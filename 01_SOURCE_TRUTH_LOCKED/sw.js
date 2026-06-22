@@ -1,0 +1,6 @@
+self.addEventListener('install',e=>{self.skipWaiting();});
+self.addEventListener('activate',e=>{e.waitUntil(self.clients.claim());});
+const CACHE='gridnode-v1-pwa-v2';
+self.addEventListener('fetch',e=>{const r=e.request;if(r.method!=='GET')return;const u=new URL(r.url);if(u.origin!==self.location.origin)return;if(r.mode==='navigate'||(r.headers.get('accept')||'').includes('text/html')){e.respondWith(fetch(r).then(res=>{const c=res.clone();caches.open(CACHE).then(ch=>ch.put(r,c)).catch(()=>0);return res;}).catch(()=>caches.match(r).then(m=>m||caches.match('./'))));}else{e.respondWith(caches.match(r).then(c=>c||fetch(r).then(res=>{if(!res||res.status!==200||res.type==='opaque')return res;const c=res.clone();caches.open(CACHE).then(ch=>ch.put(r,c)).catch(()=>0);return res;}).catch(()=>c)));}});
+self.addEventListener('push',e=>{e.waitUntil(self.registration.showNotification('GRID//NODE',{body:e.data?e.data.text():'New update',icon:'/icon-192.png',badge:'/icon-192.png',tag:'gridnode-push',renotify:true}));});
+self.addEventListener('notificationclick',e=>{e.notification.close();e.waitUntil(self.clients.matchAll({type:'window'}).then(cs=>{const existing=cs.find(c=>'focus' in c);if(existing)return existing.focus();return self.clients.openWindow('./');}));});
