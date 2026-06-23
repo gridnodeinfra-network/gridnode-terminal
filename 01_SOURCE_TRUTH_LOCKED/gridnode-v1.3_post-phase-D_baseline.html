@@ -1061,6 +1061,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 /* EMPTY STATE */
 .empty{text-align:center;padding:44px 20px;font-family:var(--font-m);font-size:0.62rem;color:var(--text-dim);letter-spacing:2px;line-height:2.5}
 .empty-ico{font-size:2.4rem;display:block;margin-bottom:10px;opacity:0.35}
+.empty-cta{margin-top:18px;display:inline-block;min-width:200px;max-width:280px;font-size:0.7rem;line-height:1.2;letter-spacing:2.5px;padding:14px 18px}
 
 /* TOAST */
 .toast{position:fixed;top:calc(68px + var(--safe-top));left:14px;right:14px;z-index:400;background:var(--panel2);border:1px solid var(--green);border-left:3px solid var(--green);padding:13px 15px;font-family:var(--font-b);font-size:1rem;color:var(--green);box-shadow:0 4px 20px rgba(0,255,136,0.12);display:none;animation:slideDown 0.3s ease;border-radius:var(--r)}
@@ -4289,7 +4290,7 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
         <button class="shot-history-toggle" type="button" data-shot-history-view="archived">ARCHIVED</button>
       </div>
       <div class="shot-history-helper" id="shotHistoryHelper"></div>
-      <div id="logList"><div class="empty"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span>NO SHOTS LOGGED YET<br>TAP THE + BUTTON TO LOG YOUR FIRST SHOT</div></div>
+      <div id="logList"><div class="empty"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span>NO SHOTS LOGGED YET<br><button class="btn-full btn-primary empty-cta" type="button" onclick="handleShotFab()" aria-label="Log your first shot">LOG YOUR FIRST SHOT</button></div></div>
     </div>
 
     <!-- ══ RESULTS PAGE ══ -->
@@ -6388,7 +6389,7 @@ function renderLog() {
   if(!shots.length){
     el.innerHTML = shotHistoryView === 'archived'
       ? `<div class="empty"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-vault-core"></use></svg></span></span>NO ARCHIVED SHOTS RECORDS<br>ARCHIVED RECORDS WILL REMAIN STORED HERE FOR REVIEW</div>`
-      : `<div class="empty"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span>NO SHOTS LOGGED YET<br>TAP THE + BUTTON TO LOG YOUR FIRST SHOT</div>`;
+      : `<div class="empty"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span>NO SHOTS LOGGED YET<br><button class="btn-full btn-primary empty-cta" type="button" onclick="handleShotFab()" aria-label="Log your first shot">LOG YOUR FIRST SHOT</button></div>`;
     return;
   }
 
