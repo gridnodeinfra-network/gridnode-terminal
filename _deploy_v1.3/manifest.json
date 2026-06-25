@@ -1,0 +1,35 @@
+{
+  "name": "GRID//NODE",
+  "short_name": "GRID//NODE",
+  "description": "Private biotech protocol tracker. Your body. Your data. Your grid.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#050508",
+  "theme_color": "#050508",
+  "categories": ["health", "medical", "lifestyle"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Log Shot",
+      "short_name": "Log",
+      "description": "Log a new peptide dose",
+      "url": "./?action=log-shot",
+      "icons": [{"src": "icon-192.png", "sizes": "192x192"}]
+    }
+  ]
+}
