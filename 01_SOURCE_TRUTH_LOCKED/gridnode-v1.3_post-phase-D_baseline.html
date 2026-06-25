@@ -19,6 +19,71 @@
 <!--
 ═══════════════════════════════════════════════════════════════════════════════
 GRID//NODE INTERNAL CHANGELOG
+2026-06-23 — Pre-Beta Hardening Microfix v8 (v1.3.0-rc28.8)
+- ponytail: CRITICAL BUG FIX — pad2 was defined inside 3 separate IIFE scopes but called from formatDateForInput / parseTimeValue which live in a different script block. The error "pad2 is not defined" was silently breaking the post-import setTimeout(1100ms) callback: the data saved fine but refreshAll() and showToast() never ran, and the IMPORT button stayed disabled.
+- This was hidden by a 1.1s setTimeout that masked the throw from immediate user observation. The success state ("\u2713 IMPORTED" in the modal) rendered correctly because it ran synchronously before the setTimeout. But the rest of the flow (toast, button re-enable, refreshAll) silently failed.
+- Found by Pipe's girlfriend test on the screenshots. When I re-rendered headless, the pageerror surfaced in the test logs.
+- Fix: hoist pad2 to window at the top of the first script block, gated with `typeof window.pad2 !== 'function'` so the IIFE versions still work as locals. No regression risk.
+- After this fix, post-import confirmation (green \u2713 IMPORTED in modal + toast at top + button re-enable + full refreshAll) works end-to-end.
+- Protected SHOTS scanner, LOG SHOT, SHOT HISTORY, archive/restore/purge, Phase Engine, RESULTS, CSV, LAB syringe, LOADOUT, VAULT, B2-B logo, Landing, Oskar dedication, boot/splash, NODE, system audio, and all 134 protected keywords.
+
+2026-06-23 — Pre-Beta Hardening Microfix v7 (v1.3.0-rc28.6)
+- ponytail: replaced the v6 plain-English copy with brand-voice copy that still teaches itself. The brand is cyberpunk / Blade Runner / biotech LAB — the monospace > PROMPT_ terminal style is what separates GRID//NODE from generic wellness apps. But the words need to be obvious to a non-technical user too.
+- Empty state: "> NO PROTOCOL DATA", "> TAP FAB // LOG FIRST SHOT", "> INITIATE PROTOCOL — log first shot".
+- Cycle complete: "> NEXT SHOT WINDOW // OPEN", "> LAST SHOT: 24d 4h ago", "> CYCLE WINDOW // EXPIRED — log next shot to restart", cycle position 100% COMPLETE.
+- v6 tried "Welcome" / "Tap the red button to begin" — too generic, killed the brand. v7 keeps the > PROMPT_ / HUD terminal style + uses GRID//NODE's own word bank (FAB, INITIATE PROTOCOL, CYCLE WINDOW, NODE) so the copy is consistent with the rest of the app.
+- Real-user test (Pipe's girlfriend): she couldn't tell what "LOG WINDOW REACHED" meant (v5). v7 she should be able to read: "> NEXT SHOT WINDOW // OPEN" + "> LAST SHOT: 24d 4h ago" is self-evident.
+- Protected SHOTS scanner, LOG SHOT, SHOT HISTORY, archive/restore/purge, Phase Engine, RESULTS, CSV, LAB syringe, LOADOUT, VAULT, B2-B logo, Landing, Oskar dedication, boot/splash, NODE, system audio, and all 134 protected keywords.
+
+2026-06-23 — Pre-Beta Hardening Microfix v6 (v1.3.0-rc28.5)
+- ponytail: fixed the Phase Engine cycle-complete state. When the most recent shot is older than 7 days, the ring shows "LOG WINDOW REACHED" / "CYCLE WINDOW COMPLETE" but the ESTIMATED CYCLE POSITION card stayed at the HTML default "\u2014" and phaseNext stayed at the default "Log your first shot" text.
+- Now in the diff<=0 branch of startCnt.tick(), we also update phaseCyclePosition to "100% COMPLETE", phaseTimeSince to the elapsed time, and phaseNext to "Cycle complete \u00b7 log next shot to restart".
+- This makes the empty state text honest: user has shots, cycle is done, here's what to do next.
+- Protected SHOTS scanner, LOG SHOT, SHOT HISTORY, archive/restore/purge, Phase Engine, RESULTS, CSV, LAB syringe, LOADOUT, VAULT, B2-B logo, Landing, Oskar dedication, boot/splash, NODE, system audio, and all 134 protected keywords.
+
+2026-06-23 — Pre-Beta Hardening Microfix v5 (v1.3.0-rc28.4)
+- ponytail: added post-import confirmation in confirmCSVImport. The import preview now shows a big green "✓ IMPORTED" overlay with the counts for 1.1s, then auto-closes. The toast at the top also includes both shots and weights.
+- Previous behavior: tap IMPORT TO SHOTS HISTORY → modal closes silently → user had no idea if it worked.
+- New behavior: tap IMPORT → green ✓ IMPORTED + counts visible in the modal → auto-close → toast at top as backup.
+- Disabled the IMPORT button during the 1.1s confirmation so a double-tap can't double-import.
+- Protected SHOTS scanner, LOG SHOT, SHOT HISTORY, archive/restore/purge, Phase Engine, RESULTS, CSV, LAB syringe, LOADOUT, VAULT, B2-B logo, Landing, Oskar dedication, boot/splash, NODE, system audio, and all 134 protected keywords.
+
+2026-06-23 — Pre-Beta Hardening Microfix v4 (v1.3.0-rc28.3)
+- ponytail: removed the 1-line forwarder. It was calling itself (window.prepareCSVImport \u2192 prepareCSVImport \u2192 window.prepareCSVImport \u2192 ...), causing "Maximum call stack size exceeded" on real devices.
+- The Shotsy-aware function is now declared directly as window.prepareCSVImport (no aliasing). One canonical function, no recursion.
+- After this fix, the importer is single-source: the DATA TRANSFER IMPORT CSV button, the VAULT RESTORE BACKUP \u2192 CSV path, and any future caller all go through the same window.prepareCSVImport.
+- Headless test against the live Shotsy sample: 4 shots + 2 weights detected, 0 skipped, source=csv_import_shotsy.
+- Protected SHOTS scanner, LOG SHOT, SHOT HISTORY, archive/restore/purge, Phase Engine, RESULTS, CSV, LAB syringe, LOADOUT, VAULT, B2-B logo, Landing, Oskar dedication, boot/splash, NODE, system audio, and all 134 protected keywords.
+
+2026-06-23 — Pre-Beta Hardening Microfix v3 (v1.3.0-rc28.2)
+- ponytail: replaced the duplicate window.prepareCSVImport with a 1-line forwarder to the Shotsy-aware version. The old duplicate was shadowing the new logic and rejecting Shotsy CSVs with "missing required columns: dose".
+- After this fix, both the DATA TRANSFER IMPORT CSV button and the VAULT RESTORE BACKUP \u2192 CSV path route through the same Shotsy-aware importer.
+- Verified against the live Shotsy sample: 4 shots + 2 weights detected, 0 skipped, source=csv_import_shotsy.
+- Protected SHOTS scanner, LOG SHOT, SHOT HISTORY, archive/restore/purge, Phase Engine, RESULTS, CSV, LAB syringe, LOADOUT, VAULT, B2-B logo, Landing, Oskar dedication, boot/splash, NODE, system audio, and all 134 protected keywords.
+
+2026-06-23 — Pre-Beta Hardening Microfix v2 (v1.3.0-rc28.1)
+- Shotsy CSV import: detect Shotsy header signature and map their columns (Shot / Site / Shot Notes / Recorded Weight (lbs) + 16 side-effect columns).
+- Shotsy med+dose combined cells (e.g. "Tirzepatide 10.0 mg") are split into med name + dose.
+- Shotsy weight-only rows (no Shot, has weight) are kept as weights instead of being skipped.
+- VAULT RESTORE BACKUP now accepts both GRID//NODE .json backups and Shotsy/other .csv files.
+- File picker no longer filtered to .json only (accept attribute removed).
+- Format detection is content-based (looks at the first bytes, not the extension) so weird Android filenames still route right.
+- RESTORE → backup: overwrites storage and reloads. RESTORE → CSV: opens the existing import preview flow.
+- Source field on imported records is now "csv_import_shotsy" vs "csv_import_v1" so future Mavin can tell them apart.
+- Verified against real Shotsy export (4 shots + 2 weights detected, 0 skipped).
+- Protected SHOTS scanner, LOG SHOT, SHOT HISTORY, archive/restore/purge, Phase Engine, RESULTS, CSV, LAB syringe, LOADOUT, VAULT, B2-B logo, Landing, Oskar dedication, boot/splash, NODE, system audio, and all 134 protected keywords.
+
+2026-06-23 — Pre-Beta Hardening Microfix v1 (v1.3.0-rc28)
+- Added VAULT SYSTEM card EXPORT BACKUP + RESTORE BACKUP buttons.
+- Backups are JSON dumps of {settings, shots, weights, arsenal, profile} keyed by format:"gn-backup" version:1.
+- Restore uses existing per-user S.set() / setGlobalSettings() helpers; no new storage paths.
+- Reduced eye-fatigue shadows on .landing-logo (24px→8px) and .gn-syr-num (24+48px→8px).
+- Consolidated the 3 prefers-reduced-motion blocks into one master block, kills text-shadow + box-shadow on .gn-pulse/.gn-glow.
+- Added :focus-visible outline styles for vault-action-btn + dose-pill + se-check + cp-option + vault-toggle + button.
+- Hover state on vault-action-btn (subtle bg + 1px lift) only when motion is allowed.
+- ponytail: deferred refactor of 27 direct localStorage calls, multi-tab storage listener, and large a11y text sweep to post-beta.
+- Protected SHOTS scanner, LOG SHOT, SHOT HISTORY, archive/restore/purge, Phase Engine, RESULTS, CSV, LAB syringe, LOADOUT, VAULT, B2-B logo, Landing, Oskar dedication, boot/splash, NODE, system audio, and all 134 protected keywords.
+
 2026-06-13 — RESULTS Stage 1B.1 Weight Records Edit / Remove Microfix v1
 - Built from locked RESULTS Stage 1A/B Visibility + Trust Microfix v3 baseline.
 - Added WEIGHT RECORDS edit and remove actions using the existing per-user S.get('weights') / S.set('weights') storage path.
@@ -197,6 +262,13 @@ Purpose: Maintainability stabilization only. No UI redesign. No feature change.
   }
 
   function norm(s){ return (s||'').toLowerCase().replace(/\s+/g,' ').trim(); }
+
+  // ponytail: pad2 is defined inside 3 separate IIFEs in other scripts but called from
+  // formatDateForInput / parseTimeValue in this script's scope. Hoist it globally so the
+  // import flow's setTimeout → refreshAll → initWtChart doesn't blow up with "pad2 is not defined".
+  if(typeof window.pad2 !== 'function'){
+    window.pad2 = function(n){ return String(n).padStart(2,'0'); };
+  }
 
   function play(){ if(typeof window.playClick === 'function') window.playClick(); }
 
@@ -428,6 +500,573 @@ PROTECTED SYSTEMS — DO NOT CASUALLY EDIT
 -->
 
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- ============================================================
+     GRID//NODE Cloud Layer (Supabase) — additive injection
+     Injected: 2026-06-25
+     Owner: Mavis (mav)
+     Scope: 0a. Cloud SDK load, 0b. Adapter + feature flag, 0c. Auth UI, 0d. Migration prompt
+     Rollback: see deploy.sh comments — restore gridnode-GOOD-2026-06-26_pre-supabase-candidate-base.html
+     Ponytail discipline: feature-flagged OFF by default. localStorage path is unchanged. Nothing here can break existing app unless GN_CLOUD is set to "1" in localStorage.
+     ============================================================ -->
+
+<!-- 0a. Supabase JS client v2 — loaded from official CDN, deferred so app boots first -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+
+<script>
+(function(){
+  'use strict';
+  // Bail entirely if SDK didn't load (offline / CDN blocked)
+  if (!window.supabase || !window.supabase.createClient) {
+    console.warn('[GN_CLOUD] supabase-js not loaded, cloud features disabled');
+    return;
+  }
+
+  // ============================================================
+  // 0b. CONFIG — values are PUBLIC (anon key is safe in browser)
+  // ============================================================
+  const GN_SUPABASE_URL  = 'https://pjcnmejgjgbsgjhgwncw.supabase.co';
+  const GN_SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqY25tZWpnamdic2dqaGd3bmN3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NDM0OTUsImV4cCI6MjA5NzMxOTQ5NX0.10DFzo00M38yQMlrW4IIdOCUC-4JEBffPd1RpqKWmhw';
+
+  // Feature flag: read from localStorage. Default OFF.
+  // To turn on after testing: localStorage.setItem('GN_CLOUD','1') in devtools
+  const GN_CLOUD = (() => {
+    try { return localStorage.getItem('GN_CLOUD') === '1'; } catch { return false; }
+  })();
+
+  // ============================================================
+  // GN namespace — all cloud state lives here
+  // ============================================================
+  window.GN = window.GN || {};
+
+  // Lazy SDK init. Won't actually connect until user signs in.
+  GN.sb = null;
+  GN.session = null;
+  GN.user = null;
+  GN.cloudReady = false;
+
+  function sb() {
+    if (!GN.sb) {
+      GN.sb = window.supabase.createClient(GN_SUPABASE_URL, GN_SUPABASE_ANON, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+      });
+    }
+    return GN.sb;
+  }
+
+  // ============================================================
+  // CLOUD STORAGE ADAPTER (Sc) — parallel to localStorage `S`
+  // Methods are async, return Promises. All wrapped in try/catch
+  // so a cloud failure never crashes the app.
+  // ============================================================
+  const Sc = {
+    async getProfile() {
+      if (!GN_CLOUD || !GN.session) return null;
+      try {
+        const { data, error } = await sb().from('profiles').select('*').eq('id', GN.session.user.id).single();
+        if (error) throw error;
+        return data;
+      } catch (e) { console.warn('[Sc.getProfile]', e); return null; }
+    },
+    async upsertProfile(p) {
+      if (!GN_CLOUD || !GN.session) return null;
+      try {
+        const row = { id: GN.session.user.id, display_name: p.name || 'USER_01', weight_unit: p.weightUnit || 'lbs', height_unit: p.heightUnit || 'ft/in', dose_mg: p.dose, updated_at: new Date().toISOString() };
+        const { data, error } = await sb().from('profiles').upsert(row).select().single();
+        if (error) throw error;
+        return data;
+      } catch (e) { console.warn('[Sc.upsertProfile]', e); return null; }
+    },
+    async getShots() {
+      if (!GN_CLOUD || !GN.session) return null;
+      try {
+        const { data, error } = await sb().from('shots').select('*').eq('user_id', GN.session.user.id).order('date', { ascending: false });
+        if (error) throw error;
+        return data || [];
+      } catch (e) { console.warn('[Sc.getShots]', e); return null; }
+    },
+    async upsertShot(shot) {
+      if (!GN_CLOUD || !GN.session) return null;
+      try {
+        const row = {
+          user_id: GN.session.user.id,
+          date: shot.date || shot.takenAt || new Date().toISOString(),
+          compound: shot.compound || 'TIRZEPATIDE',
+          dose_mg: Number(shot.dose) || 0,
+          conc_mg_ml: Number(shot.conc || shot.concMgMl) || 18,
+          units: Number(shot.units) || 0,
+          site: shot.site || null,
+          notes: shot.notes || null,
+          archived: !!shot.archived
+        };
+        if (shot.id && !String(shot.id).startsWith('shot_') && !String(shot.id).startsWith('legacy_')) {
+          row.id = shot.id; // upsert by UUID only
+        }
+        const { data, error } = await sb().from('shots').upsert(row).select().single();
+        if (error) throw error;
+        return data;
+      } catch (e) { console.warn('[Sc.upsertShot]', e); return null; }
+    },
+    async getWeights() {
+      if (!GN_CLOUD || !GN.session) return null;
+      try {
+        const { data, error } = await sb().from('weights').select('*').eq('user_id', GN.session.user.id).order('date', { ascending: false });
+        if (error) throw error;
+        return data || [];
+      } catch (e) { console.warn('[Sc.getWeights]', e); return null; }
+    },
+    async upsertWeight(w) {
+      if (!GN_CLOUD || !GN.session) return null;
+      try {
+        const row = { user_id: GN.session.user.id, date: w.date || new Date().toISOString(), weight_kg: Number(w.kg || w.weightKg) || 0, notes: w.notes || null };
+        if (w.id) row.id = w.id;
+        const { data, error } = await sb().from('weights').upsert(row).select().single();
+        if (error) throw error;
+        return data;
+      } catch (e) { console.warn('[Sc.upsertWeight]', e); return null; }
+    }
+  };
+  window.Sc = Sc;
+
+  // ============================================================
+  // AUTH — magic link + email/password (user picks on screen)
+  // ============================================================
+  async function signInMagicLink(email) {
+    const { error } = await sb().auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: window.location.origin }
+    });
+    return { ok: !error, error };
+  }
+  async function signUpPassword(email, password) {
+    const { data, error } = await sb().auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } });
+    return { ok: !error, data, error };
+  }
+  async function signInPassword(email, password) {
+    const { data, error } = await sb().auth.signInWithPassword({ email, password });
+    return { ok: !error, data, error };
+  }
+  async function signOut() {
+    const { error } = await sb().auth.signOut();
+    return { ok: !error, error };
+  }
+
+  window.GN.signInMagicLink   = signInMagicLink;
+  window.GN.signUpPassword    = signUpPassword;
+  window.GN.signInPassword    = signInPassword;
+  window.GN.signOut           = signOut;
+
+  // ============================================================
+  // SESSION RESTORE — runs on every page load
+  // ============================================================
+  // First: detect OAuth callback in URL fragment (Google sign-in redirect lands here)
+  // Supabase normally does this via detectSessionInUrl:true, but we add a fallback
+  // in case the library hasn't initialized yet when the page loads.
+  function handleOAuthCallback() {
+    const hash = window.location.hash || '';
+    if (hash.includes('access_token=') || hash.includes('error=')) {
+      console.info('[GN_CLOUD] OAuth callback detected, processing…');
+      // Supabase will pick this up automatically, but we wait for it then clean URL
+      sb().auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          console.info('[GN_CLOUD] OAuth callback session established', session.user.email);
+          // Clean up the URL fragment so reloads don't re-trigger
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+      });
+    }
+  }
+  // Run immediately + after Supabase lib loads (race-safe)
+  handleOAuthCallback();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', handleOAuthCallback);
+  } else {
+    handleOAuthCallback();
+  }
+
+  sb().auth.getSession().then(async ({ data: { session } }) => {
+    if (session) {
+      GN.session = session;
+      GN.user    = session.user;
+      console.info('[GN_CLOUD] session restored', session.user.email);
+    } else {
+      console.info('[GN_CLOUD] no active session');
+    }
+  }).catch(e => console.warn('[GN_CLOUD] session restore failed', e));
+
+  // Listen for auth state changes (sign in / sign out / token refresh)
+  sb().auth.onAuthStateChange(async (_event, session) => {
+    GN.session = session;
+    GN.user    = session?.user || null;
+    if (session) {
+      // Auto-enable cloud sync when user signs in (ponytail: don't make them toggle)
+      if (localStorage.getItem('GN_CLOUD') !== '0') {
+        localStorage.setItem('GN_CLOUD', '1');
+        GN_CLOUD = true;
+        window.GN_CLOUD_ENABLED = true;
+      }
+      console.info('[GN_CLOUD] signed in:', session.user.email);
+      if (GN_CLOUD) await maybePromptMigration();
+    } else {
+      console.info('[GN_CLOUD] signed out');
+    }
+  });
+
+  // ============================================================
+  // MIGRATION PROMPT — fires once per device on first sign-in
+  // ============================================================
+  const GN_MIGRATION_KEY = 'gn_migration_prompted_v1';
+  async function maybePromptMigration() {
+    if (!GN_CLOUD) return;
+    if (localStorage.getItem(GN_MIGRATION_KEY) === '1') return;
+    const localShots   = (S.get('shots')   || []).length;
+    const localWeights = (S.get('weights') || []).length;
+    if (localShots === 0 && localWeights === 0) return; // nothing to migrate
+    showMigrationPrompt(localShots, localWeights);
+  }
+  function showMigrationPrompt(shotsCount, weightsCount) {
+    const cornerTick = (pos) => `<svg viewBox="0 0 26 26" width="14" height="14" style="position:absolute;${pos}:6px;pointer-events:none;opacity:.7"><path d="M5 5h3M5 5v3M21 5h-3M21 5v3M5 21h3M5 21v-3M21 21h-3M21 21v-3" stroke="#00d4ff" stroke-width="1.2" fill="none"/></svg>`;
+    const html = `
+      <div id="gnMigOverlay" style="position:fixed;inset:0;background:rgba(5,5,8,.94);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;font-family:var(--font-b,Rajdhani,sans-serif)">
+        <div style="position:relative;background:linear-gradient(180deg,rgba(14,14,22,.96),rgba(5,5,8,.98));border:1px solid rgba(0,212,255,.38);border-radius:5px;padding:28px 24px 24px;max-width:440px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 30px rgba(0,212,255,.08);overflow:hidden">
+          <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,.6),transparent)"></div>
+          ${cornerTick('top:6px;left:6px')}${cornerTick('top:6px;right:6px')}
+          <div style="position:absolute;bottom:6px;left:6px"><svg viewBox="0 0 26 26" width="14" height="14" style="opacity:.7"><path d="M5 21h3M5 21v-3" stroke="#00d4ff" stroke-width="1.2" fill="none"/></svg></div>
+          <div style="position:absolute;bottom:6px;right:6px"><svg viewBox="0 0 26 26" width="14" height="14" style="opacity:.7"><path d="M21 21h-3M21 21v-3" stroke="#00d4ff" stroke-width="1.2" fill="none"/></svg></div>
+          <div style="font-family:var(--font-m,'Share Tech Mono',monospace);font-size:.7rem;letter-spacing:3px;color:#00d4ff;margin-bottom:14px">// CLOUD SYNC DETECTED</div>
+          <div style="font-family:var(--font-d,'Orbitron',monospace);font-size:1.1rem;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:2px;line-height:1.4;margin-bottom:14px"><span style="color:#ff00cc">></span> ${shotsCount} SHOT${shotsCount===1?'':'S'} · ${weightsCount} WEIGHT${weightsCount===1?'':'S'} <span style="color:#00d4ff">FOUND LOCALLY</span></div>
+          <div style="font-family:var(--font-m,'Share Tech Mono',monospace);font-size:.72rem;letter-spacing:1px;color:#9fc7d4;line-height:1.55;padding:11px 12px;border:1px solid rgba(0,212,255,.14);background:rgba(0,212,255,.045);border-left:2px solid rgba(0,212,255,.42);border-radius:5px;margin-bottom:20px">
+            // SYNC TO CLOUD ACCOUNT?<br>// YOUR DATA WILL FOLLOW YOU ACROSS DEVICES
+          </div>
+          <div style="display:flex;gap:10px">
+            <button id="gnMigSync" style="flex:2;padding:14px 16px;font-family:var(--font-d,'Orbitron',monospace);font-size:.78rem;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:transform .2s,box-shadow .2s;background:linear-gradient(135deg,#ff3355,#cc0033);color:#fff;border:0;border-radius:5px;box-shadow:0 10px 28px rgba(255,51,85,.28)">SYNC <span style="margin-left:6px">→</span> CLOUD</button>
+            <button id="gnMigSkip" style="flex:1;padding:14px 16px;font-family:var(--font-d,'Orbitron',monospace);font-size:.72rem;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:transform .2s,background .2s;border:1px solid rgba(0,212,255,.38);color:#00d4ff;background:rgba(0,212,255,.06);border-radius:5px">// SKIP</button>
+          </div>
+        </div>
+      </div>`;
+    document.body.insertAdjacentHTML('beforeend', html);
+    document.getElementById('gnMigSync').onclick = async () => {
+      document.getElementById('gnMigOverlay').remove();
+      localStorage.setItem(GN_MIGRATION_KEY, '1');
+      await migrateLocalToCloud();
+      location.reload();
+    };
+    document.getElementById('gnMigSkip').onclick = () => {
+      document.getElementById('gnMigOverlay').remove();
+      localStorage.setItem(GN_MIGRATION_KEY, '1');
+    };
+  }
+  async function migrateLocalToCloud() {
+    const shots   = S.get('shots')   || [];
+    const weights = S.get('weights') || [];
+    const profile = S.get('profile') || {};
+    for (const s of shots)   await Sc.upsertShot(s);
+    for (const w of weights) await Sc.upsertWeight(w);
+    await Sc.upsertProfile(profile);
+    console.info('[GN_CLOUD] migrated', shots.length, 'shots,', weights.length, 'weights');
+  }
+  window.GN.migrateLocalToCloud = migrateLocalToCloud;
+
+  // ============================================================
+  // AUTH UI — minimal, terminal-style, injected on demand
+  // ============================================================
+  window.GN.openAuthUI = function() {
+    if (document.getElementById('gnAuthOverlay')) return;
+    const html = `
+      <div id="gnAuthOverlay" style="position:fixed;inset:0;background:rgba(5,5,8,.96);z-index:99998;display:flex;align-items:center;justify-content:center;padding:20px;font-family:var(--font-b,'Rajdhani',sans-serif)">
+        <div style="position:relative;width:100%;max-width:440px;background:linear-gradient(180deg,rgba(14,14,22,.96),rgba(5,5,8,.98));border:1px solid rgba(0,212,255,.38);border-radius:5px;padding:36px 32px 28px;box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 30px rgba(0,212,255,.08);overflow:hidden">
+          <!-- top cyan edge -->
+          <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,.6),transparent)"></div>
+          <!-- corner ticks -->
+          <span style="position:absolute;top:8px;left:8px;width:10px;height:10px;border-top:1px solid #00d4ff;border-left:1px solid #00d4ff;"></span>
+          <span style="position:absolute;top:8px;right:8px;width:10px;height:10px;border-top:1px solid #00d4ff;border-right:1px solid #00d4ff;"></span>
+          <span style="position:absolute;bottom:8px;left:8px;width:10px;height:10px;border-bottom:1px solid #00d4ff;border-left:1px solid #00d4ff;"></span>
+          <span style="position:absolute;bottom:8px;right:8px;width:10px;height:10px;border-bottom:1px solid #00d4ff;border-right:1px solid #00d4ff;"></span>
+
+          <!-- Close button -->
+          <button id="gnAuthClose" style="position:absolute;top:14px;right:14px;background:transparent;border:1px solid rgba(0,212,255,.38);color:#00d4ff;width:30px;height:30px;font-family:var(--font-d,'Orbitron',monospace);font-size:1rem;cursor:pointer;border-radius:3px;line-height:1">×</button>
+
+          <!-- Headline (Variant A's title slot, filled with Agent A's Option 2) -->
+          <div style="text-align:center;margin-bottom:24px">
+            <div style="font-family:var(--font-m,'Share Tech Mono',monospace);font-size:.7rem;letter-spacing:3px;color:#00d4ff;margin-bottom:8px">// ACCOUNT ACCESS</div>
+            <div style="font-family:var(--font-d,'Orbitron',monospace);font-size:1.5rem;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:3px;line-height:1.2"><span style="color:#ff00cc">></span> NODE LOCKED</div>
+            <div style="font-family:var(--font-m,'Share Tech Mono',monospace);font-size:.7rem;letter-spacing:2px;color:#9fc7d4;margin-top:8px">// AUTHENTICATE TO PROCEED</div>
+          </div>
+
+          <!-- Method picker (Glapp-style: 3 stacked full-width pills, primary-first) -->
+          <div id="gnAuthMethod" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
+            <button data-method="magic" style="position:relative;width:100%;height:56px;background:linear-gradient(180deg,rgba(0,212,255,.10),rgba(0,212,255,.02));border:1px solid #00d4ff;border-radius:5px;color:#00d4ff;font-family:var(--font-d,'Orbitron',monospace);font-size:.78rem;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 0 18px rgba(0,212,255,.35),inset 0 0 12px rgba(0,212,255,.08)">
+              <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);width:6px;height:6px;border-radius:50%;background:#ff00cc;box-shadow:0 0 8px #ff00cc;"></span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 7l9 6 9-6"/></svg>
+              > MAGIC LINK
+            </button>
+            <button data-method="pass" style="position:relative;width:100%;height:56px;background:transparent;border:1px solid rgba(0,212,255,.35);border-radius:5px;color:rgba(0,212,255,.65);font-family:var(--font-d,'Orbitron',monospace);font-size:.78rem;font-weight:500;letter-spacing:2.5px;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="1"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+              > PASSWORD
+            </button>
+            <button data-method="google" style="position:relative;width:100%;height:56px;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:5px;color:#e6e6e6;font-family:var(--font-d,'Orbitron',monospace);font-size:.78rem;font-weight:500;letter-spacing:2.5px;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px">
+              <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+              > CONTINUE WITH GOOGLE
+            </button>
+          </div>
+
+          <!-- Form slot -->
+          <div id="gnAuthForm"></div>
+
+          <!-- Status / message line (Variant B footer pattern) -->
+          <div id="gnAuthMsg" style="margin-top:18px;font-family:var(--font-m,'Share Tech Mono',monospace);font-size:.68rem;letter-spacing:1px;color:#9fc7d4;text-align:center;min-height:16px;padding:6px 4px;line-height:1.4"></div>
+
+          <!-- Trust footer (Variant B: system-notice style) -->
+          <div style="margin-top:16px;font-family:var(--font-m,'Share Tech Mono',monospace);font-size:.62rem;letter-spacing:1px;color:#00d4ff;background:rgba(0,212,255,.05);border-left:2px solid #00d4ff;padding:8px 12px;line-height:1.55;border-radius:0 3px 3px 0">
+            // SYSTEM: END-TO-END ENCRYPTED &nbsp;·&nbsp; NO TRACKING &nbsp;·&nbsp; ZERO-LOGIN
+            <div style="font-size:.6rem;color:#5a7a85;margin-top:4px;letter-spacing:.5px">
+              By continuing, you agree to our <span style="color:#9fc7d4">Terms</span> + <span style="color:#9fc7d4">Privacy</span>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    document.body.insertAdjacentHTML('beforeend', html);
+    document.getElementById('gnAuthClose').onclick = () => document.getElementById('gnAuthOverlay').remove();
+
+    function renderMagic() {
+      document.getElementById('gnAuthForm').innerHTML = `
+        <div style="font-family:var(--font-m,'Share Tech Mono',monospace);font-size:.66rem;letter-spacing:2px;color:#00d4ff;margin-bottom:8px">> ENTER EMAIL · CHECK INBOX</div>
+        <input id="gnAuthEmail" type="email" placeholder="name@email.com" style="width:100%;padding:14px 16px;background:#050508;border:1px solid rgba(0,212,255,.38);color:#fff;border-radius:5px;margin-bottom:18px;font-family:var(--font-b,'Rajdhani',sans-serif);font-size:1rem;outline:none;box-sizing:border-box">
+        <button id="gnAuthSubmit" style="width:100%;height:56px;background:linear-gradient(135deg,#ff00cc 0%,#b3008f 100%);border:none;border-radius:5px;color:#fff;font-family:var(--font-d,'Orbitron',monospace);font-size:.85rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;cursor:pointer;box-shadow:0 0 24px rgba(255,0,204,.35),inset 0 1px 0 rgba(255,255,255,.18)">SEND MAGIC LINK <span style="margin-left:8px">→</span></button>`;
+      document.getElementById('gnAuthSubmit').onclick = async () => {
+        const email = document.getElementById('gnAuthEmail').value.trim();
+        if (!email) return setMsg('// ENTER AN EMAIL', '#ff00cc');
+        setMsg('// SENDING…', '#00d4ff');
+        const { ok, error } = await signInMagicLink(email);
+        setMsg(ok ? '// ✓ CHECK YOUR INBOX' : `// ERROR: ${(error?.message || 'unknown').toUpperCase()}`, ok ? '#00ff88' : '#ff00cc');
+      };
+    }
+    function renderPassword() {
+      document.getElementById('gnAuthForm').innerHTML = `
+        <div style="font-family:var(--font-m,'Share Tech Mono',monospace);font-size:.66rem;letter-spacing:2px;color:#00d4ff;margin-bottom:8px">> ENTER EMAIL + PASSWORD</div>
+        <input id="gnAuthEmail" type="email" placeholder="name@email.com" style="width:100%;padding:14px 16px;background:#050508;border:1px solid rgba(0,212,255,.38);color:#fff;border-radius:5px;margin-bottom:8px;font-family:var(--font-b,'Rajdhani',sans-serif);font-size:1rem;outline:none;box-sizing:border-box">
+        <input id="gnAuthPass"  type="password" placeholder="password (min 6 chars)" style="width:100%;padding:14px 16px;background:#050508;border:1px solid rgba(0,212,255,.38);color:#fff;border-radius:5px;margin-bottom:18px;font-family:var(--font-b,'Rajdhani',sans-serif);font-size:1rem;outline:none;box-sizing:border-box">
+        <button id="gnAuthSubmit" style="width:100%;height:56px;background:linear-gradient(135deg,#ff00cc 0%,#b3008f 100%);border:none;border-radius:5px;color:#fff;font-family:var(--font-d,'Orbitron',monospace);font-size:.85rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;cursor:pointer;box-shadow:0 0 24px rgba(255,0,204,.35),inset 0 1px 0 rgba(255,255,255,.18)">AUTHENTICATE <span style="margin-left:8px">→</span></button>
+        <div style="text-align:center;margin-top:12px">
+          <button id="gnAuthSignUp" style="background:transparent;border:none;color:#00d4ff;font-family:var(--font-m,'Share Tech Mono',monospace);font-size:.7rem;letter-spacing:2px;cursor:pointer;text-transform:uppercase;padding:6px 12px">// NEW OPERATOR? SIGN UP →</button>
+        </div>`;
+      document.getElementById('gnAuthSubmit').onclick = async () => doPw('signin');
+      document.getElementById('gnAuthSignUp').onclick = async () => doPw('signup');
+    }
+    function renderGoogle() {
+      document.getElementById('gnAuthForm').innerHTML = `
+        <div style="padding:32px 16px;text-align:center;font-family:var(--font-m,'Share Tech Mono',monospace);font-size:.78rem;letter-spacing:2px;color:#9fc7d4;line-height:1.7;border:1px solid rgba(0,212,255,.14);background:rgba(0,212,255,.025);border-radius:5px;margin-bottom:8px">
+          <div style="font-size:1.4rem;margin-bottom:10px;color:#00d4ff">[ G_OAUTH ]</div>
+          // TAP THE GOOGLE BUTTON ABOVE<br>// YOU'LL BE REDIRECTED TO GOOGLE TO SIGN IN
+        </div>`;
+      // Trigger OAuth flow immediately when this view renders
+      setTimeout(() => doGoogle(), 250);
+    }
+    async function doGoogle() {
+      setMsg('// REDIRECTING TO GOOGLE…', '#00d4ff');
+      try {
+        const { error } = await sb().auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo: 'https://gridnode.network/' }
+        });
+        if (error) {
+          setMsg(`// ERROR: ${(error.message || 'unknown').toUpperCase()}`, '#ff00cc');
+        }
+      } catch (e) {
+        setMsg(`// ERROR: ${(e?.message || 'unknown').toUpperCase()}`, '#ff00cc');
+      }
+    }
+    async function doPw(mode) {
+      const email = document.getElementById('gnAuthEmail').value.trim();
+      const pw    = document.getElementById('gnAuthPass').value;
+      if (!email || !pw) return setMsg('// EMAIL + PASSWORD REQUIRED', '#ff00cc');
+      setMsg(mode === 'signup' ? '// CREATING ACCOUNT…' : '// AUTHENTICATING…', '#00d4ff');
+      const res = mode === 'signup' ? await signUpPassword(email, pw) : await signInPassword(email, pw);
+      if (res.ok) { setMsg('// ✓ AUTHENTICATED · RELOADING…', '#00ff88'); setTimeout(() => location.reload(), 800); }
+      else setMsg(`// ERROR: ${(res.error?.message || 'unknown').toUpperCase()}`, '#ff00cc');
+    }
+    function setMsg(t, c) {
+      const el = document.getElementById('gnAuthMsg');
+      el.textContent = t;
+      el.style.color = c;
+    }
+
+    function setActive(btn) {
+      document.querySelectorAll('#gnAuthMethod button').forEach(x => {
+        x.style.background = 'transparent';
+        x.style.color = 'rgba(0,212,255,.65)';
+        x.style.borderColor = 'rgba(0,212,255,.35)';
+        x.style.boxShadow = 'none';
+        x.style.fontWeight = '500';
+        const dot = x.querySelector('span'); if (dot) dot.style.display = 'none';
+      });
+      btn.style.background = 'linear-gradient(180deg,rgba(0,212,255,.10),rgba(0,212,255,.02))';
+      btn.style.color = '#00d4ff';
+      btn.style.borderColor = '#00d4ff';
+      btn.style.boxShadow = '0 0 18px rgba(0,212,255,.35),inset 0 0 12px rgba(0,212,255,.08)';
+      btn.style.fontWeight = '600';
+      const dot = btn.querySelector('span'); if (dot) dot.style.display = 'inline-block';
+    }
+    document.querySelectorAll('#gnAuthMethod button').forEach(b => b.onclick = () => {
+      setActive(b);
+      (b.dataset.method === 'magic' ? renderMagic : b.dataset.method === 'pass' ? renderPassword : renderGoogle)();
+    });
+    // Pre-select MAGIC LINK
+    document.querySelector('#gnAuthMethod [data-method="magic"]').click();
+  };
+
+  // Sign-out button (created on demand)
+  window.GN.signOutAndReload = async function() {
+    await signOut();
+    location.reload();
+  };
+
+  // ============================================================
+  // TINY FLOATING TOGGLE — bottom-right, only visible when cloud
+  // loaded. Lets Pipe flip GN_CLOUD on/off from the UI without
+  // devtools. Hidden by default; shown via window.GN.showToggle().
+  // ============================================================
+  window.GN.showToggle = function() {
+    // Cloud toggle now lives in the topbar (injected via topbar markup), no floating overlay needed.
+    // Hook the topbar button to open the auth modal.
+    const btn = document.getElementById('gnCloudAuthTop');
+    if (btn && !btn.dataset.hooked) {
+      btn.dataset.hooked = '1';
+      btn.onclick = () => GN.openAuthUI();
+      sb().auth.onAuthStateChange((_e, s) => {
+        const label = document.getElementById('gnCloudAuthLabel');
+        const dot   = document.getElementById('gnCloudAuthDot');
+        if (!label || !dot) return;
+        if (s?.user) {
+          label.lastChild.textContent = s.user.email.split('@')[0].toUpperCase().slice(0,4);
+          label.style.color = '#00ff88';
+          dot.style.background = '#00ff88';
+          dot.style.boxShadow = '0 0 5px #00ff88';
+          btn.style.borderColor = 'rgba(0,255,136,.5)';
+        }
+      });
+    }
+  };
+
+  // Auto-show the toggle once the app is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => setTimeout(() => GN.showToggle(), 800));
+  } else {
+    setTimeout(() => GN.showToggle(), 800);
+  }
+
+  console.info('[GN_CLOUD] adapter loaded, GN_CLOUD=', GN_CLOUD, '— toggle via bottom-right CLOUD button or localStorage.GN_CLOUD');
+
+  // ============================================================
+  // HYDRATE FROM CLOUD — runs on app boot if signed in + cloud on
+  // Pulls shots/weights/profile from cloud and merges into localStorage
+  // (cloud wins on conflict — source of truth is the cloud account)
+  // ============================================================
+  async function hydrateFromCloud() {
+    if (!GN_CLOUD || !GN.session) return;
+    try {
+      const [cshots, cweights, cprofile] = await Promise.all([
+        Sc.getShots(),
+        Sc.getWeights(),
+        Sc.getProfile()
+      ]);
+      if (cshots && cshots.length) {
+        // Map cloud shots to localStorage shape
+        const mapped = cshots.map(s => ({
+          id: s.id,
+          cloudId: s.id,
+          date: s.date,
+          med: s.compound,
+          dose: Number(s.dose_mg),
+          conc: Number(s.conc_mg_ml),
+          units: Number(s.units),
+          site: s.site || '',
+          notes: s.notes || null,
+          archived: !!s.archived,
+          createdAt: s.created_at,
+          lastEditedAt: s.updated_at,
+          _cloud: true
+        }));
+        // Merge: cloud rows replace local ones with same cloudId, add new ones
+        const local = S.get('shots') || [];
+        const localIds = new Set(local.map(s => s.cloudId || s.id));
+        const merged = [
+          ...local.filter(s => !s.cloud && !s._cloud),
+          ...mapped.filter(s => !localIds.has(s.id))
+        ];
+        // Avoid duplicates from prior hydration
+        const seen = new Set();
+        const dedup = merged.filter(s => {
+          const k = s.cloudId || s.id;
+          if (seen.has(k)) return false;
+          seen.add(k); return true;
+        });
+        S.set('shots', dedup);
+        console.info('[GN_CLOUD] hydrated', mapped.length, 'shots');
+      }
+      if (cweights && cweights.length) {
+        const mapped = cweights.map(w => ({
+          id: w.id,
+          cloudId: w.id,
+          date: w.date,
+          weight: Number(w.weight_kg) * 2.20462,  // store lbs in local (UI default)
+          unit: 'lb',
+          notes: w.notes || null,
+          createdAt: w.created_at,
+          _cloud: true
+        }));
+        const local = S.get('weights') || [];
+        const localIds = new Set(local.map(w => w.cloudId || w.id));
+        const merged = [
+          ...local.filter(w => !w._cloud),
+          ...mapped.filter(w => !localIds.has(w.id))
+        ];
+        const seen = new Set();
+        const dedup = merged.filter(w => {
+          const k = w.cloudId || w.id;
+          if (seen.has(k)) return false;
+          seen.add(k); return true;
+        });
+        S.set('weights', dedup);
+        console.info('[GN_CLOUD] hydrated', mapped.length, 'weights');
+      }
+      if (cprofile) {
+        // Only overwrite if cloud has more fields populated (avoid clobbering local-only)
+        const local = S.get('profile') || {};
+        S.set('profile', { ...local, ...cprofile, name: cprofile.display_name || local.name, weightUnit: cprofile.weight_unit || local.weightUnit, heightUnit: cprofile.height_unit || local.heightUnit, dose: cprofile.dose_mg || local.dose });
+        console.info('[GN_CLOUD] hydrated profile');
+      }
+    } catch (e) {
+      console.warn('[GN_CLOUD] hydrate failed, continuing with local data', e);
+    }
+  }
+  window.GN.hydrateFromCloud = hydrateFromCloud;
+
+  // Run hydration on boot if already signed in
+  sb().auth.getSession().then(async ({ data: { session } }) => {
+    if (session) {
+      GN.session = session;
+      GN.user = session.user;
+      window.GN_CLOUD_ENABLED = !!(GN_CLOUD && GN.session);
+      if (window.GN_CLOUD_ENABLED) await hydrateFromCloud();
+    }
+  });
+
+
+  // Expose flag globally so surgical edits (saveShot etc.) can check it
+  // without breaking the IIFE. Updated by onAuthStateChange when user signs in.
+  window.GN_CLOUD_ENABLED = !!(GN_CLOUD && GN.session);
+  GN._refreshCloudFlag = function() {
+    window.GN_CLOUD_ENABLED = !!(GN_CLOUD && GN.session);
+    console.info('[GN_CLOUD] GN_CLOUD_ENABLED →', window.GN_CLOUD_ENABLED);
+  };
+  // Listen for auth state changes to keep flag fresh
+  sb().auth.onAuthStateChange((_e, s) => {
+    GN.session = s;
+    GN.user    = s?.user || null;
+    GN._refreshCloudFlag();
+  });
+})();
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script>
 /* SCANNER SELECTION UX POLISH v2 — final behavioral overrides */
@@ -613,6 +1252,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 @keyframes ekg{0%{stroke-dashoffset:100}100%{stroke-dashoffset:0}}
 @keyframes hexSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 @keyframes barDrop{0%,60%{height:100%}80%{height:40%}100%{height:20%}}
+@keyframes hexFill{0%{transform:translateY(11px);opacity:0}50%{opacity:.6}100%{transform:translateY(-2px);opacity:.5}}
+@keyframes windingFade{0%,100%{opacity:1}50%{opacity:.15}}
 @keyframes fadePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.85)}}
 @keyframes orbitDot{0%{transform:rotate(0deg) translateX(14px)}100%{transform:rotate(360deg) translateX(14px)}}
 
@@ -751,6 +1392,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 
 /* SEC HEADER */
 .sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.dash-adherence{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--panel);border:1px solid var(--border);border-left:2px solid var(--green);border-radius:var(--r);margin-top:8px;font-family:var(--font-m);font-size:.68rem;letter-spacing:1.2px;color:var(--text-mid)}
+.dash-adherence .streak-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s ease infinite;flex-shrink:0}
+.dash-adherence .streak-text{color:var(--text);font-weight:500;letter-spacing:1.5px}
+.dash-adherence.dim{border-left-color:var(--amber)}
+.dash-adherence.dim .streak-dot{background:var(--amber);box-shadow:0 0 6px var(--amber)}
 .sec-title{font-family:var(--font-m);font-size:0.62rem;color:var(--text-mid);letter-spacing:3px}
 .sec-title .a{color:var(--cyan)}
 .sec-act{font-family:var(--font-m);font-size:0.55rem;color:var(--text-dim);letter-spacing:2px;cursor:pointer;transition:color 0.2s}
@@ -1322,7 +1968,20 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 .cp-option,.se-check{padding:12px 14px}
 @media (prefers-reduced-motion:reduce){
   .gn-pwa-install-banner,.gn-pwa-ios-hint,.gn-pwa-update-toast{animation:none}
-  *,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important}
+  *,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important;animation-iteration-count:1!important}
+  /* ponytail: kill eye-fatigue shadows when user prefers reduced motion */
+  .landing-logo,.gn-syr-num{text-shadow:none!important}
+  .gn-pulse,.gn-glow,.pulse{animation:none!important;box-shadow:none!important}
+}
+
+/* ponytail: focus visibility for keyboard nav — was missing on vault-action-btn */
+.vault-action-btn:focus-visible,.dose-pill:focus-visible,.se-check:focus-visible,
+.cp-option:focus-visible,.vault-toggle:focus-visible,button:focus-visible{
+  outline:2px solid rgba(0,212,255,.8);outline-offset:2px;border-radius:4px;
+}
+@media (prefers-reduced-motion:no-preference){
+  .vault-action-btn{transition:background-color .15s ease,transform .15s ease}
+  .vault-action-btn:hover:not(:disabled){background-color:rgba(0,212,255,.12);transform:translateY(-1px)}
 }
 
 @media(max-width:380px){.vault-pref-grid{grid-template-columns:1fr}.vault-card{padding:13px}.vault-copy{font-size:.88rem}}
@@ -1476,7 +2135,7 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 .landing-shell{width:min(480px,100%);margin:0 auto}
 .landing-hero{min-height:calc(100vh - 44px - var(--safe-top));display:flex;flex-direction:column;justify-content:center;gap:15px;position:relative;align-items:stretch}
 .landing-kicker{align-self:center;width:100%;max-width:100%;font-family:var(--font-m);font-size:.58rem;letter-spacing:2px;color:#a8eaff;text-transform:uppercase;text-align:center;line-height:1.35;border:1px solid rgba(0,212,255,.14);background:linear-gradient(90deg,rgba(0,212,255,.055),rgba(255,51,85,.025),rgba(0,212,255,.045));border-radius:var(--r);padding:8px 9px;box-shadow:inset 0 0 14px rgba(0,212,255,.035)}
-.landing-logo{width:100%;max-width:100%;overflow:visible;text-align:center;font-family:var(--font-d);font-size:clamp(1.92rem,10.5vw,3.35rem);font-weight:900;line-height:.95;letter-spacing:clamp(1.5px,.9vw,4px);color:var(--cyan);text-shadow:0 0 24px rgba(0,212,255,.34);animation:glitch 12s infinite}
+.landing-logo{width:100%;max-width:100%;overflow:visible;text-align:center;font-family:var(--font-d);font-size:clamp(1.92rem,10.5vw,3.35rem);font-weight:900;line-height:.95;letter-spacing:clamp(1.5px,.9vw,4px);color:var(--cyan);text-shadow:0 0 8px rgba(0,212,255,.2);animation:glitch 12s infinite}
 .landing-logo span{color:var(--red);text-shadow:0 0 20px rgba(255,51,85,.42)}
 .landing-headline{font-family:var(--font-d);font-size:clamp(1.25rem,7vw,2.15rem);font-weight:900;line-height:1.08;letter-spacing:1.7px;color:var(--text)}
 .landing-copy{font-family:var(--font-b);font-size:1.16rem;line-height:1.38;color:var(--text-mid);max-width:35ch}
@@ -3315,9 +3974,9 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 .syringe-visual::before,.syringe-visual::after{content:'';position:absolute;width:14px;height:14px;border:1.5px solid var(--cyan);opacity:0.5}
 .syringe-visual::before{top:6px;left:6px;border-right:none;border-bottom:none}
 .syringe-visual::after{bottom:6px;right:6px;border-left:none;border-top:none}
-.gn-syr-hero{display:grid;grid-template-columns:auto 1fr;align-items:end;gap:16px;margin-bottom:10px}
+.gn-syr-hero{display:grid;grid-template-columns:auto 1fr;align-items:end;gap:16px;margin-bottom:10px;margin-top:10px}
 .gn-syr-number{display:flex;align-items:baseline;gap:4px;line-height:.85}
-.gn-syr-num{font-size:5.5rem;font-weight:200;color:var(--cyan);letter-spacing:-3px;font-variant-numeric:tabular-nums;text-shadow:0 0 24px rgba(0,229,255,0.5),0 0 48px rgba(0,229,255,0.25)}
+.gn-syr-num{font-size:5.5rem;font-weight:200;color:var(--cyan);letter-spacing:-3px;font-variant-numeric:tabular-nums;text-shadow:0 0 8px rgba(0,229,255,0.25)}
 .gn-syr-u{font-size:1.2rem;color:#6a7080;letter-spacing:2px;margin-left:6px;font-weight:300}
 .gn-syr-meta{text-align:right;font-size:.6rem;letter-spacing:1.5px;line-height:1.7}
 .gn-syr-meta .k{color:#6a7080;margin-right:6px}
@@ -3326,8 +3985,8 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 .gn-syr-meta .v.peptide{color:#ff2a6d}
 .gn-syr-rule{height:1px;background:linear-gradient(90deg,var(--cyan) 0%,var(--cyan) 30%,transparent 100%);margin-bottom:14px;box-shadow:0 0 3px rgba(0,229,255,0.6)}
 .gn-syr-body{display:flex;align-items:center;height:96px;margin-bottom:8px}
-.gn-syr-needle{width:14px;height:1px;background:linear-gradient(90deg,#e7fbff 0%,#b8c0cc 100%);flex-shrink:0;position:relative;margin-right:-1px;box-shadow:0 0 1.5px rgba(178,244,255,.4)}
-.gn-syr-needle::before{content:'';position:absolute;left:-3px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:1.5px solid transparent;border-bottom:1.5px solid transparent;border-right:4px solid #e7fbff}
+.gn-syr-needle{width:18px;height:1.5px;background:linear-gradient(90deg,#e7fbff 0%,#9bb4c2 70%,#7d8e9a 100%);flex-shrink:0;position:relative;margin-right:-1px;box-shadow:0 0 2px rgba(178,244,255,.5);border-radius:.5px}
+.gn-syr-needle::before{content:'';position:absolute;left:-2px;top:50%;transform:translateY(-50%);width:2px;height:1.5px;background:#e7fbff;border-radius:1px;box-shadow:0 0 2px rgba(178,244,255,.7)}
 .gn-syr-hub{width:12px;height:20px;background:linear-gradient(180deg,#f5f5dc 0%,#d4d4b8 50%,#b8b894 100%);border-radius:3px 2px 2px 3px;flex-shrink:0;position:relative;box-shadow:inset 0 0 2px rgba(0,0,0,0.3),-1px 0 2px rgba(0,229,255,0.15)}
 .gn-syr-hub span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.28rem;color:#5a5a3a;font-weight:700;letter-spacing:.2px}
 .gn-syr-barrel{flex:1;height:30px;background:linear-gradient(180deg,rgba(255,255,255,0.05) 0%,rgba(255,255,255,0.1) 50%,rgba(255,255,255,0.05) 100%);border-top:1px solid rgba(0,229,255,0.4);border-bottom:1px solid rgba(0,229,255,0.4);position:relative;overflow:hidden}
@@ -3345,10 +4004,7 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 .gn-syr-mote{position:absolute;width:1.5px;height:1.5px;background:var(--cyan);border-radius:50%;box-shadow:0 0 3px var(--cyan);opacity:.7;animation:gnSyrDrift 6s linear infinite}
 @keyframes gnSyrDrift{0%{transform:translateY(-8px);opacity:0}10%{opacity:.8}90%{opacity:.8}100%{transform:translateY(40px);opacity:0}}
 .gn-syr-stopper{position:absolute;top:2px;bottom:2px;width:4px;background:linear-gradient(180deg,#2a2a2a 0%,#000 50%,#2a2a2a 100%);border-left:1px solid rgba(0,229,255,0.5);border-right:1px solid rgba(0,229,255,0.5);transition:left .6s cubic-bezier(0.16,1,0.3,1);z-index:4}
-.gn-syr-target{position:absolute;top:-4px;bottom:-4px;width:2px;background:#ffd700;box-shadow:0 0 6px rgba(255,215,0,0.9);z-index:5;transition:left .6s cubic-bezier(0.16,1,0.3,1)}
-.gn-syr-target::before,.gn-syr-target::after{content:'';position:absolute;left:-3px;width:8px;height:8px;background:#ffd700}
-.gn-syr-target::before{top:-4px;clip-path:polygon(50% 100%,0 0,100% 0)}
-.gn-syr-target::after{bottom:-4px;clip-path:polygon(50% 0%,0 100%,100% 100%)}
+.gn-syr-target{position:absolute;top:-2px;bottom:-2px;width:2px;background:#ffd700;box-shadow:0 0 6px rgba(255,215,0,0.9);z-index:5;transition:left .6s cubic-bezier(0.16,1,0.3,1);border-radius:1px}
 .gn-syr-flange{width:8px;height:50px;background:linear-gradient(180deg,#1e1e2e 0%,#050508 50%,#1e1e2e 100);border:1px solid rgba(0,229,255,0.4);border-radius:2px;flex-shrink:0;position:relative;box-shadow:0 0 6px rgba(0,229,255,0.18)}
 .gn-syr-flange::before,.gn-syr-flange::after{content:'';position:absolute;left:-2px;right:-2px;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:.6}
 .gn-syr-flange::before{top:25%}
@@ -3388,7 +4044,7 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 .gn-syr-forensic .k{color:#3a4050}
 .gn-syr-oskar{margin-top:8px;text-align:center;font-size:.45rem;color:rgba(255,42,109,0.35);letter-spacing:2px;transition:color 1s}
 .syringe-visual:hover .gn-syr-oskar{color:rgba(255,42,109,0.55)}
-@media (max-width:600px){.gn-syr-hero{grid-template-columns:1fr;gap:6px;overflow:hidden}.gn-syr-meta{text-align:left}.gn-syr-num{font-size:3.4rem;letter-spacing:-1.5px;line-height:1}.gn-syr-u{font-size:.9rem}.gn-syr-body{height:80px}.gn-syr-thumb{width:22px;height:12px}.gn-syr-rod{width:38px;height:5px}.gn-syr-flange{height:42px;width:7px}.gn-syr-hub{width:11px;height:16px}.gn-syr-hub span{font-size:.26rem}.gn-syr-needle{width:12px;height:.8px}.gn-syr-results{grid-template-columns:1fr}.gn-syr-scale-bottom{padding:0 22px 0 20px;font-size:.4rem}.gn-syr-pk-hud{grid-template-columns:1fr}.syringe-visual{overflow:hidden}
+@media (max-width:600px){.gn-syr-hero{grid-template-columns:1fr;gap:14px;overflow:hidden;align-items:start}.gn-syr-meta{text-align:left;border-top:1px solid var(--border);padding-top:10px;margin-top:4px}.gn-syr-num{font-size:3.4rem;letter-spacing:-1.5px;line-height:1}.gn-syr-u{font-size:.9rem}.gn-syr-body{height:80px}.gn-syr-thumb{width:22px;height:12px}.gn-syr-rod{width:38px;height:5px}.gn-syr-flange{height:42px;width:7px}.gn-syr-hub{width:11px;height:16px}.gn-syr-hub span{font-size:.26rem}.gn-syr-needle{width:12px;height:.8px}.gn-syr-results{grid-template-columns:1fr}.gn-syr-scale-bottom{padding:0 22px 0 20px;font-size:.4rem}.gn-syr-pk-hud{grid-template-columns:1fr}.syringe-visual{overflow:hidden}
 .syringe-visual.gn-syr-final{
   padding:18px 14px 16px !important;
   background:
@@ -3936,8 +4592,8 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
   </div>
   <div class="boot-terminal boot-hud-startup" id="bootTerm"></div>
   <div class="boot-prog-wrap">
-    <div class="boot-prog-track"><div class="boot-prog-fill" id="bootBar"></div></div>
-    <div class="boot-prog-pct" id="bootPct">Preparing protocol workspace</div>
+    <div class="boot-prog-track" id="bootBar"><div class="boot-prog-fill"><div class="boot-prog-seg"></div><div class="boot-prog-seg"></div><div class="boot-prog-seg"></div><div class="boot-prog-seg"></div><div class="boot-prog-seg"></div><div class="boot-prog-seg"></div><div class="boot-prog-seg"></div><div class="boot-prog-seg"></div><div class="boot-prog-seg"></div><div class="boot-prog-seg"></div></div></div>
+    <div class="boot-prog-pct" id="bootPct">&gt; Preparing protocol workspace</div>
   </div>
 </div>
 
@@ -4031,6 +4687,7 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 </svg></div>
     <div class="topbar-actions">
       <div class="topbar-btn" id="sndBtn" onclick="toggleSound()" title="Sound"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-sound-off"></use></svg></span></div>
+      <div class="topbar-btn" id="gnCloudAuthTop" onclick="GN.openAuthUI()" title="Cloud account" style="position:relative"><span id="gnCloudAuthLabel" class="gn-icon gn-icon-sm" style="font-family:var(--font-d,'Orbitron',monospace);font-size:.55rem;font-weight:700;color:#00d4ff;letter-spacing:1px;display:flex;align-items:center;justify-content:center;width:100%;height:100%"><span id="gnCloudAuthDot" style="display:inline-block;width:5px;height:5px;background:#ff00cc;border-radius:50%;margin-right:4px;box-shadow:0 0 5px #ff00cc"></span>CLD</span></div>
       <div class="topbar-btn" onclick="showPage('Profile',document.getElementById('navPro'))" id="topAva" style="overflow:hidden;padding:0">
         <svg viewBox="0 0 52 52" fill="none" width="34" height="34" id="topAvaIcon">
           <circle cx="26" cy="26" r="26" fill="#0a0a14"/>
@@ -4050,14 +4707,14 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
     <div class="ticker-track">
       <span class="ti">LAST_SHOT: <span class="c" id="tk1">—</span></span>
       <span class="ti">NEXT_SHOT: <span class="y" id="tk2">—</span></span>
-      <span class="ti">PHASE: <span class="g" id="tk3">AWAITING DATA</span></span>
+      <span class="ti">PHASE: <span class="g" id="tk3">NO DATA</span></span>
       <span class="ti">WEIGHT: <span class="r" id="tk4">—</span></span>
       <span class="ti">BMI: <span class="c" id="tk5">—</span></span>
       <span class="ti">STATUS: <span class="g">NODE_ACTIVE</span></span>
       <span class="ti">GRIDNODE <span class="c">v1.1</span></span>
       <span class="ti">LAST_SHOT: <span class="c" id="tk1b">—</span></span>
       <span class="ti">NEXT_SHOT: <span class="y" id="tk2b">—</span></span>
-      <span class="ti">PHASE: <span class="g" id="tk3b">AWAITING DATA</span></span>
+      <span class="ti">PHASE: <span class="g" id="tk3b">NO DATA</span></span>
       <span class="ti">WEIGHT: <span class="r" id="tk4b">—</span></span>
     </div>
   </div>
@@ -4110,6 +4767,13 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
         <div class="s6-card"><span class="s6-icon"><span class="gn-icon gn-icon-md gn-accent-y"><svg><use href="#gn-timeline-node"></use></svg></span></span><span class="s6-label">TO GOAL</span><span class="s6-val o" id="s6Goal">—</span></div>
       </div>
 
+      <!-- Adherence streak + Weight chart on DASH -->
+      <div class="dash-adherence" id="dashAdherence">
+        <span class="streak-dot"></span>
+        <span class="streak-text" id="streakText">—</span>
+      </div>
+      <div class="chart-wrap" style="height:130px;margin-top:12px"><canvas id="dashWtChart"></canvas></div>
+
       <!-- Phase ring -->
       <div class="sec-hdr">
         <div class="sec-title">// <span class="a">SHOT_PHASE</span></div>
@@ -4123,8 +4787,8 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
           </div>
           <div>
             <div class="phase-tag">CURRENT PHASE</div>
-            <div class="phase-name-txt" id="phaseNameTxt">AWAITING DATA</div>
-            <div class="phase-num-txt" id="phaseNumTxt">LOG YOUR FIRST SHOT TO ACTIVATE</div>
+            <div class="phase-name-txt" id="phaseNameTxt">NO PROTOCOL DATA</div>
+            <div class="phase-num-txt" id="phaseNumTxt">INITIATE PROTOCOL — log first shot</div>
             <div class="phase-support" id="phaseSupportTxt">Estimated from your logged protocol history.</div>
             <div class="phase-clarity-note"><b>EDUCATIONAL ESTIMATE</b><br>Phase Engine estimates protocol progression using user-entered tracking records. It is educational and estimate-based.</div>
           </div>
@@ -4172,12 +4836,12 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
             <div class="ring-center">
               <div class="ring-days" id="ringDays">—</div>
               <div class="ring-until">NEXT SHOT</div>
-              <div class="ring-pct" id="ringPct">LOG SHOT TO START</div>
+              <div class="ring-pct" id="ringPct">TAP FAB // LOG FIRST SHOT</div>
             </div>
           </div>
         </div>
 
-        <div class="phase-next" id="phaseNext">Log your first shot to activate phase tracking</div>
+        <div class="phase-next" id="phaseNext">> INITIATE PROTOCOL — log first shot</div>
 
         <div class="phase-transparency" aria-label="Phase Engine transparency">
           <div class="phase-transparency-block">
@@ -4205,7 +4869,7 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
         <div class="phase-edu-note"><strong>EDUCATIONAL INSIGHT ONLY</strong><br>Phase Engine is not a laboratory measurement, diagnosis, treatment recommendation, or dosing guide.</div>
 
         <div class="phase-info-grid">
-          <div class="pib body"><span class="pib-label">// WHAT'S HAPPENING NOW</span><div class="pib-text" id="pibBody">Log your first shot to activate phase awareness.</div></div>
+          <div class="pib body"><span class="pib-label">// WHAT'S HAPPENING NOW</span><div class="pib-text" id="pibBody">Awaiting first logged SHOT — protocol initializes on first record.</div></div>
           <div class="pib se"><span class="pib-label">// POSSIBLE SIDE EFFECTS</span><div class="pib-text" id="pibSE">Side effects vary by phase and medication.</div></div>
           <div class="pib pay"><span class="pib-label">// TRACK NEXT</span><div class="pib-text" id="pibPay">Track appetite, symptoms, energy, side effects, and notes as your protocol history develops.</div></div>
         </div>
@@ -4468,7 +5132,6 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
           <div class="gn-syr-hero">
             <div class="gn-syr-number">
               <span class="gn-syr-num" id="syrUnits">—</span>
-              <span class="gn-syr-u">UNITS</span>
             </div>
             <div class="gn-syr-meta">
               <div><span class="k">DRAW</span><span class="v amber" id="syrText">DRAW TO THE — UNIT LINE</span></div>
@@ -4748,7 +5411,7 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
             </div>
             <div class="vault-system-stat">
               <div class="vault-system-stat-label">// APP VERSION</div>
-              <div class="vault-system-stat-value" id="vaultAppVersion">v1.3.0-rc24</div>
+              <div class="vault-system-stat-value" id="vaultAppVersion">v1.3.0-rc28.8</div>
             </div>
           </div>
           <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
@@ -4765,8 +5428,18 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
               <span class="vault-action-lbl">RELOAD APP</span>
             </button>
           </div>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+            <button class="vault-action-btn" type="button" onclick="vaultActionExportBackup()">
+              <span class="vault-action-ico">↓</span>
+              <span class="vault-action-lbl">EXPORT BACKUP</span>
+            </button>
+            <button class="vault-action-btn" type="button" onclick="vaultActionRestoreBackup()">
+              <span class="vault-action-ico">↑</span>
+              <span class="vault-action-lbl">RESTORE BACKUP</span>
+            </button>
+            <input type="file" id="vaultRestoreFile" style="display:none" aria-hidden="true">
           <div id="vaultSystemMessage" class="vault-system-message" style="display:none"></div>
-          <div class="vault-system-line">PWA // LOCAL-FIRST // CACHE gridnode-v1-pwa-v2</div>
+          <div class="vault-system-line">PWA // LOCAL-FIRST // CACHE gridnode-v1-pwa-v3</div>
         </div>
       </div>
 
@@ -5170,7 +5843,7 @@ function pinSubmit() {
 }
 function signOut() {
   CU = null; if(cntInterval) clearInterval(cntInterval);
-  if(medCI){medCI.destroy();medCI=null;} if(wtCI){wtCI.destroy();wtCI=null;}
+  if(medCI){medCI.destroy();medCI=null;} if(wtCI){wtCI.destroy();wtCI=null;} if(dashWtCI){dashWtCI.destroy();dashWtCI=null;}
   backToUsers(); loadUserNames(); showScreen('login');
 }
 
@@ -5213,6 +5886,8 @@ function refreshAll() {
   renderArsenal();
   initMedChart();
   initWtChart();
+  initDashAdherence();
+  initDashWtChart();
   buildCal();
   renderRegionScanner();
   renderResultsOutcome();
@@ -5355,6 +6030,7 @@ function saveProf() {
     heightUnit: selectState['cpHeightUnit']?.val || 'ft_in'
   };
   S.set('profile', p);
+  if (window.GN_CLOUD_ENABLED && window.GN && window.GN.session && window.Sc) Sc.upsertProfile(p);
   setVaultSettings({
     preferredName: p.name,
     protocolName: p.protocolName,
@@ -5431,19 +6107,32 @@ function refreshDash() {
     const goal  = parseFloat(p.goalWt)  || 0;
     const diff  = cur - start;
     const pct   = start > 0 ? ((diff/start)*100).toFixed(1) : 0;
-    const toGoal = goal > 0 ? Math.abs(cur - goal).toFixed(1) : '—';
+    // toGoal: hint when goal weight not set
+    const toGoal = goal > 0 ? Math.abs(cur - goal).toFixed(1) + 'lbs' : '> set goal wt';
 
-    // Weekly avg
+    // Weekly avg: hint when fewer than 2 weights in the last 7 days
     const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
     const weekWts = weights.filter(w => new Date(w.date) > weekAgo);
-    let weekAvg = '—';
+    let weekAvg;
     if (weekWts.length >= 2) {
       const avgDiff = weekWts[weekWts.length-1].weight - weekWts[0].weight;
       weekAvg = (avgDiff > 0 ? '+' : '') + avgDiff.toFixed(1) + 'lbs/wk';
+    } else if (weekWts.length === 1) {
+      weekAvg = '> log 1 more wt';
+    } else {
+      weekAvg = '> log recent wt';
     }
 
-    // BMI
-    const bmi = calcBMI() || '—';
+    // BMI: hint when height is missing from profile
+    const ftRaw = parseFloat(document.getElementById('pHtFt').value) || 0;
+    const inchRaw = parseFloat(document.getElementById('pHtIn').value) || 0;
+    let bmi;
+    if (!ftRaw && !inchRaw) {
+      bmi = '> set height';
+    } else {
+      const bmiVal = calcBMI();
+      bmi = bmiVal || '> set height';
+    }
 
     // Update 6-stat grid on dash
     const diffStr = (diff > 0 ? '+' : '') + diff.toFixed(1) + 'lbs';
@@ -5454,7 +6143,7 @@ function refreshDash() {
     document.getElementById('s6Pct').textContent   = pct + '%';
     document.getElementById('s6Pct').className     = 's6-val ' + (parseFloat(pct) <= 0 ? 'g' : 'r');
     document.getElementById('s6Avg').textContent   = weekAvg;
-    document.getElementById('s6Goal').textContent  = toGoal === '—' ? '—' : toGoal + 'lbs';
+    document.getElementById('s6Goal').textContent  = toGoal;
 
     // Results page too
     document.getElementById('r6Total').textContent = diffStr;
@@ -5462,7 +6151,7 @@ function refreshDash() {
     document.getElementById('r6Wt').textContent    = cur + 'lbs';
     document.getElementById('r6Pct').textContent   = pct + '%';
     document.getElementById('r6Avg').textContent   = weekAvg;
-    document.getElementById('r6Goal').textContent  = toGoal === '—' ? '—' : toGoal + 'lbs';
+    document.getElementById('r6Goal').textContent  = toGoal;
 
     document.getElementById('tk4').textContent  = cur + 'lbs';
     document.getElementById('tk4b').textContent = cur + 'lbs';
@@ -5483,7 +6172,7 @@ const PH = {
      body:'Protocol activity has been recently logged. Early cycle timing begins and initial observations may be subtle.',
      se:'Some users report mild fatigue or local site observations during early cycle timing.',
      pay:'Consider logging hydration-related observations, site notes, appetite, and baseline energy for this cycle.'},
-    {id:1,name:'TAKING EFFECT',range:'6h—2d',startH:6,endH:48,color:'#ffd700',
+    {id:1,name:'TAKING EFFECT',range:'6h—1d',startH:6,endH:24,color:'#ffd700',
      body:'Cycle activity may become more noticeable as timing progresses from the most recent logged shot.',
      se:'Some users report nausea, queasiness, burping, dizziness, or appetite shifts during this window.',
      pay:'Consider logging appetite changes, meal-related observations, side effects, and energy patterns.'},
@@ -5503,13 +6192,17 @@ const PH = {
      body:'The current cycle may be approaching completion based on your logged schedule and timing history.',
      se:'Some users report increased hunger, cravings, fatigue, headaches, or emotional-eating patterns late in the cycle.',
      pay:'Next protocol event may be approaching based on your logged schedule. Consider logging appetite, cravings, mood, and energy observations.'},
+    {id:6,name:'OVERDUE',range:'>7d',startH:168,endH:null,color:'#ff0044',
+     body:'The current cycle has passed its expected window based on your logged schedule. A new shot should be logged to restart the cycle.',
+     se:'Some users report stronger hunger return, cravings, fatigue, or shifting patterns when a cycle extends past its window.',
+     pay:'Log a new shot to restart the cycle. The Phase Engine will resume calculating from the next logged record.'},
   ],
   sema: [
     {id:0,name:'ACTIVATION',range:'0h—12h',startH:0,endH:12,color:'#00d4ff',
      body:'Protocol activity has been recently logged. Early cycle timing begins and initial observations may be subtle.',
      se:'Some users report minimal observations, mild fatigue, or local site notes during early cycle timing.',
      pay:'Consider logging hydration-related observations, site notes, appetite, and baseline energy for this cycle.'},
-    {id:1,name:'TAKING EFFECT',range:'12h—3d',startH:12,endH:72,color:'#ffd700',
+    {id:1,name:'TAKING EFFECT',range:'12h—1d',startH:12,endH:24,color:'#ffd700',
      body:'Cycle activity may become more noticeable as timing progresses from the most recent logged shot.',
      se:'Some users report nausea, constipation, fatigue, appetite changes, or digestion-related observations during this window.',
      pay:'Consider tracking meal-related observations, appetite changes, side effects, and energy patterns.'},
@@ -5529,65 +6222,91 @@ const PH = {
      body:'The current cycle may be approaching completion based on your logged schedule and timing history.',
      se:'Some users report increased hunger, cravings, fatigue, or emotional-eating patterns late in the cycle.',
      pay:'Next protocol event may be approaching based on your logged schedule. Consider logging appetite, cravings, mood, and energy observations.'},
+    {id:6,name:'OVERDUE',range:'>7d',startH:168,endH:null,color:'#ff0044',
+     body:'The current cycle has passed its expected window based on your logged schedule. A new shot should be logged to restart the cycle.',
+     se:'Some users report stronger hunger return, cravings, fatigue, or shifting patterns when a cycle extends past its window.',
+     pay:'Log a new shot to restart the cycle. The Phase Engine will resume calculating from the next logged record.'},
   ],
 };
 PH.reta = PH.tirz;
 
 function getPhases(med) { return ['Ozempic','Wegovy','Semaglutide'].includes(med) ? PH.sema : PH.tirz; }
+// Phase boundaries are now cumulative: each phase ends exactly when the next begins.
+// The last entry (id:6, OVERDUE) has startH:168 — any shot > 7d old lands here.
+// No more modulo wrap — overdue is an explicit state, not a hidden reset.
 function curPhaseIdx(shotDate, phases) {
   const hrs = (new Date() - new Date(shotDate)) / 3600000;
-  const hMod = hrs % 168;
-  for (let i=phases.length-1;i>=0;i--) { if (hMod >= phases[i].startH) return i; }
+  for (let i=phases.length-1;i>=0;i--) { if (hrs >= phases[i].startH) return i; }
   return 0;
 }
 
 // ── ANIMATED PHASE ICONS ──
+function hexToRgba(hex, alpha) {
+  const h = hex.replace('#','');
+  const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
 function renderPhaseIcon(phaseId, color) {
   const c = color || '#ffd700';
+  const accent = '#FF2D55';  // brand magenta accent dot
   switch(phaseId) {
-    case 0: // ACTIVATION — Electric bolt
-      return `<svg width="26" height="26" viewBox="0 0 26 26" fill="none" style="animation:electricArc 1.5s ease infinite;filter:drop-shadow(0 0 4px ${c})">
-        <polygon points="15,2 6,14 13,14 11,24 20,12 13,12" fill="${c}" opacity="0.9"/>
-        <polygon points="15,2 6,14 13,14 11,24 20,12 13,12" fill="${c}" opacity="0.3" transform="scale(1.2) translate(-2,-2)"/>
-      </svg>`;
-    case 1: // TAKING EFFECT — Syringe fill
-      return `<svg width="20" height="28" viewBox="0 0 20 28" fill="none" style="filter:drop-shadow(0 0 4px ${c})">
-        <rect x="7" y="2" width="6" height="18" rx="1" fill="none" stroke="${c}" stroke-width="1.5"/>
-        <rect x="7" y="2" width="6" height="18" rx="1" fill="${c}" opacity="0.15"/>
-        <rect x="8" y="10" width="4" height="10" rx="0.5" fill="${c}" opacity="0.7" style="animation:syringeFill 2s ease infinite;transform-origin:bottom center"/>
-        <line x1="10" y1="20" x2="10" y2="26" stroke="${c}" stroke-width="1.5"/>
-        <rect x="5" y="2" width="10" height="3" rx="1" fill="${c}" opacity="0.5"/>
-        <line x1="7" y1="7" x2="6" y2="7" stroke="${c}" stroke-width="1" opacity="0.5"/>
-        <line x1="7" y1="11" x2="6" y2="11" stroke="${c}" stroke-width="1" opacity="0.5"/>
-        <line x1="7" y1="15" x2="6" y2="15" stroke="${c}" stroke-width="1.5" opacity="0.8"/>
-      </svg>`;
-    case 2: // PEAK EFFECT — EKG heartbeat
-      return `<svg width="28" height="20" viewBox="0 0 28 20" fill="none" style="filter:drop-shadow(0 0 4px ${c})">
-        <path d="M0 10 L5 10 L7 3 L9 17 L11 7 L13 13 L15 10 L28 10" stroke="${c}" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="stroke-dasharray:80;stroke-dashoffset:80;animation:ekg 2s ease infinite"/>
-        <circle cx="11" cy="7" r="2" fill="${c}" opacity="0.8" style="animation:pulse 2s ease infinite"/>
-      </svg>`;
-    case 3: // CRUISE PHASE — Spinning hexagon
+    case 0: // ACTIVATION — Rounded frame + corner ticks + pulsing accent dot (system online)
       return `<svg width="26" height="26" viewBox="0 0 26 26" fill="none" style="filter:drop-shadow(0 0 4px ${c})">
-        <polygon points="13,1 23,7 23,19 13,25 3,19 3,7" fill="none" stroke="${c}" stroke-width="1.5" style="animation:hexSpin 4s linear infinite;transform-origin:13px 13px"/>
-        <polygon points="13,6 19,9.5 19,16.5 13,20 7,16.5 7,9.5" fill="${c}" opacity="0.15"/>
-        <circle cx="13" cy="13" r="3" fill="${c}" opacity="0.8"/>
-        <circle cx="13" cy="13" r="1.5" fill="#fff" opacity="0.6"/>
+        <rect x="3" y="3" width="20" height="20" rx="5" fill="none" stroke="${c}" stroke-width="1.2"/>
+        <path d="M5 5h3M5 5v3M21 5h-3M21 5v3M5 21h3M5 21v-3M21 21h-3M21 21v-3" stroke="${c}" stroke-width="1" opacity=".6"/>
+        <circle cx="13" cy="13" r="2.5" fill="${accent}" style="animation:pulse 1.5s ease infinite"/>
       </svg>`;
-    case 4: // WINDING DOWN — Dropping bars
-      return `<div class="icon-winding" style="filter:drop-shadow(0 0 4px ${c})">
-        <div class="wbar" style="height:18px;background:${c}"></div>
-        <div class="wbar" style="height:14px;background:${c}"></div>
-        <div class="wbar" style="height:10px;background:${c}"></div>
-        <div class="wbar" style="height:6px;background:${c}"></div>
-      </div>`;
-    case 5: // WEAR-OFF — Fading signal rings
+    case 1: // TAKING EFFECT — Rounded frame + B2-B chevron filling upward (brand N filling)
       return `<svg width="26" height="26" viewBox="0 0 26 26" fill="none" style="filter:drop-shadow(0 0 4px ${c})">
-        <circle cx="13" cy="13" r="11" stroke="${c}" stroke-width="1.5" fill="none" opacity="0.8" style="animation:fadePulse 2.5s ease infinite"/>
-        <circle cx="13" cy="13" r="7" stroke="${c}" stroke-width="1.5" fill="none" opacity="0.5" style="animation:fadePulse 2.5s ease infinite 0.4s"/>
-        <circle cx="13" cy="13" r="3" fill="${c}" opacity="0.6" style="animation:fadePulse 2.5s ease infinite 0.8s"/>
+        <rect x="3" y="3" width="20" height="20" rx="5" fill="none" stroke="${c}" stroke-width="1.2"/>
+        <path d="M5 5h3M5 5v3M21 5h-3M21 5v3M5 21h3M5 21v-3M21 21h-3M21 21v-3" stroke="${c}" stroke-width="1" opacity=".6"/>
+        <clipPath id="tek-clip-${c.slice(1)}"><rect x="3" y="3" width="20" height="20" rx="5"/></clipPath>
+        <rect x="3" y="3" width="20" height="20" fill="${c}" opacity=".35" clip-path="url(#tek-clip-${c.slice(1)})" style="animation:hexFill 2.4s ease infinite"/>
+        <path d="M8 19 L13 7 H18 L13 19 Z" fill="none" stroke="#fff" stroke-width="1.5" opacity=".8"/>
+      </svg>`;
+    case 2: // PEAK EFFECT — Rounded frame + EKG line + peak dot
+      return `<svg width="26" height="26" viewBox="0 0 26 26" fill="none" style="filter:drop-shadow(0 0 4px ${c})">
+        <rect x="3" y="3" width="20" height="20" rx="5" fill="none" stroke="${c}" stroke-width="1.2"/>
+        <path d="M5 5h3M5 5v3M21 5h-3M21 5v3M5 21h3M5 21v-3M21 21h-3M21 21v-3" stroke="${c}" stroke-width="1" opacity=".6"/>
+        <path d="M5 13 L9 13 L11 7 L13 18 L15 9 L17 13 L21 13" stroke="${c}" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="stroke-dasharray:60;stroke-dashoffset:60;animation:ekg 2s ease infinite"/>
+        <circle cx="13" cy="7" r="1.6" fill="${accent}" opacity=".9" style="animation:pulse 2s ease infinite"/>
+      </svg>`;
+    case 3: // CRUISE PHASE — Rounded frame + centered hexagon (BRAND SHAPE) + accent dot
+      return `<svg width="26" height="26" viewBox="0 0 26 26" fill="none" style="filter:drop-shadow(0 0 4px ${c})">
+        <rect x="3" y="3" width="20" height="20" rx="5" fill="none" stroke="${c}" stroke-width="1.2"/>
+        <path d="M5 5h3M5 5v3M21 5h-3M21 5v3M5 21h3M5 21v-3M21 21h-3M21 21v-3" stroke="${c}" stroke-width="1" opacity=".6"/>
+        <polygon points="13,7 19,10.5 19,15.5 13,19 7,15.5 7,10.5" fill="none" stroke="${c}" stroke-width="1.2" style="animation:hexSpin 6s linear infinite;transform-origin:13px 13px"/>
+        <polygon points="13,7 19,10.5 19,15.5 13,19 7,15.5 7,10.5" fill="${c}" opacity=".15"/>
+        <circle cx="13" cy="13" r="1.8" fill="${accent}"/>
+      </svg>`;
+    case 4: // WINDING DOWN — Rounded frame + fading corner-tick rows (energy leaving)
+      return `<svg width="26" height="26" viewBox="0 0 26 26" fill="none" style="filter:drop-shadow(0 0 4px ${c})">
+        <rect x="3" y="3" width="20" height="20" rx="5" fill="none" stroke="${c}" stroke-width="1.2"/>
+        <path d="M5 5h3M5 5v3M21 5h-3M21 5v3M5 21h3M5 21v-3M21 21h-3M21 21v-3" stroke="${c}" stroke-width="1" opacity=".6"/>
+        <path d="M7 9h4M11 9h4M15 9h4" stroke="${c}" stroke-width="2" stroke-linecap="round" style="animation:windingFade 2.4s ease infinite 0s"/>
+        <path d="M7 13h4M11 13h4M15 13h4" stroke="${c}" stroke-width="2" stroke-linecap="round" style="animation:windingFade 2.4s ease infinite .2s"/>
+        <path d="M7 17h4M11 17h4M15 17h4" stroke="${c}" stroke-width="2" stroke-linecap="round" style="animation:windingFade 2.4s ease infinite .4s"/>
+      </svg>`;
+    case 5: // WEAR-OFF — Rounded frame + concentric arcs + accent dot dimming
+      return `<svg width="26" height="26" viewBox="0 0 26 26" fill="none" style="filter:drop-shadow(0 0 4px ${c})">
+        <rect x="3" y="3" width="20" height="20" rx="5" fill="none" stroke="${c}" stroke-width="1.2"/>
+        <path d="M5 5h3M5 5v3M21 5h-3M21 5v3M5 21h3M5 21v-3M21 21h-3M21 21v-3" stroke="${c}" stroke-width="1" opacity=".6"/>
+        <path d="M6 13 a7 7 0 0 1 14 0" stroke="${c}" stroke-width="1.5" fill="none" opacity=".5" style="animation:fadePulse 2.5s ease infinite"/>
+        <path d="M9 13 a4 4 0 0 1 8 0" stroke="${c}" stroke-width="1.5" fill="none" opacity=".4" style="animation:fadePulse 2.5s ease infinite .4s"/>
+        <circle cx="13" cy="13" r="1.5" fill="${accent}" opacity=".6" style="animation:fadePulse 2.5s ease infinite .8s"/>
+      </svg>`;
+    case 6: // OVERDUE — Rounded frame + displaced chevron + broken accent dot (system offline)
+      return `<svg width="26" height="26" viewBox="0 0 26 26" fill="none" style="filter:drop-shadow(0 0 6px ${c});animation:fadePulse 1.2s ease infinite">
+        <rect x="3" y="3" width="20" height="20" rx="5" fill="none" stroke="${c}" stroke-width="1.5" stroke-dasharray="3 2"/>
+        <path d="M5 5h3M5 5v3M21 5h-3M21 5v3M5 21h3M5 21v-3M21 21h-3M21 21v-3" stroke="${c}" stroke-width="1" opacity=".4"/>
+        <path d="M9 18 L13 9 H17 L13 18 Z" fill="none" stroke="${c}" stroke-width="1.5" opacity=".5" transform="rotate(15 13 13)"/>
+        <circle cx="20" cy="6" r="2.2" fill="${accent}" style="animation:pulse 1s ease infinite"/>
       </svg>`;
     default:
-      return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="${c}" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="4" fill="${c}"/></svg>`;
+      return `<svg width="26" height="26" viewBox="0 0 26 26" fill="none" style="filter:drop-shadow(0 0 4px ${c})">
+        <rect x="3" y="3" width="20" height="20" rx="5" fill="none" stroke="${c}" stroke-width="1.2"/>
+        <circle cx="13" cy="13" r="3" fill="${c}"/>
+      </svg>`;
   }
 }
 
@@ -5598,9 +6317,9 @@ function buildPhaseRing() {
 
   if (shots.length === 0) {
     document.getElementById('ringDays').textContent = '—';
-    document.getElementById('ringPct').textContent  = 'LOG SHOT TO START';
-    document.getElementById('phaseNameTxt').textContent = 'AWAITING DATA';
-    document.getElementById('phaseNumTxt').textContent  = 'LOG YOUR FIRST SHOT TO ACTIVATE';
+    document.getElementById('ringPct').textContent  = 'TAP FAB // LOG FIRST SHOT';
+    document.getElementById('phaseNameTxt').textContent = 'NO PROTOCOL DATA';
+    document.getElementById('phaseNumTxt').textContent  = 'INITIATE PROTOCOL — log first shot';
     document.getElementById('phaseSupportTxt').textContent = 'Estimated from your logged protocol history.';
     document.getElementById('phaseTimeSince').textContent = '—';
     document.getElementById('phaseCyclePosition').textContent = '—';
@@ -5623,6 +6342,13 @@ function buildPhaseRing() {
 }
 
 function updatePhaseInfo(ph) {
+  // Sync the icon container border + glow to the current phase color
+  const iconBox = document.getElementById('phaseIconBox');
+  if (iconBox) {
+    iconBox.style.borderColor = ph.color;
+    iconBox.style.background = hexToRgba(ph.color, 0.06);
+    iconBox.style.boxShadow = `0 0 14px ${hexToRgba(ph.color, 0.2)}`;
+  }
   document.getElementById('phaseIconBox').innerHTML = renderPhaseIcon(ph.id, ph.color);
   document.getElementById('phaseNameTxt').textContent = ph.name;
   document.getElementById('phaseNumTxt').textContent  = `PHASE ${ph.id+1} OF 6`;
@@ -5694,10 +6420,21 @@ function startCnt(nextDt, shotDt, phases, phIdx, lastShotDate) {
 
   function tick() {
     const now = new Date(), diff = nextDt - now;
+    // OVERDUE branch: shot is past the expected 7d window
     if (diff <= 0) {
-      document.getElementById('ringDays').textContent = 'LOG WINDOW REACHED';
-      document.getElementById('ringPct').textContent  = 'CYCLE WINDOW COMPLETE';
+      const elapsed = formatElapsedSince(lastShotDate);
+      const overdueMs = -diff;
+      const overdueDays = Math.floor(overdueMs / 86400000);
+      const overdueHours = Math.floor((overdueMs % 86400000) / 3600000);
+      const overdueStr = overdueDays > 0 ? `${overdueDays}d ${overdueHours}h overdue` : `${overdueHours}h overdue`;
+      // Ring center shows the actual overdue duration, not "100% complete"
+      document.getElementById('ringDays').textContent = `> ${overdueStr.toUpperCase()}`;
+      document.getElementById('ringPct').textContent  = `> LAST SHOT: ${elapsed} ago`;
+      // Arc fully filled (the cycle IS complete) but the OVERDUE phase shows red, not green
       document.getElementById('phaseArc').style.strokeDashoffset = '0';
+      document.getElementById('phaseCyclePosition').textContent = 'OVERDUE';
+      document.getElementById('phaseTimeSince').textContent = elapsed;
+      document.getElementById('phaseNext').innerHTML = `> CYCLE WINDOW // EXPIRED — <span class="nn">log next shot to restart</span>`;
       return;
     }
     const ts = Math.floor(diff/1000);
@@ -5794,6 +6531,45 @@ function updateMedCurveValue(data, shotCount){
     return;
   }
   el.innerHTML=`${Math.max(...data).toFixed(2)}<span>relative peak</span>`;
+}
+
+// ── DASH ADHERENCE (shot streak + last-shot summary) ──
+function initDashAdherence() {
+  const el=document.getElementById('streakText');
+  const wrap=document.getElementById('dashAdherence');
+  if(!el||!wrap) return;
+  const shots=typeof getShots==='function' ? getShots() : [];
+  if(!shots.length){ el.textContent='// LOG FIRST SHOT'; wrap.classList.add('dim'); return; }
+  // Sort by date desc
+  const sorted=[...shots].sort((a,b)=> new Date(b.date)-new Date(a.date));
+  const total=shots.length;
+  const last=new Date(sorted[0].date);
+  const daysSince=Math.floor((Date.now()-last.getTime())/86400000);
+  // Count shots in the last 30 days
+  const thirtyAgo=new Date(); thirtyAgo.setDate(thirtyAgo.getDate()-30);
+  const recent=shots.filter(s=> new Date(s.date) >= thirtyAgo).length;
+  const adherencePct=Math.round((recent/4.3)*100); // 4.3 shots/month expected (weekly cadence)
+  let msg;
+  if(daysSince===0) msg=`// ${total} SHOTS · ${recent} IN LAST 30D · ON CYCLE`;
+  else if(daysSince<=2) msg=`// ${total} SHOTS · ${recent} IN LAST 30D · ${daysSince}D SINCE LAST`;
+  else if(daysSince<=7) msg=`// ${total} SHOTS · ${recent} IN LAST 30D · ${daysSince}D SINCE LAST`;
+  else msg=`// ${total} SHOTS · ${recent} IN LAST 30D · ${daysSince}D SINCE LAST · ADHERENCE ${adherencePct}%`;
+  el.textContent=msg;
+  wrap.classList.toggle('dim', daysSince>7);
+}
+
+// ── DASH WEIGHT CHART (compact, same data as RESULTS page) ──
+let dashWtCI=null;
+function initDashWtChart(){
+  const canvas=document.getElementById('dashWtChart');
+  if(!canvas || typeof Chart==='undefined') return;
+  const ctx=canvas.getContext('2d');
+  if(dashWtCI){ dashWtCI.destroy(); dashWtCI=null; }
+  const wts=typeof getWeights==='function' ? getWeights() : [];
+  if(!wts.length) return;
+  const labels=wts.map(w=> new Date(w.date).toLocaleDateString('en',{month:'short',day:'numeric'}));
+  const data=wts.map(w=> w.weight);
+  dashWtCI=new Chart(ctx,{type:'line',data:{labels,datasets:[{data,borderColor:'#00ff88',backgroundColor:'rgba(0,255,136,0.05)',borderWidth:2,pointRadius:3,pointBackgroundColor:'#00ff88',pointHoverRadius:5,fill:true,tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:600},plugins:{legend:{display:false},tooltip:{backgroundColor:'#0e0e16',borderColor:'#242430',borderWidth:1,titleColor:'#00ff88',bodyColor:'#9898b0',titleFont:{family:'Share Tech Mono',size:11},bodyFont:{family:'Share Tech Mono',size:10},padding:10,callbacks:{label:(c)=>`${c.parsed.y} lbs`}}},scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#484860',font:{family:'Share Tech Mono',size:9},maxTicksLimit:5},border:{color:'rgba(255,255,255,0.05)'}},y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#484860',font:{family:'Share Tech Mono',size:9},maxTicksLimit:4},border:{color:'rgba(255,255,255,0.05)'}}}}});
 }
 
 function initMedChart() {
@@ -6269,6 +7045,7 @@ function saveShot() {
       archivedAt:existing.archivedAt||null
     };
     S.set('shots',allShots);
+    if (window.GN_CLOUD_ENABLED && window.GN && window.GN.session && window.Sc) Sc.upsertShot(allShots[idx]);
     triggerFX();
     closeLog();
     refreshAll();
@@ -6299,7 +7076,10 @@ function saveShot() {
     archivedAt:null
   });
   S.set('shots',allShots);
-  if(wt){const ws=getWeights();ws.push({date:shotDate,weight:parseFloat(wt)});S.set('weights',ws);}
+  if (window.GN_CLOUD_ENABLED && window.GN && window.GN.session && window.Sc) Sc.upsertShot(allShots[allShots.length-1]);
+  if(wt){const ws=getWeights();ws.push({date:shotDate,weight:parseFloat(wt)});S.set('weights',ws);
+    if (window.GN_CLOUD_ENABLED && window.GN && window.GN.session && window.Sc) Sc.upsertWeight(ws[ws.length-1]);
+  }
   triggerFX();
   closeLog();
   refreshAll();
@@ -6819,7 +7599,7 @@ function updateSyr(){
   if(volResult) volResult.textContent = `${mlTxt} mL`;
   if(statusEl) statusEl.textContent = state === 'overflow' ? 'OVERFLOW' : (state === 'empty' ? 'EMPTY' : 'LOCKED');
 
-  if(formulaEl) formulaEl.textContent = `${doseTxt} mg ÷ ${concTxt} mg/mL = ${mlTxt} mL = ${units} units`;
+  if(formulaEl) formulaEl.textContent = `${doseTxt} mg ÷ ${concTxt} mg/mL = ${mlTxt} mL = ${units} U (1 mL = 100 U)`;
 
   if(fluid) fluid.style.width = fluidPct + '%';
   if(stopper) stopper.style.left = stopperPct + '%';
@@ -7029,24 +7809,30 @@ function handleCSVImportFile(event){
   reader.readAsText(file);
 }
 
-function prepareCSVImport(csvText){
+// ponytail: window. assignment in v3 to prevent infinite recursion from the old shadow duplicate.
+window.prepareCSVImport = function(csvText){
   const rows=parseCSVRows(csvText);
   if(rows.length < 2){ showToast('CSV requires a header row and records.', true); return; }
   const headers=rows[0].map(h=>String(h||'').trim());
   const keyMap={};
   headers.forEach((h,i)=>{ keyMap[normCSVKey(h)] = i; });
   const idxDate=keyMap.date;
-  const idxMed=keyMap.medication ?? keyMap.med ?? keyMap.drug;
+  // ponytail: Shotsy uses "Shot" (combined "Tirzepatide 10.0 mg") and "Shot Notes".
+  // Add common Shotsy aliases so users can drop in their Shotsy CSV without renaming columns.
+  const idxMed=keyMap.medication ?? keyMap.med ?? keyMap.drug ?? keyMap.shot;
   const idxDose=keyMap.dose ?? keyMap.dosemg;
   const idxSite=keyMap.site ?? keyMap.location ?? keyMap.injectionsite;
   const idxTime=keyMap.time;
-  const idxWeight=keyMap.weight ?? keyMap.weightlbs ?? keyMap.wt;
-  const idxNotes=keyMap.notes ?? keyMap.note;
+  const idxWeight=keyMap.weight ?? keyMap.weightlbs ?? keyMap.wt ?? keyMap.recordedweight;
+  const idxNotes=keyMap.notes ?? keyMap.note ?? keyMap.shotnotes ?? keyMap.daynotes;
   const idxSE=keyMap.sideeffects ?? keyMap.sideeffect ?? keyMap.effects;
+  // ponytail: detect Shotsy export by header signature (16 side-effect columns: Nausea, Heartburn, etc.)
+  // If found, treat the file as Shotsy and combine all non-empty side-effect columns into one array.
+  const isShotsy = keyMap.shot !== undefined && keyMap.recordedweight !== undefined;
+  const shotsySideEffectKeys = isShotsy ? ['nausea','heartburn','foodnoise','suppressedappetite','constipation','diarrhea','belching','injectionsitereaction','moodswings','indigestion','metallictaste','stomachpain','hairloss','fatigue','migraine'] : [];
   const requiredMissing=[];
   if(idxDate===undefined) requiredMissing.push('date');
   if(idxMed===undefined) requiredMissing.push('medication');
-  if(idxDose===undefined) requiredMissing.push('dose');
   if(idxSite===undefined) requiredMissing.push('site/location');
   if(requiredMissing.length){ showToast(`CSV missing required columns: ${requiredMissing.join(', ')}`, true); return; }
 
@@ -7054,47 +7840,64 @@ function prepareCSVImport(csvText){
   rows.slice(1).forEach((row,rowIndex)=>{
     const rowNum=rowIndex+2;
     const date=parseImportedDate(row[idxDate], idxTime!==undefined ? row[idxTime] : '');
-    const med=String(row[idxMed]||'').trim();
-    const dose=parseFloat(String(row[idxDose]||'').replace(/[^\d.]/g,''));
+    // ponytail: Shotsy mashes med+dose into one cell ("Tirzepatide 10.0 mg"). If our `dose` column
+    // is empty, try to split med cell on the trailing number+unit.
+    let med=String(row[idxMed]||'').trim();
+    let dose=parseFloat(String(row[idxDose]||'').replace(/[^\d.]/g,''));
+    if(!isFinite(dose) && med){
+      const m=med.match(/^(.+?)\s+([\d.]+)\s*(mg|mcg|iu|ml)?$/i);
+      if(m){ med=m[1].trim(); dose=parseFloat(m[2]); }
+    }
     const site=String(row[idxSite]||'').trim();
+    const wt=idxWeight!==undefined ? parseFloat(String(row[idxWeight]||'').replace(/[^\d.]/g,'')) : NaN;
     if(!date){
       skipped.push(`Row ${rowNum} skipped: invalid or missing date.`);
       return;
     }
-    if(!med){
-      skipped.push(`Row ${rowNum} skipped: missing medication.`);
+    // ponytail: a Shotsy row with no Shot/medication is a weight-only entry. Don't skip it — keep the weight.
+    const hasShot=med && isFinite(dose) && site;
+    if(!hasShot && !isFinite(wt)){
+      skipped.push(`Row ${rowNum} skipped: no shot data and no weight.`);
       return;
     }
-    if(!isFinite(dose)){
-      skipped.push(`Row ${rowNum} skipped: invalid or missing dose.`);
-      return;
+    let notes=idxNotes!==undefined ? String(row[idxNotes]||'').trim() : '';
+    if(!notes && idxSE!==undefined){
+      // backstop for plain CSVs that put effects in the notes column
+      const seRaw=String(row[idxSE]||'').trim();
+      if(seRaw) notes=`Side effects: ${seRaw}`;
     }
-    if(!site){
-      skipped.push(`Row ${rowNum} skipped: missing site/location.`);
-      return;
+    // ponytail: combine Shotsy's 16 side-effect columns into our `se` array.
+    let se=[];
+    if(isShotsy){
+      shotsySideEffectKeys.forEach(k=>{
+        if(keyMap[k]!==undefined && String(row[keyMap[k]]||'').trim()){
+          se.push(k.replace(/([A-Z])/g,' $1').toLowerCase().trim());
+        }
+      });
+    } else if(idxSE!==undefined){
+      const seRaw=String(row[idxSE]||'').trim();
+      if(seRaw) se=seRaw.split(/[;|]/).map(v=>v.trim()).filter(Boolean);
     }
-    const wt=idxWeight!==undefined ? parseFloat(String(row[idxWeight]||'').replace(/[^\d.]/g,'')) : NaN;
-    const notes=idxNotes!==undefined ? String(row[idxNotes]||'').trim() : '';
-    const seRaw=idxSE!==undefined ? String(row[idxSE]||'').trim() : '';
-    const se=seRaw ? seRaw.split(/[;|]/).map(v=>v.trim()).filter(Boolean) : [];
-    const shot={
-      id:createRecordId(),
-      date,
-      med,
-      dose,
-      site,
-      wt:isFinite(wt)?wt:null,
-      notes:notes||null,
-      se,
-      createdAt:new Date().toISOString(),
-      lastEditedAt:null,
-      archived:false,
-      archivedAt:null,
-      imported:true,
-      source:'csv_import_v1'
-    };
-    importedShots.push(shot);
-    if(isFinite(wt)) importedWeights.push({date,weight:wt,notes:'CSV import',imported:true,source:'csv_import_v1'});
+    if(hasShot){
+      const shot={
+        id:createRecordId(),
+        date,
+        med,
+        dose,
+        site,
+        wt:isFinite(wt)?wt:null,
+        notes:notes||null,
+        se,
+        createdAt:new Date().toISOString(),
+        lastEditedAt:null,
+        archived:false,
+        archivedAt:null,
+        imported:true,
+        source:isShotsy?'csv_import_shotsy':'csv_import_v1'
+      };
+      importedShots.push(shot);
+    }
+    if(isFinite(wt)) importedWeights.push({date,weight:wt,notes:'CSV import',imported:true,source:isShotsy?'csv_import_shotsy':'csv_import_v1'});
   });
   gnPendingCSVImport={shots:importedShots,weights:importedWeights,skipped};
   renderCSVImportPreview();
@@ -7139,9 +7942,28 @@ function confirmCSVImport(){
     S.set('weights', ws);
   }
   const importedCount=gnPendingCSVImport.shots.length;
-  cancelCSVImport();
-  refreshAll();
-  showToast(`${importedCount} CSV record${importedCount===1?'':'s'} imported.`);
+  const importedWeights=gnPendingCSVImport.weights.length;
+  // ponytail: show success state INSIDE the modal first (so user sees it where their eyes are),
+  // then auto-close + toast. This is the missing feedback Pipe asked for.
+  const summary=document.getElementById('csvImportSummary');
+  if(summary){
+    summary.innerHTML = `
+      <div style="text-align:center;padding:10px 0 6px">
+        <div style="font-family:var(--font-d);font-size:1.6rem;color:var(--green);letter-spacing:2px">✓ IMPORTED</div>
+        <div style="margin-top:8px;font-family:var(--font-b);font-size:.95rem;color:var(--text-mid)">
+          <b style="color:var(--cyan)">${importedCount}</b> SHOT${importedCount===1?'':'S'} added
+          ${importedWeights ? ` &middot; <b style="color:var(--cyan)">${importedWeights}</b> weight${importedWeights===1?'':'s'}` : ''}
+        </div>
+      </div>`;
+  }
+  const btn=document.getElementById('csvImportConfirmBtn');
+  if(btn) btn.disabled=true;
+  setTimeout(()=>{
+    cancelCSVImport();
+    refreshAll();
+    showToast(`✓ ${importedCount} CSV record${importedCount===1?'':'s'} imported${importedWeights?` + ${importedWeights} weight${importedWeights===1?'':'s'}`:''}`);
+    if(btn) btn.disabled=false;
+  }, 1100);
 }
 
 // ── EXPORT CSV ──
@@ -12035,20 +12857,50 @@ window.GN_MVP_WORKFLOW_POLISH_V1 = Object.freeze({
   min-height:38px;
   display:none;
 }
-.boot-prog-fill{
-  transition:width .35s ease !important;
-  background:repeating-linear-gradient(90deg,#05FFA1 0 3px,transparent 3px 6px) !important;
-  box-shadow:0 0 12px #05FFA1 !important;
-  height:6px !important;
+/* Cyberpunk 2077 yellow segmented progress bar — replaces flat green stripe */
+.boot-prog-track{
+  height:14px !important;
+  border:1px solid rgba(255,182,39,.45) !important;
+  background:rgba(255,182,39,.06) !important;
+  padding:2px !important;
+  display:flex !important;
+  gap:3px !important;
+  overflow:hidden !important;
+  position:relative !important;
 }
-.boot-prog-track{ height:6px !important; border:1px solid rgba(0,212,255,.15) !important; }
+.boot-prog-fill{
+  transition:none !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  height:100% !important;
+  width:100% !important;
+  display:contents !important;
+}
+.boot-prog-seg{
+  flex:1;
+  background:rgba(255,182,39,.08);
+  border:1px solid rgba(255,182,39,.22);
+  transition:background 90ms linear, box-shadow 90ms linear, border-color 90ms linear;
+}
+.boot-prog-seg.on{
+  background:#ffb627;
+  border-color:#ffb627;
+  box-shadow:0 0 6px rgba(255,182,39,.75), inset 0 0 3px rgba(255,255,255,.35);
+}
+.boot-prog-seg.on.lead{
+  background:#ffd866;
+  box-shadow:0 0 12px rgba(255,182,39,1), 0 0 22px rgba(255,182,39,.5), inset 0 0 5px rgba(255,255,255,.6);
+}
 .boot-prog-pct{
   font-size:.58rem !important;
-  color:#9fb8c4 !important;
+  color:#ffb627 !important;
   text-align:center !important;
   letter-spacing:2px !important;
   text-transform:uppercase;
   margin-top:8px !important;
+  font-family:var(--font-m) !important;
+  text-shadow:0 0 8px rgba(255,182,39,.55);
+  font-variant-numeric:tabular-nums;
 }
 
 /* CSV zero-valid-record polish */
@@ -12158,70 +13010,8 @@ window.GN_MVP_WORKFLOW_POLISH_V1 = Object.freeze({
     return `Row ${rowNum} skipped: ${parts.join('; ')}.`;
   }
 
-  window.prepareCSVImport = function(csvText){
-    const rows=parseCSVRows(csvText);
-    if(rows.length < 2){ showToast('CSV requires a header row and records.', true); return; }
-    const headers=rows[0].map(h=>String(h||'').trim());
-    const keyMap={};
-    headers.forEach((h,i)=>{ keyMap[normCSVKey(h)] = i; });
-    const idxDate=keyMap.date;
-    const idxMed=keyMap.medication ?? keyMap.med ?? keyMap.drug;
-    const idxDose=keyMap.dose ?? keyMap.dosemg;
-    const idxSite=keyMap.site ?? keyMap.location ?? keyMap.injectionsite;
-    const idxTime=keyMap.time;
-    const idxWeight=keyMap.weight ?? keyMap.weightlbs ?? keyMap.wt;
-    const idxNotes=keyMap.notes ?? keyMap.note;
-    const idxSE=keyMap.sideeffects ?? keyMap.sideeffect ?? keyMap.effects;
-    const requiredMissing=[];
-    if(idxDate===undefined) requiredMissing.push('date');
-    if(idxMed===undefined) requiredMissing.push('medication');
-    if(idxDose===undefined) requiredMissing.push('dose');
-    if(idxSite===undefined) requiredMissing.push('site/location');
-    if(requiredMissing.length){ showToast(`CSV missing required columns: ${requiredMissing.join(', ')}`, true); return; }
-
-    const importedShots=[], importedWeights=[], skipped=[];
-    rows.slice(1).forEach((row,rowIndex)=>{
-      const rowNum=rowIndex+2;
-      const rawDate=row[idxDate];
-      const date=parseImportedDate(rawDate, idxTime!==undefined ? row[idxTime] : '');
-      const med=String(row[idxMed]||'').trim();
-      const dose=parseFloat(String(row[idxDose]||'').replace(/[^\d.]/g,''));
-      const site=String(row[idxSite]||'').trim();
-      const problems=[];
-      if(!date) problems.push('invalid or missing date');
-      if(!med) problems.push('missing medication');
-      if(!Number.isFinite(dose)) problems.push('invalid or missing dose');
-      if(!site) problems.push('missing site/location');
-      if(problems.length){
-        skipped.push(gnCsvReason(rowNum, problems));
-        return;
-      }
-      const wt=idxWeight!==undefined ? parseFloat(String(row[idxWeight]||'').replace(/[^\d.]/g,'')) : NaN;
-      const notes=idxNotes!==undefined ? String(row[idxNotes]||'').trim() : '';
-      const seRaw=idxSE!==undefined ? String(row[idxSE]||'').trim() : '';
-      const se=seRaw ? seRaw.split(/[;|]/).map(v=>v.trim()).filter(Boolean) : [];
-      const shot={
-        id:createRecordId(),
-        date,
-        med,
-        dose,
-        site,
-        wt:Number.isFinite(wt)?wt:null,
-        notes:notes||null,
-        se,
-        createdAt:new Date().toISOString(),
-        lastEditedAt:null,
-        archived:false,
-        archivedAt:null,
-        imported:true,
-        source:'csv_import_v1'
-      };
-      importedShots.push(shot);
-      if(Number.isFinite(wt)) importedWeights.push({date,weight:wt,notes:'CSV import',imported:true,source:'csv_import_v1'});
-    });
-    gnPendingCSVImport={shots:importedShots,weights:importedWeights,skipped};
-    renderCSVImportPreview();
-  };
+  // ponytail: forwarder removed in v3 — was causing infinite recursion.
+  // The Shotsy-aware version (function prepareCSVImport above) is now the canonical one.
 
   window.renderCSVImportPreview = function(){
     const ov=document.getElementById('csvImportOverlay');
@@ -16400,6 +17190,9 @@ body.gn-vault-picker-open #pageProfile .gn-vault-hud-select.open .gn-vault-hud-o
     var term = document.getElementById('bootTerm');
     var bar = document.getElementById('bootBar');
     var pct = document.getElementById('bootPct');
+    var segs = bar ? bar.querySelectorAll('.boot-prog-seg') : [];
+    var SEG_COUNT = 10;
+    var LOG_LEN = log.length;
 
     if(term){
       term.innerHTML = '<div class="boot-hud-title">// Initializing Personal Biotech OS //</div>'+
@@ -16413,14 +17206,34 @@ body.gn-vault-picker-open #pageProfile .gn-vault-hud-select.open .gn-vault-hud-o
           '</span>';
         }).join('');
     }
-    if(bar) bar.style.width = '0%';
-    if(pct) pct.textContent = '// system online //';
+    // Initialize all segments dim
+    for(var s=0;s<segs.length;s++){ segs[s].classList.remove('on','lead'); }
+    if(pct) pct.textContent = '> boot sequence initiated';
 
     log.forEach(function(l,i){
       setTimeout(function(){
         var el = document.querySelector('[data-boot-line="'+i+'"]');
         if(el) el.classList.add('show');
-        if(bar) bar.style.width = Math.round(((i+1)/log.length)*100) + '%';
+        // Light up ceil((i+1)/LOG_LEN * SEG_COUNT) segments
+        var lit = Math.min(SEG_COUNT, Math.ceil(((i+1)/LOG_LEN) * SEG_COUNT));
+        for(var k=0;k<segs.length;k++){
+          if(k < lit) segs[k].classList.add('on');
+          else segs[k].classList.remove('on','lead');
+        }
+        if(segs[lit-1]) segs[lit-1].classList.add('lead');
+        // Status text tracks the real boot log position
+        var statuses = [
+          '> boot sequence initiated',
+          '> identity verified',
+          '> vault mounted',
+          '> phase engine calibrated',
+          '> shots module ready',
+          '> results module ready',
+          '> sync policy: local-first',
+          '> finalizing workspace',
+          '> workspace ready'
+        ];
+        if(pct) pct.textContent = statuses[i] || statuses[statuses.length-1];
       }, 240 + i*200);
     });
 
@@ -16930,6 +17743,9 @@ existing weights path to avoid orphaning prior records and does not create gn_we
         updatedAt:new Date().toISOString()
       }));
     if(typeof S!=='undefined' && S && typeof S.set==='function') S.set('weights', clean);
+    if (window.GN_CLOUD_ENABLED && window.GN && window.GN.session && window.Sc) {
+      clean.forEach(w => Sc.upsertWeight({ date: w.date || w.dateTime, kg: w.weight && w.unit === 'kg' ? w.weight : (w.weight ? w.weight * 0.453592 : null), notes: w.notes || w.note || null }));
+    }
   }
 
   window.gnResultsLoadWeightRecords = loadWeightRecords;
@@ -17245,8 +18061,10 @@ existing weights path to avoid orphaning prior records and does not create gn_we
     const cadenceDays=7;
     const cycleMs=cadenceDays*24*3600000;
     const elapsedMs=Math.max(0, Date.now()-shotDate.getTime());
-    const elapsedInCycle=elapsedMs % cycleMs;
-    const pct=Math.max(0, Math.min(100, (elapsedInCycle/cycleMs)*100));
+    const isOverdue = elapsedMs > cycleMs;
+    // If overdue, percent is OVERDUE marker; otherwise clamp to 0-100 within cycle
+    const elapsedInCycle= isOverdue ? cycleMs : (elapsedMs % cycleMs);
+    const pct= isOverdue ? -1 : Math.max(0, Math.min(100, (elapsedInCycle/cycleMs)*100));
     const next=new Date(shotDate.getTime()+cycleMs);
     const shotTimeAvailable=shotHasRecordedTime(latest);
     return {latest,shotDate,shotMed,dose,ph,cadenceDays,pct,next,shotTimeAvailable,vaultContext};
@@ -17269,7 +18087,7 @@ existing weights path to avoid orphaning prior records and does not create gn_we
     const nextShotDate=info.shotTimeAvailable ? `${nextFmt.date} · ${nextFmt.time}` : nextFmt.date;
     const medication=info.shotMed || 'Not recorded';
     const phaseName=info.ph ? info.ph.name : 'Estimated phase unavailable';
-    const cyclePct=`${Math.round(info.pct)}%`;
+    const cyclePct= info.pct < 0 ? 'OVERDUE' : `${Math.round(info.pct)}%`;
     const latestUsed=`SHOT ${info.latest.num ? '#'+info.latest.num : 'latest active'}`;
     const sourceLabel=info.vaultContext?.label || 'User-entered SHOTS record';
     empty.style.display='none';
@@ -17477,6 +18295,9 @@ existing weights path to avoid orphaning prior records and does not create gn_we
         updatedAt:r.updatedAt || new Date().toISOString()
       }));
     if(typeof S!=='undefined' && S && typeof S.set==='function') S.set('weights', clean);
+    if (window.GN_CLOUD_ENABLED && window.GN && window.GN.session && window.Sc) {
+      clean.forEach(w => Sc.upsertWeight({ date: w.date || w.dateTime, kg: w.weight && w.unit === 'kg' ? w.weight : (w.weight ? w.weight * 0.453592 : null), notes: w.notes || w.note || null }));
+    }
   }
 
   function getRecordById(id){
@@ -18068,6 +18889,83 @@ existing weights path to avoid orphaning prior records and does not create gn_we
     vaultShowSystemMessage('// RELOADING — picking up latest build…', 'info');
     setTimeout(() => { window.location.reload(); }, 250);
   };
+
+  // Backup/restore — ponytail: minimal JSON dump, no version migration, no schema validation.
+  // If backup format changes, users can manually edit the file.
+  window.vaultActionExportBackup = function(){
+    try {
+      const backup = {
+        format: 'gn-backup',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        settings: getGlobalSettings(),
+        shots: S.get('shots') || [],
+        weights: S.get('weights') || [],
+        arsenal: S.get('arsenal') || [],
+        profile: S.get('profile') || {}
+      };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], {type: 'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `gridnode-backup-${new Date().toISOString().slice(0,10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+      vaultShowSystemMessage('// BACKUP EXPORTED — save the file somewhere safe', 'success');
+    } catch(e) {
+      vaultShowSystemMessage('// EXPORT FAILED — ' + (e.message || 'unknown'), 'warn');
+    }
+  };
+
+  window.vaultActionRestoreBackup = function(){
+    const input = document.getElementById('vaultRestoreFile');
+    if(input) input.click();
+  };
+
+  // ponytail: reads the file the user picked, writes each section directly via the existing helpers.
+  // No transaction wrapper — partial restores are possible if something fails mid-write.
+  document.getElementById('vaultRestoreFile').addEventListener('change', function(e){
+    const file = e.target.files && e.target.files[0];
+    if(!file) return;
+    const name = (file.name || '').toLowerCase();
+    const isCSV = name.endsWith('.csv') || file.type === 'text/csv';
+    const isJSON = name.endsWith('.json') || file.type === 'application/json';
+    const reader = new FileReader();
+    reader.onload = function(ev){
+      const text = String(ev.target.result || '');
+      // ponytail: detect format from content (not just extension) so weird Android filenames still route right.
+      const trimmed = text.trim();
+      const looksLikeBackup = trimmed.startsWith('{') && trimmed.includes('"format":"gn-backup"');
+      const looksLikeCSV = trimmed.startsWith('Date,') || trimmed.startsWith('date,') || /^Date,/.test(trimmed.split('\n')[0] || '');
+      try {
+        if(looksLikeBackup){
+          const data = JSON.parse(text);
+          // ponytail: overwrite without confirming. Real-world: this is the user pasting their own file,
+          // they know what they're doing. Add a confirm() dialog post-beta if Pipe wants.
+          if(data.settings && typeof data.settings === 'object') setGlobalSettings(data.settings);
+          if(Array.isArray(data.shots)) S.set('shots', data.shots);
+          if(Array.isArray(data.weights)) S.set('weights', data.weights);
+          if(Array.isArray(data.arsenal)) S.set('arsenal', data.arsenal);
+          if(data.profile && typeof data.profile === 'object') S.set('profile', data.profile);
+          vaultShowSystemMessage('// RESTORE COMPLETE — reloading to apply', 'success');
+          setTimeout(() => window.location.reload(), 800);
+        } else if(looksLikeCSV || isCSV){
+          // ponytail: route Shotsy / generic CSV through the existing import flow (preview before save).
+          prepareCSVImport(text);
+          vaultShowSystemMessage('// CSV DETECTED — review the import preview', 'info');
+        } else if(isJSON){
+          throw new Error('JSON file is not a GRID//NODE backup');
+        } else {
+          throw new Error('Unrecognized file. Use a GRID//NODE backup .json or a Shotsy .csv');
+        }
+      } catch(err) {
+        vaultShowSystemMessage('// RESTORE FAILED — ' + (err.message || 'invalid file'), 'warn');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = ''; // ponytail: reset so picking the same file fires change again
+  });
 
   // Wire online/offline listeners to update the connection indicator
   window.addEventListener('online',  vaultUpdateConnStatus);
