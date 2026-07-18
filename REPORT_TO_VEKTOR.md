@@ -208,13 +208,15 @@ After deployment:
 > Review `REPORT_TO_VEKTOR.md` and the current GRID//NODE stable web build. Deploy `index.html` plus the complete `js/` folder to the approved HTTPS static host. Do not redesign the brand or add features. First verify Android/mobile boot, local session entry, SHOT logging, scanner location selection, SHOT history, RESULTS weight tracking, refresh persistence, archive/restore, LAB navigation, and VAULT export. Then configure and test Supabase Auth, table access, RLS, and cross-device recovery using a dedicated test account. Report every failure with reproduction steps and the exact file/function involved.
 
 
-## 11. Deployment handoff status - 2026-07-18
+## 11. Deployment and final polish status — 2026-07-18
 
 - GitHub repository: `gridnodeinfra-network/gridnode-terminal`.
 - Stabilized build merged to `main` in commit `b5ac4c40292f0ff80c3eab062efecff2af1d1412`.
-- Cloudflare Pages deployment: not completed in this workspace.
-- Cloudflare dashboard currently redirects to GitHub sign-in; no authenticated Cloudflare session is available.
-- No `CLOUDFLARE_API_TOKEN` or `CLOUDFLARE_ACCOUNT_ID` is available to the deployment runtime.
-- `https://gridnode.network/` was checked and is still serving the previous inline-script build, not the new `js/gridnode-bundle.js` build.
-
-The remaining launch action is to authenticate the approved Cloudflare account or provide a scoped Pages API token, then deploy the already-merged `main` contents to the existing `gridnode` Pages project. Do not create a second public site or change the production domain while that target is unresolved.
+- Cloudflare Pages project: existing `gridnode` production project.
+- Production deployment completed from the approved upload containing `index.html` and the complete `js/` folder.
+- Cloudflare reported production URL: `https://gridnode.pages.dev`.
+- Custom domain verification: `https://gridnode.network/` serves `js/gridnode-bundle.js`, the local-first landing copy, the auth screen, and the app shell.
+- Final polish pass corrected public wording so LAB and NODE are described as shipped systems, and the local-first/cloud-recovery model is stated consistently.
+- Live smoke verification reached boot, auth, local entry, and the full primary app surface with no browser console errors observed.
+- `https://www.gridnode.network/` and the old preview URL should be checked separately before treating those aliases as equivalent.
+- Supabase cloud signup/login, OAuth, RLS, and cross-device recovery still require dedicated real-account QA.
