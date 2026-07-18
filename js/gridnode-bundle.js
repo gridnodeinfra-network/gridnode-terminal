@@ -5,7 +5,7 @@
  * No UI code belongs in this file.
  */
 
-const APP_VERSION = '2.0.1-stable';
+const APP_VERSION = '2.0.2-stable';
 
 const CLOUD_CONFIG = Object.freeze({
   url: 'https://quwbmhxgteyykujydvii.supabase.co',
@@ -311,9 +311,25 @@ async function updateCloudPassword(password) {
   return data?.user || null;
 }
 
+async function isCloudProviderEnabled(provider) {
+  if (!provider || !(await getCloudClient())) return false;
+  try {
+    const response = await withTimeout(fetch(`${CLOUD_CONFIG.url}/auth/v1/settings`, {
+      headers: { apikey: CLOUD_CONFIG.anonKey }
+    }), 5000);
+    if (!response.ok) return false;
+    const settings = await response.json();
+    return Boolean(settings?.external?.[provider]);
+  } catch (error) {
+    console.warn('[GRID//NODE provider availability]', error);
+    return false;
+  }
+}
+
 async function signInWithGoogle() {
   const client = await getCloudClient();
   if (!client) throw new Error('CLOUD_UNAVAILABLE');
+  if (!(await isCloudProviderEnabled('google'))) throw new Error('GOOGLE_AUTH_DISABLED');
   const { error } = await withTimeout(client.auth.signInWithOAuth({
     provider: 'google',
     options: { redirectTo: window.location.href.split('#')[0] }
@@ -1529,7 +1545,7 @@ function injectStableStyles() {
     .gn-auth-card{width:min(100%,380px);padding:28px 22px;border:1px solid rgba(0,212,255,.24);border-top:2px solid #00d4ff;background:linear-gradient(180deg,rgba(14,14,22,.96),rgba(5,5,8,.98));box-shadow:0 16px 46px rgba(0,0,0,.45)}
     .gn-auth-kicker{font:700 .62rem var(--font-m,monospace);letter-spacing:3px;color:#00d4ff;text-align:center}.gn-auth-title{font:700 1.45rem var(--font-d,monospace);letter-spacing:3px;color:#fff;text-align:center;margin:10px 0 5px}.gn-auth-copy{font:.72rem/1.5 var(--font-m,monospace);color:#8295a0;text-align:center;margin:0 0 20px}
     .gn-auth-field{width:100%;box-sizing:border-box;margin:0 0 10px;padding:13px 12px;border:1px solid rgba(0,212,255,.2);background:#080810;color:#eeeef5;border-radius:3px;font:16px var(--font-m,monospace);outline:none}.gn-auth-field:focus{border-color:#00d4ff;box-shadow:0 0 0 2px rgba(0,212,255,.1)}
-    .gn-auth-primary,.gn-auth-secondary,.gn-auth-google{width:100%;min-height:46px;margin-top:8px;border-radius:3px;cursor:pointer;font:700 .68rem var(--font-d,monospace);letter-spacing:2px}.gn-auth-primary{border:0;background:linear-gradient(135deg,#ff3355,#c80036);color:#fff}.gn-auth-secondary{border:1px solid rgba(0,212,255,.35);background:transparent;color:#00d4ff}.gn-auth-google{border:1px solid rgba(0,212,255,.4);background:rgba(0,212,255,.04);color:#00d4ff}.gn-auth-links{display:flex;justify-content:space-between;gap:8px;margin-top:14px}.gn-auth-link{padding:0;border:0;background:transparent;color:#8295a0;font:600 .58rem var(--font-m,monospace);letter-spacing:1px;cursor:pointer}.gn-auth-link:hover{color:#00d4ff}.gn-auth-message{min-height:22px;margin-top:14px;text-align:center;font:.62rem/1.4 var(--font-m,monospace);letter-spacing:.7px;color:#8295a0}.gn-auth-note{margin-top:18px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07);font:.56rem/1.5 var(--font-m,monospace);letter-spacing:.6px;color:#586d76;text-align:center}
+    .gn-auth-primary,.gn-auth-secondary,.gn-auth-google{width:100%;min-height:46px;margin-top:8px;border-radius:3px;cursor:pointer;font:700 .68rem var(--font-d,monospace);letter-spacing:2px}.gn-auth-primary{border:0;background:linear-gradient(135deg,#ff3355,#c80036);color:#fff}.gn-auth-secondary{border:1px solid rgba(0,212,255,.35);background:transparent;color:#00d4ff}.gn-auth-google{border:1px solid rgba(0,212,255,.4);background:rgba(0,212,255,.04);color:#00d4ff}.gn-auth-google:disabled{cursor:not-allowed;opacity:.55;border-color:rgba(130,149,160,.28);color:#8295a0;box-shadow:none}.gn-auth-links{display:flex;justify-content:space-between;gap:8px;margin-top:14px}.gn-auth-link{padding:0;border:0;background:transparent;color:#8295a0;font:600 .58rem var(--font-m,monospace);letter-spacing:1px;cursor:pointer}.gn-auth-link:hover{color:#00d4ff}.gn-auth-message{min-height:22px;margin-top:14px;text-align:center;font:.62rem/1.4 var(--font-m,monospace);letter-spacing:.7px;color:#8295a0}.gn-auth-note{margin-top:18px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07);font:.56rem/1.5 var(--font-m,monospace);letter-spacing:.6px;color:#586d76;text-align:center}
     .gn-phase-row{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.07)}.gn-phase-index{font:700 .72rem var(--font-m,monospace);color:#ff3355}.gn-phase-row b{font:700 .72rem var(--font-d,monospace);letter-spacing:1px}.gn-phase-row p{margin:4px 0 0;color:#8295a0;font:.66rem/1.4 var(--font-m,monospace)}
     .gn-weight-record{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.07)}.gn-weight-record b{display:block;color:#00ff88;font:700 .78rem var(--font-d,monospace)}.gn-weight-record span,.gn-weight-record small{display:block;margin-top:3px;color:#8295a0;font:.6rem var(--font-m,monospace)}.gn-calendar-detail{padding:9px 0;border-bottom:1px solid rgba(255,255,255,.07);font:.66rem var(--font-m,monospace);color:#9fc7d4}
     canvas{display:block;max-width:100%}
@@ -1562,6 +1578,7 @@ function authShell() {
   $('loginGoogleBtn')?.addEventListener('click', handleGoogleSignIn);
   $('gnLocalBtn')?.addEventListener('click', enterLocalSession);
   updateAuthMode();
+  refreshGoogleAuthState();
 }
 
 function updateAuthMode() {
@@ -1571,6 +1588,19 @@ function updateAuthMode() {
 }
 function toggleAuthMode() { if (authMode === 'recovery') { passwordRecoveryActive = false; authMode = 'signin'; authShell(); return; } authMode = authMode === 'signin' ? 'signup' : 'signin'; updateAuthMode(); setAuthMessage('', false); }
 function setAuthMessage(message, error = false) { const element = $('loginMsg'); if (element) { element.textContent = message; element.style.color = error ? '#ff5577' : '#8295a0'; } }
+
+async function refreshGoogleAuthState() {
+  const button = $('loginGoogleBtn');
+  if (!button) return;
+  button.disabled = true;
+  button.textContent = 'CHECKING GOOGLE...';
+  const enabled = await isCloudProviderEnabled('google');
+  if (!button.isConnected) return;
+  button.dataset.providerEnabled = enabled ? 'true' : 'false';
+  button.disabled = !enabled;
+  button.textContent = enabled ? 'CONTINUE WITH GOOGLE' : 'GOOGLE SIGN-IN SETUP PENDING';
+  if (!enabled) setAuthMessage('// GOOGLE SIGN-IN IS NOT ENABLED YET — USE EMAIL OR CONTINUE LOCALLY', false);
+}
 
 async function requestPasswordReset() {
   const email = $('gnAuthEmail')?.value?.trim();
@@ -1615,7 +1645,13 @@ async function submitAuth() {
 async function handleGoogleSignIn() {
   const button = $('loginGoogleBtn'); if (button) { button.disabled = true; button.textContent = 'CONNECTING...'; }
   setAuthMessage('// OPENING GOOGLE AUTHENTICATION...', false);
-  try { await signInWithGoogle(); } catch (error) { setAuthMessage(error.message === 'CLOUD_UNAVAILABLE' ? '// GOOGLE AUTH UNAVAILABLE — CONTINUE LOCALLY OR RETRY WHEN ONLINE' : `// GOOGLE AUTH ERROR: ${error.message}`, true); if (button) { button.disabled = false; button.textContent = 'CONTINUE WITH GOOGLE'; } }
+  try {
+    await signInWithGoogle();
+  } catch (error) {
+    const disabled = error.message === 'GOOGLE_AUTH_DISABLED';
+    setAuthMessage(disabled ? '// GOOGLE SIGN-IN IS NOT ENABLED YET — USE EMAIL OR CONTINUE LOCALLY' : error.message === 'CLOUD_UNAVAILABLE' ? '// GOOGLE AUTH UNAVAILABLE — CONTINUE LOCALLY OR RETRY WHEN ONLINE' : '// GOOGLE AUTH COULD NOT START — RETRY OR USE EMAIL', true);
+    if (button) { button.disabled = disabled; button.textContent = disabled ? 'GOOGLE SIGN-IN SETUP PENDING' : 'CONTINUE WITH GOOGLE'; }
+  }
 }
 
 function enterLocalSession() {

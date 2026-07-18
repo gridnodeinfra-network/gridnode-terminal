@@ -3,7 +3,7 @@
  * No UI code belongs in this file.
  */
 
-export const APP_VERSION = '2.0.1-stable';
+export const APP_VERSION = '2.0.2-stable';
 
 export const CLOUD_CONFIG = Object.freeze({
   url: 'https://quwbmhxgteyykujydvii.supabase.co',
@@ -309,9 +309,25 @@ export async function updateCloudPassword(password) {
   return data?.user || null;
 }
 
+export async function isCloudProviderEnabled(provider) {
+  if (!provider || !(await getCloudClient())) return false;
+  try {
+    const response = await withTimeout(fetch(`${CLOUD_CONFIG.url}/auth/v1/settings`, {
+      headers: { apikey: CLOUD_CONFIG.anonKey }
+    }), 5000);
+    if (!response.ok) return false;
+    const settings = await response.json();
+    return Boolean(settings?.external?.[provider]);
+  } catch (error) {
+    console.warn('[GRID//NODE provider availability]', error);
+    return false;
+  }
+}
+
 export async function signInWithGoogle() {
   const client = await getCloudClient();
   if (!client) throw new Error('CLOUD_UNAVAILABLE');
+  if (!(await isCloudProviderEnabled('google'))) throw new Error('GOOGLE_AUTH_DISABLED');
   const { error } = await withTimeout(client.auth.signInWithOAuth({
     provider: 'google',
     options: { redirectTo: window.location.href.split('#')[0] }

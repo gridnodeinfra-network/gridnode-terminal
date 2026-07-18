@@ -1,15 +1,15 @@
 # GRID//NODE — Release Report for VEKTOR
 
 **Date:** 2026-07-18  
-**Build:** v2.0.1-stable / shell `20260718.11`  
+**Build:** v2.0.2-stable / shell `20260718.14`  
 **Production:** `https://gridnode.network/`  
 **Cloudflare Pages:** `https://gridnode.pages.dev/`  
-**Immutable deployment:** `https://c55e96ec.gridnode.pages.dev/`  
-**Status:** Deployed, HTTP 200, production smoke-tested, and real-account cloud recovery verified.
+**Immutable deployment:** `https://f18649d8.gridnode.pages.dev/`  
+**Status:** Deployed, HTTP 200, production smoke-tested, real-account cloud recovery verified, and Google signup/sign-in verified.
 
 ## 1. Final recommendation
 
-Use v2.0.1-stable as the controlled real-user web MVP baseline.
+Use v2.0.2-stable as the controlled real-user web MVP baseline.
 
 The core journey is operational: public entry, boot/authentication, local or cloud session, protocol entry, SHOT logging, history, Phase Engine, RESULTS, refresh persistence, and account-scoped cloud recovery. Keep the next phase focused on founder mobile QA and a small real-user cohort. Do not begin native applications until evidence from the web product identifies the right priorities.
 
@@ -74,6 +74,10 @@ The application remains a static web app. No native conversion and no unnecessar
 - Ownership policies use `auth.uid()` and anonymous table privileges are revoked.
 - Fixed a critical first-login migration bug that could copy one account's browser-local data into another account. Local migration is now bound to one cloud owner.
 - Verified account A data did not appear in clean account C.
+- Repaired the Google OAuth client callback, which still pointed to a retired Supabase project.
+- Replaced invalid Supabase provider autofill with the real Google client ID and a newly generated client secret.
+- Enabled the Supabase Google provider while retaining nonce checks and email requirements.
+- Added a provider-availability preflight so a disabled provider cannot redirect users to a raw Supabase JSON error page.
 
 ## 4. Verified QA evidence
 
@@ -108,13 +112,15 @@ The final application source was exercised at a 390 × 844 mobile viewport:
   - VAULT state: `CLOUD_SYNCED`.
 - Refresh retained the cloud session and recovered records.
 - Production HOME, SHOTS, TRENDS, LAB, and YOU navigation all passed.
+- Google first-use signup passed: account chooser → consent → Supabase callback → private GRID//NODE shell.
+- Google returning-user sign-in passed without repeating consent.
+- Google session refresh persistence, sign-out, public-boundary recovery, `CLOUD_SYNCED`, and Supabase user creation all passed.
 - The generated JavaScript bundle passed Node syntax validation.
 
 The founder's laptop screenshot was a cropped excerpt. A full 1110 × 456 laptop reproduction showed no corresponding layout shift; no speculative CSS change was made from the crop.
 
 ## 5. Remaining limitations
 
-- Google OAuth is still disabled because a Google OAuth client ID and secret have not been created/configured.
 - Confirmation-email signup has not been completed through a real email inbox.
 - Password-recovery delivery and callback have not been completed through a real email inbox.
 - Cross-browser cloud recovery is verified. A true second physical-device/reinstall test remains founder QA.
@@ -167,7 +173,7 @@ Then verify the immutable deployment URL, `gridnode.pages.dev`, and `gridnode.ne
 
 ## 9. Exact next prompt for VEKTOR
 
-> Review GRID//NODE v2.0.1-stable at `https://gridnode.network/?qa=20260718.11` and the `main` branch of `gridnodeinfra-network/gridnode-terminal`. Do not redesign or add features. Run founder Android QA for landing, boot, auth boundary, local entry, cloud login, scanner draft preservation, SHOT create/edit/archive/restore, Phase Engine, RESULTS, LAB, VAULT export/import, refresh, sign-out, and cloud recovery. Report only reproducible failures with the exact screen, action, expected result, actual result, and relevant file/function. Separately complete real-inbox confirmation signup, password recovery, and Google OAuth configuration/testing.
+> Review GRID//NODE v2.0.2-stable at `https://gridnode.network/?qa=20260718.14` and the `main` branch of `gridnodeinfra-network/gridnode-terminal`. Do not redesign or add features. Run founder Android QA for landing, boot, auth boundary, local entry, email/password login, Google signup/sign-in, scanner draft preservation, SHOT create/edit/archive/restore, Phase Engine, RESULTS, LAB, VAULT export/import, refresh, sign-out, and cloud recovery. Report only reproducible failures with the exact screen, action, expected result, actual result, and relevant file/function. Separately complete real-inbox confirmation signup and password recovery.
 
 ## 10. B12 / b12.io contamination scan
 

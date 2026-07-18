@@ -1,6 +1,6 @@
 # GRID//NODE stable web build
 
-GRID//NODE v2.0.1-stable is a static, mobile-first Personal Biotech Operating System beginning with GLP-1 protocol tracking. It supports local-first use and optional Supabase cloud accounts.
+GRID//NODE v2.0.2-stable is a static, mobile-first Personal Biotech Operating System beginning with GLP-1 protocol tracking. It supports local-first use and optional Supabase cloud accounts.
 
 Production URLs:
 
@@ -54,6 +54,7 @@ There is no server-side runtime or build command. HTTPS is required for producti
 Verified against the production Supabase project on 2026-07-18:
 
 - Email/password authentication and session refresh work with real QA accounts.
+- Google OAuth signup, returning-user sign-in, callback recovery, and refreshed sessions work with a real Google account.
 - `profiles`, `shots`, `weights`, and `workspaces` exist.
 - RLS is enabled on every user-data table and ownership policies use `auth.uid()`.
 - Anonymous table privileges are revoked.
@@ -65,7 +66,6 @@ Still requiring dedicated end-to-end verification:
 
 - Confirmation-email signup through a real mailbox.
 - Password-recovery email delivery and callback through a real mailbox.
-- Google OAuth, which remains disabled until a Google OAuth client ID and secret are configured.
 - Founder testing on a second physical device and after a true reinstall.
 
 Local mode stores data only in the current browser. Users should connect a cloud account or export a backup before clearing browser storage or changing devices.
