@@ -3679,6 +3679,18 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
     <symbol id="gn-check" viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7"></path></symbol>
     <symbol id="gn-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"></path></symbol>
     <symbol id="gn-percent" viewBox="0 0 24 24"><path d="M6 18L18 6"></path><circle cx="7.5" cy="7.5" r="2"></circle><circle cx="16.5" cy="16.5" r="2"></circle></symbol>
+    <symbol id="gn-data-packet" viewBox="0 0 24 24">
+      <rect x="4" y="5" width="11" height="14" rx="1.5"></rect><path d="M7 9h5M7 12h5M7 15h3M17 9v10M14 16l3 3 3-3"></path>
+    </symbol>
+    <symbol id="gn-archive-core" viewBox="0 0 24 24">
+      <path d="M5 8h14v11H5zM4 5h16v3H4z"></path><path d="M9 12h6M12 12v4M10 14l2 2 2-2"></path>
+    </symbol>
+    <symbol id="gn-reboot-cycle" viewBox="0 0 24 24">
+      <path d="M18.5 8A7.5 7.5 0 0 0 6 6.5L4 8.5M5.5 16A7.5 7.5 0 0 0 18 17.5l2-2"></path><path d="M4 4.5v4h4M20 19.5v-4h-4"></path><circle cx="12" cy="12" r="2"></circle>
+    </symbol>
+    <symbol id="gn-disconnect-node" viewBox="0 0 24 24">
+      <circle cx="8" cy="12" r="3"></circle><path d="M11 12h8M16 9l3 3-3 3M5 5v3M5 16v3"></path>
+    </symbol>
   </defs>
 </svg>
 
@@ -3792,7 +3804,9 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 
 <!-- â•â•â•â•â•â•â•â• BOOT â•â•â•â•â•â•â•â• -->
 <div class="screen" id="boot">
-  <div class="boot-b2b-stack" aria-label="GRID//NODE startup">
+  <div class="boot-command-deck" role="status" aria-live="polite" aria-label="GRID//NODE Personal Biotech Operating System initialization">
+    <div class="boot-deck-kicker"><span>PERSONAL BIOTECH OPERATING SYSTEM</span><b>INITIALIZING</b></div>
+    <div class="boot-b2b-stack" aria-label="GRID//NODE startup">
     <div class="boot-b2b-symbol-wrap"><svg class="gn-b2b-symbol" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="GRID//NODE B2-B primary color symbol" focusable="false" aria-hidden="false">
   <title>GRID//NODE B2-B primary color symbol</title>
   <circle cx="610.0" cy="585.0" r="58.0" fill="#FF2D55"/>
@@ -3810,7 +3824,9 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
   <div class="boot-terminal boot-hud-startup" id="bootTerm"></div>
   <div class="boot-prog-wrap">
     <div class="boot-prog-track" id="bootBar"><div class="boot-prog-fill"><div class="boot-prog-seg"></div><div class="boot-prog-seg"></div><div class="boot-prog-seg"></div><div class="boot-prog-seg"></div><div class="boot-prog-seg"></div><div class="boot-prog-seg"></div><div class="boot-prog-seg"></div><div class="boot-prog-seg"></div><div class="boot-prog-seg"></div><div class="boot-prog-seg"></div></div></div>
-    <div class="boot-prog-pct" id="bootPct">&gt; Preparing protocol workspace</div>
+    <div class="boot-prog-pct" id="bootPct">000% // PERSONAL BIOTECH OS</div>
+  </div>
+    <div class="boot-deck-footer"><span>LOCAL-FIRST DATA CORE</span><i></i><span>OPERATOR SESSION</span></div>
   </div>
 </div>
 
@@ -4584,20 +4600,20 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
   <!-- SECTION: DATA -->
   <div style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:#484860;letter-spacing:3px;margin-bottom:10px">// DATA</div>
   <div style="background:#0e0e16;border:1px solid rgba(255,255,255,0.07);border-radius:8px;overflow:hidden;margin-bottom:20px">
-    <div onclick="exportCSV()" style="display:flex;align-items:center;justify-content:space-between;padding:16px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.05);transition:background 0.2s" onmouseover="this.style.background='#121218'" onmouseout="this.style.background='transparent'">
+    <button type="button" class="gn-utility-row" onclick="exportCSV()">
       <div style="display:flex;align-items:center;gap:12px">
-        <span style="font-size:1.1rem">📤</span>
+        <span class="gn-icon gn-icon-sm gn-utility-icon"><svg><use href="#gn-data-packet"></use></svg></span>
         <span style="font-family:'Rajdhani',sans-serif;font-size:1rem;color:#eeeef5">Export CSV</span>
       </div>
-      <span style="color:#484860;font-size:1rem">›</span>
-    </div>
-    <div onclick="exportBackup()" style="display:flex;align-items:center;justify-content:space-between;padding:16px;cursor:pointer;transition:background 0.2s" onmouseover="this.style.background='#121218'" onmouseout="this.style.background='transparent'">
+      <span class="gn-utility-chevron">›</span>
+    </button>
+    <button type="button" class="gn-utility-row" onclick="exportBackup()">
       <div style="display:flex;align-items:center;gap:12px">
-        <span style="font-size:1.1rem">💾</span>
+        <span class="gn-icon gn-icon-sm gn-utility-icon"><svg><use href="#gn-archive-core"></use></svg></span>
         <span style="font-family:'Rajdhani',sans-serif;font-size:1rem;color:#eeeef5">Export Backup</span>
       </div>
-      <span style="color:#484860;font-size:1rem">›</span>
-    </div>
+      <span class="gn-utility-chevron">›</span>
+    </button>
   </div>
 
   <!-- SECTION: APP -->
@@ -4607,25 +4623,25 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
       <span style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:#484860;letter-spacing:2px">VERSION</span>
       <span style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:#303048;letter-spacing:2px">v2.0.0-stable</span>
     </div>
-    <div onclick="window.location.reload()" style="display:flex;align-items:center;justify-content:space-between;padding:16px;cursor:pointer;transition:background 0.2s" onmouseover="this.style.background='#121218'" onmouseout="this.style.background='transparent'">
+    <button type="button" class="gn-utility-row" onclick="window.location.reload()">
       <div style="display:flex;align-items:center;gap:12px">
-        <span style="font-size:1.1rem">🔄</span>
+        <span class="gn-icon gn-icon-sm gn-utility-icon"><svg><use href="#gn-reboot-cycle"></use></svg></span>
         <span style="font-family:'Rajdhani',sans-serif;font-size:1rem;color:#eeeef5">Reload App</span>
       </div>
-      <span style="color:#484860;font-size:1rem">›</span>
-    </div>
+      <span class="gn-utility-chevron">›</span>
+    </button>
   </div>
 
   <!-- SECTION: ACCOUNT -->
   <div style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:#484860;letter-spacing:3px;margin-bottom:10px">// ACCOUNT</div>
   <div style="background:#0e0e16;border:1px solid rgba(255,255,255,0.07);border-radius:8px;overflow:hidden;margin-bottom:40px">
-    <div onclick="openSignOutModal()" style="display:flex;align-items:center;justify-content:space-between;padding:16px;cursor:pointer;transition:background 0.2s" onmouseover="this.style.background='#121218'" onmouseout="this.style.background='transparent'">
+    <button type="button" class="gn-utility-row gn-utility-row-danger" onclick="openSignOutModal()">
       <div style="display:flex;align-items:center;gap:12px">
-        <span style="font-size:1.1rem">💪</span>
+        <span class="gn-icon gn-icon-sm gn-utility-icon"><svg><use href="#gn-disconnect-node"></use></svg></span>
         <span style="font-family:'Rajdhani',sans-serif;font-size:1rem;color:#ff3355;font-weight:600">Sign Out</span>
       </div>
-      <span style="color:#ff3355;font-size:1rem">›</span>
-    </div>
+      <span class="gn-utility-chevron">›</span>
+    </button>
   </div>
       </div><!-- /youSeg-vault -->
     </div></div><!-- /scroll-body -->
@@ -9165,6 +9181,43 @@ body.gn-log-shot-picker-open .fab{
 .gn-syr-inscale > *{font-family:var(--font-m);font-size:.62rem;font-weight:700;color:rgba(220,245,255,.92);letter-spacing:.3px;font-variant-numeric:tabular-nums;text-shadow:0 0 4px rgba(0,229,255,.55),0 1px 2px rgba(0,0,0,.6);line-height:1;padding-bottom:1px;width:auto !important;height:auto !important;background:transparent !important;border:none !important;display:flex;align-items:center;justify-content:center}
 .gn-syr-inscale > *:first-child{justify-self:start;margin-left:2px;color:#fff;text-shadow:0 0 6px rgba(0,229,255,.85),0 1px 2px rgba(0,0,0,.7)}
 .gn-syr-inscale > *:last-child{justify-self:end;margin-right:2px;color:#fff;text-shadow:0 0 6px rgba(0,229,255,.85),0 1px 2px rgba(0,0,0,.7)}
+</style>
+
+<!-- GRID//NODE visual consistency + operator polish v1 -->
+<style id="gn-visual-consistency-operator-polish-v1">
+#boot{min-height:100dvh !important;height:100dvh !important;align-items:center !important;justify-content:center !important;padding:calc(18px + var(--safe-top)) 14px calc(18px + var(--safe-bottom)) !important;gap:0 !important;background:radial-gradient(circle at 50% 28%,rgba(0,230,240,.14),transparent 34%),radial-gradient(circle at 82% 78%,rgba(255,45,85,.055),transparent 28%),linear-gradient(180deg,#050a0e 0%,#04060a 58%,#020204 100%) !important}
+#boot::before{inset:12px !important;border:1px solid rgba(0,230,240,.09) !important;border-radius:18px !important;background:linear-gradient(180deg,rgba(0,230,240,.025),transparent 32%) !important;box-shadow:inset 0 0 56px rgba(0,230,240,.025) !important}
+#boot::after{content:"" !important;inset:0 !important;background:repeating-linear-gradient(0deg,rgba(255,255,255,.014) 0 1px,transparent 1px 5px) !important;opacity:.4 !important}
+.boot-command-deck{position:relative;width:min(440px,calc(100vw - 28px));max-height:calc(100dvh - var(--safe-top) - var(--safe-bottom) - 28px);display:flex;flex-direction:column;align-items:stretch;gap:12px;padding:19px;overflow:hidden;border:1px solid rgba(0,230,240,.22);border-top-color:rgba(0,230,240,.54);border-bottom-color:rgba(255,45,85,.20);border-radius:16px;background:linear-gradient(135deg,rgba(0,230,240,.055),transparent 30%,transparent 75%,rgba(255,45,85,.025)),rgba(4,8,13,.92);box-shadow:0 26px 76px rgba(0,0,0,.58),0 0 38px rgba(0,230,240,.075),inset 0 0 0 1px rgba(255,255,255,.025)}
+.boot-command-deck::before{content:"";position:absolute;left:0;right:0;top:-36%;height:32%;background:linear-gradient(180deg,transparent,rgba(0,230,240,.07),transparent);animation:gnDeckSweep 2.6s ease-in-out infinite;pointer-events:none}
+@keyframes gnDeckSweep{0%{transform:translateY(0)}72%,100%{transform:translateY(440%)}}
+.boot-deck-kicker{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:9px;border-bottom:1px solid rgba(0,230,240,.13);font-family:var(--font-m);font-size:.53rem;line-height:1.3;letter-spacing:1.45px;color:#93b5c0}
+.boot-deck-kicker b{font-weight:400;color:#ffd166;text-shadow:0 0 10px rgba(255,209,102,.22)}
+#boot .boot-b2b-stack{width:100% !important;margin:0 !important;padding:4px 0 7px !important;gap:5px !important;border:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;backdrop-filter:none !important}
+#boot .boot-b2b-stack::before,#boot .boot-b2b-stack::after{display:none !important}
+#boot .boot-b2b-symbol-wrap{width:78px !important;height:78px !important;border-radius:18px !important;border-color:rgba(0,230,240,.22) !important;background:radial-gradient(circle,rgba(0,230,240,.12),rgba(0,0,0,.18) 66%) !important}
+#boot .boot-b2b-symbol-wrap .gn-b2b-symbol{width:59px !important;max-height:59px !important}
+#boot .boot-b2b-wordmark-wrap{width:min(278px,78vw) !important}
+#boot .boot-slogan{font-size:.91rem !important;color:#d3e3e9 !important;letter-spacing:1.35px !important}
+#boot .boot-terminal.boot-hud-startup{width:100% !important;max-width:none !important;min-height:126px !important;max-height:126px !important;margin:0 !important;padding:13px 14px !important;border:1px solid rgba(0,230,240,.16) !important;border-left:2px solid rgba(0,230,240,.48) !important;border-radius:8px !important;background:linear-gradient(180deg,rgba(0,230,240,.045),rgba(0,0,0,.22)),rgba(2,7,11,.82) !important;box-shadow:inset 0 0 24px rgba(0,230,240,.025) !important;overflow:auto !important;scrollbar-width:none}
+#boot .boot-terminal.boot-hud-startup::-webkit-scrollbar{display:none}
+#boot .boot-line{font-size:.65rem !important;line-height:1.5 !important;letter-spacing:.2px;color:#9bb8c2}
+#boot .boot-line.info{color:#a7dce5}#boot .boot-line.warn{color:#ffd166}#boot .boot-line.ok{color:#77f2b5}
+#boot .boot-prog-wrap{width:100% !important;max-width:none !important;margin:0 !important;padding:11px 12px 10px !important;border:1px solid rgba(255,209,102,.15) !important;border-radius:8px !important;background:rgba(0,0,0,.22) !important;box-shadow:inset 0 0 18px rgba(255,209,102,.025) !important}
+#boot .boot-prog-track{height:13px !important;border:1px solid rgba(255,209,102,.38) !important;border-radius:2px !important;background:rgba(255,209,102,.045) !important;padding:2px !important}
+#boot .boot-prog-pct{margin-top:7px !important;font-size:.56rem !important;letter-spacing:1.55px !important;color:#d9c88f !important;text-shadow:none !important}
+.boot-deck-footer{display:flex;align-items:center;gap:9px;font-family:var(--font-m);font-size:.48rem;letter-spacing:1.25px;color:#718e99;white-space:nowrap}
+.boot-deck-footer i{height:1px;flex:1;background:linear-gradient(90deg,rgba(0,230,240,.28),rgba(255,45,85,.18))}
+.gn-utility-row{width:100%;min-height:56px;display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border:0;border-bottom:1px solid rgba(255,255,255,.05);background:transparent;color:#eeeef5;text-align:left;cursor:pointer;transition:background .18s ease,border-color .18s ease}
+.gn-utility-row:last-child{border-bottom:0}.gn-utility-row:hover,.gn-utility-row:active{background:linear-gradient(90deg,rgba(0,230,240,.07),rgba(0,230,240,.015))}
+.gn-utility-row:focus-visible{outline:1px solid rgba(0,230,240,.68);outline-offset:-2px;background:rgba(0,230,240,.06)}
+.gn-utility-icon{flex:0 0 32px;width:32px;height:32px;padding:5px;color:#74eaf4;border:1px solid rgba(0,230,240,.22);border-radius:7px;background:rgba(0,230,240,.045);filter:drop-shadow(0 0 7px rgba(0,230,240,.16))}
+.gn-utility-chevron{color:#66808b;font-size:1rem;line-height:1}
+.gn-utility-row-danger .gn-utility-icon,.gn-utility-row-danger .gn-utility-chevron{color:#ff6684;border-color:rgba(255,51,85,.28);background:rgba(255,51,85,.05);filter:drop-shadow(0 0 7px rgba(255,51,85,.15))}
+.gn-utility-row-danger:hover,.gn-utility-row-danger:active{background:linear-gradient(90deg,rgba(255,51,85,.075),rgba(255,51,85,.012))}
+@media(max-width:430px){.boot-command-deck{width:calc(100vw - 24px);padding:15px;gap:9px;border-radius:14px}.boot-deck-kicker{font-size:.47rem;letter-spacing:1.05px}#boot .boot-b2b-symbol-wrap{width:66px !important;height:66px !important;border-radius:15px !important}#boot .boot-b2b-symbol-wrap .gn-b2b-symbol{width:50px !important;max-height:50px !important}#boot .boot-b2b-wordmark-wrap{width:min(248px,72vw) !important}#boot .boot-terminal.boot-hud-startup{min-height:116px !important;max-height:116px !important;padding:11px 12px !important}.boot-deck-footer{font-size:.43rem;letter-spacing:.85px;gap:7px}}
+@media(max-height:700px){.boot-command-deck{padding:12px;gap:7px}.boot-deck-kicker{padding-bottom:6px}#boot .boot-b2b-stack{padding:0 0 3px !important}#boot .boot-b2b-symbol-wrap{width:52px !important;height:52px !important}#boot .boot-b2b-symbol-wrap .gn-b2b-symbol{width:40px !important;max-height:40px !important}#boot .boot-slogan{font-size:.76rem !important}#boot .boot-terminal.boot-hud-startup{min-height:102px !important;max-height:102px !important}}
+@media(prefers-reduced-motion:reduce){.boot-command-deck::before,#boot .boot-b2b-symbol,#boot .boot-b2b-symbol-wrap::after{animation:none !important}}
 </style>
 
 <script src="./js/gridnode-bundle.js" defer></script>
