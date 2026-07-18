@@ -5,13 +5,15 @@
 import {
   APP_VERSION, state, S, activateSession, clearSession, localSession,
   restoreLocalSession, migrateLegacyLocalData, getCloudSession, getCloudClient,
-  signInCloud, signUpCloud, signInWithGoogle, signOutCloud, hydrateCloudData,
-  queueCloudSync, getAllShots, getWeights, loadCloudLibrary
+  signInCloud, signUpCloud, resetPasswordCloud, updateCloudPassword, signInWithGoogle, signOutCloud, hydrateCloudData,
+  captureWorkspace, workspaceHasData, restoreWorkspace, localWorkspaceMigrationAllowed,
+  markLocalWorkspaceMigrated, syncAllCloudData, loadCloudLibrary
 } from './gridnode-core.js';
 import * as modules from './gridnode-modules.js';
 
 let bootRunning = false;
 let authMode = 'signin';
+let passwordRecoveryActive = false;
 
 const $ = id => document.getElementById(id);
 
@@ -63,24 +65,24 @@ function injectStableStyles() {
 function authShell() {
   const login = $('login');
   if (!login) return;
+  const recovering = authMode === 'recovery';
   login.innerHTML = `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:0"><div class="gn-auth-card">
     <div class="gn-auth-kicker">// PERSONAL BIOTECH OPERATING SYSTEM //</div>
-    <div class="gn-auth-title">JACK IN</div>
-    <p class="gn-auth-copy">Use a cloud account when you want recovery across devices. Local session keeps your record on this device.</p>
+    <div class="gn-auth-title">${recovering ? 'RESET ACCESS' : 'JACK IN'}</div>
+    <p class="gn-auth-copy">${recovering ? 'Enter a new password for this GRID//NODE cloud account.' : 'Use a cloud account when you want recovery across devices. Local session keeps your record on this device.'}</p>
     <form id="gnAuthForm" novalidate>
-      <input class="gn-auth-field" id="gnAuthEmail" type="email" autocomplete="email" placeholder="EMAIL ADDRESS" aria-label="Email address">
-      <input class="gn-auth-field" id="gnAuthPassword" type="password" autocomplete="current-password" placeholder="PASSWORD" aria-label="Password">
-      <button class="gn-auth-primary" id="gnAuthSubmit" type="submit">SIGN IN TO CLOUD</button>
+      <input class="gn-auth-field" id="gnAuthEmail" type="email" autocomplete="email" placeholder="EMAIL ADDRESS" aria-label="Email address"${recovering ? ' hidden' : ''}>
+      <input class="gn-auth-field" id="gnAuthPassword" type="password" autocomplete="${recovering ? 'new-password' : 'current-password'}" placeholder="${recovering ? 'NEW PASSWORD' : 'PASSWORD'}" aria-label="${recovering ? 'New password' : 'Password'}">
+      <button class="gn-auth-primary" id="gnAuthSubmit" type="submit">${recovering ? 'UPDATE PASSWORD' : 'SIGN IN TO CLOUD'}</button>
     </form>
-    <div class="gn-auth-links"><button class="gn-auth-link" id="gnAuthModeToggle" type="button">CREATE ACCOUNT</button><button class="gn-auth-link" id="gnAuthReset" type="button">RESET PASSWORD</button></div>
-    <button class="gn-auth-google" id="loginGoogleBtn" type="button">CONTINUE WITH GOOGLE</button>
-    <button class="gn-auth-secondary" id="gnLocalBtn" type="button">CONTINUE LOCALLY</button>
+    <div class="gn-auth-links"><button class="gn-auth-link" id="gnAuthModeToggle" type="button">${recovering ? 'BACK TO SIGN IN' : 'CREATE ACCOUNT'}</button>${recovering ? '' : '<button class="gn-auth-link" id="gnAuthReset" type="button">RESET PASSWORD</button>'}</div>
+    ${recovering ? '' : '<button class="gn-auth-google" id="loginGoogleBtn" type="button">CONTINUE WITH GOOGLE</button><button class="gn-auth-secondary" id="gnLocalBtn" type="button">CONTINUE LOCALLY</button>'}
     <div class="gn-auth-message" id="loginMsg" role="status" aria-live="polite"></div>
     <div class="gn-auth-note">// VAULT POLICY: YOUR RECORD STAYS LOCAL UNTIL YOU CONNECT A CLOUD ACCOUNT // GRID//NODE DOES NOT PROVIDE MEDICAL ADVICE //</div>
   </div></div>`;
   $('gnAuthForm')?.addEventListener('submit', event => { event.preventDefault(); submitAuth(); });
   $('gnAuthModeToggle')?.addEventListener('click', toggleAuthMode);
-  $('gnAuthReset')?.addEventListener('click', () => setAuthMessage('Password recovery requires a connected cloud account. Use your provider recovery flow.', false));
+  $('gnAuthReset')?.addEventListener('click', requestPasswordReset);
   $('loginGoogleBtn')?.addEventListener('click', handleGoogleSignIn);
   $('gnLocalBtn')?.addEventListener('click', enterLocalSession);
   updateAuthMode();
@@ -88,20 +90,38 @@ function authShell() {
 
 function updateAuthMode() {
   const submit = $('gnAuthSubmit'), toggle = $('gnAuthModeToggle');
-  if (submit) submit.textContent = authMode === 'signin' ? 'SIGN IN TO CLOUD' : 'CREATE CLOUD ACCOUNT';
+  if (submit) submit.textContent = authMode === 'recovery' ? 'UPDATE PASSWORD' : authMode === 'signin' ? 'SIGN IN TO CLOUD' : 'CREATE CLOUD ACCOUNT';
   if (toggle) toggle.textContent = authMode === 'signin' ? 'CREATE ACCOUNT' : 'BACK TO SIGN IN';
 }
-function toggleAuthMode() { authMode = authMode === 'signin' ? 'signup' : 'signin'; updateAuthMode(); setAuthMessage('', false); }
+function toggleAuthMode() { if (authMode === 'recovery') { passwordRecoveryActive = false; authMode = 'signin'; authShell(); return; } authMode = authMode === 'signin' ? 'signup' : 'signin'; updateAuthMode(); setAuthMessage('', false); }
 function setAuthMessage(message, error = false) { const element = $('loginMsg'); if (element) { element.textContent = message; element.style.color = error ? '#ff5577' : '#8295a0'; } }
+
+async function requestPasswordReset() {
+  const email = $('gnAuthEmail')?.value?.trim();
+  if (!email || !email.includes('@')) { setAuthMessage('// ENTER YOUR ACCOUNT EMAIL FIRST', true); return; }
+  const button = $('gnAuthReset'); if (button) button.disabled = true;
+  try {
+    await resetPasswordCloud(email);
+    setAuthMessage('// RECOVERY LINK SENT — CHECK YOUR EMAIL', false);
+  } catch (error) {
+    setAuthMessage(error.message === 'CLOUD_UNAVAILABLE' ? '// CLOUD RECOVERY UNAVAILABLE — RETRY WHEN ONLINE' : `// RECOVERY ERROR: ${error.message || 'TRY AGAIN'}`, true);
+  } finally { if (button) button.disabled = false; }
+}
 
 async function submitAuth() {
   const email = $('gnAuthEmail')?.value?.trim();
   const password = $('gnAuthPassword')?.value || '';
-  if (!email || !email.includes('@')) { setAuthMessage('// ENTER A VALID EMAIL ADDRESS', true); return; }
-  if (password.length < 6) { setAuthMessage('// PASSWORD MUST BE AT LEAST 6 CHARACTERS', true); return; }
+  if (authMode !== 'recovery' && (!email || !email.includes('@'))) { setAuthMessage('// ENTER A VALID EMAIL ADDRESS', true); return; }
+  if (password.length < 8) { setAuthMessage('// PASSWORD MUST BE AT LEAST 8 CHARACTERS', true); return; }
   const submit = $('gnAuthSubmit'); if (submit) { submit.disabled = true; submit.textContent = 'CONNECTING...'; }
   try {
-    if (authMode === 'signup') {
+    if (authMode === 'recovery') {
+      await updateCloudPassword(password);
+      passwordRecoveryActive = false;
+      const session = await getCloudSession();
+      if (!session) throw new Error('RECOVERY_SESSION_EXPIRED');
+      await completeCloudSession(session);
+    } else if (authMode === 'signup') {
       const result = await signUpCloud(email, password);
       if (result?.session) { await completeCloudSession(result.session); } else { setAuthMessage('// ACCOUNT CREATED — CHECK YOUR EMAIL TO CONFIRM', false); }
     } else {
@@ -129,10 +149,29 @@ function enterLocalSession() {
 }
 
 async function completeCloudSession(session) {
+  migrateLegacyLocalData();
+  const targetUserId = session?.user?.id ? String(session.user.id) : '';
+  const mayMigrateLocal = state.accountKey === 'local' && localWorkspaceMigrationAllowed(targetUserId);
+  const localWorkspace = mayMigrateLocal ? captureWorkspace('local') : null;
   activateSession(session, true);
-  await hydrateCloudData();
-  getAllShots().forEach(record => queueCloudSync('shot', record));
-  getWeights().forEach(record => queueCloudSync('weight', record));
+  const accountWorkspace = captureWorkspace(state.accountKey);
+  const hydration = await hydrateCloudData();
+  if (hydration.ok && localWorkspace && workspaceHasData(localWorkspace) && !workspaceHasData(accountWorkspace)) {
+    const remote = hydration.remote || {};
+    const migration = { ...localWorkspace };
+    if (remote.shots) migration.shots = [];
+    if (remote.weights) migration.weights = [];
+    if (remote.profile) migration.profile = {};
+    if (remote.workspace) {
+      migration.results = []; migration.notes = []; migration.symptoms = []; migration.labs = [];
+      migration.preferences = {}; migration.settings = {}; migration.arsenal = []; migration.selectedLocation = '';
+    }
+    restoreWorkspace(migration, { onlyEmpty: true });
+  }
+  await syncAllCloudData();
+  if (hydration.ok && localWorkspace && workspaceHasData(localWorkspace) && state.cloudStatus === 'CLOUD_SYNCED') {
+    markLocalWorkspaceMigrated(targetUserId);
+  }
   showApp();
 }
 
@@ -186,11 +225,23 @@ export async function confirmSignOut() {
 }
 
 async function restoreSession() {
+  if (passwordRecoveryActive) { authShell(); modules.showScreen('login'); return; }
   const local = restoreLocalSession();
   if (local) { migrateLegacyLocalData(); activateSession(local, false); showApp(); }
   else modules.showScreen('landing');
   const cloud = await getCloudSession();
-  if (cloud) await completeCloudSession(cloud);
+  if (cloud && !passwordRecoveryActive) await completeCloudSession(cloud);
+}
+
+async function wireCloudAuthEvents() {
+  const client = await getCloudClient();
+  client?.auth?.onAuthStateChange((event) => {
+    if (event !== 'PASSWORD_RECOVERY') return;
+    passwordRecoveryActive = true;
+    authMode = 'recovery';
+    authShell();
+    modules.showScreen('login');
+  });
 }
 
 function wireGlobalEvents() {
@@ -202,7 +253,7 @@ function wireGlobalEvents() {
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   navigator.serviceWorker
-    .register('/sw.js?v=20260718.4', { updateViaCache: 'none' })
+    .register('/sw.js?v=20260718.6', { updateViaCache: 'none' })
     .then(registration => registration.update())
     .catch(() => {});
 }
@@ -211,7 +262,7 @@ window.GN = {
   version: APP_VERSION,
   state,
   S,
-  async syncNow() { await Promise.all([getCloudClient(), hydrateCloudData()]); modules.refreshAll(); },
+  async syncNow() { await getCloudClient(); await hydrateCloudData(); await syncAllCloudData(); modules.refreshAll(); },
   signOut: confirmSignOut,
   localMode: enterLocalSession
 };
@@ -227,7 +278,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.confirmSignOut = confirmSignOut;
   wireGlobalEvents();
   registerServiceWorker();
+  await wireCloudAuthEvents();
   await restoreSession();
   // Load the cloud library in the background so the local-first boot is immediate.
   loadCloudLibrary().catch(() => null);
 });
+

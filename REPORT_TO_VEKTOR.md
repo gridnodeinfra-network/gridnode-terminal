@@ -1,264 +1,175 @@
-# GRID//NODE — Stabilization Report for VEKTOR
+# GRID//NODE — Release Report for VEKTOR
 
 **Date:** 2026-07-18  
-**Project:** GRID//NODE  
-**Build:** v2.0.0-stable  
-**Status:** Production deployed and verified on Cloudflare Pages and the custom domain.
+**Build:** v2.0.1-stable / shell `20260718.11`  
+**Production:** `https://gridnode.network/`  
+**Cloudflare Pages:** `https://gridnode.pages.dev/`  
+**Immutable deployment:** `https://c55e96ec.gridnode.pages.dev/`  
+**Status:** Deployed, HTTP 200, production smoke-tested, and real-account cloud recovery verified.
 
 ## 1. Final recommendation
 
-Use the current modular static build as the next web MVP baseline.
+Use v2.0.1-stable as the controlled real-user web MVP baseline.
 
-The build is ready for controlled real-user testing in local-first mode. Do not expand the feature set until real users have tested the core tracking flow and feedback has been collected.
+The core journey is operational: public entry, boot/authentication, local or cloud session, protocol entry, SHOT logging, history, Phase Engine, RESULTS, refresh persistence, and account-scoped cloud recovery. Keep the next phase focused on founder mobile QA and a small real-user cohort. Do not begin native applications until evidence from the web product identifies the right priorities.
 
-Recommended sequence:
+## 2. Architecture
 
-1. Deploy the static build.
-2. Run founder Android/mobile QA on the deployed HTTPS URL.
-3. Invite a small group of real users.
-4. Collect feedback and usage data.
-5. Stabilize based on evidence before considering native apps.
+The unstable single-file runtime was consolidated into one source of truth:
 
-## 2. What changed
+- `index.html` preserves the approved GRID//NODE interface and embedded visual system.
+- `js/gridnode-core.js` owns state, account namespaces, local persistence, authentication, Supabase access, synchronization, and tombstones.
+- `js/gridnode-modules.js` owns SHOTS, scanner/location behavior, Phase Engine, RESULTS, LAB, VAULT utilities, and navigation.
+- `js/gridnode-app.js` owns boot, public/private shell state, auth orchestration, recovery handling, and compatibility bridges.
+- `js/gridnode-bundle.js` is generated from those modules and is the only browser runtime loaded by `index.html`.
+- `supabase/schema.sql` is the idempotent schema/RLS source of truth.
+- `sw.js` uses an update-safe shell cache with a versioned runtime URL.
 
-The original production source was a large single HTML file with duplicated inline JavaScript, multiple boot paths, session-dependent storage access, and conflicting authentication behavior.
+The application remains a static web app. No native conversion and no unnecessary framework were introduced.
 
-The working build now uses:
+## 3. Fixed systems
 
-- `index.html` for the preserved GRID//NODE interface and visual identity.
-- `js/gridnode-core.js` for state, storage, sessions, and optional cloud sync.
-- `js/gridnode-modules.js` for SHOTS, Phase Engine, RESULTS, LAB, VAULT, and navigation.
-- `js/gridnode-app.js` for boot, authentication shell, compatibility bridges, and orchestration.
-- `js/gridnode-bundle.js` as the deployable browser runtime.
+### Core and UX boundary
 
-`index.html` loads one consolidated runtime bundle instead of executing the previous duplicated JavaScript architecture.
-
-## 3. Systems fixed
-
-### Core
-
-- Landing page to boot/auth flow.
-- Local session entry without requiring cloud authentication.
-- Account-scoped local persistence.
-- Refresh recovery.
-- Main navigation across HOME, SHOTS, RESULTS, LAB, and YOU/VAULT.
-- Mobile layout and interaction pass.
+- Unified boot and initialization path.
+- Reliable local and cloud session handling.
+- Account-scoped storage keys and consolidated state access.
+- Public landing, boot, and auth hide all private navigation and SHOT controls.
+- Entering local mode or cloud authentication reveals the private operating environment.
+- Signing out immediately restores the public boundary.
+- Purpose-built SVG operator icons replaced emoji-style utility icons.
+- Consistent error, success, empty-state, and educational wording.
 
 ### SHOTS
 
-- Scanner zone selection.
-- Medication category selection.
-- Dose entry.
-- Date and time handling.
-- Required-field validation.
-- SHOT history rendering.
-- SHOT editing.
-- Archive confirmation.
-- Archive restore.
-- Compatibility migration for older saved location strings.
+- Scanner/location selection and selected-location source of truth.
+- SHOT draft survives a scanner detour.
+- Medication, dose, date/time, weight, symptom, and note logging.
+- History rendering, edit, archive, archived view, restore, and permanent-delete cloud tombstones.
+- Editing a SHOT-linked weight updates the existing record instead of duplicating it.
 
 ### Phase Engine
 
-- Uses the latest active logged SHOT.
-- Calculates time since the latest SHOT.
-- Displays educational cycle phase visibility.
-- Shows estimated next-shot timing based on the existing reference cadence.
-- Preserves educational and non-medical language.
+- Uses the latest active SHOT and protocol history.
+- Calculates time since the latest record and educational cycle position.
+- Updates from `NO DATA` to a phase after a SHOT is logged.
+- Uses an event → rise → peak → decay educational curve.
+- Clearly states that the curve is relative, estimated, and not a measured medication level or dosing guide.
 
-### RESULTS
+### RESULTS, LAB, NODE, and VAULT
 
-- Weight record entry.
-- Weight history display.
-- Trend summary.
-- Phase Engine source context.
-- SHOT continuity context.
-- Fixed an HTML rendering bug that displayed literal `<span>` markup in the current-weight result.
+- Weight history, current result, trend context, and symptom/side-effect organization.
+- Fixed literal HTML appearing in the side-effect trend.
+- LAB DRAW/MIX/STOCK navigation and U-100 unit math remain operational.
+- NODE remains a data-grounded pattern-awareness layer with no medical recommendations.
+- CSV export, backup export/import foundation, reload, and sign-out controls.
+- Backup/cloud workspace coverage includes results, notes, symptoms, labs, preferences, settings, arsenal, and selected location.
 
-### LAB
+### Cloud and privacy
 
-- U-100 syringe math.
-- Dose/concentration calculation.
-- Educational calculator output.
-- Preserved safety boundaries and non-recommendation language.
+- Supabase email/password login and refreshed sessions work with real QA accounts.
+- Cloud tables: `profiles`, `shots`, `weights`, and `workspaces`.
+- Workspace synchronization covers results, notes, symptoms, labs, preferences, settings, arsenal, and selected location.
+- RLS is enabled on all user-data tables.
+- Ownership policies use `auth.uid()` and anonymous table privileges are revoked.
+- Fixed a critical first-login migration bug that could copy one account's browser-local data into another account. Local migration is now bound to one cloud owner.
+- Verified account A data did not appear in clean account C.
 
-### VAULT / Profile
+## 4. Verified QA evidence
 
-- Local-only status visibility.
-- Profile information surface.
-- CSV export.
-- Backup export.
-- Branded sign-out confirmation.
-- Local data retained after sign-out and re-entry.
+### Functional/mobile test
 
-### Reliability / compatibility
+The final application source was exercised at a 390 × 844 mobile viewport:
 
-- Safe storage reads before session initialization.
-- Legacy local storage fallback.
-- Legacy mojibake text normalization for existing saved records.
-- Fixed medication accordion behavior.
-- Repaired visible text encoding in the active interface.
+- Landing → boot → auth → local entry.
+- No bottom navigation or floating SHOT action before private entry.
+- HOME, SHOTS, TRENDS, LAB, and YOU.
+- Scanner detour with unfinished form preservation.
+- SHOT creation with Mounjaro 2.5 mg, location, 200 lb weight, nausea, and a note.
+- SHOT history, edit prefill, linked-weight update without duplication, archive, restore.
+- Phase Engine changed to `ONSET`.
+- RESULTS displayed weight and side-effect trend correctly.
+- LAB DRAW/MIX/STOCK and 2.5 mg at 5 mg/mL → 50.0 U calculation.
+- Refresh persistence.
+- No horizontal overflow in the tested mobile viewport.
 
-## 4. QA evidence
+### Production verification
 
-The build was tested locally through a browser against the static HTTP server.
+- Cloudflare upload completed successfully: six static files plus `_headers`.
+- `https://gridnode.network/` returned HTTP 200.
+- Production returned `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, the restricted permissions policy, and the configured referrer policy.
+- Public landing contained no private navigation or floating SHOT action.
+- Boot/auth contained no private navigation or floating SHOT action.
+- A separate browser environment signed into cloud QA account A and recovered:
+  - last SHOT: July 18;
+  - next estimated SHOT: July 25;
+  - phase: `ONSET`;
+  - weight: 200.0 lb;
+  - VAULT state: `CLOUD_SYNCED`.
+- Refresh retained the cloud session and recovered records.
+- Production HOME, SHOTS, TRENDS, LAB, and YOU navigation all passed.
+- The generated JavaScript bundle passed Node syntax validation.
 
-Verified flows:
+The founder's laptop screenshot was a cropped excerpt. A full 1110 × 456 laptop reproduction showed no corresponding layout shift; no speculative CSS change was made from the crop.
 
-- Landing → GET STARTED → authentication screen.
-- Authentication screen → CONTINUE LOCALLY.
-- Scanner zone selection.
-- Saved a SHOT using Zepbound, 2.5 mg, and Right Abdomen — Upper.
-- Confirmed SHOT history record appeared.
-- Confirmed Phase Engine changed to `ONSET`.
-- Confirmed estimated next-shot date appeared.
-- Edited the SHOT form.
-- Archived the SHOT.
-- Restored the SHOT.
-- Logged a 180.0 lb weight record.
-- Confirmed RESULTS displayed the weight record.
-- Confirmed RESULTS displayed PHASE ENGINE SOURCE.
-- Tested HOME, SHOTS, RESULTS, LAB, and YOU navigation.
-- Refreshed the page and confirmed SHOT, weight, and Phase Engine state remained.
-- Signed out and re-entered local mode.
-- Confirmed saved data remained after re-entry.
-- Tested at a 390 × 844 mobile viewport.
-- Confirmed mobile SHOTS and LAB surfaces loaded.
-- Confirmed no browser console errors during the tested flows.
-- Confirmed `js/gridnode-bundle.js` passed Node syntax validation.
+## 5. Remaining limitations
 
-## 5. Known limitations
-
-### Cloud authentication and sync
-
-The Supabase adapter is implemented, but the following still require production verification:
-
-- Real email/password signup.
-- Real email/password login.
-- Google OAuth redirect flow.
-- Password recovery email.
-- Cloud table schema.
-- Row-level security policies.
-- Cross-device recovery.
-- Reinstall recovery.
-
-These require a real test account, final HTTPS deployment URL, and correctly configured Supabase Auth settings.
-
-### Local mode boundary
-
-Local mode persists data in the browser on the current device. It cannot recover data after browser storage is cleared, device loss, or reinstall unless the user connects a working cloud account or exports a backup.
-
-### Source cleanup
-
-The active JavaScript architecture is modular and consolidated. The original visual CSS remains embedded inside the preserved HTML shell to reduce visual regression risk during stabilization.
+- Google OAuth is still disabled because a Google OAuth client ID and secret have not been created/configured.
+- Confirmation-email signup has not been completed through a real email inbox.
+- Password-recovery delivery and callback have not been completed through a real email inbox.
+- Cross-browser cloud recovery is verified. A true second physical-device/reinstall test remains founder QA.
+- Local mode cannot recover after browser storage is cleared unless the user previously exported a backup or connected a cloud account.
+- Notes and symptoms are currently captured through SHOTS; LAB data has cloud storage foundation, but dedicated longitudinal record-entry UX can be expanded only after real-user evidence.
+- The preserved visual CSS remains embedded in `index.html` to avoid destabilizing the approved interface during emergency stabilization.
 
 ## 6. Deployment instructions
 
-Upload the following to any static host:
+Build:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build-bundle.ps1
+node --check .\js\gridnode-bundle.js
+```
+
+Stage only:
 
 - `index.html`
 - `sw.js`
-- the complete `js/` folder
+- `_headers`
+- complete `js/` folder
 
-Deployment settings:
+Deploy:
 
-- Build command: none.
-- Publish directory: the folder containing `index.html`.
-- Entry point: `index.html`.
-- HTTPS: required for production auth and reliable browser behavior.
+```powershell
+wrangler pages deploy .\deploy-gridnode-stable --project-name=gridnode --branch=main
+```
 
-After deployment:
+Then verify the immutable deployment URL, `gridnode.pages.dev`, and `gridnode.network` with a unique `?qa=` query to bypass old client caches.
 
-1. Open the HTTPS URL on Android Chrome.
-2. Complete the mobile QA checklist.
-3. Test the deployed local-first flow.
-4. Configure Supabase redirect URLs for the final domain.
-5. Verify cloud signup/login with a real test account.
-6. Verify RLS before allowing real cloud data.
+## 7. What to keep
 
-## 7. Files for VEKTOR
+- GRID//NODE identity and cyberpunk biotech command-center language.
+- SHOTS as the primary action.
+- Phase Engine as the reactor core and differentiator.
+- RESULTS, LAB, NODE, and VAULT as one connected system.
+- Local-first ownership plus optional cloud recovery.
+- Tracking/education boundary with no diagnosis, treatment, or dosing recommendations.
+- Web-first sequence: product → users → evidence → native apps.
 
-- `index.html` — deployable application shell.
-- `js/gridnode-bundle.js` — deployable runtime bundle.
-- `js/gridnode-core.js` — storage/session/cloud source module.
-- `js/gridnode-modules.js` — product systems source module.
-- `js/gridnode-app.js` — application orchestration source module.
-- `sw.js` — cache-safe service worker and offline fallback.
-- `README.md` — beginner-safe deployment and QA notes.
-- `REPORT_TO_VEKTOR.md` — this handoff report.
+## 8. What to reject
 
-## 8. What to keep
-
-- GRID//NODE branding and cyberpunk biotech identity.
-- SHOTS as the primary tracking flow.
-- Phase Engine as the central differentiator.
-- RESULTS, LAB, NODE, and VAULT concepts.
-- Local-first data ownership.
-- Educational/non-medical safety boundary.
-- Existing mobile-first interaction model.
-
-## 9. What to reject
-
-- Removing major systems to hide bugs.
-- Reintroducing duplicated boot or storage logic.
+- Reintroducing duplicated storage, boot, or authentication paths.
+- Hiding defects by removing major systems.
 - Making cloud authentication mandatory for first use.
-- Adding dosing, treatment, diagnosis, or medical recommendation behavior.
-- Building native apps before real web-user feedback exists.
-- Adding features without evidence of user value.
+- Medical recommendation, sourcing, treatment, or dosing behavior.
+- Feature expansion before founder mobile QA and real-user evidence.
+- Native development before the web experience proves retention and product value.
 
-## 10. Exact next prompt for VEKTOR
+## 9. Exact next prompt for VEKTOR
 
-> Review the live GRID//NODE stable build at `https://gridnode.network/` and the current `main` branch. Do not redesign the brand or add features. First verify Android/mobile boot, local session entry, SHOT logging, scanner location selection, SHOT history, RESULTS weight tracking, refresh persistence, archive/restore, LAB navigation, and VAULT export. Then configure and test Supabase Auth, table access, RLS, and cross-device recovery using a dedicated test account. Report every failure with reproduction steps and the exact file/function involved.
+> Review GRID//NODE v2.0.1-stable at `https://gridnode.network/?qa=20260718.11` and the `main` branch of `gridnodeinfra-network/gridnode-terminal`. Do not redesign or add features. Run founder Android QA for landing, boot, auth boundary, local entry, cloud login, scanner draft preservation, SHOT create/edit/archive/restore, Phase Engine, RESULTS, LAB, VAULT export/import, refresh, sign-out, and cloud recovery. Report only reproducible failures with the exact screen, action, expected result, actual result, and relevant file/function. Separately complete real-inbox confirmation signup, password recovery, and Google OAuth configuration/testing.
 
+## 10. B12 / b12.io contamination scan
 
-## 11. Deployment and final polish status — 2026-07-18
+No b12.io service, content, code, account, or data transfer was used. No B12 / b12.io contamination was found in this release workflow.
 
-- GitHub repository: `gridnodeinfra-network/gridnode-terminal`.
-- Stabilized build merged to `main` in commit `b5ac4c40292f0ff80c3eab062efecff2af1d1412`.
-- Cloudflare Pages project: existing `gridnode` production project.
-- Production deployment completed from the approved upload containing `index.html` and the complete `js/` folder.
-- Cloudflare reported production URL: `https://gridnode.pages.dev`.
-- Custom domain verification: `https://gridnode.network/` serves `js/gridnode-bundle.js`, the local-first landing copy, the auth screen, and the app shell.
-- Final polish pass corrected public wording so LAB and NODE are described as shipped systems, and the local-first/cloud-recovery model is stated consistently.
-- Live smoke verification reached boot, auth, local entry, and the full primary app surface with no browser console errors observed.
-- `https://www.gridnode.network/` and the old preview URL should be checked separately before treating those aliases as equivalent.
-- Supabase cloud signup/login, OAuth, RLS, and cross-device recovery still require dedicated real-account QA.
-
-
-## 12. Public/private boundary and visual consistency release
-
-Production release completed on 2026-07-18.
-
-### Fixed
-
-- Landing, boot, and authentication now hide bottom navigation, SHOTS navigation, the floating SHOT action, and private app controls.
-- Signing in, creating an account, or choosing `CONTINUE LOCALLY` activates the private GRID//NODE shell.
-- Sign-out immediately returns to the public landing state and hides private controls again.
-- Boot is now one centered Personal Biotech Operating System command deck with clear system-progress messaging.
-- The progress rail reports the active subsystem and visibly advances through segmented states.
-- Export CSV, Export Backup, Reload App, and Sign Out now use one custom GRID//NODE SVG operator-glyph system instead of emoji.
-- Utility rows are real keyboard-focusable buttons with visible focus treatment.
-- Missing-SHOT validation now names the required information instead of showing a generic error.
-- Weight-save feedback now uses the same sentence-case language as the rest of the app.
-- The production runtime URL is versioned and `sw.js` now uses a network-first update strategy so existing PWA users are not stranded on an old shell after deployment.
-
-### Production QA passed
-
-- Public landing, boot, auth, local entry, sign-out, and local re-entry.
-- 390 × 844 mobile viewport with no horizontal overflow.
-- HOME, SHOTS, TRENDS, LAB, and YOU navigation.
-- SHOT creation with medication, dose, date/time, scanner location, weight, side effect, and notes.
-- SHOT history, edit prefill, archive, and restore.
-- Phase Engine response from no data to `ONSET` with educational-estimate language.
-- RESULTS weight data.
-- Refresh persistence and sign-out/re-entry data recovery in local mode.
-- No browser console errors or warnings during the final production checks.
-- Node syntax validation for the modular source and deployable bundle.
-
-### Deployment truth
-
-- GitHub: `gridnodeinfra-network/gridnode-terminal`, branch `main`.
-- Cloudflare Pages project: `gridnode`.
-- Production: `https://gridnode.pages.dev/`.
-- Custom domain: `https://gridnode.network/`.
-- Cloud account signup/login, OAuth redirects, RLS, cross-device recovery, and reinstall recovery remain the only major launch systems that still require dedicated real-account QA.
-- Direct custom-domain verification returned HTTP 200 for the versioned HTML runtime and the cache-safe JavaScript service worker.

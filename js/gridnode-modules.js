@@ -5,7 +5,7 @@
 import {
   APP_VERSION, S, state, getProfile, getShots, getAllShots, getWeights, normalizeLegacyText,
   createId, safeText, formatDate, formatDateTime, normalizeDateInput,
-  todayISO, downloadFile, queueCloudSync, sessionLabel
+  todayISO, downloadFile, queueCloudSync, deleteCloudShot, sessionLabel
 } from './gridnode-core.js';
 
 const $ = id => document.getElementById(id);
@@ -22,6 +22,7 @@ export const moduleState = {
   pendingArchiveId: null,
   pendingPermanentDeleteId: null,
   pendingFutureShot: false,
+  pendingLocationDraft: false,
   pendingImport: null,
   meridiem: new Date().getHours() >= 12 ? 'PM' : 'AM',
   weightUnit: 'lb',
@@ -82,6 +83,7 @@ function showToast(message, isError = false) {
   clearTimeout(toast._timer);
   toast._timer = setTimeout(() => toast.classList.remove('active'), 2800);
 }
+
 function setPrivateShell(active) {
   document.body?.classList.toggle('gn-private-active', active);
   qa('.bottom-nav, .fab').forEach(control => {
@@ -269,6 +271,7 @@ function renderDashboard() {
   setText('s6Avg', weeklyAverage === null ? '—' : `${weeklyAverage} lb/wk`);
   setText('s6Goal', goalGap === null ? '—' : `${Math.max(0, goalGap).toFixed(1)} lb`);
   const phase = renderPhase(lastShot, shots);
+  renderProtocolCurve(shots, phase);
   setText('tk1', lastShot ? formatDate(lastShot.date, { month: 'short', day: 'numeric' }) : '—');
   setText('tk1b', lastShot ? formatDate(lastShot.date, { month: 'short', day: 'numeric' }) : '—');
   setText('tk2', next ? formatDate(next, { month: 'short', day: 'numeric' }) : '—');
@@ -380,6 +383,7 @@ export function setScannerMode(mode, button) {
 export function selectScannerLocation(label) {
   moduleState.selectedLocation = label;
   S.set('selectedLocation', label);
+  queueCloudSync('workspace');
   renderScanner();
   showToast(`Location staged: ${label}`);
 }
@@ -403,7 +407,9 @@ export function renderScanner() {
 export function openLogModal(options = {}) {
   const modal = $('logOv');
   if (!modal) return;
-  if (!options.preserve) {
+  const preserveDraft = Boolean(options.preserve || moduleState.pendingLocationDraft);
+  moduleState.pendingLocationDraft = false;
+  if (!preserveDraft) {
     moduleState.editingShotId = null;
     document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode('LOG SHOT'));
     setTodayDefaults();
@@ -421,6 +427,7 @@ export function openLogModal(options = {}) {
 
 export function closeLog() {
   $('logOv')?.classList.remove('active');
+  moduleState.pendingLocationDraft = false;
   moduleState.editingShotId = null;
 }
 
@@ -474,13 +481,15 @@ export function restoreArchivedShot(id) {
 
 export function openPermanentDeleteConfirm(id) { moduleState.pendingPermanentDeleteId = id; $('permanentDeleteConfirmOv')?.classList.add('active'); }
 export function cancelPermanentDeleteShot() { moduleState.pendingPermanentDeleteId = null; $('permanentDeleteConfirmOv')?.classList.remove('active'); }
-export function confirmPermanentDeleteShot() {
+export async function confirmPermanentDeleteShot() {
   const id = moduleState.pendingPermanentDeleteId;
   cancelPermanentDeleteShot();
+  const record = getAllShots().find(item => item.id === id);
   const next = getAllShots().filter(item => item.id !== id);
   S.set('shots', next);
   refreshAll();
-  showToast('Archived record deleted.');
+  const cloudDeleted = await deleteCloudShot(record);
+  showToast(cloudDeleted ? 'Archived record deleted.' : 'Deleted locally. Cloud deletion queued for retry.');
 }
 
 export function saveShot(allowFuture = false) {
@@ -507,8 +516,17 @@ export function saveShot(allowFuture = false) {
   queueCloudSync('shot', record);
   if (record.wt) {
     const weights = getWeights();
-    const weightRecord = { id: createId('weight'), date: record.date, weight: record.wt, notes: 'Logged with SHOT' };
-    weights.push(weightRecord); S.set('weights', weights); queueCloudSync('weight', weightRecord);
+    const linkedIndex = weights.findIndex(item => item.shotId === record.id || (
+      existing && !item.shotId && item.notes === 'Logged with SHOT'
+      && item.date === existing.date && Number(item.weight) === Number(existing.wt)
+    ));
+    const linkedWeight = linkedIndex >= 0 ? weights[linkedIndex] : null;
+    const weightRecord = {
+      ...(linkedWeight || {}), id: linkedWeight?.id || createId('weight'), shotId: record.id,
+      date: record.date, weight: record.wt, notes: 'Logged with SHOT'
+    };
+    if (linkedIndex >= 0) weights[linkedIndex] = weightRecord; else weights.push(weightRecord);
+    S.set('weights', weights); queueCloudSync('weight', weightRecord);
   }
   moduleState.pendingFutureShot = false;
   $('futureTimestampConfirm')?.classList.remove('active');
@@ -524,7 +542,8 @@ export function confirmFutureTimestampSave() { $('futureTimestampConfirm')?.clas
 
 export function handleShotFab() { openLogModal(); }
 export function goToScannerForLocationFromLog() {
-  closeLog();
+  moduleState.pendingLocationDraft = true;
+  $('logOv')?.classList.remove('active');
   showPage('Log', $('navLog'));
   document.querySelector('.gn-stable-zone-picker')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   showToast('Select a trackable zone, then open LOG SHOT again.');
@@ -605,7 +624,12 @@ function renderPhaseSource(shot) {
 function renderTrendLists(shots) {
   const effects = shots.flatMap(item => item.se || []);
   setDisplay('sideEffectTrendEmpty', !effects.length); setDisplay('sideEffectTrendLive', Boolean(effects.length));
-  setText('sideEffectTrendLive', effects.length ? effects.slice(-6).reverse().map(effect => `<div class="results-list-row"><b>${safeText(effect)}</b><span>logged observation</span></div>`).join('') : '');
+  const sideEffectTrend = $('sideEffectTrendLive');
+  if (sideEffectTrend) {
+    sideEffectTrend.innerHTML = effects.length
+      ? effects.slice(-6).reverse().map(effect => `<div class="results-list-row"><b>${safeText(effect)}</b><span>logged observation</span></div>`).join('')
+      : '';
+  }
   setDisplay('appetiteTrendEmpty', true); setDisplay('energyTrendEmpty', true);
 }
 
@@ -623,6 +647,46 @@ function drawCanvasChart(canvas, values, color) {
   context.strokeStyle = color; context.shadowColor = color; context.shadowBlur = 8; context.lineWidth = 2; context.beginPath();
   values.forEach((value, index) => { const x = values.length === 1 ? width / 2 : (index / (values.length - 1)) * (width - 16) + 8; const y = height - 12 - ((value - min) / span) * (height - 28); if (index === 0) context.moveTo(x, y); else context.lineTo(x, y); });
   context.stroke(); context.shadowBlur = 0;
+}
+
+function renderProtocolCurve(shots, phase) {
+  const canvas = $('medChart');
+  const readout = $('medLvlVal');
+  if (!shots.length) {
+    if (readout) {
+      const detail = document.createElement('span');
+      detail.textContent = 'log a shot to begin';
+      readout.replaceChildren(document.createTextNode('—'), detail);
+    }
+    const context = canvas?.getContext('2d');
+    if (context) context.clearRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
+
+  if (readout) {
+    const detail = document.createElement('span');
+    detail.textContent = 'relative cycle model · not a measured level';
+    readout.replaceChildren(document.createTextNode(phase?.name || 'ACTIVE'), detail);
+  }
+
+  const now = Date.now();
+  const rangeDays = { '2w': 14, '1m': 30, '3m': 90 }[moduleState.medRange]
+    || Math.max(30, Math.ceil((now - new Date(shots[0].date).getTime()) / 86400000));
+  const start = now - rangeDays * 86400000;
+  const end = now + 7 * 86400000;
+  const pointCount = 96;
+  const values = Array.from({ length: pointCount }, (_, index) => {
+    const pointTime = start + ((end - start) * index / (pointCount - 1));
+    return shots.reduce((total, shot) => {
+      const elapsed = (pointTime - new Date(shot.date).getTime()) / 86400000;
+      if (!Number.isFinite(elapsed) || elapsed < 0) return total;
+      const relative = elapsed <= 0.75
+        ? Math.max(0.04, elapsed / 0.75)
+        : Math.exp(-0.28 * (elapsed - 0.75));
+      return total + relative;
+    }, 0);
+  });
+  drawCanvasChart(canvas, values, phase?.color || '#00d4ff');
 }
 
 export function setRange(button, range) { moduleState.medRange = range; qa('#pageDash .time-tab').forEach(item => item.classList.toggle('active', item === button)); renderDashboard(); }
@@ -682,7 +746,7 @@ export function exportCSV() {
 function csvCell(value) { const text = String(value ?? ''); return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text; }
 
 export function exportBackup() {
-  const backup = { app: 'GRID//NODE', version: APP_VERSION, exportedAt: new Date().toISOString(), profile: getProfile(), shots: getAllShots(), weights: getWeights(), settings: S.get('settings', {}), arsenal: S.get('arsenal', []) };
+  const backup = { app: 'GRID//NODE', version: APP_VERSION, exportedAt: new Date().toISOString(), profile: getProfile(), shots: getAllShots(), weights: getWeights(), results: S.get('results', []), notes: S.get('notes', []), symptoms: S.get('symptoms', []), labs: S.get('labs', []), preferences: S.get('preferences', {}), settings: S.get('settings', {}), arsenal: S.get('arsenal', []) };
   downloadFile('gridnode-backup.json', JSON.stringify(backup, null, 2), 'application/json');
   showToast('VAULT backup prepared.');
 }
@@ -729,10 +793,10 @@ export function calDayClick(day) { moduleState.selectedCalendarDay = day; render
 
 export function openArsenalMod(type = 'compound', editId = null) { moduleState.arsenalEditId = editId; $('arsTitle')?.replaceChildren(document.createTextNode(editId ? 'EDIT CONTEXT' : 'ADD CONTEXT')); $('arsOv')?.classList.add('active'); }
 export function closeArs() { $('arsOv')?.classList.remove('active'); moduleState.arsenalEditId = null; }
-export function saveArs() { const items = S.get('arsenal', []); const record = { id: moduleState.arsenalEditId || createId('context'), name: $('aName')?.value?.trim(), concentration: Number($('aConc')?.value) || null, volume: Number($('aVol')?.value) || null, quantity: Number($('aQty')?.value) || 1, reviewDate: $('aExpiry')?.value || '' }; if (!record.name) { showToast('Enter a context name.', true); return; } const index = items.findIndex(item => item.id === record.id); if (index >= 0) items[index] = record; else items.push(record); S.set('arsenal', items); closeArs(); showToast('VAULT context saved.'); }
+export function saveArs() { const items = S.get('arsenal', []); const record = { id: moduleState.arsenalEditId || createId('context'), name: $('aName')?.value?.trim(), concentration: Number($('aConc')?.value) || null, volume: Number($('aVol')?.value) || null, quantity: Number($('aQty')?.value) || 1, reviewDate: $('aExpiry')?.value || '' }; if (!record.name) { showToast('Enter a context name.', true); return; } const index = items.findIndex(item => item.id === record.id); if (index >= 0) items[index] = record; else items.push(record); S.set('arsenal', items); queueCloudSync('workspace'); closeArs(); showToast('VAULT context saved.'); }
 export function requestLoadoutRemove(id) { moduleState.pendingArsenalId = id; $('loadoutRemoveOverlay')?.classList.add('active'); }
 export function cancelLoadoutRemove() { moduleState.pendingArsenalId = null; $('loadoutRemoveOverlay')?.classList.remove('active'); }
-export function confirmLoadoutRemove() { const next = S.get('arsenal', []).filter(item => item.id !== moduleState.pendingArsenalId); S.set('arsenal', next); cancelLoadoutRemove(); showToast('Context removed.'); }
+export function confirmLoadoutRemove() { const next = S.get('arsenal', []).filter(item => item.id !== moduleState.pendingArsenalId); S.set('arsenal', next); queueCloudSync('workspace'); cancelLoadoutRemove(); showToast('Context removed.'); }
 
 export function toggleSound() { window.GN_SOUND_ON = window.GN_SOUND_ON === false; const button = $('sndBtn'); if (button) button.style.opacity = window.GN_SOUND_ON ? '1' : '.4'; }
 
@@ -783,3 +847,4 @@ export function initModules() {
   setTodayDefaults();
   renderScanner();
 }
+

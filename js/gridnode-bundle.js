@@ -1,14 +1,15 @@
 /* GRID//NODE stable classic delivery bundle. Source remains modular in gridnode-core.js, gridnode-modules.js, and gridnode-app.js. */
+
 /* GRID//NODE stable core
  * State, local persistence, session handling, and optional Supabase sync.
  * No UI code belongs in this file.
  */
 
-const APP_VERSION = '2.0.0-stable';
+const APP_VERSION = '2.0.1-stable';
 
 const CLOUD_CONFIG = Object.freeze({
-  url: 'https://pjcnmejgjgbsgjhgwncw.supabase.co',
-  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqY25tZWpnamdic2dqaGd3bmN3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NDM0OTUsImV4cCI6MjA5NzMxOTQ5NX0.10DFzo00M38yQMlrW4IIdOCUC-4JEBffPd1RpqKWmhw'
+  url: 'https://quwbmhxgteyykujydvii.supabase.co',
+  anonKey: 'sb_publishable_rWPuL8wGfe2zok4cYNENng_L6n2Qttu'
 });
 
 const state = {
@@ -21,7 +22,9 @@ const state = {
 };
 
 const SESSION_KEY = 'gn_session_v2';
+const LOCAL_CLOUD_OWNER_KEY = 'gn_local_cloud_owner_v1';
 const LEGACY_ACCOUNT_KEYS = ['0', 'local'];
+const WORKSPACE_KEYS = ['profile', 'shots', 'weights', 'results', 'notes', 'symptoms', 'labs', 'preferences', 'settings', 'arsenal', 'selectedLocation', 'cloudDeletes'];
 
 function jsonParse(raw, fallback) {
   if (raw == null) return fallback;
@@ -58,6 +61,7 @@ function accountStorageKey(key) {
 }
 
 function legacyStorageKeys(key) {
+  if (state.accountKey !== 'local') return [];
   return LEGACY_ACCOUNT_KEYS
     .filter(accountKey => accountKey !== state.accountKey)
     .map(accountKey => `gn_${accountKey}_${key}`);
@@ -107,14 +111,67 @@ function normalizeLegacyText(value) {
     .replace(/\u00c2\u00b7/g, '\u00b7')
     .replace(/\u00e2\u2020\u2019/g, '\u2192');
 }
+
 function normalizeShotRecord(record) {
   if (!record || typeof record !== 'object') return record;
-  return { ...record, med: normalizeLegacyText(record.med), site: normalizeLegacyText(record.site), notes: normalizeLegacyText(record.notes) };
+  return {
+    ...record,
+    med: normalizeLegacyText(record.med),
+    site: normalizeLegacyText(record.site),
+    notes: normalizeLegacyText(record.notes)
+  };
 }
+
 function getProfile() { return S.get('profile', {}); }
 function getShots() { return S.get('shots', []).filter(record => !record.archived).map(normalizeShotRecord); }
 function getAllShots() { return S.get('shots', []).map(normalizeShotRecord); }
 function getWeights() { return S.get('weights', []); }
+
+function readAccountValue(accountKey, key, fallback) {
+  try { return jsonParse(localStorage.getItem(`gn_${accountKey}_${key}`), fallback); } catch { return fallback; }
+}
+
+function captureWorkspace(accountKey = state.accountKey) {
+  return Object.fromEntries(WORKSPACE_KEYS.map(key => [key, readAccountValue(accountKey, key, key === 'profile' || key === 'preferences' || key === 'settings' ? {} : key === 'selectedLocation' ? '' : [])]));
+}
+
+function workspaceHasData(snapshot) {
+  if (!snapshot) return false;
+  return WORKSPACE_KEYS.some(key => {
+    if (key === 'cloudDeletes') return false;
+    const value = snapshot[key];
+    if (Array.isArray(value)) return value.length > 0;
+    if (value && typeof value === 'object') return Object.keys(value).length > 0;
+    return Boolean(value);
+  });
+}
+
+function localWorkspaceMigrationAllowed(userId) {
+  if (!userId) return false;
+  try {
+    const owner = localStorage.getItem(LOCAL_CLOUD_OWNER_KEY);
+    return !owner || owner === String(userId);
+  } catch { return false; }
+}
+
+function markLocalWorkspaceMigrated(userId) {
+  if (!userId) return false;
+  try {
+    localStorage.setItem(LOCAL_CLOUD_OWNER_KEY, String(userId));
+    return true;
+  } catch { return false; }
+}
+
+function restoreWorkspace(snapshot, { onlyEmpty = true } = {}) {
+  if (!snapshot) return;
+  for (const key of WORKSPACE_KEYS) {
+    if (key === 'cloudDeletes') continue;
+    const value = snapshot[key];
+    const hasValue = Array.isArray(value) ? value.length > 0 : value && typeof value === 'object' ? Object.keys(value).length > 0 : Boolean(value);
+    if (!hasValue || (onlyEmpty && S.has(key))) continue;
+    S.set(key, value);
+  }
+}
 
 function localSession() {
   return {
@@ -236,6 +293,24 @@ async function signUpCloud(email, password) {
   return data || null;
 }
 
+async function resetPasswordCloud(email) {
+  const client = await getCloudClient();
+  if (!client) throw new Error('CLOUD_UNAVAILABLE');
+  const { error } = await withTimeout(client.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/`
+  }), 8000);
+  if (error) throw error;
+  return true;
+}
+
+async function updateCloudPassword(password) {
+  const client = await getCloudClient();
+  if (!client) throw new Error('CLOUD_UNAVAILABLE');
+  const { data, error } = await withTimeout(client.auth.updateUser({ password }), 8000);
+  if (error) throw error;
+  return data?.user || null;
+}
+
 async function signInWithGoogle() {
   const client = await getCloudClient();
   if (!client) throw new Error('CLOUD_UNAVAILABLE');
@@ -260,6 +335,7 @@ function cloudShotPayload(record, userId) {
     dose_mg: Number(record.dose) || 0,
     site: record.site || null,
     notes: record.notes || null,
+    side_effects: Array.isArray(record.se) ? record.se : [],
     archived: Boolean(record.archived)
   };
   if (record.cloudId) payload.id = record.cloudId;
@@ -328,6 +404,7 @@ async function syncProfile(profile) {
       weight_unit: profile.weightUnit || 'lbs',
       height_unit: 'ft/in',
       dose_mg: Number(profile.dose) || null,
+      profile_data: profile || {},
       updated_at: new Date().toISOString()
     }), 8000);
     if (error) throw error;
@@ -338,18 +415,77 @@ async function syncProfile(profile) {
   }
 }
 
+function workspacePayload(userId) {
+  const preferences = { ...S.get('preferences', {}) };
+  const selectedLocation = S.get('selectedLocation', '');
+  if (selectedLocation) preferences.selectedLocation = selectedLocation;
+  return {
+    user_id: userId,
+    results_data: S.get('results', []),
+    notes_data: S.get('notes', []),
+    symptoms_data: S.get('symptoms', []),
+    labs_data: S.get('labs', []),
+    preferences,
+    settings: S.get('settings', {}),
+    arsenal: S.get('arsenal', []),
+    updated_at: new Date().toISOString()
+  };
+}
+
+async function syncWorkspace() {
+  if (!state.cloud || !state.cloudClient || !state.session?.user?.id) return;
+  try {
+    const { error } = await withTimeout(state.cloudClient.from('workspaces').upsert(workspacePayload(state.session.user.id)), 8000);
+    if (error) throw error;
+    state.cloudStatus = 'CLOUD_SYNCED';
+  } catch (error) {
+    state.cloudStatus = 'LOCAL_BACKUP';
+    console.warn('[GRID//NODE cloud workspace sync]', error);
+  }
+}
+
+async function flushCloudDeletes() {
+  if (!state.cloud || !state.cloudClient || !state.session?.user?.id) return false;
+  const pending = S.get('cloudDeletes', []);
+  if (!pending.length) return true;
+  const remaining = [];
+  for (const item of pending) {
+    try {
+      const { error } = await withTimeout(state.cloudClient.from(item.table).delete().eq('id', item.id).eq('user_id', state.session.user.id), 8000);
+      if (error) throw error;
+    } catch (error) {
+      remaining.push(item);
+      console.warn('[GRID//NODE cloud delete]', error);
+    }
+  }
+  S.set('cloudDeletes', remaining);
+  state.cloudStatus = remaining.length ? 'LOCAL_BACKUP' : 'CLOUD_SYNCED';
+  return remaining.length === 0;
+}
+
+async function deleteCloudShot(record) {
+  if (!record?.cloudId) return true;
+  const pending = S.get('cloudDeletes', []);
+  if (!pending.some(item => item.table === 'shots' && item.id === record.cloudId)) pending.push({ table: 'shots', id: record.cloudId });
+  S.set('cloudDeletes', pending);
+  return flushCloudDeletes();
+}
+
 async function hydrateCloudData() {
   if (!state.cloud || !state.cloudClient || !state.session?.user?.id) return { ok: false, reason: 'LOCAL_ONLY' };
   try {
     const userId = state.session.user.id;
-    const [profileResult, shotsResult, weightsResult] = await Promise.all([
+    await flushCloudDeletes();
+    const [profileResult, shotsResult, weightsResult, workspaceResult] = await Promise.all([
       withTimeout(state.cloudClient.from('profiles').select('*').eq('id', userId).maybeSingle(), 8000),
       withTimeout(state.cloudClient.from('shots').select('*').eq('user_id', userId).order('date', { ascending: true }), 8000),
-      withTimeout(state.cloudClient.from('weights').select('*').eq('user_id', userId).order('date', { ascending: true }), 8000)
+      withTimeout(state.cloudClient.from('weights').select('*').eq('user_id', userId).order('date', { ascending: true }), 8000),
+      withTimeout(state.cloudClient.from('workspaces').select('*').eq('user_id', userId).maybeSingle(), 8000)
     ]);
     if (profileResult.error) throw profileResult.error;
     if (shotsResult.error) throw shotsResult.error;
     if (weightsResult.error) throw weightsResult.error;
+    if (workspaceResult.error) throw workspaceResult.error;
 
     const localShots = getAllShots();
     const cloudShots = (shotsResult.data || []).map(item => ({
@@ -360,6 +496,7 @@ async function hydrateCloudData() {
       dose: Number(item.dose_mg) || 0,
       site: item.site || '',
       notes: item.notes || null,
+      se: Array.isArray(item.side_effects) ? item.side_effects : [],
       archived: Boolean(item.archived),
       createdAt: item.created_at || item.date
     }));
@@ -381,12 +518,36 @@ async function hydrateCloudData() {
     const remoteProfile = profileResult.data;
     if (remoteProfile) {
       const profile = getProfile();
-      profile.name = profile.name || remoteProfile.display_name || '';
-      if (remoteProfile.dose_mg && !profile.dose) profile.dose = remoteProfile.dose_mg;
-      S.set('profile', profile);
+      const cloudProfile = remoteProfile.profile_data && typeof remoteProfile.profile_data === 'object' ? remoteProfile.profile_data : {};
+      const mergedProfile = { ...cloudProfile, ...profile };
+      mergedProfile.name = mergedProfile.name || remoteProfile.display_name || '';
+      if (remoteProfile.dose_mg && !mergedProfile.dose) mergedProfile.dose = remoteProfile.dose_mg;
+      S.set('profile', mergedProfile);
+    }
+
+    const remoteWorkspace = workspaceResult.data;
+    if (remoteWorkspace) {
+      S.set('results', mergeJsonRecords(S.get('results', []), remoteWorkspace.results_data || []));
+      S.set('notes', mergeJsonRecords(S.get('notes', []), remoteWorkspace.notes_data || []));
+      S.set('symptoms', mergeJsonRecords(S.get('symptoms', []), remoteWorkspace.symptoms_data || []));
+      S.set('labs', mergeJsonRecords(S.get('labs', []), remoteWorkspace.labs_data || []));
+      S.set('arsenal', mergeJsonRecords(S.get('arsenal', []), remoteWorkspace.arsenal || []));
+      const preferences = { ...(remoteWorkspace.preferences || {}), ...S.get('preferences', {}) };
+      const settings = { ...(remoteWorkspace.settings || {}), ...S.get('settings', {}) };
+      S.set('preferences', preferences);
+      S.set('settings', settings);
+      if (!S.get('selectedLocation', '') && preferences.selectedLocation) S.set('selectedLocation', preferences.selectedLocation);
     }
     state.cloudStatus = 'CLOUD_SYNCED';
-    return { ok: true };
+    return {
+      ok: true,
+      remote: {
+        shots: shotsResult.data?.length || 0,
+        weights: weightsResult.data?.length || 0,
+        profile: Boolean(profileResult.data),
+        workspace: Boolean(workspaceResult.data)
+      }
+    };
   } catch (error) {
     state.cloudStatus = 'LOCAL_BACKUP';
     console.warn('[GRID//NODE cloud hydrate]', error);
@@ -403,8 +564,25 @@ function mergeRecords(localRecords, remoteRecords, identity) {
   return merged.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
 }
 
+function mergeJsonRecords(localRecords, remoteRecords) {
+  const local = Array.isArray(localRecords) ? localRecords : [];
+  const remote = Array.isArray(remoteRecords) ? remoteRecords : [];
+  return mergeRecords(local, remote, record => record && typeof record === 'object' ? record.id || JSON.stringify(record) : String(record));
+}
+
+async function syncAllCloudData() {
+  if (!state.cloud) return;
+  await flushCloudDeletes();
+  await Promise.all([
+    ...getAllShots().map(record => syncShot(record)),
+    ...getWeights().map(record => syncWeight(record)),
+    syncProfile(getProfile()),
+    syncWorkspace()
+  ]);
+}
+
 function queueCloudSync(kind, record) {
-  const work = kind === 'shot' ? syncShot(record) : kind === 'weight' ? syncWeight(record) : syncProfile(record);
+  const work = kind === 'shot' ? syncShot(record) : kind === 'weight' ? syncWeight(record) : kind === 'profile' ? syncProfile(record) : syncWorkspace();
   work.catch(error => console.warn('[GRID//NODE cloud queue]', error));
 }
 
@@ -414,7 +592,7 @@ function sessionLabel() {
 
 function migrateLegacyLocalData() {
   if (state.accountKey !== 'local') return;
-  for (const key of ['profile', 'shots', 'weights', 'settings', 'arsenal']) {
+  for (const key of WORKSPACE_KEYS) {
     const current = localStorage.getItem(`gn_local_${key}`);
     if (current !== null) continue;
     const legacy = localStorage.getItem(`gn_0_${key}`);
@@ -477,6 +655,7 @@ const moduleState = {
   pendingArchiveId: null,
   pendingPermanentDeleteId: null,
   pendingFutureShot: false,
+  pendingLocationDraft: false,
   pendingImport: null,
   meridiem: new Date().getHours() >= 12 ? 'PM' : 'AM',
   weightUnit: 'lb',
@@ -537,6 +716,7 @@ function showToast(message, isError = false) {
   clearTimeout(toast._timer);
   toast._timer = setTimeout(() => toast.classList.remove('active'), 2800);
 }
+
 function setPrivateShell(active) {
   document.body?.classList.toggle('gn-private-active', active);
   qa('.bottom-nav, .fab').forEach(control => {
@@ -724,6 +904,7 @@ function renderDashboard() {
   setText('s6Avg', weeklyAverage === null ? '—' : `${weeklyAverage} lb/wk`);
   setText('s6Goal', goalGap === null ? '—' : `${Math.max(0, goalGap).toFixed(1)} lb`);
   const phase = renderPhase(lastShot, shots);
+  renderProtocolCurve(shots, phase);
   setText('tk1', lastShot ? formatDate(lastShot.date, { month: 'short', day: 'numeric' }) : '—');
   setText('tk1b', lastShot ? formatDate(lastShot.date, { month: 'short', day: 'numeric' }) : '—');
   setText('tk2', next ? formatDate(next, { month: 'short', day: 'numeric' }) : '—');
@@ -835,6 +1016,7 @@ function setScannerMode(mode, button) {
 function selectScannerLocation(label) {
   moduleState.selectedLocation = label;
   S.set('selectedLocation', label);
+  queueCloudSync('workspace');
   renderScanner();
   showToast(`Location staged: ${label}`);
 }
@@ -858,7 +1040,9 @@ function renderScanner() {
 function openLogModal(options = {}) {
   const modal = $('logOv');
   if (!modal) return;
-  if (!options.preserve) {
+  const preserveDraft = Boolean(options.preserve || moduleState.pendingLocationDraft);
+  moduleState.pendingLocationDraft = false;
+  if (!preserveDraft) {
     moduleState.editingShotId = null;
     document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode('LOG SHOT'));
     setTodayDefaults();
@@ -876,6 +1060,7 @@ function openLogModal(options = {}) {
 
 function closeLog() {
   $('logOv')?.classList.remove('active');
+  moduleState.pendingLocationDraft = false;
   moduleState.editingShotId = null;
 }
 
@@ -929,13 +1114,15 @@ function restoreArchivedShot(id) {
 
 function openPermanentDeleteConfirm(id) { moduleState.pendingPermanentDeleteId = id; $('permanentDeleteConfirmOv')?.classList.add('active'); }
 function cancelPermanentDeleteShot() { moduleState.pendingPermanentDeleteId = null; $('permanentDeleteConfirmOv')?.classList.remove('active'); }
-function confirmPermanentDeleteShot() {
+async function confirmPermanentDeleteShot() {
   const id = moduleState.pendingPermanentDeleteId;
   cancelPermanentDeleteShot();
+  const record = getAllShots().find(item => item.id === id);
   const next = getAllShots().filter(item => item.id !== id);
   S.set('shots', next);
   refreshAll();
-  showToast('Archived record deleted.');
+  const cloudDeleted = await deleteCloudShot(record);
+  showToast(cloudDeleted ? 'Archived record deleted.' : 'Deleted locally. Cloud deletion queued for retry.');
 }
 
 function saveShot(allowFuture = false) {
@@ -962,8 +1149,17 @@ function saveShot(allowFuture = false) {
   queueCloudSync('shot', record);
   if (record.wt) {
     const weights = getWeights();
-    const weightRecord = { id: createId('weight'), date: record.date, weight: record.wt, notes: 'Logged with SHOT' };
-    weights.push(weightRecord); S.set('weights', weights); queueCloudSync('weight', weightRecord);
+    const linkedIndex = weights.findIndex(item => item.shotId === record.id || (
+      existing && !item.shotId && item.notes === 'Logged with SHOT'
+      && item.date === existing.date && Number(item.weight) === Number(existing.wt)
+    ));
+    const linkedWeight = linkedIndex >= 0 ? weights[linkedIndex] : null;
+    const weightRecord = {
+      ...(linkedWeight || {}), id: linkedWeight?.id || createId('weight'), shotId: record.id,
+      date: record.date, weight: record.wt, notes: 'Logged with SHOT'
+    };
+    if (linkedIndex >= 0) weights[linkedIndex] = weightRecord; else weights.push(weightRecord);
+    S.set('weights', weights); queueCloudSync('weight', weightRecord);
   }
   moduleState.pendingFutureShot = false;
   $('futureTimestampConfirm')?.classList.remove('active');
@@ -979,7 +1175,8 @@ function confirmFutureTimestampSave() { $('futureTimestampConfirm')?.classList.r
 
 function handleShotFab() { openLogModal(); }
 function goToScannerForLocationFromLog() {
-  closeLog();
+  moduleState.pendingLocationDraft = true;
+  $('logOv')?.classList.remove('active');
   showPage('Log', $('navLog'));
   document.querySelector('.gn-stable-zone-picker')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   showToast('Select a trackable zone, then open LOG SHOT again.');
@@ -1060,7 +1257,12 @@ function renderPhaseSource(shot) {
 function renderTrendLists(shots) {
   const effects = shots.flatMap(item => item.se || []);
   setDisplay('sideEffectTrendEmpty', !effects.length); setDisplay('sideEffectTrendLive', Boolean(effects.length));
-  setText('sideEffectTrendLive', effects.length ? effects.slice(-6).reverse().map(effect => `<div class="results-list-row"><b>${safeText(effect)}</b><span>logged observation</span></div>`).join('') : '');
+  const sideEffectTrend = $('sideEffectTrendLive');
+  if (sideEffectTrend) {
+    sideEffectTrend.innerHTML = effects.length
+      ? effects.slice(-6).reverse().map(effect => `<div class="results-list-row"><b>${safeText(effect)}</b><span>logged observation</span></div>`).join('')
+      : '';
+  }
   setDisplay('appetiteTrendEmpty', true); setDisplay('energyTrendEmpty', true);
 }
 
@@ -1078,6 +1280,46 @@ function drawCanvasChart(canvas, values, color) {
   context.strokeStyle = color; context.shadowColor = color; context.shadowBlur = 8; context.lineWidth = 2; context.beginPath();
   values.forEach((value, index) => { const x = values.length === 1 ? width / 2 : (index / (values.length - 1)) * (width - 16) + 8; const y = height - 12 - ((value - min) / span) * (height - 28); if (index === 0) context.moveTo(x, y); else context.lineTo(x, y); });
   context.stroke(); context.shadowBlur = 0;
+}
+
+function renderProtocolCurve(shots, phase) {
+  const canvas = $('medChart');
+  const readout = $('medLvlVal');
+  if (!shots.length) {
+    if (readout) {
+      const detail = document.createElement('span');
+      detail.textContent = 'log a shot to begin';
+      readout.replaceChildren(document.createTextNode('—'), detail);
+    }
+    const context = canvas?.getContext('2d');
+    if (context) context.clearRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
+
+  if (readout) {
+    const detail = document.createElement('span');
+    detail.textContent = 'relative cycle model · not a measured level';
+    readout.replaceChildren(document.createTextNode(phase?.name || 'ACTIVE'), detail);
+  }
+
+  const now = Date.now();
+  const rangeDays = { '2w': 14, '1m': 30, '3m': 90 }[moduleState.medRange]
+    || Math.max(30, Math.ceil((now - new Date(shots[0].date).getTime()) / 86400000));
+  const start = now - rangeDays * 86400000;
+  const end = now + 7 * 86400000;
+  const pointCount = 96;
+  const values = Array.from({ length: pointCount }, (_, index) => {
+    const pointTime = start + ((end - start) * index / (pointCount - 1));
+    return shots.reduce((total, shot) => {
+      const elapsed = (pointTime - new Date(shot.date).getTime()) / 86400000;
+      if (!Number.isFinite(elapsed) || elapsed < 0) return total;
+      const relative = elapsed <= 0.75
+        ? Math.max(0.04, elapsed / 0.75)
+        : Math.exp(-0.28 * (elapsed - 0.75));
+      return total + relative;
+    }, 0);
+  });
+  drawCanvasChart(canvas, values, phase?.color || '#00d4ff');
 }
 
 function setRange(button, range) { moduleState.medRange = range; qa('#pageDash .time-tab').forEach(item => item.classList.toggle('active', item === button)); renderDashboard(); }
@@ -1131,13 +1373,13 @@ function exportCSV() {
   getAllShots().forEach(record => rows.push(['shot', record.date || '', record.med || '', record.dose || '', record.site || '', record.wt || '', (record.se || []).join('|'), record.notes || '', record.archived ? 'true' : 'false']));
   getWeights().forEach(record => rows.push(['weight', record.date || '', '', '', '', record.weight || '', '', record.notes || '', 'false']));
   downloadFile('gridnode-records.csv', rows.map(row => row.map(csvCell).join(',')).join('\n'), 'text/csv;charset=utf-8');
-  showToast('CSV prepared.');
+  showToast('CSV export prepared.');
 }
 
 function csvCell(value) { const text = String(value ?? ''); return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text; }
 
 function exportBackup() {
-  const backup = { app: 'GRID//NODE', version: APP_VERSION, exportedAt: new Date().toISOString(), profile: getProfile(), shots: getAllShots(), weights: getWeights(), settings: S.get('settings', {}), arsenal: S.get('arsenal', []) };
+  const backup = { app: 'GRID//NODE', version: APP_VERSION, exportedAt: new Date().toISOString(), profile: getProfile(), shots: getAllShots(), weights: getWeights(), results: S.get('results', []), notes: S.get('notes', []), symptoms: S.get('symptoms', []), labs: S.get('labs', []), preferences: S.get('preferences', {}), settings: S.get('settings', {}), arsenal: S.get('arsenal', []) };
   downloadFile('gridnode-backup.json', JSON.stringify(backup, null, 2), 'application/json');
   showToast('VAULT backup prepared.');
 }
@@ -1184,10 +1426,10 @@ function calDayClick(day) { moduleState.selectedCalendarDay = day; renderCalenda
 
 function openArsenalMod(type = 'compound', editId = null) { moduleState.arsenalEditId = editId; $('arsTitle')?.replaceChildren(document.createTextNode(editId ? 'EDIT CONTEXT' : 'ADD CONTEXT')); $('arsOv')?.classList.add('active'); }
 function closeArs() { $('arsOv')?.classList.remove('active'); moduleState.arsenalEditId = null; }
-function saveArs() { const items = S.get('arsenal', []); const record = { id: moduleState.arsenalEditId || createId('context'), name: $('aName')?.value?.trim(), concentration: Number($('aConc')?.value) || null, volume: Number($('aVol')?.value) || null, quantity: Number($('aQty')?.value) || 1, reviewDate: $('aExpiry')?.value || '' }; if (!record.name) { showToast('Enter a context name.', true); return; } const index = items.findIndex(item => item.id === record.id); if (index >= 0) items[index] = record; else items.push(record); S.set('arsenal', items); closeArs(); showToast('VAULT context saved.'); }
+function saveArs() { const items = S.get('arsenal', []); const record = { id: moduleState.arsenalEditId || createId('context'), name: $('aName')?.value?.trim(), concentration: Number($('aConc')?.value) || null, volume: Number($('aVol')?.value) || null, quantity: Number($('aQty')?.value) || 1, reviewDate: $('aExpiry')?.value || '' }; if (!record.name) { showToast('Enter a context name.', true); return; } const index = items.findIndex(item => item.id === record.id); if (index >= 0) items[index] = record; else items.push(record); S.set('arsenal', items); queueCloudSync('workspace'); closeArs(); showToast('VAULT context saved.'); }
 function requestLoadoutRemove(id) { moduleState.pendingArsenalId = id; $('loadoutRemoveOverlay')?.classList.add('active'); }
 function cancelLoadoutRemove() { moduleState.pendingArsenalId = null; $('loadoutRemoveOverlay')?.classList.remove('active'); }
-function confirmLoadoutRemove() { const next = S.get('arsenal', []).filter(item => item.id !== moduleState.pendingArsenalId); S.set('arsenal', next); cancelLoadoutRemove(); showToast('Context removed.'); }
+function confirmLoadoutRemove() { const next = S.get('arsenal', []).filter(item => item.id !== moduleState.pendingArsenalId); S.set('arsenal', next); queueCloudSync('workspace'); cancelLoadoutRemove(); showToast('Context removed.'); }
 
 function toggleSound() { window.GN_SOUND_ON = window.GN_SOUND_ON === false; const button = $('sndBtn'); if (button) button.style.opacity = window.GN_SOUND_ON ? '1' : '.4'; }
 
@@ -1207,7 +1449,15 @@ function gnSelectPickerDate(date) { if ($('sDate')) $('sDate').value = date; gnC
 function gnSetShotDateFromPicker() { gnCloseShotDatePicker(); }
 function gnSetShotDateValue(value) { if ($('sDate')) $('sDate').value = value; }
 function gnSetShotTimeValue(value) { if ($('sTime')) $('sTime').value = formatTime12(new Date(`2000-01-01T${value}`)); }
-function gnMedRevealGroup(dropId, group) { const drop = $(dropId); if (!drop) return; qa('[data-gn-med-options]', drop).forEach(block => { const isActive = block.dataset.gnMedOptions === group; block.classList.toggle('gn-revealed', isActive); block.style.display = ''; }); }
+function gnMedRevealGroup(dropId, group) {
+  const drop = $(dropId);
+  if (!drop) return;
+  qa('[data-gn-med-options]', drop).forEach(block => {
+    const isActive = block.dataset.gnMedOptions === group;
+    block.classList.toggle('gn-revealed', isActive);
+    block.style.display = '';
+  });
+}
 function updatePills() { const med = selectState.cpShotMed?.val; const dose = Number(getProfile().dose); const container = $('dosePills'); if (!container) return; const values = dose ? [dose] : [0.5, 1, 2.5, 5, 7.5, 10]; container.innerHTML = values.map(value => `<button type="button" class="dose-pill" data-dose="${value}">${value} mg</button>`).join(''); setText('profMedTxt', med ? `// ${med.toUpperCase()}` : '// NO MEDICATION SET'); }
 function selPill(button, dose) { if ($('sDose')) $('sDose').value = dose; qa('.dose-pill').forEach(item => item.classList.toggle('active', item === button)); }
 
@@ -1231,15 +1481,17 @@ function initModules() {
   renderScanner();
 }
 
-window.GNModules={showScreen:showScreen,showPage:showPage,refreshAll:refreshAll,loadApp:loadApp,showPhasesModal:showPhasesModal,closePhases:closePhases,openLogModal:openLogModal,closeLog:closeLog,saveShot:saveShot,editShot:editShot,handleShotFab:handleShotFab,openArchiveConfirm:openArchiveConfirm,cancelArchiveShot:cancelArchiveShot,confirmArchiveShot:confirmArchiveShot,restoreArchivedShot:restoreArchivedShot,openPermanentDeleteConfirm:openPermanentDeleteConfirm,cancelPermanentDeleteShot:cancelPermanentDeleteShot,confirmPermanentDeleteShot:confirmPermanentDeleteShot,openFutureTimestampConfirm:openFutureTimestampConfirm,closeFutureTimestampConfirm:closeFutureTimestampConfirm,cancelFutureTimestampSave:cancelFutureTimestampSave,confirmFutureTimestampSave:confirmFutureTimestampSave,goToScannerForLocationFromLog:goToScannerForLocationFromLog,setScannerMode:setScannerMode,selectScannerLocation:selectScannerLocation,renderScanner:renderScanner,openWeightModal:openWeightModal,closeWt:closeWt,saveWt:saveWt,setWeightUnit:setWeightUnit,setRange:setRange,setWtRange:setWtRange,showLabSeg:showLabSeg,showYouSeg:showYouSeg,toggleSelect:toggleSelect,selectOpt:selectOpt,saveProfileMed:saveProfileMed,saveProfileMetrics:saveProfileMetrics,calcAndShowBMI:calcAndShowBMI,updatePills:updatePills,selPill:selPill,gnMedRevealGroup:gnMedRevealGroup,gnSetShotMeridiem:gnSetShotMeridiem,gnShotClockLiveFormat:gnShotClockLiveFormat,gnNormalizeShotClockField:gnNormalizeShotClockField,gnWeightDateInput:gnWeightDateInput,gnWeightTimeInput:gnWeightTimeInput,gnOpenShotDatePicker:gnOpenShotDatePicker,gnCloseShotDatePicker:gnCloseShotDatePicker,gnDatePickerMove:gnDatePickerMove,gnSelectPickerDate:gnSelectPickerDate,gnSetShotDateFromPicker:gnSetShotDateFromPicker,gnSetShotTimeValue:gnSetShotTimeValue,gnSetShotDateValue:gnSetShotDateValue,updateSyr:updateSyr,updateRecon:updateRecon,updateSupply:updateSupply,exportCSV:exportCSV,exportBackup:exportBackup,handleCSVImportFile:handleCSVImportFile,cancelCSVImport:cancelCSVImport,confirmCSVImport:confirmCSVImport,calPrev:calPrev,calNext:calNext,calDayClick:calDayClick,openArsenalMod:openArsenalMod,closeArs:closeArs,saveArs:saveArs,requestLoadoutRemove:requestLoadoutRemove,cancelLoadoutRemove:cancelLoadoutRemove,confirmLoadoutRemove:confirmLoadoutRemove,toggleSound:toggleSound,initModules:initModules};
+window.GNModules=Object.freeze({selectState:selectState,moduleState:moduleState,showScreen:showScreen,showPage:showPage,refreshAll:refreshAll,loadApp:loadApp,saveProfileMed:saveProfileMed,saveProfileMetrics:saveProfileMetrics,calcAndShowBMI:calcAndShowBMI,toggleSelect:toggleSelect,selectOpt:selectOpt,showPhasesModal:showPhasesModal,closePhases:closePhases,renderShots:renderShots,setShotHistoryView:setShotHistoryView,setScannerMode:setScannerMode,selectScannerLocation:selectScannerLocation,renderScanner:renderScanner,openLogModal:openLogModal,closeLog:closeLog,editShot:editShot,openArchiveConfirm:openArchiveConfirm,cancelArchiveShot:cancelArchiveShot,confirmArchiveShot:confirmArchiveShot,restoreArchivedShot:restoreArchivedShot,openPermanentDeleteConfirm:openPermanentDeleteConfirm,cancelPermanentDeleteShot:cancelPermanentDeleteShot,confirmPermanentDeleteShot:confirmPermanentDeleteShot,saveShot:saveShot,openFutureTimestampConfirm:openFutureTimestampConfirm,closeFutureTimestampConfirm:closeFutureTimestampConfirm,cancelFutureTimestampSave:cancelFutureTimestampSave,confirmFutureTimestampSave:confirmFutureTimestampSave,handleShotFab:handleShotFab,goToScannerForLocationFromLog:goToScannerForLocationFromLog,openWeightModal:openWeightModal,closeWt:closeWt,setWeightUnit:setWeightUnit,saveWt:saveWt,renderResults:renderResults,setRange:setRange,setWtRange:setWtRange,showLabSeg:showLabSeg,showYouSeg:showYouSeg,renderLab:renderLab,updateSyr:updateSyr,updateRecon:updateRecon,updateSupply:updateSupply,renderProfile:renderProfile,exportCSV:exportCSV,exportBackup:exportBackup,handleCSVImportFile:handleCSVImportFile,cancelCSVImport:cancelCSVImport,confirmCSVImport:confirmCSVImport,renderCalendar:renderCalendar,calPrev:calPrev,calNext:calNext,calDayClick:calDayClick,openArsenalMod:openArsenalMod,closeArs:closeArs,saveArs:saveArs,requestLoadoutRemove:requestLoadoutRemove,cancelLoadoutRemove:cancelLoadoutRemove,confirmLoadoutRemove:confirmLoadoutRemove,toggleSound:toggleSound,formatTime24:formatTime24,formatTime12:formatTime12,gnSetShotMeridiem:gnSetShotMeridiem,gnShotClockLiveFormat:gnShotClockLiveFormat,gnNormalizeShotClockField:gnNormalizeShotClockField,gnWeightDateInput:gnWeightDateInput,gnWeightTimeInput:gnWeightTimeInput,gnOpenShotDatePicker:gnOpenShotDatePicker,gnCloseShotDatePicker:gnCloseShotDatePicker,gnDatePickerMove:gnDatePickerMove,gnSelectPickerDate:gnSelectPickerDate,gnSetShotDateFromPicker:gnSetShotDateFromPicker,gnSetShotDateValue:gnSetShotDateValue,gnSetShotTimeValue:gnSetShotTimeValue,gnMedRevealGroup:gnMedRevealGroup,updatePills:updatePills,selPill:selPill,initModules:initModules});
 
 const modules=window.GNModules;
+
 /* GRID//NODE stable app bootstrap
  * Auth UI, boot sequence, compatibility bridge for existing inline controls.
  */
 
 let bootRunning = false;
 let authMode = 'signin';
+let passwordRecoveryActive = false;
 
 function bridge() {
   const names = [
@@ -1289,24 +1541,24 @@ function injectStableStyles() {
 function authShell() {
   const login = $('login');
   if (!login) return;
+  const recovering = authMode === 'recovery';
   login.innerHTML = `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:0"><div class="gn-auth-card">
     <div class="gn-auth-kicker">// PERSONAL BIOTECH OPERATING SYSTEM //</div>
-    <div class="gn-auth-title">JACK IN</div>
-    <p class="gn-auth-copy">Use a cloud account when you want recovery across devices. Local session keeps your record on this device.</p>
+    <div class="gn-auth-title">${recovering ? 'RESET ACCESS' : 'JACK IN'}</div>
+    <p class="gn-auth-copy">${recovering ? 'Enter a new password for this GRID//NODE cloud account.' : 'Use a cloud account when you want recovery across devices. Local session keeps your record on this device.'}</p>
     <form id="gnAuthForm" novalidate>
-      <input class="gn-auth-field" id="gnAuthEmail" type="email" autocomplete="email" placeholder="EMAIL ADDRESS" aria-label="Email address">
-      <input class="gn-auth-field" id="gnAuthPassword" type="password" autocomplete="current-password" placeholder="PASSWORD" aria-label="Password">
-      <button class="gn-auth-primary" id="gnAuthSubmit" type="submit">SIGN IN TO CLOUD</button>
+      <input class="gn-auth-field" id="gnAuthEmail" type="email" autocomplete="email" placeholder="EMAIL ADDRESS" aria-label="Email address"${recovering ? ' hidden' : ''}>
+      <input class="gn-auth-field" id="gnAuthPassword" type="password" autocomplete="${recovering ? 'new-password' : 'current-password'}" placeholder="${recovering ? 'NEW PASSWORD' : 'PASSWORD'}" aria-label="${recovering ? 'New password' : 'Password'}">
+      <button class="gn-auth-primary" id="gnAuthSubmit" type="submit">${recovering ? 'UPDATE PASSWORD' : 'SIGN IN TO CLOUD'}</button>
     </form>
-    <div class="gn-auth-links"><button class="gn-auth-link" id="gnAuthModeToggle" type="button">CREATE ACCOUNT</button><button class="gn-auth-link" id="gnAuthReset" type="button">RESET PASSWORD</button></div>
-    <button class="gn-auth-google" id="loginGoogleBtn" type="button">CONTINUE WITH GOOGLE</button>
-    <button class="gn-auth-secondary" id="gnLocalBtn" type="button">CONTINUE LOCALLY</button>
+    <div class="gn-auth-links"><button class="gn-auth-link" id="gnAuthModeToggle" type="button">${recovering ? 'BACK TO SIGN IN' : 'CREATE ACCOUNT'}</button>${recovering ? '' : '<button class="gn-auth-link" id="gnAuthReset" type="button">RESET PASSWORD</button>'}</div>
+    ${recovering ? '' : '<button class="gn-auth-google" id="loginGoogleBtn" type="button">CONTINUE WITH GOOGLE</button><button class="gn-auth-secondary" id="gnLocalBtn" type="button">CONTINUE LOCALLY</button>'}
     <div class="gn-auth-message" id="loginMsg" role="status" aria-live="polite"></div>
     <div class="gn-auth-note">// VAULT POLICY: YOUR RECORD STAYS LOCAL UNTIL YOU CONNECT A CLOUD ACCOUNT // GRID//NODE DOES NOT PROVIDE MEDICAL ADVICE //</div>
   </div></div>`;
   $('gnAuthForm')?.addEventListener('submit', event => { event.preventDefault(); submitAuth(); });
   $('gnAuthModeToggle')?.addEventListener('click', toggleAuthMode);
-  $('gnAuthReset')?.addEventListener('click', () => setAuthMessage('Password recovery requires a connected cloud account. Use your provider recovery flow.', false));
+  $('gnAuthReset')?.addEventListener('click', requestPasswordReset);
   $('loginGoogleBtn')?.addEventListener('click', handleGoogleSignIn);
   $('gnLocalBtn')?.addEventListener('click', enterLocalSession);
   updateAuthMode();
@@ -1314,20 +1566,38 @@ function authShell() {
 
 function updateAuthMode() {
   const submit = $('gnAuthSubmit'), toggle = $('gnAuthModeToggle');
-  if (submit) submit.textContent = authMode === 'signin' ? 'SIGN IN TO CLOUD' : 'CREATE CLOUD ACCOUNT';
+  if (submit) submit.textContent = authMode === 'recovery' ? 'UPDATE PASSWORD' : authMode === 'signin' ? 'SIGN IN TO CLOUD' : 'CREATE CLOUD ACCOUNT';
   if (toggle) toggle.textContent = authMode === 'signin' ? 'CREATE ACCOUNT' : 'BACK TO SIGN IN';
 }
-function toggleAuthMode() { authMode = authMode === 'signin' ? 'signup' : 'signin'; updateAuthMode(); setAuthMessage('', false); }
+function toggleAuthMode() { if (authMode === 'recovery') { passwordRecoveryActive = false; authMode = 'signin'; authShell(); return; } authMode = authMode === 'signin' ? 'signup' : 'signin'; updateAuthMode(); setAuthMessage('', false); }
 function setAuthMessage(message, error = false) { const element = $('loginMsg'); if (element) { element.textContent = message; element.style.color = error ? '#ff5577' : '#8295a0'; } }
+
+async function requestPasswordReset() {
+  const email = $('gnAuthEmail')?.value?.trim();
+  if (!email || !email.includes('@')) { setAuthMessage('// ENTER YOUR ACCOUNT EMAIL FIRST', true); return; }
+  const button = $('gnAuthReset'); if (button) button.disabled = true;
+  try {
+    await resetPasswordCloud(email);
+    setAuthMessage('// RECOVERY LINK SENT — CHECK YOUR EMAIL', false);
+  } catch (error) {
+    setAuthMessage(error.message === 'CLOUD_UNAVAILABLE' ? '// CLOUD RECOVERY UNAVAILABLE — RETRY WHEN ONLINE' : `// RECOVERY ERROR: ${error.message || 'TRY AGAIN'}`, true);
+  } finally { if (button) button.disabled = false; }
+}
 
 async function submitAuth() {
   const email = $('gnAuthEmail')?.value?.trim();
   const password = $('gnAuthPassword')?.value || '';
-  if (!email || !email.includes('@')) { setAuthMessage('// ENTER A VALID EMAIL ADDRESS', true); return; }
-  if (password.length < 6) { setAuthMessage('// PASSWORD MUST BE AT LEAST 6 CHARACTERS', true); return; }
+  if (authMode !== 'recovery' && (!email || !email.includes('@'))) { setAuthMessage('// ENTER A VALID EMAIL ADDRESS', true); return; }
+  if (password.length < 8) { setAuthMessage('// PASSWORD MUST BE AT LEAST 8 CHARACTERS', true); return; }
   const submit = $('gnAuthSubmit'); if (submit) { submit.disabled = true; submit.textContent = 'CONNECTING...'; }
   try {
-    if (authMode === 'signup') {
+    if (authMode === 'recovery') {
+      await updateCloudPassword(password);
+      passwordRecoveryActive = false;
+      const session = await getCloudSession();
+      if (!session) throw new Error('RECOVERY_SESSION_EXPIRED');
+      await completeCloudSession(session);
+    } else if (authMode === 'signup') {
       const result = await signUpCloud(email, password);
       if (result?.session) { await completeCloudSession(result.session); } else { setAuthMessage('// ACCOUNT CREATED — CHECK YOUR EMAIL TO CONFIRM', false); }
     } else {
@@ -1355,10 +1625,29 @@ function enterLocalSession() {
 }
 
 async function completeCloudSession(session) {
+  migrateLegacyLocalData();
+  const targetUserId = session?.user?.id ? String(session.user.id) : '';
+  const mayMigrateLocal = state.accountKey === 'local' && localWorkspaceMigrationAllowed(targetUserId);
+  const localWorkspace = mayMigrateLocal ? captureWorkspace('local') : null;
   activateSession(session, true);
-  await hydrateCloudData();
-  getAllShots().forEach(record => queueCloudSync('shot', record));
-  getWeights().forEach(record => queueCloudSync('weight', record));
+  const accountWorkspace = captureWorkspace(state.accountKey);
+  const hydration = await hydrateCloudData();
+  if (hydration.ok && localWorkspace && workspaceHasData(localWorkspace) && !workspaceHasData(accountWorkspace)) {
+    const remote = hydration.remote || {};
+    const migration = { ...localWorkspace };
+    if (remote.shots) migration.shots = [];
+    if (remote.weights) migration.weights = [];
+    if (remote.profile) migration.profile = {};
+    if (remote.workspace) {
+      migration.results = []; migration.notes = []; migration.symptoms = []; migration.labs = [];
+      migration.preferences = {}; migration.settings = {}; migration.arsenal = []; migration.selectedLocation = '';
+    }
+    restoreWorkspace(migration, { onlyEmpty: true });
+  }
+  await syncAllCloudData();
+  if (hydration.ok && localWorkspace && workspaceHasData(localWorkspace) && state.cloudStatus === 'CLOUD_SYNCED') {
+    markLocalWorkspaceMigrated(targetUserId);
+  }
   showApp();
 }
 
@@ -1412,11 +1701,23 @@ async function confirmSignOut() {
 }
 
 async function restoreSession() {
+  if (passwordRecoveryActive) { authShell(); modules.showScreen('login'); return; }
   const local = restoreLocalSession();
   if (local) { migrateLegacyLocalData(); activateSession(local, false); showApp(); }
   else modules.showScreen('landing');
   const cloud = await getCloudSession();
-  if (cloud) await completeCloudSession(cloud);
+  if (cloud && !passwordRecoveryActive) await completeCloudSession(cloud);
+}
+
+async function wireCloudAuthEvents() {
+  const client = await getCloudClient();
+  client?.auth?.onAuthStateChange((event) => {
+    if (event !== 'PASSWORD_RECOVERY') return;
+    passwordRecoveryActive = true;
+    authMode = 'recovery';
+    authShell();
+    modules.showScreen('login');
+  });
 }
 
 function wireGlobalEvents() {
@@ -1428,7 +1729,7 @@ function wireGlobalEvents() {
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   navigator.serviceWorker
-    .register('/sw.js?v=20260718.4', { updateViaCache: 'none' })
+    .register('/sw.js?v=20260718.6', { updateViaCache: 'none' })
     .then(registration => registration.update())
     .catch(() => {});
 }
@@ -1437,7 +1738,7 @@ window.GN = {
   version: APP_VERSION,
   state,
   S,
-  async syncNow() { await Promise.all([getCloudClient(), hydrateCloudData()]); modules.refreshAll(); },
+  async syncNow() { await getCloudClient(); await hydrateCloudData(); await syncAllCloudData(); modules.refreshAll(); },
   signOut: confirmSignOut,
   localMode: enterLocalSession
 };
@@ -1453,6 +1754,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.confirmSignOut = confirmSignOut;
   wireGlobalEvents();
   registerServiceWorker();
+  await wireCloudAuthEvents();
   await restoreSession();
   // Load the cloud library in the background so the local-first boot is immediate.
   loadCloudLibrary().catch(() => null);

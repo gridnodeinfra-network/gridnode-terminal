@@ -1,4 +1,7 @@
 <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
 <!--
 ================================================================================
   GRID//NODE — rc32 CHANGELOG
@@ -130,9 +133,6 @@
 
 ================================================================================
 -->
-<html lang="en">
-<head>
-<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -4621,7 +4621,7 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
   <div style="background:#0e0e16;border:1px solid rgba(255,255,255,0.07);border-radius:8px;overflow:hidden;margin-bottom:20px">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid rgba(255,255,255,0.05)">
       <span style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:#484860;letter-spacing:2px">VERSION</span>
-      <span style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:#303048;letter-spacing:2px">v2.0.0-stable</span>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:#303048;letter-spacing:2px">v2.0.1-stable</span>
     </div>
     <button type="button" class="gn-utility-row" onclick="window.location.reload()">
       <div style="display:flex;align-items:center;gap:12px">
@@ -9185,42 +9185,193 @@ body.gn-log-shot-picker-open .fab{
 
 <!-- GRID//NODE visual consistency + operator polish v1 -->
 <style id="gn-visual-consistency-operator-polish-v1">
-#boot{min-height:100dvh !important;height:100dvh !important;align-items:center !important;justify-content:center !important;padding:calc(18px + var(--safe-top)) 14px calc(18px + var(--safe-bottom)) !important;gap:0 !important;background:radial-gradient(circle at 50% 28%,rgba(0,230,240,.14),transparent 34%),radial-gradient(circle at 82% 78%,rgba(255,45,85,.055),transparent 28%),linear-gradient(180deg,#050a0e 0%,#04060a 58%,#020204 100%) !important}
-#boot::before{inset:12px !important;border:1px solid rgba(0,230,240,.09) !important;border-radius:18px !important;background:linear-gradient(180deg,rgba(0,230,240,.025),transparent 32%) !important;box-shadow:inset 0 0 56px rgba(0,230,240,.025) !important}
-#boot::after{content:"" !important;inset:0 !important;background:repeating-linear-gradient(0deg,rgba(255,255,255,.014) 0 1px,transparent 1px 5px) !important;opacity:.4 !important}
-.boot-command-deck{position:relative;width:min(440px,calc(100vw - 28px));max-height:calc(100dvh - var(--safe-top) - var(--safe-bottom) - 28px);display:flex;flex-direction:column;align-items:stretch;gap:12px;padding:19px;overflow:hidden;border:1px solid rgba(0,230,240,.22);border-top-color:rgba(0,230,240,.54);border-bottom-color:rgba(255,45,85,.20);border-radius:16px;background:linear-gradient(135deg,rgba(0,230,240,.055),transparent 30%,transparent 75%,rgba(255,45,85,.025)),rgba(4,8,13,.92);box-shadow:0 26px 76px rgba(0,0,0,.58),0 0 38px rgba(0,230,240,.075),inset 0 0 0 1px rgba(255,255,255,.025)}
-.boot-command-deck::before{content:"";position:absolute;left:0;right:0;top:-36%;height:32%;background:linear-gradient(180deg,transparent,rgba(0,230,240,.07),transparent);animation:gnDeckSweep 2.6s ease-in-out infinite;pointer-events:none}
+/* One deliberate initialization surface: the Personal Biotech OS comes online here. */
+#boot{
+  min-height:100dvh !important;
+  height:100dvh !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:calc(18px + var(--safe-top)) 14px calc(18px + var(--safe-bottom)) !important;
+  gap:0 !important;
+  background:
+    radial-gradient(circle at 50% 28%,rgba(0,230,240,.14),transparent 34%),
+    radial-gradient(circle at 82% 78%,rgba(255,45,85,.055),transparent 28%),
+    linear-gradient(180deg,#050a0e 0%,#04060a 58%,#020204 100%) !important;
+}
+#boot::before{
+  inset:12px !important;
+  border:1px solid rgba(0,230,240,.09) !important;
+  border-radius:18px !important;
+  background:linear-gradient(180deg,rgba(0,230,240,.025),transparent 32%) !important;
+  box-shadow:inset 0 0 56px rgba(0,230,240,.025) !important;
+}
+#boot::after{
+  content:"" !important;
+  inset:0 !important;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,.014) 0 1px,transparent 1px 5px) !important;
+  opacity:.4 !important;
+}
+.boot-command-deck{
+  position:relative;
+  width:min(440px,calc(100vw - 28px));
+  max-height:calc(100dvh - var(--safe-top) - var(--safe-bottom) - 28px);
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:12px;
+  padding:19px;
+  overflow:hidden;
+  border:1px solid rgba(0,230,240,.22);
+  border-top-color:rgba(0,230,240,.54);
+  border-bottom-color:rgba(255,45,85,.20);
+  border-radius:16px;
+  background:
+    linear-gradient(135deg,rgba(0,230,240,.055),transparent 30%,transparent 75%,rgba(255,45,85,.025)),
+    rgba(4,8,13,.92);
+  box-shadow:0 26px 76px rgba(0,0,0,.58),0 0 38px rgba(0,230,240,.075),inset 0 0 0 1px rgba(255,255,255,.025);
+}
+.boot-command-deck::before{
+  content:"";
+  position:absolute;
+  left:0;right:0;top:-36%;height:32%;
+  background:linear-gradient(180deg,transparent,rgba(0,230,240,.07),transparent);
+  animation:gnDeckSweep 2.6s ease-in-out infinite;
+  pointer-events:none;
+}
 @keyframes gnDeckSweep{0%{transform:translateY(0)}72%,100%{transform:translateY(440%)}}
-.boot-deck-kicker{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:9px;border-bottom:1px solid rgba(0,230,240,.13);font-family:var(--font-m);font-size:.53rem;line-height:1.3;letter-spacing:1.45px;color:#93b5c0}
+.boot-deck-kicker{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding-bottom:9px;
+  border-bottom:1px solid rgba(0,230,240,.13);
+  font-family:var(--font-m);
+  font-size:.53rem;
+  line-height:1.3;
+  letter-spacing:1.45px;
+  color:#93b5c0;
+}
 .boot-deck-kicker b{font-weight:400;color:#ffd166;text-shadow:0 0 10px rgba(255,209,102,.22)}
-#boot .boot-b2b-stack{width:100% !important;margin:0 !important;padding:4px 0 7px !important;gap:5px !important;border:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;backdrop-filter:none !important}
+#boot .boot-b2b-stack{
+  width:100% !important;
+  margin:0 !important;
+  padding:4px 0 7px !important;
+  gap:5px !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+}
 #boot .boot-b2b-stack::before,#boot .boot-b2b-stack::after{display:none !important}
-#boot .boot-b2b-symbol-wrap{width:78px !important;height:78px !important;border-radius:18px !important;border-color:rgba(0,230,240,.22) !important;background:radial-gradient(circle,rgba(0,230,240,.12),rgba(0,0,0,.18) 66%) !important}
+#boot .boot-b2b-symbol-wrap{
+  width:78px !important;height:78px !important;
+  border-radius:18px !important;
+  border-color:rgba(0,230,240,.22) !important;
+  background:radial-gradient(circle,rgba(0,230,240,.12),rgba(0,0,0,.18) 66%) !important;
+}
 #boot .boot-b2b-symbol-wrap .gn-b2b-symbol{width:59px !important;max-height:59px !important}
 #boot .boot-b2b-wordmark-wrap{width:min(278px,78vw) !important}
 #boot .boot-slogan{font-size:.91rem !important;color:#d3e3e9 !important;letter-spacing:1.35px !important}
-#boot .boot-terminal.boot-hud-startup{width:100% !important;max-width:none !important;min-height:126px !important;max-height:126px !important;margin:0 !important;padding:13px 14px !important;border:1px solid rgba(0,230,240,.16) !important;border-left:2px solid rgba(0,230,240,.48) !important;border-radius:8px !important;background:linear-gradient(180deg,rgba(0,230,240,.045),rgba(0,0,0,.22)),rgba(2,7,11,.82) !important;box-shadow:inset 0 0 24px rgba(0,230,240,.025) !important;overflow:auto !important;scrollbar-width:none}
+#boot .boot-terminal.boot-hud-startup{
+  width:100% !important;
+  max-width:none !important;
+  min-height:126px !important;
+  max-height:126px !important;
+  margin:0 !important;
+  padding:13px 14px !important;
+  border:1px solid rgba(0,230,240,.16) !important;
+  border-left:2px solid rgba(0,230,240,.48) !important;
+  border-radius:8px !important;
+  background:linear-gradient(180deg,rgba(0,230,240,.045),rgba(0,0,0,.22)),rgba(2,7,11,.82) !important;
+  box-shadow:inset 0 0 24px rgba(0,230,240,.025) !important;
+  overflow:auto !important;
+  scrollbar-width:none;
+}
 #boot .boot-terminal.boot-hud-startup::-webkit-scrollbar{display:none}
 #boot .boot-line{font-size:.65rem !important;line-height:1.5 !important;letter-spacing:.2px;color:#9bb8c2}
 #boot .boot-line.info{color:#a7dce5}#boot .boot-line.warn{color:#ffd166}#boot .boot-line.ok{color:#77f2b5}
-#boot .boot-prog-wrap{width:100% !important;max-width:none !important;margin:0 !important;padding:11px 12px 10px !important;border:1px solid rgba(255,209,102,.15) !important;border-radius:8px !important;background:rgba(0,0,0,.22) !important;box-shadow:inset 0 0 18px rgba(255,209,102,.025) !important}
-#boot .boot-prog-track{height:13px !important;border:1px solid rgba(255,209,102,.38) !important;border-radius:2px !important;background:rgba(255,209,102,.045) !important;padding:2px !important}
+#boot .boot-prog-wrap{
+  width:100% !important;
+  max-width:none !important;
+  margin:0 !important;
+  padding:11px 12px 10px !important;
+  border:1px solid rgba(255,209,102,.15) !important;
+  border-radius:8px !important;
+  background:rgba(0,0,0,.22) !important;
+  box-shadow:inset 0 0 18px rgba(255,209,102,.025) !important;
+}
+#boot .boot-prog-track{
+  height:13px !important;
+  border:1px solid rgba(255,209,102,.38) !important;
+  border-radius:2px !important;
+  background:rgba(255,209,102,.045) !important;
+  padding:2px !important;
+}
 #boot .boot-prog-pct{margin-top:7px !important;font-size:.56rem !important;letter-spacing:1.55px !important;color:#d9c88f !important;text-shadow:none !important}
-.boot-deck-footer{display:flex;align-items:center;gap:9px;font-family:var(--font-m);font-size:.48rem;letter-spacing:1.25px;color:#718e99;white-space:nowrap}
+.boot-deck-footer{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  font-family:var(--font-m);
+  font-size:.48rem;
+  letter-spacing:1.25px;
+  color:#718e99;
+  white-space:nowrap;
+}
 .boot-deck-footer i{height:1px;flex:1;background:linear-gradient(90deg,rgba(0,230,240,.28),rgba(255,45,85,.18))}
-.gn-utility-row{width:100%;min-height:56px;display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border:0;border-bottom:1px solid rgba(255,255,255,.05);background:transparent;color:#eeeef5;text-align:left;cursor:pointer;transition:background .18s ease,border-color .18s ease}
-.gn-utility-row:last-child{border-bottom:0}.gn-utility-row:hover,.gn-utility-row:active{background:linear-gradient(90deg,rgba(0,230,240,.07),rgba(0,230,240,.015))}
+
+/* Utility actions share the same accessible operator-control language as navigation. */
+.gn-utility-row{
+  width:100%;min-height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:15px 16px;
+  border:0;border-bottom:1px solid rgba(255,255,255,.05);
+  background:transparent;
+  color:#eeeef5;
+  text-align:left;
+  cursor:pointer;
+  transition:background .18s ease,border-color .18s ease;
+}
+.gn-utility-row:last-child{border-bottom:0}
+.gn-utility-row:hover,.gn-utility-row:active{background:linear-gradient(90deg,rgba(0,230,240,.07),rgba(0,230,240,.015))}
 .gn-utility-row:focus-visible{outline:1px solid rgba(0,230,240,.68);outline-offset:-2px;background:rgba(0,230,240,.06)}
-.gn-utility-icon{flex:0 0 32px;width:32px;height:32px;padding:5px;color:#74eaf4;border:1px solid rgba(0,230,240,.22);border-radius:7px;background:rgba(0,230,240,.045);filter:drop-shadow(0 0 7px rgba(0,230,240,.16))}
+.gn-utility-icon{
+  flex:0 0 32px;width:32px;height:32px;padding:5px;
+  color:#74eaf4;
+  border:1px solid rgba(0,230,240,.22);
+  border-radius:7px;
+  background:rgba(0,230,240,.045);
+  filter:drop-shadow(0 0 7px rgba(0,230,240,.16));
+}
 .gn-utility-chevron{color:#66808b;font-size:1rem;line-height:1}
 .gn-utility-row-danger .gn-utility-icon,.gn-utility-row-danger .gn-utility-chevron{color:#ff6684;border-color:rgba(255,51,85,.28);background:rgba(255,51,85,.05);filter:drop-shadow(0 0 7px rgba(255,51,85,.15))}
 .gn-utility-row-danger:hover,.gn-utility-row-danger:active{background:linear-gradient(90deg,rgba(255,51,85,.075),rgba(255,51,85,.012))}
-@media(max-width:430px){.boot-command-deck{width:calc(100vw - 24px);padding:15px;gap:9px;border-radius:14px}.boot-deck-kicker{font-size:.47rem;letter-spacing:1.05px}#boot .boot-b2b-symbol-wrap{width:66px !important;height:66px !important;border-radius:15px !important}#boot .boot-b2b-symbol-wrap .gn-b2b-symbol{width:50px !important;max-height:50px !important}#boot .boot-b2b-wordmark-wrap{width:min(248px,72vw) !important}#boot .boot-terminal.boot-hud-startup{min-height:116px !important;max-height:116px !important;padding:11px 12px !important}.boot-deck-footer{font-size:.43rem;letter-spacing:.85px;gap:7px}}
-@media(max-height:700px){.boot-command-deck{padding:12px;gap:7px}.boot-deck-kicker{padding-bottom:6px}#boot .boot-b2b-stack{padding:0 0 3px !important}#boot .boot-b2b-symbol-wrap{width:52px !important;height:52px !important}#boot .boot-b2b-symbol-wrap .gn-b2b-symbol{width:40px !important;max-height:40px !important}#boot .boot-slogan{font-size:.76rem !important}#boot .boot-terminal.boot-hud-startup{min-height:102px !important;max-height:102px !important}}
+
+@media(max-width:430px){
+  .boot-command-deck{width:calc(100vw - 24px);padding:15px;gap:9px;border-radius:14px}
+  .boot-deck-kicker{font-size:.47rem;letter-spacing:1.05px}
+  #boot .boot-b2b-symbol-wrap{width:66px !important;height:66px !important;border-radius:15px !important}
+  #boot .boot-b2b-symbol-wrap .gn-b2b-symbol{width:50px !important;max-height:50px !important}
+  #boot .boot-b2b-wordmark-wrap{width:min(248px,72vw) !important}
+  #boot .boot-terminal.boot-hud-startup{min-height:116px !important;max-height:116px !important;padding:11px 12px !important}
+  .boot-deck-footer{font-size:.43rem;letter-spacing:.85px;gap:7px}
+}
+@media(max-height:700px){
+  .boot-command-deck{padding:12px;gap:7px}
+  .boot-deck-kicker{padding-bottom:6px}
+  #boot .boot-b2b-stack{padding:0 0 3px !important}
+  #boot .boot-b2b-symbol-wrap{width:52px !important;height:52px !important}
+  #boot .boot-b2b-symbol-wrap .gn-b2b-symbol{width:40px !important;max-height:40px !important}
+  #boot .boot-slogan{font-size:.76rem !important}
+  #boot .boot-terminal.boot-hud-startup{min-height:102px !important;max-height:102px !important}
+}
 @media(prefers-reduced-motion:reduce){.boot-command-deck::before,#boot .boot-b2b-symbol,#boot .boot-b2b-symbol-wrap::after{animation:none !important}}
 </style>
 
-<script src="./js/gridnode-bundle.js?v=20260718.4" defer></script>
+<script src="./js/gridnode-bundle.js?v=20260718.11" defer></script>
 </body>
 </html>
+
 

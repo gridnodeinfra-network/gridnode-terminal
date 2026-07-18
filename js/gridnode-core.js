@@ -3,11 +3,11 @@
  * No UI code belongs in this file.
  */
 
-export const APP_VERSION = '2.0.0-stable';
+export const APP_VERSION = '2.0.1-stable';
 
 export const CLOUD_CONFIG = Object.freeze({
-  url: 'https://pjcnmejgjgbsgjhgwncw.supabase.co',
-  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqY25tZWpnamdic2dqaGd3bmN3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NDM0OTUsImV4cCI6MjA5NzMxOTQ5NX0.10DFzo00M38yQMlrW4IIdOCUC-4JEBffPd1RpqKWmhw'
+  url: 'https://quwbmhxgteyykujydvii.supabase.co',
+  anonKey: 'sb_publishable_rWPuL8wGfe2zok4cYNENng_L6n2Qttu'
 });
 
 export const state = {
@@ -20,7 +20,9 @@ export const state = {
 };
 
 const SESSION_KEY = 'gn_session_v2';
+const LOCAL_CLOUD_OWNER_KEY = 'gn_local_cloud_owner_v1';
 const LEGACY_ACCOUNT_KEYS = ['0', 'local'];
+const WORKSPACE_KEYS = ['profile', 'shots', 'weights', 'results', 'notes', 'symptoms', 'labs', 'preferences', 'settings', 'arsenal', 'selectedLocation', 'cloudDeletes'];
 
 function jsonParse(raw, fallback) {
   if (raw == null) return fallback;
@@ -57,6 +59,7 @@ export function accountStorageKey(key) {
 }
 
 function legacyStorageKeys(key) {
+  if (state.accountKey !== 'local') return [];
   return LEGACY_ACCOUNT_KEYS
     .filter(accountKey => accountKey !== state.accountKey)
     .map(accountKey => `gn_${accountKey}_${key}`);
@@ -121,6 +124,52 @@ export function getProfile() { return S.get('profile', {}); }
 export function getShots() { return S.get('shots', []).filter(record => !record.archived).map(normalizeShotRecord); }
 export function getAllShots() { return S.get('shots', []).map(normalizeShotRecord); }
 export function getWeights() { return S.get('weights', []); }
+
+function readAccountValue(accountKey, key, fallback) {
+  try { return jsonParse(localStorage.getItem(`gn_${accountKey}_${key}`), fallback); } catch { return fallback; }
+}
+
+export function captureWorkspace(accountKey = state.accountKey) {
+  return Object.fromEntries(WORKSPACE_KEYS.map(key => [key, readAccountValue(accountKey, key, key === 'profile' || key === 'preferences' || key === 'settings' ? {} : key === 'selectedLocation' ? '' : [])]));
+}
+
+export function workspaceHasData(snapshot) {
+  if (!snapshot) return false;
+  return WORKSPACE_KEYS.some(key => {
+    if (key === 'cloudDeletes') return false;
+    const value = snapshot[key];
+    if (Array.isArray(value)) return value.length > 0;
+    if (value && typeof value === 'object') return Object.keys(value).length > 0;
+    return Boolean(value);
+  });
+}
+
+export function localWorkspaceMigrationAllowed(userId) {
+  if (!userId) return false;
+  try {
+    const owner = localStorage.getItem(LOCAL_CLOUD_OWNER_KEY);
+    return !owner || owner === String(userId);
+  } catch { return false; }
+}
+
+export function markLocalWorkspaceMigrated(userId) {
+  if (!userId) return false;
+  try {
+    localStorage.setItem(LOCAL_CLOUD_OWNER_KEY, String(userId));
+    return true;
+  } catch { return false; }
+}
+
+export function restoreWorkspace(snapshot, { onlyEmpty = true } = {}) {
+  if (!snapshot) return;
+  for (const key of WORKSPACE_KEYS) {
+    if (key === 'cloudDeletes') continue;
+    const value = snapshot[key];
+    const hasValue = Array.isArray(value) ? value.length > 0 : value && typeof value === 'object' ? Object.keys(value).length > 0 : Boolean(value);
+    if (!hasValue || (onlyEmpty && S.has(key))) continue;
+    S.set(key, value);
+  }
+}
 
 export function localSession() {
   return {
@@ -242,6 +291,24 @@ export async function signUpCloud(email, password) {
   return data || null;
 }
 
+export async function resetPasswordCloud(email) {
+  const client = await getCloudClient();
+  if (!client) throw new Error('CLOUD_UNAVAILABLE');
+  const { error } = await withTimeout(client.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/`
+  }), 8000);
+  if (error) throw error;
+  return true;
+}
+
+export async function updateCloudPassword(password) {
+  const client = await getCloudClient();
+  if (!client) throw new Error('CLOUD_UNAVAILABLE');
+  const { data, error } = await withTimeout(client.auth.updateUser({ password }), 8000);
+  if (error) throw error;
+  return data?.user || null;
+}
+
 export async function signInWithGoogle() {
   const client = await getCloudClient();
   if (!client) throw new Error('CLOUD_UNAVAILABLE');
@@ -266,6 +333,7 @@ function cloudShotPayload(record, userId) {
     dose_mg: Number(record.dose) || 0,
     site: record.site || null,
     notes: record.notes || null,
+    side_effects: Array.isArray(record.se) ? record.se : [],
     archived: Boolean(record.archived)
   };
   if (record.cloudId) payload.id = record.cloudId;
@@ -334,6 +402,7 @@ export async function syncProfile(profile) {
       weight_unit: profile.weightUnit || 'lbs',
       height_unit: 'ft/in',
       dose_mg: Number(profile.dose) || null,
+      profile_data: profile || {},
       updated_at: new Date().toISOString()
     }), 8000);
     if (error) throw error;
@@ -344,18 +413,77 @@ export async function syncProfile(profile) {
   }
 }
 
+function workspacePayload(userId) {
+  const preferences = { ...S.get('preferences', {}) };
+  const selectedLocation = S.get('selectedLocation', '');
+  if (selectedLocation) preferences.selectedLocation = selectedLocation;
+  return {
+    user_id: userId,
+    results_data: S.get('results', []),
+    notes_data: S.get('notes', []),
+    symptoms_data: S.get('symptoms', []),
+    labs_data: S.get('labs', []),
+    preferences,
+    settings: S.get('settings', {}),
+    arsenal: S.get('arsenal', []),
+    updated_at: new Date().toISOString()
+  };
+}
+
+export async function syncWorkspace() {
+  if (!state.cloud || !state.cloudClient || !state.session?.user?.id) return;
+  try {
+    const { error } = await withTimeout(state.cloudClient.from('workspaces').upsert(workspacePayload(state.session.user.id)), 8000);
+    if (error) throw error;
+    state.cloudStatus = 'CLOUD_SYNCED';
+  } catch (error) {
+    state.cloudStatus = 'LOCAL_BACKUP';
+    console.warn('[GRID//NODE cloud workspace sync]', error);
+  }
+}
+
+export async function flushCloudDeletes() {
+  if (!state.cloud || !state.cloudClient || !state.session?.user?.id) return false;
+  const pending = S.get('cloudDeletes', []);
+  if (!pending.length) return true;
+  const remaining = [];
+  for (const item of pending) {
+    try {
+      const { error } = await withTimeout(state.cloudClient.from(item.table).delete().eq('id', item.id).eq('user_id', state.session.user.id), 8000);
+      if (error) throw error;
+    } catch (error) {
+      remaining.push(item);
+      console.warn('[GRID//NODE cloud delete]', error);
+    }
+  }
+  S.set('cloudDeletes', remaining);
+  state.cloudStatus = remaining.length ? 'LOCAL_BACKUP' : 'CLOUD_SYNCED';
+  return remaining.length === 0;
+}
+
+export async function deleteCloudShot(record) {
+  if (!record?.cloudId) return true;
+  const pending = S.get('cloudDeletes', []);
+  if (!pending.some(item => item.table === 'shots' && item.id === record.cloudId)) pending.push({ table: 'shots', id: record.cloudId });
+  S.set('cloudDeletes', pending);
+  return flushCloudDeletes();
+}
+
 export async function hydrateCloudData() {
   if (!state.cloud || !state.cloudClient || !state.session?.user?.id) return { ok: false, reason: 'LOCAL_ONLY' };
   try {
     const userId = state.session.user.id;
-    const [profileResult, shotsResult, weightsResult] = await Promise.all([
+    await flushCloudDeletes();
+    const [profileResult, shotsResult, weightsResult, workspaceResult] = await Promise.all([
       withTimeout(state.cloudClient.from('profiles').select('*').eq('id', userId).maybeSingle(), 8000),
       withTimeout(state.cloudClient.from('shots').select('*').eq('user_id', userId).order('date', { ascending: true }), 8000),
-      withTimeout(state.cloudClient.from('weights').select('*').eq('user_id', userId).order('date', { ascending: true }), 8000)
+      withTimeout(state.cloudClient.from('weights').select('*').eq('user_id', userId).order('date', { ascending: true }), 8000),
+      withTimeout(state.cloudClient.from('workspaces').select('*').eq('user_id', userId).maybeSingle(), 8000)
     ]);
     if (profileResult.error) throw profileResult.error;
     if (shotsResult.error) throw shotsResult.error;
     if (weightsResult.error) throw weightsResult.error;
+    if (workspaceResult.error) throw workspaceResult.error;
 
     const localShots = getAllShots();
     const cloudShots = (shotsResult.data || []).map(item => ({
@@ -366,6 +494,7 @@ export async function hydrateCloudData() {
       dose: Number(item.dose_mg) || 0,
       site: item.site || '',
       notes: item.notes || null,
+      se: Array.isArray(item.side_effects) ? item.side_effects : [],
       archived: Boolean(item.archived),
       createdAt: item.created_at || item.date
     }));
@@ -387,12 +516,36 @@ export async function hydrateCloudData() {
     const remoteProfile = profileResult.data;
     if (remoteProfile) {
       const profile = getProfile();
-      profile.name = profile.name || remoteProfile.display_name || '';
-      if (remoteProfile.dose_mg && !profile.dose) profile.dose = remoteProfile.dose_mg;
-      S.set('profile', profile);
+      const cloudProfile = remoteProfile.profile_data && typeof remoteProfile.profile_data === 'object' ? remoteProfile.profile_data : {};
+      const mergedProfile = { ...cloudProfile, ...profile };
+      mergedProfile.name = mergedProfile.name || remoteProfile.display_name || '';
+      if (remoteProfile.dose_mg && !mergedProfile.dose) mergedProfile.dose = remoteProfile.dose_mg;
+      S.set('profile', mergedProfile);
+    }
+
+    const remoteWorkspace = workspaceResult.data;
+    if (remoteWorkspace) {
+      S.set('results', mergeJsonRecords(S.get('results', []), remoteWorkspace.results_data || []));
+      S.set('notes', mergeJsonRecords(S.get('notes', []), remoteWorkspace.notes_data || []));
+      S.set('symptoms', mergeJsonRecords(S.get('symptoms', []), remoteWorkspace.symptoms_data || []));
+      S.set('labs', mergeJsonRecords(S.get('labs', []), remoteWorkspace.labs_data || []));
+      S.set('arsenal', mergeJsonRecords(S.get('arsenal', []), remoteWorkspace.arsenal || []));
+      const preferences = { ...(remoteWorkspace.preferences || {}), ...S.get('preferences', {}) };
+      const settings = { ...(remoteWorkspace.settings || {}), ...S.get('settings', {}) };
+      S.set('preferences', preferences);
+      S.set('settings', settings);
+      if (!S.get('selectedLocation', '') && preferences.selectedLocation) S.set('selectedLocation', preferences.selectedLocation);
     }
     state.cloudStatus = 'CLOUD_SYNCED';
-    return { ok: true };
+    return {
+      ok: true,
+      remote: {
+        shots: shotsResult.data?.length || 0,
+        weights: weightsResult.data?.length || 0,
+        profile: Boolean(profileResult.data),
+        workspace: Boolean(workspaceResult.data)
+      }
+    };
   } catch (error) {
     state.cloudStatus = 'LOCAL_BACKUP';
     console.warn('[GRID//NODE cloud hydrate]', error);
@@ -409,8 +562,25 @@ function mergeRecords(localRecords, remoteRecords, identity) {
   return merged.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
 }
 
+function mergeJsonRecords(localRecords, remoteRecords) {
+  const local = Array.isArray(localRecords) ? localRecords : [];
+  const remote = Array.isArray(remoteRecords) ? remoteRecords : [];
+  return mergeRecords(local, remote, record => record && typeof record === 'object' ? record.id || JSON.stringify(record) : String(record));
+}
+
+export async function syncAllCloudData() {
+  if (!state.cloud) return;
+  await flushCloudDeletes();
+  await Promise.all([
+    ...getAllShots().map(record => syncShot(record)),
+    ...getWeights().map(record => syncWeight(record)),
+    syncProfile(getProfile()),
+    syncWorkspace()
+  ]);
+}
+
 export function queueCloudSync(kind, record) {
-  const work = kind === 'shot' ? syncShot(record) : kind === 'weight' ? syncWeight(record) : syncProfile(record);
+  const work = kind === 'shot' ? syncShot(record) : kind === 'weight' ? syncWeight(record) : kind === 'profile' ? syncProfile(record) : syncWorkspace();
   work.catch(error => console.warn('[GRID//NODE cloud queue]', error));
 }
 
@@ -420,7 +590,7 @@ export function sessionLabel() {
 
 export function migrateLegacyLocalData() {
   if (state.accountKey !== 'local') return;
-  for (const key of ['profile', 'shots', 'weights', 'settings', 'arsenal']) {
+  for (const key of WORKSPACE_KEYS) {
     const current = localStorage.getItem(`gn_local_${key}`);
     if (current !== null) continue;
     const legacy = localStorage.getItem(`gn_0_${key}`);
@@ -464,3 +634,4 @@ export function downloadFile(filename, contents, type = 'application/octet-strea
   anchor.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
