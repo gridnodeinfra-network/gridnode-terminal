@@ -55,6 +55,7 @@ Verified against the production Supabase project on 2026-07-18:
 
 - Email/password authentication and session refresh work with real QA accounts.
 - Google OAuth signup, returning-user sign-in, callback recovery, and refreshed sessions work with a real Google account.
+- The primary Google web flow uses Google's official identity button and direct ID-token exchange, so the account chooser presents `gridnode.network` instead of the Supabase project hostname.
 - `profiles`, `shots`, `weights`, and `workspaces` exist.
 - RLS is enabled on every user-data table and ownership policies use `auth.uid()`.
 - Anonymous table privileges are revoked.

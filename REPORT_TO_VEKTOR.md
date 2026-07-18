@@ -1,15 +1,15 @@
 # GRID//NODE — Release Report for VEKTOR
 
 **Date:** 2026-07-18  
-**Build:** v2.0.2-stable / shell `20260718.14`  
+**Build:** v2.0.3-stable / shell `20260718.16`  
 **Production:** `https://gridnode.network/`  
 **Cloudflare Pages:** `https://gridnode.pages.dev/`  
-**Immutable deployment:** `https://f18649d8.gridnode.pages.dev/`  
-**Status:** Deployed, HTTP 200, production smoke-tested, real-account cloud recovery verified, and Google signup/sign-in verified.
+**Immutable deployment:** `https://264df6aa.gridnode.pages.dev/`  
+**Status:** Deployed, HTTP 200, production smoke-tested, real-account cloud recovery verified, and branded Google signup/sign-in verified.
 
 ## 1. Final recommendation
 
-Use v2.0.2-stable as the controlled real-user web MVP baseline.
+Use v2.0.3-stable as the controlled real-user web MVP baseline.
 
 The core journey is operational: public entry, boot/authentication, local or cloud session, protocol entry, SHOT logging, history, Phase Engine, RESULTS, refresh persistence, and account-scoped cloud recovery. Keep the next phase focused on founder mobile QA and a small real-user cohort. Do not begin native applications until evidence from the web product identifies the right priorities.
 
@@ -78,6 +78,8 @@ The application remains a static web app. No native conversion and no unnecessar
 - Replaced invalid Supabase provider autofill with the real Google client ID and a newly generated client secret.
 - Enabled the Supabase Google provider while retaining nonce checks and email requirements.
 - Added a provider-availability preflight so a disabled provider cannot redirect users to a raw Supabase JSON error page.
+- Replaced the user-facing Supabase-hosted redirect with Google's official web identity button and Supabase ID-token exchange.
+- The Google account chooser now identifies `gridnode.network`; the raw Supabase project hostname is absent from the primary user flow.
 
 ## 4. Verified QA evidence
 
@@ -115,6 +117,8 @@ The final application source was exercised at a 390 × 844 mobile viewport:
 - Google first-use signup passed: account chooser → consent → Supabase callback → private GRID//NODE shell.
 - Google returning-user sign-in passed without repeating consent.
 - Google session refresh persistence, sign-out, public-boundary recovery, `CLOUD_SYNCED`, and Supabase user creation all passed.
+- Branded direct-ID-token flow passed: official Google control → chooser labeled `gridnode.network` → token exchange → private cloud session.
+- Final production auth screen and branded chooser produced no GRID//NODE or Google initialization warnings.
 - The generated JavaScript bundle passed Node syntax validation.
 
 The founder's laptop screenshot was a cropped excerpt. A full 1110 × 456 laptop reproduction showed no corresponding layout shift; no speculative CSS change was made from the crop.
@@ -173,7 +177,7 @@ Then verify the immutable deployment URL, `gridnode.pages.dev`, and `gridnode.ne
 
 ## 9. Exact next prompt for VEKTOR
 
-> Review GRID//NODE v2.0.2-stable at `https://gridnode.network/?qa=20260718.14` and the `main` branch of `gridnodeinfra-network/gridnode-terminal`. Do not redesign or add features. Run founder Android QA for landing, boot, auth boundary, local entry, email/password login, Google signup/sign-in, scanner draft preservation, SHOT create/edit/archive/restore, Phase Engine, RESULTS, LAB, VAULT export/import, refresh, sign-out, and cloud recovery. Report only reproducible failures with the exact screen, action, expected result, actual result, and relevant file/function. Separately complete real-inbox confirmation signup and password recovery.
+> Review GRID//NODE v2.0.3-stable at `https://gridnode.network/?qa=20260718.16` and the `main` branch of `gridnodeinfra-network/gridnode-terminal`. Do not redesign or add features. Run founder Android QA for landing, boot, auth boundary, local entry, email/password login, branded Google signup/sign-in, scanner draft preservation, SHOT create/edit/archive/restore, Phase Engine, RESULTS, LAB, VAULT export/import, refresh, sign-out, and cloud recovery. Confirm the Google chooser identifies `gridnode.network`, not a Supabase hostname. Report only reproducible failures with the exact screen, action, expected result, actual result, and relevant file/function. Separately complete real-inbox confirmation signup and password recovery.
 
 ## 10. B12 / b12.io contamination scan
 

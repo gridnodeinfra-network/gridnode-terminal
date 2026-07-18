@@ -3,7 +3,9 @@
  * No UI code belongs in this file.
  */
 
-export const APP_VERSION = '2.0.2-stable';
+export const APP_VERSION = '2.0.3-stable';
+
+export const GOOGLE_OAUTH_CLIENT_ID = '305099332421-u752btn6p8cbaq8opapvdkfau9gnd9a3.apps.googleusercontent.com';
 
 export const CLOUD_CONFIG = Object.freeze({
   url: 'https://quwbmhxgteyykujydvii.supabase.co',
@@ -333,6 +335,19 @@ export async function signInWithGoogle() {
     options: { redirectTo: window.location.href.split('#')[0] }
   }), 8000);
   if (error) throw error;
+}
+
+export async function signInWithGoogleIdToken(token) {
+  if (!token) throw new Error('GOOGLE_TOKEN_MISSING');
+  const client = await getCloudClient();
+  if (!client) throw new Error('CLOUD_UNAVAILABLE');
+  if (!(await isCloudProviderEnabled('google'))) throw new Error('GOOGLE_AUTH_DISABLED');
+  const { data, error } = await withTimeout(client.auth.signInWithIdToken({
+    provider: 'google',
+    token
+  }), 8000);
+  if (error) throw error;
+  return data?.session || null;
 }
 
 export async function signOutCloud() {

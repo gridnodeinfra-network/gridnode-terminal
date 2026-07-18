@@ -3,9 +3,9 @@
  */
 
 import {
-  APP_VERSION, state, S, activateSession, clearSession, localSession,
+  APP_VERSION, GOOGLE_OAUTH_CLIENT_ID, state, S, activateSession, clearSession, localSession,
   restoreLocalSession, migrateLegacyLocalData, getCloudSession, getCloudClient,
-  signInCloud, signUpCloud, resetPasswordCloud, updateCloudPassword, isCloudProviderEnabled, signInWithGoogle, signOutCloud, hydrateCloudData,
+  signInCloud, signUpCloud, resetPasswordCloud, updateCloudPassword, isCloudProviderEnabled, signInWithGoogle, signInWithGoogleIdToken, signOutCloud, hydrateCloudData,
   captureWorkspace, workspaceHasData, restoreWorkspace, localWorkspaceMigrationAllowed,
   markLocalWorkspaceMigrated, syncAllCloudData, loadCloudLibrary
 } from './gridnode-core.js';
@@ -14,6 +14,8 @@ import * as modules from './gridnode-modules.js';
 let bootRunning = false;
 let authMode = 'signin';
 let passwordRecoveryActive = false;
+let googleIdentityPromise = null;
+let googleIdentityInitialized = false;
 
 const $ = id => document.getElementById(id);
 
@@ -53,7 +55,7 @@ function injectStableStyles() {
     .gn-auth-card{width:min(100%,380px);padding:28px 22px;border:1px solid rgba(0,212,255,.24);border-top:2px solid #00d4ff;background:linear-gradient(180deg,rgba(14,14,22,.96),rgba(5,5,8,.98));box-shadow:0 16px 46px rgba(0,0,0,.45)}
     .gn-auth-kicker{font:700 .62rem var(--font-m,monospace);letter-spacing:3px;color:#00d4ff;text-align:center}.gn-auth-title{font:700 1.45rem var(--font-d,monospace);letter-spacing:3px;color:#fff;text-align:center;margin:10px 0 5px}.gn-auth-copy{font:.72rem/1.5 var(--font-m,monospace);color:#8295a0;text-align:center;margin:0 0 20px}
     .gn-auth-field{width:100%;box-sizing:border-box;margin:0 0 10px;padding:13px 12px;border:1px solid rgba(0,212,255,.2);background:#080810;color:#eeeef5;border-radius:3px;font:16px var(--font-m,monospace);outline:none}.gn-auth-field:focus{border-color:#00d4ff;box-shadow:0 0 0 2px rgba(0,212,255,.1)}
-    .gn-auth-primary,.gn-auth-secondary,.gn-auth-google{width:100%;min-height:46px;margin-top:8px;border-radius:3px;cursor:pointer;font:700 .68rem var(--font-d,monospace);letter-spacing:2px}.gn-auth-primary{border:0;background:linear-gradient(135deg,#ff3355,#c80036);color:#fff}.gn-auth-secondary{border:1px solid rgba(0,212,255,.35);background:transparent;color:#00d4ff}.gn-auth-google{border:1px solid rgba(0,212,255,.4);background:rgba(0,212,255,.04);color:#00d4ff}.gn-auth-google:disabled{cursor:not-allowed;opacity:.55;border-color:rgba(130,149,160,.28);color:#8295a0;box-shadow:none}.gn-auth-links{display:flex;justify-content:space-between;gap:8px;margin-top:14px}.gn-auth-link{padding:0;border:0;background:transparent;color:#8295a0;font:600 .58rem var(--font-m,monospace);letter-spacing:1px;cursor:pointer}.gn-auth-link:hover{color:#00d4ff}.gn-auth-message{min-height:22px;margin-top:14px;text-align:center;font:.62rem/1.4 var(--font-m,monospace);letter-spacing:.7px;color:#8295a0}.gn-auth-note{margin-top:18px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07);font:.56rem/1.5 var(--font-m,monospace);letter-spacing:.6px;color:#586d76;text-align:center}
+    .gn-auth-primary,.gn-auth-secondary,.gn-auth-google{width:100%;min-height:46px;margin-top:8px;border-radius:3px;cursor:pointer;font:700 .68rem var(--font-d,monospace);letter-spacing:2px}.gn-auth-primary{border:0;background:linear-gradient(135deg,#ff3355,#c80036);color:#fff}.gn-auth-secondary{border:1px solid rgba(0,212,255,.35);background:transparent;color:#00d4ff}.gn-auth-google{border:1px solid rgba(0,212,255,.4);background:rgba(0,212,255,.04);color:#00d4ff}.gn-auth-google:disabled{cursor:not-allowed;opacity:.55;border-color:rgba(130,149,160,.28);color:#8295a0;box-shadow:none}.gn-google-button-shell{width:100%;min-height:46px;margin-top:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:3px}.gn-google-button-shell.loading{pointer-events:none;opacity:.55}.gn-google-button-shell>div{max-width:100%}.gn-auth-links{display:flex;justify-content:space-between;gap:8px;margin-top:14px}.gn-auth-link{padding:0;border:0;background:transparent;color:#8295a0;font:600 .58rem var(--font-m,monospace);letter-spacing:1px;cursor:pointer}.gn-auth-link:hover{color:#00d4ff}.gn-auth-message{min-height:22px;margin-top:14px;text-align:center;font:.62rem/1.4 var(--font-m,monospace);letter-spacing:.7px;color:#8295a0}.gn-auth-note{margin-top:18px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07);font:.56rem/1.5 var(--font-m,monospace);letter-spacing:.6px;color:#586d76;text-align:center}
     .gn-phase-row{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.07)}.gn-phase-index{font:700 .72rem var(--font-m,monospace);color:#ff3355}.gn-phase-row b{font:700 .72rem var(--font-d,monospace);letter-spacing:1px}.gn-phase-row p{margin:4px 0 0;color:#8295a0;font:.66rem/1.4 var(--font-m,monospace)}
     .gn-weight-record{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.07)}.gn-weight-record b{display:block;color:#00ff88;font:700 .78rem var(--font-d,monospace)}.gn-weight-record span,.gn-weight-record small{display:block;margin-top:3px;color:#8295a0;font:.6rem var(--font-m,monospace)}.gn-calendar-detail{padding:9px 0;border-bottom:1px solid rgba(255,255,255,.07);font:.66rem var(--font-m,monospace);color:#9fc7d4}
     canvas{display:block;max-width:100%}
@@ -76,17 +78,16 @@ function authShell() {
       <button class="gn-auth-primary" id="gnAuthSubmit" type="submit">${recovering ? 'UPDATE PASSWORD' : 'SIGN IN TO CLOUD'}</button>
     </form>
     <div class="gn-auth-links"><button class="gn-auth-link" id="gnAuthModeToggle" type="button">${recovering ? 'BACK TO SIGN IN' : 'CREATE ACCOUNT'}</button>${recovering ? '' : '<button class="gn-auth-link" id="gnAuthReset" type="button">RESET PASSWORD</button>'}</div>
-    ${recovering ? '' : '<button class="gn-auth-google" id="loginGoogleBtn" type="button">CONTINUE WITH GOOGLE</button><button class="gn-auth-secondary" id="gnLocalBtn" type="button">CONTINUE LOCALLY</button>'}
+    ${recovering ? '' : '<div class="gn-google-button-shell" id="gnGoogleButtonMount" aria-label="Continue with Google"></div><button class="gn-auth-secondary" id="gnLocalBtn" type="button">CONTINUE LOCALLY</button>'}
     <div class="gn-auth-message" id="loginMsg" role="status" aria-live="polite"></div>
     <div class="gn-auth-note">// VAULT POLICY: YOUR RECORD STAYS LOCAL UNTIL YOU CONNECT A CLOUD ACCOUNT // GRID//NODE DOES NOT PROVIDE MEDICAL ADVICE //</div>
   </div></div>`;
   $('gnAuthForm')?.addEventListener('submit', event => { event.preventDefault(); submitAuth(); });
   $('gnAuthModeToggle')?.addEventListener('click', toggleAuthMode);
   $('gnAuthReset')?.addEventListener('click', requestPasswordReset);
-  $('loginGoogleBtn')?.addEventListener('click', handleGoogleSignIn);
   $('gnLocalBtn')?.addEventListener('click', enterLocalSession);
   updateAuthMode();
-  refreshGoogleAuthState();
+  renderGoogleIdentityButton();
 }
 
 function updateAuthMode() {
@@ -97,17 +98,92 @@ function updateAuthMode() {
 function toggleAuthMode() { if (authMode === 'recovery') { passwordRecoveryActive = false; authMode = 'signin'; authShell(); return; } authMode = authMode === 'signin' ? 'signup' : 'signin'; updateAuthMode(); setAuthMessage('', false); }
 function setAuthMessage(message, error = false) { const element = $('loginMsg'); if (element) { element.textContent = message; element.style.color = error ? '#ff5577' : '#8295a0'; } }
 
-async function refreshGoogleAuthState() {
-  const button = $('loginGoogleBtn');
-  if (!button) return;
-  button.disabled = true;
-  button.textContent = 'CHECKING GOOGLE...';
+function loadGoogleIdentityLibrary() {
+  if (window.google?.accounts?.id) return Promise.resolve(window.google);
+  if (googleIdentityPromise) return googleIdentityPromise;
+  googleIdentityPromise = new Promise((resolve, reject) => {
+    const existing = document.querySelector('script[data-gridnode-google-identity]');
+    if (existing) {
+      existing.addEventListener('load', () => resolve(window.google), { once: true });
+      existing.addEventListener('error', () => reject(new Error('GOOGLE_LIBRARY_UNAVAILABLE')), { once: true });
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.dataset.gridnodeGoogleIdentity = 'true';
+    script.onload = () => resolve(window.google);
+    script.onerror = () => reject(new Error('GOOGLE_LIBRARY_UNAVAILABLE'));
+    document.head.appendChild(script);
+  });
+  return googleIdentityPromise;
+}
+
+function renderGoogleFallback(host, message) {
+  if (!host?.isConnected) return;
+  const fallback = document.createElement('button');
+  fallback.type = 'button';
+  fallback.className = 'gn-auth-google';
+  fallback.disabled = true;
+  fallback.textContent = message;
+  host.replaceChildren(fallback);
+}
+
+async function renderGoogleIdentityButton() {
+  const host = $('gnGoogleButtonMount');
+  if (!host) return;
+  renderGoogleFallback(host, 'CHECKING GOOGLE...');
   const enabled = await isCloudProviderEnabled('google');
-  if (!button.isConnected) return;
-  button.dataset.providerEnabled = enabled ? 'true' : 'false';
-  button.disabled = !enabled;
-  button.textContent = enabled ? 'CONTINUE WITH GOOGLE' : 'GOOGLE SIGN-IN SETUP PENDING';
-  if (!enabled) setAuthMessage('// GOOGLE SIGN-IN IS NOT ENABLED YET — USE EMAIL OR CONTINUE LOCALLY', false);
+  if (!host.isConnected) return;
+  if (!enabled) {
+    renderGoogleFallback(host, 'GOOGLE SIGN-IN SETUP PENDING');
+    setAuthMessage('// GOOGLE SIGN-IN IS NOT ENABLED YET — USE EMAIL OR CONTINUE LOCALLY', false);
+    return;
+  }
+  try {
+    await loadGoogleIdentityLibrary();
+    if (!host.isConnected || !window.google?.accounts?.id) throw new Error('GOOGLE_LIBRARY_UNAVAILABLE');
+    host.replaceChildren();
+    if (!googleIdentityInitialized) {
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_OAUTH_CLIENT_ID,
+        callback: handleGoogleCredential,
+        auto_select: false,
+        cancel_on_tap_outside: true,
+        context: 'signin',
+        ux_mode: 'popup'
+      });
+      googleIdentityInitialized = true;
+    }
+    window.google.accounts.id.renderButton(host, {
+      type: 'standard',
+      theme: 'filled_black',
+      size: 'large',
+      text: 'continue_with',
+      shape: 'rectangular',
+      logo_alignment: 'left',
+      width: Math.min(336, Math.max(260, host.clientWidth || 336))
+    });
+  } catch (error) {
+    console.warn('[GRID//NODE Google identity]', error);
+    renderGoogleFallback(host, 'GOOGLE SIGN-IN UNAVAILABLE');
+    setAuthMessage('// GOOGLE SIGN-IN COULD NOT LOAD — USE EMAIL OR CONTINUE LOCALLY', true);
+  }
+}
+
+async function handleGoogleCredential(response) {
+  const host = $('gnGoogleButtonMount');
+  host?.classList.add('loading');
+  setAuthMessage('// VERIFYING GOOGLE IDENTITY...', false);
+  try {
+    const session = await signInWithGoogleIdToken(response?.credential);
+    if (!session) throw new Error('NO_SESSION');
+    await completeCloudSession(session);
+  } catch (error) {
+    setAuthMessage('// GOOGLE SIGN-IN COULD NOT COMPLETE — RETRY OR USE EMAIL', true);
+    host?.classList.remove('loading');
+  }
 }
 
 async function requestPasswordReset() {
