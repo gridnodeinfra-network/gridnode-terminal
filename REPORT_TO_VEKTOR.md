@@ -156,6 +156,7 @@ The active JavaScript architecture is modular and consolidated. The original vis
 Upload the following to any static host:
 
 - `index.html`
+- `sw.js`
 - the complete `js/` folder
 
 Deployment settings:
@@ -181,6 +182,7 @@ After deployment:
 - `js/gridnode-core.js` — storage/session/cloud source module.
 - `js/gridnode-modules.js` — product systems source module.
 - `js/gridnode-app.js` — application orchestration source module.
+- `sw.js` — cache-safe service worker and offline fallback.
 - `README.md` — beginner-safe deployment and QA notes.
 - `REPORT_TO_VEKTOR.md` — this handoff report.
 
@@ -237,6 +239,7 @@ Production release completed on 2026-07-18.
 - Utility rows are real keyboard-focusable buttons with visible focus treatment.
 - Missing-SHOT validation now names the required information instead of showing a generic error.
 - Weight-save feedback now uses the same sentence-case language as the rest of the app.
+- The production runtime URL is versioned and `sw.js` now uses a network-first update strategy so existing PWA users are not stranded on an old shell after deployment.
 
 ### Production QA passed
 
@@ -258,3 +261,4 @@ Production release completed on 2026-07-18.
 - Production: `https://gridnode.pages.dev/`.
 - Custom domain: `https://gridnode.network/`.
 - Cloud account signup/login, OAuth redirects, RLS, cross-device recovery, and reinstall recovery remain the only major launch systems that still require dedicated real-account QA.
+- Direct custom-domain verification returned HTTP 200 for the versioned HTML runtime and the cache-safe JavaScript service worker.
