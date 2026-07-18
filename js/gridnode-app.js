@@ -147,17 +147,30 @@ export function startGridNode() {
   modules.showScreen('boot');
   const term = $('bootTerm'), bar = $('bootBar'), pct = $('bootPct');
   if (term) term.innerHTML = '';
-  if (bar) bar.style.width = '0%';
+  if (bar) {
+    bar.style.width = '100%';
+    bar.querySelectorAll('.boot-prog-seg').forEach(segment => segment.classList.remove('on', 'lead'));
+  }
   const messages = [
-    ['> Initializing Personal Biotech OS', 'info'], ['> Preparing SHOTS', 'info'],
-    ['> Preparing Phase Engine', 'info'], ['> Preparing RESULTS', 'info'],
-    ['> Preparing LAB + VAULT', 'info'], ['> Loading local records', 'warn'],
-    ['> Protocol workspace ready', 'ok']
+    ['> Initializing Personal Biotech OS', 'info', 'CORE HANDSHAKE'],
+    ['> Preparing SHOTS', 'info', 'SHOTS ONLINE'],
+    ['> Preparing Phase Engine', 'info', 'PHASE ENGINE ONLINE'],
+    ['> Preparing RESULTS', 'info', 'RESULTS ONLINE'],
+    ['> Preparing LAB + VAULT', 'info', 'LAB + VAULT ONLINE'],
+    ['> Loading local records', 'warn', 'LOCAL RECORDS'],
+    ['> Protocol workspace ready', 'ok', 'SYSTEM ONLINE']
   ];
-  messages.forEach(([message, className], index) => setTimeout(() => {
+  messages.forEach(([message, className, status], index) => setTimeout(() => {
     if (term) { const line = document.createElement('div'); line.className = `boot-line ${className}`; line.textContent = message; term.appendChild(line); term.scrollTop = term.scrollHeight; }
-    if (bar) bar.style.width = `${Math.round((index + 1) / messages.length * 100)}%`;
-    if (pct) pct.textContent = index === messages.length - 1 ? 'Workspace ready' : 'Loading local records';
+    const progress = Math.round((index + 1) / messages.length * 100);
+    if (bar) {
+      const activeSegments = Math.ceil(progress / 10);
+      bar.querySelectorAll('.boot-prog-seg').forEach((segment, segmentIndex) => {
+        segment.classList.toggle('on', segmentIndex < activeSegments);
+        segment.classList.toggle('lead', segmentIndex === activeSegments - 1);
+      });
+    }
+    if (pct) pct.textContent = `${String(progress).padStart(3, '0')}% // ${status}`;
   }, index * 180));
   setTimeout(() => { bootRunning = false; authShell(); modules.showScreen('login'); }, 1450);
 }
