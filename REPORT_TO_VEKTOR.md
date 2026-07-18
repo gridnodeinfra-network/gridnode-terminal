@@ -205,7 +205,7 @@ After deployment:
 
 ## 10. Exact next prompt for VEKTOR
 
-> Review `REPORT_TO_VEKTOR.md` and the current GRID//NODE stable web build. Deploy `index.html` plus the complete `js/` folder to the approved HTTPS static host. Do not redesign the brand or add features. First verify Android/mobile boot, local session entry, SHOT logging, scanner location selection, SHOT history, RESULTS weight tracking, refresh persistence, archive/restore, LAB navigation, and VAULT export. Then configure and test Supabase Auth, table access, RLS, and cross-device recovery using a dedicated test account. Report every failure with reproduction steps and the exact file/function involved.
+> Review the live GRID//NODE stable build at `https://gridnode.network/` and the current `main` branch. Do not redesign the brand or add features. First verify Android/mobile boot, local session entry, SHOT logging, scanner location selection, SHOT history, RESULTS weight tracking, refresh persistence, archive/restore, LAB navigation, and VAULT export. Then configure and test Supabase Auth, table access, RLS, and cross-device recovery using a dedicated test account. Report every failure with reproduction steps and the exact file/function involved.
 
 
 ## 11. Deployment and final polish status — 2026-07-18
