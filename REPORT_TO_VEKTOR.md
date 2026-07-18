@@ -3,7 +3,7 @@
 **Date:** 2026-07-18  
 **Project:** GRID//NODE  
 **Build:** v2.0.0-stable  
-**Status:** Static deployment-ready; production deployment still requires a hosting target and credentials.
+**Status:** Production deployed and verified on Cloudflare Pages and the custom domain.
 
 ## 1. Final recommendation
 
@@ -220,3 +220,41 @@ After deployment:
 - Live smoke verification reached boot, auth, local entry, and the full primary app surface with no browser console errors observed.
 - `https://www.gridnode.network/` and the old preview URL should be checked separately before treating those aliases as equivalent.
 - Supabase cloud signup/login, OAuth, RLS, and cross-device recovery still require dedicated real-account QA.
+
+
+## 12. Public/private boundary and visual consistency release
+
+Production release completed on 2026-07-18.
+
+### Fixed
+
+- Landing, boot, and authentication now hide bottom navigation, SHOTS navigation, the floating SHOT action, and private app controls.
+- Signing in, creating an account, or choosing `CONTINUE LOCALLY` activates the private GRID//NODE shell.
+- Sign-out immediately returns to the public landing state and hides private controls again.
+- Boot is now one centered Personal Biotech Operating System command deck with clear system-progress messaging.
+- The progress rail reports the active subsystem and visibly advances through segmented states.
+- Export CSV, Export Backup, Reload App, and Sign Out now use one custom GRID//NODE SVG operator-glyph system instead of emoji.
+- Utility rows are real keyboard-focusable buttons with visible focus treatment.
+- Missing-SHOT validation now names the required information instead of showing a generic error.
+- Weight-save feedback now uses the same sentence-case language as the rest of the app.
+
+### Production QA passed
+
+- Public landing, boot, auth, local entry, sign-out, and local re-entry.
+- 390 × 844 mobile viewport with no horizontal overflow.
+- HOME, SHOTS, TRENDS, LAB, and YOU navigation.
+- SHOT creation with medication, dose, date/time, scanner location, weight, side effect, and notes.
+- SHOT history, edit prefill, archive, and restore.
+- Phase Engine response from no data to `ONSET` with educational-estimate language.
+- RESULTS weight data.
+- Refresh persistence and sign-out/re-entry data recovery in local mode.
+- No browser console errors or warnings during the final production checks.
+- Node syntax validation for the modular source and deployable bundle.
+
+### Deployment truth
+
+- GitHub: `gridnodeinfra-network/gridnode-terminal`, branch `main`.
+- Cloudflare Pages project: `gridnode`.
+- Production: `https://gridnode.pages.dev/`.
+- Custom domain: `https://gridnode.network/`.
+- Cloud account signup/login, OAuth redirects, RLS, cross-device recovery, and reinstall recovery remain the only major launch systems that still require dedicated real-account QA.
