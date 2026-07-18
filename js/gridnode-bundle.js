@@ -944,7 +944,7 @@ function saveShot(allowFuture = false) {
   const date = normalizeDateInput($('sDate')?.value);
   const time = getShotTime24($('sTime')?.value);
   const site = moduleState.selectedLocation;
-  if (!med || !dose || !date || !time || !site) { showToast('Required SHOT information is missing.', true); return; }
+  if (!med || !dose || !date || !time || !site) { showToast('Add medication, dose, date, time, and a logged location.', true); return; }
   const dateTime = new Date(`${date}T${time}`);
   if (!allowFuture && dateTime > new Date()) { moduleState.pendingFutureShot = true; $('futureTimestampConfirm')?.classList.add('active'); return; }
   const existing = moduleState.editingShotId ? getAllShots().find(item => item.id === moduleState.editingShotId) : null;
@@ -1005,7 +1005,7 @@ function saveWt() {
   closeWt();
   if ($('wtVal')) $('wtVal').value = '';
   if ($('wtNotes')) $('wtNotes').value = '';
-  refreshAll(); showToast('WEIGHT RECORD SAVED.');
+  refreshAll(); showToast('Weight record saved.');
 }
 
 function renderResults() {
