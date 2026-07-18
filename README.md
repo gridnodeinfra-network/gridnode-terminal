@@ -14,6 +14,7 @@ The public landing, boot, and authentication states intentionally hide all priva
 Upload these items to any static web host:
 
 - `index.html`
+- `sw.js`
 - the complete `js/` folder
 
 Use the project root as the publish directory. There is no build command and no server-side runtime required for local mode.
@@ -47,6 +48,7 @@ Cloud signup, Google OAuth, and recovery require a real test account and the fin
 - `js/gridnode-modules.js` - SHOTS, Phase Engine, RESULTS, LAB, VAULT, and navigation modules
 - `js/gridnode-app.js` - boot, auth shell, compatibility bridge, and app orchestration
 - `js/gridnode-bundle.js` - deployable browser bundle referenced by `index.html`
+- `sw.js` - network-first update and offline fallback worker that prevents stale production shells
 
 ## Mobile QA checklist
 
