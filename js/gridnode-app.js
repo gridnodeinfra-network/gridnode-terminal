@@ -199,6 +199,14 @@ function wireGlobalEvents() {
   window.addEventListener('error', event => console.warn('[GRID//NODE runtime]', event.error || event.message));
 }
 
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker
+    .register('/sw.js?v=20260718.4', { updateViaCache: 'none' })
+    .then(registration => registration.update())
+    .catch(() => {});
+}
+
 window.GN = {
   version: APP_VERSION,
   state,
@@ -218,6 +226,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.closeSignOutModal = closeSignOutModal;
   window.confirmSignOut = confirmSignOut;
   wireGlobalEvents();
+  registerServiceWorker();
   await restoreSession();
   // Load the cloud library in the background so the local-first boot is immediate.
   loadCloudLibrary().catch(() => null);
