@@ -2,6 +2,13 @@
 
 This folder is a static, mobile-first GRID//NODE web application. The runtime is local-first: a user can open the app, create a local session, log SHOTS, review RESULTS, use LAB tools, and keep the record after refresh without an account.
 
+Production URLs:
+
+- `https://gridnode.network/`
+- `https://gridnode.pages.dev/`
+
+The public landing, boot, and authentication states intentionally hide all private navigation and SHOT controls. The private shell appears only after cloud authentication, account creation, or `CONTINUE LOCALLY`.
+
 ## Deploy
 
 Upload these items to any static web host:
