@@ -537,8 +537,16 @@ function showToast(message, isError = false) {
   clearTimeout(toast._timer);
   toast._timer = setTimeout(() => toast.classList.remove('active'), 2800);
 }
+function setPrivateShell(active) {
+  document.body?.classList.toggle('gn-private-active', active);
+  qa('.bottom-nav, .fab').forEach(control => {
+    control.setAttribute('aria-hidden', active ? 'false' : 'true');
+    if ('inert' in control) control.inert = !active;
+  });
+}
 
 function showScreen(id) {
+  setPrivateShell(id === 'app');
   qa('.screen').forEach(screen => {
     screen.classList.remove('active');
     screen.style.display = 'none';
