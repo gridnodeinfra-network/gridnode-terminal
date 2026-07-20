@@ -373,35 +373,6 @@ body:not(.gn-private-active) .fab{display:none!important;visibility:hidden;point
 .protocol-curve-copy{font-family:var(--font-b);font-size:.88rem;color:var(--text-mid);line-height:1.35;margin:-4px 0 10px}
 @media(max-width:380px){.phase-core-readouts{grid-template-columns:1fr}.phase-readout-value{font-size:.9rem}.phase-transparency-block p,.phase-transparency-block li{font-size:.86rem}}
 
-/* PHASE SPHERE — separate, functional in-app readout */
-.phase-sphere-card{border:1px solid rgba(0,230,240,.22);background:linear-gradient(145deg,rgba(0,230,240,.08),rgba(8,8,14,.96) 58%);border-radius:var(--r);padding:16px 14px;margin:14px 0;overflow:hidden;position:relative}
-.phase-sphere-card::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 0 48%,rgba(0,230,240,.06) 49%,transparent 50%);opacity:.75}
-.phase-sphere-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;position:relative;z-index:1}
-.phase-sphere-title{font:800 .82rem var(--font-d);letter-spacing:2.2px;color:var(--cyan)}
-.phase-sphere-status{font:600 .5rem var(--font-m);letter-spacing:1.3px;color:#8bb1bc;white-space:nowrap}
-.phase-sphere-grid{display:grid;grid-template-columns:minmax(130px, .9fr) minmax(0,1.1fr);align-items:center;gap:15px;position:relative;z-index:1}
-.phase-sphere-visual{display:grid;place-items:center;min-height:150px}
-.phase-sphere-orb{--sphere-color:var(--cyan);--sphere-progress:0deg;width:min(42vw,164px);height:min(42vw,164px);border-radius:50%;display:grid;place-items:center;position:relative;background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.32),rgba(0,230,240,.09) 16%,rgba(2,15,22,.96) 64%);box-shadow:0 0 22px rgba(0,230,240,.18),inset 0 0 24px rgba(0,0,0,.75);border:1px solid rgba(0,230,240,.32)}
-.phase-sphere-ring{position:absolute;inset:4%;border:1px solid rgba(0,230,240,.28);border-radius:50%;transform:rotate(-18deg);box-shadow:0 0 12px rgba(0,230,240,.14)}
-.phase-sphere-ring::before{content:"";position:absolute;inset:8%;border:1px dashed rgba(255,255,255,.2);border-radius:50%;transform:scaleY(.42)}
-.phase-sphere-ring::after{content:"";position:absolute;inset:13%;border:1px solid var(--sphere-color);border-radius:50%;border-right-color:transparent;border-bottom-color:transparent;transform:rotate(var(--sphere-progress));filter:drop-shadow(0 0 4px var(--sphere-color));transition:transform 1s ease,border-color .4s ease}
-.phase-sphere-ring.ring-inner{inset:18%;border-color:rgba(255,215,0,.26);transform:rotate(34deg) scaleY(.48)}
-.phase-sphere-ring.ring-inner::before{inset:16%;border-style:solid;transform:scaleX(.5)}
-.phase-sphere-ring.ring-inner::after{inset:8%;border-color:rgba(255,215,0,.66);border-left-color:transparent;border-bottom-color:transparent}
-.phase-sphere-marker{position:absolute;left:50%;top:6%;width:7px;height:7px;border-radius:50%;background:var(--sphere-color);box-shadow:0 0 0 4px rgba(0,230,240,.12),0 0 12px var(--sphere-color);transform:translate(-50%,-50%) rotate(var(--sphere-angle)) translateY(calc(min(42vw,164px) * -.43));transform-origin:center calc(min(42vw,164px) * .43);transition:transform 1s ease,background .4s ease,box-shadow .4s ease}
-.phase-sphere-core{display:grid;place-items:center;align-content:center;gap:3px;position:relative;z-index:2;width:48%;height:48%;border-radius:50%;background:rgba(2,6,10,.88);border:1px solid rgba(255,255,255,.28);font:900 1.35rem var(--font-d);color:var(--sphere-color);text-shadow:0 0 12px var(--sphere-color);transition:color .4s ease}
-.phase-sphere-core-label{font:600 .38rem var(--font-m);letter-spacing:1px;color:#b7d0d7;text-align:center;max-width:90%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.phase-sphere-readout{display:grid;gap:8px;min-width:0}
-.phase-sphere-kicker{font:600 .5rem var(--font-m);letter-spacing:1.7px;color:#8bb1bc}
-.phase-sphere-value{font:900 clamp(1.05rem,4.6vw,1.5rem) var(--font-d);letter-spacing:1.5px;color:var(--sphere-color,var(--cyan));line-height:1.05}
-.phase-sphere-progress{font:700 .62rem var(--font-m);letter-spacing:1.2px;color:#e8fcff}
-.phase-sphere-since{font:400 .84rem/1.35 var(--font-b);color:var(--text-mid)}
-.phase-sphere-meta{font:600 .52rem var(--font-m);letter-spacing:1.2px;color:#8bb1bc}
-.phase-sphere-action{width:100%;margin-top:4px;padding:10px 11px;border:1px solid rgba(0,230,240,.3);border-radius:var(--r);background:rgba(0,230,240,.07);color:var(--cyan);font:800 .62rem var(--font-d);letter-spacing:1.6px;cursor:pointer}
-.phase-sphere-action:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
-.phase-sphere-note{margin:13px 0 0;position:relative;z-index:1;font:400 .65rem/1.45 var(--font-m);letter-spacing:.5px;color:#91abb5}
-@media(max-width:430px){.phase-sphere-grid{grid-template-columns:1fr;gap:8px}.phase-sphere-visual{min-height:142px}.phase-sphere-orb{width:min(48vw,176px);height:min(48vw,176px)}.phase-sphere-marker{transform:translate(-50%,-50%) rotate(var(--sphere-angle)) translateY(calc(min(48vw,176px) * -.43));transform-origin:center calc(min(48vw,176px) * .43)}.phase-sphere-readout{text-align:center}.phase-sphere-action{max-width:260px;justify-self:center}.phase-sphere-note{font-size:.61rem}}
-
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    ANIMATED PHASE ICONS — CP2077 STYLE
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
@@ -1062,8 +1033,6 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 .landing-btn.secondary{border:1px solid rgba(0,212,255,.38);color:var(--cyan);background:rgba(0,212,255,.06)}
 .landing-btn:hover,.landing-btn:active{transform:translateY(-1px)}
 .landing-note{font-family:var(--font-m);font-size:.62rem;letter-spacing:1px;color:#9fc7d4;line-height:1.48}
-.landing-local-link{border:0;background:none;padding:6px 0;color:#f5d76e;font:600 .58rem var(--font-m);letter-spacing:1.3px;text-transform:uppercase;cursor:pointer}
-.landing-local-link:hover,.landing-local-link:focus-visible{color:#fff;outline:none;text-decoration:underline;text-underline-offset:4px}
 .landing-trust{padding:0;border:0;background:none;box-shadow:none}
 .landing-trust strong{display:block;margin-bottom:4px;color:#e8fcff;font:700 .72rem var(--font-d);letter-spacing:1.6px}
 .s6-basis{display:block;margin-top:4px;color:#8295a0;font:500 .48rem/1.25 var(--font-m);letter-spacing:.7px;text-transform:lowercase}
@@ -3422,10 +3391,6 @@ function scrollLandingTo(id) {
     behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
   });
 }
-function continueLocallyFromWelcome() {
-  if (window.GN?.localMode) window.GN.localMode();
-  else if (typeof window.startGridNode === 'function') window.startGridNode();
-}
 </script>
 
 
@@ -3448,9 +3413,9 @@ function continueLocallyFromWelcome() {
       <div class="landing-phase-visual" aria-hidden="true"><div class="phase-segment-ring"></div><div class="landing-phase-core"><span>NODE ONLINE</span><b>01</b></div></div>
       <div class="landing-cta-row">
         <button class="landing-btn primary" type="button" onclick="startGridNode()">ENTER THE GRID</button>
-        <button class="landing-btn secondary" type="button" onclick="scrollLandingTo('howItWorks');return false">EXPLORE THE SYSTEM ↓</button>
+        <button class="landing-btn secondary" type="button" onclick="scrollLandingTo('howItWorks');return false">EXPLORE THE SYSTEM</button>
       </div>
-      <div class="landing-note landing-trust"><strong>Your body. Your data. Your grid.</strong>Your data stays on your device unless you choose to connect it.<br><button class="landing-local-link" type="button" onclick="continueLocallyFromWelcome()">CONTINUE LOCALLY →</button></div>
+      <div class="landing-note landing-trust"><strong>Your body. Your data. Your grid.</strong>Your data stays on your device unless you choose to connect it.</div>
     </section>
 
     <section class="landing-section" id="howItWorks">
@@ -3843,32 +3808,6 @@ function continueLocallyFromWelcome() {
           <div class="pib pay"><span class="pib-label">// TRACK NEXT</span><div class="pib-text" id="pibPay">Track appetite, symptoms, energy, side effects, and notes as your protocol history develops.</div></div>
         </div>
       </div>
-
-      <section class="phase-sphere-card" id="phaseSpherePanel" aria-labelledby="phaseSphereTitle">
-        <div class="phase-sphere-head">
-          <div class="phase-sphere-title" id="phaseSphereTitle">// PHASE SPHERE</div>
-          <div class="phase-sphere-status">LOCAL-FIRST READOUT</div>
-        </div>
-        <div class="phase-sphere-grid">
-          <div class="phase-sphere-visual" aria-hidden="true">
-            <div class="phase-sphere-orb" id="phaseSphereOrb">
-              <div class="phase-sphere-ring ring-outer"></div>
-              <div class="phase-sphere-ring ring-inner"></div>
-              <div class="phase-sphere-marker" id="phaseSphereMarker"></div>
-              <div class="phase-sphere-core"><span id="phaseSphereCore">01</span><span class="phase-sphere-core-label" id="phaseSphereCoreLabel">CYCLE</span></div>
-            </div>
-          </div>
-          <div class="phase-sphere-readout">
-            <div class="phase-sphere-kicker">CURRENT SIGNAL</div>
-            <div class="phase-sphere-value" id="phaseSpherePhase">AWAITING FIRST SHOT</div>
-            <div class="phase-sphere-progress" id="phaseSphereProgress">0% · NO ACTIVE CYCLE</div>
-            <div class="phase-sphere-since" id="phaseSphereSince">Log a SHOT to initialize the sphere.</div>
-            <div class="phase-sphere-meta" id="phaseSphereCount">0 ACTIVE RECORDS</div>
-            <button class="phase-sphere-action" type="button" onclick="showPage('Log',document.getElementById('navLog'))">OPEN SHOTS →</button>
-          </div>
-        </div>
-        <p class="phase-sphere-note">Educational timing context grounded in your own active SHOT records. This is not a laboratory measurement, diagnosis, or dosing guide.</p>
-      </section>
 
       
       <div class="sec-hdr"><div class="sec-title">// <span class="a">PHASE_CURVE</span></div></div>
@@ -9072,7 +9011,7 @@ body.gn-log-shot-picker-open .fab{
 @media(prefers-reduced-motion:reduce){.boot-command-deck::before,#boot .boot-b2b-symbol,#boot .boot-b2b-symbol-wrap::after{animation:none !important}}
 </style>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="./js/gridnode-bundle.js?v=20260720.36" defer></script><script src="./js/gridnode-phase-sphere.js?v=20260720.36-1" defer></script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="./js/gridnode-bundle.js?v=20260720.36" defer></script>
 </body>
 </html>
 

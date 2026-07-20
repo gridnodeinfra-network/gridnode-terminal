@@ -1,0 +1,60 @@
+{
+  "baseline": "gridnode.network",
+  "release_marker": "20260720.36",
+  "runtime_version": "2.1.7",
+  "retrieved_at_utc": "2026-07-20T15:24:29Z",
+  "canonical_production_url": "https://gridnode.network/",
+  "deployment_id": null,
+  "deployment_url": null,
+  "deployment_timestamp_utc": null,
+  "production_branch": null,
+  "associated_git_commit": null,
+  "metadata_note": "The public Pages responses expose the canonical origin and release marker but no deployment ID, Pages deployment URL, branch, commit, or deployment timestamp. The authenticated Pages API was unavailable because Cloudflare credentials were not present in the environment.",
+  "classification": "SOURCE MISMATCH REQUIRES RECONCILIATION",
+  "files": {
+    "index.html": {
+      "bytes": 580173,
+      "sha256": "baf7a6b3ed4776bc03ef6306cd05b159f5f81b06fd7c0e8265f1a0fcdb86cf41"
+    },
+    "js/gridnode-bundle.js": {
+      "bytes": 250766,
+      "sha256": "6f40374d0d23c64004b0141663ac1bd34419273836cf03eff18b59f739095b1b"
+    },
+    "sw.js": {
+      "bytes": 1463,
+      "sha256": "799aa3cbad18867168d880dace1717228535a87c664d9d782eb1217fa746c2b1"
+    },
+    "manifest.json": {
+      "bytes": 987,
+      "sha256": "a2a48d9e42b686598299bc4c043af7f8038330c9a4b0a6faa1416ee07f94042c"
+    },
+    "assets/gridnode-icon.svg": {
+      "bytes": 904,
+      "sha256": "a79dd5a4f6e621d8afa0b847a34b103c97d0186bc20d2141271dd89432723225"
+    },
+    "assets/gridnode-icon-192.png": {
+      "bytes": 3162,
+      "sha256": "de9c4b901d19709f5b15b03d2191c9e1d606681e3d593b6986bb2ba7116bba79"
+    },
+    "assets/gridnode-icon-512.png": {
+      "bytes": 10844,
+      "sha256": "57d69d97a0d286def63b32b50aa7784e23e12da264bffbd6a7bf73b990d45d1a"
+    },
+    "assets/gridnode-icon-maskable-192.png": {
+      "bytes": 3162,
+      "sha256": "de9c4b901d19709f5b15b03d2191c9e1d606681e3d593b6986bb2ba7116bba79"
+    },
+    "assets/gridnode-icon-maskable-512.png": {
+      "bytes": 10844,
+      "sha256": "57d69d97a0d286def63b32b50aa7784e23e12da264bffbd6a7bf73b990d45d1a"
+    },
+    "assets/apple-touch-icon.png": {
+      "bytes": 3150,
+      "sha256": "859ada4275beaf92973a405681932877a170e8e9d7023f55525305622688d6d3"
+    },
+    "assets/scanner-body-rear.jpg": {
+      "bytes": 65179,
+      "sha256": "f8070c01688e279d667f85ab207ba13b4fa3e9d6119b64b58204ccdd39b5e886"
+    }
+  }
+}

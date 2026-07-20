@@ -18,7 +18,7 @@ core_path = js_root / "gridnode-core.js"
 modules_path = js_root / "gridnode-modules.js"
 app_path = js_root / "gridnode-app.js"
 bundle_path = js_root / "gridnode-bundle.js"
-temp_path = js_root / "gridnode-bundle.js.tmp"
+temp_path = js_root / "gridnode-bundle.candidate.js"
 
 for path in (core_path, modules_path, app_path):
     if not path.is_file():
@@ -88,12 +88,27 @@ parts = [
 
 bundle = "\r\n\r\n".join(parts) + "\r\n\r\n"
 temp_path.write_bytes(bundle.encode("utf-8"))
-temp_path.replace(bundle_path)
 
-print(f"Built {bundle_path}")
-print(f"Size: {bundle_path.stat().st_size} bytes")
+print(f"Prepared candidate {temp_path}")
+print(f"Size: {temp_path.stat().st_size} bytes")
 PY
 
+TEMP_BUNDLE="$REPO_ROOT/js/gridnode-bundle.candidate.js"
+trap 'rm -f "$TEMP_BUNDLE"' EXIT
+node --check "$TEMP_BUNDLE"
+
+LIVE_BUNDLE="$REPO_ROOT/01_SOURCE_TRUTH_LOCKED/production-20260720.36/js/gridnode-bundle.js"
+if [[ -f "$LIVE_BUNDLE" ]]; then
+    live_bytes=$(stat -c '%s' "$LIVE_BUNDLE")
+    built_bytes=$(stat -c '%s' "$TEMP_BUNDLE")
+    if (( built_bytes + 5120 < live_bytes )); then
+        printf 'ERROR: generated bundle is %d bytes smaller than protected live baseline (%d bytes).\n' "$((live_bytes - built_bytes))" "$live_bytes" >&2
+        printf 'Refusing to replace the live-parity runtime until modular reconciliation is complete.\n' >&2
+        exit 1
+    fi
+fi
+
+mv "$TEMP_BUNDLE" "$REPO_ROOT/js/gridnode-bundle.js"
 node --check "$REPO_ROOT/js/gridnode-bundle.js"
 
 printf 'SHA256: '

@@ -16,21 +16,26 @@ The public landing, boot, and authentication states hide private navigation and 
 - `js/gridnode-modules.js` — SHOTS, Phase Engine, RESULTS, LAB, NODE/VAULT surfaces, and navigation.
 - `js/gridnode-app.js` — boot, authentication, compatibility bridge, and orchestration.
 - `js/gridnode-bundle.js` — generated deployable browser runtime.
-- `scripts/build-bundle.ps1` — deterministic bundle generator.
+- `scripts/build-bundle.sh` — guarded deterministic bundle generator.
+- `scripts/verify.sh` — parity, syntax, reference, hash, and growth gate.
+- `scripts/stage-deploy.sh` — atomic local Pages staging.
+- `scripts/backup.sh` — recoverable local archive with SHA-256.
+- `scripts/deploy-preview.sh` / `scripts/deploy-production.sh` — Bash-only Pages deploys.
+- `scripts/build-bundle.ps1` — legacy compatibility only; do not use for WSL development.
 - `supabase/schema.sql` — idempotent cloud schema, indexes, grants, and RLS policies.
 - `sw.js` — update-safe service worker and offline shell fallback.
 - `_headers` — production security headers for Cloudflare Pages.
 
 ## Build
 
-Run from the repository root:
+Run from the repository root in WSL2 Ubuntu:
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\build-bundle.ps1
-node --check .\js\gridnode-bundle.js
+```bash
+bash scripts/build-bundle.sh
+bash scripts/verify.sh
 ```
 
-The source modules remain readable, while `index.html` loads only the generated bundle.
+The readable modules remain in `js/`; the protected `.36` runtime bundle is used as the current behavioral baseline while modular reconciliation continues.
 
 ## Deploy
 
@@ -41,11 +46,22 @@ Static files required in the Cloudflare Pages upload:
 - `_headers`
 - complete `js/` folder
 
-Wrangler command:
+Preview workflow:
 
-```powershell
-wrangler pages deploy .\deploy-gridnode-stable --project-name=gridnode --branch=main
+```bash
+bash scripts/verify.sh
+bash scripts/stage-deploy.sh
+bash scripts/deploy-preview.sh
 ```
+
+Production requires a separate staging directory, `GRIDNODE_FOUNDER_APPROVAL=YES`, and `--confirm-production`:
+
+```bash
+GRIDNODE_STAGING_NAME=gridnode-production bash scripts/stage-deploy.sh
+GRIDNODE_FOUNDER_APPROVAL=YES bash scripts/deploy-production.sh --confirm-production
+```
+
+Credentials stay outside Git and are supplied through Wrangler authentication/environment variables. No script commits or pushes changes.
 
 There is no server-side runtime or build command. HTTPS is required for production authentication and service-worker behavior.
 
