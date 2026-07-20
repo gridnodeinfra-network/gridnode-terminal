@@ -72,7 +72,9 @@
 
   function start() {
     if (render()) {
-      window.setInterval(render, 60000);
+      // The sphere is read-only, so a lightweight poll keeps it responsive
+      // after SHOT saves without changing the existing storage contract.
+      window.setInterval(render, 1000);
       document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
       return;
     }
