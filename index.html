@@ -1054,7 +1054,7 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 .landing-headline{max-width:10ch;font-family:var(--font-d);font-size:clamp(2.2rem,6vw,4.7rem);font-weight:900;line-height:1.04;letter-spacing:.6px;color:var(--text)}
 .landing-copy{font-family:var(--font-b);font-size:clamp(1.05rem,2vw,1.25rem);line-height:1.5;color:var(--text-mid);max-width:47ch}
 .landing-copy span{color:#b6d6dd}
-.landing-phase-visual{position:absolute;right:-18vw;top:25%;width:min(72vw,460px);height:min(72vw,460px);pointer-events:none;opacity:.42;z-index:0}
+.landing-phase-visual{display:block!important;position:absolute;right:-18vw;top:25%;width:min(72vw,460px);height:min(72vw,460px);pointer-events:none;opacity:.42;z-index:0}
 .landing-phase-visual::before{content:"";position:absolute;inset:3%;border-radius:50%;background:conic-gradient(from 215deg,transparent 0 18%,rgba(0,230,240,.8) 19% 27%,transparent 28% 53%,rgba(255,45,85,.82) 54% 61%,transparent 62% 100%);-webkit-mask:radial-gradient(circle,transparent 0 67%,#000 68% 70%,transparent 71%);mask:radial-gradient(circle,transparent 0 67%,#000 68% 70%,transparent 71%);filter:drop-shadow(0 0 10px rgba(0,230,240,.35));animation:phaseRingDrift 18s linear infinite}
 .landing-phase-visual::after{content:"";position:absolute;inset:13%;border-radius:50%;border:1px solid rgba(0,230,240,.18);box-shadow:0 0 0 16px rgba(0,230,240,.025),0 0 0 33px rgba(0,230,240,.018),inset 0 0 28px rgba(0,230,240,.08)}
 .landing-phase-visual .phase-segment-ring{position:absolute;inset:20%;border-radius:50%;border:1px dashed rgba(0,230,240,.28);transform:rotate(-22deg) scaleY(.55);box-shadow:0 0 16px rgba(0,230,240,.15);animation:phaseRingDrift 24s linear infinite reverse}
