@@ -388,6 +388,10 @@ body:not(.gn-private-active) .fab{display:none!important;visibility:hidden;point
 .phase-sphere-ring.ring-inner{inset:18%;border-color:rgba(255,215,0,.26);transform:rotate(34deg) scaleY(.48)}
 .phase-sphere-ring.ring-inner::before{inset:16%;border-style:solid;transform:scaleX(.5)}
 .phase-sphere-ring.ring-inner::after{inset:8%;border-color:rgba(255,215,0,.66);border-left-color:transparent;border-bottom-color:transparent}
+.phase-sphere-ticks{position:absolute;inset:7%;border-radius:50%;pointer-events:none}
+.phase-sphere-tick{position:absolute;left:50%;top:0;width:1px;height:7px;background:rgba(185,248,255,.58);transform-origin:50% calc((min(42vw,164px) * .43) + 1px);opacity:.82}
+.phase-sphere-tick:nth-child(3n){height:11px;background:var(--sphere-color);box-shadow:0 0 5px var(--sphere-color)}
+.phase-sphere-tick:nth-child(1){transform:translateX(-50%) rotate(0deg)}.phase-sphere-tick:nth-child(2){transform:translateX(-50%) rotate(30deg)}.phase-sphere-tick:nth-child(3){transform:translateX(-50%) rotate(60deg)}.phase-sphere-tick:nth-child(4){transform:translateX(-50%) rotate(90deg)}.phase-sphere-tick:nth-child(5){transform:translateX(-50%) rotate(120deg)}.phase-sphere-tick:nth-child(6){transform:translateX(-50%) rotate(150deg)}.phase-sphere-tick:nth-child(7){transform:translateX(-50%) rotate(180deg)}.phase-sphere-tick:nth-child(8){transform:translateX(-50%) rotate(210deg)}.phase-sphere-tick:nth-child(9){transform:translateX(-50%) rotate(240deg)}.phase-sphere-tick:nth-child(10){transform:translateX(-50%) rotate(270deg)}.phase-sphere-tick:nth-child(11){transform:translateX(-50%) rotate(300deg)}.phase-sphere-tick:nth-child(12){transform:translateX(-50%) rotate(330deg)}
 .phase-sphere-marker{position:absolute;left:50%;top:6%;width:7px;height:7px;border-radius:50%;background:var(--sphere-color);box-shadow:0 0 0 4px rgba(0,230,240,.12),0 0 12px var(--sphere-color);transform:translate(-50%,-50%) rotate(var(--sphere-angle)) translateY(calc(min(42vw,164px) * -.43));transform-origin:center calc(min(42vw,164px) * .43);transition:transform 1s ease,background .4s ease,box-shadow .4s ease}
 .phase-sphere-core{display:grid;place-items:center;align-content:center;gap:3px;position:relative;z-index:2;width:48%;height:48%;border-radius:50%;background:rgba(2,6,10,.88);border:1px solid rgba(255,255,255,.28);font:900 1.35rem var(--font-d);color:var(--sphere-color);text-shadow:0 0 12px var(--sphere-color);transition:color .4s ease}
 .phase-sphere-core-label{font:600 .38rem var(--font-m);letter-spacing:1px;color:#b7d0d7;text-align:center;max-width:90%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -401,6 +405,19 @@ body:not(.gn-private-active) .fab{display:none!important;visibility:hidden;point
 .phase-sphere-action:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .phase-sphere-note{margin:13px 0 0;position:relative;z-index:1;font:400 .65rem/1.45 var(--font-m);letter-spacing:.5px;color:#91abb5}
 @media(max-width:430px){.phase-sphere-grid{grid-template-columns:1fr;gap:8px}.phase-sphere-visual{min-height:142px}.phase-sphere-orb{width:min(48vw,176px);height:min(48vw,176px)}.phase-sphere-marker{transform:translate(-50%,-50%) rotate(var(--sphere-angle)) translateY(calc(min(48vw,176px) * -.43));transform-origin:center calc(min(48vw,176px) * .43)}.phase-sphere-readout{text-align:center}.phase-sphere-action{max-width:260px;justify-self:center}.phase-sphere-note{font-size:.61rem}}
+@media(max-width:430px){.phase-sphere-tick{transform-origin:50% calc((min(48vw,176px) * .43) + 1px)} }
+@media(prefers-reduced-motion:reduce){.phase-sphere-ring::after,.phase-sphere-marker{transition:none}.phase-sphere-ring::after{filter:none}}
+
+/* PRODUCT COMPLETION — mobile progress, mapped import, and preference controls */
+.gn-progress-signals{border-left:2px solid var(--cyan)}
+.gn-progress-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.gn-progress-signal{display:grid;gap:4px;padding:10px;border:1px solid rgba(255,255,255,.09);border-radius:var(--r);background:rgba(0,0,0,.22)}
+.gn-progress-signal span,.gn-progress-timeline-label{font:700 .53rem var(--font-m);letter-spacing:1.4px;color:#8bb1bc}.gn-progress-signal b{font:800 .95rem var(--font-d);color:#e8fcff}.gn-progress-signal small{font:.72rem/1.3 var(--font-b);color:var(--text-mid)}
+.gn-phase-timeline{display:grid;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)}.gn-progress-timeline-row{display:flex;align-items:center;gap:8px}.gn-progress-timeline-row i{width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan)}.gn-progress-timeline-row span{display:grid;gap:2px}.gn-progress-timeline-row b{font:.78rem var(--font-d);color:#e8fcff}.gn-progress-timeline-row small,.gn-progress-empty{font:.72rem/1.35 var(--font-b);color:var(--text-mid)}
+.gn-inventory-history{grid-column:1/-1;margin-top:7px;font:.66rem var(--font-m);color:#9ab3bc}.gn-inventory-history summary{cursor:pointer;color:#9ceff4;letter-spacing:.8px}.gn-inventory-history div{display:grid;gap:4px;padding-top:6px}.gn-inventory-history span{color:#849ba4}
+.gn-preferences-card{margin-top:14px;padding:15px;border:1px solid rgba(0,230,240,.2);border-radius:var(--r);background:linear-gradient(145deg,rgba(0,230,240,.07),rgba(8,8,14,.95));}.gn-preferences-card h3{margin:4px 0 5px;font:800 1rem var(--font-d);letter-spacing:1.8px;color:#e8fcff}.gn-preferences-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.gn-preferences-grid label{display:grid;gap:5px;font:.56rem var(--font-m);letter-spacing:1.1px;color:#a6c5cc}.gn-preferences-grid input,.gn-preferences-grid select{width:100%;min-height:40px;padding:9px 10px;border:1px solid rgba(255,255,255,.12);border-radius:var(--r);background:rgba(0,0,0,.3);color:#f3fbff;font: .84rem var(--font-b)}.gn-preferences-grid .gn-pref-wide{grid-column:1/-1}.gn-preferences-grid label:has(input[type="checkbox"]){display:flex;align-items:center;grid-template-columns:auto 1fr;gap:8px;font-size:.68rem}.gn-preferences-grid input[type="checkbox"]{width:18px;min-height:18px}.gn-preferences-status{margin-top:9px;font:.58rem var(--font-m);letter-spacing:1px;color:#9ceff4}
+.gn-import-map-button{width:100%;margin-top:8px;padding:10px;border:1px solid rgba(0,230,240,.35);border-radius:var(--r);background:rgba(0,230,240,.06);color:#9ceff4;font:700 .65rem var(--font-d);letter-spacing:1.3px}.gn-mapping-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.gn-mapping-grid label{display:grid;gap:4px;font:.55rem var(--font-m);letter-spacing:1px;color:#a6c5cc}.gn-mapping-grid select{min-height:38px;padding:7px;background:#11141c;border:1px solid rgba(255,255,255,.15);border-radius:var(--r);color:#f3fbff}.gn-import-actions{display:flex;gap:8px;margin-top:10px}.gn-import-actions button{flex:1}
+@media(max-width:430px){.gn-progress-grid,.gn-preferences-grid,.gn-mapping-grid{grid-template-columns:1fr}.gn-preferences-grid .gn-pref-wide{grid-column:auto}.gn-progress-signal{padding:9px}.gn-preferences-card{padding:13px}}
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    ANIMATED PHASE ICONS — CP2077 STYLE
@@ -1054,12 +1071,12 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 .landing-headline{max-width:10ch;font-family:var(--font-d);font-size:clamp(2.2rem,6vw,4.7rem);font-weight:900;line-height:1.04;letter-spacing:.6px;color:var(--text)}
 .landing-copy{font-family:var(--font-b);font-size:clamp(1.05rem,2vw,1.25rem);line-height:1.5;color:var(--text-mid);max-width:47ch}
 .landing-copy span{color:#b6d6dd}
-.landing-phase-visual{display:block!important;position:absolute;right:-18vw;top:25%;width:min(72vw,460px);height:min(72vw,460px);pointer-events:none;opacity:.42;z-index:0}
+.landing-phase-visual{display:block!important;position:absolute;right:-18vw;top:25%;width:min(72vw,460px);height:min(72vw,460px);pointer-events:none;opacity:.42;z-index:0;animation:none!important}
 .landing-phase-visual::before{content:"";position:absolute;inset:3%;border-radius:50%;background:conic-gradient(from 215deg,transparent 0 18%,rgba(0,230,240,.8) 19% 27%,transparent 28% 53%,rgba(255,45,85,.82) 54% 61%,transparent 62% 100%);-webkit-mask:radial-gradient(circle,transparent 0 67%,#000 68% 70%,transparent 71%);mask:radial-gradient(circle,transparent 0 67%,#000 68% 70%,transparent 71%);filter:drop-shadow(0 0 10px rgba(0,230,240,.35));animation:phaseRingDrift 18s linear infinite}
 .landing-phase-visual::after{content:"";position:absolute;inset:13%;border-radius:50%;border:1px solid rgba(0,230,240,.18);box-shadow:0 0 0 16px rgba(0,230,240,.025),0 0 0 33px rgba(0,230,240,.018),inset 0 0 28px rgba(0,230,240,.08)}
 .landing-phase-visual .phase-segment-ring{position:absolute;inset:20%;border-radius:50%;border:1px dashed rgba(0,230,240,.28);transform:rotate(-22deg) scaleY(.55);box-shadow:0 0 16px rgba(0,230,240,.15);animation:phaseRingDrift 24s linear infinite reverse}
 .landing-phase-core{position:absolute;inset:37%;display:grid;place-items:center;align-content:center;gap:4px;border:1px solid rgba(0,230,240,.3);border-radius:50%;background:rgba(2,7,12,.58);color:var(--cyan);font-family:var(--font-m);letter-spacing:1.2px;text-align:center}
-.landing-phase-core span{font-size:.43rem}.landing-phase-core b{font:800 1.35rem var(--font-d);color:#f5d76e}
+.landing-phase-core span{font-size:.43rem!important;color:#b9f8ff!important}.landing-phase-core b{font:600 .48rem var(--font-m)!important;letter-spacing:1.6px!important;color:#f5d76e!important}
 .landing-hero > *:not(.landing-phase-visual){position:relative;z-index:1}
 @keyframes phaseRingDrift{to{transform:rotate(360deg)}}
 .landing-beats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:4px 0 2px}
@@ -3454,7 +3471,7 @@ function continueLocallyFromWelcome() {
       <div class="landing-kicker">// PERSONAL BIOTECH SYSTEM //</div>
       <h1 class="landing-headline">Your biology.<br>Your timeline.<br>Your grid.</h1>
       <p class="landing-copy">Track GLP-1 protocols, compound and research grade peptides, weight, and the personal biotech patterns that connect them.<br><span>Local-first. No account required.</span></p>
-      <div class="landing-phase-visual" aria-hidden="true"><div class="phase-segment-ring"></div><div class="landing-phase-core"><span>NODE ONLINE</span><b>01</b></div></div>
+      <div class="landing-phase-visual" aria-hidden="true"><div class="phase-segment-ring"></div><div class="landing-phase-core"><span>LOCAL-FIRST</span><b>SYSTEM READY</b></div></div>
       <div class="landing-cta-row">
         <button class="landing-btn primary" type="button" onclick="startGridNode()">ENTER THE GRID</button>
         <button class="landing-btn secondary" type="button" onclick="scrollLandingTo('howItWorks');return false">EXPLORE THE SYSTEM ↓</button>
@@ -3863,6 +3880,7 @@ function continueLocallyFromWelcome() {
             <div class="phase-sphere-orb" id="phaseSphereOrb">
               <div class="phase-sphere-ring ring-outer"></div>
               <div class="phase-sphere-ring ring-inner"></div>
+              <div class="phase-sphere-ticks" id="phaseSphereTicks" aria-hidden="true"></div>
               <div class="phase-sphere-marker" id="phaseSphereMarker"></div>
               <div class="phase-sphere-core"><span id="phaseSphereCore">01</span><span class="phase-sphere-core-label" id="phaseSphereCoreLabel">CYCLE</span></div>
             </div>
@@ -3873,6 +3891,7 @@ function continueLocallyFromWelcome() {
             <div class="phase-sphere-progress" id="phaseSphereProgress">0% · NO ACTIVE CYCLE</div>
             <div class="phase-sphere-since" id="phaseSphereSince">Log a SHOT to initialize the sphere.</div>
             <div class="phase-sphere-meta" id="phaseSphereCount">0 ACTIVE RECORDS</div>
+            <div class="phase-sphere-meta" id="phaseSphereProtocol">PROTOCOL · NOT SET</div>
             <button class="phase-sphere-action" type="button" onclick="showPage('Log',document.getElementById('navLog'))">OPEN SHOTS →</button>
           </div>
         </div>
@@ -9081,7 +9100,7 @@ body.gn-log-shot-picker-open .fab{
 @media(prefers-reduced-motion:reduce){.boot-command-deck::before,#boot .boot-b2b-symbol,#boot .boot-b2b-symbol-wrap::after{animation:none !important}}
 </style>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="./js/gridnode-bundle.js?v=20260720.36" defer></script><script src="./js/gridnode-phase-sphere.js?v=20260720.36-1" defer></script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="./js/gridnode-bundle.js?v=20260720.36" defer></script><script src="./js/gridnode-phase-sphere.js?v=20260720.36-1" defer></script><script src="./js/gridnode-product-completion.js?v=20260720.36-2" defer></script>
 </body>
 </html>
 

@@ -17,6 +17,17 @@
   const $ = id => document.getElementById(id);
   const text = (id, value) => { const node = $(id); if (node) node.textContent = value; };
 
+  function ensureTicks() {
+    const ticks = $('phaseSphereTicks');
+    if (!ticks || ticks.childElementCount) return;
+    for (let index = 0; index < 12; index += 1) {
+      const tick = document.createElement('i');
+      tick.className = 'phase-sphere-tick';
+      tick.style.transform = `translateX(-50%) rotate(${index * 30}deg)`;
+      ticks.appendChild(tick);
+    }
+  }
+
   function activeShots() {
     const records = window.GN?.S?.get?.('shots', []);
     return (Array.isArray(records) ? records : [])
@@ -33,6 +44,10 @@
     const coreLabel = $('phaseSphereCoreLabel');
     const orb = $('phaseSphereOrb');
     const marker = $('phaseSphereMarker');
+    ensureTicks();
+    const profile = window.GN.S.get('profile', {}) || {};
+    const protocol = profile.med ? `${profile.med}${profile.dose ? ` · ${profile.dose}mg` : ''}` : 'NOT SET';
+    text('phaseSphereProtocol', `PROTOCOL · ${protocol}`);
     if (!last) {
       panel.dataset.state = 'empty';
       text('phaseSpherePhase', 'AWAITING FIRST SHOT');
@@ -46,6 +61,7 @@
         orb.style.setProperty('--sphere-progress', '0deg');
       }
       if (marker) marker.style.setProperty('--sphere-angle', '0deg');
+      text('phaseSphereProtocol', `PROTOCOL · ${protocol}`);
       return true;
     }
 

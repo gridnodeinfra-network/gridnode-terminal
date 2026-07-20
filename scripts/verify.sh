@@ -8,7 +8,7 @@ LOCKED_ROOT="$REPO_ROOT/01_SOURCE_TRUTH_LOCKED/production-20260720.36"
 require_command() { command -v "$1" >/dev/null 2>&1 || { printf 'ERROR: missing command: %s\n' "$1" >&2; exit 1; }; }
 for command_name in cmp find grep node shellcheck sha256sum stat; do require_command "$command_name"; done
 
-required_files=(index.html js/gridnode-bundle.js js/gridnode-phase-sphere.js sw.js manifest.json _headers)
+required_files=(index.html js/gridnode-bundle.js js/gridnode-phase-sphere.js js/gridnode-product-completion.js sw.js manifest.json _headers)
 for relative_path in "${required_files[@]}"; do
     [[ -f "$REPO_ROOT/$relative_path" ]] || { printf 'ERROR: missing required file: %s\n' "$relative_path" >&2; exit 1; }
 done
@@ -21,11 +21,13 @@ shellcheck "${bash_files[@]}"
 printf '%s\n' '== JavaScript syntax =='
 node --check "$REPO_ROOT/js/gridnode-bundle.js"
 node --check "$REPO_ROOT/js/gridnode-phase-sphere.js"
+node --check "$REPO_ROOT/js/gridnode-product-completion.js"
 node --check "$REPO_ROOT/sw.js"
 
 printf '%s\n' '== Runtime references =='
 grep -q 'js/gridnode-bundle.js' "$REPO_ROOT/index.html"
 grep -q 'js/gridnode-phase-sphere.js' "$REPO_ROOT/index.html"
+grep -q 'js/gridnode-product-completion.js' "$REPO_ROOT/index.html"
 grep -q 'manifest.json' "$REPO_ROOT/index.html"
 grep -q '/sw.js' "$REPO_ROOT/js/gridnode-bundle.js"
 node -e "const fs=require('fs'); const m=JSON.parse(fs.readFileSync(process.argv[1])); if(!Array.isArray(m.icons)||m.icons.length<3) process.exit(1);" "$REPO_ROOT/manifest.json"
