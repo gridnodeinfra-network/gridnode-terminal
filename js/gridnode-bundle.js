@@ -1159,7 +1159,7 @@ function renderDashboard() {
   const phase = renderPhase(lastShot, shots);
   renderProtocolCurve(shots, phase);
   refreshNodeHeader({ lastShot, next, phase, currentWeight: lastWeight?.weight });
-  setText('streakText', shots.length ? `${shots.length} SHOT${shots.length === 1 ? '' : 'S'} IN YOUR LOCAL RECORD` : 'YOUR GRID IS EMPTY. LOG YOUR FIRST SHOT TO BEGIN.');
+  setText('streakText', shots.length ? `${shots.length} SHOT${shots.length === 1 ? '' : 'S'} IN YOUR LOCAL RECORD` : 'NO SHOT CADENCE YET · LOG YOUR FIRST SHOT');
   drawCanvasChart($('dashWtChart'), weights.map(item => Number(item.weight)), '#00d4ff');
   renderWandaDashboard({ shots, weights, lastShot, lastWeight, profile, next, phase, weightMetrics, goalGap });
 }

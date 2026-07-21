@@ -27,18 +27,32 @@
   function renderStreak() {
     const node = $('streakText'); if (!node) return;
     const shots = activeShots();
-    if (!shots.length) { node.textContent = 'NO SHOT STREAK YET · LOG YOUR FIRST SHOT'; return; }
-    if (shots.length < 2) { node.textContent = '1 SHOT LOGGED · LOG ANOTHER TO ESTABLISH A STREAK'; return; }
-    const latest = new Date(shots.at(-1).date).getTime();
-    let streak = 1;
-    for (let index = shots.length - 2; index >= 0; index -= 1) {
-      const gap = latest - new Date(shots[index].date).getTime();
-      if (gap <= weekMs * (streak + 0.35)) streak += 1; else break;
+    if (!shots.length) { node.textContent = 'NO SHOT CADENCE YET · LOG YOUR FIRST SHOT'; return; }
+    if (shots.length === 1) { node.textContent = '1 SHOT LOGGED · LOG ANOTHER TO ESTABLISH CADENCE'; return; }
+    // Cadence = observed median gap between consecutive shots, in days.
+    // Honest reporting: shows the actual rhythm, not a stretched streak.
+    const gaps = [];
+    for (let index = 1; index < shots.length; index += 1) {
+      const delta = (new Date(shots[index].date).getTime() - new Date(shots[index - 1].date).getTime()) / dayMs;
+      if (Number.isFinite(delta) && delta >= 0) gaps.push(delta);
     }
-    const cadence = Math.round((latest - new Date(shots[0].date).getTime()) / Math.max(1, shots.length - 1) / dayMs);
-    node.textContent = streak < 2
-      ? `${shots.length} SHOTS LOGGED · KEEP A REGULAR TIMELINE`
-      : `${streak} SHOT${streak === 1 ? '' : 'S'} IN A ROW · ${cadence || 0}D AVERAGE CADENCE`;
+    if (!gaps.length) {
+      node.textContent = `${shots.length} SHOTS LOGGED · KEEP A REGULAR TIMELINE`;
+      return;
+    }
+    const sorted = gaps.slice().sort((a, b) => a - b);
+    const mid = sorted.length / 2;
+    // True median: average the two middle values for even-length arrays,
+    // not the upper bound. e.g. gaps [6, 8] -> 7, not 8.
+    const medianDays = sorted.length % 2 === 0
+      ? Math.round((sorted[mid - 1] + sorted[mid]) / 2)
+      : sorted[Math.floor(mid)];
+    const labelCount = `${shots.length} SHOT${shots.length === 1 ? '' : 'S'}`;
+    // 0D median means same-day shots. Don't show '0D MEDIAN GAP' to the user;
+    // describe what actually happened in their record instead.
+    node.textContent = medianDays === 0
+      ? `CADENCE · SAME-DAY · ${labelCount} LOGGED`
+      : `CADENCE · ${medianDays}D MEDIAN GAP · ${labelCount} LOGGED`;
   }
 
   function drawWeightChart() {
