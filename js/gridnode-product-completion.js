@@ -79,16 +79,37 @@
     const y = value => top + (max - Number(value)) / span * plotHeight;
     context.font = '10px Share Tech Mono, monospace'; context.textAlign = 'left'; context.fillStyle = '#8ea5ad'; context.strokeStyle = 'rgba(255,255,255,.11)'; context.lineWidth = 1;
     for (let index = 0; index <= 3; index += 1) { const rowY = top + plotHeight * index / 3; context.beginPath(); context.moveTo(left, rowY); context.lineTo(width - right, rowY); context.stroke(); context.fillText((max - span * index / 3).toFixed(1), 4, rowY + 3); }
-    if (Number.isFinite(goal) && goal > 0) { context.save(); context.setLineDash([5, 4]); context.strokeStyle = 'rgba(255,215,0,.78)'; context.beginPath(); context.moveTo(left, y(goal)); context.lineTo(width - right, y(goal)); context.stroke(); context.restore(); context.fillStyle = '#ffd766'; context.fillText(`GOAL ${goal.toFixed(1)}`, Math.max(left, width - 78), Math.max(12, y(goal) - 5)); }
+    if (Number.isFinite(goal) && goal > 0) { context.save(); context.shadowColor = 'rgba(255,215,0,.35)'; context.shadowBlur = 6; context.setLineDash([6, 5]); context.strokeStyle = 'rgba(255,215,0,.58)'; context.lineWidth = 1.8; context.beginPath(); context.moveTo(left, y(goal)); context.lineTo(width - right, y(goal)); context.stroke(); context.setLineDash([]); context.shadowBlur = 0; context.strokeStyle = 'rgba(255,215,0,.15)'; context.lineWidth = 4; context.beginPath(); context.moveTo(left, y(goal)); context.lineTo(width - right, y(goal)); context.stroke(); context.restore(); context.fillStyle = '#ffd766'; context.font = 'bold 9px Share Tech Mono, monospace'; context.fillText(`GOAL ${goal.toFixed(1)}`, Math.max(left, width - 78), Math.max(12, y(goal) - 5)); }
     context.strokeStyle = '#00e6f0'; context.lineWidth = 2.5; context.shadowColor = '#00e6f0'; context.shadowBlur = 7; context.beginPath();
     values.forEach((value, index) => { const pointX = x(index), pointY = y(value); if (index === 0) context.moveTo(pointX, pointY); else context.lineTo(pointX, pointY); }); context.stroke(); context.shadowBlur = 0;
     context.fillStyle = '#00e6f0'; values.forEach((value, index) => { context.beginPath(); context.arc(x(index), y(value), 3.2, 0, Math.PI * 2); context.fill(); });
+    // Moving end dot — GLAPP-style glow on the most recent data point
+    if (data.length > 1) {
+      const lastIdx = data.length - 1, lastX = x(lastIdx), lastY = y(values[lastIdx]);
+      context.save();
+      context.shadowColor = '#00e6f0'; context.shadowBlur = 22;
+      context.fillStyle = '#00e6f0'; context.beginPath(); context.arc(lastX, lastY, 5.5, 0, Math.PI * 2); context.fill();
+      context.shadowBlur = 0; context.strokeStyle = 'rgba(0,230,240,.28)'; context.lineWidth = 1.8;
+      context.beginPath(); context.arc(lastX, lastY, 10, 0, Math.PI * 2); context.stroke();
+      context.beginPath(); context.arc(lastX, lastY, 18, 0, Math.PI * 2); context.stroke();
+      context.restore();
+    }
     const shotTimes = activeShots().map(item => localDate(item.date)?.getTime()).filter(Number.isFinite);
     shotTimes.forEach(time => { const nearest = data.reduce((best, item, index) => Math.abs(new Date(item.date).getTime() - time) < Math.abs(new Date(data[best].date).getTime() - time) ? index : best, 0); context.fillStyle = '#ff5577'; context.beginPath(); context.arc(x(nearest), y(values[nearest]), 5.5, 0, Math.PI * 2); context.fill(); });
-    context.fillStyle = '#8ea5ad'; context.fillText(dateLabel(data[0].date), left, height - 8); context.textAlign = 'right'; context.fillText(dateLabel(data.at(-1).date), width - right, height - 8); context.textAlign = 'left';
+    // GLAPP-style date labels — show a selection of reference dates along the x-axis
+    context.font = '8px Share Tech Mono, monospace'; context.textAlign = 'center'; context.fillStyle = 'rgba(142,165,173,.55)';
+    if (data.length <= 3) {
+      // Sparse data: show every label
+      data.forEach((item, index) => { if (index === 0 || index === data.length - 1) { context.fillText(dateLabel(item.date), x(index), height - 8); } });
+    } else {
+      // Dense data: show first, last, midpoint, and quarter marks
+      const markers = [0, Math.floor(data.length * 0.25), Math.floor(data.length * 0.5), Math.floor(data.length * 0.75), data.length - 1];
+      [...new Set(markers)].forEach(idx => { context.fillText(dateLabel(data[idx].date), x(idx), height - 8); });
+    }
+    context.textAlign = 'left';
     if (summary) summary.textContent = data.length < 2 ? 'One data point logged. Keep tracking to see direction.' : `Showing ${data.length} weight records · red markers are SHOT events${Number.isFinite(goal) && goal > 0 ? ` · goal ${goal.toFixed(1)} lb` : ''}.`;
     const direction = $('resWeightDirection');
-    if (direction) { const delta = values.at(-1) - values[0]; const ready = data.length >= 3 && new Date(data.at(-1).date).getTime() - new Date(data[0].date).getTime() >= dayMs * 7; direction.textContent = ready ? `Trend direction: ${delta < -0.05 ? 'Downward' : delta > 0.05 ? 'Upward' : 'Stable'} across logged measurements` : 'Trend direction: INSUFFICIENT DATA'; direction.className = `results-direction ${ready && delta <= 0 ? 'good' : ready ? 'warn' : 'insufficient'}`; }
+    if (direction) { const delta = values.at(-1) - values[0]; const ready = data.length >= 2 && new Date(data.at(-1).date).getTime() - new Date(data[0].date).getTime() >= dayMs * 3; direction.textContent = ready ? `Trend direction: ${delta < -0.05 ? 'Downward' : delta > 0.05 ? 'Upward' : 'Stable'} across logged measurements` : 'Trend direction: INSUFFICIENT DATA'; direction.className = `results-direction ${ready && delta <= 0 ? 'good' : ready ? 'warn' : 'insufficient'}`; }
   }
 
   function renderProgressViews() {
