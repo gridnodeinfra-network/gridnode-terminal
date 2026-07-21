@@ -1,5 +1,13 @@
 # GRID//NODE Agent Execution Policy
 
+## GRID//NODE identity and standard
+- GRID//NODE serves mainstream and underserved users navigating FDA-approved, compounded, emerging, stigmatized, or fragmented biotech spaces.
+- GRID//NODE is a personal biotech operating system for tracking, organization, and education; it does not prescribe, diagnose, treat, or act as a doctor.
+- GRID//NODE is a microscopic, solo-founder, under-resourced, fast-moving, deeply personal underdog startup—not a corporation, committee, bureaucracy, or conventional company.
+- Felipe / Pipe is Founder HQ and owns the purpose, vision, product direction, priorities, final decisions, production approval, and major strategic changes.
+- Always write **GRID//NODE**.
+- The product should feel like a premium Cyberpunk 2077 and Blade Runner biotech command center: an underground intelligence lab and personal biological operating system that is technical, alive, immersive, intelligent, distinct, mobile-first, personal, and high-trust.
+
 ## Environment
 - Windows host is allowed.
 - All GRID//NODE development runs inside WSL2 Ubuntu.
