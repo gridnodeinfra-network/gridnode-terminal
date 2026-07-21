@@ -23,3 +23,21 @@
 
 ## Approval boundaries
 - Pipe approval is required before production deployment, DNS or domain changes, billing, credential changes, destructive resets, force pushes, irreversible user-data actions, medical-risk behavior, or major vision changes.
+
+## Human Craft Pass — Mandatory Release Gate
+
+Before considering any work complete, apply a Human Craft Pass. The code, interface, copy, and interactions should feel intentionally made by a thoughtful human developer with care, detail, and taste — not rushed, generic, obviously AI-generated, or filled with vibe-coding language.
+
+This applies to:
+
+- CSS and styling — every line placed with intent, not generated
+- DOM structure — every element has a reason to exist, no empty wrappers or framework filler
+- Copy and strings — one consistent voice throughout, no shifting register
+- Animations and timing — tuned easing, durations, subtlety
+- Architecture decisions — coherent and load-bearing, not assembled
+- Visual identity — consistent across surfaces, intentional variation not uniformity
+
+Sign of AI generation: uniformity. Same size, same padding, same voice, same curve.
+Sign of human craft: intentional variation that earns its presence.
+
+Before shipping, ask: "Would an experienced human product designer and front-end engineer proudly put their name on this?" If the answer is not clearly yes, revise before any preview approval or production push.
