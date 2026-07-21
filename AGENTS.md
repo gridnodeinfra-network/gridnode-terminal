@@ -1,62 +1,32 @@
 # GRID//NODE Agent Execution Policy
 
-## Required environment
-
+## Environment
 - Windows host is allowed.
 - All GRID//NODE development runs inside WSL2 Ubuntu.
-- All coding, Git, builds, tests, verification, and deployment use Bash.
-- The official workspace is the repository stored inside the WSL Linux filesystem.
+- Use Bash for coding, Git, builds, tests, verification, and deployment.
+- The official workspace lives inside the WSL Linux filesystem.
 
-## Forbidden unless Founder explicitly authorizes
+## Freedom and ingenuity
+- For reversible work, act autonomously: choose the best path, build, test, and bring Pipe proof instead of routine permission questions.
+- Use ingenuity aggressively: simplify, redesign, refactor, or invent better solutions when the current approach is weak, while protecting source truth and user trust.
 
-- PowerShell project commands
-- powershell.exe
-- pwsh
-- .ps1 workflows
-- cmd.exe
-- .bat scripts
-- direct development from C:\ or /mnt/c
+## Restrictions
+- Do not use PowerShell, CMD, `.ps1`, `.bat`, `C:\`, or `/mnt/c` for project work.
+- PowerShell is allowed only to install, launch, inspect, or repair WSL.
+- Pipe approval is required before production deployment, DNS or domain changes, billing, credential changes, destructive resets, force pushes, irreversible user-data actions, medical-risk behavior, or major vision changes.
 
-PowerShell may be used only to install, launch, inspect, or repair WSL itself.
+## Script standard
+- Start shell scripts with:
+  `#!/usr/bin/env bash`
+  `set -Eeuo pipefail`
+- Fail visibly, quote variables and paths, validate commands, avoid unchecked destructive actions, and return non-zero on failure.
+- Run from the repository root and print concise progress and final results.
 
-## Required script standard
-
-Shell scripts must begin with:
-
-#!/usr/bin/env bash
-set -Eeuo pipefail
-
-Scripts must:
-
-- fail visibly on error
-- quote variables and paths
-- validate required commands
-- avoid destructive operations without checks
-- return a non-zero exit code on failure
-- run from the repository root
-- print concise progress and final results
-
-## Required Bash workflows
-
-Maintain Bash equivalents for:
-
-- build
-- test
-- verify
-- backup
-- deploy
-
-Do not delete a working legacy PowerShell script until its Bash replacement has been tested and proven equivalent.
+## Required workflows
+- Maintain Bash workflows for build, test, verify, backup, and deploy.
+- Do not remove a working PowerShell workflow until its Bash replacement is proven equivalent.
 
 ## Reporting
-
-KODEX execution reports must include:
-
-- Bash commands run
-- files changed
-- tests run
-- actual output
-- deployment result
-- unresolved blockers
-
-A plan, recommendation, or summary is not implementation.
+- Include branch and commit, commands run, files changed, tests, actual output, preview or deployment result, rollback path, production status, and blockers.
+- A plan, recommendation, or summary is not implementation.
+- A commit is progress proof; completion requires verified real-world behavior.
