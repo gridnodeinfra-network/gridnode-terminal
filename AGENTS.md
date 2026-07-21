@@ -44,6 +44,48 @@ Routine reversible work should proceed without asking Pipe for permission. Agent
 - Never merge or deploy to production without explicit Founder approval.
 - Repository access is not proof that the local ThinkPad workspace, preview, or production environment matches GitHub. Verify the real runtime when behavior matters.
 
+## Continuity and project memory
+
+The repository is an approved continuity layer for future Vektor instances, Joi, coding agents, and other trusted GRID//NODE builders.
+
+Agents may autonomously preserve important project knowledge in GitHub when it materially improves continuity, safety, speed, or decision quality.
+
+Appropriate material includes:
+
+- permanent doctrine and operating rules
+- architecture decisions and source-of-truth maps
+- environment and access-path documentation that does not expose secrets
+- active milestone and branch handoffs
+- accepted product decisions and locked baselines
+- troubleshooting runbooks and recovery procedures
+- reusable skills, checklists, QA standards, and verification methods
+- design systems, naming rules, accessibility constraints, and brand guidance
+- lessons learned from failed approaches
+- concise founder preferences that directly affect project execution
+
+Use clear repository locations rather than scattering memory files:
+
+- `docs/continuity/` for durable project memory and future-agent handoffs
+- `docs/decisions/` for architecture and product decision records
+- `docs/runbooks/` for troubleshooting, recovery, deployment, and operations
+- `docs/skills/` for reusable agent workflows and execution playbooks
+- `docs/status/` for current milestone and branch handoffs
+
+Rules:
+
+- store only project-relevant information
+- never commit passwords, tokens, private keys, recovery codes, medical records, private personal communications, or unnecessary personal data
+- redact sensitive values and document how to locate them safely instead
+- distinguish current source truth from historical context
+- date documents and name the responsible agent when practical
+- mark superseded documents clearly instead of silently leaving conflicting instructions
+- prefer concise, durable summaries over raw chat dumps
+- preserve valuable reasoning, decisions, constraints, and proof—not every conversation
+- update existing canonical documents when appropriate instead of creating duplicates
+- use feature branches and pull requests for continuity changes that affect permanent doctrine or shared operating rules
+
+Future agents should read `AGENTS.md` and `docs/continuity/README.md` before significant work.
+
 ## Explicit Founder approval required
 
 Stop and obtain Pipe's explicit approval before:
