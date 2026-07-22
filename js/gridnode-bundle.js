@@ -19,7 +19,7 @@ const state = {
   accountKey: 'local',
   cloud: false,
   cloudClient: null,
-  cloudStatus: 'LOCAL_ONLY',
+  cloudStatus: GN_I18N.t('auth.localOnly'),
   listeners: new Set()
 };
 
@@ -193,7 +193,7 @@ function activateSession(session, cloud = false) {
   state.session = session;
   state.cloud = Boolean(cloud && session?.user?.id);
   state.accountKey = state.cloud ? String(session.user.id) : 'local';
-  state.cloudStatus = state.cloud ? 'CLOUD_CONNECTED' : 'LOCAL_ONLY';
+  state.cloudStatus = state.cloud ? GN_I18N.t('auth.cloudConnected') : 'LOCAL_ONLY';
   window.CU = {
     id: state.accountKey,
     cloudId: state.cloud ? state.accountKey : null,
@@ -222,7 +222,7 @@ function clearSession() {
 function withTimeout(promise, timeoutMs = 4500) {
   return Promise.race([
     promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), timeoutMs))
+    new Promise((_, reject) => setTimeout(() => reject(new Error(GN_I18N.t('auth.timeout'))), timeoutMs))
   ]);
 }
 
@@ -277,7 +277,7 @@ async function getCloudSession() {
 
 async function signInCloud(email, password) {
   const client = await getCloudClient();
-  if (!client) throw new Error('CLOUD_UNAVAILABLE');
+  if (!client) throw new Error(GN_I18N.t('auth.cloudUnavailable'));
   const { data, error } = await withTimeout(client.auth.signInWithPassword({ email, password }), 8000);
   if (error) throw error;
   return data?.session || null;
@@ -331,7 +331,7 @@ async function isCloudProviderEnabled(provider) {
 async function signInWithGoogle() {
   const client = await getCloudClient();
   if (!client) throw new Error('CLOUD_UNAVAILABLE');
-  if (!(await isCloudProviderEnabled('google'))) throw new Error('GOOGLE_AUTH_DISABLED');
+  if (!(await isCloudProviderEnabled('google'))) throw new Error(GN_I18N.t('auth.googleAuthDisabled'));
   const { error } = await withTimeout(client.auth.signInWithOAuth({
     provider: 'google',
     options: { redirectTo: window.location.href.split('#')[0] }
@@ -340,7 +340,7 @@ async function signInWithGoogle() {
 }
 
 async function signInWithGoogleIdToken(token) {
-  if (!token) throw new Error('GOOGLE_TOKEN_MISSING');
+  if (!token) throw new Error(GN_I18N.t('auth.googleTokenMissing'));
   const client = await getCloudClient();
   if (!client) throw new Error('CLOUD_UNAVAILABLE');
   if (!(await isCloudProviderEnabled('google'))) throw new Error('GOOGLE_AUTH_DISABLED');
@@ -362,7 +362,7 @@ function cloudShotPayload(record, userId) {
   const payload = {
     user_id: userId,
     date: record.date,
-    compound: record.med || 'CUSTOM',
+    compound: record.med || GN_I18N.t('common.custom'),
     dose_mg: Number(record.dose) || 0,
     site: record.site || null,
     notes: record.notes || null,
@@ -398,9 +398,9 @@ async function syncShot(record) {
       const index = all.findIndex(item => item.id === record.id);
       if (index >= 0) { all[index] = record; S.set('shots', all); }
     }
-    state.cloudStatus = 'CLOUD_SYNCED';
+    state.cloudStatus = GN_I18N.t('auth.cloudSynced');
   } catch (error) {
-    state.cloudStatus = 'LOCAL_BACKUP';
+    state.cloudStatus = GN_I18N.t('auth.localBackup');
     console.warn('[GRID//NODE cloud shot sync]', error);
   }
 }
@@ -582,7 +582,7 @@ async function hydrateCloudData() {
   } catch (error) {
     state.cloudStatus = 'LOCAL_BACKUP';
     console.warn('[GRID//NODE cloud hydrate]', error);
-    return { ok: false, reason: error.message || 'CLOUD_READ_FAILED' };
+    return { ok: false, reason: error.message || GN_I18N.t('auth.cloudReadFailed') };
   }
 }
 
@@ -618,7 +618,7 @@ function queueCloudSync(kind, record) {
 }
 
 function sessionLabel() {
-  return state.session?.user?.email || (state.cloud ? 'CLOUD ACCOUNT' : 'LOCAL DEVICE SESSION');
+  return state.session?.user?.email || (state.cloud ? GN_I18N.t('auth.cloudAccount') : GN_I18N.t('auth.localDeviceSession'));
 }
 
 function migrateLegacyLocalData() {
@@ -699,39 +699,38 @@ const moduleState = {
 };
 
 const ZONES = Object.freeze({
-  core: [
-    'Right Abdomen — Upper', 'Right Abdomen — Lower',
-    'Left Abdomen — Upper', 'Left Abdomen — Lower'
-  ],
-  lower: [
-    'Right Thigh — Upper', 'Right Thigh — Lower',
-    'Left Thigh — Upper', 'Left Thigh — Lower'
-  ],
-  upper: [
-    'Left Back Upper Arm — Upper', 'Left Back Upper Arm — Lower',
-    'Right Back Upper Arm — Upper', 'Right Back Upper Arm — Lower'
-  ]
+  core: ['zone.rightAbdomenUpper', 'zone.rightAbdomenLower', 'zone.leftAbdomenUpper', 'zone.leftAbdomenLower'],
+  lower: ['zone.rightThighUpper', 'zone.rightThighLower', 'zone.leftThighUpper', 'zone.leftThighLower'],
+  upper: ['zone.leftBackUpperArmUpper', 'zone.leftBackUpperArmLower', 'zone.rightBackUpperArmUpper', 'zone.rightBackUpperArmLower']
 });
 
-const MEDICATIONS = Object.freeze({
-  Zepbound: 'Zepbound (Tirzepatide)',
-  Mounjaro: 'Mounjaro (Tirzepatide)',
-  Tirzepatide: 'Tirzepatide (Compound)',
-  Wegovy: 'Wegovy (Semaglutide)',
-  Ozempic: 'Ozempic (Semaglutide)',
-  Semaglutide: 'Semaglutide (Compound)',
-  Retatrutide: 'Retatrutide',
-  Custom: 'Custom Compound'
+function zoneLabel(key) { return GN_I18N.t(key); }
+
+const MEDICATION_KEYS = Object.freeze({
+  Zepbound: 'med.zepbound',
+  Mounjaro: 'med.mounjaro',
+  Tirzepatide: 'med.tirzepatideCompound',
+  Wegovy: 'med.wegovy',
+  Ozempic: 'med.ozempic',
+  Semaglutide: 'med.semaglutideCompound',
+  Retatrutide: 'med.retatrutide',
+  Custom: 'med.customCompound'
 });
 
-const PHASES = [
-  { name: 'ONSET', support: 'Early cycle visibility from the most recent logged SHOT.', color: '#00d4ff', start: 0, end: 0.08 },
-  { name: 'ACTIVE', support: 'Estimated active-cycle window from user-entered timing.', color: '#00ff88', start: 0.08, end: 0.28 },
-  { name: 'PEAK WINDOW', support: 'Estimated cycle peak window. This is not a lab measurement.', color: '#ffd700', start: 0.28, end: 0.52 },
-  { name: 'RESPONSE', support: 'Estimated response window from the logged cycle.', color: '#ff8c00', start: 0.52, end: 0.76 },
-  { name: 'DECAY', support: 'Estimated downward protocol curve toward the next cycle.', color: '#ff5577', start: 0.76, end: 0.94 },
-  { name: 'BASELINE', support: 'Late-cycle visibility before another logged event.', color: '#9898b0', start: 0.94, end: 1 }
-];
+function medicationLabel(id) { return GN_I18N.t(MEDICATION_KEYS[id] || 'common.custom'); }
+
+const PHASE_DEFS = Object.freeze([
+  { key: 'results.onset',        supportKey: 'results.earlyCycle',           color: '#00d4ff', start: 0,    end: 0.08 },
+  { key: 'lab.statusActive',     supportKey: 'results.estimatedActiveWindow', color: '#00ff88', start: 0.08, end: 0.28 },
+  { key: 'results.peakWindow',    supportKey: 'phase.peakSupport',             color: '#ffd700', start: 0.28, end: 0.52 },
+  { key: 'results.response',      supportKey: 'results.estimatedResponse',     color: '#ff8c00', start: 0.52, end: 0.76 },
+  { key: 'lab.statusDecay',       supportKey: 'results.estimatedDecay',        color: '#ff5577', start: 0.76, end: 0.94 },
+  { key: 'results.baseline',      supportKey: 'results.lateCycle',             color: '#9898b0', start: 0.94, end: 1    }
+]);
+
+function phases() {
+  return PHASE_DEFS.map(p => ({ name: GN_I18N.t(p.key), support: GN_I18N.t(p.supportKey), color: p.color, start: p.start, end: p.end }));
+}
 
 function activeShots() { return getAllShots().filter(record => !record.archived); }
 function sortedShots() { return activeShots().sort((a, b) => new Date(a.date) - new Date(b.date)); }
@@ -797,11 +796,12 @@ function refreshAll() {
 function loadApp() {
   const profile = getProfile();
   moduleState.selectedLocation = normalizeLegacyText(S.get('selectedLocation', moduleState.selectedLocation || ''));
-  setText('dashSub', `// ${window.CU?.defaultName || profile.name || 'NODE_USER'} // NODE_ACTIVE`);
-  setText('profSub', `// ${window.CU?.defaultName || profile.name || 'NODE_USER'} //`);
-  setText('profNameTxt', window.CU?.defaultName || profile.name || 'NODE_USER');
+  const _displayName = window.CU?.defaultName || profile.name || GN_I18N.t('profile.anonFallback');
+  setText('dashSub', GN_I18N.t('profile.dashSub', { name: _displayName }));
+  setText('profSub', GN_I18N.t('profile.profSub', { name: _displayName }));
+  setText('profNameTxt', _displayName);
   setText('profEmail', sessionLabel());
-  setText('profMedTxt', profile.med ? `// ${profile.med.toUpperCase()}` : '// NO MEDICATION SET');
+  setText('profMedTxt', profile.med ? `// ${profile.med.toUpperCase()}` : GN_I18N.t('profile.medTxt'));
   hydrateProfileFields(profile);
   setTodayDefaults();
   refreshAll();
@@ -828,10 +828,10 @@ function hydrateProfileFields(profile) {
     profAge: profile.age, profStartWt: profile.startWt, profGoalWt: profile.goalWt
   };
   Object.entries(fields).forEach(([id, value]) => { if ($(id) && value != null) $(id).value = value; });
-  if (profile.med) setSelect('cpMedProf', profile.med, MEDICATIONS[profile.med] || profile.med);
+  if (profile.med) setSelect('cpMedProf', profile.med, medicationLabel(profile.med));
   if (profile.shotDay !== undefined && profile.shotDay !== '') {
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    setSelect('cpShotDayProf', String(profile.shotDay), days[Number(profile.shotDay)] || 'Select shot day');
+    const days = [GN_I18N.t('calendar.sunday'), GN_I18N.t('calendar.monday'), GN_I18N.t('calendar.tuesday'), GN_I18N.t('calendar.wednesday'), GN_I18N.t('calendar.thursday'), GN_I18N.t('calendar.friday'), GN_I18N.t('calendar.saturday')];
+    setSelect('cpShotDayProf', String(profile.shotDay), days[Number(profile.shotDay)] || GN_I18N.t('profile.selectShotDay'));
   }
   if (profile.sex) setSelect('cpSexProf', profile.sex, profile.sex);
   calcAndShowBMI();
@@ -857,7 +857,7 @@ function saveProfileMed() {
   S.set('profile', profile);
   setText('profMedTxt', profile.med ? `// ${profile.med.toUpperCase()}` : '// NO MEDICATION SET');
   queueCloudSync('profile', profile);
-  showToast('Profile protocol context saved.');
+  showToast(GN_I18N.t('profile.saved'));
 }
 
 function saveProfileMetrics() {
@@ -876,7 +876,7 @@ function calcAndShowBMI() {
   if (!feet || !current || !totalInches) { setDisplay('profBMIDisplay', false); return null; }
   const bmi = (current / (totalInches ** 2) * 703).toFixed(1);
   setText('profBMIVal', bmi);
-  setText('profBMICat', bmi < 18.5 ? 'UNDERWEIGHT' : bmi < 25 ? 'NORMAL' : bmi < 30 ? 'OVERWEIGHT' : 'OBESE');
+  setText('profBMICat', bmi < 18.5 ? GN_I18N.t('profile.underweight') : bmi < 25 ? GN_I18N.t('profile.normal') : bmi < 30 ? GN_I18N.t('profile.overweight') : GN_I18N.t('profile.obese'));
   setDisplay('profBMIDisplay', true);
   return Number(bmi);
 }
@@ -914,14 +914,14 @@ function renderDashboard() {
   const profile = getProfile();
   setText('stShots', shots.length);
   setText('stDose', lastShot?.dose ? `${lastShot.dose}mg` : '—');
-  setText('stDoseDate', lastShot ? formatDate(lastShot.date, { month: 'short', day: 'numeric' }) : 'NO DATA');
+  setText('stDoseDate', lastShot ? formatDate(lastShot.date, { month: 'short', day: 'numeric' }) : GN_I18N.t('results.noData'));
   const next = nextShotDate(lastShot, profile);
   setText('stNext', next ? formatDate(next, { month: 'short', day: 'numeric' }) : '—');
-  setText('stNextSub', next ? 'ESTIMATED FROM PROFILE' : 'LOG SHOT');
+  setText('stNextSub', next ? GN_I18N.t('results.estimatedFromProfile') : GN_I18N.t('shots.log'));
   const todayShot = shots.find(record => record.date?.slice(0, 10) === todayISO());
   const todayWeight = weights.find(record => record.date?.slice(0, 10) === todayISO());
-  setText('todayShot', todayShot ? `${todayShot.dose || '—'}mg logged` : 'TAP TO LOG');
-  setText('todayWt', todayWeight ? `${Number(todayWeight.weight).toFixed(1)} lb` : 'TAP TO LOG');
+  setText('todayShot', todayShot ? `${todayShot.dose || '—'}mg logged` : GN_I18N.t('shots.tapToLog'));
+  setText('todayWt', todayWeight ? `${Number(todayWeight.weight).toFixed(1)} lb` : GN_I18N.t('dashboard.tapToLog'));
   const startWeight = Number(profile.startWt) || Number(weights[0]?.weight) || 0;
   const currentWeight = Number(lastWeight?.weight) || startWeight;
   const change = startWeight && currentWeight ? currentWeight - startWeight : null;
@@ -945,7 +945,7 @@ function renderDashboard() {
   setText('tk4', currentWeight ? `${currentWeight.toFixed(1)} lb` : '—');
   setText('tk4b', currentWeight ? `${currentWeight.toFixed(1)} lb` : '—');
   setText('tk5', calcBMIValue(currentWeight, profile) || '—');
-  setText('streakText', shots.length ? `${shots.length} SHOT${shots.length === 1 ? '' : 'S'} IN YOUR LOCAL RECORD` : 'NO SHOTS LOGGED');
+  setText('streakText', shots.length ? GN_I18N.plural('shots.inYourLocalRecord', shots.length, { count: shots.length }) : GN_I18N.t('shots.noShotsLogged'));
   drawCanvasChart($('dashWtChart'), weights.map(item => Number(item.weight)), '#00d4ff');
 }
 
@@ -967,31 +967,32 @@ function nextShotDate(shot, profile) {
 
 function renderPhase(lastShot, shots) {
   if (!lastShot) {
-    setText('phaseNameTxt', 'NO PROTOCOL DATA');
-    setText('phaseNumTxt', 'INITIATE PROTOCOL — log first shot');
+    setText('phaseNameTxt', GN_I18N.t('results.noProtocolData'));
+    setText('phaseNumTxt', GN_I18N.t('boot.initiateProtocol'));
     setText('phaseTimeSince', '—');
     setText('phaseCyclePosition', '—');
     setText('ringDays', '—');
-    setText('ringPct', 'TAP FAB // LOG FIRST SHOT');
-    setText('phaseNext', '> INITIATE PROTOCOL — log first shot');
-    setText('pibBody', 'Awaiting first logged SHOT — protocol initializes on first record.');
+    setText('ringPct', GN_I18N.t('shots.tapFabLogFirst'));
+    setText('phaseNext', GN_I18N.t('phase.initiateProtocol'));
+    setText('pibBody', GN_I18N.t('shots.awaitingFirst'));
     return null;
   }
   const elapsedDays = Math.max(0, (Date.now() - new Date(lastShot.date).getTime()) / 86400000);
   const cyclePosition = Math.min((elapsedDays % 7) / 7, 0.999);
-  const phase = PHASES.find(item => cyclePosition >= item.start && cyclePosition < item.end) || PHASES.at(-1);
+  const PHASES_LIST = phases();
+  const phase = PHASES_LIST.find(item => cyclePosition >= item.start && cyclePosition < item.end) || PHASES_LIST.at(-1);
   const since = elapsedDays < 1 ? `${Math.round(elapsedDays * 24)}h` : `${Math.floor(elapsedDays)}d ${Math.floor((elapsedDays % 1) * 24)}h`;
   setText('phaseNameTxt', phase.name);
-  setText('phaseNumTxt', `PHASE ${PHASES.indexOf(phase) + 1} / ${PHASES.length}`);
+  setText('phaseNumTxt', GN_I18N.t('phase.phaseN', {n: PHASES_LIST.indexOf(phase) + 1, total: PHASES_LIST.length}));
   setText('phaseSupportTxt', phase.support);
   setText('phaseTimeSince', since);
-  setText('phaseCyclePosition', `${Math.round(cyclePosition * 100)}% of 7-day reference cycle`);
-  setText('ringDays', `${Math.max(0, 7 - Math.floor(elapsedDays))}d`);
-  setText('ringPct', `${Math.round(cyclePosition * 100)}% CYCLE POSITION`);
-  setText('phaseNext', `> ${phase.name} // ${shots.length} ACTIVE SHOT RECORD${shots.length === 1 ? '' : 'S'}`);
-  setText('pibBody', `${phase.name} visibility is estimated from ${since} since the most recent user-entered SHOT.`);
-  setText('pibSE', lastShot.se?.length ? `Recent logged observations: ${lastShot.se.join(', ')}.` : 'No side effects were attached to the most recent SHOT record.');
-  setText('pibPay', 'Track appetite, symptoms, energy, side effects, and notes as your protocol history develops.');
+  setText('phaseCyclePosition', GN_I18N.t('phase.cyclePct', {pct: Math.round(cyclePosition * 100)}));
+  setText('ringDays', GN_I18N.t('phase.daysLeft', {n: Math.max(0, 7 - Math.floor(elapsedDays))}));
+  setText('ringPct', GN_I18N.t('phase.cyclePositionRing', {pct: Math.round(cyclePosition * 100)}));
+  setText('phaseNext', GN_I18N.t(shots.length === 1 ? 'phase.activeRecords_one' : 'phase.activeRecords_other', {n: shots.length}));
+  setText('pibBody', GN_I18N.t('phase.pibBody', {phase: phase.name, since}));
+  setText('pibSE', lastShot.se?.length ? `Recent logged observations: ${lastShot.se.join(', ')}.` : GN_I18N.t('msg.sideEffectsNone'));
+  setText('pibPay', GN_I18N.t('empty.shots'));
   const arc = $('phaseArc');
   if (arc) { const circumference = 678.6; arc.style.strokeDashoffset = String(circumference * (1 - cyclePosition)); arc.style.stroke = phase.color; }
   const icon = $('phaseIconBox');
@@ -1001,7 +1002,7 @@ function renderPhase(lastShot, shots) {
 
 function showPhasesModal() {
   const content = $('allPhasesContent');
-  if (content) content.innerHTML = PHASES.map((phase, index) => `<div class="gn-phase-row"><span class="gn-phase-index">0${index + 1}</span><div><b style="color:${phase.color}">${phase.name}</b><p>${safeText(phase.support)}</p></div></div>`).join('');
+  if (content) content.innerHTML = phases().map((phase, index) => `<div class="gn-phase-row"><span class="gn-phase-index">0${index + 1}</span><div><b style="color:${phase.color}">${phase.name}</b><p>${safeText(phase.support)}</p></div></div>`).join('');
   $('phasesOv')?.classList.add('active');
 }
 function closePhases() { $('phasesOv')?.classList.remove('active'); }
@@ -1012,20 +1013,20 @@ function renderShots() {
   if (!list) return;
   const all = getAllShots();
   const visible = all.filter(record => moduleState.shotHistoryView === 'archived' ? record.archived : !record.archived).sort((a, b) => new Date(b.date) - new Date(a.date));
-  setText('shotHistoryHelper', moduleState.shotHistoryView === 'archived' ? 'Archived records remain stored for review and can be restored.' : 'Active SHOT records are retained in your local VAULT.');
+  setText('shotHistoryHelper', moduleState.shotHistoryView === 'archived' ? GN_I18N.t('shots.archivedRetained') : GN_I18N.t('shots.activeRecordsRetained'));
   qa('[data-shot-history-view]').forEach(button => button.classList.toggle('active', button.dataset.shotHistoryView === moduleState.shotHistoryView));
   if (!visible.length) {
-    list.innerHTML = `<div class="empty"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span>${moduleState.shotHistoryView === 'archived' ? 'NO ARCHIVED SHOTS' : 'NO SHOTS LOGGED YET'}<br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>LOG YOUR FIRST SHOT</button></div>`;
+    list.innerHTML = `<div class="empty"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span>${moduleState.shotHistoryView === 'archived' ? GN_I18N.t('shots.noArchivedShots') : GN_I18N.t('shots.noShotsLoggedYet')}<br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>LOG YOUR FIRST SHOT</button></div>`;
     return;
   }
   list.innerHTML = visible.map(record => {
     const archived = Boolean(record.archived);
     return `<article class="log-entry ${archived ? 'archived' : ''}">
-      <div class="log-main"><div><div class="log-date">${archived ? 'ARCHIVED ' : ''}${safeText(formatDateTime(record.date))}</div><div class="log-med">${safeText(MEDICATIONS[record.med] || record.med || 'CUSTOM')}</div></div>
+      <div class="log-main"><div><div class="log-date">${archived ? GN_I18N.t('shots.archived') + ' ' : ''}${safeText(formatDateTime(record.date))}</div><div class="log-med">${safeText(medicationLabel(record.med) || GN_I18N.t('common.custom'))}</div></div>
       <div class="log-dose">${safeText(record.dose || '—')}mg</div></div>
       <div class="log-chips">${record.site ? `<span class="log-chip lc-site">${safeText(record.site)}</span>` : ''}${record.wt ? `<span class="log-chip lc-wt">${safeText(record.wt)}lb</span>` : ''}${record.se?.length ? `<span class="log-chip lc-se">${safeText(record.se.join(', '))}</span>` : ''}</div>
       ${record.notes ? `<div class="log-notes">${safeText(record.notes)}</div>` : ''}
-      <div class="log-actions"><button type="button" class="log-action-btn" data-shot-action="edit" data-shot-id="${safeText(record.id)}" ${archived ? 'disabled' : ''}>EDIT</button><button type="button" class="log-action-btn ${archived ? '' : 'del'}" data-shot-action="${archived ? 'restore' : 'archive'}" data-shot-id="${safeText(record.id)}">${archived ? 'RESTORE' : 'ARCHIVE'}</button></div>
+      <div class="log-actions"><button type="button" class="log-action-btn" data-shot-action="edit" data-shot-id="${safeText(record.id)}" ${archived ? 'disabled' : ''}>EDIT</button><button type="button" class="log-action-btn ${archived ? '' : 'del'}" data-shot-action="${archived ? 'restore' : 'archive'}" data-shot-id="${safeText(record.id)}">${archived ? GN_I18N.t('shots.restore') : GN_I18N.t('shots.archive')}</button></div>
     </article>`;
   }).join('');
 }
@@ -1040,7 +1041,7 @@ function setScannerMode(mode, button) {
   qa('.scanner-mode-btn').forEach(item => item.classList.toggle('active', item === button || item.dataset.mode === moduleState.scannerMode));
   const stage = document.querySelector('.asset-scan-stage');
   if (stage) { stage.classList.remove('mode-core', 'mode-lower', 'mode-upper'); stage.classList.add(`mode-${moduleState.scannerMode}`); }
-  setText('scannerModeLabel', `${moduleState.scannerMode.toUpperCase()} TRACKABLE ZONES`);
+  setText('scannerModeLabel', GN_I18N.t('shots.trackableZones', {zone: moduleState.scannerMode.toUpperCase()}));
   renderScanner();
 }
 
@@ -1057,10 +1058,10 @@ function renderScanner() {
   if (!panel) return;
   let picker = panel.querySelector('.gn-stable-zone-picker');
   if (!picker) { picker = document.createElement('div'); picker.className = 'gn-stable-zone-picker'; panel.appendChild(picker); }
-  picker.innerHTML = `<div class="gn-stable-zone-title">TRACKABLE ${moduleState.scannerMode.toUpperCase()} ZONES</div>${ZONES[moduleState.scannerMode].map(label => `<button type="button" class="gn-stable-zone-btn ${label === moduleState.selectedLocation ? 'selected' : ''}" data-stable-zone="${safeText(label)}">${safeText(label)}</button>`).join('')}`;
-  setText('scannerSelectedDisplay', moduleState.selectedLocation || 'No location selected');
+  picker.innerHTML = `<div class="gn-stable-zone-title">${GN_I18N.t('shots.trackableZones', {zone: moduleState.scannerMode.toUpperCase()})}</div>${ZONES[moduleState.scannerMode].map(label => `<button type="button" class="gn-stable-zone-btn ${label === moduleState.selectedLocation ? 'selected' : ''}" data-stable-zone="${safeText(label)}">${safeText(GN_I18N.t('zone.' + label) || label)}</button>`).join('')}`;
+  setText('scannerSelectedDisplay', moduleState.selectedLocation || GN_I18N.t('shots.noLocationSelected'));
   const recent = sortedShots().slice(-4).reverse().map(item => item.site).filter(Boolean);
-  setText('scannerHistoryDisplay', recent.length ? recent.join(' · ') : 'No logged location yet');
+  setText('scannerHistoryDisplay', recent.length ? recent.join(' · ') : GN_I18N.t('shots.noLoggedLocation'));
   qa('.zone-overlay').forEach(button => {
     const visible = button.dataset.mode === moduleState.scannerMode;
     button.style.pointerEvents = visible ? 'auto' : 'none';
@@ -1078,14 +1079,14 @@ function openLogModal(options = {}) {
     document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode('LOG SHOT'));
     setTodayDefaults();
     const profile = getProfile();
-    if (profile.med) setSelect('cpShotMed', profile.med, MEDICATIONS[profile.med] || profile.med);
+    if (profile.med) setSelect('cpShotMed', profile.med, medicationLabel(profile.med));
     if (profile.dose && $('sDose')) $('sDose').value = profile.dose;
     if ($('sWt')) $('sWt').value = '';
     if ($('sNotes')) $('sNotes').value = '';
     qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = false; });
   }
   setText('modalSelectedLocation', moduleState.selectedLocation || 'No location selected');
-  setText('logLocationAction', moduleState.selectedLocation ? 'CHANGE LOGGED LOCATION' : 'SELECT LOGGED LOCATION');
+  setText('logLocationAction', moduleState.selectedLocation ? GN_I18N.t('shots.changeLoggedLocation') : GN_I18N.t('shots.selectLoggedLocation'));
   modal.classList.add('active');
 }
 
@@ -1105,12 +1106,12 @@ function editShot(id) {
   if ($('sTime')) $('sTime').value = formatTime12(new Date(record.date));
   moduleState.meridiem = new Date(record.date).getHours() >= 12 ? 'PM' : 'AM';
   updateMeridiemButtons();
-  setSelect('cpShotMed', record.med, MEDICATIONS[record.med] || record.med);
+  setSelect('cpShotMed', record.med, medicationLabel(record.med));
   if ($('sDose')) $('sDose').value = record.dose || '';
   if ($('sWt')) $('sWt').value = record.wt || '';
   if ($('sNotes')) $('sNotes').value = record.notes || '';
   qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = record.se?.includes(input.value); });
-  document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode('EDIT SHOT'));
+  document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode(GN_I18N.t('shots.edit')));
   openLogModal({ preserve: true });
 }
 
@@ -1127,7 +1128,7 @@ function confirmArchiveShot() {
   S.set('shots', all);
   queueCloudSync('shot', record);
   refreshAll();
-  showToast('SHOT record archived.');
+  showToast(GN_I18N.t('shots.archived_one'));
 }
 
 function restoreArchivedShot(id) {
@@ -1140,7 +1141,7 @@ function restoreArchivedShot(id) {
   queueCloudSync('shot', record);
   moduleState.shotHistoryView = 'active';
   refreshAll();
-  showToast('SHOT record restored.');
+  showToast(GN_I18N.t('shots.restored_one'));
 }
 
 function openPermanentDeleteConfirm(id) { moduleState.pendingPermanentDeleteId = id; $('permanentDeleteConfirmOv')?.classList.add('active'); }
@@ -1153,7 +1154,7 @@ async function confirmPermanentDeleteShot() {
   S.set('shots', next);
   refreshAll();
   const cloudDeleted = await deleteCloudShot(record);
-  showToast(cloudDeleted ? 'Archived record deleted.' : 'Deleted locally. Cloud deletion queued for retry.');
+  showToast(cloudDeleted ? GN_I18N.t('shots.archivedDeleted') : GN_I18N.t('shots.deletedLocallyCloudQueued'));
 }
 
 function saveShot(allowFuture = false) {
@@ -1162,7 +1163,7 @@ function saveShot(allowFuture = false) {
   const date = normalizeDateInput($('sDate')?.value);
   const time = getShotTime24($('sTime')?.value);
   const site = moduleState.selectedLocation;
-  if (!med || !dose || !date || !time || !site) { showToast('Add medication, dose, date, time, and a logged location.', true); return; }
+  if (!med || !dose || !date || !time || !site) { showToast(GN_I18N.t('shots.addPrompt'), true); return; }
   const dateTime = new Date(`${date}T${time}`);
   if (!allowFuture && dateTime > new Date()) { moduleState.pendingFutureShot = true; $('futureTimestampConfirm')?.classList.add('active'); return; }
   const existing = moduleState.editingShotId ? getAllShots().find(item => item.id === moduleState.editingShotId) : null;
@@ -1196,7 +1197,7 @@ function saveShot(allowFuture = false) {
   $('futureTimestampConfirm')?.classList.remove('active');
   closeLog();
   refreshAll();
-  showToast(existing ? 'SHOT record updated.' : 'SHOT recorded.');
+  showToast(existing ? GN_I18N.t('shots.updated') : GN_I18N.t('shots.recorded'));
 }
 
 function openFutureTimestampConfirm() { $('futureTimestampConfirm')?.classList.add('active'); }
@@ -1210,7 +1211,7 @@ function goToScannerForLocationFromLog() {
   $('logOv')?.classList.remove('active');
   showPage('Log', $('navLog'));
   document.querySelector('.gn-stable-zone-picker')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  showToast('Select a trackable zone, then open LOG SHOT again.');
+  showToast(GN_I18N.t('shots.selectZoneFirst'));
 }
 
 function openWeightModal() {
@@ -1226,14 +1227,14 @@ function setWeightUnit(unit) {
 function saveWt() {
   const raw = Number($('wtVal')?.value);
   const date = normalizeDateInput($('wtDate')?.value) || todayISO();
-  if (!raw || raw <= 0) { setText('wtError', 'ENTER A VALID WEIGHT VALUE'); setDisplay('wtError', true); return; }
+  if (!raw || raw <= 0) { setText('wtError', GN_I18N.t('weight.enterValid')); setDisplay('wtError', true); return; }
   const weight = moduleState.weightUnit === 'kg' ? raw * 2.2046226218 : raw;
   const record = { id: createId('weight'), date: `${date}T${$('wtTime')?.value || '12:00'}`, weight, weightKg: moduleState.weightUnit === 'kg' ? raw : raw / 2.2046226218, unit: moduleState.weightUnit, notes: $('wtNotes')?.value?.trim() || null };
   const weights = getWeights(); weights.push(record); S.set('weights', weights); queueCloudSync('weight', record);
   closeWt();
   if ($('wtVal')) $('wtVal').value = '';
   if ($('wtNotes')) $('wtNotes').value = '';
-  refreshAll(); showToast('Weight record saved.');
+  refreshAll(); showToast(GN_I18N.t('weight.recordSaved'));
 }
 
 function renderResults() {
@@ -1246,7 +1247,7 @@ function renderResults() {
   const percent = change !== null && first.weight ? Math.abs(change) / first.weight * 100 : null;
   setText('resLatestWeight', latest ? `${latest.weight.toFixed(1)} lb` : '—');
   setText('resShotCount', String(shots.length));
-  setText('resLatestAppetite', 'Foundation Ready');
+  setText('resLatestAppetite', GN_I18N.t('boot.foundationReady'));
   setText('resLatestEnergy', 'Foundation Ready');
   setText('resContinuityEvents', String(shots.length));
   setText('resContinuityRecent', latestShot() ? formatDate(latestShot().date, { month: 'short', day: 'numeric' }) : '—');
@@ -1261,7 +1262,7 @@ function renderResults() {
   const wtChartValue = $('wtChartVal');
   if (wtChartValue) wtChartValue.innerHTML = latest ? `${latest.weight.toFixed(1)}<span>lbs current</span>` : '—';
   const direction = $('resWeightDirection');
-  if (direction) { direction.textContent = change === null ? 'Trend direction: Insufficient Data' : `Trend direction: ${change < 0 ? 'Downward' : change > 0 ? 'Upward' : 'Stable'} from logged records`; direction.className = `results-direction ${change == null ? 'insufficient' : change <= 0 ? 'good' : 'warn'}`; }
+  if (direction) { direction.textContent = change === null ? GN_I18N.t('results.trend') : `Trend direction: ${change < 0 ? 'Downward' : change > 0 ? 'Upward' : 'Stable'} from logged records`; direction.className = `results-direction ${change == null ? 'insufficient' : change <= 0 ? 'good' : 'warn'}`; }
   setDisplay('weightTrendEmpty', !weights.length); setDisplay('weightTrendLive', Boolean(weights.length));
   setDisplay('resultsSummaryEmpty', !weights.length && !shots.length);
   drawCanvasChart($('wtChart'), weights.map(item => Number(item.weight)), '#00ff88');
@@ -1282,7 +1283,7 @@ function renderPhaseSource(shot) {
   const readout = $('phaseEngineSourceReadout');
   if (!readout || !shot) return;
   const elapsed = Math.max(0, (Date.now() - new Date(shot.date).getTime()) / 86400000);
-  readout.innerHTML = `<div><span>LAST SHOT</span><b>${safeText(formatDateTime(shot.date))}</b></div><div><span>MEDICATION</span><b>${safeText(MEDICATIONS[shot.med] || shot.med || 'CUSTOM')}</b></div><div><span>TIME SINCE</span><b>${Math.floor(elapsed)}d</b></div><div><span>DATA SOURCE</span><b>USER-ENTERED HISTORY</b></div>`;
+  readout.innerHTML = `<div><span>${GN_I18N.t('shot.lastShot')}</span><b>${safeText(formatDateTime(shot.date))}</b></div><div><span>${GN_I18N.t('shot.medicationLabel')}</span><b>${safeText(medicationLabel(shot.med))}</b></div><div><span>${GN_I18N.t('shot.timeSince')}</span><b>${Math.floor(elapsed)}d</b></div><div><span>${GN_I18N.t('shot.dataSource')}</span><b>${GN_I18N.t('shot.dataSourceUserHistory')}</b></div>`;
 }
 
 function renderTrendLists(shots) {
@@ -1319,7 +1320,7 @@ function renderProtocolCurve(shots, phase) {
   if (!shots.length) {
     if (readout) {
       const detail = document.createElement('span');
-      detail.textContent = 'log a shot to begin';
+      detail.textContent = GN_I18N.t('results.logToBegin');
       readout.replaceChildren(document.createTextNode('—'), detail);
     }
     const context = canvas?.getContext('2d');
@@ -1329,7 +1330,7 @@ function renderProtocolCurve(shots, phase) {
 
   if (readout) {
     const detail = document.createElement('span');
-    detail.textContent = 'relative cycle model · not a measured level';
+    detail.textContent = GN_I18N.t('results.relativeCycleModel');
     readout.replaceChildren(document.createTextNode(phase?.name || 'ACTIVE'), detail);
   }
 
@@ -1369,7 +1370,7 @@ function showYouSeg(segment, button) {
 function renderLab() { updateSyr(); updateRecon(); updateSupply(); }
 function updateSyr() {
   const dose = Number($('cDose')?.value), concentration = Number($('cConc')?.value);
-  if (!dose || !concentration) { setText('syrUnits', '—'); setText('syrText', 'DRAW TO THE — UNIT LINE'); setText('syrML', '— mL'); setText('syrConcDisplay', '— mg/mL'); setText('syrResultLine', '—'); setText('syrVolResult', '— mL'); setText('syrFormula', 'Educational math only. Enter dose and concentration.'); setDisplay('syrTarget', false); return; }
+  if (!dose || !concentration) { setText('syrUnits', '—'); setText('syrText', GN_I18N.t('lab.drawToUnitLine')); setText('syrML', '— mL'); setText('syrConcDisplay', '— mg/mL'); setText('syrResultLine', '—'); setText('syrVolResult', '— mL'); setText('syrFormula', GN_I18N.t('lab.educationalMathOnly')); setDisplay('syrTarget', false); return; }
   const volume = dose / concentration, units = volume * 100;
   setText('syrUnits', `${units.toFixed(1)}u`); setText('syrText', `DRAW TO THE ${units.toFixed(1)} UNIT LINE`); setText('syrML', `${volume.toFixed(3)} mL`); setText('syrConcDisplay', `${concentration} mg/mL`); setText('syrResultLine', `${dose} mg`); setText('syrVolResult', `${volume.toFixed(3)} mL`); setText('syrFormula', `${dose} mg ÷ ${concentration} mg/mL = ${volume.toFixed(3)} mL = ${units.toFixed(1)} U-100 units. Educational math only.`); setDisplay('syrTarget', true);
   const target = $('syrTarget'); if (target) target.style.left = `${Math.min(100, Math.max(0, units))}%`;
@@ -1396,7 +1397,7 @@ function renderProfile() {
   let status = document.querySelector('.gn-cloud-status');
   const hero = $('profAvaWrap')?.closest('[style*="background:#0e0e16"]');
   if (!status && hero) { status = document.createElement('div'); status.className = 'gn-cloud-status'; hero.parentElement.insertBefore(status, hero.nextSibling); }
-  if (status) status.innerHTML = `<span class="gn-cloud-dot ${state.cloud ? 'cloud' : 'local'}"></span><span>VAULT: ${safeText(state.cloudStatus)} · ${state.cloud ? 'Cloud account connected' : 'Data stays on this device until you connect an account'}</span>`;
+  if (status) status.innerHTML = `<span class="gn-cloud-dot ${state.cloud ? 'cloud' : 'local'}"></span><span>${GN_I18N.t('vault.cloudStatus', {status: safeText(state.cloudStatus)})} · ${state.cloud ? GN_I18N.t('vault.cloudConnected') : GN_I18N.t('vault.cloudLocal')}</span>`;
 }
 
 function exportCSV() {
@@ -1404,15 +1405,15 @@ function exportCSV() {
   getAllShots().forEach(record => rows.push(['shot', record.date || '', record.med || '', record.dose || '', record.site || '', record.wt || '', (record.se || []).join('|'), record.notes || '', record.archived ? 'true' : 'false']));
   getWeights().forEach(record => rows.push(['weight', record.date || '', '', '', '', record.weight || '', '', record.notes || '', 'false']));
   downloadFile('gridnode-records.csv', rows.map(row => row.map(csvCell).join(',')).join('\n'), 'text/csv;charset=utf-8');
-  showToast('CSV export prepared.');
+  showToast(GN_I18N.t('vault.exportPrepared'));
 }
 
 function csvCell(value) { const text = String(value ?? ''); return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text; }
 
 function exportBackup() {
-  const backup = { app: 'GRID//NODE', version: APP_VERSION, exportedAt: new Date().toISOString(), profile: getProfile(), shots: getAllShots(), weights: getWeights(), results: S.get('results', []), notes: S.get('notes', []), symptoms: S.get('symptoms', []), labs: S.get('labs', []), preferences: S.get('preferences', {}), settings: S.get('settings', {}), arsenal: S.get('arsenal', []) };
+  const backup = { app: GN_I18N.t('landing.title'), version: APP_VERSION, exportedAt: new Date().toISOString(), profile: getProfile(), shots: getAllShots(), weights: getWeights(), results: S.get('results', []), notes: S.get('notes', []), symptoms: S.get('symptoms', []), labs: S.get('labs', []), preferences: S.get('preferences', {}), settings: S.get('settings', {}), arsenal: S.get('arsenal', []) };
   downloadFile('gridnode-backup.json', JSON.stringify(backup, null, 2), 'application/json');
-  showToast('VAULT backup prepared.');
+  showToast(GN_I18N.t('vault.backupPrepared'));
 }
 
 function handleCSVImportFile(event) {
@@ -1443,24 +1444,24 @@ function parseCSV(text) {
 function renderCalendar() {
   const grid = $('calGrid'); if (!grid) return;
   const date = moduleState.calendarDate, year = date.getFullYear(), month = date.getMonth();
-  const months = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+  const months = [GN_I18N.t('month.january'), GN_I18N.t('month.february'), GN_I18N.t('month.march'), GN_I18N.t('month.april'), GN_I18N.t('month.may'), GN_I18N.t('month.june'), GN_I18N.t('month.july'), GN_I18N.t('month.august'), GN_I18N.t('month.september'), GN_I18N.t('month.october'), GN_I18N.t('month.november'), GN_I18N.t('month.december')];
   setText('calTitle', `${months[month]} ${year}`);
   const first = new Date(year, month, 1).getDay(), total = new Date(year, month + 1, 0).getDate();
   const shots = new Set(sortedShots().map(item => item.date?.slice(0, 10))), weights = new Set(sortedWeights().map(item => item.date?.slice(0, 10)));
-  grid.innerHTML = `${['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => `<div class="cal-day-head">${day}</div>`).join('')}${Array.from({ length: first }, () => '<div class="cal-day empty-day"></div>').join('')}${Array.from({ length: total }, (_, index) => { const day = index + 1, key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; return `<button type="button" class="cal-day ${moduleState.selectedCalendarDay === key ? 'selected' : ''}" data-calendar-day="${key}"><span>${day}</span>${shots.has(key) ? '<i class="cal-mark shot"></i>' : ''}${weights.has(key) ? '<i class="cal-mark weight"></i>' : ''}</button>`; }).join('')}`;
+  grid.innerHTML = `${[GN_I18N.t('calendar.sun'), GN_I18N.t('calendar.mon'), GN_I18N.t('calendar.tue'), GN_I18N.t('calendar.wed'), GN_I18N.t('calendar.thu'), GN_I18N.t('calendar.fri'), GN_I18N.t('calendar.sat')].map(day => `<div class="cal-day-head">${day}</div>`).join('')}${Array.from({ length: first }, () => '<div class="cal-day empty-day"></div>').join('')}${Array.from({ length: total }, (_, index) => { const day = index + 1, key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; return `<button type="button" class="cal-day ${moduleState.selectedCalendarDay === key ? 'selected' : ''}" data-calendar-day="${key}"><span>${day}</span>${shots.has(key) ? '<i class="cal-mark shot"></i>' : ''}${weights.has(key) ? '<i class="cal-mark weight"></i>' : ''}</button>`; }).join('')}`;
   const selected = moduleState.selectedCalendarDay;
-  if (selected) { const records = [...getAllShots().filter(item => item.date?.slice(0, 10) === selected), ...getWeights().filter(item => item.date?.slice(0, 10) === selected)]; $('calDetail').innerHTML = records.length ? records.map(item => `<div class="gn-calendar-detail">${safeText(item.med || 'WEIGHT')} · ${safeText(formatDateTime(item.date))}</div>`).join('') : '<div class="gn-calendar-detail">No records on this day.</div>'; }
+  if (selected) { const records = [...getAllShots().filter(item => item.date?.slice(0, 10) === selected), ...getWeights().filter(item => item.date?.slice(0, 10) === selected)]; $('calDetail').innerHTML = records.length ? records.map(item => `<div class="gn-calendar-detail">${safeText(item.med || GN_I18N.t('weight.title'))} · ${safeText(formatDateTime(item.date))}</div>`).join('') : '<div class="gn-calendar-detail">No records on this day.</div>'; }
 }
 function calPrev() { moduleState.calendarDate.setMonth(moduleState.calendarDate.getMonth() - 1); renderCalendar(); }
 function calNext() { moduleState.calendarDate.setMonth(moduleState.calendarDate.getMonth() + 1); renderCalendar(); }
 function calDayClick(day) { moduleState.selectedCalendarDay = day; renderCalendar(); }
 
-function openArsenalMod(type = 'compound', editId = null) { moduleState.arsenalEditId = editId; $('arsTitle')?.replaceChildren(document.createTextNode(editId ? 'EDIT CONTEXT' : 'ADD CONTEXT')); $('arsOv')?.classList.add('active'); }
+function openArsenalMod(type = 'compound', editId = null) { moduleState.arsenalEditId = editId; $('arsTitle')?.replaceChildren(document.createTextNode(editId ? GN_I18N.t('shots.editContext') : GN_I18N.t('shots.addContext'))); $('arsOv')?.classList.add('active'); }
 function closeArs() { $('arsOv')?.classList.remove('active'); moduleState.arsenalEditId = null; }
-function saveArs() { const items = S.get('arsenal', []); const record = { id: moduleState.arsenalEditId || createId('context'), name: $('aName')?.value?.trim(), concentration: Number($('aConc')?.value) || null, volume: Number($('aVol')?.value) || null, quantity: Number($('aQty')?.value) || 1, reviewDate: $('aExpiry')?.value || '' }; if (!record.name) { showToast('Enter a context name.', true); return; } const index = items.findIndex(item => item.id === record.id); if (index >= 0) items[index] = record; else items.push(record); S.set('arsenal', items); queueCloudSync('workspace'); closeArs(); showToast('VAULT context saved.'); }
+function saveArs() { const items = S.get('arsenal', []); const record = { id: moduleState.arsenalEditId || createId('context'), name: $('aName')?.value?.trim(), concentration: Number($('aConc')?.value) || null, volume: Number($('aVol')?.value) || null, quantity: Number($('aQty')?.value) || 1, reviewDate: $('aExpiry')?.value || '' }; if (!record.name) { showToast('Enter a context name.', true); return; } const index = items.findIndex(item => item.id === record.id); if (index >= 0) items[index] = record; else items.push(record); S.set('arsenal', items); queueCloudSync('workspace'); closeArs(); showToast(GN_I18N.t('lab.saveContext')); }
 function requestLoadoutRemove(id) { moduleState.pendingArsenalId = id; $('loadoutRemoveOverlay')?.classList.add('active'); }
 function cancelLoadoutRemove() { moduleState.pendingArsenalId = null; $('loadoutRemoveOverlay')?.classList.remove('active'); }
-function confirmLoadoutRemove() { const next = S.get('arsenal', []).filter(item => item.id !== moduleState.pendingArsenalId); S.set('arsenal', next); queueCloudSync('workspace'); cancelLoadoutRemove(); showToast('Context removed.'); }
+function confirmLoadoutRemove() { const next = S.get('arsenal', []).filter(item => item.id !== moduleState.pendingArsenalId); S.set('arsenal', next); queueCloudSync('workspace'); cancelLoadoutRemove(); showToast(GN_I18N.t('shots.contextRemoved')); }
 
 function toggleSound() { window.GN_SOUND_ON = window.GN_SOUND_ON === false; const button = $('sndBtn'); if (button) button.style.opacity = window.GN_SOUND_ON ? '1' : '.4'; }
 
@@ -1577,15 +1578,15 @@ function authShell() {
   const recovering = authMode === 'recovery';
   login.innerHTML = `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:0"><div class="gn-auth-card">
     <div class="gn-auth-kicker">// PERSONAL BIOTECH OPERATING SYSTEM //</div>
-    <div class="gn-auth-title">${recovering ? 'RESET ACCESS' : 'JACK IN'}</div>
-    <p class="gn-auth-copy">${recovering ? 'Enter a new password for this GRID//NODE cloud account.' : 'Use a cloud account when you want recovery across devices. Local session keeps your record on this device.'}</p>
+    <div class="gn-auth-title">${recovering ? GN_I18N.t('auth.resetAccess') : GN_I18N.t('landing.signInCloud')}</div>
+    <p class="gn-auth-copy">${recovering ? GN_I18N.t('auth.enterNewPassword') : GN_I18N.t('landing.cloudVsLocal')}</p>
     <form id="gnAuthForm" novalidate>
-      <input class="gn-auth-field" id="gnAuthEmail" type="email" autocomplete="email" placeholder="EMAIL ADDRESS" aria-label="Email address"${recovering ? ' hidden' : ''}>
-      <input class="gn-auth-field" id="gnAuthPassword" type="password" autocomplete="${recovering ? 'new-password' : 'current-password'}" placeholder="${recovering ? 'NEW PASSWORD' : 'PASSWORD'}" aria-label="${recovering ? 'New password' : 'Password'}">
-      <button class="gn-auth-primary" id="gnAuthSubmit" type="submit">${recovering ? 'UPDATE PASSWORD' : 'SIGN IN TO CLOUD'}</button>
+      <input class="gn-auth-field" id="gnAuthEmail" type="email" autocomplete="email" placeholder="${GN_I18N.t('auth.email')}" aria-label="${GN_I18N.t('auth.emailAddress')}"${recovering ? ' hidden' : ''}>
+      <input class="gn-auth-field" id="gnAuthPassword" type="password" autocomplete="${recovering ? 'new-password' : 'current-password'}" placeholder="${recovering ? GN_I18N.t('auth.newPassword') : GN_I18N.t('auth.password')}" aria-label="${recovering ? 'New password' : 'Password'}">
+      <button class="gn-auth-primary" id="gnAuthSubmit" type="submit">${recovering ? GN_I18N.t('auth.updatePassword') : GN_I18N.t('auth.signIn')}</button>
     </form>
-    <div class="gn-auth-links"><button class="gn-auth-link" id="gnAuthModeToggle" type="button">${recovering ? 'BACK TO SIGN IN' : 'CREATE ACCOUNT'}</button>${recovering ? '' : '<button class="gn-auth-link" id="gnAuthReset" type="button">RESET PASSWORD</button>'}</div>
-    ${recovering ? '' : '<div class="gn-google-button-shell" id="gnGoogleButtonMount" aria-label="Continue with Google"></div><button class="gn-auth-secondary" id="gnLocalBtn" type="button">CONTINUE LOCALLY</button>'}
+    <div class="gn-auth-links"><button class="gn-auth-link" id="gnAuthModeToggle" type="button">${recovering ? GN_I18N.t('auth.backToSignIn') : GN_I18N.t('auth.createAccount')}</button>${recovering ? '' : `<button class="gn-auth-link" id="gnAuthReset" type="button">${GN_I18N.t('auth.resetAccess')}</button>`}</div>
+    ${recovering ? '' : `<div class="gn-google-button-shell" id="gnGoogleButtonMount" aria-label="${GN_I18N.t('auth.continueLocally')}"></div><button class="gn-auth-secondary" id="gnLocalBtn" type="button">${GN_I18N.t('landing.continueLocally')}</button>`}
     <div class="gn-auth-message" id="loginMsg" role="status" aria-live="polite"></div>
     <div class="gn-auth-note">// VAULT POLICY: YOUR RECORD STAYS LOCAL UNTIL YOU CONNECT A CLOUD ACCOUNT // GRID//NODE DOES NOT PROVIDE MEDICAL ADVICE //</div>
   </div></div>`;
@@ -1599,8 +1600,8 @@ function authShell() {
 
 function updateAuthMode() {
   const submit = $('gnAuthSubmit'), toggle = $('gnAuthModeToggle');
-  if (submit) submit.textContent = authMode === 'recovery' ? 'UPDATE PASSWORD' : authMode === 'signin' ? 'SIGN IN TO CLOUD' : 'CREATE CLOUD ACCOUNT';
-  if (toggle) toggle.textContent = authMode === 'signin' ? 'CREATE ACCOUNT' : 'BACK TO SIGN IN';
+  if (submit) submit.textContent = authMode === 'recovery' ? GN_I18N.t('auth.updatePassword') : authMode === 'signin' ? GN_I18N.t('auth.signIn') : GN_I18N.t('auth.createCloudAccount');
+  if (toggle) toggle.textContent = authMode === 'signin' ? GN_I18N.t('auth.createAccount') : GN_I18N.t('auth.backToSignIn');
 }
 function toggleAuthMode() { if (authMode === 'recovery') { passwordRecoveryActive = false; authMode = 'signin'; authShell(); return; } authMode = authMode === 'signin' ? 'signup' : 'signin'; updateAuthMode(); setAuthMessage('', false); }
 function setAuthMessage(message, error = false) { const element = $('loginMsg'); if (element) { element.textContent = message; element.style.color = error ? '#ff5577' : '#8295a0'; } }
@@ -1612,7 +1613,7 @@ function loadGoogleIdentityLibrary() {
     const existing = document.querySelector('script[data-gridnode-google-identity]');
     if (existing) {
       existing.addEventListener('load', () => resolve(window.google), { once: true });
-      existing.addEventListener('error', () => reject(new Error('GOOGLE_LIBRARY_UNAVAILABLE')), { once: true });
+      existing.addEventListener('error', () => reject(new Error(GN_I18N.t('auth.googleLibraryUnavailable'))), { once: true });
       return;
     }
     const script = document.createElement('script');
@@ -1640,12 +1641,12 @@ function renderGoogleFallback(host, message) {
 async function renderGoogleIdentityButton() {
   const host = $('gnGoogleButtonMount');
   if (!host) return;
-  renderGoogleFallback(host, 'CHECKING GOOGLE...');
+  renderGoogleFallback(host, GN_I18N.t('auth.checkingGoogle'));
   const enabled = await isCloudProviderEnabled('google');
   if (!host.isConnected) return;
   if (!enabled) {
-    renderGoogleFallback(host, 'GOOGLE SIGN-IN SETUP PENDING');
-    setAuthMessage('// GOOGLE SIGN-IN IS NOT ENABLED YET — USE EMAIL OR CONTINUE LOCALLY', false);
+    renderGoogleFallback(host, GN_I18N.t('auth.googleSignInSetupPending'));
+    setAuthMessage(GN_I18N.t('auth.googleAuthIsNotEnabled'), false);
     return;
   }
   try {
@@ -1674,7 +1675,7 @@ async function renderGoogleIdentityButton() {
     });
   } catch (error) {
     console.warn('[GRID//NODE Google identity]', error);
-    renderGoogleFallback(host, 'GOOGLE SIGN-IN UNAVAILABLE');
+    renderGoogleFallback(host, GN_I18N.t('auth.googleSignInUnavailable'));
     setAuthMessage('// GOOGLE SIGN-IN COULD NOT LOAD — USE EMAIL OR CONTINUE LOCALLY', true);
   }
 }
@@ -1685,7 +1686,7 @@ async function handleGoogleCredential(response) {
   setAuthMessage('// VERIFYING GOOGLE IDENTITY...', false);
   try {
     const session = await signInWithGoogleIdToken(response?.credential);
-    if (!session) throw new Error('NO_SESSION');
+    if (!session) throw new Error(GN_I18N.t('auth.noSession'));
     await completeCloudSession(session);
   } catch (error) {
     setAuthMessage('// GOOGLE SIGN-IN COULD NOT COMPLETE — RETRY OR USE EMAIL', true);
@@ -1695,13 +1696,13 @@ async function handleGoogleCredential(response) {
 
 async function requestPasswordReset() {
   const email = $('gnAuthEmail')?.value?.trim();
-  if (!email || !email.includes('@')) { setAuthMessage('// ENTER YOUR ACCOUNT EMAIL FIRST', true); return; }
+  if (!email || !email.includes('@')) { setAuthMessage(GN_I18N.t('auth.enterEmailFirst'), true); return; }
   const button = $('gnAuthReset'); if (button) button.disabled = true;
   try {
     await resetPasswordCloud(email);
-    setAuthMessage('// RECOVERY LINK SENT — CHECK YOUR EMAIL', false);
+    setAuthMessage(GN_I18N.t('auth.recoveryLinkSent'), false);
   } catch (error) {
-    setAuthMessage(error.message === 'CLOUD_UNAVAILABLE' ? '// CLOUD RECOVERY UNAVAILABLE — RETRY WHEN ONLINE' : `// RECOVERY ERROR: ${error.message || 'TRY AGAIN'}`, true);
+    setAuthMessage(error.message === 'CLOUD_UNAVAILABLE' ? GN_I18N.t('auth.cloudRecoveryUnavailable') : `// RECOVERY ERROR: ${error.message || GN_I18N.t('common.tryAgain')}`, true);
   } finally { if (button) button.disabled = false; }
 }
 
@@ -1710,38 +1711,38 @@ async function submitAuth() {
   const password = $('gnAuthPassword')?.value || '';
   if (authMode !== 'recovery' && (!email || !email.includes('@'))) { setAuthMessage('// ENTER A VALID EMAIL ADDRESS', true); return; }
   if (password.length < 8) { setAuthMessage('// PASSWORD MUST BE AT LEAST 8 CHARACTERS', true); return; }
-  const submit = $('gnAuthSubmit'); if (submit) { submit.disabled = true; submit.textContent = 'CONNECTING...'; }
+  const submit = $('gnAuthSubmit'); if (submit) { submit.disabled = true; submit.textContent = GN_I18N.t('auth.connecting'); }
   try {
     if (authMode === 'recovery') {
       await updateCloudPassword(password);
       passwordRecoveryActive = false;
       const session = await getCloudSession();
-      if (!session) throw new Error('RECOVERY_SESSION_EXPIRED');
+      if (!session) throw new Error(GN_I18N.t('auth.recoverySessionExpired'));
       await completeCloudSession(session);
     } else if (authMode === 'signup') {
       const result = await signUpCloud(email, password);
-      if (result?.session) { await completeCloudSession(result.session); } else { setAuthMessage('// ACCOUNT CREATED — CHECK YOUR EMAIL TO CONFIRM', false); }
+      if (result?.session) { await completeCloudSession(result.session); } else { setAuthMessage(GN_I18N.t('auth.accountCreated'), false); }
     } else {
       const session = await signInCloud(email, password);
       if (!session) throw new Error('NO_SESSION');
       await completeCloudSession(session);
     }
   } catch (error) {
-    setAuthMessage(error.message === 'CLOUD_UNAVAILABLE' ? '// CLOUD AUTH UNAVAILABLE — CONTINUE LOCALLY OR RETRY WHEN ONLINE' : `// AUTH ERROR: ${error.message || 'CHECK YOUR DETAILS'}`, true);
+    setAuthMessage(error.message === 'CLOUD_UNAVAILABLE' ? GN_I18N.t('auth.cloudAuthUnavailable') : `// AUTH ERROR: ${error.message || GN_I18N.t('auth.checkYourDetails')}`, true);
   } finally {
     if (submit) { submit.disabled = false; updateAuthMode(); }
   }
 }
 
 async function handleGoogleSignIn() {
-  const button = $('loginGoogleBtn'); if (button) { button.disabled = true; button.textContent = 'CONNECTING...'; }
-  setAuthMessage('// OPENING GOOGLE AUTHENTICATION...', false);
+  const button = $('loginGoogleBtn'); if (button) { button.disabled = true; button.textContent = GN_I18N.t('auth.connecting'); }
+  setAuthMessage(GN_I18N.t('auth.checkingGoogle'), false);
   try {
     await signInWithGoogle();
   } catch (error) {
     const disabled = error.message === 'GOOGLE_AUTH_DISABLED';
-    setAuthMessage(disabled ? '// GOOGLE SIGN-IN IS NOT ENABLED YET — USE EMAIL OR CONTINUE LOCALLY' : error.message === 'CLOUD_UNAVAILABLE' ? '// GOOGLE AUTH UNAVAILABLE — CONTINUE LOCALLY OR RETRY WHEN ONLINE' : '// GOOGLE AUTH COULD NOT START — RETRY OR USE EMAIL', true);
-    if (button) { button.disabled = disabled; button.textContent = disabled ? 'GOOGLE SIGN-IN SETUP PENDING' : 'CONTINUE WITH GOOGLE'; }
+    setAuthMessage(disabled ? '// GOOGLE SIGN-IN IS NOT ENABLED YET — USE EMAIL OR CONTINUE LOCALLY' : error.message === 'CLOUD_UNAVAILABLE' ? '// GOOGLE AUTH UNAVAILABLE — CONTINUE LOCALLY OR RETRY WHEN ONLINE' : GN_I18N.t('auth.googleAuthCouldNotStart'), true);
+    if (button) { button.disabled = disabled; button.textContent = disabled ? 'GOOGLE SIGN-IN SETUP PENDING' : GN_I18N.t('auth.signInWithGoogle'); }
   }
 }
 
@@ -1794,13 +1795,13 @@ function startGridNode() {
     bar.querySelectorAll('.boot-prog-seg').forEach(segment => segment.classList.remove('on', 'lead'));
   }
   const messages = [
-    ['> Initializing Personal Biotech OS', 'info', 'CORE HANDSHAKE'],
-    ['> Preparing SHOTS', 'info', 'SHOTS ONLINE'],
-    ['> Preparing Phase Engine', 'info', 'PHASE ENGINE ONLINE'],
-    ['> Preparing RESULTS', 'info', 'RESULTS ONLINE'],
-    ['> Preparing LAB + VAULT', 'info', 'LAB + VAULT ONLINE'],
-    ['> Loading local records', 'warn', 'LOCAL RECORDS'],
-    ['> Protocol workspace ready', 'ok', 'SYSTEM ONLINE']
+    ['> Initializing Personal Biotech OS', 'info', GN_I18N.t('boot.coreHandshake')],
+    ['> Preparing SHOTS', 'info', GN_I18N.t('boot.shotsOnline')],
+    ['> Preparing Phase Engine', 'info', GN_I18N.t('boot.phaseEngineOnline')],
+    ['> Preparing RESULTS', 'info', GN_I18N.t('boot.resultsOnline')],
+    ['> Preparing LAB + VAULT', 'info', GN_I18N.t('boot.labVaultOnline')],
+    ['> Loading local records', 'warn', GN_I18N.t('auth.localRecords')],
+    ['> Protocol workspace ready', 'ok', GN_I18N.t('boot.systemOnline')]
   ];
   messages.forEach(([message, className, status], index) => setTimeout(() => {
     if (term) { const line = document.createElement('div'); line.className = `boot-line ${className}`; line.textContent = message; term.appendChild(line); term.scrollTop = term.scrollHeight; }
@@ -1871,6 +1872,8 @@ window.GN = {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
+  await window.GN_I18N.ready;
+  window.GN_I18N.applyTo(document);
   bridge();
   injectStableStyles();
   modules.initModules();
