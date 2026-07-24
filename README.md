@@ -21,7 +21,6 @@ The public landing, boot, and authentication states hide private navigation and 
 - `scripts/stage-deploy.sh` — atomic local Pages staging.
 - `scripts/backup.sh` — recoverable local archive with SHA-256.
 - `scripts/deploy-preview.sh` / `scripts/deploy-production.sh` — Bash-only Pages deploys.
-- `scripts/build-bundle.ps1` — legacy compatibility only; do not use for WSL development.
 - `supabase/schema.sql` — idempotent cloud schema, indexes, grants, and RLS policies.
 - `sw.js` — update-safe service worker and offline shell fallback.
 - `_headers` — production security headers for Cloudflare Pages.

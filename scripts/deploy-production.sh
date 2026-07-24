@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+NEXUS_CF_ENV="${HOME}/.config/nexus/cloudflare.env"
+if [[ -f "$NEXUS_CF_ENV" ]]; then
+  # shellcheck disable=SC1090
+  source "$NEXUS_CF_ENV"
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 STAGING_NAME="${GRIDNODE_STAGING_NAME:-gridnode-production}"

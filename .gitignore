@@ -2,3 +2,5 @@
 backups/
 .gridnode-secrets/
 .wrangler/
+scripts/*.bak.*
+*.bak.*
