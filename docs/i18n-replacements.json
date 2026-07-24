@@ -1,0 +1,1150 @@
+[
+  {
+    "old": "'Use a cloud account when you want recovery across devices. Local session keeps your record on this device.'",
+    "new": "GN_I18N.t('landing.cloudVsLocal')",
+    "count": 1,
+    "literal": "Use a cloud account when you want recovery across devices. Local session keeps your record on this device.",
+    "key": "landing.cloudVsLocal"
+  },
+  {
+    "old": "'Track appetite, symptoms, energy, side effects, and notes as your protocol history develops.'",
+    "new": "GN_I18N.t('empty.shots')",
+    "count": 1,
+    "literal": "Track appetite, symptoms, energy, side effects, and notes as your protocol history develops.",
+    "key": "empty.shots"
+  },
+  {
+    "old": "'// GOOGLE SIGN-IN IS NOT ENABLED YET \u2014 USE EMAIL OR CONTINUE LOCALLY'",
+    "new": "GN_I18N.t('auth.googleAuthIsNotEnabled')",
+    "count": 2,
+    "literal": "// GOOGLE SIGN-IN IS NOT ENABLED YET \u2014 USE EMAIL OR CONTINUE LOCALLY",
+    "key": "auth.googleAuthIsNotEnabled"
+  },
+  {
+    "old": "'Awaiting first logged SHOT \u2014 protocol initializes on first record.'",
+    "new": "GN_I18N.t('shots.awaitingFirst')",
+    "count": 1,
+    "literal": "Awaiting first logged SHOT \u2014 protocol initializes on first record.",
+    "key": "shots.awaitingFirst"
+  },
+  {
+    "old": "'// CLOUD AUTH UNAVAILABLE \u2014 CONTINUE LOCALLY OR RETRY WHEN ONLINE'",
+    "new": "GN_I18N.t('auth.cloudAuthUnavailable')",
+    "count": 1,
+    "literal": "// CLOUD AUTH UNAVAILABLE \u2014 CONTINUE LOCALLY OR RETRY WHEN ONLINE",
+    "key": "auth.cloudAuthUnavailable"
+  },
+  {
+    "old": "'Archived records remain stored for review and can be restored.'",
+    "new": "GN_I18N.t('shots.archivedRetained')",
+    "count": 1,
+    "literal": "Archived records remain stored for review and can be restored.",
+    "key": "shots.archivedRetained"
+  },
+  {
+    "old": "'No side effects were attached to the most recent SHOT record.'",
+    "new": "GN_I18N.t('msg.sideEffectsNone')",
+    "count": 1,
+    "literal": "No side effects were attached to the most recent SHOT record.",
+    "key": "msg.sideEffectsNone"
+  },
+  {
+    "old": "'Add medication, dose, date, time, and a logged location.'",
+    "new": "GN_I18N.t('shots.addPrompt')",
+    "count": 1,
+    "literal": "Add medication, dose, date, time, and a logged location.",
+    "key": "shots.addPrompt"
+  },
+  {
+    "old": "'Estimated downward protocol curve toward the next cycle.'",
+    "new": "GN_I18N.t('results.estimatedDecay')",
+    "count": 1,
+    "literal": "Estimated downward protocol curve toward the next cycle.",
+    "key": "results.estimatedDecay"
+  },
+  {
+    "old": "'Enter a new password for this GRID//NODE cloud account.'",
+    "new": "GN_I18N.t('auth.enterNewPassword')",
+    "count": 1,
+    "literal": "Enter a new password for this GRID//NODE cloud account.",
+    "key": "auth.enterNewPassword"
+  },
+  {
+    "old": "'Estimated active-cycle window from user-entered timing.'",
+    "new": "GN_I18N.t('results.estimatedActiveWindow')",
+    "count": 1,
+    "literal": "Estimated active-cycle window from user-entered timing.",
+    "key": "results.estimatedActiveWindow"
+  },
+  {
+    "old": "'Data stays on this device until you connect an account'",
+    "new": "GN_I18N.t('vault.cloudLocal')",
+    "count": 1,
+    "literal": "Data stays on this device until you connect an account",
+    "key": "vault.cloudLocal"
+  },
+  {
+    "old": "'Active SHOT records are retained in your local VAULT.'",
+    "new": "GN_I18N.t('shots.activeRecordsRetained')",
+    "count": 1,
+    "literal": "Active SHOT records are retained in your local VAULT.",
+    "key": "shots.activeRecordsRetained"
+  },
+  {
+    "old": "'Educational math only. Enter dose and concentration.'",
+    "new": "GN_I18N.t('lab.educationalMathOnly')",
+    "count": 1,
+    "literal": "Educational math only. Enter dose and concentration.",
+    "key": "lab.educationalMathOnly"
+  },
+  {
+    "old": "'// GOOGLE AUTH COULD NOT START \u2014 RETRY OR USE EMAIL'",
+    "new": "GN_I18N.t('auth.googleAuthCouldNotStart')",
+    "count": 1,
+    "literal": "// GOOGLE AUTH COULD NOT START \u2014 RETRY OR USE EMAIL",
+    "key": "auth.googleAuthCouldNotStart"
+  },
+  {
+    "old": "'Select a trackable zone, then open LOG SHOT again.'",
+    "new": "GN_I18N.t('shots.selectZoneFirst')",
+    "count": 1,
+    "literal": "Select a trackable zone, then open LOG SHOT again.",
+    "key": "shots.selectZoneFirst"
+  },
+  {
+    "old": "'Late-cycle visibility before another logged event.'",
+    "new": "GN_I18N.t('results.lateCycle')",
+    "count": 1,
+    "literal": "Late-cycle visibility before another logged event.",
+    "key": "results.lateCycle"
+  },
+  {
+    "old": "'// CLOUD RECOVERY UNAVAILABLE \u2014 RETRY WHEN ONLINE'",
+    "new": "GN_I18N.t('auth.cloudRecoveryUnavailable')",
+    "count": 1,
+    "literal": "// CLOUD RECOVERY UNAVAILABLE \u2014 RETRY WHEN ONLINE",
+    "key": "auth.cloudRecoveryUnavailable"
+  },
+  {
+    "old": "'Deleted locally. Cloud deletion queued for retry.'",
+    "new": "GN_I18N.t('shots.deletedLocallyCloudQueued')",
+    "count": 1,
+    "literal": "Deleted locally. Cloud deletion queued for retry.",
+    "key": "shots.deletedLocallyCloudQueued"
+  },
+  {
+    "old": "'// ACCOUNT CREATED \u2014 CHECK YOUR EMAIL TO CONFIRM'",
+    "new": "GN_I18N.t('auth.accountCreated')",
+    "count": 1,
+    "literal": "// ACCOUNT CREATED \u2014 CHECK YOUR EMAIL TO CONFIRM",
+    "key": "auth.accountCreated"
+  },
+  {
+    "old": "'Estimated response window from the logged cycle.'",
+    "new": "GN_I18N.t('results.estimatedResponse')",
+    "count": 1,
+    "literal": "Estimated response window from the logged cycle.",
+    "key": "results.estimatedResponse"
+  },
+  {
+    "old": "'relative cycle model \u00b7 not a measured level'",
+    "new": "GN_I18N.t('results.relativeCycleModel')",
+    "count": 1,
+    "literal": "relative cycle model \u00b7 not a measured level",
+    "key": "results.relativeCycleModel"
+  },
+  {
+    "old": "'// RECOVERY LINK SENT \u2014 CHECK YOUR EMAIL'",
+    "new": "GN_I18N.t('auth.recoveryLinkSent')",
+    "count": 1,
+    "literal": "// RECOVERY LINK SENT \u2014 CHECK YOUR EMAIL",
+    "key": "auth.recoveryLinkSent"
+  },
+  {
+    "old": "'Trend direction: Insufficient Data'",
+    "new": "GN_I18N.t('results.trend')",
+    "count": 1,
+    "literal": "Trend direction: Insufficient Data",
+    "key": "results.trend"
+  },
+  {
+    "old": "'INITIATE PROTOCOL \u2014 log first shot'",
+    "new": "GN_I18N.t('boot.initiateProtocol')",
+    "count": 1,
+    "literal": "INITIATE PROTOCOL \u2014 log first shot",
+    "key": "boot.initiateProtocol"
+  },
+  {
+    "old": "'// ENTER YOUR ACCOUNT EMAIL FIRST'",
+    "new": "GN_I18N.t('auth.enterEmailFirst')",
+    "count": 1,
+    "literal": "// ENTER YOUR ACCOUNT EMAIL FIRST",
+    "key": "auth.enterEmailFirst"
+  },
+  {
+    "old": "'Profile protocol context saved.'",
+    "new": "GN_I18N.t('profile.saved')",
+    "count": 1,
+    "literal": "Profile protocol context saved.",
+    "key": "profile.saved"
+  },
+  {
+    "old": "'GOOGLE SIGN-IN SETUP PENDING'",
+    "new": "GN_I18N.t('auth.googleSignInSetupPending')",
+    "count": 2,
+    "literal": "GOOGLE SIGN-IN SETUP PENDING",
+    "key": "auth.googleSignInSetupPending"
+  },
+  {
+    "old": "'Right Back Upper Arm \u2014 Lower'",
+    "new": "GN_I18N.t('zone.rightBackUpperArmLower')",
+    "count": 1,
+    "literal": "Right Back Upper Arm \u2014 Lower",
+    "key": "zone.rightBackUpperArmLower"
+  },
+  {
+    "old": "'Right Back Upper Arm \u2014 Upper'",
+    "new": "GN_I18N.t('zone.rightBackUpperArmUpper')",
+    "count": 1,
+    "literal": "Right Back Upper Arm \u2014 Upper",
+    "key": "zone.rightBackUpperArmUpper"
+  },
+  {
+    "old": "'Left Back Upper Arm \u2014 Lower'",
+    "new": "GN_I18N.t('zone.leftBackUpperArmLower')",
+    "count": 1,
+    "literal": "Left Back Upper Arm \u2014 Lower",
+    "key": "zone.leftBackUpperArmLower"
+  },
+  {
+    "old": "'Left Back Upper Arm \u2014 Upper'",
+    "new": "GN_I18N.t('zone.leftBackUpperArmUpper')",
+    "count": 1,
+    "literal": "Left Back Upper Arm \u2014 Upper",
+    "key": "zone.leftBackUpperArmUpper"
+  },
+  {
+    "old": "'GOOGLE SIGN-IN UNAVAILABLE'",
+    "new": "GN_I18N.t('auth.googleSignInUnavailable')",
+    "count": 1,
+    "literal": "GOOGLE SIGN-IN UNAVAILABLE",
+    "key": "auth.googleSignInUnavailable"
+  },
+  {
+    "old": "'GOOGLE_LIBRARY_UNAVAILABLE'",
+    "new": "GN_I18N.t('auth.googleLibraryUnavailable')",
+    "count": 3,
+    "literal": "GOOGLE_LIBRARY_UNAVAILABLE",
+    "key": "auth.googleLibraryUnavailable"
+  },
+  {
+    "old": "'ENTER A VALID WEIGHT VALUE'",
+    "new": "GN_I18N.t('weight.enterValid')",
+    "count": 1,
+    "literal": "ENTER A VALID WEIGHT VALUE",
+    "key": "weight.enterValid"
+  },
+  {
+    "old": "'TAP FAB // LOG FIRST SHOT'",
+    "new": "GN_I18N.t('shots.tapFabLogFirst')",
+    "count": 1,
+    "literal": "TAP FAB // LOG FIRST SHOT",
+    "key": "shots.tapFabLogFirst"
+  },
+  {
+    "old": "'RECOVERY_SESSION_EXPIRED'",
+    "new": "GN_I18N.t('auth.recoverySessionExpired')",
+    "count": 1,
+    "literal": "RECOVERY_SESSION_EXPIRED",
+    "key": "auth.recoverySessionExpired"
+  },
+  {
+    "old": "'Archived record deleted.'",
+    "new": "GN_I18N.t('shots.archivedDeleted')",
+    "count": 1,
+    "literal": "Archived record deleted.",
+    "key": "shots.archivedDeleted"
+  },
+  {
+    "old": "'DRAW TO THE \u2014 UNIT LINE'",
+    "new": "GN_I18N.t('lab.drawToUnitLine')",
+    "count": 1,
+    "literal": "DRAW TO THE \u2014 UNIT LINE",
+    "key": "lab.drawToUnitLine"
+  },
+  {
+    "old": "'Cloud account connected'",
+    "new": "GN_I18N.t('vault.cloudConnected')",
+    "count": 1,
+    "literal": "Cloud account connected",
+    "key": "vault.cloudConnected"
+  },
+  {
+    "old": "'SELECT LOGGED LOCATION'",
+    "new": "GN_I18N.t('shots.selectLoggedLocation')",
+    "count": 1,
+    "literal": "SELECT LOGGED LOCATION",
+    "key": "shots.selectLoggedLocation"
+  },
+  {
+    "old": "'CHANGE LOGGED LOCATION'",
+    "new": "GN_I18N.t('shots.changeLoggedLocation')",
+    "count": 1,
+    "literal": "CHANGE LOGGED LOCATION",
+    "key": "shots.changeLoggedLocation"
+  },
+  {
+    "old": "'No logged location yet'",
+    "new": "GN_I18N.t('shots.noLoggedLocation')",
+    "count": 1,
+    "literal": "No logged location yet",
+    "key": "shots.noLoggedLocation"
+  },
+  {
+    "old": "'Zepbound (Tirzepatide)'",
+    "new": "GN_I18N.t('med.zepbound')",
+    "count": 1,
+    "literal": "Zepbound (Tirzepatide)",
+    "key": "med.zepbound"
+  },
+  {
+    "old": "'Mounjaro (Tirzepatide)'",
+    "new": "GN_I18N.t('med.mounjaro')",
+    "count": 1,
+    "literal": "Mounjaro (Tirzepatide)",
+    "key": "med.mounjaro"
+  },
+  {
+    "old": "'Tirzepatide (Compound)'",
+    "new": "GN_I18N.t('med.tirzepatideCompound')",
+    "count": 1,
+    "literal": "Tirzepatide (Compound)",
+    "key": "med.tirzepatideCompound"
+  },
+  {
+    "old": "'Semaglutide (Compound)'",
+    "new": "GN_I18N.t('med.semaglutideCompound')",
+    "count": 1,
+    "literal": "Semaglutide (Compound)",
+    "key": "med.semaglutideCompound"
+  },
+  {
+    "old": "'ESTIMATED FROM PROFILE'",
+    "new": "GN_I18N.t('results.estimatedFromProfile')",
+    "count": 1,
+    "literal": "ESTIMATED FROM PROFILE",
+    "key": "results.estimatedFromProfile"
+  },
+  {
+    "old": "'VAULT backup prepared.'",
+    "new": "GN_I18N.t('vault.backupPrepared')",
+    "count": 1,
+    "literal": "VAULT backup prepared.",
+    "key": "vault.backupPrepared"
+  },
+  {
+    "old": "'SHOT record archived.'",
+    "new": "GN_I18N.t('shots.archived_one')",
+    "count": 1,
+    "literal": "SHOT record archived.",
+    "key": "shots.archived_one"
+  },
+  {
+    "old": "'SHOT record restored.'",
+    "new": "GN_I18N.t('shots.restored_one')",
+    "count": 1,
+    "literal": "SHOT record restored.",
+    "key": "shots.restored_one"
+  },
+  {
+    "old": "'Ozempic (Semaglutide)'",
+    "new": "GN_I18N.t('med.ozempic')",
+    "count": 1,
+    "literal": "Ozempic (Semaglutide)",
+    "key": "med.ozempic"
+  },
+  {
+    "old": "'Right Abdomen \u2014 Lower'",
+    "new": "GN_I18N.t('zone.rightAbdomenLower')",
+    "count": 1,
+    "literal": "Right Abdomen \u2014 Lower",
+    "key": "zone.rightAbdomenLower"
+  },
+  {
+    "old": "'Right Abdomen \u2014 Upper'",
+    "new": "GN_I18N.t('zone.rightAbdomenUpper')",
+    "count": 1,
+    "literal": "Right Abdomen \u2014 Upper",
+    "key": "zone.rightAbdomenUpper"
+  },
+  {
+    "old": "'CONTINUE WITH GOOGLE'",
+    "new": "GN_I18N.t('auth.signInWithGoogle')",
+    "count": 1,
+    "literal": "CONTINUE WITH GOOGLE",
+    "key": "auth.signInWithGoogle"
+  },
+  {
+    "old": "'CREATE CLOUD ACCOUNT'",
+    "new": "GN_I18N.t('auth.createCloudAccount')",
+    "count": 1,
+    "literal": "CREATE CLOUD ACCOUNT",
+    "key": "auth.createCloudAccount"
+  },
+  {
+    "old": "\"Continue with Google\"",
+    "new": "GN_I18N.t(\"auth.continueLocally\")",
+    "count": 1,
+    "literal": "Continue with Google",
+    "key": "auth.continueLocally"
+  },
+  {
+    "old": "'LOCAL DEVICE SESSION'",
+    "new": "GN_I18N.t('auth.localDeviceSession')",
+    "count": 1,
+    "literal": "LOCAL DEVICE SESSION",
+    "key": "auth.localDeviceSession"
+  },
+  {
+    "old": "'GOOGLE_AUTH_DISABLED'",
+    "new": "GN_I18N.t('auth.googleAuthDisabled')",
+    "count": 3,
+    "literal": "GOOGLE_AUTH_DISABLED",
+    "key": "auth.googleAuthDisabled"
+  },
+  {
+    "old": "'GOOGLE_TOKEN_MISSING'",
+    "new": "GN_I18N.t('auth.googleTokenMissing')",
+    "count": 1,
+    "literal": "GOOGLE_TOKEN_MISSING",
+    "key": "auth.googleTokenMissing"
+  },
+  {
+    "old": "'SHOT record updated.'",
+    "new": "GN_I18N.t('shots.updated')",
+    "count": 1,
+    "literal": "SHOT record updated.",
+    "key": "shots.updated"
+  },
+  {
+    "old": "'No location selected'",
+    "new": "GN_I18N.t('shots.noLocationSelected')",
+    "count": 3,
+    "literal": "No location selected",
+    "key": "shots.noLocationSelected"
+  },
+  {
+    "old": "'Wegovy (Semaglutide)'",
+    "new": "GN_I18N.t('med.wegovy')",
+    "count": 1,
+    "literal": "Wegovy (Semaglutide)",
+    "key": "med.wegovy"
+  },
+  {
+    "old": "'Left Abdomen \u2014 Lower'",
+    "new": "GN_I18N.t('zone.leftAbdomenLower')",
+    "count": 1,
+    "literal": "Left Abdomen \u2014 Lower",
+    "key": "zone.leftAbdomenLower"
+  },
+  {
+    "old": "'Left Abdomen \u2014 Upper'",
+    "new": "GN_I18N.t('zone.leftAbdomenUpper')",
+    "count": 1,
+    "literal": "Left Abdomen \u2014 Upper",
+    "key": "zone.leftAbdomenUpper"
+  },
+  {
+    "old": "'VAULT context saved.'",
+    "new": "GN_I18N.t('lab.saveContext')",
+    "count": 1,
+    "literal": "VAULT context saved.",
+    "key": "lab.saveContext"
+  },
+  {
+    "old": "'CSV export prepared.'",
+    "new": "GN_I18N.t('vault.exportPrepared')",
+    "count": 1,
+    "literal": "CSV export prepared.",
+    "key": "vault.exportPrepared"
+  },
+  {
+    "old": "'// NO MEDICATION SET'",
+    "new": "GN_I18N.t('profile.medTxt')",
+    "count": 4,
+    "literal": "// NO MEDICATION SET",
+    "key": "profile.medTxt"
+  },
+  {
+    "old": "'Weight record saved.'",
+    "new": "GN_I18N.t('weight.recordSaved')",
+    "count": 1,
+    "literal": "Weight record saved.",
+    "key": "weight.recordSaved"
+  },
+  {
+    "old": "'PHASE ENGINE ONLINE'",
+    "new": "GN_I18N.t('boot.phaseEngineOnline')",
+    "count": 1,
+    "literal": "PHASE ENGINE ONLINE",
+    "key": "boot.phaseEngineOnline"
+  },
+  {
+    "old": "'NO SHOTS LOGGED YET'",
+    "new": "GN_I18N.t('shots.noShotsLoggedYet')",
+    "count": 1,
+    "literal": "NO SHOTS LOGGED YET",
+    "key": "shots.noShotsLoggedYet"
+  },
+  {
+    "old": "'Right Thigh \u2014 Lower'",
+    "new": "GN_I18N.t('zone.rightThighLower')",
+    "count": 1,
+    "literal": "Right Thigh \u2014 Lower",
+    "key": "zone.rightThighLower"
+  },
+  {
+    "old": "'Right Thigh \u2014 Upper'",
+    "new": "GN_I18N.t('zone.rightThighUpper')",
+    "count": 1,
+    "literal": "Right Thigh \u2014 Upper",
+    "key": "zone.rightThighUpper"
+  },
+  {
+    "old": "'log a shot to begin'",
+    "new": "GN_I18N.t('results.logToBegin')",
+    "count": 1,
+    "literal": "log a shot to begin",
+    "key": "results.logToBegin"
+  },
+  {
+    "old": "'LAB + VAULT ONLINE'",
+    "new": "GN_I18N.t('boot.labVaultOnline')",
+    "count": 1,
+    "literal": "LAB + VAULT ONLINE",
+    "key": "boot.labVaultOnline"
+  },
+  {
+    "old": "'CHECKING GOOGLE...'",
+    "new": "GN_I18N.t('auth.checkingGoogle')",
+    "count": 1,
+    "literal": "CHECKING GOOGLE...",
+    "key": "auth.checkingGoogle"
+  },
+  {
+    "old": "'CHECK YOUR DETAILS'",
+    "new": "GN_I18N.t('auth.checkYourDetails')",
+    "count": 1,
+    "literal": "CHECK YOUR DETAILS",
+    "key": "auth.checkYourDetails"
+  },
+  {
+    "old": "'Left Thigh \u2014 Lower'",
+    "new": "GN_I18N.t('zone.leftThighLower')",
+    "count": 1,
+    "literal": "Left Thigh \u2014 Lower",
+    "key": "zone.leftThighLower"
+  },
+  {
+    "old": "'Left Thigh \u2014 Upper'",
+    "new": "GN_I18N.t('zone.leftThighUpper')",
+    "count": 1,
+    "literal": "Left Thigh \u2014 Upper",
+    "key": "zone.leftThighUpper"
+  },
+  {
+    "old": "'PASSWORD_RECOVERY'",
+    "new": "GN_I18N.t('auth.passwordRecovery')",
+    "count": 1,
+    "literal": "PASSWORD_RECOVERY",
+    "key": "auth.passwordRecovery"
+  },
+  {
+    "old": "'CLOUD_UNAVAILABLE'",
+    "new": "GN_I18N.t('auth.cloudUnavailable')",
+    "count": 9,
+    "literal": "CLOUD_UNAVAILABLE",
+    "key": "auth.cloudUnavailable"
+  },
+  {
+    "old": "'CLOUD_READ_FAILED'",
+    "new": "GN_I18N.t('auth.cloudReadFailed')",
+    "count": 1,
+    "literal": "CLOUD_READ_FAILED",
+    "key": "auth.cloudReadFailed"
+  },
+  {
+    "old": "'NO ARCHIVED SHOTS'",
+    "new": "GN_I18N.t('shots.noArchivedShots')",
+    "count": 1,
+    "literal": "NO ARCHIVED SHOTS",
+    "key": "shots.noArchivedShots"
+  },
+  {
+    "old": "'Foundation Ready'",
+    "new": "GN_I18N.t('boot.foundationReady')",
+    "count": 2,
+    "literal": "Foundation Ready",
+    "key": "boot.foundationReady"
+  },
+  {
+    "old": "'SIGN IN TO CLOUD'",
+    "new": "GN_I18N.t('auth.signIn')",
+    "count": 2,
+    "literal": "SIGN IN TO CLOUD",
+    "key": "auth.signIn"
+  },
+  {
+    "old": "'Context removed.'",
+    "new": "GN_I18N.t('shots.contextRemoved')",
+    "count": 1,
+    "literal": "Context removed.",
+    "key": "shots.contextRemoved"
+  },
+  {
+    "old": "'Logged with SHOT'",
+    "new": "GN_I18N.t('shots.loggedWith')",
+    "count": 2,
+    "literal": "Logged with SHOT",
+    "key": "shots.loggedWith"
+  },
+  {
+    "old": "'NO PROTOCOL DATA'",
+    "new": "GN_I18N.t('results.noProtocolData')",
+    "count": 1,
+    "literal": "NO PROTOCOL DATA",
+    "key": "results.noProtocolData"
+  },
+  {
+    "old": "'BACK TO SIGN IN'",
+    "new": "GN_I18N.t('auth.backToSignIn')",
+    "count": 2,
+    "literal": "BACK TO SIGN IN",
+    "key": "auth.backToSignIn"
+  },
+  {
+    "old": "'UPDATE PASSWORD'",
+    "new": "GN_I18N.t('auth.updatePassword')",
+    "count": 2,
+    "literal": "UPDATE PASSWORD",
+    "key": "auth.updatePassword"
+  },
+  {
+    "old": "'CLOUD_CONNECTED'",
+    "new": "GN_I18N.t('auth.cloudConnected')",
+    "count": 1,
+    "literal": "CLOUD_CONNECTED",
+    "key": "auth.cloudConnected"
+  },
+  {
+    "old": "'NO SHOTS LOGGED'",
+    "new": "GN_I18N.t('shots.noShotsLogged')",
+    "count": 1,
+    "literal": "NO SHOTS LOGGED",
+    "key": "shots.noShotsLogged"
+  },
+  {
+    "old": "'Custom Compound'",
+    "new": "GN_I18N.t('med.customCompound')",
+    "count": 1,
+    "literal": "Custom Compound",
+    "key": "med.customCompound"
+  },
+  {
+    "old": "'Select shot day'",
+    "new": "GN_I18N.t('profile.selectShotDay')",
+    "count": 1,
+    "literal": "Select shot day",
+    "key": "profile.selectShotDay"
+  },
+  {
+    "old": "'CORE HANDSHAKE'",
+    "new": "GN_I18N.t('boot.coreHandshake')",
+    "count": 1,
+    "literal": "CORE HANDSHAKE",
+    "key": "boot.coreHandshake"
+  },
+  {
+    "old": "'RESULTS ONLINE'",
+    "new": "GN_I18N.t('boot.resultsOnline')",
+    "count": 1,
+    "literal": "RESULTS ONLINE",
+    "key": "boot.resultsOnline"
+  },
+  {
+    "old": "'CREATE ACCOUNT'",
+    "new": "GN_I18N.t('auth.createAccount')",
+    "count": 2,
+    "literal": "CREATE ACCOUNT",
+    "key": "auth.createAccount"
+  },
+  {
+    "old": "'SHOT recorded.'",
+    "new": "GN_I18N.t('shots.recorded')",
+    "count": 1,
+    "literal": "SHOT recorded.",
+    "key": "shots.recorded"
+  },
+  {
+    "old": "'SYSTEM ONLINE'",
+    "new": "GN_I18N.t('boot.systemOnline')",
+    "count": 1,
+    "literal": "SYSTEM ONLINE",
+    "key": "boot.systemOnline"
+  },
+  {
+    "old": "\"EMAIL ADDRESS\"",
+    "new": "GN_I18N.t(\"auth.email\")",
+    "count": 1,
+    "literal": "EMAIL ADDRESS",
+    "key": "auth.email"
+  },
+  {
+    "old": "\"Email address\"",
+    "new": "GN_I18N.t(\"auth.emailAddress\")",
+    "count": 1,
+    "literal": "Email address",
+    "key": "auth.emailAddress"
+  },
+  {
+    "old": "'CONNECTING...'",
+    "new": "GN_I18N.t('auth.connecting')",
+    "count": 2,
+    "literal": "CONNECTING...",
+    "key": "auth.connecting"
+  },
+  {
+    "old": "'CLOUD ACCOUNT'",
+    "new": "GN_I18N.t('auth.cloudAccount')",
+    "count": 1,
+    "literal": "CLOUD ACCOUNT",
+    "key": "auth.cloudAccount"
+  },
+  {
+    "old": "'LOCAL RECORDS'",
+    "new": "GN_I18N.t('auth.localRecords')",
+    "count": 1,
+    "literal": "LOCAL RECORDS",
+    "key": "auth.localRecords"
+  },
+  {
+    "old": "'SHOTS ONLINE'",
+    "new": "GN_I18N.t('boot.shotsOnline')",
+    "count": 1,
+    "literal": "SHOTS ONLINE",
+    "key": "boot.shotsOnline"
+  },
+  {
+    "old": "'RESET ACCESS'",
+    "new": "GN_I18N.t('auth.resetAccess')",
+    "count": 1,
+    "literal": "RESET ACCESS",
+    "key": "auth.resetAccess"
+  },
+  {
+    "old": "'NEW PASSWORD'",
+    "new": "GN_I18N.t('auth.newPassword')",
+    "count": 1,
+    "literal": "NEW PASSWORD",
+    "key": "auth.newPassword"
+  },
+  {
+    "old": "'CLOUD_SYNCED'",
+    "new": "GN_I18N.t('auth.cloudSynced')",
+    "count": 7,
+    "literal": "CLOUD_SYNCED",
+    "key": "auth.cloudSynced"
+  },
+  {
+    "old": "'LOCAL_BACKUP'",
+    "new": "GN_I18N.t('auth.localBackup')",
+    "count": 6,
+    "literal": "LOCAL_BACKUP",
+    "key": "auth.localBackup"
+  },
+  {
+    "old": "'EDIT CONTEXT'",
+    "new": "GN_I18N.t('shots.editContext')",
+    "count": 1,
+    "literal": "EDIT CONTEXT",
+    "key": "shots.editContext"
+  },
+  {
+    "old": "'ADD CONTEXT'",
+    "new": "GN_I18N.t('shots.addContext')",
+    "count": 1,
+    "literal": "ADD CONTEXT",
+    "key": "shots.addContext"
+  },
+  {
+    "old": "'Retatrutide'",
+    "new": "GN_I18N.t('med.retatrutide')",
+    "count": 1,
+    "literal": "Retatrutide",
+    "key": "med.retatrutide"
+  },
+  {
+    "old": "'PEAK WINDOW'",
+    "new": "GN_I18N.t('results.peakWindow')",
+    "count": 1,
+    "literal": "PEAK WINDOW",
+    "key": "results.peakWindow"
+  },
+  {
+    "old": "'UNDERWEIGHT'",
+    "new": "GN_I18N.t('profile.underweight')",
+    "count": 1,
+    "literal": "UNDERWEIGHT",
+    "key": "profile.underweight"
+  },
+  {
+    "old": "'GRID//NODE'",
+    "new": "GN_I18N.t('landing.title')",
+    "count": 1,
+    "literal": "GRID//NODE",
+    "key": "landing.title"
+  },
+  {
+    "old": "'NO_SESSION'",
+    "new": "GN_I18N.t('auth.noSession')",
+    "count": 2,
+    "literal": "NO_SESSION",
+    "key": "auth.noSession"
+  },
+  {
+    "old": "'LOCAL_ONLY'",
+    "new": "GN_I18N.t('auth.localOnly')",
+    "count": 4,
+    "literal": "LOCAL_ONLY",
+    "key": "auth.localOnly"
+  },
+  {
+    "old": "'TAP TO LOG'",
+    "new": "GN_I18N.t('shots.tapToLog')",
+    "count": 2,
+    "literal": "TAP TO LOG",
+    "key": "shots.tapToLog"
+  },
+  {
+    "old": "'OVERWEIGHT'",
+    "new": "GN_I18N.t('profile.overweight')",
+    "count": 1,
+    "literal": "OVERWEIGHT",
+    "key": "profile.overweight"
+  },
+  {
+    "old": "'TRY AGAIN'",
+    "new": "GN_I18N.t('common.tryAgain')",
+    "count": 1,
+    "literal": "TRY AGAIN",
+    "key": "common.tryAgain"
+  },
+  {
+    "old": "'EDIT SHOT'",
+    "new": "GN_I18N.t('shots.edit')",
+    "count": 1,
+    "literal": "EDIT SHOT",
+    "key": "shots.edit"
+  },
+  {
+    "old": "'Wednesday'",
+    "new": "GN_I18N.t('calendar.wednesday')",
+    "count": 1,
+    "literal": "Wednesday",
+    "key": "calendar.wednesday"
+  },
+  {
+    "old": "'SEPTEMBER'",
+    "new": "GN_I18N.t('month.september')",
+    "count": 1,
+    "literal": "SEPTEMBER",
+    "key": "month.september"
+  },
+  {
+    "old": "'BASELINE'",
+    "new": "GN_I18N.t('results.baseline')",
+    "count": 1,
+    "literal": "BASELINE",
+    "key": "results.baseline"
+  },
+  {
+    "old": "'PASSWORD'",
+    "new": "GN_I18N.t('auth.password')",
+    "count": 1,
+    "literal": "PASSWORD",
+    "key": "auth.password"
+  },
+  {
+    "old": "'LOG SHOT'",
+    "new": "GN_I18N.t('shots.log')",
+    "count": 2,
+    "literal": "LOG SHOT",
+    "key": "shots.log"
+  },
+  {
+    "old": "'RESPONSE'",
+    "new": "GN_I18N.t('results.response')",
+    "count": 1,
+    "literal": "RESPONSE",
+    "key": "results.response"
+  },
+  {
+    "old": "'Thursday'",
+    "new": "GN_I18N.t('calendar.thursday')",
+    "count": 1,
+    "literal": "Thursday",
+    "key": "calendar.thursday"
+  },
+  {
+    "old": "'Saturday'",
+    "new": "GN_I18N.t('calendar.saturday')",
+    "count": 1,
+    "literal": "Saturday",
+    "key": "calendar.saturday"
+  },
+  {
+    "old": "'FEBRUARY'",
+    "new": "GN_I18N.t('month.february')",
+    "count": 1,
+    "literal": "FEBRUARY",
+    "key": "month.february"
+  },
+  {
+    "old": "'NOVEMBER'",
+    "new": "GN_I18N.t('month.november')",
+    "count": 1,
+    "literal": "NOVEMBER",
+    "key": "month.november"
+  },
+  {
+    "old": "'DECEMBER'",
+    "new": "GN_I18N.t('month.december')",
+    "count": 1,
+    "literal": "DECEMBER",
+    "key": "month.december"
+  },
+  {
+    "old": "'JACK IN'",
+    "new": "GN_I18N.t('landing.signInCloud')",
+    "count": 1,
+    "literal": "JACK IN",
+    "key": "landing.signInCloud"
+  },
+  {
+    "old": "'TIMEOUT'",
+    "new": "GN_I18N.t('auth.timeout')",
+    "count": 1,
+    "literal": "TIMEOUT",
+    "key": "auth.timeout"
+  },
+  {
+    "old": "'ARCHIVE'",
+    "new": "GN_I18N.t('shots.archive')",
+    "count": 1,
+    "literal": "ARCHIVE",
+    "key": "shots.archive"
+  },
+  {
+    "old": "'RESTORE'",
+    "new": "GN_I18N.t('shots.restore')",
+    "count": 1,
+    "literal": "RESTORE",
+    "key": "shots.restore"
+  },
+  {
+    "old": "'NO DATA'",
+    "new": "GN_I18N.t('results.noData')",
+    "count": 3,
+    "literal": "NO DATA",
+    "key": "results.noData"
+  },
+  {
+    "old": "'Profile'",
+    "new": "GN_I18N.t('profile.title')",
+    "count": 1,
+    "literal": "Profile",
+    "key": "profile.title"
+  },
+  {
+    "old": "'Tuesday'",
+    "new": "GN_I18N.t('calendar.tuesday')",
+    "count": 1,
+    "literal": "Tuesday",
+    "key": "calendar.tuesday"
+  },
+  {
+    "old": "'JANUARY'",
+    "new": "GN_I18N.t('month.january')",
+    "count": 1,
+    "literal": "JANUARY",
+    "key": "month.january"
+  },
+  {
+    "old": "'OCTOBER'",
+    "new": "GN_I18N.t('month.october')",
+    "count": 1,
+    "literal": "OCTOBER",
+    "key": "month.october"
+  },
+  {
+    "old": "'ACTIVE'",
+    "new": "GN_I18N.t('lab.statusActive')",
+    "count": 2,
+    "literal": "ACTIVE",
+    "key": "lab.statusActive"
+  },
+  {
+    "old": "'CUSTOM'",
+    "new": "GN_I18N.t('common.custom')",
+    "count": 4,
+    "literal": "CUSTOM",
+    "key": "common.custom"
+  },
+  {
+    "old": "'WEIGHT'",
+    "new": "GN_I18N.t('weight.title')",
+    "count": 1,
+    "literal": "WEIGHT",
+    "key": "weight.title"
+  },
+  {
+    "old": "'NORMAL'",
+    "new": "GN_I18N.t('profile.normal')",
+    "count": 1,
+    "literal": "NORMAL",
+    "key": "profile.normal"
+  },
+  {
+    "old": "'Sunday'",
+    "new": "GN_I18N.t('calendar.sunday')",
+    "count": 1,
+    "literal": "Sunday",
+    "key": "calendar.sunday"
+  },
+  {
+    "old": "'Monday'",
+    "new": "GN_I18N.t('calendar.monday')",
+    "count": 1,
+    "literal": "Monday",
+    "key": "calendar.monday"
+  },
+  {
+    "old": "'Friday'",
+    "new": "GN_I18N.t('calendar.friday')",
+    "count": 1,
+    "literal": "Friday",
+    "key": "calendar.friday"
+  },
+  {
+    "old": "'AUGUST'",
+    "new": "GN_I18N.t('month.august')",
+    "count": 1,
+    "literal": "AUGUST",
+    "key": "month.august"
+  },
+  {
+    "old": "'DECAY'",
+    "new": "GN_I18N.t('lab.statusDecay')",
+    "count": 1,
+    "literal": "DECAY",
+    "key": "lab.statusDecay"
+  },
+  {
+    "old": "'ONSET'",
+    "new": "GN_I18N.t('results.onset')",
+    "count": 1,
+    "literal": "ONSET",
+    "key": "results.onset"
+  },
+  {
+    "old": "'OBESE'",
+    "new": "GN_I18N.t('profile.obese')",
+    "count": 1,
+    "literal": "OBESE",
+    "key": "profile.obese"
+  },
+  {
+    "old": "'MARCH'",
+    "new": "GN_I18N.t('month.march')",
+    "count": 1,
+    "literal": "MARCH",
+    "key": "month.march"
+  },
+  {
+    "old": "'APRIL'",
+    "new": "GN_I18N.t('month.april')",
+    "count": 1,
+    "literal": "APRIL",
+    "key": "month.april"
+  },
+  {
+    "old": "'JUNE'",
+    "new": "GN_I18N.t('month.june')",
+    "count": 1,
+    "literal": "JUNE",
+    "key": "month.june"
+  },
+  {
+    "old": "'JULY'",
+    "new": "GN_I18N.t('month.july')",
+    "count": 1,
+    "literal": "JULY",
+    "key": "month.july"
+  },
+  {
+    "old": "'SUN'",
+    "new": "GN_I18N.t('calendar.sun')",
+    "count": 1,
+    "literal": "SUN",
+    "key": "calendar.sun"
+  },
+  {
+    "old": "'MON'",
+    "new": "GN_I18N.t('calendar.mon')",
+    "count": 1,
+    "literal": "MON",
+    "key": "calendar.mon"
+  },
+  {
+    "old": "'TUE'",
+    "new": "GN_I18N.t('calendar.tue')",
+    "count": 1,
+    "literal": "TUE",
+    "key": "calendar.tue"
+  },
+  {
+    "old": "'WED'",
+    "new": "GN_I18N.t('calendar.wed')",
+    "count": 1,
+    "literal": "WED",
+    "key": "calendar.wed"
+  },
+  {
+    "old": "'THU'",
+    "new": "GN_I18N.t('calendar.thu')",
+    "count": 1,
+    "literal": "THU",
+    "key": "calendar.thu"
+  },
+  {
+    "old": "'FRI'",
+    "new": "GN_I18N.t('calendar.fri')",
+    "count": 1,
+    "literal": "FRI",
+    "key": "calendar.fri"
+  },
+  {
+    "old": "'SAT'",
+    "new": "GN_I18N.t('calendar.sat')",
+    "count": 1,
+    "literal": "SAT",
+    "key": "calendar.sat"
+  },
+  {
+    "old": "'MAY'",
+    "new": "GN_I18N.t('month.may')",
+    "count": 1,
+    "literal": "MAY",
+    "key": "month.may"
+  }
+]
