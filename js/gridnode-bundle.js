@@ -5,7 +5,7 @@
  * No UI code belongs in this file.
  */
 
-const APP_VERSION = '2.0.3-stable';
+const APP_VERSION = '2.1.7';
 
 const GOOGLE_OAUTH_CLIENT_ID = '305099332421-u752btn6p8cbaq8opapvdkfau9gnd9a3.apps.googleusercontent.com';
 
@@ -26,7 +26,7 @@ const state = {
 const SESSION_KEY = 'gn_session_v2';
 const LOCAL_CLOUD_OWNER_KEY = 'gn_local_cloud_owner_v1';
 const LEGACY_ACCOUNT_KEYS = ['0', 'local'];
-const WORKSPACE_KEYS = ['profile', 'shots', 'weights', 'results', 'notes', 'symptoms', 'labs', 'preferences', 'settings', 'arsenal', 'selectedLocation', 'cloudDeletes'];
+const WORKSPACE_KEYS = ['profile', 'shots', 'weights', 'measurements', 'results', 'notes', 'symptoms', 'labs', 'preferences', 'settings', 'arsenal', 'researchRecords', 'devices', 'inventory', 'loadouts', 'eventLedger', 'importQueue', 'selectedLocation', 'cloudDeletes'];
 
 function jsonParse(raw, fallback) {
   if (raw == null) return fallback;
@@ -450,6 +450,18 @@ function workspacePayload(userId) {
   const preferences = { ...S.get('preferences', {}) };
   const selectedLocation = S.get('selectedLocation', '');
   if (selectedLocation) preferences.selectedLocation = selectedLocation;
+  const settings = {
+    ...S.get('settings', {}),
+    _gridnodeFoundation: {
+      researchRecords: S.get('researchRecords', []),
+      devices: S.get('devices', []),
+      measurements: S.get('measurements', []),
+      inventory: S.get('inventory', []),
+      loadouts: S.get('loadouts', []),
+      eventLedger: S.get('eventLedger', []),
+      importQueue: S.get('importQueue', [])
+    }
+  };
   return {
     user_id: userId,
     results_data: S.get('results', []),
@@ -457,7 +469,7 @@ function workspacePayload(userId) {
     symptoms_data: S.get('symptoms', []),
     labs_data: S.get('labs', []),
     preferences,
-    settings: S.get('settings', {}),
+    settings,
     arsenal: S.get('arsenal', []),
     updated_at: new Date().toISOString()
   };
@@ -564,10 +576,21 @@ async function hydrateCloudData() {
       S.set('labs', mergeJsonRecords(S.get('labs', []), remoteWorkspace.labs_data || []));
       S.set('arsenal', mergeJsonRecords(S.get('arsenal', []), remoteWorkspace.arsenal || []));
       const preferences = { ...(remoteWorkspace.preferences || {}), ...S.get('preferences', {}) };
-      const settings = { ...(remoteWorkspace.settings || {}), ...S.get('settings', {}) };
+      const remoteSettings = remoteWorkspace.settings || {};
+      const localSettings = S.get('settings', {});
+      const remoteFoundation = remoteSettings._gridnodeFoundation || {};
+      const localFoundation = localSettings._gridnodeFoundation || {};
+      const settings = { ...remoteSettings, ...localSettings, _gridnodeFoundation: { ...remoteFoundation, ...localFoundation } };
       S.set('preferences', preferences);
       S.set('settings', settings);
       if (!S.get('selectedLocation', '') && preferences.selectedLocation) S.set('selectedLocation', preferences.selectedLocation);
+      S.set('researchRecords', mergeJsonRecords(S.get('researchRecords', []), remoteFoundation.researchRecords || []));
+      S.set('devices', mergeJsonRecords(S.get('devices', []), remoteFoundation.devices || []));
+      S.set('measurements', mergeJsonRecords(S.get('measurements', []), remoteFoundation.measurements || []));
+      S.set('inventory', mergeJsonRecords(S.get('inventory', []), remoteFoundation.inventory || []));
+      S.set('loadouts', mergeJsonRecords(S.get('loadouts', []), remoteFoundation.loadouts || []));
+      S.set('eventLedger', mergeJsonRecords(S.get('eventLedger', []), remoteFoundation.eventLedger || []));
+      S.set('importQueue', mergeJsonRecords(S.get('importQueue', []), remoteFoundation.importQueue || []));
     }
     state.cloudStatus = 'CLOUD_SYNCED';
     return {
@@ -619,6 +642,32 @@ function queueCloudSync(kind, record) {
 
 function sessionLabel() {
   return state.session?.user?.email || (state.cloud ? GN_I18N.t('auth.cloudAccount') : GN_I18N.t('auth.localDeviceSession'));
+}
+
+async function deleteCloudAccount() {
+  if (!state.cloud || !state.cloudClient || !state.session?.user?.id) return { ok: false, reason: 'CLOUD_ONLY_ACTION' };
+  var session = state.session;
+  try {
+    var current = await withTimeout(state.cloudClient.auth.getSession(), 5000);
+    if (current.error) return { ok: false, reason: 'CLOUD_SESSION_READ_FAILED' };
+    session = current.data?.session || session;
+  } catch {
+    return { ok: false, reason: 'CLOUD_SESSION_READ_FAILED' };
+  }
+  var accessToken = session?.access_token;
+  if (!accessToken) return { ok: false, reason: 'CLOUD_SESSION_MISSING' };
+  try {
+    var response = await withTimeout(fetch('/api/delete-account', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + accessToken },
+      body: JSON.stringify({ user_id: state.session.user.id })
+    }), 15000);
+    if (!response.ok) return { ok: false, reason: 'CLOUD_DELETE_REJECTED', status: response.status };
+    var text = await response.text();
+    return text === 'ok' ? { ok: true } : { ok: false, reason: text };
+  } catch (err) {
+    return { ok: false, reason: 'CLOUD_DELETE_NETWORK' };
+  }
 }
 
 function migrateLegacyLocalData() {
