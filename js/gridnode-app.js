@@ -342,6 +342,13 @@ async function wireCloudAuthEvents() {
 
 function wireGlobalEvents() {
   $('signOutOverlay')?.addEventListener('click', event => { if (event.target.id === 'signOutOverlay') closeSignOutModal(); });
+  document.addEventListener('click', event => {
+    const button = event.target?.closest?.('[data-lang-choice]');
+    if (!button) return;
+    event.preventDefault();
+    const lang = button.getAttribute('data-lang-choice');
+    if (lang) window.GN_I18N?.setLang(lang);
+  });
   window.addEventListener('storage', event => { if (!event.key?.includes('_shots') && !event.key?.includes('_weights')) return; if (state.session) modules.refreshAll(); });
   window.addEventListener('error', event => console.warn('[GRID//NODE runtime]', event.error || event.message));
 }
@@ -364,6 +371,10 @@ window.GN = {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
+  if (window.GN_I18N?.ready) {
+    await window.GN_I18N.ready;
+    window.GN_I18N.applyTo(document);
+  }
   bridge();
   injectStableStyles();
   modules.initModules();
