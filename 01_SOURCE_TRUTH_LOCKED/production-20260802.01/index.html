@@ -159,7 +159,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 /* GRIDNODE LOGO SVG */
 .boot-logo-svg{margin-bottom:8px}
 .boot-slogan{font-family:var(--font-b);font-size:1rem;font-weight:500;color:var(--text-mid);letter-spacing:2px;margin-bottom:44px;text-align:center}
-.boot-terminal{width:100%;max-width:320px;background:var(--panel);border:1px solid var(--border2);padding:14px;margin-bottom:20px;min-height:130px}
+.boot-terminal{width:100%;max-width:320px;background:var(--panel, #0e0e16);border:1px solid var(--border2);padding:14px;margin-bottom:20px;min-height:130px}
 .boot-line{font-family:var(--font-m);font-size:0.72rem;padding:2px 0;opacity:0;animation:bootLine 0.25s ease forwards;line-height:1.6}
 .boot-line.ok{color:var(--green)}.boot-line.warn{color:var(--yellow)}.boot-line.info{color:var(--text-mid)}
 .boot-prog-wrap{width:100%;max-width:320px;margin-bottom:10px}
@@ -177,7 +177,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .user-sel-title{font-family:var(--font-m);font-size:0.6rem;color:var(--text-dim);letter-spacing:4px;margin-bottom:14px;text-align:center}
 
 /* AVATAR CARDS */
-.user-card{background:var(--panel);border:1px solid var(--border2);padding:16px 18px;margin-bottom:10px;display:flex;align-items:center;gap:14px;cursor:pointer;position:relative;overflow:hidden;transition:all 0.2s;width:100%}
+.user-card{background:var(--panel, #0e0e16);border:1px solid var(--border2);padding:16px 18px;margin-bottom:10px;display:flex;align-items:center;gap:14px;cursor:pointer;position:relative;overflow:hidden;transition:all 0.2s;width:100%}
 .user-card::after{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--cyan);transform:scaleY(0);transition:transform 0.2s}
 .user-card:hover::after,.user-card:active::after{transform:scaleY(1)}
 .user-card:hover,.user-card:active{border-color:rgba(0,212,255,0.3);background:var(--panel2);transform:translateX(4px)}
@@ -198,7 +198,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .pin-dot.filled{background:var(--cyan);border-color:var(--cyan);box-shadow:0 0 10px var(--cyan-glow);transform:scale(1.1)}
 .pin-dot.error{background:var(--red);border-color:var(--red);animation:pulse 0.3s 3}
 .pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%}
-.pin-key{height:62px;background:var(--panel);border:1px solid var(--border2);border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;transition:all 0.15s;user-select:none}
+.pin-key{height:62px;background:var(--panel, #0e0e16);border:1px solid var(--border2);border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;transition:all 0.15s;user-select:none}
 .pin-key:hover,.pin-key:active{background:var(--panel2);border-color:var(--cyan);transform:scale(0.96)}
 .pin-key-n{font-family:var(--font-d);font-size:1.3rem;color:var(--text);line-height:1}
 .pin-key-a{font-family:var(--font-m);font-size:0.4rem;color:var(--text-dim);letter-spacing:2px}
@@ -217,9 +217,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 #app.active{display:flex;flex-direction:column}
 
 /* TOPBAR */
-.topbar,.gn-topbar{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 16px;padding-top:calc(6px + var(--safe-top));padding-bottom:10px;background:#0a0a14;border-bottom:1px solid var(--border);backdrop-filter:blur(16px);z-index:50;position:sticky;top:0}
+.topbar,.gn-topbar{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 16px;padding-top:calc(6px + var(--safe-top));padding-bottom:10px;background:var(--surface, #0a0a14);border-bottom:1px solid var(--border);backdrop-filter:blur(16px);z-index:50;position:sticky;top:0}
 .topbar-actions{display:flex;align-items:center;gap:8px}
-.topbar-btn{width:34px;height:34px;border-radius:50%;background:var(--panel);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.9rem;transition:all 0.2s;position:relative}
+.topbar-btn{width:34px;height:34px;border-radius:50%;background:var(--panel, #0e0e16);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.9rem;transition:all 0.2s;position:relative}
 .topbar-btn:hover{border-color:var(--cyan)}
 
 /* LIVE NODE status pill */
@@ -264,7 +264,7 @@ body:not(.gn-private-active) .fab{display:none!important;visibility:hidden;point
 
 /* STAT CARDS */
 .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px}
-.stat-card{background:var(--panel);border:1px solid var(--border);border-top:2px solid transparent;padding:13px 10px}
+.stat-card{background:var(--panel, #0e0e16);border:1px solid var(--border);border-top:2px solid transparent;padding:13px 10px}
 .stat-card.c{border-top-color:var(--cyan)}.stat-card.r{border-top-color:var(--red)}.stat-card.g{border-top-color:var(--green)}.stat-card.y{border-top-color:var(--yellow)}.stat-card.o{border-top-color:var(--orange)}
 .stat-lbl{font-family:var(--font-m);font-size:0.5rem;color:var(--text-dim);letter-spacing:2px;margin-bottom:5px;display:block}
 .stat-val{font-family:var(--font-d);font-size:1.1rem;font-weight:700;line-height:1;margin-bottom:3px;display:block}
@@ -274,7 +274,7 @@ body:not(.gn-private-active) .fab{display:none!important;visibility:hidden;point
 
 /* 6-STAT GRID (Shotsy style) */
 .stats-6{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px}
-.s6-card{background:var(--panel);border:1px solid var(--border);padding:14px 12px;border-radius:var(--r)}
+.s6-card{background:var(--panel, #0e0e16);border:1px solid var(--border);padding:14px 12px;border-radius:var(--r)}
 .s6-icon{font-size:1rem;margin-bottom:4px;display:block}
 .s6-label{font-family:var(--font-m);font-size:0.5rem;color:var(--text-dim);letter-spacing:1px;display:block;margin-bottom:3px}
 .s6-val{font-family:var(--font-d);font-size:1rem;font-weight:700;display:block;line-height:1}
@@ -282,7 +282,7 @@ body:not(.gn-private-active) .fab{display:none!important;visibility:hidden;point
 
 /* SEC HEADER */
 .sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.dash-adherence{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--panel);border:1px solid var(--border);border-left:2px solid var(--cyan);border-radius:var(--r);margin-top:8px;font-family:var(--font-m);font-size:.68rem;letter-spacing:1.2px;color:var(--text-mid)}
+.dash-adherence{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--panel, #0e0e16);border:1px solid var(--border);border-left:2px solid var(--cyan);border-radius:var(--r);margin-top:8px;font-family:var(--font-m);font-size:.68rem;letter-spacing:1.2px;color:var(--text-mid)}
 .dash-adherence .streak-dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 6px var(--cyan-glow);flex-shrink:0;opacity:.85}
 .dash-adherence .streak-text{color:var(--text);font-weight:500;letter-spacing:1.5px}
 .dash-adherence.dim{border-left-color:var(--amber)}
@@ -293,7 +293,7 @@ body:not(.gn-private-active) .fab{display:none!important;visibility:hidden;point
 .sec-act:hover{color:var(--cyan)}
 
 /* CARD */
-.card{background:var(--panel);border:1px solid var(--border);padding:16px;margin-bottom:14px;border-radius:var(--r)}
+.card{background:var(--panel, #0e0e16);border:1px solid var(--border);padding:16px;margin-bottom:14px;border-radius:var(--r)}
 .card-title{font-family:var(--font-m);font-size:0.58rem;color:var(--text-dim);letter-spacing:3px;margin-bottom:4px}
 .card-val{font-family:var(--font-d);font-size:1.3rem;font-weight:700;color:var(--cyan);margin-bottom:12px;line-height:1}
 .card-val span{font-size:0.72rem;color:var(--text-dim);margin-left:4px}
@@ -308,7 +308,7 @@ body:not(.gn-private-active) .fab{display:none!important;visibility:hidden;point
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    FEATURE 2 — CP2077 PHASE RING
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-.phase-card{background:var(--panel);border:1px solid var(--border);padding:18px 14px;margin-bottom:14px;position:relative;overflow:hidden;border-radius:var(--r)}
+.phase-card{background:var(--panel, #0e0e16);border:1px solid var(--border);padding:18px 14px;margin-bottom:14px;position:relative;overflow:hidden;border-radius:var(--r)}
 .phase-card::before,.phase-card::after{content:'';position:absolute;width:14px;height:14px;border-color:rgba(0,212,255,0.3);border-style:solid;opacity:0.6}
 .phase-card::before{top:8px;left:8px;border-width:1px 0 0 1px}
 .phase-card::after{bottom:8px;right:8px;border-width:0 1px 1px 0}
@@ -489,7 +489,7 @@ body:not(.gn-private-active) .fab{display:none!important;visibility:hidden;point
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:200;display:none;align-items:flex-end;backdrop-filter:blur(6px)}
 .overlay.active{display:flex}
-.modal{width:100%;background:var(--panel);border-top:2px solid var(--red);max-height:92vh;overflow-y:auto;padding:18px 16px;padding-bottom:calc(18px + var(--safe-bottom));animation:slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)}
+.modal{width:100%;background:var(--panel, #0e0e16);border-top:2px solid var(--red);max-height:92vh;overflow-y:auto;padding:18px 16px;padding-bottom:calc(18px + var(--safe-bottom));animation:slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)}
 .modal::-webkit-scrollbar{display:none}
 .modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
 .modal-title{font-family:var(--font-d);font-size:1rem;color:var(--text);letter-spacing:3px}
@@ -669,7 +669,7 @@ body:not(.gn-private-active) .fab{display:none!important;visibility:hidden;point
 
 /* LOG ENTRY */
 .log-month{font-family:var(--font-m);font-size:0.6rem;color:var(--text-dim);letter-spacing:4px;padding:10px 0 6px;border-bottom:1px solid var(--border);margin-bottom:10px}
-.log-entry{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--red);padding:14px;margin-bottom:8px;border-radius:0 var(--r) var(--r) 0;animation:fadeInUp 0.3s ease}
+.log-entry{background:var(--panel, #0e0e16);border:1px solid var(--border);border-left:3px solid var(--red);padding:14px;margin-bottom:8px;border-radius:0 var(--r) var(--r) 0;animation:fadeInUp 0.3s ease}
 .log-entry-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
 .log-entry-left{}
 .log-shot-num{font-family:var(--font-m);font-size:0.55rem;color:var(--text-dim);letter-spacing:2px;margin-bottom:2px}
@@ -799,7 +799,7 @@ body:not(.gn-private-active) .fab{display:none!important;visibility:hidden;point
 
 
 /* NEXT SHOT CARD */
-.next-shot-card{background:var(--panel);border:1px solid var(--border);border-top:2px solid var(--red);padding:16px;margin-bottom:14px;border-radius:0 0 var(--r) var(--r)}
+.next-shot-card{background:var(--panel, #0e0e16);border:1px solid var(--border);border-top:2px solid var(--red);padding:16px;margin-bottom:14px;border-radius:0 0 var(--r) var(--r)}
 .nsc-label{font-family:var(--font-m);font-size:0.58rem;color:var(--text-dim);letter-spacing:3px;margin-bottom:6px}
 .nsc-shot{font-family:var(--font-d);font-size:0.95rem;color:var(--text);letter-spacing:2px;margin-bottom:2px}
 .nsc-dose{display:inline-block;background:var(--yellow-dim);border:1px solid var(--yellow);color:var(--yellow);font-family:var(--font-m);font-size:0.7rem;padding:3px 10px;border-radius:12px;margin-left:8px}
@@ -807,14 +807,14 @@ body:not(.gn-private-active) .fab{display:none!important;visibility:hidden;point
 
 /* WEIGHT LOG QUICK */
 .weight-quick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-.wq-card{background:var(--panel);border:1px solid var(--border);padding:14px;cursor:pointer;transition:all 0.2s;border-radius:var(--r)}
+.wq-card{background:var(--panel, #0e0e16);border:1px solid var(--border);padding:14px;cursor:pointer;transition:all 0.2s;border-radius:var(--r)}
 .wq-card:hover{border-color:var(--cyan);background:var(--panel2)}
 .wq-icon{font-size:1.4rem;margin-bottom:6px;display:block}
 .wq-label{font-family:var(--font-m);font-size:0.58rem;color:var(--text-dim);letter-spacing:2px;display:block;margin-bottom:3px}
 .wq-val{font-family:var(--font-d);font-size:1.1rem;font-weight:700;color:var(--green);display:block}
 
 /* CALENDAR */
-.cal-wrap{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.cal-wrap{background:var(--panel, #0e0e16);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
 .cal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)}
 .cal-title{font-family:var(--font-d);font-size:0.85rem;color:var(--cyan);letter-spacing:2px}
 .cal-nav{width:32px;height:32px;background:var(--panel2);border:1px solid var(--border2);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-mid);font-size:0.9rem;transition:all 0.2s}
@@ -846,7 +846,7 @@ body:not(.gn-private-active) .fab{display:none!important;visibility:hidden;point
 .cal-detail-tap:hover{color:var(--cyan)}
 
 /* ARSENAL */
-.arsenal-item{background:var(--panel);border:1px solid var(--border);border-left:3px solid transparent;padding:14px;margin-bottom:9px;border-radius:0 var(--r) var(--r) 0}
+.arsenal-item{background:var(--panel, #0e0e16);border:1px solid var(--border);border-left:3px solid transparent;padding:14px;margin-bottom:9px;border-radius:0 var(--r) var(--r) 0}
 .arsenal-item.compound{border-left-color:var(--cyan)}.arsenal-item.research{border-left-color:var(--yellow)}.arsenal-item.supply{border-left-color:var(--green)}
 .arsenal-row{display:flex;align-items:flex-start;gap:11px}
 .arsenal-icon{font-size:1.7rem;flex-shrink:0;margin-top:2px}
@@ -864,7 +864,7 @@ body:not(.gn-private-active) .fab{display:none!important;visibility:hidden;point
 .no-data{font-family:var(--font-m);font-size:0.58rem;color:var(--text-dim);letter-spacing:2px;text-align:center;padding:20px}
 
 /* PROFILE */
-.profile-hero{display:flex;align-items:center;gap:15px;padding:18px;background:var(--panel);border:1px solid var(--border);margin-bottom:18px;border-radius:var(--r)}
+.profile-hero{display:flex;align-items:center;gap:15px;padding:18px;background:var(--panel, #0e0e16);border:1px solid var(--border);margin-bottom:18px;border-radius:var(--r)}
 .profile-name-txt{font-family:var(--font-d);font-size:1.1rem;color:var(--text);letter-spacing:2px;margin-bottom:3px}
 .profile-med-txt{font-family:var(--font-m);font-size:0.6rem;color:var(--cyan);letter-spacing:2px;margin-bottom:2px}
 .profile-ver{font-family:var(--font-m);font-size:0.52rem;color:var(--text-dim);letter-spacing:2px}
@@ -3990,9 +3990,9 @@ function continueLocallyFromWelcome() {
           <div class="scanner-status-helper"><b>SELECTED</b> = active choice · LAST = last logged location · READY = available tracking zone · RECENT = recently logged</div>
         </div>
         <div class="scanner-selected-panel">
-          <small>SELECTED LOCATION</small>
+          <small data-i18n="shot.selectedLocationLabel">SELECTED LOCATION</small>
           <b id="scannerSelectedDisplay" data-i18n="shots.noLocationSelected">No location selected</b>
-          <small>LOCATION HISTORY</small>
+          <small data-i18n="shots.locationHistory">LOCATION HISTORY</small>
           <b id="scannerHistoryDisplay" data-i18n="shots.noLoggedLocation">Log a zone to see recent locations</b>
         </div>
         <div class="shots-safety-note">// SYSTEM NOTICE: USER-ENTERED LOCATION TRACKING ONLY. GRID//NODE DOES NOT PROVIDE LOCATION RECOMMENDATIONS OR MEDICAL ADVICE.</div>
@@ -4304,7 +4304,7 @@ function continueLocallyFromWelcome() {
 
   
   <div style="
-    background:#0e0e16;border:1px solid rgba(255,255,255,0.07);
+    background:var(--panel, #0e0e16);border:1px solid rgba(255,255,255,0.07);
     border-radius:8px;padding:20px;margin-bottom:20px;
     display:flex;align-items:center;gap:16px;
   ">
@@ -4313,7 +4313,7 @@ function continueLocallyFromWelcome() {
       width:64px;height:64px;border-radius:50%;
       border:2px solid #00d4ff;overflow:hidden;flex-shrink:0;
       box-shadow:0 0 14px rgba(0,212,255,0.3);
-      background:#0a0a14;display:flex;align-items:center;justify-content:center;
+      background:var(--surface, #0a0a14);display:flex;align-items:center;justify-content:center;
     ">
       <img id="profAvaIcon" src="/assets/gridnode-icon.svg" alt="GRID//NODE NODE mark" width="64" height="64">
     </div>
@@ -4337,7 +4337,7 @@ function continueLocallyFromWelcome() {
 
   
   <div style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:3px;margin-bottom:10px" data-i18n="profile.sectionMedication">// MEDICATION</div>
-  <div style="background:#0e0e16;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:16px;margin-bottom:20px">
+  <div style="background:var(--panel, #0e0e16);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:16px;margin-bottom:20px">
     <div class="form-group">
       <label class="form-label" data-i18n="shot.medication">MEDICATION</label>
       <div class="cp-select" id="cpMedProf">
@@ -4386,7 +4386,7 @@ function continueLocallyFromWelcome() {
 
   
   <div style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:3px;margin-bottom:10px" data-i18n="profile.sectionBody">// BODY METRICS</div>
-  <div style="background:#0e0e16;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:16px;margin-bottom:20px">
+  <div style="background:var(--panel, #0e0e16);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:16px;margin-bottom:20px">
     <div class="form-row">
       <div class="form-group">
         <label class="form-label" data-i18n="profile.heightFt">HEIGHT (ft)</label>
@@ -4428,7 +4428,7 @@ function continueLocallyFromWelcome() {
       </div>
     </div>
     
-    <div id="profBMIDisplay" style="display:none;background:#080810;border:1px solid rgba(255,255,255,0.07);border-left:3px solid #00d4ff;border-radius:0 6px 6px 0;padding:12px;margin-top:4px">
+    <div id="profBMIDisplay" style="display:none;background:var(--panel, #0e0e16);border:1px solid rgba(255,255,255,0.07);border-left:3px solid #00d4ff;border-radius:0 6px 6px 0;padding:12px;margin-top:4px">
       <div style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);letter-spacing:2px;margin-bottom:4px" data-i18n="profile.bmi">BMI</div>
       <span id="profBMIVal" style="font-family:'Orbitron',monospace;font-size:1.4rem;font-weight:700;color:#00d4ff">—</span>
       <span id="profBMICat" style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:#9898b0;margin-left:8px;letter-spacing:2px"></span>
@@ -4438,7 +4438,7 @@ function continueLocallyFromWelcome() {
   
       <div data-gn-legacy-profile>
       <div style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:3px;margin-bottom:10px" data-i18n="profile.sectionData">// DATA</div>
-  <div style="background:#0e0e16;border:1px solid rgba(255,255,255,0.07);border-radius:8px;overflow:hidden;margin-bottom:20px">
+  <div style="background:var(--panel, #0e0e16);border:1px solid rgba(255,255,255,0.07);border-radius:8px;overflow:hidden;margin-bottom:20px">
     <button type="button" class="gn-utility-row" onclick="exportCSV()">
       <div style="display:flex;align-items:center;gap:12px">
         <span class="gn-icon gn-icon-sm gn-utility-icon"><svg><use href="#gn-data-packet"></use></svg></span>
@@ -4457,7 +4457,7 @@ function continueLocallyFromWelcome() {
 
   
   <div style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:3px;margin-bottom:10px">// APP</div>
-  <div style="background:#0e0e16;border:1px solid rgba(255,255,255,0.07);border-radius:8px;overflow:hidden;margin-bottom:20px">
+  <div style="background:var(--panel, #0e0e16);border:1px solid rgba(255,255,255,0.07);border-radius:8px;overflow:hidden;margin-bottom:20px">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid rgba(255,255,255,0.05)">
       <span style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:2px" data-i18n="profile.version">VERSION</span>
 <span style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:2px">v2.1.7</span>
@@ -4473,7 +4473,7 @@ function continueLocallyFromWelcome() {
 
   
   <div style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:3px;margin-bottom:10px">// ACCOUNT</div>
-  <div style="background:#0e0e16;border:1px solid rgba(255,255,255,0.07);border-radius:8px;overflow:hidden;margin-bottom:40px">
+  <div style="background:var(--panel, #0e0e16);border:1px solid rgba(255,255,255,0.07);border-radius:8px;overflow:hidden;margin-bottom:40px">
     <button type="button" class="gn-utility-row gn-utility-row-danger" onclick="openSignOutModal()">
       <div style="display:flex;align-items:center;gap:12px">
         <span class="gn-icon gn-icon-sm gn-utility-icon"><svg><use href="#gn-disconnect-node"></use></svg></span>
@@ -4543,7 +4543,7 @@ function continueLocallyFromWelcome() {
         </div>
       </div>
     </div>
-    <div class="form-group"><label class="form-label">DOSE — TAP TO SELECT OR ENTER CUSTOM</label><div class="dose-pills" id="dosePills"></div><input class="form-input" type="number" id="sDose" placeholder="Custom dose (mg)" step="0.1" style="margin-top:7px"></div>
+    <div class="form-group"><label class="form-label" data-i18n="shot.doseLabel">DOSE — TAP TO SELECT OR ENTER CUSTOM</label><div class="dose-pills" id="dosePills"></div><input class="form-input" type="number" id="sDose" placeholder="Custom dose (mg)" step="0.1" style="margin-top:7px"></div>
     <div class="form-group">
       <label class="form-label">SELECTED LOCATION</label>
       <div class="scanner-location-display">
@@ -4554,12 +4554,12 @@ function continueLocallyFromWelcome() {
     </div>
     <div class="form-group"><label class="form-label" for="shotDeviceId" data-i18n="shot.deviceUsed">DEVICE USED — OPTIONAL</label><select class="form-input" id="shotDeviceId"><option value="" data-i18n="shot.unknownDevice">Unknown / Not applicable</option></select><div class="gn-shot-time-helper" data-i18n="shot.deviceHelper">Device identity stays separate from the SHOT event. Historical SHOTS are not rewritten when a device changes.</div></div>
     <button type="button" class="gn-shot-advanced-trigger" data-collapse-target="gnShotAdvanced" aria-expanded="false" aria-controls="gnShotAdvanced">
-      <span>// MORE DETAILS  (weight · side effects · notes)</span>
+      <span data-i18n="shot.moreDetails">// MORE DETAILS</span>
       <span class="gn-shot-advanced-chevron" aria-hidden="true">▼</span>
     </button>
     <div id="gnShotAdvanced" class="gn-shot-advanced-body gn-hidden">
-      <div class="form-group"><label class="form-label">WEIGHT TODAY (lbs) — OPTIONAL</label><input class="form-input" type="number" id="sWt" placeholder="e.g. 215.5" step="0.1"></div>
-      <div class="form-group"><label class="form-label">SIDE EFFECTS</label>
+      <div class="form-group"><label class="form-label" data-i18n="shot.weightToday">WEIGHT TODAY (lbs) — OPTIONAL</label><input class="form-input" type="number" id="sWt" placeholder="e.g. 215.5" step="0.1"></div>
+      <div class="form-group"><label class="form-label" data-i18n="shot.sideEffects">SIDE EFFECTS</label>
         <div class="se-grid">
           <label class="se-check"><input type="checkbox" value="Nausea"> Nausea</label>
           <label class="se-check"><input type="checkbox" value="Fatigue"> Fatigue</label>
@@ -4575,8 +4575,8 @@ function continueLocallyFromWelcome() {
       </div>
       <div class="form-group"><label class="form-label" data-i18n="shots.notesOptional">NOTES — OPTIONAL</label><textarea class="form-textarea" id="sNotes" placeholder="How do you feel?" maxlength="500"></textarea></div>
     </div>
-    <button class="btn-full btn-primary" onclick="saveShot()">SAVE SHOT</button>
-    <button class="btn-full btn-secondary log-modal-bottom-close" onclick="closeLog()">CLOSE / RETURN</button>
+    <button class="btn-full btn-primary" onclick="saveShot()" data-i18n="shot.saveShot">SAVE SHOT</button>
+    <button class="btn-full btn-secondary log-modal-bottom-close" onclick="closeLog()" data-i18n="shot.closeReturn">CLOSE / RETURN</button>
   </div>
 </div>
 
@@ -8848,7 +8848,7 @@ body.gn-log-shot-picker-open .fab{
 
 <div class="overlay" id="signOutOverlay" style="display:none;align-items:center;justify-content:center">
   <div class="gn-signout-panel" style="
-    background:#0e0e16;
+    background:var(--panel, #0e0e16);
     border:1px solid rgba(255,51,85,0.3);
     border-top:2px solid #ff3355;
     border-radius:8px;

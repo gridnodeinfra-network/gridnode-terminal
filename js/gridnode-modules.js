@@ -532,7 +532,7 @@ export function saveShot(allowFuture = false) {
   $('futureTimestampConfirm')?.classList.remove('active');
   closeLog();
   refreshAll();
-  showToast(existing ? 'SHOT record updated.' : 'SHOT recorded.');
+  showToast(existing ? 'SHOT UPDATED' : 'SHOT RECORDED');
 }
 
 export function openFutureTimestampConfirm() { $('futureTimestampConfirm')?.classList.add('active'); }
@@ -569,7 +569,7 @@ export function saveWt() {
   closeWt();
   if ($('wtVal')) $('wtVal').value = '';
   if ($('wtNotes')) $('wtNotes').value = '';
-  refreshAll(); showToast('Weight record saved.');
+  refreshAll(); showToast('WEIGHT RECORDED');
 }
 
 export function renderResults() {

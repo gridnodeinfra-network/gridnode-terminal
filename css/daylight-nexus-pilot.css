@@ -563,7 +563,10 @@ html[data-theme="light"] { --surface-telemetry: rgba(238, 234, 224, .94); }
 html[data-theme="light"] #landing,
 html[data-theme="light"] #login {
   background-color: var(--background);
-  background-image: none;
+  background-image: linear-gradient(90deg, rgba(248, 245, 237, .94) 0 34%, rgba(248, 245, 237, .66) 58%, rgba(236, 208, 168, .30) 100%), url('../assets/nexus-city-daylight-v1.webp');
+  background-position: center;
+  background-size: cover;
+  background-attachment: scroll;
 }
 html[data-theme="light"] #landing .landing-hero { background: linear-gradient(90deg, rgba(232, 228, 218, .94) 0 34%, rgba(232, 228, 218, .62) 58%, transparent 78%); }
 html[data-theme="light"] .gn-auth-privacy {
@@ -1401,4 +1404,37 @@ html[data-theme="light"] .zone-overlay {
   .landing-language-control { top: 10px; right: 10px; }
   .landing-node-mark { top: 54px; right: 10px; }
   .landing-logo { max-width: 100%; }
+}
+
+/* Light-theme completeness: chrome surfaces must never stay dark. */
+html[data-theme="light"] .cp-dropdown,
+html[data-theme="light"] .gn-date-panel,
+html[data-theme="light"] .future-confirm-panel,
+html[data-theme="light"] .gn-shot-advanced-body,
+html[data-theme="light"] .gn-weekly-report,
+html[data-theme="light"] .gn-foundation-panel,
+html[data-theme="light"] .gn-profile-hub {
+  background: var(--surface-elevated, var(--surface, #f4f1e9)) !important;
+  color: var(--text-primary, #1c2b31) !important;
+  border-color: var(--border, rgba(20, 60, 70, .28)) !important;
+}
+html[data-theme="light"] .cp-dropdown .cp-option:hover,
+html[data-theme="light"] .cp-dropdown .cp-group-label,
+html[data-theme="light"] .gn-date-title,
+html[data-theme="light"] .future-confirm-title {
+  color: var(--text-primary, #1c2b31) !important;
+}
+html[data-theme="light"] .overlay .form-input,
+html[data-theme="light"] .overlay input,
+html[data-theme="light"] .overlay textarea,
+html[data-theme="light"] .overlay select,
+html[data-theme="light"] .csv-import-overlay input {
+  background: var(--surface-elevated, #ffffff) !important;
+  color: var(--text-primary, #1c2b31) !important;
+  border-color: var(--border, rgba(20, 60, 70, .3)) !important;
+}
+html[data-theme="light"] .toast {
+  background: var(--surface-elevated, #f4f1e9) !important;
+  color: var(--text-primary, #1c2b31) !important;
+  border: 1px solid var(--border, rgba(20, 60, 70, .28)) !important;
 }

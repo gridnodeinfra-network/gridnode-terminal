@@ -36,16 +36,16 @@
       "sha256": "f8070c01688e279d667f85ab207ba13b4fa3e9d6119b64b58204ccdd39b5e886"
     },
     "css/gridnode-native.css": {
-      "bytes": 2359,
-      "sha256": "8a40649bca36a46b9e69a71d569314640dd20af1cd95e088571a76d3d8359531"
+      "bytes": 5307,
+      "sha256": "9a23f483858b44e1728c068345e967cec0485f68f1f1cce34ba2ca5da8b3d8c6"
     },
     "index.html": {
-      "bytes": 609143,
-      "sha256": "09f89e28cae369515edb080cce185ca809c39969cbefb9c54fcad9b2b4f634f2"
+      "bytes": 609638,
+      "sha256": "84edde87d51ebdf812b6818326dcf0e617898fe7152677961ecf49557aab5c68"
     },
     "js/gridnode-bundle.js": {
-      "bytes": 287762,
-      "sha256": "59025d26e1fa611dc1fc3efea94f34c2ba5c2b69f513be79be926cafefc0165b"
+      "bytes": 282846,
+      "sha256": "a86c687d0a1a158f647cce1fad54748ff974227a7b3f3bce01c3a7775886c0a0"
     },
     "js/gridnode-native.js": {
       "bytes": 6015,
@@ -60,9 +60,9 @@
       "sha256": "3dde3ad27ac1fa0c0c878704a5104dc355e34769f05a9cd65aa5da7ee06a0540"
     }
   },
-  "metadata_note": "Re-locked 2026-08-02 (release 20260802.2): twitch fix satellites + marker bump.",
+  "metadata_note": "Re-locked 2026-08-02 (UI polish batch): tutorial removed, theme names, toggles, light completeness, typography.",
   "production_branch": null,
   "release_marker": "20260802.01",
-  "retrieved_at_utc": "2026-08-02T18:37:15Z",
+  "retrieved_at_utc": "2026-08-02T19:07:25Z",
   "runtime_version": "2.1.7"
 }

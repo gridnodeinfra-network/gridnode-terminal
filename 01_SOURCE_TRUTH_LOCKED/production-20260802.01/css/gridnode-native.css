@@ -72,3 +72,76 @@ html.gn-keyboard-open #signOutOverlay {
 html[data-theme="light"] :focus-visible {
   --gn-focus-ring: rgba(0, 90, 110, 0.9);
 }
+
+/* ── Theme toggle: segmented control with the real theme identities ── */
+.gn-theme-toggle {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+  min-height: 34px !important;
+  padding: 3px !important;
+  border: 1px solid rgba(0, 212, 255, .22) !important;
+  border-radius: 999px !important;
+  background: rgba(0, 12, 18, .55) !important;
+}
+.gn-theme-toggle .gn-theme-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #7fa3ad;
+  font: 700 .58rem var(--font-m, monospace);
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: background .18s ease, color .18s ease, box-shadow .18s ease;
+}
+.gn-theme-toggle .gn-theme-opt .gn-theme-opt-icon { font-size: .62rem; line-height: 1; }
+.gn-theme-toggle .gn-theme-opt.active {
+  background: linear-gradient(135deg, rgba(0, 212, 255, .22), rgba(0, 212, 255, .08));
+  color: #00d4ff;
+  box-shadow: inset 0 0 0 1px rgba(0, 212, 255, .35);
+}
+html[data-theme="light"] .gn-theme-toggle {
+  background: rgba(248, 245, 237, .85) !important;
+  border-color: rgba(0, 111, 130, .3) !important;
+}
+html[data-theme="light"] .gn-theme-toggle .gn-theme-opt { color: #4d6b75; }
+html[data-theme="light"] .gn-theme-toggle .gn-theme-opt.active {
+  background: rgba(0, 111, 130, .14);
+  color: #005f73;
+  box-shadow: inset 0 0 0 1px rgba(0, 111, 130, .4);
+}
+
+/* ── Language control: same segmented language, proper touch targets ── */
+.gn-language-control { min-height: 34px !important; padding: 3px !important; }
+.gn-language-control button { min-width: 38px !important; min-height: 28px !important; font-size: .6rem !important; }
+.gn-language-control > span { font-size: .56rem !important; }
+
+/* ── Welcome screen: the NODE mark lives at the bottom of the viewport ── */
+#landing .landing-node-mark {
+  position: fixed !important;
+  bottom: max(18px, env(safe-area-inset-bottom, 0px)) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  top: auto !important;
+  right: auto !important;
+  z-index: 6 !important;
+  opacity: .85;
+}
+
+/* ── Readability pass (EN + ES, mobile) ── */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+.gn-record-row, .gn-ledger-row, .gn-weight-record, .gn-calendar-detail,
+.gn-measurement-trend-row, .results-list-item, .gn-progress-signal,
+.gn-research-group, .gn-device-row { overflow-wrap: anywhere; }
+.landing-copy, .results-copy, .empty, .csv-import-body,
+.gn-shot-time-helper, .gn-shot-date-helper, .gn-auth-privacy { line-height: 1.55; }
+html[lang="es"] .nav-lbl, html[lang="es"] .gn-theme-opt-name,
+html[lang="es"] .form-label { letter-spacing: .4px !important; }
+html[lang="es"] .form-label { font-size: .64rem !important; }
+html[lang="es"] .nav-lbl { font-size: .54rem !important; }
+html[lang="es"] .gn-theme-opt { padding: 0 8px !important; }

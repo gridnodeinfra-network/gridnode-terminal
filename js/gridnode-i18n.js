@@ -122,7 +122,8 @@
       const key = el.getAttribute('data-i18n-html');
       if (key) el.innerHTML = t(key);
     });
-    doc.documentElement.setAttribute('lang', currentLang);
+    const html = doc.documentElement || document.documentElement;
+    if (html) html.setAttribute('lang', currentLang);
     doc.querySelectorAll('[data-lang-choice]').forEach(button => {
       const selected = button.getAttribute('data-lang-choice') === currentLang;
       button.setAttribute('aria-pressed', selected ? 'true' : 'false');
