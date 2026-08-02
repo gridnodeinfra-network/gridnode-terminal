@@ -412,3 +412,15 @@ enabled = true
 # declarative_schema_path = "./database"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+
+# Passkey functions self-enforce auth (register requires a user JWT; the
+# authenticate endpoints are deliberately pre-auth). verify_jwt stays off so
+# the platform does not 401-gate them before our handlers run.
+[functions.webauthn-register-options]
+verify_jwt = false
+[functions.webauthn-register-verify]
+verify_jwt = false
+[functions.webauthn-authenticate-options]
+verify_jwt = false
+[functions.webauthn-authenticate-verify]
+verify_jwt = false
