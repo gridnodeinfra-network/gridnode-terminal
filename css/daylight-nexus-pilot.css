@@ -563,7 +563,7 @@ html[data-theme="light"] { --surface-telemetry: rgba(238, 234, 224, .94); }
 html[data-theme="light"] #landing,
 html[data-theme="light"] #login {
   background-color: var(--background);
-  background-image: linear-gradient(90deg, rgba(248, 245, 237, .94) 0 34%, rgba(248, 245, 237, .66) 58%, rgba(236, 208, 168, .30) 100%), url('../assets/nexus-city-daylight-v1.webp');
+  background-image: linear-gradient(90deg, rgba(235, 237, 240, .94) 0 34%, rgba(235, 237, 240, .74) 58%, rgba(215, 222, 230, .48) 100%), url('../assets/nexus-city-night-v1.webp');
   background-position: center;
   background-size: cover;
   background-attachment: scroll;
@@ -1437,4 +1437,37 @@ html[data-theme="light"] .toast {
   background: var(--surface-elevated, #f4f1e9) !important;
   color: var(--text-primary, #1c2b31) !important;
   border: 1px solid var(--border, rgba(20, 60, 70, .28)) !important;
+}
+
+/* SHOTS holographic scanner: light-theme surfaces. */
+html[data-theme="light"] .shots-scanner-card {
+  background: var(--surface, #f4f1e9);
+  border-color: var(--border, rgba(20, 60, 70, .25));
+}
+html[data-theme="light"] .shots-scanner-card::before { opacity: .35; }
+html[data-theme="light"] .shots-scanner-head h2,
+html[data-theme="light"] .shots-scanner-head p,
+html[data-theme="light"] .asset-matrix-title b,
+html[data-theme="light"] .scanner-selected-panel b,
+html[data-theme="light"] .scanner-status-helper,
+html[data-theme="light"] .shot-history-helper {
+  color: var(--text-primary, #1c2b31) !important;
+}
+html[data-theme="light"] .asset-helper,
+html[data-theme="light"] .scanner-source-tag {
+  color: var(--text-secondary, #2e424b) !important;
+}
+html[data-theme="light"] .asset-scan-stage,
+html[data-theme="light"] .site-scanner {
+  background: transparent !important;
+  border-color: var(--border, rgba(20, 60, 70, .3)) !important;
+}
+html[data-theme="light"] .gn-stable-zone-btn {
+  border-color: var(--border, rgba(20, 60, 70, .3)) !important;
+  color: var(--text-secondary, #2e424b) !important;
+}
+html[data-theme="light"] .gn-stable-zone-btn.selected {
+  background: rgba(0, 111, 130, .14) !important;
+  color: #005f73 !important;
+  border-color: rgba(0, 111, 130, .45) !important;
 }

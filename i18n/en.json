@@ -1126,5 +1126,6 @@
   "shot.weightToday": "WEIGHT TODAY (lbs) — OPTIONAL",
   "shot.saveShot": "SAVE SHOT",
   "shot.closeReturn": "CLOSE / RETURN",
-  "shots.locationHistory": "LOCATION HISTORY"
+  "shots.locationHistory": "LOCATION HISTORY",
+  "whatsnew.gotIt": "GOT IT"
 }

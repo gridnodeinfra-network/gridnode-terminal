@@ -1126,5 +1126,6 @@
   "shot.weightToday": "PESO HOY (lbs) — OPCIONAL",
   "shot.saveShot": "GUARDAR DOSIS",
   "shot.closeReturn": "CERRAR / VOLVER",
-  "shots.locationHistory": "HISTORIAL DE UBICACIONES"
+  "shots.locationHistory": "HISTORIAL DE UBICACIONES",
+  "whatsnew.gotIt": "ENTENDIDO"
 }

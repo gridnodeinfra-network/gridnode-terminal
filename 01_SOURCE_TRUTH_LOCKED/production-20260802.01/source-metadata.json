@@ -36,20 +36,24 @@
       "sha256": "f8070c01688e279d667f85ab207ba13b4fa3e9d6119b64b58204ccdd39b5e886"
     },
     "css/gridnode-native.css": {
-      "bytes": 5307,
-      "sha256": "9a23f483858b44e1728c068345e967cec0485f68f1f1cce34ba2ca5da8b3d8c6"
+      "bytes": 9643,
+      "sha256": "f858cfaf83a953c6d80be08fe7dfa82d5b57a753840bb1bb5d9af09cf9536c0c"
     },
     "index.html": {
-      "bytes": 609638,
-      "sha256": "7447c64ad5d1f3551a358e7eb2f2ed711e0ddd4a83f77ae9327ad3fbee7a51bd"
+      "bytes": 609892,
+      "sha256": "ecbb9eb5e4aa2f2611f1e411d335bc83ed8e1c606d786dcb349e015be25c29d1"
     },
     "js/gridnode-bundle.js": {
       "bytes": 282846,
-      "sha256": "702781ab9d5a572f3685e30b8f3234bec6b0af3213005fcc5432eeac2865eea4"
+      "sha256": "e3ed7091adb86a1d962815392a3152207bbe90dc6861b0d9bdb30b1057d80d33"
     },
     "js/gridnode-native.js": {
       "bytes": 6015,
       "sha256": "a981b80e7ea5a0e7898446a9c0ebb474deb6864cca68f315802b45b48b4a6d3b"
+    },
+    "js/gridnode-whatsnew.js": {
+      "bytes": 3050,
+      "sha256": "7707a91c27fac272822925da7e368db5da6218a19f229dcde1f39b0136a108e2"
     },
     "manifest.json": {
       "bytes": 1547,
@@ -57,12 +61,12 @@
     },
     "sw.js": {
       "bytes": 1743,
-      "sha256": "ea063ed527686f2c2849eea37b4d7940a6dea3f3206abf817892c1a734adc3ed"
+      "sha256": "41b9e14d22c0402f44c2da77e65a146d8f0fe814b765fe483736aedb18a958ac"
     }
   },
-  "metadata_note": "Re-locked 2026-08-02 (UI polish batch): tutorial removed, theme names, toggles, light completeness, typography.",
+  "metadata_note": "Re-locked 2026-08-02 (release 20260802.4): icon-only toggles, whatsnew, cloudy login, scanner light, LAB readability.",
   "production_branch": null,
   "release_marker": "20260802.01",
-  "retrieved_at_utc": "2026-08-02T19:08:00Z",
+  "retrieved_at_utc": "2026-08-02T19:41:12Z",
   "runtime_version": "2.1.7"
 }

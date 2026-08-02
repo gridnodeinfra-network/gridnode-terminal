@@ -145,3 +145,92 @@ html[lang="es"] .form-label { letter-spacing: .4px !important; }
 html[lang="es"] .form-label { font-size: .64rem !important; }
 html[lang="es"] .nav-lbl { font-size: .54rem !important; }
 html[lang="es"] .gn-theme-opt { padding: 0 8px !important; }
+
+/* ── v2: icon-only compact theme toggle (insignias), no overlap anywhere ── */
+.gn-theme-toggle {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+  min-height: 32px !important;
+  padding: 2px !important;
+  border: 1px solid rgba(0, 212, 255, .25) !important;
+  border-radius: 999px !important;
+  background: rgba(0, 12, 18, .55) !important;
+}
+.gn-theme-toggle .gn-theme-opt {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 30px !important;
+  min-height: 26px !important;
+  padding: 0 7px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: #7fa3ad !important;
+  font-size: .78rem !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  transition: background .18s ease, color .18s ease, box-shadow .18s ease !important;
+}
+.gn-theme-toggle .gn-theme-opt .gn-theme-opt-icon { font-size: .78rem; line-height: 1; }
+.gn-theme-toggle .gn-theme-opt.active {
+  background: linear-gradient(135deg, rgba(0, 212, 255, .22), rgba(0, 212, 255, .08)) !important;
+  color: #00d4ff !important;
+  box-shadow: inset 0 0 0 1px rgba(0, 212, 255, .35) !important;
+}
+html[data-theme="light"] .gn-theme-toggle {
+  background: rgba(248, 245, 237, .9) !important;
+  border-color: rgba(0, 111, 130, .32) !important;
+}
+html[data-theme="light"] .gn-theme-toggle .gn-theme-opt { color: #4d6b75 !important; }
+html[data-theme="light"] .gn-theme-toggle .gn-theme-opt.active {
+  background: rgba(0, 111, 130, .16) !important;
+  color: #005f73 !important;
+  box-shadow: inset 0 0 0 1px rgba(0, 111, 130, .42) !important;
+}
+
+/* Landing host: sits under the language control, never near the NODE mark. */
+.landing-theme-toggle-host { position: absolute; top: 48px; right: 0; z-index: 5; }
+
+/* Topbar: compact controls, avatar always visible and tappable. */
+#app .topbar { flex-wrap: nowrap !important; gap: 6px !important; }
+#app .topbar-actions { flex-shrink: 0 !important; margin-left: auto !important; gap: 6px !important; }
+.gn-topbar-language-control { margin: 0 !important; }
+.gn-topbar-language-control button { min-width: 30px !important; }
+
+/* ── What's New modal ── */
+.gn-whatsnew-overlay {
+  position: fixed; inset: 0; z-index: 950;
+  display: grid; place-items: center; padding: 20px;
+  background: rgba(2, 2, 8, .78); backdrop-filter: blur(8px);
+}
+.gn-whatsnew-card {
+  width: min(100%, 360px); box-sizing: border-box; padding: 22px;
+  border: 1px solid rgba(0, 212, 255, .4); border-top: 2px solid #00d4ff;
+  border-radius: 10px; background: var(--panel, #0e0e16); color: var(--text, #eef6f8);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .6);
+}
+.gn-whatsnew-kicker { color: #00d4ff; font: 800 .68rem var(--font-d, monospace); letter-spacing: 2.4px; }
+.gn-whatsnew-version { margin: 4px 0 14px; color: var(--text-dim, #8295a0); font: .58rem var(--font-m, monospace); letter-spacing: 1.4px; }
+.gn-whatsnew-list { margin: 0 0 18px; padding: 0 0 0 18px; color: var(--text-mid, #b7c7d3); font: .78rem/1.55 var(--font-b, system-ui); }
+.gn-whatsnew-list li { margin: 6px 0; }
+.gn-whatsnew-close {
+  width: 100%; min-height: 44px; border: 0; border-radius: 6px;
+  background: linear-gradient(135deg, #00d4ff, #0099cc); color: #001015;
+  font: 800 .68rem var(--font-d, monospace); letter-spacing: 1.6px; cursor: pointer;
+}
+html[data-theme="light"] .gn-whatsnew-overlay { background: rgba(240, 236, 226, .7); }
+html[data-theme="light"] .gn-whatsnew-card { background: var(--surface, #f4f1e9); color: var(--text-primary, #1c2b31); border-color: rgba(0, 111, 130, .35); }
+html[data-theme="light"] .gn-whatsnew-list { color: #2e424b; }
+
+/* ── LAB: peptide research readability (both themes) ── */
+#pageLab .form-label { font-size: .68rem !important; }
+#syrPept { font-size: 1.02rem !important; }
+#pageLab .gn-syr-result .v { font-size: 1.05rem !important; }
+html[data-theme="light"] #pageLab .gn-syr-result .v,
+html[data-theme="light"] #syrPept { color: var(--text-primary, #1c2b31) !important; }
+html[data-theme="light"] #pageLab .cheat-table { background: var(--surface, #f4f1e9) !important; color: var(--text-primary, #1c2b31) !important; }
+
+/* Hidden nav items (e.g. #navPro) must never render. */
+.gn-nav-hidden { display: none !important; }
