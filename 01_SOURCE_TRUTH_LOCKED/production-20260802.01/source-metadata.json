@@ -41,11 +41,11 @@
     },
     "index.html": {
       "bytes": 609143,
-      "sha256": "8a84682c4445626f7f255b4882e74cfc23335edac914ee1b7987c64418dd71b0"
+      "sha256": "09f89e28cae369515edb080cce185ca809c39969cbefb9c54fcad9b2b4f634f2"
     },
     "js/gridnode-bundle.js": {
       "bytes": 287762,
-      "sha256": "63758a13840869ccc1f003226403e74d428304785fe97eb29a503d2320f8059b"
+      "sha256": "59025d26e1fa611dc1fc3efea94f34c2ba5c2b69f513be79be926cafefc0165b"
     },
     "js/gridnode-native.js": {
       "bytes": 6015,
@@ -57,12 +57,12 @@
     },
     "sw.js": {
       "bytes": 1744,
-      "sha256": "7f12e520e432774c2a52209176afb3c0ece54a8eba2940fa2a9e494a3d15341c"
+      "sha256": "3dde3ad27ac1fa0c0c878704a5104dc355e34769f05a9cd65aa5da7ee06a0540"
     }
   },
-  "metadata_note": "Re-locked 2026-08-02 (Phase 6 perf/install): webp assets, sw cache allowlist, headers, manifest shortcuts, SRI, splash.",
+  "metadata_note": "Re-locked 2026-08-02 (release 20260802.2): twitch fix satellites + marker bump.",
   "production_branch": null,
   "release_marker": "20260802.01",
-  "retrieved_at_utc": "2026-08-02T17:48:37Z",
+  "retrieved_at_utc": "2026-08-02T18:37:15Z",
   "runtime_version": "2.1.7"
 }
