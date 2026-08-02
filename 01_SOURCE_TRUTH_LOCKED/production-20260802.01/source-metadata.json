@@ -1,0 +1,60 @@
+{
+  "associated_git_commit": null,
+  "baseline": "gridnode.network",
+  "canonical_production_url": "https://gridnode.network/",
+  "classification": "CURRENT PRODUCTION LOCK - WORKTREE == LIVE (verified 2026-08-02)",
+  "deployment_id": null,
+  "deployment_timestamp_utc": null,
+  "deployment_url": null,
+  "files": {
+    "assets/apple-touch-icon.png": {
+      "bytes": 3150,
+      "sha256": "859ada4275beaf92973a405681932877a170e8e9d7023f55525305622688d6d3"
+    },
+    "assets/gridnode-icon-192.png": {
+      "bytes": 3162,
+      "sha256": "de9c4b901d19709f5b15b03d2191c9e1d606681e3d593b6986bb2ba7116bba79"
+    },
+    "assets/gridnode-icon-512.png": {
+      "bytes": 10844,
+      "sha256": "57d69d97a0d286def63b32b50aa7784e23e12da264bffbd6a7bf73b990d45d1a"
+    },
+    "assets/gridnode-icon-maskable-192.png": {
+      "bytes": 3162,
+      "sha256": "de9c4b901d19709f5b15b03d2191c9e1d606681e3d593b6986bb2ba7116bba79"
+    },
+    "assets/gridnode-icon-maskable-512.png": {
+      "bytes": 10844,
+      "sha256": "57d69d97a0d286def63b32b50aa7784e23e12da264bffbd6a7bf73b990d45d1a"
+    },
+    "assets/gridnode-icon.svg": {
+      "bytes": 904,
+      "sha256": "a79dd5a4f6e621d8afa0b847a34b103c97d0186bc20d2141271dd89432723225"
+    },
+    "assets/scanner-body-rear.jpg": {
+      "bytes": 65179,
+      "sha256": "f8070c01688e279d667f85ab207ba13b4fa3e9d6119b64b58204ccdd39b5e886"
+    },
+    "index.html": {
+      "bytes": 607078,
+      "sha256": "79dae4e469c343efd95e69018a9d70baae53c2f5f00b3918a68929ea21f988d9"
+    },
+    "js/gridnode-bundle.js": {
+      "bytes": 282242,
+      "sha256": "eef812c08d01b26cfcd4e73253b5f76c69f2f1d86f1c4bd3c76c6b9ed123c3d4"
+    },
+    "manifest.json": {
+      "bytes": 987,
+      "sha256": "a2a48d9e42b686598299bc4c043af7f8038330c9a4b0a6faa1416ee07f94042c"
+    },
+    "sw.js": {
+      "bytes": 1462,
+      "sha256": "b7746fc2bc0082809f2ad847ab93cbcc3221b334746fcc06811b0a78e5da9f89"
+    }
+  },
+  "metadata_note": "Re-locked 2026-08-02 from the working tree after byte-identity verification against live production: index.html and js/gridnode-bundle.js fetched from https://gridnode.network match the worktree exactly. Prior lock production-20260720.36 retained for history; scripts/verify.sh LOCKED_ROOT points here. Bundle remains the canonical protected runtime; build-bundle.sh guard still refuses module-generated bundles smaller than this baseline.",
+  "production_branch": null,
+  "release_marker": "20260802.01",
+  "retrieved_at_utc": "2026-08-02T16:15:20Z",
+  "runtime_version": "2.1.7"
+}
