@@ -3,7 +3,7 @@
  * No UI code belongs in this file.
  */
 
-export const APP_VERSION = '2.0.3-stable';
+export const APP_VERSION = '2.1.7';
 
 export const GOOGLE_OAUTH_CLIENT_ID = '305099332421-u752btn6p8cbaq8opapvdkfau9gnd9a3.apps.googleusercontent.com';
 
@@ -73,7 +73,11 @@ export const S = Object.freeze({
     for (const storageKey of candidates) {
       try {
         const value = jsonParse(localStorage.getItem(storageKey), undefined);
-        if (value !== undefined && value !== null) return value;
+        if (value !== undefined && value !== null) {
+          if (Array.isArray(fallback)) return Array.isArray(value) ? value : fallback;
+          if (fallback !== null && typeof fallback === 'object') return value && typeof value === 'object' && !Array.isArray(value) ? value : fallback;
+          return value;
+        }
       } catch (error) {
         console.warn('[GRID//NODE storage.read]', storageKey, error);
       }
@@ -633,23 +637,36 @@ export function formatDate(value, options = { month: 'short', day: 'numeric', ye
   if (!value) return '—';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '—';
-  return date.toLocaleDateString('en-US', options);
+  const locale = typeof document !== 'undefined' && document.documentElement?.lang === 'es' ? 'es-419' : 'en-US';
+  return date.toLocaleDateString(locale, options);
 }
 
 export function formatDateTime(value) {
   if (!value) return '—';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '—';
-  return date.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const locale = typeof document !== 'undefined' && document.documentElement?.lang === 'es' ? 'es-419' : 'en-US';
+  return date.toLocaleString(locale, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
 export function normalizeDateInput(value) {
   const raw = String(value || '').trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    const parsed = new Date(`${raw}T00:00:00`);
+    return Number.isNaN(parsed.getTime()) || localISODate(parsed) !== raw ? '' : raw;
+  }
   const mdy = raw.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
-  if (mdy) return `${mdy[3]}-${mdy[1].padStart(2, '0')}-${mdy[2].padStart(2, '0')}`;
+  if (mdy) {
+    const candidate = `${mdy[3]}-${mdy[1].padStart(2, '0')}-${mdy[2].padStart(2, '0')}`;
+    const parsed = new Date(`${candidate}T00:00:00`);
+    return Number.isNaN(parsed.getTime()) || localISODate(parsed) !== candidate ? '' : candidate;
+  }
   const date = new Date(raw);
-  return Number.isNaN(date.getTime()) ? '' : date.toISOString().slice(0, 10);
+  return Number.isNaN(date.getTime()) ? '' : localISODate(date);
+}
+
+function localISODate(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
 export function todayISO() { return new Date().toISOString().slice(0, 10); }

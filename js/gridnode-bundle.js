@@ -1,4 +1,4 @@
-﻿/* GRID//NODE stable classic delivery bundle. Source remains modular in gridnode-core.js, gridnode-modules.js, and gridnode-app.js. */
+/* GRID//NODE stable classic delivery bundle. Source remains modular in gridnode-core.js, gridnode-modules.js, and gridnode-app.js. */
 
 /* GRID//NODE stable core
  * State, local persistence, session handling, and optional Supabase sync.
@@ -75,7 +75,11 @@ const S = Object.freeze({
     for (const storageKey of candidates) {
       try {
         const value = jsonParse(localStorage.getItem(storageKey), undefined);
-        if (value !== undefined && value !== null) return value;
+        if (value !== undefined && value !== null) {
+          if (Array.isArray(fallback)) return Array.isArray(value) ? value : fallback;
+          if (fallback !== null && typeof fallback === 'object') return value && typeof value === 'object' && !Array.isArray(value) ? value : fallback;
+          return value;
+        }
       } catch (error) {
         console.warn('[GRID//NODE storage.read]', storageKey, error);
       }
@@ -386,6 +390,8 @@ function cloudWeightPayload(record, userId) {
 
 async function syncShot(record) {
   if (!state.cloud || !state.cloudClient || !state.session?.user?.id) return;
+  if (!record?.id || syncInFlight.has(`shot:${record.id}`)) return;
+  syncInFlight.add(`shot:${record.id}`);
   try {
     const query = record.cloudId
       ? state.cloudClient.from('shots').upsert(cloudShotPayload(record, state.session.user.id)).select().single()
@@ -396,17 +402,23 @@ async function syncShot(record) {
       record.cloudId = data.id;
       const all = getAllShots();
       const index = all.findIndex(item => item.id === record.id);
-      if (index >= 0) { all[index] = record; S.set('shots', all); }
+      if (index >= 0) { all[index] = record; if (!S.set('shots', all)) console.warn('[GRID//NODE cloud shot sync] failed to persist cloudId'); }
     }
     state.cloudStatus = 'CLOUD_SYNCED';
   } catch (error) {
     state.cloudStatus = 'LOCAL_BACKUP';
+    syncPassFailed = true;
+    enqueueSync('shot', record);
     console.warn('[GRID//NODE cloud shot sync]', error);
+  } finally {
+    syncInFlight.delete(`shot:${record.id}`);
   }
 }
 
 async function syncWeight(record) {
   if (!state.cloud || !state.cloudClient || !state.session?.user?.id) return;
+  if (!record?.id || syncInFlight.has(`weight:${record.id}`)) return;
+  syncInFlight.add(`weight:${record.id}`);
   try {
     const query = record.cloudId
       ? state.cloudClient.from('weights').upsert(cloudWeightPayload(record, state.session.user.id)).select().single()
@@ -417,12 +429,16 @@ async function syncWeight(record) {
       record.cloudId = data.id;
       const all = getWeights();
       const index = all.findIndex(item => item.id === record.id);
-      if (index >= 0) { all[index] = record; S.set('weights', all); }
+      if (index >= 0) { all[index] = record; if (!S.set('weights', all)) console.warn('[GRID//NODE cloud weight sync] failed to persist cloudId'); }
     }
     state.cloudStatus = 'CLOUD_SYNCED';
   } catch (error) {
     state.cloudStatus = 'LOCAL_BACKUP';
+    syncPassFailed = true;
+    enqueueSync('weight', record);
     console.warn('[GRID//NODE cloud weight sync]', error);
+  } finally {
+    syncInFlight.delete(`weight:${record.id}`);
   }
 }
 
@@ -501,7 +517,9 @@ async function flushCloudDeletes() {
       console.warn('[GRID//NODE cloud delete]', error);
     }
   }
-  S.set('cloudDeletes', remaining);
+  if (remaining.length !== pending.length) {
+    if (!S.set('cloudDeletes', remaining)) console.warn('[GRID//NODE cloud delete] could not persist queue; retaining all pending tombstones');
+  }
   state.cloudStatus = remaining.length ? 'LOCAL_BACKUP' : 'CLOUD_SYNCED';
   return remaining.length === 0;
 }
@@ -610,12 +628,24 @@ async function hydrateCloudData() {
 }
 
 function mergeRecords(localRecords, remoteRecords, identity) {
-  const merged = [...localRecords];
-  const identities = new Set(merged.map(identity));
-  for (const record of remoteRecords) {
-    if (!identities.has(identity(record))) merged.push(record);
+  const localList = Array.isArray(localRecords) ? localRecords : [];
+  const remoteList = Array.isArray(remoteRecords) ? remoteRecords : [];
+  const byId = new Map();
+  for (const record of localList) {
+    let id;
+    try { id = identity(record); } catch (error) { id = JSON.stringify(record); }
+    byId.set(id, record);
   }
-  return merged.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+  for (const record of remoteList) {
+    let id;
+    try { id = identity(record); } catch (error) { id = JSON.stringify(record); }
+    const local = byId.get(id);
+    if (!local) { byId.set(id, record); continue; }
+    const localTime = new Date(local.updatedAt || local.modifiedAt || local.createdAt || local.date || 0).getTime();
+    const remoteTime = new Date(record.updatedAt || record.modifiedAt || record.createdAt || record.date || 0).getTime();
+    if (Number.isNaN(localTime) || remoteTime > localTime) byId.set(id, record);
+  }
+  return [...byId.values()].sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
 }
 
 function mergeJsonRecords(localRecords, remoteRecords) {
@@ -624,8 +654,12 @@ function mergeJsonRecords(localRecords, remoteRecords) {
   return mergeRecords(local, remote, record => record && typeof record === 'object' ? record.id || JSON.stringify(record) : String(record));
 }
 
+let syncPassFailed = false;
+const syncInFlight = new Set();
+
 async function syncAllCloudData() {
   if (!state.cloud) return;
+  syncPassFailed = false;
   await flushCloudDeletes();
   await Promise.all([
     ...getAllShots().map(record => syncShot(record)),
@@ -633,11 +667,24 @@ async function syncAllCloudData() {
     syncProfile(getProfile()),
     syncWorkspace()
   ]);
+  if (!syncPassFailed) {
+    const queue = S.get('syncQueue', []);
+    if (queue.length) S.set('syncQueue', []);
+  }
 }
 
 function queueCloudSync(kind, record) {
   const work = kind === 'shot' ? syncShot(record) : kind === 'weight' ? syncWeight(record) : kind === 'profile' ? syncProfile(record) : syncWorkspace();
   work.catch(error => console.warn('[GRID//NODE cloud queue]', error));
+}
+
+function enqueueSync(kind, record) {
+  const id = record?.id || record?.cloudId || kind;
+  const queue = S.get('syncQueue', []);
+  const entry = { kind, id, cloudId: record?.cloudId || null, at: Date.now() };
+  const index = queue.findIndex(item => item.kind === kind && item.id === id);
+  if (index >= 0) queue[index] = entry; else queue.push(entry);
+  S.set('syncQueue', queue);
 }
 
 function sessionLabel() {
@@ -670,12 +717,37 @@ async function deleteCloudAccount() {
 }
 
 function migrateLegacyLocalData() {
-  if (state.accountKey !== 'local') return;
-  for (const key of WORKSPACE_KEYS) {
-    const current = localStorage.getItem(`gn_local_${key}`);
-    if (current !== null) continue;
-    const legacy = localStorage.getItem(`gn_0_${key}`);
-    if (legacy !== null) localStorage.setItem(`gn_local_${key}`, legacy);
+  if (state.accountKey === 'local') {
+    for (const key of WORKSPACE_KEYS) {
+      const current = localStorage.getItem(`gn_local_${key}`);
+      if (current !== null) continue;
+      const legacy = localStorage.getItem(`gn_0_${key}`);
+      if (legacy !== null) localStorage.setItem(`gn_local_${key}`, legacy);
+    }
+  }
+  repairStorageShapes();
+}
+
+function repairStorageShapes() {
+  const arrayKeys = WORKSPACE_KEYS.filter(key => key !== 'profile' && key !== 'preferences' && key !== 'settings' && key !== 'selectedLocation');
+  const objectKeys = ['profile', 'preferences', 'settings'];
+  for (const key of arrayKeys) {
+    const raw = localStorage.getItem(accountStorageKey(key));
+    if (raw == null) continue;
+    let parsed;
+    try { parsed = JSON.parse(raw); } catch { continue; }
+    if (!Array.isArray(parsed)) {
+      try { localStorage.setItem(accountStorageKey(key), '[]'); } catch (error) { console.warn('[GRID//NODE storage repair]', key, error); }
+    }
+  }
+  for (const key of objectKeys) {
+    const raw = localStorage.getItem(accountStorageKey(key));
+    if (raw == null) continue;
+    let parsed;
+    try { parsed = JSON.parse(raw); } catch { continue; }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      try { localStorage.setItem(accountStorageKey(key), '{}'); } catch (error) { console.warn('[GRID//NODE storage repair]', key, error); }
+    }
   }
 }
 
@@ -691,21 +763,30 @@ function formatDate(value, options = { month: 'short', day: 'numeric', year: 'nu
   if (!value) return '—';
   const date = parseLocalDate(value);
   if (Number.isNaN(date.getTime())) return '—';
-  return date.toLocaleDateString('en-US', options);
+  const locale = document.documentElement?.lang === 'es' ? 'es-419' : 'en-US';
+  return date.toLocaleDateString(locale, options);
 }
 
 function formatDateTime(value) {
   if (!value) return '—';
   const date = parseLocalDate(value);
   if (Number.isNaN(date.getTime())) return '—';
-  return date.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const locale = document.documentElement?.lang === 'es' ? 'es-419' : 'en-US';
+  return date.toLocaleString(locale, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
 function normalizeDateInput(value) {
   const raw = String(value || '').trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    const parsed = parseLocalDate(raw);
+    return Number.isNaN(parsed.getTime()) || todayISO(parsed) !== raw ? '' : raw;
+  }
   const mdy = raw.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
-  if (mdy) return `${mdy[3]}-${mdy[1].padStart(2, '0')}-${mdy[2].padStart(2, '0')}`;
+  if (mdy) {
+    const candidate = `${mdy[3]}-${mdy[1].padStart(2, '0')}-${mdy[2].padStart(2, '0')}`;
+    const parsed = parseLocalDate(candidate);
+    return Number.isNaN(parsed.getTime()) || todayISO(parsed) !== candidate ? '' : candidate;
+  }
   const date = parseLocalDate(raw);
   return Number.isNaN(date.getTime()) ? '' : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
@@ -731,6 +812,30 @@ function downloadFile(filename, contents, type = 'application/octet-stream') {
  */
 
 const $ = id => document.getElementById(id);
+const tx = (key, fallback, vars) => window.GN_I18N?.text?.(key, fallback, vars) || fallback;
+const PHASE_I18N = Object.freeze({
+  ONSET: { name: 'results.onset', support: 'phase.supportOnset', context: 'phase.contextOnset' },
+  ACTIVE: { name: 'results.active', support: 'phase.supportActive', context: 'phase.contextActive' },
+  'PEAK WINDOW': { name: 'results.peakWindow', support: 'phase.supportPeak', context: 'phase.contextPeak' },
+  RESPONSE: { name: 'results.response', support: 'phase.supportResponse', context: 'phase.contextResponse' },
+  DECAY: { name: 'results.decay', support: 'phase.supportDecay', context: 'phase.contextDecay' },
+  BASELINE: { name: 'results.baseline', support: 'phase.supportBaseline', context: 'phase.contextBaseline' }
+});
+function localizedPhaseName(phase) {
+  if (!phase) return '';
+  const key = PHASE_I18N[phase.name]?.name;
+  return key ? tx(key, phase.name) : phase.name;
+}
+function localizedPhaseSupport(phase) {
+  if (!phase) return '';
+  const key = PHASE_I18N[phase.name]?.support;
+  return key ? tx(key, phase.support) : phase.support;
+}
+function localizedPhaseContext(phase) {
+  if (!phase) return '';
+  const key = PHASE_I18N[phase.name]?.context;
+  return key ? tx(key, phase.context) : phase.context;
+}
 const qa = selector => Array.from(document.querySelectorAll(selector));
 
 const selectState = {};
@@ -888,28 +993,32 @@ function actionFeedback(title, detail, isError = false) {
 }
 
 function nodeSyncLabel() {
-  if (state.cloudStatus === 'CLOUD_SYNCED') return 'CLOUD SYNCED';
-  if (state.cloudStatus === 'CLOUD_CONNECTED') return 'SYNCING';
-  if (state.cloudStatus === 'LOCAL_BACKUP') return 'LOCAL BACKUP';
-  return 'LOCAL MODE';
+  if (state.cloudStatus === 'CLOUD_SYNCED') return tx('runtime.cloudSynced', 'CLOUD SYNCED');
+  if (state.cloudStatus === 'CLOUD_CONNECTED') return tx('runtime.syncing', 'SYNCING');
+  if (state.cloudStatus === 'LOCAL_BACKUP') return tx('runtime.localBackup', 'LOCAL BACKUP');
+  return tx('runtime.localMode', 'LOCAL MODE');
 }
 
 function nodeDateTime(value) {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'NOT AVAILABLE';
-  return `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} · ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+  if (Number.isNaN(date.getTime())) return tx('runtime.notAvailable', 'NOT AVAILABLE');
+  const locale = document.documentElement?.lang === 'es' ? 'es-419' : 'en-US';
+  return [date.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' }), date.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' })].join(' · ');
 }
 
 function nodePhaseDay(lastShot) {
-  if (!lastShot) return 'Awaiting first SHOT';
+  if (!lastShot) return tx('runtime.awaitingFirstShot', 'AWAITING FIRST SHOT');
   const elapsedDays = Math.max(0, (Date.now() - new Date(lastShot.date).getTime()) / 86400000);
-  if (!Number.isFinite(elapsedDays)) return 'Awaiting verified timing';
-  return `DAY ${Math.floor(elapsedDays) + 1} · ${elapsedDays < 1 ? 'RECENT EVENT' : `${Math.floor(elapsedDays)}d since SHOT`}`;
+  if (!Number.isFinite(elapsedDays)) return tx('runtime.awaitingVerifiedTiming', 'AWAITING VERIFIED TIMING');
+  const day = Math.floor(elapsedDays) + 1;
+  return elapsedDays < 1
+    ? tx('runtime.dayRecentEvent', 'DAY {day} · {event}', { day, event: tx('runtime.recentEvent', 'RECENT EVENT') })
+    : tx('runtime.daySinceShot', 'DAY {day} · {days}d since SHOT', { day, days: Math.floor(elapsedDays) });
 }
 
 function refreshNodeHeader({ phase } = {}) {
   const sync = nodeSyncLabel();
-  const phaseLabel = phase?.name || 'AWAITING FIRST SHOT';
+  const phaseLabel = localizedPhaseName(phase) || tx('runtime.awaitingFirstShot', 'AWAITING FIRST SHOT');
   setText('nodeHeaderPhase', phaseLabel);
   setText('nodeHeaderState', sync);
 }
@@ -971,11 +1080,11 @@ function loadApp() {
   const profile = getProfile();
   moduleState.selectedLocation = normalizeLegacyText(S.get('selectedLocation', moduleState.selectedLocation || ''));
   syncIdentityAvatars();
-  setText('dashSub', `// ${window.CU?.defaultName || profile.name || 'NODE_USER'} // NODE ONLINE`);
+  setText('dashSub', tx('dashboard.nodeOnline', '// {name} // NODE ONLINE', { name: window.CU?.defaultName || profile.name || 'NODE_USER' }));
   setText('profSub', `// ${window.CU?.defaultName || profile.name || 'NODE_USER'} //`);
-  setText('profNameTxt', window.CU?.defaultName || profile.name || 'NODE_USER');
+  setText('profNameTxt', window.CU?.defaultName || profile.name || tx('profile.anonFallback', 'NODE_USER'));
   setText('profEmail', sessionLabel());
-  setText('profMedTxt', profile.med ? `// ${profile.med.toUpperCase()}` : '// NO MEDICATION SET');
+  setText('profMedTxt', profile.med ? `// ${profile.med.toUpperCase()}` : tx('profile.noMedicationSet', '// NO MEDICATION SET'));
   hydrateProfileFields(profile);
   setTodayDefaults();
   refreshAll();
@@ -1065,17 +1174,16 @@ function profileSnapshot() {
 
 function saveProfileMed() {
   const profile = profileSnapshot();
-  S.set('profile', profile);
-  setText('profMedTxt', profile.med ? `// ${profile.med.toUpperCase()}` : '// NO MEDICATION SET');
-  queueCloudSync('profile', profile);
-  showToast('Profile protocol context saved.');
+  const saved = S.set('profile', profile);
+  setText('profMedTxt', profile.med ? `// ${profile.med.toUpperCase()}` : tx('profile.noMedicationSet', '// NO MEDICATION SET'));
+  if (saved) queueCloudSync('profile', profile);
+  showToast(saved ? 'Profile protocol context saved.' : 'Profile could not be saved — storage is full.', !saved);
 }
 
 function saveProfileMetrics() {
   const profile = profileSnapshot();
-  S.set('profile', profile);
+  if (S.set('profile', profile)) queueCloudSync('profile', profile);
   calcAndShowBMI();
-  queueCloudSync('profile', profile);
 }
 
 function calcAndShowBMI() {
@@ -1127,59 +1235,61 @@ function renderDashboard() {
   const weightMetrics = computeTotalChange(weights, profile, 'profile');
   setText('stShots', shots.length);
   setText('stDose', lastShot?.dose ? `${lastShot.dose}mg` : '—');
-  setText('stDoseDate', lastShot ? formatDate(lastShot.date, { month: 'short', day: 'numeric' }) : 'NO DATA');
+  setText('stDoseDate', lastShot ? formatDate(lastShot.date, { month: 'short', day: 'numeric' }) : tx('runtime.noData', 'NO DATA'));
   const next = nextShotDate(lastShot, profile);
   setText('stNext', next ? formatDate(next, { month: 'short', day: 'numeric' }) : '—');
-  setText('stNextSub', next ? 'ESTIMATED FROM PROFILE' : 'LOG A SHOT');
+  setText('stNextSub', next ? tx('runtime.estimatedFromProfile', 'ESTIMATED FROM PROFILE') : tx('runtime.logShot', 'LOG SHOT'));
   const nextCard = $('nextShotStatCard');
   if (nextCard) nextCard.classList.remove('gn-next-today', 'gn-next-tomorrow', 'gn-next-overdue');
   if (next) {
     const deltaDays = Math.round((parseLocalDate(next).getTime() - parseLocalDate(todayISO()).getTime()) / 86400000);
-    if (deltaDays === 0) { nextCard?.classList.add('gn-next-today'); setText('stNextSub', '// TODAY'); }
-    else if (deltaDays === 1) { nextCard?.classList.add('gn-next-tomorrow'); setText('stNextSub', 'TOMORROW'); }
-    else if (deltaDays < 0) { nextCard?.classList.add('gn-next-overdue'); setText('stNextSub', '// OVERDUE'); }
+    if (deltaDays === 0) { nextCard?.classList.add('gn-next-today'); setText('stNextSub', '// ' + tx('dashboard.today', 'TODAY')); }
+    else if (deltaDays === 1) { nextCard?.classList.add('gn-next-tomorrow'); setText('stNextSub', tx('dashboard.tomorrow', 'TOMORROW')); }
+    else if (deltaDays < 0) { nextCard?.classList.add('gn-next-overdue'); setText('stNextSub', '// ' + tx('dashboard.overdue', 'OVERDUE')); }
   }
   const todayShot = shots.find(record => record.date?.slice(0, 10) === todayISO());
   const todayWeight = weights.find(record => record.date?.slice(0, 10) === todayISO());
-  setText('todayShot', todayShot ? `${todayShot.dose || '—'}mg logged` : 'TAP TO LOG');
-  setText('todayWt', todayWeight ? `${Number(todayWeight.weight).toFixed(1)} lb` : 'TAP TO LOG');
+  setText('todayShot', todayShot ? tx('dashboard.loggedDose', '{dose}mg logged', { dose: todayShot.dose || '—' }) : tx('runtime.tapToLog', 'TAP TO LOG'));
+  setText('todayWt', todayWeight ? Number(todayWeight.weight).toFixed(1) + ' lb' : tx('runtime.tapToLog', 'TAP TO LOG'));
   const currentWeight = weightMetrics.currentWeight || 0;
   const change = weightMetrics.change;
   const goalGap = Number(profile.goalWt) && currentWeight ? currentWeight - Number(profile.goalWt) : null;
-  setText('s6TotalLabel', 'TOTAL CHANGE');
-  setText('s6TotalBasis', weightMetrics.basis === 'from profile start weight' ? '(from profile start)' : '(from first recorded weight)');
+  setText('s6TotalLabel', tx('dashboard.resultsTotal', 'TOTAL CHANGE'));
+  setText('s6TotalBasis', weightMetrics.basis === 'from profile start weight' ? tx('dashboard.fromProfileStart', '(from profile start)') : tx('dashboard.fromFirstWeight', '(from first recorded weight)'));
   setText('s6Total', change === null ? '—' : `${change > 0 ? '+' : ''}${change.toFixed(1)} lb`);
   const dashboardBMI = calcBMIValue(currentWeight, profile);
   setText('s6BMI', dashboardBMI || '');
   setDisplay('s6BMICard', Boolean(dashboardBMI));
   setText('s6Wt', currentWeight ? `${currentWeight.toFixed(1)} lb` : '—');
   setText('s6Pct', weightMetrics.percentLost === null ? '—' : `${weightMetrics.percentLost.toFixed(1)}%`);
-  setText('s6Avg', weightMetrics.weeklyAverage === null ? '—' : `${weightMetrics.weeklyAverage.toFixed(1)} lb/wk`);
+  setText('s6Avg', weightMetrics.weeklyAverage === null ? '—' : tx('dashboard.weeklyRate', '{value} lb/wk', { value: weightMetrics.weeklyAverage.toFixed(1) }));
   setText('s6Goal', goalGap === null ? '—' : `${Math.max(0, goalGap).toFixed(1)} lb`);
   const phase = renderPhase(lastShot, shots);
   renderProtocolCurve(shots, phase);
   refreshNodeHeader({ lastShot, next, phase, currentWeight: lastWeight?.weight });
-  setText('streakText', shots.length ? `${shots.length} SHOT${shots.length === 1 ? '' : 'S'} IN YOUR LOCAL RECORD` : 'NO SHOT CADENCE YET · LOG YOUR FIRST SHOT');
+  setText('streakText', shots.length ? tx(shots.length === 1 ? 'dashboard.shotsInLocalRecord_one' : 'dashboard.shotsInLocalRecord_other', '{count} SHOTS IN YOUR LOCAL RECORD', { count: shots.length }) : tx('dashboard.noShotCadence', 'NO SHOT CADENCE YET · LOG YOUR FIRST SHOT'));
   drawCanvasChart($('dashWtChart'), weights.map(item => Number(item.weight)), '#00d4ff');
   renderWandaDashboard({ shots, weights, lastShot, lastWeight, profile, next, phase, weightMetrics, goalGap });
 }
 
 function ensureWandaDashboard() {
-  const header = $('pageDash')?.querySelector('.page-hdr');
-  if (!header || $('gnWandaDashboard')) return;
-  header.insertAdjacentHTML('afterend', `<section id="gnWandaDashboard" aria-label="Current protocol signals"><div class="gn-wanda-grid">
-    <button class="gn-wanda-card" id="gnWandaNext" type="button" onclick="openLogModal()"><span class="gn-wanda-label">NEXT SHOT</span><b class="gn-wanda-value" id="gnWandaNextValue">LOG A SHOT</b><small class="gn-wanda-note" id="gnWandaNextNote">Log a shot to start your timeline</small></button>
-    <button class="gn-wanda-card" id="gnWandaPhase" type="button" onclick="showPhasesModal()"><span class="gn-wanda-label">CURRENT PHASE</span><b class="gn-wanda-value" id="gnWandaPhaseValue">START WITH A SHOT</b><small class="gn-wanda-note">Educational estimate</small></button>
-    <button class="gn-wanda-card" id="gnWandaWeight" type="button" onclick="openWeightModal()"><span class="gn-wanda-label">CURRENT WEIGHT</span><b class="gn-wanda-value" id="gnWandaWeightValue">LOG A WEIGHT</b><small class="gn-wanda-note">Latest record</small></button>
-    <button class="gn-wanda-card" id="gnWandaLevel" type="button" onclick="showPhasesModal()"><span class="gn-wanda-label">RELATIVE LEVEL</span><b class="gn-wanda-value" id="gnWandaLevelValue">START WITH A SHOT</b><small class="gn-wanda-note">Estimated, not measured</small></button>
-    <button class="gn-wanda-card" id="gnWandaRate" type="button" onclick="showPage('Results',document.getElementById('navRes'))"><span class="gn-wanda-label">WEEKLY RATE</span><b class="gn-wanda-value" id="gnWandaRateValue">KEEP LOGGING</b><small class="gn-wanda-note">Keep logging - data builds over time</small></button>
-    <button class="gn-wanda-card" id="gnWandaGoal" type="button" onclick="showPage('Profile',document.getElementById('navPro'))"><span class="gn-wanda-label">TO GOAL</span><b class="gn-wanda-value" id="gnWandaGoalValue">SET GOAL</b><small class="gn-wanda-note">From latest weight</small></button>
-  </div><div class="gn-wanda-actions"><button type="button" onclick="openLogModal()">LOG SHOT</button><button type="button" onclick="openWeightModal()">LOG WEIGHT</button></div><div class="gn-streak-card" id="gnStreakCard" hidden><b id="gnStreakValue"></b><span id="gnStreakCopy"></span></div></section>`);
+  const header = document.getElementById('pageDash')?.querySelector('.page-hdr');
+  if (!header || document.getElementById('gnWandaDashboard')) return;
+  const markup = '<section id="gnWandaDashboard" aria-label="' + safeText(tx('dashboard.currentProtocolSignals', 'Current protocol signals')) + '"><div class="gn-wanda-grid">'
+    + '<button class="gn-wanda-card" id="gnWandaNext" type="button" onclick="openLogModal()"><span class="gn-wanda-label" data-i18n="dashboard.nextShotLabel">NEXT SHOT</span><b class="gn-wanda-value" id="gnWandaNextValue">' + tx('runtime.logShot', 'LOG SHOT') + '</b><small class="gn-wanda-note" id="gnWandaNextNote" data-i18n="dashboard.logShotStartTimeline">Log a shot to start your timeline</small></button>'
+    + '<button class="gn-wanda-card" id="gnWandaPhase" type="button" onclick="showPhasesModal()"><span class="gn-wanda-label" data-i18n="dashboard.currentPhase">CURRENT PHASE</span><b class="gn-wanda-value" id="gnWandaPhaseValue">' + tx('dashboard.startWithShot', 'START WITH A SHOT') + '</b><small class="gn-wanda-note" data-i18n="phase.educationalEstimate">EDUCATIONAL ESTIMATE</small></button>'
+    + '<button class="gn-wanda-card" id="gnWandaWeight" type="button" onclick="openWeightModal()"><span class="gn-wanda-label" data-i18n="dashboard.currentWeight">CURRENT WEIGHT</span><b class="gn-wanda-value" id="gnWandaWeightValue">' + tx('dashboard.logWeight', 'LOG WEIGHT') + '</b><small class="gn-wanda-note" data-i18n="dashboard.latestRecord">Latest record</small></button>'
+    + '<button class="gn-wanda-card" id="gnWandaLevel" type="button" onclick="showPhasesModal()"><span class="gn-wanda-label" data-i18n="dashboard.relativeLevel">RELATIVE LEVEL</span><b class="gn-wanda-value" id="gnWandaLevelValue">' + tx('dashboard.startWithShot', 'START WITH A SHOT') + '</b><small class="gn-wanda-note" data-i18n="dashboard.estimatedNotMeasured">Estimated, not measured</small></button>'
+    + '<button class="gn-wanda-card" id="gnWandaRate" type="button" onclick="showPage(\'Results\',document.getElementById(\'navRes\'))"><span class="gn-wanda-label" data-i18n="dashboard.weeklyRateLabel">WEEKLY RATE</span><b class="gn-wanda-value" id="gnWandaRateValue">' + tx('dashboard.keepLogging', 'KEEP LOGGING') + '</b><small class="gn-wanda-note" data-i18n="dashboard.keepLoggingBuilds">Keep logging — data builds over time</small></button>'
+    + '<button class="gn-wanda-card" id="gnWandaGoal" type="button" onclick="showPage(\'Profile\',document.getElementById(\'navPro\'))"><span class="gn-wanda-label" data-i18n="dashboard.toGoal">TO GOAL</span><b class="gn-wanda-value" id="gnWandaGoalValue">' + tx('dashboard.setGoal', 'SET GOAL') + '</b><small class="gn-wanda-note" data-i18n="dashboard.fromLatestWeight">From latest weight</small></button>'
+    + '</div><div class="gn-wanda-actions"><button type="button" onclick="openLogModal()" data-i18n="runtime.logShot">LOG SHOT</button><button type="button" onclick="openWeightModal()" data-i18n="dashboard.logWeight">LOG WEIGHT</button></div><div class="gn-streak-card" id="gnStreakCard" hidden><b id="gnStreakValue"></b><span id="gnStreakCopy"></span></div></section>';
+  header.insertAdjacentHTML('afterend', markup);
+  window.GN_I18N?.applyTo?.(document.getElementById('gnWandaDashboard'));
   ['.stat-row', '.weight-quick', '.stats-6', '#dashAdherence', '#dashWtChart'].forEach(selector => {
-    const element = $('pageDash')?.querySelector(selector);
+    const element = document.getElementById('pageDash')?.querySelector(selector);
     if (element) element.closest('.chart-wrap')?.style.setProperty('display', 'none') || element.style.setProperty('display', 'none');
   });
-  qa('#pageDash > .sec-hdr').slice(0, 2).forEach(element => element.style.display = 'none');
+  Array.from(document.querySelectorAll('#pageDash > .sec-hdr')).slice(0, 2).forEach(element => element.style.display = 'none');
 }
 
 function calculateShotStreak(shots = []) {
@@ -1193,37 +1303,44 @@ function calculateShotStreak(shots = []) {
 }
 
 function renderShotStreak(shots, next) {
-  const card = $('gnStreakCard');
+  const card = document.getElementById('gnStreakCard');
   if (!card) return;
   const weeks = calculateShotStreak(shots);
   if (weeks < 2) { card.hidden = true; return; }
   const due = next || new Date(Math.max(...shots.map(item => new Date(item.date).getTime()).filter(Number.isFinite)) + 604800000).toISOString();
+  const date = formatDate(due, { month: 'short', day: 'numeric' });
   card.hidden = false;
-  setText('gnStreakValue', `${weeks} WEEK${weeks === 1 ? '' : 'S'} IN A ROW ✓`);
-  setText('gnStreakCopy', `Log your next shot by ${formatDate(due, { month: 'short', day: 'numeric' })} to keep your streak alive.`);
+  setText('gnStreakValue', tx(weeks === 1 ? 'dashboard.weeksInRow_one' : 'dashboard.weeksInRow_other', '{count} WEEKS IN A ROW ✓', { count: weeks }));
+  setText('gnStreakCopy', tx('dashboard.streakCopy', 'Log your next shot by {date} to keep your streak alive.', { date }));
 }
 
 function renderWandaDashboard({ shots, lastShot, lastWeight, next, phase, weightMetrics, goalGap }) {
-  setText('gnWandaNextValue', next ? formatDate(next, { month: 'short', day: 'numeric' }) : 'LOG A SHOT');
-  let nextNote = 'Log a shot to start your timeline';
-  const nextCard = $('gnWandaNext');
+  window.GN_I18N?.applyTo?.(document.getElementById('gnWandaDashboard'));
+  setText('gnWandaNextValue', next ? formatDate(next, { month: 'short', day: 'numeric' }) : tx('runtime.logShot', 'LOG SHOT'));
+  let nextNote = tx('dashboard.logShotStartTimeline', 'Log a shot to start your timeline');
+  const nextCard = document.getElementById('gnWandaNext');
   nextCard?.classList.remove('attention', 'empty');
   if (next) {
     const delta = Math.round((parseLocalDate(next).getTime() - parseLocalDate(todayISO()).getTime()) / 86400000);
-    nextNote = delta < 0 ? `${Math.abs(delta)}d past expected` : delta === 0 ? 'Expected today' : delta === 1 ? 'Expected tomorrow' : `Expected in ${delta}d`;
+    nextNote = delta < 0
+      ? tx('dashboard.daysPastExpected', '{days}d past expected', { days: Math.abs(delta) })
+      : delta === 0 ? tx('dashboard.expectedToday', 'Expected today')
+        : delta === 1 ? tx('dashboard.expectedTomorrow', 'Expected tomorrow')
+          : tx('dashboard.expectedInDays', 'Expected in {days}d', { days: delta });
     nextCard?.classList.toggle('attention', delta <= 0);
   } else nextCard?.classList.add('empty');
   setText('gnWandaNextNote', nextNote);
-  setText('gnWandaPhaseValue', phase?.name || 'START WITH A SHOT');
-  setText('gnWandaWeightValue', lastWeight ? `${Number(lastWeight.weight).toFixed(1)} lb` : 'LOG A WEIGHT');
-  setText('gnWandaLevelValue', phase?.name || 'START WITH A SHOT');
-  setText('gnWandaRateValue', weightMetrics.weeklyAverage === null ? 'KEEP LOGGING' : `${weightMetrics.weeklyAverage.toFixed(1)} lb/wk`);
-  setText('gnWandaGoalValue', goalGap === null ? 'SET GOAL' : `${Math.max(0, goalGap).toFixed(1)} lb`);
-  $('gnWandaPhase')?.classList.toggle('empty', !phase);
-  $('gnWandaWeight')?.classList.toggle('empty', !lastWeight);
-  $('gnWandaLevel')?.classList.toggle('empty', !phase);
-  $('gnWandaRate')?.classList.toggle('empty', weightMetrics.weeklyAverage === null);
-  $('gnWandaGoal')?.classList.toggle('empty', goalGap === null);
+  const localizedName = localizedPhaseName(phase);
+  setText('gnWandaPhaseValue', localizedName || tx('dashboard.startWithShot', 'START WITH A SHOT'));
+  setText('gnWandaWeightValue', lastWeight ? Number(lastWeight.weight).toFixed(1) + ' lb' : tx('dashboard.logWeight', 'LOG WEIGHT'));
+  setText('gnWandaLevelValue', localizedName || tx('dashboard.startWithShot', 'START WITH A SHOT'));
+  setText('gnWandaRateValue', weightMetrics.weeklyAverage === null ? tx('dashboard.keepLogging', 'KEEP LOGGING') : tx('dashboard.weeklyRate', '{value} lb/wk', { value: weightMetrics.weeklyAverage.toFixed(1) }));
+  setText('gnWandaGoalValue', goalGap === null ? tx('dashboard.setGoal', 'SET GOAL') : Math.max(0, goalGap).toFixed(1) + ' lb');
+  document.getElementById('gnWandaPhase')?.classList.toggle('empty', !phase);
+  document.getElementById('gnWandaWeight')?.classList.toggle('empty', !lastWeight);
+  document.getElementById('gnWandaLevel')?.classList.toggle('empty', !phase);
+  document.getElementById('gnWandaRate')?.classList.toggle('empty', weightMetrics.weeklyAverage === null);
+  document.getElementById('gnWandaGoal')?.classList.toggle('empty', goalGap === null);
   renderShotStreak(shots, next);
 }
 
@@ -1245,54 +1362,57 @@ function nextShotDate(shot, profile) {
 
 function renderPhase(lastShot, shots) {
   if (!lastShot) {
-    setText('phaseNameTxt', 'YOUR GRID IS EMPTY');
-    setText('phaseNumTxt', 'INITIATE PROTOCOL — log first shot');
+    setText('phaseNameTxt', tx('dashboard.noShotsRecorded', 'NO SHOTS RECORDED'));
+    setText('phaseNumTxt', tx('boot.initiateProtocol', 'INITIATE PROTOCOL — log first shot'));
     setText('phaseTimeSince', '—');
     setText('phaseCyclePosition', '—');
     setText('ringDays', '—');
-    setText('ringPct', 'TAP FAB // LOG FIRST SHOT');
-    setText('phaseContextText', 'Log a SHOT to see educational cycle context grounded in your own records.');
-    setText('phaseNext', '> INITIATE PROTOCOL — log first shot');
-    setText('pibBody', 'Awaiting first logged SHOT — protocol initializes on first record.');
-    const emptyMarker = $('phaseMarker');
+    setText('ringPct', tx('phase.firstShotCta', 'TAP FAB // LOG FIRST SHOT'));
+    setText('phaseContextText', tx('phase.logShotContext', 'Log a SHOT to see educational cycle context grounded in your own records.'));
+    setText('phaseNext', tx('phase.initiateProtocol', '> INITIATE PROTOCOL — log first shot'));
+    setText('pibBody', tx('phase.awaitingFirstRecord', 'Awaiting first logged SHOT — protocol initializes on first record.'));
+    setText('pibSE', tx('phase.sideEffectsVary', 'Side effects vary by phase and medication.'));
+    setText('pibPay', tx('phase.appetiteSymptoms', 'Track appetite, symptoms, energy, side effects, and notes as your protocol history develops.'));
+    const emptyMarker = document.getElementById('phaseMarker');
     if (emptyMarker) emptyMarker.hidden = true;
     return null;
   }
   const elapsedDays = Math.max(0, (Date.now() - new Date(lastShot.date).getTime()) / 86400000);
   const cyclePosition = Math.min((elapsedDays % 7) / 7, 0.999);
   const phase = PHASES.find(item => cyclePosition >= item.start && cyclePosition < item.end) || PHASES.at(-1);
-  const since = elapsedDays < 1 ? `${Math.round(elapsedDays * 24)}h` : `${Math.floor(elapsedDays)}d ${Math.floor((elapsedDays % 1) * 24)}h`;
-  setText('phaseNameTxt', phase.name);
-  setText('phaseNumTxt', `PHASE ${PHASES.indexOf(phase) + 1} / ${PHASES.length}`);
-  setText('phaseSupportTxt', phase.support);
-  setText('phaseContextText', phase.context);
+  const since = elapsedDays < 1 ? Math.round(elapsedDays * 24) + 'h' : Math.floor(elapsedDays) + 'd ' + Math.floor((elapsedDays % 1) * 24) + 'h';
+  const phaseName = localizedPhaseName(phase);
+  setText('phaseNameTxt', phaseName);
+  setText('phaseNumTxt', tx('phase.phaseN', 'PHASE {n} / {total}', { n: PHASES.indexOf(phase) + 1, total: PHASES.length }));
+  setText('phaseSupportTxt', localizedPhaseSupport(phase));
+  setText('phaseContextText', localizedPhaseContext(phase));
   setText('phaseTimeSince', since);
-  setText('phaseCyclePosition', `${Math.round(cyclePosition * 100)}% of 7-day reference cycle`);
-  setText('ringDays', `${Math.max(0, 7 - Math.floor(elapsedDays))}d`);
-  setText('ringPct', `${Math.round(cyclePosition * 100)}% CYCLE POSITION`);
-  setText('phaseNext', `> ${phase.name} // ${shots.length} ACTIVE SHOT RECORD${shots.length === 1 ? '' : 'S'}`);
-  setText('pibBody', `${phase.name} visibility is estimated from ${since} since the most recent user-entered SHOT.`);
-  setText('pibSE', lastShot.se?.length ? `Recent logged observations: ${lastShot.se.join(', ')}.` : 'No side effects were attached to the most recent SHOT record.');
-  setText('pibPay', 'Track appetite, symptoms, energy, side effects, and notes as your protocol history develops.');
-  const arc = $('phaseArc');
+  setText('phaseCyclePosition', tx('phase.cyclePct', '{pct}% of 7-day reference cycle', { pct: Math.round(cyclePosition * 100) }));
+  setText('ringDays', tx('phase.daysLeft', '{n}d', { n: Math.max(0, 7 - Math.floor(elapsedDays)) }));
+  setText('ringPct', tx('phase.cyclePositionRing', '{pct}% CYCLE POSITION', { pct: Math.round(cyclePosition * 100) }));
+  setText('phaseNext', tx(shots.length === 1 ? 'phase.activeRecords_one' : 'phase.activeRecords_other', '> {phase} // {n} ACTIVE SHOT RECORDS', { phase: phaseName, n: shots.length }));
+  setText('pibBody', tx('phase.pibBody', '{phase} visibility is estimated from {since} since the most recent user-entered SHOT.', { phase: phaseName, since }));
+  setText('pibSE', lastShot.se?.length ? tx('phase.recentObservations', 'Recent logged observations: {items}.', { items: lastShot.se.join(', ') }) : tx('phase.noRecentObservations', 'No side effects were attached to the most recent SHOT record.'));
+  setText('pibPay', tx('phase.appetiteSymptoms', 'Track appetite, symptoms, energy, side effects, and notes as your protocol history develops.'));
+  const arc = document.getElementById('phaseArc');
   if (arc) { const circumference = 678.6; arc.style.strokeDashoffset = String(circumference * (1 - cyclePosition)); arc.style.stroke = phase.color; }
-  const marker = $('phaseMarker');
+  const marker = document.getElementById('phaseMarker');
   if (marker) {
     const angle = (cyclePosition * Math.PI * 2) - (Math.PI / 2);
-    marker.style.left = `${50 + (Math.cos(angle) * 45)}%`;
-    marker.style.top = `${50 + (Math.sin(angle) * 45)}%`;
+    marker.style.left = (50 + (Math.cos(angle) * 45)) + '%';
+    marker.style.top = (50 + (Math.sin(angle) * 45)) + '%';
     marker.style.background = phase.color;
     marker.style.color = phase.color;
     marker.hidden = false;
   }
-  const icon = $('phaseIconBox');
-  if (icon) icon.innerHTML = `<span class="gn-icon gn-icon-lg gn-icon-hud" style="color:${phase.color}"><svg><use href="#gn-phase-ring"></use></svg></span>`;
+  const icon = document.getElementById('phaseIconBox');
+  if (icon) icon.innerHTML = '<span class="gn-icon gn-icon-lg gn-icon-hud" style="color:' + phase.color + '"><svg><use href="#gn-phase-ring"></use></svg></span>';
   return phase;
 }
 
 function showPhasesModal() {
   const content = $('allPhasesContent');
-  if (content) content.innerHTML = PHASES.map((phase, index) => `<div class="gn-phase-row"><span class="gn-phase-index">0${index + 1}</span><div><b style="color:${phase.color}">${phase.name}</b><p>${safeText(phase.support)}</p></div></div>`).join('');
+  if (content) content.innerHTML = PHASES.map((phase, index) => '<div class="gn-phase-row"><span class="gn-phase-index">0' + (index + 1) + '</span><div><b style="color:' + phase.color + '">' + localizedPhaseName(phase) + '</b><p>' + safeText(localizedPhaseSupport(phase)) + '</p></div></div>').join('');
   $('phasesOv')?.classList.add('active');
 }
 function closePhases() { $('phasesOv')?.classList.remove('active'); }
@@ -1348,11 +1468,11 @@ function renderShots() {
   renderShotFilterOptions(all);
   installCustomPickers(document);
   syncCustomPickers($('gnShotFilters') || document);
-  setText('shotHistoryHelper', moduleState.shotHistoryView === 'archived' ? 'Archived records remain stored for review and can be restored.' : 'Active SHOT records are retained in your local VAULT.');
+  setText('shotHistoryHelper', moduleState.shotHistoryView === 'archived' ? tx('shots.archivedRetained', 'Archived records remain stored for review and can be restored.') : tx('shots.activeRecordsRetained', 'Active SHOT records are retained in your local VAULT.'));
   qa('[data-shot-history-view]').forEach(button => button.classList.toggle('active', button.dataset.shotHistoryView === moduleState.shotHistoryView));
   if (!visible.length) {
     const activeFilters = Object.values(moduleState.shotFilters).some(value => value && value !== 'all');
-    list.innerHTML = `<div class="empty"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span>${activeFilters ? 'NO SHOTS MATCH THESE FILTERS.' : moduleState.shotHistoryView === 'archived' ? 'NO ARCHIVED SHOTS' : 'NO SHOTS LOGGED YET'}${activeFilters ? '<br><button class="btn-full btn-secondary empty-cta" type="button" id="gnShotFilterEmptyClear">CLEAR FILTERS</button>' : '<br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>LOG YOUR FIRST SHOT</button>'}</div>`;
+    list.innerHTML = `<div class="empty"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span>${activeFilters ? tx('shots.noFilterMatch', 'NO SHOTS MATCH THESE FILTERS.') : moduleState.shotHistoryView === 'archived' ? tx('shots.noArchivedShots', 'NO ARCHIVED SHOTS') : tx('shots.noShotsLoggedYet', 'NO SHOTS LOGGED YET')}${activeFilters ? '<br><button class="btn-full btn-secondary empty-cta" type="button" id="gnShotFilterEmptyClear">' + tx('shots.clearFilters', 'CLEAR FILTERS') + '</button>' : '<br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>' + tx('shots.logYourFirst', 'LOG YOUR FIRST SHOT') + '</button>'}</div>`;
     $('gnShotFilterEmptyClear')?.addEventListener('click', () => { moduleState.shotFilters = { medication: '', site: '', range: 'all', query: '' }; renderShots(); });
     return;
   }
@@ -1363,8 +1483,8 @@ function renderShots() {
       <div class="log-dose">${safeText(record.dose || '—')}mg</div></div>
       <div class="log-chips">${record.site ? `<span class="log-chip lc-site">${safeText(record.site)}</span>` : ''}${record.deviceId ? `<span class="log-chip lc-site">DEVICE: ${safeText(deviceLabel(record.deviceId) || 'UNKNOWN')}</span>` : ''}${record.wt ? `<span class="log-chip lc-wt">${safeText(record.wt)}lb</span>` : ''}${record.se?.length ? `<span class="log-chip lc-se">${safeText(record.se.join(', '))}</span>` : ''}</div>
       ${record.notes ? `<div class="log-notes">${safeText(record.notes)}</div>` : ''}
-      <div class="log-actions">${archived ? `<button type="button" class="log-action-btn" data-shot-action="restore-edit" data-shot-id="${safeText(record.id)}">RESTORE TO EDIT</button>` : `<button type="button" class="log-action-btn" data-shot-action="edit" data-shot-id="${safeText(record.id)}">EDIT</button><button type="button" class="log-action-btn del" data-shot-action="archive" data-shot-id="${safeText(record.id)}">ARCHIVE</button>`}</div>
-      ${archived ? '<div class="shot-history-helper">Restore the record before editing.</div>' : ''}
+      <div class="log-actions">${archived ? `<button type="button" class="log-action-btn" data-shot-action="restore-edit" data-shot-id="${safeText(record.id)}">${tx('shots.restoreToEdit', 'RESTORE TO EDIT')}</button>` : `<button type="button" class="log-action-btn" data-shot-action="edit" data-shot-id="${safeText(record.id)}">${tx('shots.edit', 'EDIT')}</button><button type="button" class="log-action-btn del" data-shot-action="archive" data-shot-id="${safeText(record.id)}">${tx('shots.archive', 'ARCHIVE')}</button>`}</div>
+      ${archived ? `<div class="shot-history-helper">${tx('shots.archivedRestoreNote', 'Restore the record before editing.')}</div>` : ''}
     </article>`;
   }).join('');
 }
@@ -1417,15 +1537,15 @@ function openLogModal(options = {}) {
   const modal = $('logOv');
   if (!modal) return;
   if (!modal.querySelector('[data-gn-shot-step="timing"]')) {
-    modal.querySelector('.gn-shot-datetime-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="timing">01 // TIMING</div>');
-    $('cpShotMed')?.closest('.form-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="protocol">02 // PROTOCOL</div>');
-    $('modalSelectedLocation')?.closest('.form-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="location">03 // LOCATION</div>');
+    modal.querySelector('.gn-shot-datetime-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="timing">' + tx('shot.timing', '01 // TIMING') + '</div>');
+    $('cpShotMed')?.closest('.form-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="protocol">' + tx('shot.protocol', '02 // PROTOCOL') + '</div>');
+    $('modalSelectedLocation')?.closest('.form-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="location">' + tx('shot.location', '03 // LOCATION') + '</div>');
   }
   const preserveDraft = Boolean(options.preserve || moduleState.pendingLocationDraft);
   moduleState.pendingLocationDraft = false;
   if (!preserveDraft) {
     moduleState.editingShotId = null;
-    document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode('LOG SHOT'));
+    document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode(tx('shot.logShot', 'LOG SHOT')));
     setTodayDefaults();
     const profile = getProfile();
     if (profile.med) setSelect('cpShotMed', profile.med, MEDICATIONS[profile.med] || profile.med);
@@ -1444,7 +1564,7 @@ function renderShotDevicePicker(selectedId = '') {
   const picker = $('shotDeviceId');
   if (!picker) return;
   const devices = S.get('devices', []).filter(device => !device.archived);
-  picker.innerHTML = `<option value="">Unknown / Not applicable</option>${devices.map(device => `<option value="${safeText(device.id)}">${safeText(device.name)} · ${safeText(device.status || 'READY')}</option>`).join('')}`;
+  picker.innerHTML = `<option value="">${tx('shot.unknownDevice', 'Unknown / Not applicable')}</option>${devices.map(device => `<option value="${safeText(device.id)}">${safeText(device.name)} · ${safeText(device.status || 'READY')}</option>`).join('')}`;
   picker.value = selectedId || '';
 }
 
@@ -1460,9 +1580,11 @@ function editShot(id) {
   moduleState.editingShotId = id;
   setText('modalSelectedLocation', record.site || 'No location selected');
   moduleState.selectedLocation = record.site || moduleState.selectedLocation;
+  const recordDate = new Date(record.date);
+  const safeRecordDate = Number.isNaN(recordDate.getTime()) ? new Date() : recordDate;
   if ($('sDate')) $('sDate').value = record.date?.slice(0, 10) || todayISO();
-  if ($('sTime')) $('sTime').value = formatTime12(new Date(record.date));
-  moduleState.meridiem = new Date(record.date).getHours() >= 12 ? 'PM' : 'AM';
+  if ($('sTime')) $('sTime').value = formatTime12(safeRecordDate);
+  moduleState.meridiem = safeRecordDate.getHours() >= 12 ? 'PM' : 'AM';
   updateMeridiemButtons();
   setSelect('cpShotMed', record.med, MEDICATIONS[record.med] || record.med);
   if ($('sDose')) $('sDose').value = record.dose || '';
@@ -1470,7 +1592,7 @@ function editShot(id) {
   if ($('sNotes')) $('sNotes').value = record.notes || '';
   renderShotDevicePicker(record.deviceId || '');
   qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = record.se?.includes(input.value); });
-  document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode('EDIT SHOT'));
+  document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode(tx('shot.editShot', 'EDIT SHOT')));
   openLogModal({ preserve: true });
 }
 
@@ -1484,7 +1606,7 @@ function confirmArchiveShot() {
   if (!record) return;
   record.archived = true;
   record.archivedAt = new Date().toISOString();
-  S.set('shots', all);
+  if (!S.set('shots', all)) { showToast('Could not archive — storage unavailable.', true); return; }
   queueCloudSync('shot', record);
   refreshAll();
   showToast('SHOT record archived.');
@@ -1496,7 +1618,7 @@ function restoreArchivedShot(id) {
   if (!record) return;
   record.archived = false;
   record.archivedAt = null;
-  S.set('shots', all);
+  if (!S.set('shots', all)) { showToast('Could not restore — storage unavailable.', true); return; }
   queueCloudSync('shot', record);
   moduleState.shotHistoryView = 'active';
   refreshAll();
@@ -1517,56 +1639,63 @@ async function confirmPermanentDeleteShot() {
   cancelPermanentDeleteShot();
   const record = getAllShots().find(item => item.id === id);
   const next = getAllShots().filter(item => item.id !== id);
-  S.set('shots', next);
+  if (!S.set('shots', next)) { showToast('Could not delete — storage unavailable.', true); return; }
   refreshAll();
   const cloudDeleted = await deleteCloudShot(record);
   showToast(cloudDeleted ? 'Archived record deleted.' : 'Deleted locally. Cloud deletion queued for retry.');
 }
 
 function saveShot(allowFuture = false) {
-  const med = selectState.cpShotMed?.val;
-  const dose = Number($('sDose')?.value);
-  const date = normalizeDateInput($('sDate')?.value);
-  const time = getShotTime24($('sTime')?.value);
-  const site = moduleState.selectedLocation;
-  if (!med || !dose || !date || !time || !site) { showToast('Add medication, dose, date, time, and a logged location.', true); return; }
-  const dateTime = new Date(`${date}T${time}`);
-  if (!allowFuture && dateTime > new Date()) { moduleState.pendingFutureShot = true; $('futureTimestampConfirm')?.classList.add('active'); return; }
-  const existing = moduleState.editingShotId ? getAllShots().find(item => item.id === moduleState.editingShotId) : null;
-  const record = {
-    ...(existing || {}), id: existing?.id || createId('shot'), date: `${date}T${time}`,
-    med, dose, site, deviceId: $('shotDeviceId')?.value || null, wt: Number($('sWt')?.value) || null,
-    notes: $('sNotes')?.value?.trim() || null,
-    se: qa('#logOv input[type="checkbox"]:checked').map(input => input.value),
-    archived: false, archivedAt: null, createdAt: existing?.createdAt || new Date().toISOString(),
-    source: existing?.source || 'Manual Entry', state: existing?.state || 'User Confirmed'
-  };
-  const all = getAllShots();
-  const index = all.findIndex(item => item.id === record.id);
-  reconcileInventoryForShot(record, existing);
-  if (index >= 0) all[index] = record; else all.push(record);
-  S.set('shots', all);
-  queueCloudSync('shot', record);
-  if (record.wt) {
-    const weights = getWeights();
-    const linkedIndex = weights.findIndex(item => item.shotId === record.id || (
-      existing && !item.shotId && item.notes === 'Logged with SHOT'
-      && item.date === existing.date && Number(item.weight) === Number(existing.wt)
-    ));
-    const linkedWeight = linkedIndex >= 0 ? weights[linkedIndex] : null;
-    const weightRecord = {
-      ...(linkedWeight || {}), id: linkedWeight?.id || createId('weight'), shotId: record.id,
-      date: record.date, weight: record.wt, notes: 'Logged with SHOT'
+  if (moduleState.savingShot) return;
+  moduleState.savingShot = true;
+  try {
+    const med = selectState.cpShotMed?.val;
+    const dose = Number($('sDose')?.value);
+    const date = normalizeDateInput($('sDate')?.value);
+    const time = getShotTime24($('sTime')?.value);
+    const site = moduleState.selectedLocation;
+    if (!med || !(Number.isFinite(dose) && dose > 0) || !date || !time || !site) { showToast('Add medication, dose, date, time, and a logged location.', true); return; }
+    const dateTime = new Date(`${date}T${time}`);
+    if (!allowFuture && dateTime > new Date()) { moduleState.pendingFutureShot = true; $('futureTimestampConfirm')?.classList.add('active'); return; }
+    const existing = moduleState.editingShotId ? getAllShots().find(item => item.id === moduleState.editingShotId) : null;
+    const record = {
+      ...(existing || {}), id: existing?.id || createId('shot'), date: `${date}T${time}`,
+      med, dose, site, deviceId: $('shotDeviceId')?.value || null, wt: Number($('sWt')?.value) || null,
+      notes: $('sNotes')?.value?.trim() || null,
+      se: qa('#logOv input[type="checkbox"]:checked').map(input => input.value),
+      archived: false, archivedAt: null, createdAt: existing?.createdAt || new Date().toISOString(),
+      source: existing?.source || 'Manual Entry', state: existing?.state || 'User Confirmed'
     };
-    if (linkedIndex >= 0) weights[linkedIndex] = weightRecord; else weights.push(weightRecord);
-    S.set('weights', weights); queueCloudSync('weight', weightRecord);
+    const all = getAllShots();
+    const index = all.findIndex(item => item.id === record.id);
+    reconcileInventoryForShot(record, existing);
+    if (index >= 0) all[index] = record; else all.push(record);
+    if (!S.set('shots', all)) { showToast('SHOT could not be saved — storage is full.', true); return; }
+    queueCloudSync('shot', record);
+    if (record.wt) {
+      const weights = getWeights();
+      const linkedIndex = weights.findIndex(item => item.shotId === record.id || (
+        existing && !item.shotId && item.notes === 'Logged with SHOT'
+        && item.date === existing.date && Number(item.weight) === Number(existing.wt)
+      ));
+      const linkedWeight = linkedIndex >= 0 ? weights[linkedIndex] : null;
+      const weightRecord = {
+        ...(linkedWeight || {}), id: linkedWeight?.id || createId('weight'), shotId: record.id,
+        date: record.date, weight: record.wt, notes: 'Logged with SHOT'
+      };
+      if (linkedIndex >= 0) weights[linkedIndex] = weightRecord; else weights.push(weightRecord);
+      if (S.set('weights', weights)) queueCloudSync('weight', weightRecord);
+      else showToast('Linked weight could not be saved — storage is full.', true);
+    }
+    appendEventLedger({ type: 'SHOT', recordId: record.id, date: record.date, label: existing ? 'SHOT UPDATED' : 'SHOT EVENT CONFIRMED' });
+    moduleState.pendingFutureShot = false;
+    $('futureTimestampConfirm')?.classList.remove('active');
+    closeLog();
+    refreshAll();
+    showToast(`${existing ? 'SHOT UPDATED' : 'SHOT RECORDED'} · ${site} ✓`);
+  } finally {
+    moduleState.savingShot = false;
   }
-  appendEventLedger({ type: 'SHOT', recordId: record.id, date: record.date, label: existing ? 'SHOT UPDATED' : 'SHOT EVENT CONFIRMED' });
-  moduleState.pendingFutureShot = false;
-  $('futureTimestampConfirm')?.classList.remove('active');
-  closeLog();
-  refreshAll();
-  showToast(`${existing ? 'Shot updated' : 'Shot logged'} · ${site} ✓`);
 }
 
 function reconcileInventoryForShot(record, existing) {
@@ -1607,6 +1736,7 @@ function openWeightModal() {
   if ($('wtDate')) $('wtDate').value = todayISO();
   if ($('wtTime')) $('wtTime').value = formatTime24(new Date());
   syncCustomPickers(document);
+  window.GN_I18N?.applyTo?.(document.getElementById('wtOv'));
   $('wtOv')?.classList.add('active');
 }
 function closeWt() { $('wtOv')?.classList.remove('active'); }
@@ -1615,25 +1745,36 @@ function setWeightUnit(unit) {
   qa('[data-wt-unit]').forEach(button => button.classList.toggle('active', button.dataset.wtUnit === moduleState.weightUnit));
 }
 function saveWt() {
-  const raw = Number($('wtVal')?.value);
-  const date = normalizeDateInput($('wtDate')?.value) || todayISO();
-  if (!raw || raw <= 0) { setText('wtError', 'ENTER A VALID WEIGHT VALUE'); setDisplay('wtError', true); return; }
-  const weight = moduleState.weightUnit === 'kg' ? raw * 2.2046226218 : raw;
-  const previousWeight = sortedWeights().at(-1)?.weight;
-  const milestone = weightMilestone(previousWeight, weight, getProfile());
-  const record = { id: createId('weight'), date: `${date}T${$('wtTime')?.value || '12:00'}`, weight, weightKg: moduleState.weightUnit === 'kg' ? raw : raw / 2.2046226218, unit: moduleState.weightUnit, notes: $('wtNotes')?.value?.trim() || null, source: 'Manual Entry', state: 'User Confirmed' };
-  const weights = getWeights(); weights.push(record); S.set('weights', weights); queueCloudSync('weight', record);
-  appendEventLedger({ type: 'WEIGHT', recordId: record.id, date: record.date, label: 'RESULTS UPDATED' });
-  closeWt();
-  if ($('wtVal')) $('wtVal').value = '';
-  if ($('wtNotes')) $('wtNotes').value = '';
-  refreshAll();
-  if (milestone) celebrateMilestone(milestone.type, milestone.value);
-  else actionFeedback('RESULTS UPDATED', 'NEW DATA POINT CAPTURED // PROGRESS TIMELINE EXPANDED');
+  if (moduleState.savingWt) return;
+  moduleState.savingWt = true;
+  try {
+    const raw = Number($('wtVal')?.value);
+    const date = normalizeDateInput($('wtDate')?.value) || todayISO();
+    if (!Number.isFinite(raw) || raw <= 0) { setText('wtError', 'ENTER A VALID WEIGHT VALUE'); setDisplay('wtError', true); return; }
+    const dateTime = new Date(`${date}T${$('wtTime')?.value || '12:00'}`);
+    if (Number.isNaN(dateTime.getTime()) || dateTime > new Date()) { setText('wtError', 'FUTURE DATE NOT ALLOWED'); setDisplay('wtError', true); return; }
+    const weight = moduleState.weightUnit === 'kg' ? raw * 2.2046226218 : raw;
+    const previousWeight = sortedWeights().at(-1)?.weight;
+    const milestone = weightMilestone(previousWeight, weight, getProfile());
+    const record = { id: createId('weight'), date: `${date}T${$('wtTime')?.value || '12:00'}`, weight, weightKg: moduleState.weightUnit === 'kg' ? raw : raw / 2.2046226218, unit: moduleState.weightUnit, notes: $('wtNotes')?.value?.trim() || null, source: 'Manual Entry', state: 'User Confirmed' };
+    const weights = getWeights(); weights.push(record);
+    if (!S.set('weights', weights)) { setText('wtError', 'STORAGE UNAVAILABLE — WEIGHT NOT SAVED'); setDisplay('wtError', true); return; }
+    queueCloudSync('weight', record);
+    appendEventLedger({ type: 'WEIGHT', recordId: record.id, date: record.date, label: 'RESULTS UPDATED' });
+    closeWt();
+    if ($('wtVal')) $('wtVal').value = '';
+    if ($('wtNotes')) $('wtNotes').value = '';
+    refreshAll();
+    if (milestone) celebrateMilestone(milestone.type, milestone.value);
+    else actionFeedback('RESULTS UPDATED', 'NEW DATA POINT CAPTURED // PROGRESS TIMELINE EXPANDED');
+  } finally {
+    moduleState.savingWt = false;
+  }
 }
 
 function renderResults() {
   ensureResultsEnhancements();
+  window.GN_I18N?.applyTo?.(document.getElementById('pageResults'));
   const shots = sortedShots();
   const weights = sortedWeights();
   const profile = getProfile();
@@ -1645,25 +1786,25 @@ function renderResults() {
   const directionReady = weights.length >= 3 && spanDays >= 7;
   setText('resLatestWeight', latest ? `${latest.weight.toFixed(1)} lb` : '—');
   setText('resShotCount', String(shots.length));
-  setText('resLatestAppetite', 'LOG OBSERVATIONS');
-  setText('resLatestEnergy', 'LOG OBSERVATIONS');
+  setText('resLatestAppetite', tx('results.logObservations', 'LOG OBSERVATIONS'));
+  setText('resLatestEnergy', tx('results.logObservations', 'LOG OBSERVATIONS'));
   setText('resContinuityEvents', String(shots.length));
   setText('resContinuityRecent', latestShot() ? formatDate(latestShot().date, { month: 'short', day: 'numeric' }) : '—');
   setText('resContinuityActive', String(shots.length));
-  setText('r6TotalLabel', 'TOTAL CHANGE');
-  setText('r6TotalBasis', weightMetrics.basis === 'from profile start weight' ? '(from profile start)' : '(from first recorded weight)');
+  setText('r6TotalLabel', tx('dashboard.resultsTotal', 'TOTAL CHANGE'));
+  setText('r6TotalBasis', weightMetrics.basis === 'from profile start weight' ? tx('dashboard.fromProfileStart', '(from profile start)') : tx('dashboard.fromFirstWeight', '(from first recorded weight)'));
   setText('r6Total', change === null ? '—' : `${change > 0 ? '+' : ''}${change.toFixed(1)} lb`);
   const resultsBMI = calcBMIValue(latest?.weight, profile);
   setText('r6BMI', resultsBMI || '');
   setDisplay('r6BMICard', Boolean(resultsBMI));
   setText('r6Wt', latest ? `${latest.weight.toFixed(1)} lb` : '—');
   setText('r6Pct', weightMetrics.percentLost === null ? '—' : `${weightMetrics.percentLost.toFixed(1)}%`);
-  setText('r6Avg', weightMetrics.weeklyAverage === null ? '—' : `${weightMetrics.weeklyAverage.toFixed(1)} lb/wk`);
+  setText('r6Avg', weightMetrics.weeklyAverage === null ? '—' : tx('dashboard.weeklyRate', '{value} lb/wk', { value: weightMetrics.weeklyAverage.toFixed(1) }));
   setText('r6Goal', profile.goalWt && latest ? `${Math.max(0, latest.weight - Number(profile.goalWt)).toFixed(1)} lb` : '—');
   const wtChartValue = $('wtChartVal');
-  if (wtChartValue) wtChartValue.innerHTML = latest ? `${latest.weight.toFixed(1)}<span>lbs current</span>` : '—';
+  if (wtChartValue) wtChartValue.innerHTML = latest ? Number(latest.weight).toFixed(1) + '<span>' + tx('results.lbsCurrent', 'lbs current') + '</span>' : '—';
   const direction = $('resWeightDirection');
-  if (direction) { direction.textContent = directionReady ? `Trend direction: ${change < 0 ? 'Downward' : change > 0 ? 'Upward' : 'Stable'} across logged measurements` : 'Trend direction: INSUFFICIENT DATA'; direction.className = `results-direction ${!directionReady ? 'insufficient' : change <= 0 ? 'good' : 'warn'}`; }
+  if (direction) { direction.textContent = directionReady ? tx(change < 0 ? 'results.trendDownAcross' : change > 0 ? 'results.trendUpAcross' : 'results.trendStableAcross', 'Trend direction: Stable across logged measurements') : tx('results.trendInsufficient', 'Trend direction: Insufficient Data'); direction.className = 'results-direction ' + (!directionReady ? 'insufficient' : change <= 0 ? 'good' : 'warn'); }
   setDisplay('weightTrendEmpty', !weights.length); setDisplay('weightTrendLive', Boolean(weights.length));
   setDisplay('resultsSummaryEmpty', !weights.length && !shots.length);
   drawWeightTrendChart($('wtChart'), filterWeightsForChart(weights), shots, profile.goalWt);
@@ -1679,7 +1820,7 @@ function renderWeightRecords(weights) {
   const list = $('weightRecordsList');
   if (!list) return;
   setDisplay('weightRecordsEmpty', !weights.length);
-  list.innerHTML = [...weights].reverse().map(record => `<div class="gn-weight-record"><div><b>${record.weight.toFixed(1)} lb</b><span>${safeText(formatDateTime(record.date))}</span>${record.notes ? `<small>${safeText(record.notes)}</small>` : ''}</div></div>`).join('');
+  list.innerHTML = [...weights].reverse().filter(record => record && Number.isFinite(Number(record.weight))).map(record => `<div class="gn-weight-record"><div><b>${Number(record.weight).toFixed(1)} lb</b><span>${safeText(formatDateTime(record.date))}</span>${record.notes ? `<small>${safeText(record.notes)}</small>` : ''}</div></div>`).join('');
 }
 
 function filterWeightsForChart(weights) {
@@ -1691,20 +1832,27 @@ function filterWeightsForChart(weights) {
 }
 
 function ensureResultsEnhancements() {
-  const ledger = $('pageResults')?.querySelector('.results-ledger');
-  if (ledger && !$('gnWeeklyReport')) ledger.insertAdjacentHTML('afterbegin', `<section class="gn-weekly-report" id="gnWeeklyReport"><div class="gn-foundation-kicker">// WEEKLY NODE REPORT</div><h3 id="gnWeeklyTitle">MORE HISTORY NEEDED</h3><p id="gnWeeklyCopy">Log a shot or log your weight to begin building your SIGNAL.</p><div class="gn-weekly-signals" id="gnWeeklySignals"></div><div class="gn-weekly-actions" id="gnWeeklyActions"><button type="button" onclick="handleShotFab()">LOG SHOT</button><button type="button" onclick="openWeightModal()">LOG WEIGHT</button></div></section><div class="gn-reference-pending"><strong>REFERENCE DATA NOT LOADED</strong><br>Clinical comparison remains off until a medication-specific, source-verified dataset and uncertainty model are available. Your SIGNAL uses your own logged history.</div>`);
-  const weightCard = $('weightRecordsPanel')?.closest('.results-card');
-  if (weightCard && !$('measurementTrendCard')) weightCard.insertAdjacentHTML('afterend', `<section class="results-card" id="measurementTrendCard"><div class="results-card-title"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-biometric-gauge"></use></svg></span>MEASUREMENTS</div><div class="results-card-sub">Latest user-entered body measurements</div><div id="measurementTrendList" class="gn-measurement-trend-list"></div><div id="measurementTrendEmpty" class="results-empty">No measurements logged yet.</div></section>`);
-  const chart = $('wtChart');
-  if (chart && !$('weightTrendChartSummary')) chart.parentElement?.insertAdjacentHTML('afterend', '<div class="results-copy" id="weightTrendChartSummary">Log weight to build your trend.</div>');
+  const ledger = document.getElementById('pageResults')?.querySelector('.results-ledger');
+  if (ledger && !document.getElementById('gnWeeklyReport')) {
+    const markup = '<section class="gn-weekly-report" id="gnWeeklyReport"><div class="gn-foundation-kicker" data-i18n="results.weeklyKicker">// WEEKLY NODE REPORT</div><h3 id="gnWeeklyTitle" data-i18n="results.moreDataNeeded">MORE DATA NEEDED</h3><p id="gnWeeklyCopy" data-i18n="results.weeklyEmptyCopy">Log a shot or log your weight to begin building your SIGNAL.</p><div class="gn-weekly-signals" id="gnWeeklySignals"></div><div class="gn-weekly-actions" id="gnWeeklyActions"><button type="button" onclick="handleShotFab()" data-i18n="runtime.logShot">LOG SHOT</button><button type="button" onclick="openWeightModal()" data-i18n="dashboard.logWeight">LOG WEIGHT</button></div></section><div class="gn-reference-pending"><strong data-i18n="results.referencePendingTitle">REFERENCE DATA NOT LOADED</strong><br><span data-i18n="results.referencePendingHtml">Clinical comparison remains off until a medication-specific, source-verified dataset and uncertainty model are available. Your SIGNAL uses your own logged history.</span></div>';
+    ledger.insertAdjacentHTML('afterbegin', markup);
+  }
+  const weightCard = document.getElementById('weightRecordsPanel')?.closest('.results-card');
+  if (weightCard && !document.getElementById('measurementTrendCard')) {
+    const markup = '<section class="results-card" id="measurementTrendCard"><div class="results-card-title"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-biometric-gauge"></use></svg></span><span data-i18n="results.measurementsTitle">MEASUREMENTS</span></div><div class="results-card-sub" data-i18n="results.measurementsSub">Latest user-entered body measurements</div><div id="measurementTrendList" class="gn-measurement-trend-list"></div><div id="measurementTrendEmpty" class="results-empty" data-i18n="results.noMeasurements">No measurements logged yet.</div></section>';
+    weightCard.insertAdjacentHTML('afterend', markup);
+  }
+  const chart = document.getElementById('wtChart');
+  if (chart && !document.getElementById('weightTrendChartSummary')) chart.parentElement?.insertAdjacentHTML('afterend', '<div class="results-copy" id="weightTrendChartSummary" data-i18n="results.weightTrendEmptyHtml">Log weight to build your trend.</div>');
 }
 
 function renderWeeklyReport(shots, weights) {
-  if (!$('gnWeeklyReport')) return;
+  if (!document.getElementById('gnWeeklyReport')) return;
   if (shots.length < 2) {
-    setText('gnWeeklyTitle', 'MORE HISTORY NEEDED');
-    setText('gnWeeklyCopy', 'Log a shot or log your weight to begin building your SIGNAL.');
-    if ($('gnWeeklySignals')) $('gnWeeklySignals').innerHTML = '';
+    setText('gnWeeklyTitle', tx('results.moreDataNeeded', 'MORE DATA NEEDED'));
+    setText('gnWeeklyCopy', tx('results.weeklyEmptyCopy', 'Log a shot or log your weight to begin building your SIGNAL.'));
+    const signals = document.getElementById('gnWeeklySignals');
+    if (signals) signals.innerHTML = '';
     setDisplay('gnWeeklyActions', true);
     return;
   }
@@ -1713,9 +1861,10 @@ function renderWeeklyReport(shots, weights) {
   const weekWeights = weights.filter(item => new Date(item.date).getTime() >= cutoff);
   const observations = weekShots.flatMap(item => item.se || []);
   const change = weekWeights.length > 1 ? Number(weekWeights.at(-1).weight) - Number(weekWeights[0].weight) : null;
-  setText('gnWeeklyTitle', 'YOUR LAST 7 DAYS');
-  setText('gnWeeklyCopy', 'This report summarizes only your logged timeline. Gaps remain visible and no clinical comparison is inferred.');
-  if ($('gnWeeklySignals')) $('gnWeeklySignals').innerHTML = `<span>SHOT EVENTS<b>${weekShots.length}</b></span><span>WEIGHT CHANGE<b>${change === null ? 'NOT ENOUGH DATA' : `${change > 0 ? '+' : ''}${change.toFixed(1)} lb`}</b></span><span>OBSERVATIONS<b>${observations.length || 'NONE LOGGED'}</b></span>`;
+  setText('gnWeeklyTitle', tx('results.last7Days', 'YOUR LAST 7 DAYS'));
+  setText('gnWeeklyCopy', tx('results.weeklyCopy', 'This report summarizes only your logged timeline. Gaps remain visible and no clinical comparison is inferred.'));
+  const signals = document.getElementById('gnWeeklySignals');
+  if (signals) signals.innerHTML = '<span>' + tx('results.shotEvents', 'SHOT EVENTS') + '<b>' + weekShots.length + '</b></span><span>' + tx('results.weightChange', 'WEIGHT CHANGE') + '<b>' + (change === null ? tx('results.notEnoughData', 'NOT ENOUGH DATA') : (change > 0 ? '+' : '') + change.toFixed(1) + ' lb') + '</b></span><span>' + tx('results.observations', 'OBSERVATIONS') + '<b>' + (observations.length || tx('results.noneLogged', 'NONE LOGGED')) + '</b></span>';
   setDisplay('gnWeeklyActions', false);
 }
 
@@ -1727,7 +1876,7 @@ function renderMeasurementTrend() {
   records.forEach(record => { const current = latest.get(record.type); if (!current || new Date(record.date) > new Date(current.date)) latest.set(record.type, record); });
   const rows = [...latest.values()].sort((a, b) => a.type.localeCompare(b.type));
   setDisplay('measurementTrendEmpty', !rows.length);
-  list.innerHTML = rows.map(record => `<div class="gn-measurement-trend-row"><b>${safeText(record.type)}</b><span>${Number(record.value).toFixed(1)} ${safeText(record.unit)}</span></div>`).join('');
+  list.innerHTML = rows.filter(record => Number.isFinite(Number(record.value))).map(record => `<div class="gn-measurement-trend-row"><b>${safeText(record.type)}</b><span>${Number(record.value).toFixed(1)} ${safeText(record.unit)}</span></div>`).join('');
 }
 
 function drawWeightTrendChart(canvas, weights, shots, goal) {
@@ -1737,7 +1886,8 @@ function drawWeightTrendChart(canvas, weights, shots, goal) {
   canvas.width = width * scale; canvas.height = height * scale;
   const context = canvas.getContext('2d'); if (!context) return;
   context.setTransform(scale, 0, 0, scale, 0, 0); context.clearRect(0, 0, width, height);
-  if (!weights.length) { if (summary) summary.textContent = 'Log weight to build your trend.'; return; }
+  if (!weights.length) { if (summary) summary.textContent = tx('dashboard.logWeight', 'LOG WEIGHT'); return; }
+
   const left = 42, right = 12, top = 16, bottom = 30, plotWidth = width - left - right, plotHeight = height - top - bottom;
   const values = weights.map(item => Number(item.weight));
   const minValue = Math.min(...values, Number(goal) || Infinity), maxValue = Math.max(...values, Number(goal) || -Infinity);
@@ -1760,7 +1910,7 @@ function drawWeightTrendChart(canvas, weights, shots, goal) {
     const changed = priorDose !== null && dose !== priorDose;
     context.fillStyle = changed ? '#ffd700' : '#ff3355';
     context.beginPath(); context.arc(xFor(nearest), yFor(values[nearest]), changed ? 6 : 4, 0, Math.PI * 2); context.fill();
-    if (changed) { context.fillStyle = '#ffd700'; context.font = '9px Share Tech Mono, monospace'; context.fillText('DOSE', Math.min(width - 38, xFor(nearest) + 5), Math.max(10, yFor(values[nearest]) - 7)); }
+    if (changed) { context.fillStyle = '#ffd700'; context.font = '9px Share Tech Mono, monospace'; context.fillText(tx('results.chartDose', 'DOSE'), Math.min(width - 38, xFor(nearest) + 5), Math.max(10, yFor(values[nearest]) - 7)); }
     priorDose = dose;
   });
   const profileStart = Number(getProfile().startWt) || values[0];
@@ -1770,7 +1920,8 @@ function drawWeightTrendChart(canvas, weights, shots, goal) {
     if (firstIndex < 0) return;
     context.fillStyle = '#00ff88'; context.beginPath(); context.arc(xFor(firstIndex), yFor(values[firstIndex]), 5, 0, Math.PI * 2); context.fill();
   });
-  if (summary) summary.textContent = weights.length === 1 ? 'One data point logged. Keep tracking to see your trend.' : `Showing ${weights.length} weight records${Number(goal) > 0 ? ` · goal ${Number(goal).toFixed(1)} lb` : ''}. Red = SHOT, yellow = dose change, green = personal milestone.`;
+  if (summary) { const summaryText = weights.length === 1 ? tx('results.oneWeightPoint', 'One data point logged. Keep tracking to see your trend.') : Number(goal) > 0 ? tx('results.showingWeightRecordsWithGoal', 'Showing {count} weight records · goal {goal} lb', { count: weights.length, goal: Number(goal).toFixed(1) }) : tx('results.showingWeightRecords', 'Showing {count} weight records', { count: weights.length }); summary.textContent = summaryText + '. ' + tx('results.chartLegend', 'Red = SHOT, yellow = dose change, green = personal milestone.'); }
+
 }
 
 function drawTrendArrow(canvas, weights, goal) {
@@ -1794,19 +1945,19 @@ function drawTrendArrow(canvas, weights, goal) {
 
 function renderPhaseSource(shot) {
   setDisplay('phaseEngineSourceEmpty', !shot); setDisplay('phaseEngineSourceReadout', Boolean(shot));
-  const readout = $('phaseEngineSourceReadout');
+  const readout = document.getElementById('phaseEngineSourceReadout');
   if (!readout || !shot) return;
   const elapsed = Math.max(0, (Date.now() - new Date(shot.date).getTime()) / 86400000);
-  readout.innerHTML = `<div><span>LAST SHOT</span><b>${safeText(formatDateTime(shot.date))}</b></div><div><span>MEDICATION</span><b>${safeText(MEDICATIONS[shot.med] || shot.med || 'CUSTOM')}</b></div><div><span>TIME SINCE</span><b>${Math.floor(elapsed)}d</b></div><div><span>DATA SOURCE</span><b>USER-ENTERED HISTORY</b></div>`;
+  readout.innerHTML = '<div><span>' + tx('runtime.lastShot', 'LAST SHOT') + '</span><b>' + safeText(formatDateTime(shot.date)) + '</b></div><div><span>' + tx('runtime.medication', 'MEDICATION') + '</span><b>' + safeText(MEDICATIONS[shot.med] || shot.med || tx('med.customCompound', 'Custom Compound')) + '</b></div><div><span>' + tx('runtime.timeSince', 'TIME SINCE') + '</span><b>' + Math.floor(elapsed) + 'd</b></div><div><span>' + tx('runtime.dataSource', 'DATA SOURCE') + '</span><b>' + tx('runtime.userHistory', 'USER-ENTERED HISTORY') + '</b></div>';
 }
 
 function renderTrendLists(shots) {
   const effects = shots.flatMap(item => item.se || []);
   setDisplay('sideEffectTrendEmpty', !effects.length); setDisplay('sideEffectTrendLive', Boolean(effects.length));
-  const sideEffectTrend = $('sideEffectTrendLive');
+  const sideEffectTrend = document.getElementById('sideEffectTrendLive');
   if (sideEffectTrend) {
     sideEffectTrend.innerHTML = effects.length
-      ? effects.slice(-6).reverse().map(effect => `<div class="results-list-row"><b>${safeText(effect)}</b><span>logged observation</span></div>`).join('')
+      ? effects.slice(-6).reverse().map(effect => '<div class="results-list-row"><b>' + safeText(effect) + '</b><span>' + tx('runtime.loggedObservation', 'logged observation') + '</span></div>').join('')
       : '';
   }
   setDisplay('appetiteTrendEmpty', true); setDisplay('energyTrendEmpty', true);
@@ -1834,7 +1985,7 @@ function renderProtocolCurve(shots, phase) {
   if (!shots.length) {
     if (readout) {
       const detail = document.createElement('span');
-      detail.textContent = 'log a shot to begin';
+      detail.textContent = tx('results.logToBegin', 'log a shot to begin');
       readout.replaceChildren(document.createTextNode('—'), detail);
     }
     const context = canvas?.getContext('2d');
@@ -1844,8 +1995,8 @@ function renderProtocolCurve(shots, phase) {
 
   if (readout) {
     const detail = document.createElement('span');
-    detail.textContent = 'relative cycle model · not a measured level';
-    readout.replaceChildren(document.createTextNode(phase?.name || 'ACTIVE'), detail);
+    detail.textContent = tx('results.relativeCycleModel', 'relative cycle model · not a measured level');
+    readout.replaceChildren(document.createTextNode(localizedPhaseName(phase) || tx('results.active', 'ACTIVE')), detail);
   }
 
   const now = Date.now();
@@ -1975,7 +2126,7 @@ function installCustomDate(input) {
   trigger.setAttribute('aria-haspopup', 'dialog');
   const popover = document.createElement('div');
   popover.className = 'gn-custom-date-popover';
-  popover.innerHTML = '<div class="gn-custom-date-head"><button type="button" data-gn-date-prev aria-label="Previous month">‹</button><strong data-gn-date-label></strong><button type="button" data-gn-date-next aria-label="Next month">›</button></div><div class="gn-custom-date-grid" data-gn-date-grid></div><div class="gn-custom-date-foot"><button type="button" data-gn-date-today>USE TODAY</button><button type="button" data-gn-date-close>CLOSE</button></div>';
+  popover.innerHTML = '<div class="gn-custom-date-head"><button type="button" data-gn-date-prev aria-label="' + tx('date.prevMonth', 'Previous month') + '">‹</button><strong data-gn-date-label></strong><button type="button" data-gn-date-next aria-label="' + tx('date.nextMonth', 'Next month') + '">›</button></div><div class="gn-custom-date-grid" data-gn-date-grid></div><div class="gn-custom-date-foot"><button type="button" data-gn-date-today>' + tx('date.useToday', 'USE TODAY') + '</button><button type="button" data-gn-date-close>' + tx('date.close', 'CLOSE') + '</button></div>';
   input.type = 'text';
   input.readOnly = true;
   input.hidden = true;
@@ -2026,17 +2177,17 @@ function ensureLabFoundations() {
     <div class="gn-foundation-head"><div><div class="gn-foundation-kicker">// ORGANIZED SYSTEMS</div><h2 id="gnLabFoundationTitle">LAB <span>EXPANSION LAYER</span></h2></div><span class="gn-foundation-signal">LOCAL RECORDS</span></div>
     <div class="gn-lab-breadcrumb">LAB <b>›</b> CHOOSE A SYSTEM</div>
     <div class="gn-foundation-grid">
-      <button type="button" class="gn-foundation-tile" data-lab-focus="calculators"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-g"><svg><use href="#gn-biometric-gauge"></use></svg></span></span><b>CALCULATORS</b><small>Focused educational tools</small></button>
-      <button type="button" class="gn-foundation-tile active" data-lab-focus="research"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-lab-vessel"></use></svg></span></span><b>RESEARCH PEPTIDES</b><small>Personal record tracking</small></button>
-      <button type="button" class="gn-foundation-tile" data-lab-focus="inventory"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-g"><svg><use href="#gn-inventory-core"></use></svg></span></span><b>INVENTORY</b><small>Supply records + deduction</small></button>
-      <button type="button" class="gn-foundation-tile" data-lab-focus="devices"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-y"><svg><use href="#gn-vault-core"></use></svg></span></span><b>DEVICE VAULT</b><small>Identity, lifecycle, status</small></button>
-      <button type="button" class="gn-foundation-tile" data-lab-focus="ledger"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-r"><svg><use href="#gn-timeline-node"></use></svg></span></span><b>EVENT LEDGER</b><small>Source-aware history</small></button>
+      <button type="button" class="gn-foundation-tile" data-lab-focus="calculators"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-g"><svg><use href="#gn-biometric-gauge"></use></svg></span></span><b data-i18n="lab.calculators">CALCULATORS</b><small data-i18n="lab.calculatorsHelp">Focused educational tools</small></button>
+      <button type="button" class="gn-foundation-tile active" data-lab-focus="research"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-lab-vessel"></use></svg></span></span><b data-i18n="lab.researchPeptides">RESEARCH PEPTIDES</b><small data-i18n="lab.researchPeptidesHelp">Personal record tracking</small></button>
+      <button type="button" class="gn-foundation-tile" data-lab-focus="inventory"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-g"><svg><use href="#gn-inventory-core"></use></svg></span></span><b data-i18n="lab.inventory">INVENTORY</b><small data-i18n="lab.inventoryHelp">Supply records + deduction</small></button>
+      <button type="button" class="gn-foundation-tile" data-lab-focus="devices"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-y"><svg><use href="#gn-vault-core"></use></svg></span></span><b data-i18n="lab.deviceVault">DEVICE VAULT</b><small data-i18n="lab.deviceVaultHelp">Identity, lifecycle, status</small></button>
+      <button type="button" class="gn-foundation-tile" data-lab-focus="ledger"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-r"><svg><use href="#gn-timeline-node"></use></svg></span></span><b data-i18n="lab.eventLedger">EVENT LEDGER</b><small data-i18n="lab.eventLedgerHelp">Source-aware history</small></button>
     </div>
-    <details class="gn-foundation-section" open id="gnResearchSection"><summary><span>RESEARCH PEPTIDES</span><em>ORGANIZE · OBSERVE · REVIEW</em></summary>
+    <details class="gn-foundation-section" open id="gnResearchSection"><summary><span data-i18n="lab.researchPeptides">RESEARCH PEPTIDES</span><em data-i18n="research.organize">ORGANIZE · OBSERVE · REVIEW</em></summary>
       <div class="gn-research-notice"><strong>USER-ENTERED RESEARCH RECORDS</strong><span>Some compounds above have FDA-approved indications in specific clinical contexts. This organizer does not distinguish regulated from research use. All records are user-entered. Verify independently.</span></div>
-      <div class="gn-research-library">${RESEARCH_LIBRARY.map(({ category, names, context }) => `<div class="gn-research-group"><span>${safeText(category)}</span><small class="gn-research-context">${safeText(context)}</small><div>${names.map(name => `<button type="button" data-research-name="${safeText(name)}" data-research-category="${safeText(category)}">${safeText(name)}</button>`).join('')}</div></div>`).join('')}<div class="gn-research-group"><span>CUSTOM ENTRY</span><small class="gn-research-context">USER-ENTERED RECORD · REGULATORY STATUS IS NOT VERIFIED HERE.</small><div><button type="button" data-research-name="" data-research-category="Custom Research">CUSTOM ENTRY</button></div></div></div>
+      <div class="gn-research-library">${RESEARCH_LIBRARY.map(({ category, names, context }) => { const catKey = { 'RECOVERY & REPAIR': 'lab.recoveryRepair', 'METABOLIC & BODY COMPOSITION': 'lab.metabolic', 'CELLULAR & MITOCHONDRIAL': 'lab.cellular', 'IMMUNE & NEUROLOGICAL': 'lab.immune' }[category]; const ctxKey = context === 'RESEARCH-FOCUSED RECORDS · REGULATORY STATUS IS NOT VERIFIED HERE.' ? 'lab.researchKicker' : null; return `<div class="gn-research-group"><span>${safeText(catKey ? tx(catKey, category) : category)}</span><small class="gn-research-context">${safeText(ctxKey ? tx(ctxKey, context) : context)}</small><div>${names.map(name => `<button type="button" data-research-name="${safeText(name)}" data-research-category="${safeText(category)}">${safeText(name)}</button>`).join('')}</div></div>`; }).join('')}<div class="gn-research-group"><span data-i18n="lab.customEntry">CUSTOM ENTRY</span><small class="gn-research-context" data-i18n="lab.customEntryHelp">USER-ENTERED RECORD · REGULATORY STATUS IS NOT VERIFIED HERE.</small><div><button type="button" data-research-name="" data-research-category="Custom Research" data-i18n="lab.customEntry">CUSTOM ENTRY</button></div></div></div>
       <div class="gn-research-disclaimer">Some compounds above have FDA-approved indications in specific clinical contexts. This organizer does not distinguish regulated from research use. All records are user-entered. Verify independently.</div>
-      <form class="gn-record-form" id="gnResearchForm"><div class="gn-form-grid"><label>RECORD NAME<input id="gnResearchName" required placeholder="Select a library entry or type a custom name"></label><label>CATEGORY<input id="gnResearchCategory" placeholder="Research category"></label><label>DATE<input id="gnResearchDate" type="date"></label></div><div class="gn-form-grid"><label>STATUS<select id="gnResearchState"><option>TRACKING</option><option>COMPLETED</option><option>ARCHIVED</option><option>RESEARCH NOTE ONLY</option></select></label><label>SOURCE<input id="gnResearchSource" placeholder="User-entered source or note"></label></div><label>OBSERVATIONS / NOTES<textarea id="gnResearchNotes" rows="3" placeholder="User-entered observations only"></textarea></label><button class="btn-full btn-primary" type="submit" id="gnResearchSave">SAVE RESEARCH RECORD</button></form>
+      <form class="gn-record-form" id="gnResearchForm"><div class="gn-form-grid"><label><span data-i18n="research.recordName">RECORD NAME</span><input id="gnResearchName" required placeholder="Select a library entry or type a custom name" data-i18n-placeholder="research.recordNamePlaceholder"></label><label><span data-i18n="research.category">CATEGORY</span><input id="gnResearchCategory" placeholder="Research category" data-i18n-placeholder="research.categoryPlaceholder"></label><label><span data-i18n="research.date">DATE</span><input id="gnResearchDate" type="date"></label></div><div class="gn-form-grid"><label><span data-i18n="research.status">STATUS</span><select id="gnResearchState"><option data-i18n="research.tracking">TRACKING</option><option data-i18n="research.completed">COMPLETED</option><option data-i18n="research.archived">ARCHIVED</option><option data-i18n="research.noteOnly">RESEARCH NOTE ONLY</option></select></label><label><span data-i18n="research.source">SOURCE</span><input id="gnResearchSource" placeholder="User-entered source or note" data-i18n-placeholder="research.sourcePlaceholder"></label></div><label><span data-i18n="research.observations">OBSERVATIONS / NOTES</span><textarea id="gnResearchNotes" rows="3" placeholder="User-entered observations only" data-i18n-placeholder="research.observationsPlaceholder"></textarea></label><button class="btn-full btn-primary" type="submit" id="gnResearchSave" data-i18n="research.save">SAVE RESEARCH RECORD</button></form>
       <div class="gn-record-list" id="gnResearchList"></div>
     </details>
     <details class="gn-foundation-section" id="gnLedgerSection"><summary><span>SOURCE-AWARE EVENT LEDGER</span><em>NO SILENT REWRITES</em></summary><div class="gn-ledger-copy">Every important record keeps its origin and review state. Manual Entry, Import, Device Reported, and System Generated events remain distinguishable.</div><div class="gn-ledger-list" id="gnLedgerList"></div></details>
@@ -2056,7 +2207,7 @@ function ensureLabFoundations() {
   overlay.id = 'gnLabToolOverlay';
   overlay.hidden = true;
   overlay.setAttribute('aria-modal', 'true');
-  overlay.innerHTML = `<div class="gn-lab-tool-shell"><header class="gn-lab-tool-head"><button type="button" class="gn-lab-back" data-lab-back>← BACK TO LAB</button><div><div class="gn-foundation-kicker">// LAB SYSTEM</div><h2 id="gnLabToolTitle">FOCUSED TOOL</h2></div><span class="gn-foundation-signal">LOCAL RECORDS</span></header><div id="gnLabToolHost" class="gn-lab-tool-host"></div></div>`;
+  overlay.innerHTML = `<div class="gn-lab-tool-shell"><header class="gn-lab-tool-head"><button type="button" class="gn-lab-back" data-lab-back>${tx('lab.back', '← BACK TO LAB')}</button><div><div class="gn-foundation-kicker" data-i18n="lab.kicker">// LAB SYSTEM</div><h2 id="gnLabToolTitle">${tx('lab.chooseSystem', 'LAB > CHOOSE A SYSTEM')}</h2></div><span class="gn-foundation-signal" data-i18n="lab.localRecords">LOCAL RECORDS</span></header><div id="gnLabToolHost" class="gn-lab-tool-host"></div></div>`;
   document.body.appendChild(overlay);
   overlay.querySelector('[data-lab-back]')?.addEventListener('click', closeLabTool);
   qa('[data-lab-focus]').forEach(tile => tile.addEventListener('click', () => openLabTool(tile.dataset.labFocus)));
@@ -2096,7 +2247,7 @@ function openLabTool(tool) {
   toolNodes.forEach(labSlot);
   toolNodes.forEach(node => host.appendChild(node));
   [$('gnResearchSection'), $('gnLedgerSection'), $('gnSupplySection')].forEach(section => { if (section) section.open = section.id === (tool === 'research' ? 'gnResearchSection' : tool === 'inventory' ? 'gnSupplySection' : 'gnLedgerSection'); });
-  const titles = { calculators: 'CALCULATORS', research: 'RESEARCH PEPTIDES', inventory: 'INVENTORY', devices: 'DEVICE VAULT', ledger: 'EVENT LEDGER' };
+  const titles = { calculators: tx('lab.calculators', 'CALCULATORS'), research: tx('lab.researchPeptides', 'RESEARCH PEPTIDES'), inventory: tx('lab.inventory', 'INVENTORY'), devices: tx('lab.deviceVault', 'DEVICE VAULT'), ledger: tx('lab.eventLedger', 'EVENT LEDGER') };
   setText('gnLabToolTitle', titles[tool] || 'LAB SYSTEM');
   qa('[data-lab-focus]').forEach(tile => tile.classList.toggle('active', tile.dataset.labFocus === tool));
   page.classList.add('gn-lab-tool-open');
@@ -2127,7 +2278,7 @@ function renderLabFoundations() {
     const records = S.get('researchRecords', []);
     const active = records.filter(record => !record.archived);
     const archived = records.filter(record => record.archived);
-    list.innerHTML = records.length ? `${active.slice().reverse().map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(record.category || 'CUSTOM RESEARCH')} · ${safeText(formatDate(record.date || record.createdAt))} · ${safeText(record.source || 'Manual Entry')}</small></div><span class="gn-record-state">${safeText(record.state || 'TRACKING')}</span><div style="display:flex;gap:4px"><button type="button" class="gn-record-delete" data-research-edit="${safeText(record.id)}" aria-label="Edit research record">✎</button><button type="button" class="gn-record-delete" data-research-archive="${safeText(record.id)}" aria-label="Archive research record">×</button></div></article>`).join('')}${archived.length ? `<div class="gn-ledger-copy" style="margin-top:10px">ARCHIVED RECORDS · Restore the record before editing.</div>${archived.slice().reverse().map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(record.category || 'CUSTOM RESEARCH')} · Archived ${safeText(formatDate(record.modifiedAt || record.createdAt))}</small></div><span class="gn-record-state">ARCHIVED</span><button type="button" class="gn-record-delete gn-restore-edit" data-research-restore="${safeText(record.id)}" aria-label="Restore research record to edit">RESTORE TO EDIT</button></article>`).join('')}` : ''}` : '<div class="gn-empty-state"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-lab-vessel"></use></svg></span><b>NO RESEARCH RECORDS YET</b><span>Choose a library entry or create a custom record when you have something to preserve.</span></div>';
+    list.innerHTML = records.length ? `${active.slice().reverse().map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(record.category || tx('lab.customResearch', 'CUSTOM RESEARCH'))} · ${safeText(formatDate(record.date || record.createdAt))} · ${safeText(record.source || 'Manual Entry')}</small></div><span class="gn-record-state">${safeText(record.state || tx('lab.tracking', 'TRACKING'))}</span><div style="display:flex;gap:4px"><button type="button" class="gn-record-delete" data-research-edit="${safeText(record.id)}" aria-label="${tx('lab.editResearch', 'Edit research record')}">✎</button><button type="button" class="gn-record-delete" data-research-archive="${safeText(record.id)}" aria-label="${tx('lab.archiveResearch', 'Archive research record')}">×</button></div></article>`).join('')}${archived.length ? `<div class="gn-ledger-copy" style="margin-top:10px">ARCHIVED RECORDS · Restore the record before editing.</div>${archived.slice().reverse().map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(record.category || tx('lab.customResearch', 'CUSTOM RESEARCH'))} · Archived ${safeText(formatDate(record.modifiedAt || record.createdAt))}</small></div><span class="gn-record-state">ARCHIVED</span><button type="button" class="gn-record-delete gn-restore-edit" data-research-restore="${safeText(record.id)}" aria-label="${tx('lab.restoreResearch', 'Restore research record to edit')}">RESTORE TO EDIT</button></article>`).join('')}` : ''}` : '<div class="gn-empty-state"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-lab-vessel"></use></svg></span><b>NO RESEARCH RECORDS YET</b><span>Choose a library entry or create a custom record when you have something to preserve.</span></div>';
   }
   const ledger = $('gnLedgerList');
   if (ledger) {
@@ -2217,17 +2368,18 @@ function ensureProfileHub() {
   const hero = avatar?.closest('[style*="background:#0e0e16"]');
   if (!hero) return;
   hero.insertAdjacentHTML('afterend', `<section class="gn-profile-hub" data-gn-profile-hub aria-labelledby="gnProfileHubTitle">
-    <div class="gn-foundation-head"><div><div class="gn-foundation-kicker">// NODE PROFILE HUB</div><h2 id="gnProfileHubTitle">YOUR <span>NODE</span></h2></div><span class="gn-foundation-signal" id="gnProfileSync">LOCAL MODE</span></div>
+    <div class="gn-foundation-head"><div><div class="gn-foundation-kicker" data-i18n="vault.kicker">// NODE PROFILE HUB</div><h2 id="gnProfileHubTitle" data-i18n="vault.hubTitle">YOUR NODE</h2></div><span class="gn-foundation-signal" id="gnProfileSync">LOCAL MODE</span></div>
     <div class="gn-profile-sections">
-      <section class="gn-profile-section"><div class="gn-profile-section-label">// YOUR NODE</div><div class="gn-profile-row"><span><b>Medication</b><small id="gnProfileMedication">Not entered</small></span><span class="gn-profile-chevron">›</span></div><div class="gn-profile-row"><span><b>Body Metrics</b><small id="gnProfileBody">Not entered</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row" onclick="openSystemUpdate()"><span><b>What's New</b><small>v2.1.7</small></span><span class="gn-profile-chevron">›</span></button></section>
-      <section class="gn-profile-section"><div class="gn-profile-section-label">// YOUR DATA</div><button type="button" class="gn-profile-row" onclick="exportCSV()"><span><b>Export CSV</b><small>Download readable records</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="exportBackup()"><span><b>Export Backup</b><small>Save a complete local copy</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b>Data Ownership</b><small>Export or delete anytime</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row gn-profile-danger-row" onclick="openDeleteLocalData()"><span><b>Delete All Local Data</b><small>Remove this device record</small></span><span class="gn-profile-chevron">›</span></button></section>
-      <section class="gn-profile-section"><div class="gn-profile-section-label">// TOOLS</div><button type="button" class="gn-profile-row" onclick="document.querySelector('.gn-device-vault')?.scrollIntoView({behavior:'smooth',block:'start'})"><span><b>Device Vault</b><small>Private identity registry</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b>Connected Account</b><small id="gnProfileAccount">Local device session</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row gn-profile-danger-row" onclick="openDeleteCloudAccount()"><span><b>Delete Cloud Account</b><small>Requires server deletion control</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b>App Version</b><small id="gnProfileVersion">v2.1.7</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row" onclick="window.location.reload()"><span><b>Reload App</b><small>Refresh the current build</small></span><span class="gn-profile-chevron">›</span></button></section>
+      <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.node">// YOUR NODE</div><div class="gn-profile-row"><span><b data-i18n="vault.medicationLabel">Medication</b><small id="gnProfileMedication">Not entered</small></span><span class="gn-profile-chevron">›</span></div><div class="gn-profile-row"><span><b data-i18n="vault.bodyMetrics">Body Metrics</b><small id="gnProfileBody">Not entered</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row" onclick="openSystemUpdate()"><span><b data-i18n="vault.whatsNew">What's New</b><small>v2.1.7</small></span><span class="gn-profile-chevron">›</span></button></section>
+      <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.yourData">// YOUR DATA</div><button type="button" class="gn-profile-row" onclick="exportCSV()"><span><b data-i18n="vault.exportCsv">Export CSV</b><small data-i18n="vault.exportCsvHelp">Download readable records</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="exportBackup()"><span><b data-i18n="vault.exportBackup">Export Backup</b><small data-i18n="vault.exportBackupHelp">Save a complete local copy</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.dataOwnership">Data Ownership</b><small data-i18n="vault.dataOwnershipHelp">Export or delete anytime</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row gn-profile-danger-row" onclick="openDeleteLocalData()"><span><b data-i18n="vault.deleteAllData">Delete All Local Data</b><small data-i18n="vault.deleteAllDataHelp">Remove this device record</small></span><span class="gn-profile-chevron">›</span></button></section>
+      <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.tools">// TOOLS</div><button type="button" class="gn-profile-row" onclick="document.querySelector('.gn-device-vault')?.scrollIntoView({behavior:'smooth',block:'start'})"><span><b data-i18n="vault.deviceVaultLink">Device Vault</b><small data-i18n="vault.deviceVaultLinkHelp">Private identity registry</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.connectedAccount">Connected Account</b><small id="gnProfileAccount">Local device session</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row gn-profile-danger-row" onclick="openDeleteCloudAccount()"><span><b data-i18n="vault.deleteCloudAccount">Delete Cloud Account</b><small data-i18n="vault.deleteCloudAccountHelp">Requires server deletion control</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.appVersion">App Version</b><small id="gnProfileVersion">v2.1.7</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row" onclick="window.location.reload()"><span><b data-i18n="vault.reloadApp">Reload App</b><small data-i18n="vault.reloadAppHelp">Refresh the current build</small></span><span class="gn-profile-chevron">›</span></button></section>
     </div>
-    <button type="button" class="gn-profile-signout" onclick="openSignOutModal()"><span><b>SIGN OUT</b><small>Your data stays on this device.</small></span><span class="gn-profile-chevron">›</span></button>
-    <div class="system-update-card" id="gnSystemUpdateCard"><div class="system-update-head"><strong>SYSTEM UPDATE // v2.1.7</strong><button type="button" id="gnSystemUpdateDismiss">DISMISS</button></div><p>v2.1.7 — First-run orientation, SIGNAL, a focused dashboard, weekly record summaries, LAB launch controls, and inventory deduction are now connected.</p><ul><li>Phase language stays educational and grounded in user-entered history.</li><li>Weight charts distinguish SHOTS, dose changes, and personal milestones.</li><li>Clinical comparison remains off until reference data is verified.</li></ul></div>
-    <div class="gn-device-vault"><div class="gn-device-vault-head"><div><div class="gn-foundation-kicker">// DEVICE VAULT</div><h3>PHYSICAL OBJECT IDENTITY</h3></div><span class="gn-record-state">PRIVATE REGISTRY</span></div><p class="gn-ledger-copy">The device is not the cartridge. The cartridge is not the dose. The dose is not the plan. Device identity, inventory, SHOT events, and LOADOUT remain separate records.</p><form class="gn-record-form" id="gnDeviceForm"><div class="gn-form-grid"><label>DEVICE NAME<input id="gnDeviceName" required placeholder="e.g. Home pen A"></label><label>DEVICE TYPE<select id="gnDeviceType"><option>Reusable pen</option><option>Disposable pen</option><option>Autoinjector</option><option>Other device</option></select></label><label>STATUS<select id="gnDeviceStatus">${DEVICE_STATUSES.map(status => `<option>${status}</option>`).join('')}</select></label></div><label>LABEL / NOTES<textarea id="gnDeviceNotes" rows="2" placeholder="User-entered identity notes"></textarea></label><button class="btn-full btn-secondary" type="submit">REGISTER DEVICE IDENTITY</button></form><div class="gn-device-list" id="gnDeviceList"></div></div>
+    <button type="button" class="gn-profile-signout" onclick="openSignOutModal()"><span><b data-i18n="vault.signOut">SIGN OUT</b><small data-i18n="vault.localOnlyFooter">Your data stays on this device.</small></span><span class="gn-profile-chevron">›</span></button>
+    <div class="system-update-card" id="gnSystemUpdateCard"><div class="system-update-head"><strong>SYSTEM UPDATE // v2.1.7</strong><button type="button" id="gnSystemUpdateDismiss" data-i18n="vault.dismiss">DISMISS</button></div><p>v2.1.7 — First-run orientation, SIGNAL, a focused dashboard, weekly record summaries, LAB launch controls, and inventory deduction are now connected.</p><ul><li>Phase language stays educational and grounded in user-entered history.</li><li>Weight charts distinguish SHOTS, dose changes, and personal milestones.</li><li>Clinical comparison remains off until reference data is verified.</li></ul></div>
+    <div class="gn-device-vault"><div class="gn-device-vault-head"><div><div class="gn-foundation-kicker" data-i18n="vault.deviceVaultKicker">// DEVICE VAULT</div><h3 data-i18n="vault.deviceVaultSubhead">PHYSICAL OBJECT IDENTITY</h3></div><span class="gn-record-state" data-i18n="vault.deviceVaultPrivate">PRIVATE REGISTRY</span></div><p class="gn-ledger-copy">The device is not the cartridge. The cartridge is not the dose. The dose is not the plan. Device identity, inventory, SHOT events, and LOADOUT remain separate records.</p><form class="gn-record-form" id="gnDeviceForm"><div class="gn-form-grid"><label><span data-i18n="vault.deviceName">DEVICE NAME</span><input id="gnDeviceName" required placeholder="e.g. Home pen A"></label><label><span data-i18n="vault.deviceType">DEVICE TYPE</span><select id="gnDeviceType"><option data-i18n="vault.deviceTypeReusable">Reusable pen</option><option data-i18n="vault.deviceTypeDisposable">Disposable pen</option><option data-i18n="vault.deviceTypeAutoinjector">Autoinjector</option><option data-i18n="vault.deviceTypeOther">Other device</option></select></label><label><span data-i18n="vault.deviceStatus">STATUS</span><select id="gnDeviceStatus">${DEVICE_STATUSES.map(status => `<option>${status}</option>`).join('')}</select></label></div><label><span data-i18n="vault.deviceLabelNotes">LABEL / NOTES</span><textarea id="gnDeviceNotes" rows="2" placeholder="User-entered identity notes"></textarea></label><button class="btn-full btn-secondary" type="submit" data-i18n="vault.deviceRegister">REGISTER DEVICE IDENTITY</button></form><div class="gn-device-list" id="gnDeviceList"></div></div>
   </section>`);
   installCustomPickers(hero.parentElement || page);
+  window.GN_I18N?.applyTo?.(page);
   const updateTitle = hero.parentElement?.querySelector('.system-update-head strong');
   if (updateTitle) updateTitle.textContent = `WHAT'S NEW // ${APP_VERSION}`;
   const updateCopy = hero.parentElement?.querySelector('#gnSystemUpdateCard p');
@@ -2244,6 +2396,7 @@ function ensureProfileHub() {
   $('gnDeviceForm')?.addEventListener('submit', event => { event.preventDefault(); saveDeviceRecord(); });
   $('gnDeviceList')?.addEventListener('click', handleDeviceAction);
   renderDeviceVault();
+  ensurePasskeySection();
 }
 
 function renderDeviceVault() {
@@ -2323,7 +2476,7 @@ function saveCalculatorReference(type) {
   S.set('inventory', records); appendEventLedger({ type: 'INVENTORY', recordId: records.at(-1).id, label: 'CALCULATOR REFERENCE SAVED' }); queueCloudSync('workspace'); renderInventory(); actionFeedback('REFERENCE SAVED', 'INVENTORY UPDATED // EDUCATIONAL MATH ONLY');
 }
 
-function renderLab() { ensureLabFoundations(); ensureDoseProjection(); ensureCalculatorInventoryActions(); updateSyr(); updateRecon(); updateSupply(); updateDoseProjection(); renderLabFoundations(); }
+function renderLab() { ensureLabFoundations(); ensureDoseProjection(); ensureCalculatorInventoryActions(); updateSyr(); updateRecon(); updateSupply(); updateDoseProjection(); renderLabFoundations(); window.GN_I18N?.applyTo?.(document.getElementById('pageLab')); }
 function positiveNumberField(id, label, maximum) {
   const raw = String($(id)?.value ?? '').trim();
   if (!raw) return { valid: false, message: `ENTER VALID VALUES · ${label} IS REQUIRED` };
@@ -2457,7 +2610,9 @@ function saveMeasurements() {
 
 function ensureDestructiveDialogs() {
   if ($('gnDeleteLocalOverlay')) return;
-  document.body.insertAdjacentHTML('beforeend', `<div class="gn-delete-overlay" id="gnDeleteLocalOverlay" role="dialog" aria-modal="true" aria-labelledby="gnDeleteLocalTitle"><div class="gn-delete-panel"><div class="gn-delete-kicker">// VAULT CONTROL</div><h2 id="gnDeleteLocalTitle">DELETE ALL LOCAL DATA?</h2><p>This removes all shots, weights, peptides, devices, and settings from this device. Cloud records will be restored on next sign-in. This action cannot be undone.</p><label>TYPE DELETE TO CONFIRM<input id="gnDeleteLocalInput" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" oninput="updateDeleteLocalButton(this.value)"></label><div class="gn-delete-actions"><button type="button" class="btn-full btn-secondary" onclick="closeDeleteLocalData()">CANCEL</button><button type="button" class="btn-full gn-delete-confirm" id="gnDeleteLocalConfirm" disabled onclick="confirmDeleteLocalData()">DELETE LOCAL DATA</button></div></div></div><div class="gn-delete-overlay" id="gnDeleteCloudOverlay" role="dialog" aria-modal="true" aria-labelledby="gnDeleteCloudTitle"><div class="gn-delete-panel"><div class="gn-delete-kicker">// CLOUD ACCOUNT CONTROL</div><h2 id="gnDeleteCloudTitle">DELETE CLOUD ACCOUNT?</h2><p>This permanently removes all synced records from cloud storage. Local data on this device is not affected. You will be signed out.</p><p class="gn-delete-note">A secure server request verifies the signed-in account before deletion. The browser never receives the server key.</p><div class="gn-delete-actions"><button type="button" class="btn-full btn-secondary" onclick="closeDeleteCloudAccount()">CANCEL</button><button type="button" class="btn-full gn-delete-confirm" onclick="confirmDeleteCloudAccount()">DELETE CLOUD ACCOUNT</button></div></div></div>`);
+  document.body.insertAdjacentHTML('beforeend', `<div class="gn-delete-overlay" id="gnDeleteLocalOverlay" role="dialog" aria-modal="true" aria-labelledby="gnDeleteLocalTitle"><div class="gn-delete-panel"><div class="gn-delete-kicker" data-i18n="deleteLocal.kicker">// VAULT CONTROL</div><h2 id="gnDeleteLocalTitle" data-i18n="deleteLocal.title">DELETE ALL LOCAL DATA?</h2><p data-i18n="deleteLocal.body">This removes all shots, weights, peptides, devices, and settings from this device. Cloud records will be restored on next sign-in. This action cannot be undone.</p><label><span data-i18n="deleteLocal.typeConfirm">TYPE DELETE TO CONFIRM</span><input id="gnDeleteLocalInput" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" oninput="updateDeleteLocalButton(this.value)"></label><div class="gn-delete-actions"><button type="button" class="btn-full btn-secondary" onclick="closeDeleteLocalData()" data-i18n="deleteLocal.cancel">CANCEL</button><button type="button" class="btn-full gn-delete-confirm" id="gnDeleteLocalConfirm" disabled onclick="confirmDeleteLocalData()" data-i18n="deleteLocal.confirm">DELETE LOCAL DATA</button></div></div></div><div class="gn-delete-overlay" id="gnDeleteCloudOverlay" role="dialog" aria-modal="true" aria-labelledby="gnDeleteCloudTitle"><div class="gn-delete-panel"><div class="gn-delete-kicker" data-i18n="deleteCloud.kicker">// CLOUD ACCOUNT CONTROL</div><h2 id="gnDeleteCloudTitle" data-i18n="deleteCloud.title">DELETE CLOUD ACCOUNT?</h2><p data-i18n="deleteCloud.body">This permanently removes all synced records from cloud storage. Local data on this device is not affected. You will be signed out.</p><p class="gn-delete-note" data-i18n="deleteCloud.note">A secure server request verifies the signed-in account before deletion. The browser never receives the server key.</p><div class="gn-delete-actions"><button type="button" class="btn-full btn-secondary" onclick="closeDeleteCloudAccount()" data-i18n="deleteCloud.cancel">CANCEL</button><button type="button" class="btn-full gn-delete-confirm" onclick="confirmDeleteCloudAccount()" data-i18n="deleteCloud.confirm">DELETE CLOUD ACCOUNT</button></div></div></div>`);
+    window.GN_I18N?.applyTo?.(document.getElementById('gnDeleteLocalOverlay'));
+    window.GN_I18N?.applyTo?.(document.getElementById('gnDeleteCloudOverlay'));
 }
 
 function clearLocalGridNodeData() {
@@ -2496,15 +2651,15 @@ function renderProfile() {
   const updateCard = $('gnSystemUpdateCard');
   if (updateCard) updateCard.hidden = S.get('settings', {}).systemUpdateDismissed === APP_VERSION;
   const profile = getProfile();
-  setText('profNameTxt', window.CU?.defaultName || profile.name || 'NODE_USER');
+  setText('profNameTxt', window.CU?.defaultName || profile.name || tx('profile.anonFallback', 'NODE_USER'));
   setText('profEmail', sessionLabel());
-  setText('profMedTxt', profile.med ? `// ${profile.med.toUpperCase()}` : '// NO MEDICATION SET');
+  setText('profMedTxt', profile.med ? `// ${profile.med.toUpperCase()}` : tx('profile.noMedicationSet', '// NO MEDICATION SET'));
   const currentWeight = latestWeight()?.weight;
-  const height = profile.htFt ? `${profile.htFt}'${profile.htIn || 0}"` : 'Height not entered';
-  setText('gnProfileMedication', profile.med ? `${profile.med}${profile.dose ? ` · ${profile.dose}mg` : ''}` : 'Not entered');
+  const height = profile.htFt ? `${profile.htFt}'${profile.htIn || 0}"` : tx('profile.heightNotEntered', 'Height not entered');
+  setText('gnProfileMedication', profile.med ? `${profile.med}${profile.dose ? ` · ${profile.dose}mg` : ''}` : tx('vault.notEntered', 'Not entered'));
   setText('gnProfileBody', `${height}${currentWeight ? ` · ${Number(currentWeight).toFixed(1)} lb` : ''}`);
   setText('gnProfileVersion', APP_VERSION);
-  setText('gnProfileAccount', state.cloud ? `${state.session?.user?.app_metadata?.provider === 'google' ? 'Signed in with Google' : 'Cloud account connected'} · ${state.session?.user?.email || sessionLabel()}` : 'Local device session');
+  setText('gnProfileAccount', state.cloud ? `${state.session?.user?.app_metadata?.provider === 'google' ? tx('profile.signedInWithGoogle', 'Signed in with Google') : tx('vault.cloudConnected', 'Cloud account connected')} · ${state.session?.user?.email || sessionLabel()}` : tx('profile.localDeviceSession', 'Local device session'));
   setText('gnProfileSync', nodeSyncLabel());
   hydrateProfileFields(profile);
   syncCustomPickers($('pageProfile') || document);
@@ -2512,8 +2667,9 @@ function renderProfile() {
   let status = document.querySelector('.gn-cloud-status');
   const hero = $('profAvaWrap')?.closest('[style*="background:#0e0e16"]');
   if (!status && hero) { status = document.createElement('div'); status.className = 'gn-cloud-status'; hero.parentElement.insertBefore(status, hero.nextSibling); }
-  if (status) status.innerHTML = `<span class="gn-cloud-dot ${state.cloud ? 'cloud' : 'local'}"></span><span>VAULT: ${safeText(state.cloudStatus)} · ${state.cloud ? 'Cloud account connected' : 'Data stays on this device until you connect an account'}</span>`;
+  if (status) status.innerHTML = `<span class="gn-cloud-dot ${state.cloud ? 'cloud' : 'local'}"></span><span>VAULT: ${safeText(state.cloudStatus)} · ${state.cloud ? tx('vault.cloudConnected', 'Cloud account connected') : tx('vault.cloudLocal', 'Data stays on this device until you connect an account')}</span>`;
   renderDeviceVault();
+  ensurePasskeySection();
 }
 
 function dismissSystemUpdate() {
@@ -2545,7 +2701,11 @@ function exportCSV() {
   showToast('CSV export prepared.');
 }
 
-function csvCell(value) { const text = String(value ?? ''); return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text; }
+function csvCell(value) {
+  let text = String(value ?? '');
+  if (/^[=+\-@]/.test(text)) text = `'${text}`;
+  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
 
 function exportBackup() {
   const backup = { app: 'GRID//NODE', version: APP_VERSION, exportedAt: new Date().toISOString(), profile: getProfile(), shots: getAllShots(), weights: getWeights(), measurements: S.get('measurements', []), results: S.get('results', []), notes: S.get('notes', []), symptoms: S.get('symptoms', []), labs: S.get('labs', []), preferences: S.get('preferences', {}), settings: S.get('settings', {}), arsenal: S.get('arsenal', []), researchRecords: S.get('researchRecords', []), devices: S.get('devices', []), inventory: S.get('inventory', []), loadouts: S.get('loadouts', []), eventLedger: S.get('eventLedger', []) };
@@ -2610,7 +2770,8 @@ function handleCSVImportFile(event) {
 }
 function ensureImportDialog() {
   if ($('gnImportOverlay')) return;
-  document.body.insertAdjacentHTML('beforeend', `<div class="gn-import-overlay" id="gnImportOverlay" role="dialog" aria-modal="true" aria-labelledby="gnImportTitle"><div class="gn-import-panel"><div class="gn-import-title" id="gnImportTitle">IMPORT DATA</div><p>Choose a source. GRID//NODE will detect the file format and show a review before commit.</p><label>FROM ANOTHER APP<select id="gnImportSource"><option>Shotsy</option><option>GLAPP</option><option>Generic CSV</option></select></label><label class="gn-import-file">FROM CSV FILE<input type="file" id="gnUnifiedCsvInput" accept=".csv,text/csv"></label><label class="gn-import-file">FROM GRID//NODE BACKUP<input type="file" id="gnBackupInput" accept=".json,application/json"></label><button type="button" class="gn-import-close" onclick="closeImportDialog()">CANCEL</button></div></div>`);
+  document.body.insertAdjacentHTML('beforeend', `<div class="gn-import-overlay" id="gnImportOverlay" role="dialog" aria-modal="true" aria-labelledby="gnImportTitle"><div class="gn-import-panel"><div class="gn-import-title" id="gnImportTitle" data-i18n="import.title">IMPORT DATA</div><p data-i18n="import.copy">Choose a source. GRID//NODE will detect the file format and show a review before commit.</p><label><span data-i18n="import.fromApp">FROM ANOTHER APP</span><select id="gnImportSource"><option data-i18n="import.shotsy">Shotsy</option><option data-i18n="import.glapp">GLAPP</option><option data-i18n="import.genericCsv">Generic CSV</option></select></label><label class="gn-import-file"><span data-i18n="import.fromCsv">FROM CSV FILE</span><input type="file" id="gnUnifiedCsvInput" accept=".csv,text/csv"></label><label class="gn-import-file"><span data-i18n="import.fromBackup">FROM GRID//NODE BACKUP</span><input type="file" id="gnBackupInput" accept=".json,application/json"></label><button type="button" class="gn-import-close" onclick="closeImportDialog()" data-i18n="import.cancel">CANCEL</button></div></div>`);
+    window.GN_I18N?.applyTo?.(document.getElementById('gnImportOverlay'));
   $('gnUnifiedCsvInput')?.addEventListener('change', handleUnifiedCsvSelection);
   $('gnBackupInput')?.addEventListener('change', handleBackupImportFile);
 }
@@ -2952,7 +3113,7 @@ function authShell() {
     <div class="gn-auth-kicker">// PERSONAL BIOTECH OPERATING SYSTEM //</div>
     <div class="gn-auth-title">${recovering ? 'RESET ACCESS' : 'JACK IN'}</div>
     <p class="gn-auth-copy">${recovering ? 'Enter a new password for this GRID//NODE cloud account.' : 'Use a cloud account when you want recovery across devices. Local session keeps your record on this device.'}</p>
-    ${recovering ? '' : '<div class="gn-auth-primary-label">PRIMARY CLOUD PATH</div><div class="gn-google-button-shell" id="gnGoogleButtonMount" aria-label="Continue with Google"></div><div class="gn-auth-privacy"><strong>YOUR DATA STAYS YOURS.</strong><span>Connect cloud recovery only when you choose. GRID//NODE remains a tracking and educational system, not medical advice.</span></div><button class="gn-auth-secondary" id="gnLocalBtn" type="button">CONTINUE LOCALLY</button><details class="gn-auth-options"><summary>OTHER SIGN-IN OPTIONS</summary>'}
+    ${recovering ? '' : '<div class="gn-auth-primary-label">PRIMARY CLOUD PATH</div><div class="gn-google-button-shell" id="gnGoogleButtonMount" aria-label="Continue with Google"></div><button class="gn-auth-passkey" id="gnPasskeyBtn" type="button" data-i18n-aria-label="auth.passkeyAria"><span class="gn-passkey-icon" aria-hidden="true">⌘</span><span data-i18n="auth.continueWithPasskey">CONTINUE WITH PASSKEY</span></button><div class="gn-auth-privacy"><strong>YOUR DATA STAYS YOURS.</strong><span>Connect cloud recovery only when you choose. GRID//NODE remains a tracking and educational system, not medical advice.</span></div><button class="gn-auth-secondary" id="gnLocalBtn" type="button">CONTINUE LOCALLY</button><details class="gn-auth-options"><summary>OTHER SIGN-IN OPTIONS</summary>'}
     <form id="gnAuthForm" novalidate>
       <input class="gn-auth-field" id="gnAuthEmail" type="email" autocomplete="email" placeholder="EMAIL ADDRESS" aria-label="Email address"${recovering ? ' hidden' : ''}>
       <input class="gn-auth-field" id="gnAuthPassword" type="password" autocomplete="${recovering ? 'new-password' : 'current-password'}" placeholder="${recovering ? 'NEW PASSWORD' : 'PASSWORD'}" aria-label="${recovering ? 'New password' : 'Password'}">
@@ -2963,18 +3124,61 @@ function authShell() {
     <div class="gn-auth-message" id="loginMsg" role="status" aria-live="polite"></div>
     <div class="gn-auth-note">// VAULT POLICY: YOUR RECORD STAYS LOCAL UNTIL YOU CONNECT A CLOUD ACCOUNT // GRID//NODE DOES NOT PROVIDE MEDICAL ADVICE //</div>
   </div></div>`;
+  login.querySelector('.gn-auth-card')?.insertAdjacentHTML('afterbegin', '<div class="gn-language-control gn-auth-language-control" role="group" data-i18n-aria-label="lang.switcherAria"><span data-i18n="lang.switcherLabel">LANGUAGE</span><button type="button" data-lang-choice="en" aria-label="English" data-i18n-aria-label="lang.englishName">EN</button><button type="button" data-lang-choice="es" aria-label="Spanish" data-i18n-aria-label="lang.spanishName">ES</button></div>');
+  applyAuthTranslations(recovering);
   $('gnAuthForm')?.addEventListener('submit', event => { event.preventDefault(); submitAuth(); });
   $('gnAuthModeToggle')?.addEventListener('click', toggleAuthMode);
   $('gnAuthReset')?.addEventListener('click', requestPasswordReset);
   $('gnLocalBtn')?.addEventListener('click', enterLocalSession);
   updateAuthMode();
   renderGoogleIdentityButton();
+  wirePasskeyAuth();
 }
 
+function applyAuthTranslations(recovering) {
+  const login = $('login');
+  const title = login?.querySelector('.gn-auth-title');
+  const copy = login?.querySelector('.gn-auth-copy');
+  const note = login?.querySelector('.gn-auth-note');
+  if (title) title.setAttribute('data-i18n', recovering ? 'auth.resetAccess' : 'auth.jackIn');
+  if (copy) copy.setAttribute('data-i18n', recovering ? 'auth.enterNewPassword' : 'landing.cloudVsLocal');
+  if (note) note.setAttribute('data-i18n', 'landing.vaultPolicy');
+  const kicker = login?.querySelector('.gn-auth-kicker');
+  if (kicker) kicker.setAttribute('data-i18n', 'auth.kicker');
+  const primaryPath = login?.querySelector('.gn-auth-primary-label');
+  if (primaryPath) primaryPath.setAttribute('data-i18n', 'auth.primaryCloudPath');
+  const privacyTitle = login?.querySelector('.gn-auth-privacy strong');
+  if (privacyTitle) privacyTitle.setAttribute('data-i18n', 'auth.privacyTitle');
+  const privacyCopy = login?.querySelector('.gn-auth-privacy span');
+  if (privacyCopy) privacyCopy.setAttribute('data-i18n', 'auth.privacyCopy');
+  const otherOptions = login?.querySelector('.gn-auth-options summary');
+  if (otherOptions) otherOptions.setAttribute('data-i18n', 'auth.otherSignInOptions');
+  const email = $('gnAuthEmail');
+  if (email) {
+    email.setAttribute('data-i18n-placeholder', 'auth.email');
+    email.setAttribute('data-i18n-aria-label', 'auth.emailAddress');
+  }
+  const password = $('gnAuthPassword');
+  if (password) {
+    password.setAttribute('data-i18n-placeholder', recovering ? 'auth.newPassword' : 'auth.password');
+    password.setAttribute('data-i18n-aria-label', recovering ? 'auth.enterNewPassword' : 'auth.password');
+  }
+  const submit = $('gnAuthSubmit');
+  if (submit) submit.setAttribute('data-i18n', recovering ? 'auth.updatePassword' : 'auth.signIn');
+  const toggle = $('gnAuthModeToggle');
+  if (toggle) toggle.setAttribute('data-i18n', recovering ? 'auth.backToSignIn' : 'auth.createAccount');
+  const reset = $('gnAuthReset');
+  if (reset) reset.setAttribute('data-i18n', 'auth.resetAccess');
+  const google = $('gnGoogleButtonMount');
+  if (google) google.setAttribute('data-i18n-aria-label', 'auth.continueWithGoogle');
+  const local = $('gnLocalBtn');
+  if (local) local.setAttribute('data-i18n', 'auth.continueLocally');
+  window.GN_I18N?.applyTo?.(login);
+}
 function updateAuthMode() {
   const submit = $('gnAuthSubmit'), toggle = $('gnAuthModeToggle');
-  if (submit) submit.textContent = authMode === 'recovery' ? 'UPDATE PASSWORD' : authMode === 'signin' ? 'SIGN IN TO CLOUD' : 'CREATE CLOUD ACCOUNT';
-  if (toggle) toggle.textContent = authMode === 'signin' ? 'CREATE ACCOUNT' : 'BACK TO SIGN IN';
+  if (submit) submit.textContent = authMode === 'recovery' ? tx('auth.updatePassword', 'UPDATE PASSWORD') : authMode === 'signin' ? tx('auth.signIn', 'SIGN IN TO CLOUD') : tx('auth.createCloudAccount', 'CREATE CLOUD ACCOUNT');
+  if (toggle) toggle.textContent = authMode === 'signin' ? tx('auth.createAccount', 'CREATE ACCOUNT') : tx('auth.backToSignIn', 'BACK TO SIGN IN');
 }
 function toggleAuthMode() { if (authMode === 'recovery') { passwordRecoveryActive = false; authMode = 'signin'; authShell(); return; } authMode = authMode === 'signin' ? 'signup' : 'signin'; updateAuthMode(); setAuthMessage('', false); }
 function setAuthMessage(message, error = false) { const element = $('loginMsg'); if (element) { element.textContent = message; element.style.color = error ? '#ff5577' : '#8295a0'; } }
@@ -3061,6 +3265,7 @@ async function handleGoogleCredential(response) {
     const session = await signInWithGoogleIdToken(response?.credential);
     if (!session) throw new Error('NO_SESSION');
     await completeCloudSession(session);
+    maybeOfferPasskeyRegistration();
   } catch (error) {
     setAuthMessage('// GOOGLE SIGN-IN COULD NOT COMPLETE — RETRY OR USE EMAIL', true);
     host?.classList.remove('loading');
@@ -3094,7 +3299,7 @@ async function submitAuth() {
       await completeCloudSession(session);
     } else if (authMode === 'signup') {
       const result = await signUpCloud(email, password);
-      if (result?.session) { await completeCloudSession(result.session); } else { setAuthMessage('// ACCOUNT CREATED — CHECK YOUR EMAIL TO CONFIRM', false); }
+      if (result?.session) { await completeCloudSession(result.session); maybeOfferPasskeyRegistration(); } else { setAuthMessage('// ACCOUNT CREATED — CHECK YOUR EMAIL TO CONFIRM', false); }
     } else {
       const session = await signInCloud(email, password);
       if (!session) throw new Error('NO_SESSION');
@@ -3112,6 +3317,7 @@ async function handleGoogleSignIn() {
   setAuthMessage('// OPENING GOOGLE AUTHENTICATION...', false);
   try {
     await signInWithGoogle();
+    maybeOfferPasskeyRegistration();
   } catch (error) {
     const disabled = error.message === 'GOOGLE_AUTH_DISABLED';
     setAuthMessage(disabled ? '// GOOGLE SIGN-IN IS NOT ENABLED YET — USE EMAIL OR CONTINUE LOCALLY' : error.message === 'CLOUD_UNAVAILABLE' ? '// GOOGLE AUTH UNAVAILABLE — CONTINUE LOCALLY OR RETRY WHEN ONLINE' : '// GOOGLE AUTH COULD NOT START — RETRY OR USE EMAIL', true);
@@ -3132,6 +3338,7 @@ async function completeCloudSession(session) {
   const localWorkspace = mayMigrateLocal ? captureWorkspace('local') : null;
   activateSession(session, true);
   const accountWorkspace = captureWorkspace(state.accountKey);
+  showApp();
   const hydration = await hydrateCloudData();
   if (hydration.ok && localWorkspace && workspaceHasData(localWorkspace) && !workspaceHasData(accountWorkspace)) {
     const remote = hydration.remote || {};
@@ -3153,17 +3360,18 @@ async function completeCloudSession(session) {
 }
 
 function showApp() {
+  maybeShowWhatsNew();
   modules.showScreen('app');
   modules.loadApp();
   window.setTimeout(startOrientationIfNeeded, 350);
 }
 
 const ORIENTATION_STEPS = [
-  { page: 'Dash', target: '.fab', title: 'LOG YOUR FIRST SHOT', copy: 'The red SHOT control opens the logging flow from anywhere inside your private grid.' },
-  { page: 'Dash', target: '.bottom-nav', title: 'MOVE THROUGH THE GRID', copy: 'HOME, SHOTS, SIGNAL, and LAB keep every core system one tap away.' },
-  { page: 'Log', target: '#shotsRegionScanner', title: 'MAP THE LOCATION', copy: 'Choose a body region and a precise zone. The selected location becomes the SHOT record source of truth.' },
-  { page: 'Dash', target: '#phaseCard', title: 'READ THE PHASE ENGINE', copy: 'This educational estimate connects time since your last SHOT with your own logged observations.' },
-  { page: 'Dash', target: '#navLab', title: 'OPEN LAB SYSTEMS', copy: 'Calculators, research records, inventory, and device identity stay organized behind one launchpad.' }
+  { page: 'Dash', target: '.fab', titleKey: 'orientation.logShotTitle', copyKey: 'orientation.logShotCopy' },
+  { page: 'Dash', target: '.bottom-nav', titleKey: 'orientation.moveGridTitle', copyKey: 'orientation.moveGridCopy' },
+  { page: 'Log', target: '#shotsRegionScanner', titleKey: 'orientation.mapLocationTitle', copyKey: 'orientation.mapLocationCopy' },
+  { page: 'Dash', target: '#phaseCard', titleKey: 'orientation.readPhaseTitle', copyKey: 'orientation.readPhaseCopy' },
+  { page: 'Dash', target: '#navLab', titleKey: 'orientation.openLabTitle', copyKey: 'orientation.openLabCopy' }
 ];
 
 function finishOrientation() {
@@ -3184,14 +3392,16 @@ function renderOrientationStep(index) {
   modules.showPage(step.page, document.getElementById({ Dash: 'navDash', Log: 'navLog' }[step.page]));
   const target = document.querySelector(step.target);
   target?.classList.add('gn-orientation-target');
-  overlay.querySelector('[data-orientation-count]').textContent = `SYSTEM ORIENTATION // ${index + 1} OF ${ORIENTATION_STEPS.length}`;
-  overlay.querySelector('h2').textContent = step.title;
-  overlay.querySelector('p').textContent = step.copy;
+  overlay.querySelector('[data-orientation-count]').textContent = tx('orientation.step', 'SYSTEM ORIENTATION // {current} OF {total}', { current: index + 1, total: ORIENTATION_STEPS.length });
+  overlay.querySelector('h2').textContent = tx(step.titleKey, '');
+  overlay.querySelector('p').textContent = tx(step.copyKey, '');
   overlay.querySelector('.gn-orientation-dots').innerHTML = ORIENTATION_STEPS.map((_, dot) => `<i class="${dot === index ? 'active' : ''}"></i>`).join('');
   const next = overlay.querySelector('[data-orientation-next]');
-  next.textContent = index === ORIENTATION_STEPS.length - 1 ? 'ENTER GRID' : 'NEXT';
+  next.textContent = tx(index === ORIENTATION_STEPS.length - 1 ? 'orientation.enter' : 'orientation.next', index === ORIENTATION_STEPS.length - 1 ? 'ENTER GRID' : 'NEXT');
   next.onclick = () => renderOrientationStep(index + 1);
-  overlay.querySelector('[data-orientation-skip]').onclick = finishOrientation;
+  const skip = overlay.querySelector('[data-orientation-skip]');
+  skip.textContent = tx('orientation.skip', 'SKIP');
+  skip.onclick = finishOrientation;
   window.clearTimeout(orientationTimer);
   orientationTimer = window.setTimeout(() => renderOrientationStep(index + 1), 8000);
 }
@@ -3202,9 +3412,257 @@ function startOrientationIfNeeded() {
   renderOrientationStep(0);
 }
 
-function startGridNode() {
+
+  /* ── PASSKEY (WebAuthn) — additive sign-in option ─────────────────── */
+  let webAuthnLoadPromise = null;
+
+  async function loadWebAuthnLibrary() {
+    if (window.SimpleWebAuthnBrowser?.startRegistration) return window.SimpleWebAuthnBrowser;
+    if (webAuthnLoadPromise) return webAuthnLoadPromise;
+    webAuthnLoadPromise = new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-gridnode-webauthn]');
+      if (existing) { existing.addEventListener('load', () => resolve(window.SimpleWebAuthnBrowser), { once: true }); return; }
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/@simplewebauthn/browser@10.0.0/dist/bundle/index.umd.min.js';
+      script.async = true;
+      script.dataset.gridnodeWebauthn = 'true';
+      script.onload = () => resolve(window.SimpleWebAuthnBrowser);
+      script.onerror = () => reject(new Error('WEBAUTHN_LIBRARY_UNAVAILABLE'));
+      document.head.appendChild(script);
+    });
+    return webAuthnLoadPromise;
+  }
+
+  async function isWebAuthnSupported() {
+    if (!window.PublicKeyCredential) return false;
+    if (typeof window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable !== 'function') return false;
+    try { return await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable(); }
+    catch (_) { return false; }
+  }
+
+  function webauthnFunctionsUrl() {
+    return `${CLOUD_CONFIG.url}/functions/v1`;
+  }
+
+  async function signInWithPasskey(email) {
+    const client = await getCloudClient();
+    if (!client) throw new Error('CLOUD_UNAVAILABLE');
+    const { startAuthentication } = await loadWebAuthnLibrary();
+    const functionsUrl = webauthnFunctionsUrl();
+    const optionsResponse = await fetch(`${functionsUrl}/webauthn-authenticate-options`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': CLOUD_CONFIG.anonKey },
+      body: JSON.stringify({ email: email || undefined }),
+    });
+    if (!optionsResponse.ok) {
+      if (optionsResponse.status === 404) throw new Error('NO_PASSKEY_REGISTERED');
+      throw new Error(`AUTH_OPTIONS_FAILED: ${await optionsResponse.text()}`);
+    }
+    const options = await optionsResponse.json();
+    let authResponse;
+    try {
+      authResponse = await startAuthentication(options);
+    } catch (error) {
+      if (error.name === 'NotAllowedError') throw new Error('USER_CANCELLED');
+      throw error;
+    }
+    const verifyResponse = await fetch(`${functionsUrl}/webauthn-authenticate-verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': CLOUD_CONFIG.anonKey },
+      body: JSON.stringify({ authResp: authResponse, challengeToken: options.challengeToken }),
+    });
+    if (!verifyResponse.ok) throw new Error('AUTH_VERIFY_FAILED');
+    const { access_token, refresh_token } = await verifyResponse.json();
+    const { data, error } = await client.auth.setSession({ access_token, refresh_token });
+    if (error) throw error;
+    return data.session;
+  }
+
+  async function registerPasskey(deviceName) {
+    const session = await getCloudSession();
+    if (!session) throw new Error('NOT_AUTHENTICATED');
+    const { startRegistration } = await loadWebAuthnLibrary();
+    const functionsUrl = webauthnFunctionsUrl();
+    const optionsResponse = await fetch(`${functionsUrl}/webauthn-register-options`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}`, 'apikey': CLOUD_CONFIG.anonKey },
+      body: JSON.stringify({ userId: session.user.id, deviceName }),
+    });
+    if (!optionsResponse.ok) throw new Error(`REGISTER_OPTIONS_FAILED: ${await optionsResponse.text()}`);
+    const options = await optionsResponse.json();
+    let attestationResponse;
+    try {
+      attestationResponse = await startRegistration(options);
+    } catch (error) {
+      if (error.name === 'NotAllowedError') throw new Error('USER_CANCELLED');
+      throw error;
+    }
+    const verifyResponse = await fetch(`${functionsUrl}/webauthn-register-verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}`, 'apikey': CLOUD_CONFIG.anonKey },
+      body: JSON.stringify({ attResp: attestationResponse, challengeToken: options.challengeToken, deviceName }),
+    });
+    if (!verifyResponse.ok) throw new Error(`REGISTER_VERIFY_FAILED: ${await verifyResponse.text()}`);
+    return await verifyResponse.json();
+  }
+
+  async function listPasskeys() {
+    const session = await getCloudSession();
+    if (!session) return [];
+    const response = await fetch(`${CLOUD_CONFIG.url}/rest/v1/webauthn_credentials?user_id=eq.${session.user.id}&select=id,device_name,aaguid,transports,last_used_at,created_at&order=created_at.desc`, {
+      headers: { 'apikey': CLOUD_CONFIG.anonKey, 'Authorization': `Bearer ${session.access_token}` },
+    });
+    if (!response.ok) return [];
+    return await response.json();
+  }
+
+  async function revokePasskey(id) {
+    const session = await getCloudSession();
+    if (!session) throw new Error('NOT_AUTHENTICATED');
+    const response = await fetch(`${CLOUD_CONFIG.url}/rest/v1/rpc/revoke_webauthn_credential`, {
+      method: 'POST',
+      headers: { 'apikey': CLOUD_CONFIG.anonKey, 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential_id: id }),
+    });
+    if (!response.ok) throw new Error('REVOKE_FAILED');
+  }
+
+  function guessDeviceName() {
+    const userAgent = navigator.userAgent;
+    if (/iPhone/.test(userAgent)) return 'iPhone';
+    if (/iPad/.test(userAgent)) return 'iPad';
+    if (/Mac OS/.test(userAgent)) return 'Mac';
+    if (/Windows/.test(userAgent)) return 'Windows PC';
+    if (/Android/.test(userAgent)) return 'Android';
+    return 'Unknown device';
+  }
+
+  async function wirePasskeyAuth() {
+    const button = $('gnPasskeyBtn');
+    if (!button || button.dataset.gnPasskeyBound) return;
+    button.dataset.gnPasskeyBound = 'true';
+    if (!(await isWebAuthnSupported())) { button.hidden = true; return; }
+    const emailInput = $('gnAuthEmail');
+    if (emailInput) emailInput.autocomplete = 'username webauthn';
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      setAuthMessage('// ' + tx('auth.connecting', 'CONNECTING...'), false);
+      try {
+        const email = $('gnAuthEmail')?.value?.trim() || null;
+        const session = await signInWithPasskey(email);
+        if (session) {
+          await completeCloudSession(session);
+          setAuthMessage('// ' + tx('auth.passkeyWelcome', 'WELCOME BACK'), false);
+        }
+      } catch (error) {
+        if (error.message === 'NO_PASSKEY_REGISTERED') setAuthMessage('// ' + tx('auth.noPasskeyFound', 'NO PASSKEY ON FILE — USE EMAIL OR REGISTER'), true);
+        else if (error.message === 'USER_CANCELLED') setAuthMessage('', false);
+        else setAuthMessage('// ' + tx('auth.passkeyError', 'PASSKEY ERROR: {message}', { message: error.message }), true);
+      } finally {
+        button.disabled = false;
+      }
+    });
+  }
+
+  async function ensurePasskeySection() {
+    const page = $('pageProfile');
+    if (!page || $('gnPasskeysCard')) return;
+    if (!state.cloud) return;
+    const hub = page.querySelector('[data-gn-profile-hub]');
+    if (!hub) return;
+    hub.insertAdjacentHTML('beforeend', `<section class="gn-passkeys-card" id="gnPasskeysCard" aria-labelledby="gnPasskeysTitle">
+      <div class="gn-foundation-kicker" data-i18n="auth.passkeysKicker">// PASSKEYS</div>
+      <h3 id="gnPasskeysTitle" data-i18n="auth.passkeysTitle">MANAGE PASSKEYS</h3>
+      <p class="gn-measurements-copy" data-i18n="auth.passkeysCopy">Sign in with your fingerprint, face, or security key.</p>
+      <ul class="gn-passkeys-list" data-gn-passkeys-list></ul>
+      <button type="button" class="btn-full btn-primary" id="gnRegisterPasskeyBtn" data-i18n="auth.registerNewPasskey">+ REGISTER A NEW PASSKEY</button>
+    </section>`);
+    $('gnRegisterPasskeyBtn')?.addEventListener('click', async () => {
+      if (!(await isWebAuthnSupported())) { showToast(tx('auth.passkeyNotSupported', 'YOUR BROWSER DOES NOT SUPPORT PASSKEYS'), true); return; }
+      try {
+        await registerPasskey(guessDeviceName());
+        showToast(tx('auth.passkeyRegistered', 'PASSKEY REGISTERED'));
+        await renderPasskeyList();
+      } catch (error) {
+        if (error.message === 'USER_CANCELLED') return;
+        showToast(error.message, true);
+      }
+    });
+    await renderPasskeyList();
+    window.GN_I18N?.applyTo?.(page);
+  }
+
+  async function renderPasskeyList() {
+    const list = document.querySelector('[data-gn-passkeys-list]');
+    if (!list) return;
+    const passkeys = await listPasskeys();
+    if (!passkeys.length) {
+      list.innerHTML = `<li class="gn-passkeys-empty" data-i18n="auth.noPasskeys">NO PASSKEYS REGISTERED</li>`;
+      return;
+    }
+    list.innerHTML = passkeys.map(passkey => `<li class="gn-passkey-row" data-id="${safeText(passkey.id)}">
+      <div><b>${safeText(passkey.device_name || 'DEVICE')}</b><small>${safeText(tx('auth.lastUsed', 'LAST USED'))} ${safeText(formatDate(passkey.last_used_at || passkey.created_at))}</small></div>
+      <button class="gn-passkey-revoke" type="button" data-revoke="${safeText(passkey.id)}">${safeText(tx('vault.signOut', 'SIGN OUT'))}</button>
+    </li>`).join('');
+    list.querySelectorAll('[data-revoke]').forEach(button => button.addEventListener('click', async () => {
+      const confirmBox = typeof confirmDialog === 'function' ? confirmDialog : (title, copy) => window.confirm(`${title}
+${copy}`);
+      if (!await confirmBox(tx('auth.revokePasskeyConfirm', 'REVOKE THIS PASSKEY?'), tx('auth.passkeysCopy', 'Sign in with your fingerprint, face, or security key.'))) return;
+      try {
+        await revokePasskey(button.dataset.revoke);
+        showToast(tx('auth.passkeyRevoked', 'PASSKEY REVOKED'));
+        await renderPasskeyList();
+      } catch (error) {
+        showToast(error.message, true);
+      }
+    }));
+  }
+
+
+  async function maybeOfferPasskeyRegistration() {
+    try {
+      if (!(await isWebAuthnSupported())) return;
+      if (!(await getCloudSession())) return;
+      let overlay = document.getElementById('gnPasskeyUpsell');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'gnPasskeyUpsell';
+        overlay.className = 'gn-passkey-upsell';
+        overlay.innerHTML = `<div class="gn-passkey-upsell-card" role="dialog" aria-modal="true" aria-labelledby="gnPasskeyUpsellTitle">
+          <div class="gn-whatsnew-kicker" data-i18n="auth.passkeysKicker">// PASSKEYS</div>
+          <h3 id="gnPasskeyUpsellTitle" data-i18n="auth.registerPasskeyTitle">REGISTER A PASSKEY?</h3>
+          <p data-i18n="auth.registerPasskeyCopy">Use your fingerprint, face, or security key to sign in faster next time.</p>
+          <div class="gn-passkey-upsell-actions">
+            <button type="button" class="btn-full btn-primary" data-passkey-upsell-register data-i18n="auth.registerNewPasskey">+ REGISTER A NEW PASSKEY</button>
+            <button type="button" class="btn-full btn-secondary" data-passkey-upsell-later data-i18n="auth.later">LATER</button>
+          </div>
+        </div>`;
+        overlay.addEventListener('click', async event => {
+          if (event.target === overlay || event.target.closest('[data-passkey-upsell-later]')) { overlay.classList.remove('active'); return; }
+          if (event.target.closest('[data-passkey-upsell-register]')) {
+            const button = overlay.querySelector('[data-passkey-upsell-register]');
+            if (button) button.disabled = true;
+            try {
+              await registerPasskey(guessDeviceName());
+              showToast(tx('auth.passkeyRegistered', 'PASSKEY REGISTERED'));
+            } catch (error) {
+              if (error.message !== 'USER_CANCELLED') showToast(error.message, true);
+            } finally {
+              overlay.classList.remove('active');
+            }
+          }
+        });
+        document.body.appendChild(overlay);
+      }
+      window.GN_I18N?.applyTo?.(overlay);
+      overlay.classList.add('active');
+    } catch (_) { /* auth or storage hiccup — never block the main flow */ }
+  }
+
+async function startGridNode() {
   if (bootRunning) return;
   bootRunning = true;
+  if (window.GN_I18N?.ready) await window.GN_I18N.ready;
   modules.showScreen('boot');
   const term = $('bootTerm'), bar = $('bootBar'), pct = $('bootPct');
   if (term) term.innerHTML = '';
@@ -3213,13 +3671,13 @@ function startGridNode() {
     bar.querySelectorAll('.boot-prog-seg').forEach(segment => segment.classList.remove('on', 'lead'));
   }
   const messages = [
-    ['> Initializing Personal Biotech OS', 'info', 'CORE HANDSHAKE'],
-    ['> Preparing SHOTS', 'info', 'SHOTS ONLINE'],
-    ['> Preparing Phase Engine', 'info', 'PHASE ENGINE ONLINE'],
-    ['> Preparing RESULTS', 'info', 'RESULTS ONLINE'],
-    ['> Preparing LAB + VAULT', 'info', 'LAB + VAULT ONLINE'],
-    ['> Loading local records', 'warn', 'LOCAL RECORDS'],
-    ['> Protocol workspace ready', 'ok', 'SYSTEM ONLINE']
+    [tx('boot.line1', '> Initializing Personal Biotech OS'), 'info', tx('boot.status1', 'CORE HANDSHAKE')],
+    [tx('boot.line2', '> Preparing SHOTS'), 'info', tx('boot.status2', 'SHOTS ONLINE')],
+    [tx('boot.line3', '> Preparing Phase Engine'), 'info', tx('boot.status3', 'PHASE ENGINE ONLINE')],
+    [tx('boot.line4', '> Preparing RESULTS'), 'info', tx('boot.status4', 'RESULTS ONLINE')],
+    [tx('boot.line5', '> Preparing LAB + VAULT'), 'info', tx('boot.status5', 'LAB + VAULT ONLINE')],
+    [tx('boot.line6', '> Loading local records'), 'warn', tx('boot.status6', 'LOCAL RECORDS')],
+    [tx('boot.line7', '> Protocol workspace ready'), 'ok', tx('boot.status7', 'SYSTEM ONLINE')]
   ];
   messages.forEach(([message, className, status], index) => setTimeout(() => {
     if (term) { const line = document.createElement('div'); line.className = `boot-line ${className}`; line.textContent = message; term.appendChild(line); term.scrollTop = term.scrollHeight; }
@@ -3246,6 +3704,41 @@ async function confirmSignOut() {
   modules.showScreen('landing');
 }
 
+  const whatsNewKey = 'gn_whatsnew_seen';
+  function maybeShowWhatsNew() {
+    try {
+      if (localStorage.getItem(whatsNewKey) === APP_VERSION) return;
+      if (!document.getElementById('gnWhatsNewOverlay')) {
+        const overlay = document.createElement('div');
+        overlay.className = 'gn-whatsnew-overlay';
+        overlay.id = 'gnWhatsNewOverlay';
+        overlay.innerHTML = `<div class="gn-whatsnew-card" role="dialog" aria-modal="true" aria-labelledby="gnWhatsNewTitle">
+          <div class="gn-whatsnew-kicker" data-i18n="whatsnew.title">WHAT'S NEW</div>
+          <div class="gn-whatsnew-version">v${APP_VERSION}</div>
+          <h2 id="gnWhatsNewTitle" data-i18n="whatsnew.headline">A CLEANER GRID, IN ANY LIGHT</h2>
+          <ul>
+            <li data-i18n="whatsnew.b1">Daylight theme now covers every surface — Vault, LAB, and every modal.</li>
+            <li data-i18n="whatsnew.b2">Mobile-first polish: bigger touch targets, full bottom nav, no clipped Spanish.</li>
+            <li data-i18n="whatsnew.b3">Faster reloads with a refreshed service worker and safer security headers.</li>
+          </ul>
+          <div class="gn-whatsnew-actions">
+            <button type="button" class="btn-full btn-primary" data-whatsnew-dismiss data-i18n="whatsnew.cta">ENTER THE GRID</button>
+            <button type="button" class="btn-full btn-secondary" data-whatsnew-dismiss data-i18n="whatsnew.dismiss">DISMISS</button>
+          </div>
+        </div>`;
+        overlay.addEventListener('click', event => {
+          if (event.target === overlay || event.target.closest('[data-whatsnew-dismiss]')) {
+            try { localStorage.setItem(whatsNewKey, APP_VERSION); } catch (_) {}
+            overlay.classList.remove('active');
+          }
+        });
+        document.body.appendChild(overlay);
+      }
+      window.GN_I18N?.applyTo?.(document.getElementById('gnWhatsNewOverlay'));
+      document.getElementById('gnWhatsNewOverlay')?.classList.add('active');
+    } catch (_) { /* storage or DOM unavailable */ }
+  }
+
 async function restoreSession() {
   if (passwordRecoveryActive) { authShell(); modules.showScreen('login'); return; }
   const local = restoreLocalSession();
@@ -3268,6 +3761,17 @@ async function wireCloudAuthEvents() {
 
 function wireGlobalEvents() {
   $('signOutOverlay')?.addEventListener('click', event => { if (event.target.id === 'signOutOverlay') closeSignOutModal(); });
+  document.addEventListener('click', event => {
+    const button = event.target?.closest?.('[data-lang-choice]');
+    if (!button) return;
+    event.preventDefault();
+    const lang = button.getAttribute('data-lang-choice');
+    if (lang) window.GN_I18N?.setLang(lang);
+  });
+  document.addEventListener('gn:langchange', () => {
+    if ($('login')?.classList.contains('active')) authShell();
+    if (state.session) modules.refreshAll();
+  });
   window.addEventListener('storage', event => { if (!event.key?.includes('_shots') && !event.key?.includes('_weights')) return; if (state.session) modules.refreshAll(); });
   window.addEventListener('error', event => console.warn('[GRID//NODE runtime]', event.error || event.message));
 }
@@ -3275,7 +3779,7 @@ function wireGlobalEvents() {
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   navigator.serviceWorker
-    .register('/sw.js?v=20260720.36', { updateViaCache: 'none' })
+    .register('/sw.js?v=20260731.9', { updateViaCache: 'none' })
     .then(registration => registration.update())
     .catch(() => {});
 }
@@ -3290,6 +3794,10 @@ window.GN = {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
+  if (window.GN_I18N?.ready) {
+    await window.GN_I18N.ready;
+    window.GN_I18N.applyTo(document);
+  }
   bridge();
   injectStableStyles();
   modules.initModules();

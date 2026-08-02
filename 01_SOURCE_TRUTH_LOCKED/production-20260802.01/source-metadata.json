@@ -40,8 +40,8 @@
       "sha256": "79dae4e469c343efd95e69018a9d70baae53c2f5f00b3918a68929ea21f988d9"
     },
     "js/gridnode-bundle.js": {
-      "bytes": 282242,
-      "sha256": "eef812c08d01b26cfcd4e73253b5f76c69f2f1d86f1c4bd3c76c6b9ed123c3d4"
+      "bytes": 287490,
+      "sha256": "cf6c394805ab05106b598833d4cbaaacbae86047235ba1a8ad3a968f8580d33a"
     },
     "manifest.json": {
       "bytes": 987,
@@ -52,9 +52,9 @@
       "sha256": "b7746fc2bc0082809f2ad847ab93cbcc3221b334746fcc06811b0a78e5da9f89"
     }
   },
-  "metadata_note": "Re-locked 2026-08-02 from the working tree after byte-identity verification against live production: index.html and js/gridnode-bundle.js fetched from https://gridnode.network match the worktree exactly. Prior lock production-20260720.36 retained for history; scripts/verify.sh LOCKED_ROOT points here. Bundle remains the canonical protected runtime; build-bundle.sh guard still refuses module-generated bundles smaller than this baseline.",
+  "metadata_note": "Re-locked 2026-08-02 (refresh after Operation Financial Freedom Phase 1 bundle edits): storage shape coercion, save-path S.set honoring, double-submit guards, cloud sync serialization/backlog, newest-wins hydrate merge, validation and CSV formula escaping. Byte-identical to live production at lock time; bundle is the canonical protected runtime.",
   "production_branch": null,
   "release_marker": "20260802.01",
-  "retrieved_at_utc": "2026-08-02T16:15:20Z",
+  "retrieved_at_utc": "2026-08-02T16:47:07Z",
   "runtime_version": "2.1.7"
 }

@@ -1,4 +1,4 @@
-﻿/* GRID//NODE stable classic delivery bundle. Source remains modular in gridnode-core.js, gridnode-modules.js, and gridnode-app.js. */
+/* GRID//NODE stable classic delivery bundle. Source remains modular in gridnode-core.js, gridnode-modules.js, and gridnode-app.js. */
 
 /* GRID//NODE stable core
  * State, local persistence, session handling, and optional Supabase sync.
@@ -75,7 +75,11 @@ const S = Object.freeze({
     for (const storageKey of candidates) {
       try {
         const value = jsonParse(localStorage.getItem(storageKey), undefined);
-        if (value !== undefined && value !== null) return value;
+        if (value !== undefined && value !== null) {
+          if (Array.isArray(fallback)) return Array.isArray(value) ? value : fallback;
+          if (fallback !== null && typeof fallback === 'object') return value && typeof value === 'object' && !Array.isArray(value) ? value : fallback;
+          return value;
+        }
       } catch (error) {
         console.warn('[GRID//NODE storage.read]', storageKey, error);
       }
@@ -386,6 +390,8 @@ function cloudWeightPayload(record, userId) {
 
 async function syncShot(record) {
   if (!state.cloud || !state.cloudClient || !state.session?.user?.id) return;
+  if (!record?.id || syncInFlight.has(`shot:${record.id}`)) return;
+  syncInFlight.add(`shot:${record.id}`);
   try {
     const query = record.cloudId
       ? state.cloudClient.from('shots').upsert(cloudShotPayload(record, state.session.user.id)).select().single()
@@ -396,17 +402,23 @@ async function syncShot(record) {
       record.cloudId = data.id;
       const all = getAllShots();
       const index = all.findIndex(item => item.id === record.id);
-      if (index >= 0) { all[index] = record; S.set('shots', all); }
+      if (index >= 0) { all[index] = record; if (!S.set('shots', all)) console.warn('[GRID//NODE cloud shot sync] failed to persist cloudId'); }
     }
     state.cloudStatus = 'CLOUD_SYNCED';
   } catch (error) {
     state.cloudStatus = 'LOCAL_BACKUP';
+    syncPassFailed = true;
+    enqueueSync('shot', record);
     console.warn('[GRID//NODE cloud shot sync]', error);
+  } finally {
+    syncInFlight.delete(`shot:${record.id}`);
   }
 }
 
 async function syncWeight(record) {
   if (!state.cloud || !state.cloudClient || !state.session?.user?.id) return;
+  if (!record?.id || syncInFlight.has(`weight:${record.id}`)) return;
+  syncInFlight.add(`weight:${record.id}`);
   try {
     const query = record.cloudId
       ? state.cloudClient.from('weights').upsert(cloudWeightPayload(record, state.session.user.id)).select().single()
@@ -417,12 +429,16 @@ async function syncWeight(record) {
       record.cloudId = data.id;
       const all = getWeights();
       const index = all.findIndex(item => item.id === record.id);
-      if (index >= 0) { all[index] = record; S.set('weights', all); }
+      if (index >= 0) { all[index] = record; if (!S.set('weights', all)) console.warn('[GRID//NODE cloud weight sync] failed to persist cloudId'); }
     }
     state.cloudStatus = 'CLOUD_SYNCED';
   } catch (error) {
     state.cloudStatus = 'LOCAL_BACKUP';
+    syncPassFailed = true;
+    enqueueSync('weight', record);
     console.warn('[GRID//NODE cloud weight sync]', error);
+  } finally {
+    syncInFlight.delete(`weight:${record.id}`);
   }
 }
 
@@ -501,7 +517,9 @@ async function flushCloudDeletes() {
       console.warn('[GRID//NODE cloud delete]', error);
     }
   }
-  S.set('cloudDeletes', remaining);
+  if (remaining.length !== pending.length) {
+    if (!S.set('cloudDeletes', remaining)) console.warn('[GRID//NODE cloud delete] could not persist queue; retaining all pending tombstones');
+  }
   state.cloudStatus = remaining.length ? 'LOCAL_BACKUP' : 'CLOUD_SYNCED';
   return remaining.length === 0;
 }
@@ -610,12 +628,24 @@ async function hydrateCloudData() {
 }
 
 function mergeRecords(localRecords, remoteRecords, identity) {
-  const merged = [...localRecords];
-  const identities = new Set(merged.map(identity));
-  for (const record of remoteRecords) {
-    if (!identities.has(identity(record))) merged.push(record);
+  const localList = Array.isArray(localRecords) ? localRecords : [];
+  const remoteList = Array.isArray(remoteRecords) ? remoteRecords : [];
+  const byId = new Map();
+  for (const record of localList) {
+    let id;
+    try { id = identity(record); } catch (error) { id = JSON.stringify(record); }
+    byId.set(id, record);
   }
-  return merged.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+  for (const record of remoteList) {
+    let id;
+    try { id = identity(record); } catch (error) { id = JSON.stringify(record); }
+    const local = byId.get(id);
+    if (!local) { byId.set(id, record); continue; }
+    const localTime = new Date(local.updatedAt || local.modifiedAt || local.createdAt || local.date || 0).getTime();
+    const remoteTime = new Date(record.updatedAt || record.modifiedAt || record.createdAt || record.date || 0).getTime();
+    if (Number.isNaN(localTime) || remoteTime > localTime) byId.set(id, record);
+  }
+  return [...byId.values()].sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
 }
 
 function mergeJsonRecords(localRecords, remoteRecords) {
@@ -624,8 +654,12 @@ function mergeJsonRecords(localRecords, remoteRecords) {
   return mergeRecords(local, remote, record => record && typeof record === 'object' ? record.id || JSON.stringify(record) : String(record));
 }
 
+let syncPassFailed = false;
+const syncInFlight = new Set();
+
 async function syncAllCloudData() {
   if (!state.cloud) return;
+  syncPassFailed = false;
   await flushCloudDeletes();
   await Promise.all([
     ...getAllShots().map(record => syncShot(record)),
@@ -633,11 +667,24 @@ async function syncAllCloudData() {
     syncProfile(getProfile()),
     syncWorkspace()
   ]);
+  if (!syncPassFailed) {
+    const queue = S.get('syncQueue', []);
+    if (queue.length) S.set('syncQueue', []);
+  }
 }
 
 function queueCloudSync(kind, record) {
   const work = kind === 'shot' ? syncShot(record) : kind === 'weight' ? syncWeight(record) : kind === 'profile' ? syncProfile(record) : syncWorkspace();
   work.catch(error => console.warn('[GRID//NODE cloud queue]', error));
+}
+
+function enqueueSync(kind, record) {
+  const id = record?.id || record?.cloudId || kind;
+  const queue = S.get('syncQueue', []);
+  const entry = { kind, id, cloudId: record?.cloudId || null, at: Date.now() };
+  const index = queue.findIndex(item => item.kind === kind && item.id === id);
+  if (index >= 0) queue[index] = entry; else queue.push(entry);
+  S.set('syncQueue', queue);
 }
 
 function sessionLabel() {
@@ -670,12 +717,37 @@ async function deleteCloudAccount() {
 }
 
 function migrateLegacyLocalData() {
-  if (state.accountKey !== 'local') return;
-  for (const key of WORKSPACE_KEYS) {
-    const current = localStorage.getItem(`gn_local_${key}`);
-    if (current !== null) continue;
-    const legacy = localStorage.getItem(`gn_0_${key}`);
-    if (legacy !== null) localStorage.setItem(`gn_local_${key}`, legacy);
+  if (state.accountKey === 'local') {
+    for (const key of WORKSPACE_KEYS) {
+      const current = localStorage.getItem(`gn_local_${key}`);
+      if (current !== null) continue;
+      const legacy = localStorage.getItem(`gn_0_${key}`);
+      if (legacy !== null) localStorage.setItem(`gn_local_${key}`, legacy);
+    }
+  }
+  repairStorageShapes();
+}
+
+function repairStorageShapes() {
+  const arrayKeys = WORKSPACE_KEYS.filter(key => key !== 'profile' && key !== 'preferences' && key !== 'settings' && key !== 'selectedLocation');
+  const objectKeys = ['profile', 'preferences', 'settings'];
+  for (const key of arrayKeys) {
+    const raw = localStorage.getItem(accountStorageKey(key));
+    if (raw == null) continue;
+    let parsed;
+    try { parsed = JSON.parse(raw); } catch { continue; }
+    if (!Array.isArray(parsed)) {
+      try { localStorage.setItem(accountStorageKey(key), '[]'); } catch (error) { console.warn('[GRID//NODE storage repair]', key, error); }
+    }
+  }
+  for (const key of objectKeys) {
+    const raw = localStorage.getItem(accountStorageKey(key));
+    if (raw == null) continue;
+    let parsed;
+    try { parsed = JSON.parse(raw); } catch { continue; }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      try { localStorage.setItem(accountStorageKey(key), '{}'); } catch (error) { console.warn('[GRID//NODE storage repair]', key, error); }
+    }
   }
 }
 
@@ -705,9 +777,16 @@ function formatDateTime(value) {
 
 function normalizeDateInput(value) {
   const raw = String(value || '').trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    const parsed = parseLocalDate(raw);
+    return Number.isNaN(parsed.getTime()) || todayISO(parsed) !== raw ? '' : raw;
+  }
   const mdy = raw.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
-  if (mdy) return `${mdy[3]}-${mdy[1].padStart(2, '0')}-${mdy[2].padStart(2, '0')}`;
+  if (mdy) {
+    const candidate = `${mdy[3]}-${mdy[1].padStart(2, '0')}-${mdy[2].padStart(2, '0')}`;
+    const parsed = parseLocalDate(candidate);
+    return Number.isNaN(parsed.getTime()) || todayISO(parsed) !== candidate ? '' : candidate;
+  }
   const date = parseLocalDate(raw);
   return Number.isNaN(date.getTime()) ? '' : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
@@ -1095,17 +1174,16 @@ function profileSnapshot() {
 
 function saveProfileMed() {
   const profile = profileSnapshot();
-  S.set('profile', profile);
+  const saved = S.set('profile', profile);
   setText('profMedTxt', profile.med ? `// ${profile.med.toUpperCase()}` : tx('profile.noMedicationSet', '// NO MEDICATION SET'));
-  queueCloudSync('profile', profile);
-  showToast('Profile protocol context saved.');
+  if (saved) queueCloudSync('profile', profile);
+  showToast(saved ? 'Profile protocol context saved.' : 'Profile could not be saved — storage is full.', !saved);
 }
 
 function saveProfileMetrics() {
   const profile = profileSnapshot();
-  S.set('profile', profile);
+  if (S.set('profile', profile)) queueCloudSync('profile', profile);
   calcAndShowBMI();
-  queueCloudSync('profile', profile);
 }
 
 function calcAndShowBMI() {
@@ -1502,9 +1580,11 @@ function editShot(id) {
   moduleState.editingShotId = id;
   setText('modalSelectedLocation', record.site || 'No location selected');
   moduleState.selectedLocation = record.site || moduleState.selectedLocation;
+  const recordDate = new Date(record.date);
+  const safeRecordDate = Number.isNaN(recordDate.getTime()) ? new Date() : recordDate;
   if ($('sDate')) $('sDate').value = record.date?.slice(0, 10) || todayISO();
-  if ($('sTime')) $('sTime').value = formatTime12(new Date(record.date));
-  moduleState.meridiem = new Date(record.date).getHours() >= 12 ? 'PM' : 'AM';
+  if ($('sTime')) $('sTime').value = formatTime12(safeRecordDate);
+  moduleState.meridiem = safeRecordDate.getHours() >= 12 ? 'PM' : 'AM';
   updateMeridiemButtons();
   setSelect('cpShotMed', record.med, MEDICATIONS[record.med] || record.med);
   if ($('sDose')) $('sDose').value = record.dose || '';
@@ -1526,7 +1606,7 @@ function confirmArchiveShot() {
   if (!record) return;
   record.archived = true;
   record.archivedAt = new Date().toISOString();
-  S.set('shots', all);
+  if (!S.set('shots', all)) { showToast('Could not archive — storage unavailable.', true); return; }
   queueCloudSync('shot', record);
   refreshAll();
   showToast('SHOT record archived.');
@@ -1538,7 +1618,7 @@ function restoreArchivedShot(id) {
   if (!record) return;
   record.archived = false;
   record.archivedAt = null;
-  S.set('shots', all);
+  if (!S.set('shots', all)) { showToast('Could not restore — storage unavailable.', true); return; }
   queueCloudSync('shot', record);
   moduleState.shotHistoryView = 'active';
   refreshAll();
@@ -1559,56 +1639,63 @@ async function confirmPermanentDeleteShot() {
   cancelPermanentDeleteShot();
   const record = getAllShots().find(item => item.id === id);
   const next = getAllShots().filter(item => item.id !== id);
-  S.set('shots', next);
+  if (!S.set('shots', next)) { showToast('Could not delete — storage unavailable.', true); return; }
   refreshAll();
   const cloudDeleted = await deleteCloudShot(record);
   showToast(cloudDeleted ? 'Archived record deleted.' : 'Deleted locally. Cloud deletion queued for retry.');
 }
 
 function saveShot(allowFuture = false) {
-  const med = selectState.cpShotMed?.val;
-  const dose = Number($('sDose')?.value);
-  const date = normalizeDateInput($('sDate')?.value);
-  const time = getShotTime24($('sTime')?.value);
-  const site = moduleState.selectedLocation;
-  if (!med || !dose || !date || !time || !site) { showToast('Add medication, dose, date, time, and a logged location.', true); return; }
-  const dateTime = new Date(`${date}T${time}`);
-  if (!allowFuture && dateTime > new Date()) { moduleState.pendingFutureShot = true; $('futureTimestampConfirm')?.classList.add('active'); return; }
-  const existing = moduleState.editingShotId ? getAllShots().find(item => item.id === moduleState.editingShotId) : null;
-  const record = {
-    ...(existing || {}), id: existing?.id || createId('shot'), date: `${date}T${time}`,
-    med, dose, site, deviceId: $('shotDeviceId')?.value || null, wt: Number($('sWt')?.value) || null,
-    notes: $('sNotes')?.value?.trim() || null,
-    se: qa('#logOv input[type="checkbox"]:checked').map(input => input.value),
-    archived: false, archivedAt: null, createdAt: existing?.createdAt || new Date().toISOString(),
-    source: existing?.source || 'Manual Entry', state: existing?.state || 'User Confirmed'
-  };
-  const all = getAllShots();
-  const index = all.findIndex(item => item.id === record.id);
-  reconcileInventoryForShot(record, existing);
-  if (index >= 0) all[index] = record; else all.push(record);
-  S.set('shots', all);
-  queueCloudSync('shot', record);
-  if (record.wt) {
-    const weights = getWeights();
-    const linkedIndex = weights.findIndex(item => item.shotId === record.id || (
-      existing && !item.shotId && item.notes === 'Logged with SHOT'
-      && item.date === existing.date && Number(item.weight) === Number(existing.wt)
-    ));
-    const linkedWeight = linkedIndex >= 0 ? weights[linkedIndex] : null;
-    const weightRecord = {
-      ...(linkedWeight || {}), id: linkedWeight?.id || createId('weight'), shotId: record.id,
-      date: record.date, weight: record.wt, notes: 'Logged with SHOT'
+  if (moduleState.savingShot) return;
+  moduleState.savingShot = true;
+  try {
+    const med = selectState.cpShotMed?.val;
+    const dose = Number($('sDose')?.value);
+    const date = normalizeDateInput($('sDate')?.value);
+    const time = getShotTime24($('sTime')?.value);
+    const site = moduleState.selectedLocation;
+    if (!med || !(Number.isFinite(dose) && dose > 0) || !date || !time || !site) { showToast('Add medication, dose, date, time, and a logged location.', true); return; }
+    const dateTime = new Date(`${date}T${time}`);
+    if (!allowFuture && dateTime > new Date()) { moduleState.pendingFutureShot = true; $('futureTimestampConfirm')?.classList.add('active'); return; }
+    const existing = moduleState.editingShotId ? getAllShots().find(item => item.id === moduleState.editingShotId) : null;
+    const record = {
+      ...(existing || {}), id: existing?.id || createId('shot'), date: `${date}T${time}`,
+      med, dose, site, deviceId: $('shotDeviceId')?.value || null, wt: Number($('sWt')?.value) || null,
+      notes: $('sNotes')?.value?.trim() || null,
+      se: qa('#logOv input[type="checkbox"]:checked').map(input => input.value),
+      archived: false, archivedAt: null, createdAt: existing?.createdAt || new Date().toISOString(),
+      source: existing?.source || 'Manual Entry', state: existing?.state || 'User Confirmed'
     };
-    if (linkedIndex >= 0) weights[linkedIndex] = weightRecord; else weights.push(weightRecord);
-    S.set('weights', weights); queueCloudSync('weight', weightRecord);
+    const all = getAllShots();
+    const index = all.findIndex(item => item.id === record.id);
+    reconcileInventoryForShot(record, existing);
+    if (index >= 0) all[index] = record; else all.push(record);
+    if (!S.set('shots', all)) { showToast('SHOT could not be saved — storage is full.', true); return; }
+    queueCloudSync('shot', record);
+    if (record.wt) {
+      const weights = getWeights();
+      const linkedIndex = weights.findIndex(item => item.shotId === record.id || (
+        existing && !item.shotId && item.notes === 'Logged with SHOT'
+        && item.date === existing.date && Number(item.weight) === Number(existing.wt)
+      ));
+      const linkedWeight = linkedIndex >= 0 ? weights[linkedIndex] : null;
+      const weightRecord = {
+        ...(linkedWeight || {}), id: linkedWeight?.id || createId('weight'), shotId: record.id,
+        date: record.date, weight: record.wt, notes: 'Logged with SHOT'
+      };
+      if (linkedIndex >= 0) weights[linkedIndex] = weightRecord; else weights.push(weightRecord);
+      if (S.set('weights', weights)) queueCloudSync('weight', weightRecord);
+      else showToast('Linked weight could not be saved — storage is full.', true);
+    }
+    appendEventLedger({ type: 'SHOT', recordId: record.id, date: record.date, label: existing ? 'SHOT UPDATED' : 'SHOT EVENT CONFIRMED' });
+    moduleState.pendingFutureShot = false;
+    $('futureTimestampConfirm')?.classList.remove('active');
+    closeLog();
+    refreshAll();
+    showToast(`${existing ? 'SHOT UPDATED' : 'SHOT RECORDED'} · ${site} ✓`);
+  } finally {
+    moduleState.savingShot = false;
   }
-  appendEventLedger({ type: 'SHOT', recordId: record.id, date: record.date, label: existing ? 'SHOT UPDATED' : 'SHOT EVENT CONFIRMED' });
-  moduleState.pendingFutureShot = false;
-  $('futureTimestampConfirm')?.classList.remove('active');
-  closeLog();
-  refreshAll();
-  showToast(`${existing ? 'SHOT UPDATED' : 'SHOT RECORDED'} · ${site} ✓`);
 }
 
 function reconcileInventoryForShot(record, existing) {
@@ -1658,21 +1745,31 @@ function setWeightUnit(unit) {
   qa('[data-wt-unit]').forEach(button => button.classList.toggle('active', button.dataset.wtUnit === moduleState.weightUnit));
 }
 function saveWt() {
-  const raw = Number($('wtVal')?.value);
-  const date = normalizeDateInput($('wtDate')?.value) || todayISO();
-  if (!raw || raw <= 0) { setText('wtError', 'ENTER A VALID WEIGHT VALUE'); setDisplay('wtError', true); return; }
-  const weight = moduleState.weightUnit === 'kg' ? raw * 2.2046226218 : raw;
-  const previousWeight = sortedWeights().at(-1)?.weight;
-  const milestone = weightMilestone(previousWeight, weight, getProfile());
-  const record = { id: createId('weight'), date: `${date}T${$('wtTime')?.value || '12:00'}`, weight, weightKg: moduleState.weightUnit === 'kg' ? raw : raw / 2.2046226218, unit: moduleState.weightUnit, notes: $('wtNotes')?.value?.trim() || null, source: 'Manual Entry', state: 'User Confirmed' };
-  const weights = getWeights(); weights.push(record); S.set('weights', weights); queueCloudSync('weight', record);
-  appendEventLedger({ type: 'WEIGHT', recordId: record.id, date: record.date, label: 'RESULTS UPDATED' });
-  closeWt();
-  if ($('wtVal')) $('wtVal').value = '';
-  if ($('wtNotes')) $('wtNotes').value = '';
-  refreshAll();
-  if (milestone) celebrateMilestone(milestone.type, milestone.value);
-  else actionFeedback('RESULTS UPDATED', 'NEW DATA POINT CAPTURED // PROGRESS TIMELINE EXPANDED');
+  if (moduleState.savingWt) return;
+  moduleState.savingWt = true;
+  try {
+    const raw = Number($('wtVal')?.value);
+    const date = normalizeDateInput($('wtDate')?.value) || todayISO();
+    if (!Number.isFinite(raw) || raw <= 0) { setText('wtError', 'ENTER A VALID WEIGHT VALUE'); setDisplay('wtError', true); return; }
+    const dateTime = new Date(`${date}T${$('wtTime')?.value || '12:00'}`);
+    if (Number.isNaN(dateTime.getTime()) || dateTime > new Date()) { setText('wtError', 'FUTURE DATE NOT ALLOWED'); setDisplay('wtError', true); return; }
+    const weight = moduleState.weightUnit === 'kg' ? raw * 2.2046226218 : raw;
+    const previousWeight = sortedWeights().at(-1)?.weight;
+    const milestone = weightMilestone(previousWeight, weight, getProfile());
+    const record = { id: createId('weight'), date: `${date}T${$('wtTime')?.value || '12:00'}`, weight, weightKg: moduleState.weightUnit === 'kg' ? raw : raw / 2.2046226218, unit: moduleState.weightUnit, notes: $('wtNotes')?.value?.trim() || null, source: 'Manual Entry', state: 'User Confirmed' };
+    const weights = getWeights(); weights.push(record);
+    if (!S.set('weights', weights)) { setText('wtError', 'STORAGE UNAVAILABLE — WEIGHT NOT SAVED'); setDisplay('wtError', true); return; }
+    queueCloudSync('weight', record);
+    appendEventLedger({ type: 'WEIGHT', recordId: record.id, date: record.date, label: 'RESULTS UPDATED' });
+    closeWt();
+    if ($('wtVal')) $('wtVal').value = '';
+    if ($('wtNotes')) $('wtNotes').value = '';
+    refreshAll();
+    if (milestone) celebrateMilestone(milestone.type, milestone.value);
+    else actionFeedback('RESULTS UPDATED', 'NEW DATA POINT CAPTURED // PROGRESS TIMELINE EXPANDED');
+  } finally {
+    moduleState.savingWt = false;
+  }
 }
 
 function renderResults() {
@@ -1723,7 +1820,7 @@ function renderWeightRecords(weights) {
   const list = $('weightRecordsList');
   if (!list) return;
   setDisplay('weightRecordsEmpty', !weights.length);
-  list.innerHTML = [...weights].reverse().map(record => `<div class="gn-weight-record"><div><b>${record.weight.toFixed(1)} lb</b><span>${safeText(formatDateTime(record.date))}</span>${record.notes ? `<small>${safeText(record.notes)}</small>` : ''}</div></div>`).join('');
+  list.innerHTML = [...weights].reverse().filter(record => record && Number.isFinite(Number(record.weight))).map(record => `<div class="gn-weight-record"><div><b>${Number(record.weight).toFixed(1)} lb</b><span>${safeText(formatDateTime(record.date))}</span>${record.notes ? `<small>${safeText(record.notes)}</small>` : ''}</div></div>`).join('');
 }
 
 function filterWeightsForChart(weights) {
@@ -1779,7 +1876,7 @@ function renderMeasurementTrend() {
   records.forEach(record => { const current = latest.get(record.type); if (!current || new Date(record.date) > new Date(current.date)) latest.set(record.type, record); });
   const rows = [...latest.values()].sort((a, b) => a.type.localeCompare(b.type));
   setDisplay('measurementTrendEmpty', !rows.length);
-  list.innerHTML = rows.map(record => `<div class="gn-measurement-trend-row"><b>${safeText(record.type)}</b><span>${Number(record.value).toFixed(1)} ${safeText(record.unit)}</span></div>`).join('');
+  list.innerHTML = rows.filter(record => Number.isFinite(Number(record.value))).map(record => `<div class="gn-measurement-trend-row"><b>${safeText(record.type)}</b><span>${Number(record.value).toFixed(1)} ${safeText(record.unit)}</span></div>`).join('');
 }
 
 function drawWeightTrendChart(canvas, weights, shots, goal) {
@@ -2604,7 +2701,11 @@ function exportCSV() {
   showToast('CSV export prepared.');
 }
 
-function csvCell(value) { const text = String(value ?? ''); return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text; }
+function csvCell(value) {
+  let text = String(value ?? '');
+  if (/^[=+\-@]/.test(text)) text = `'${text}`;
+  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
 
 function exportBackup() {
   const backup = { app: 'GRID//NODE', version: APP_VERSION, exportedAt: new Date().toISOString(), profile: getProfile(), shots: getAllShots(), weights: getWeights(), measurements: S.get('measurements', []), results: S.get('results', []), notes: S.get('notes', []), symptoms: S.get('symptoms', []), labs: S.get('labs', []), preferences: S.get('preferences', {}), settings: S.get('settings', {}), arsenal: S.get('arsenal', []), researchRecords: S.get('researchRecords', []), devices: S.get('devices', []), inventory: S.get('inventory', []), loadouts: S.get('loadouts', []), eventLedger: S.get('eventLedger', []) };
