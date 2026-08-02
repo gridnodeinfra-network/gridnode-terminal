@@ -172,7 +172,7 @@ grant select on table public.webauthn_credentials to authenticated;
 create or replace function public.revoke_webauthn_credential(credential_id text)
 returns boolean
 language plpgsql
-security define
+security definer
 set search_path = public
 as $$
 declare
@@ -202,7 +202,7 @@ grant execute on function public.revoke_webauthn_credential(text) to authenticat
 create or replace function public.webauthn_rate_limit_check(bucket text, max_count int, window_ms int)
 returns boolean
 language plpgsql
-security define
+security definer
 set search_path = public
 as $$
 declare
