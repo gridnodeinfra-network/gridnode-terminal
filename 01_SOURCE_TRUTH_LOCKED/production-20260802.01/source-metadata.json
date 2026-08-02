@@ -41,11 +41,11 @@
     },
     "index.html": {
       "bytes": 609638,
-      "sha256": "84edde87d51ebdf812b6818326dcf0e617898fe7152677961ecf49557aab5c68"
+      "sha256": "7447c64ad5d1f3551a358e7eb2f2ed711e0ddd4a83f77ae9327ad3fbee7a51bd"
     },
     "js/gridnode-bundle.js": {
       "bytes": 282846,
-      "sha256": "a86c687d0a1a158f647cce1fad54748ff974227a7b3f3bce01c3a7775886c0a0"
+      "sha256": "702781ab9d5a572f3685e30b8f3234bec6b0af3213005fcc5432eeac2865eea4"
     },
     "js/gridnode-native.js": {
       "bytes": 6015,
@@ -56,13 +56,13 @@
       "sha256": "bc3b6ad8fa6992bd8c5555477756cd2bc3ac6179b6a258aca9dcfd7f5a68f413"
     },
     "sw.js": {
-      "bytes": 1744,
-      "sha256": "3dde3ad27ac1fa0c0c878704a5104dc355e34769f05a9cd65aa5da7ee06a0540"
+      "bytes": 1743,
+      "sha256": "ea063ed527686f2c2849eea37b4d7940a6dea3f3206abf817892c1a734adc3ed"
     }
   },
   "metadata_note": "Re-locked 2026-08-02 (UI polish batch): tutorial removed, theme names, toggles, light completeness, typography.",
   "production_branch": null,
   "release_marker": "20260802.01",
-  "retrieved_at_utc": "2026-08-02T19:07:25Z",
+  "retrieved_at_utc": "2026-08-02T19:08:00Z",
   "runtime_version": "2.1.7"
 }
