@@ -40,20 +40,20 @@
       "sha256": "f858cfaf83a953c6d80be08fe7dfa82d5b57a753840bb1bb5d9af09cf9536c0c"
     },
     "index.html": {
-      "bytes": 609892,
-      "sha256": "ecbb9eb5e4aa2f2611f1e411d335bc83ed8e1c606d786dcb349e015be25c29d1"
+      "bytes": 610386,
+      "sha256": "7ae2e08ed52dda798b6dfac51ed6444808f1564bdb8690cf39142b4c85b78f1e"
     },
     "js/gridnode-bundle.js": {
       "bytes": 282846,
-      "sha256": "e3ed7091adb86a1d962815392a3152207bbe90dc6861b0d9bdb30b1057d80d33"
+      "sha256": "48a429d603a375fc63817ef34d8d83f3a36c2f9c137b8a927123cc564fcdcb5d"
     },
     "js/gridnode-native.js": {
       "bytes": 6015,
       "sha256": "a981b80e7ea5a0e7898446a9c0ebb474deb6864cca68f315802b45b48b4a6d3b"
     },
     "js/gridnode-whatsnew.js": {
-      "bytes": 3050,
-      "sha256": "7707a91c27fac272822925da7e368db5da6218a19f229dcde1f39b0136a108e2"
+      "bytes": 3473,
+      "sha256": "2190e9844cb90e8dc2566167dbff73b19a8eaa2efd6d24652ae9f54bf484956f"
     },
     "manifest.json": {
       "bytes": 1547,
@@ -61,12 +61,12 @@
     },
     "sw.js": {
       "bytes": 1743,
-      "sha256": "41b9e14d22c0402f44c2da77e65a146d8f0fe814b765fe483736aedb18a958ac"
+      "sha256": "9b18dbdde05c81127e009092394ad3565dac0d4bdc5141a00cf36455ac96a438"
     }
   },
   "metadata_note": "Re-locked 2026-08-02 (release 20260802.4): icon-only toggles, whatsnew, cloudy login, scanner light, LAB readability.",
   "production_branch": null,
   "release_marker": "20260802.01",
-  "retrieved_at_utc": "2026-08-02T19:41:12Z",
+  "retrieved_at_utc": "2026-08-02T20:54:51Z",
   "runtime_version": "2.1.7"
 }

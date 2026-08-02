@@ -5,9 +5,19 @@
 (function () {
   'use strict';
 
-  var MARKER = '20260802.4';
+  var MARKER = '20260802.5';
 
   var NOTES = {
+    '20260802.5': {
+      en: [
+        'Fixed: the full user menu is back — profile, Device Vault, tools, and sign out',
+        'Theme colors no longer break any screen or menu'
+      ],
+      es: [
+        'Corregido: el menú completo del usuario está de vuelta — perfil, bóveda de dispositivos, herramientas y cerrar sesión',
+        'Los colores del tema ya no rompen ninguna pantalla ni menú'
+      ]
+    },
     '20260802.4': {
       en: [
         'What\u2019s New: every update now tells you what changed',
