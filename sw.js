@@ -22,10 +22,12 @@ self.addEventListener('fetch', event => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin || url.pathname === '/sw.js') return;
 
+  const cacheable = /^\/(index\.html)?$/.test(url.pathname) || /^\.(js|css|json|webp|png|jpg|jpeg|svg|ico)$/.test(url.pathname);
+  const versioned = /[?&]v=/.test(url.search);
   event.respondWith(
     fetch(request)
       .then(response => {
-        if (response.ok) {
+        if (response.ok && cacheable && versioned) {
           const copy = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
         }

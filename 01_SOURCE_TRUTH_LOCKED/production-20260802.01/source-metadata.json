@@ -40,29 +40,29 @@
       "sha256": "8a40649bca36a46b9e69a71d569314640dd20af1cd95e088571a76d3d8359531"
     },
     "index.html": {
-      "bytes": 608974,
-      "sha256": "7270c1548d364d37b6273b162df3edb41d8ceb010fa752d2e8e57fc1e2c95ad6"
+      "bytes": 609143,
+      "sha256": "8a84682c4445626f7f255b4882e74cfc23335edac914ee1b7987c64418dd71b0"
     },
     "js/gridnode-bundle.js": {
-      "bytes": 287490,
-      "sha256": "76c25a5869940b6bed147a8e4a565a3cda45f332701d8c72caaabce0956e16fe"
+      "bytes": 287762,
+      "sha256": "63758a13840869ccc1f003226403e74d428304785fe97eb29a503d2320f8059b"
     },
     "js/gridnode-native.js": {
       "bytes": 6015,
       "sha256": "a981b80e7ea5a0e7898446a9c0ebb474deb6864cca68f315802b45b48b4a6d3b"
     },
     "manifest.json": {
-      "bytes": 987,
-      "sha256": "a2a48d9e42b686598299bc4c043af7f8038330c9a4b0a6faa1416ee07f94042c"
+      "bytes": 1547,
+      "sha256": "bc3b6ad8fa6992bd8c5555477756cd2bc3ac6179b6a258aca9dcfd7f5a68f413"
     },
     "sw.js": {
-      "bytes": 1542,
-      "sha256": "f1226a075a97267029257ac121a422daa5dc62ceb066e6d8ef340407873d2eaa"
+      "bytes": 1744,
+      "sha256": "7f12e520e432774c2a52209176afb3c0ece54a8eba2940fa2a9e494a3d15341c"
     }
   },
-  "metadata_note": "Re-locked 2026-08-02 (Phase 5 bilingual/a11y sweep): index.html i18n wiring + contrast, native.css focus-visible.",
+  "metadata_note": "Re-locked 2026-08-02 (Phase 6 perf/install): webp assets, sw cache allowlist, headers, manifest shortcuts, SRI, splash.",
   "production_branch": null,
   "release_marker": "20260802.01",
-  "retrieved_at_utc": "2026-08-02T17:45:31Z",
+  "retrieved_at_utc": "2026-08-02T17:48:37Z",
   "runtime_version": "2.1.7"
 }

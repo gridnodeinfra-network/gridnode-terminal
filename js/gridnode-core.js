@@ -239,6 +239,8 @@ export function loadCloudLibrary() {
     let settled = false;
     const finish = value => { if (!settled) { settled = true; resolve(value); } };
     script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js';
+  script.integrity = 'sha384-tD6X9wDfTRdKpuPoHFZrVW2RXjSYSWjLBPWXxpHprWWl9eaHlwl05aRjHsiKF97n';
+  script.crossOrigin = 'anonymous';
     script.async = true;
     script.onload = () => finish(window.supabase || null);
     script.onerror = () => finish(null);

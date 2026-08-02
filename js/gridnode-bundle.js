@@ -241,6 +241,8 @@ function loadCloudLibrary() {
     let settled = false;
     const finish = value => { if (!settled) { settled = true; resolve(value); } };
     script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js';
+  script.integrity = 'sha384-tD6X9wDfTRdKpuPoHFZrVW2RXjSYSWjLBPWXxpHprWWl9eaHlwl05aRjHsiKF97n';
+  script.crossOrigin = 'anonymous';
     script.async = true;
     script.onload = () => finish(window.supabase || null);
     script.onerror = () => finish(null);
@@ -3424,6 +3426,8 @@ function startOrientationIfNeeded() {
       if (existing) { existing.addEventListener('load', () => resolve(window.SimpleWebAuthnBrowser), { once: true }); return; }
       const script = document.createElement('script');
       script.src = 'https://cdn.jsdelivr.net/npm/@simplewebauthn/browser@10.0.0/dist/bundle/index.umd.min.js';
+      script.integrity = 'sha384-SijkeUvZZs1bto8G/GPfjLDAg4FRZB5yGFAdMT5T7n3bMnkfFMEhE/h11ClJPNFR';
+      script.crossOrigin = 'anonymous';
       script.async = true;
       script.dataset.gridnodeWebauthn = 'true';
       script.onload = () => resolve(window.SimpleWebAuthnBrowser);
