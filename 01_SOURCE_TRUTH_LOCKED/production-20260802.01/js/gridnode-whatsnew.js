@@ -5,9 +5,19 @@
 (function () {
   'use strict';
 
-  var MARKER = '20260802.5';
+  var MARKER = '20260802.6';
 
   var NOTES = {
+    '20260802.6': {
+      en: [
+        'Fixed: theme controls and the profile menu now load consistently for everyone',
+        'Release 20260802.6 refreshes cached app files'
+      ],
+      es: [
+        'Corregido: los controles de tema y el menú de perfil ahora cargan de forma consistente para todos',
+        'La versión 20260802.6 refresca los archivos de la app en caché'
+      ]
+    },
     '20260802.5': {
       en: [
         'Fixed: the full user menu is back — profile, Device Vault, tools, and sign out',
