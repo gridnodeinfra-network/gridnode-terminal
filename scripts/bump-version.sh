@@ -24,5 +24,7 @@ sed -i "s/$CUR/$NEXT/g" sw.js
 # bundle + source mirror: SW registration URL
 sed -i "0,/v=$CUR/s//v=$NEXT/" js/gridnode-bundle.js
 sed -i "0,/v=$CUR/s//v=$NEXT/" js/gridnode-app.js
+# native layer: injected-asset version constant (js/gridnode-native.js)
+sed -i "0,/$CUR/s//$NEXT/" js/gridnode-native.js
 
 echo "done. next: edit release files -> bash scripts/verify.sh -> stage + deploy"
