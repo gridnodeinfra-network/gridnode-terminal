@@ -5,9 +5,17 @@
 (function () {
   'use strict';
 
-  var MARKER = '20260802.6';
+  var MARKER = '20260802.7';
 
   var NOTES = {
+    '20260802.7': {
+      en: [
+        'Fixed: charts and live stats now keep updating reliably'
+      ],
+      es: [
+        'Corregido: las gráficas y estadísticas en vivo ahora se actualizan de forma confiable'
+      ]
+    },
     '20260802.6': {
       en: [
         'Fixed: theme controls and the profile menu now load consistently for everyone',
