@@ -36,12 +36,12 @@
       "sha256": "f8070c01688e279d667f85ab207ba13b4fa3e9d6119b64b58204ccdd39b5e886"
     },
     "css/gridnode-native.css": {
-      "bytes": 2065,
-      "sha256": "0ab5997fd42655244c2ec02537f5b5578e73903fd547e73f39ce6314e7e9b1b4"
+      "bytes": 2359,
+      "sha256": "8a40649bca36a46b9e69a71d569314640dd20af1cd95e088571a76d3d8359531"
     },
     "index.html": {
-      "bytes": 607180,
-      "sha256": "904a85211765ab6ffb2034af0856501e7bf6db4bb0bd92a83b3480e6726c12db"
+      "bytes": 608974,
+      "sha256": "7270c1548d364d37b6273b162df3edb41d8ceb010fa752d2e8e57fc1e2c95ad6"
     },
     "js/gridnode-bundle.js": {
       "bytes": 287490,
@@ -60,9 +60,9 @@
       "sha256": "f1226a075a97267029257ac121a422daa5dc62ceb066e6d8ef340407873d2eaa"
     }
   },
-  "metadata_note": "Re-locked 2026-08-02 (Phase 3 native-feel): added js/gridnode-native.js + css/gridnode-native.css, version marker 20260802.1.",
+  "metadata_note": "Re-locked 2026-08-02 (Phase 5 bilingual/a11y sweep): index.html i18n wiring + contrast, native.css focus-visible.",
   "production_branch": null,
   "release_marker": "20260802.01",
-  "retrieved_at_utc": "2026-08-02T17:38:05Z",
+  "retrieved_at_utc": "2026-08-02T17:45:31Z",
   "runtime_version": "2.1.7"
 }
