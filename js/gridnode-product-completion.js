@@ -25,11 +25,13 @@
     return `${Math.floor(elapsed / dayMs)}d`;
   }
 
+  const setNodeText = (node, value) => { if (node && node.textContent !== value) node.textContent = value; };
+
   function renderStreak() {
     const node = document.getElementById('streakText'); if (!node) return;
     const shots = activeShots();
-    if (!shots.length) { node.textContent = tx('dashboard.noShotCadence', 'NO SHOT CADENCE YET · LOG YOUR FIRST SHOT'); return; }
-    if (shots.length === 1) { node.textContent = tx('dashboard.singleShotCadence', '1 SHOT LOGGED · LOG ANOTHER TO ESTABLISH CADENCE'); return; }
+    if (!shots.length) { setNodeText(node, tx('dashboard.noShotCadence', 'NO SHOT CADENCE YET · LOG YOUR FIRST SHOT')); return; }
+    if (shots.length === 1) { setNodeText(node, tx('dashboard.singleShotCadence', '1 SHOT LOGGED · LOG ANOTHER TO ESTABLISH CADENCE')); return; }
     // Cadence = observed median gap between consecutive shots, in days.
     // Honest reporting: shows the actual rhythm, not a stretched streak.
     const gaps = [];
@@ -38,7 +40,7 @@
       if (Number.isFinite(delta) && delta >= 0) gaps.push(delta);
     }
     if (!gaps.length) {
-      node.textContent = tx('dashboard.cadenceTimeline', '{count} SHOTS LOGGED · KEEP A REGULAR TIMELINE', { count: shots.length });
+      setNodeText(node, tx('dashboard.cadenceTimeline', '{count} SHOTS LOGGED · KEEP A REGULAR TIMELINE', { count: shots.length }));
       return;
     }
     const sorted = gaps.slice().sort((a, b) => a - b);
@@ -49,15 +51,24 @@
       ? Math.round((sorted[mid - 1] + sorted[mid]) / 2)
       : sorted[Math.floor(mid)];
     // 0D median means same-day shots. Describe the actual record instead.
-    node.textContent = medianDays === 0
+    setNodeText(node, medianDays === 0
       ? tx('dashboard.cadenceSameDay', 'CADENCE · SAME-DAY · {count} LOGGED', { count: shots.length })
-      : tx('dashboard.cadenceMedian', 'CADENCE · {days}D MEDIAN GAP · {count} LOGGED', { days: medianDays, count: shots.length });
+      : tx('dashboard.cadenceMedian', 'CADENCE · {days}D MEDIAN GAP · {count} LOGGED', { days: medianDays, count: shots.length }));
   }
 
+  let lastWeightChartFingerprint = '';
   function drawWeightChart() {
     const canvas = $('wtChart');
     if (!canvas) return;
     const data = weights();
+    // Skip repaint when nothing changed: the 900ms poll must not churn the canvas.
+    const fp = JSON.stringify([
+      data.map(item => [item.date, Number(item.weight)]),
+      activeShots().map(item => [item.date, Number(item.dose || 0)]),
+      Number(window.GN?.S?.get?.('profile', {})?.goalWt) || null,
+    ]);
+    if (fp === lastWeightChartFingerprint) return;
+    lastWeightChartFingerprint = fp;
     const goal = Number(window.GN?.S?.get?.('profile', {})?.goalWt);
     const rect = canvas.getBoundingClientRect();
     const width = Math.max(280, Math.round(rect.width || canvas.parentElement?.clientWidth || 320));
@@ -271,6 +282,17 @@
     if (!store()) { window.setTimeout(boot, 150); return; }
     if (window.GN_I18N?.ready) await window.GN_I18N.ready;
     renderStreak(); drawWeightChart(); renderProgressViews(); enhanceInventory(); ensurePreferences(); ensureGenericImport(); installSwipeNavigation();
+    // Repaint the enhanced chart right after any bundle render so the last
+    // writer is always this layer (no style alternation with the bundle).
+    const refreshAll = window.GNModules?.refreshAll;
+    if (typeof refreshAll === 'function' && !window.GNModules.__gnWeightChartHooked) {
+      window.GNModules.__gnWeightChartHooked = true;
+      window.GNModules.refreshAll = function (...args) {
+        const result = refreshAll.apply(this, args);
+        window.setTimeout(() => { lastWeightChartFingerprint = ''; drawWeightChart(); }, 0);
+        return result;
+      };
+    }
     window.setInterval(() => { renderStreak(); drawWeightChart(); renderProgressViews(); enhanceInventory(); ensurePreferences(); ensureGenericImport(); }, 900);
     document.addEventListener('gn:langchange', () => { renderStreak(); drawWeightChart(); renderProgressViews(); });
     document.addEventListener('visibilitychange', () => { if (!document.hidden) { renderStreak(); drawWeightChart(); } });

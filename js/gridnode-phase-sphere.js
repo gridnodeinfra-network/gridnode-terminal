@@ -15,7 +15,20 @@
   ];
 
   const $ = id => document.getElementById(id);
-  const text = (id, value) => { const node = $(id); if (node) node.textContent = value; };
+  const text = (id, value) => { const node = $(id); if (node && node.textContent !== value) node.textContent = value; };
+  const tx = (key, fallback, vars) => window.GN_I18N?.text?.(key, fallback, vars) || fallback;
+  const phaseKeys = Object.freeze({
+    ACTIVATION: 'phase.sphereActivation',
+    'TAKING EFFECT': 'phase.sphereTakingEffect',
+    'PEAK EFFECT': 'phase.spherePeakEffect',
+    CRUISE: 'phase.sphereCruise',
+    'WINDING DOWN': 'phase.sphereWindingDown',
+    'WEAR-OFF': 'phase.sphereWearOff'
+  });
+  const phaseLabel = phase => tx(phaseKeys[phase?.name], phase?.name || '');
+  const protocolLabel = protocol => protocol
+    ? tx('phase.sphereProtocol', 'PROTOCOL · {protocol}', { protocol })
+    : tx('phase.protocolNotSet', 'PROTOCOL · NOT SET');
 
   function ensureTicks() {
     const ticks = $('phaseSphereTicks');
@@ -35,7 +48,8 @@
       .sort((a, b) => new Date(a.date) - new Date(b.date));
   }
 
-  function render() {
+  async function render() {
+    if (window.GN_I18N?.ready) await window.GN_I18N.ready;
     const panel = $('phaseSpherePanel');
     if (!panel || !window.GN?.S) return false;
     const shots = activeShots();
@@ -46,22 +60,22 @@
     const marker = $('phaseSphereMarker');
     ensureTicks();
     const profile = window.GN.S.get('profile', {}) || {};
-    const protocol = profile.med ? `${profile.med}${profile.dose ? ` · ${profile.dose}mg` : ''}` : 'NOT SET';
-    text('phaseSphereProtocol', `PROTOCOL · ${protocol}`);
+    const protocol = profile.med ? profile.med + (profile.dose ? ' · ' + profile.dose + 'mg' : '') : '';
+    text('phaseSphereProtocol', protocolLabel(protocol));
     if (!last) {
       panel.dataset.state = 'empty';
-      text('phaseSpherePhase', 'AWAITING FIRST SHOT');
-      text('phaseSphereProgress', '0% · NO ACTIVE CYCLE');
-      text('phaseSphereSince', 'Log a SHOT to initialize the sphere.');
-      text('phaseSphereCount', '0 ACTIVE RECORDS');
+      text('phaseSpherePhase', tx('runtime.awaitingFirstShot', 'AWAITING FIRST SHOT'));
+      text('phaseSphereProgress', tx('phase.noActiveCycle', '0% · NO ACTIVE CYCLE'));
+      text('phaseSphereSince', tx('phase.initializeSphere', 'Log a SHOT to initialize the sphere.'));
+      text('phaseSphereCount', tx('phase.zeroActiveRecords', '0 ACTIVE RECORDS'));
       if (core) core.textContent = '01';
-      if (coreLabel) coreLabel.textContent = 'CYCLE';
+      if (coreLabel) coreLabel.textContent = tx('phase.cycleLabel', 'CYCLE');
       if (orb) {
         orb.style.setProperty('--sphere-color', '#00e6f0');
         orb.style.setProperty('--sphere-progress', '0deg');
       }
       if (marker) marker.style.setProperty('--sphere-angle', '0deg');
-      text('phaseSphereProtocol', `PROTOCOL · ${protocol}`);
+      text('phaseSphereProtocol', protocolLabel(protocol));
       return true;
     }
 
@@ -69,15 +83,16 @@
     const progress = Math.min((elapsed % 7) / 7, 0.999);
     const phase = phases.find(item => progress >= item.start && progress < item.end) || phases.at(-1);
     const since = elapsed < 1
-      ? `${Math.max(1, Math.round(elapsed * 24))}h since last SHOT`
-      : `${Math.floor(elapsed)}d since last SHOT`;
+      ? tx('phase.sphereSinceHours', '{hours}h since last SHOT', { hours: Math.max(1, Math.round(elapsed * 24)) })
+      : tx('phase.sphereSinceDays', '{days}d since last SHOT', { days: Math.floor(elapsed) });
     panel.dataset.state = 'active';
-    text('phaseSpherePhase', phase.name);
-    text('phaseSphereProgress', `${Math.round(progress * 100)}% · 7-DAY REFERENCE CYCLE`);
+    const localizedName = phaseLabel(phase);
+    text('phaseSpherePhase', localizedName);
+    text('phaseSphereProgress', tx('phase.sphereProgress', '{pct}% · 7-DAY REFERENCE CYCLE', { pct: Math.round(progress * 100) }));
     text('phaseSphereSince', since);
-    text('phaseSphereCount', `${shots.length} ACTIVE RECORD${shots.length === 1 ? '' : 'S'}`);
+    text('phaseSphereCount', tx(shots.length === 1 ? 'phase.sphereActiveRecords_one' : 'phase.sphereActiveRecords_other', '{count} ACTIVE RECORDS', { count: shots.length }));
     if (core) core.textContent = String(Math.round(progress * 100)).padStart(2, '0');
-    if (coreLabel) coreLabel.textContent = phase.name;
+    if (coreLabel) coreLabel.textContent = localizedName;
     if (orb) {
       orb.style.setProperty('--sphere-color', phase.color);
       orb.style.setProperty('--sphere-progress', `${Math.round(progress * 360)}deg`);
@@ -86,11 +101,12 @@
     return true;
   }
 
-  function start() {
-    if (render()) {
+  async function start() {
+    if (await render()) {
       // The sphere is read-only, so a lightweight poll keeps it responsive
       // after SHOT saves without changing the existing storage contract.
       window.setInterval(render, 1000);
+      document.addEventListener('gn:langchange', () => { render(); });
       document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
       return;
     }
