@@ -5,9 +5,17 @@
 (function () {
   'use strict';
 
-  var MARKER = '20260802.7';
+  var MARKER = '20260802.8';
 
   var NOTES = {
+    '20260802.8': {
+      en: [
+        'Fixed: the What\u2019s New screen now closes properly on first visit'
+      ],
+      es: [
+        'Corregido: la pantalla de Novedades ahora se cierra correctamente en la primera visita'
+      ]
+    },
     '20260802.7': {
       en: [
         'Fixed: charts and live stats now keep updating reliably'
@@ -85,10 +93,15 @@
         '<button type="button" class="gn-whatsnew-close">' + tx('whatsnew.gotIt', 'GOT IT') + '</button>' +
       '</div>';
     document.body.appendChild(overlay);
+    overlay.classList.add('active');
 
     function dismiss() {
+      overlay.classList.remove('active');
       overlay.remove();
       try { localStorage.setItem(key, '1'); } catch (_) { /* storage unavailable */ }
+      // Suppress the legacy bundle whatsnew modal (bundle APP_VERSION 2.1.7)
+      // so first-time users see one release note, not two.
+      try { localStorage.setItem('gn_whatsnew_seen', '2.1.7'); } catch (_) { /* storage unavailable */ }
     }
     overlay.querySelector('.gn-whatsnew-close').addEventListener('click', dismiss);
     overlay.addEventListener('click', function (event) {

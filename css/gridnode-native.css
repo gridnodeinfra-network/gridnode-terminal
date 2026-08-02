@@ -202,8 +202,11 @@ html[data-theme="light"] .gn-theme-toggle .gn-theme-opt.active {
 /* ── What's New modal ── */
 .gn-whatsnew-overlay {
   position: fixed; inset: 0; z-index: 950;
-  display: grid; place-items: center; padding: 20px;
+  display: none; padding: 20px;
   background: rgba(2, 2, 8, .78); backdrop-filter: blur(8px);
+}
+.gn-whatsnew-overlay.active {
+  display: grid; place-items: center;
 }
 .gn-whatsnew-card {
   width: min(100%, 360px); box-sizing: border-box; padding: 22px;
