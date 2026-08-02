@@ -18,6 +18,7 @@ let googleIdentityPromise = null;
 let googleIdentityInitialized = false;
 
 const $ = id => document.getElementById(id);
+const tx = (key, fallback, vars) => window.GN_I18N?.text?.(key, fallback, vars) || fallback;
 
 function bridge() {
   const names = [
@@ -69,6 +70,11 @@ function authShell() {
   if (!login) return;
   const recovering = authMode === 'recovery';
   login.innerHTML = `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:0"><div class="gn-auth-card">
+    <div class="gn-language-control gn-auth-language-control" role="group" data-i18n-aria-label="lang.switcherAria">
+      <span data-i18n="lang.switcherLabel">LANGUAGE</span>
+      <button type="button" data-lang-choice="en" aria-label="English" data-i18n-aria-label="lang.englishName">EN</button>
+      <button type="button" data-lang-choice="es" aria-label="Español" data-i18n-aria-label="lang.spanishName">ES</button>
+    </div>
     <div class="gn-auth-kicker">// PERSONAL BIOTECH OPERATING SYSTEM //</div>
     <div class="gn-auth-title">${recovering ? 'RESET ACCESS' : 'JACK IN'}</div>
     <p class="gn-auth-copy">${recovering ? 'Enter a new password for this GRID//NODE cloud account.' : 'Use a cloud account when you want recovery across devices. Local session keeps your record on this device.'}</p>
@@ -82,6 +88,7 @@ function authShell() {
     <div class="gn-auth-message" id="loginMsg" role="status" aria-live="polite"></div>
     <div class="gn-auth-note">// VAULT POLICY: YOUR RECORD STAYS LOCAL UNTIL YOU CONNECT A CLOUD ACCOUNT // GRID//NODE DOES NOT PROVIDE MEDICAL ADVICE //</div>
   </div></div>`;
+  applyAuthTranslations(recovering);
   $('gnAuthForm')?.addEventListener('submit', event => { event.preventDefault(); submitAuth(); });
   $('gnAuthModeToggle')?.addEventListener('click', toggleAuthMode);
   $('gnAuthReset')?.addEventListener('click', requestPasswordReset);
@@ -90,10 +97,41 @@ function authShell() {
   renderGoogleIdentityButton();
 }
 
+function applyAuthTranslations(recovering) {
+  const login = $('login');
+  const title = login?.querySelector('.gn-auth-title');
+  const copy = login?.querySelector('.gn-auth-copy');
+  const note = login?.querySelector('.gn-auth-note');
+  if (title) title.setAttribute('data-i18n', recovering ? 'auth.resetAccess' : 'auth.jackIn');
+  if (copy) copy.setAttribute('data-i18n', recovering ? 'auth.enterNewPassword' : 'landing.cloudVsLocal');
+  if (note) note.setAttribute('data-i18n', 'landing.vaultPolicy');
+  const email = $('gnAuthEmail');
+  if (email) {
+    email.setAttribute('data-i18n-placeholder', 'auth.email');
+    email.setAttribute('data-i18n-aria-label', 'auth.emailAddress');
+  }
+  const password = $('gnAuthPassword');
+  if (password) {
+    password.setAttribute('data-i18n-placeholder', recovering ? 'auth.newPassword' : 'auth.password');
+    password.setAttribute('data-i18n-aria-label', recovering ? 'auth.enterNewPassword' : 'auth.password');
+  }
+  const submit = $('gnAuthSubmit');
+  if (submit) submit.setAttribute('data-i18n', recovering ? 'auth.updatePassword' : 'auth.signIn');
+  const toggle = $('gnAuthModeToggle');
+  if (toggle) toggle.setAttribute('data-i18n', recovering ? 'auth.backToSignIn' : 'auth.createAccount');
+  const reset = $('gnAuthReset');
+  if (reset) reset.setAttribute('data-i18n', 'auth.resetAccess');
+  const google = $('gnGoogleButtonMount');
+  if (google) google.setAttribute('data-i18n-aria-label', 'auth.continueWithGoogle');
+  const local = $('gnLocalBtn');
+  if (local) local.setAttribute('data-i18n', 'auth.continueLocally');
+  window.GN_I18N?.applyTo?.(login);
+}
+
 function updateAuthMode() {
   const submit = $('gnAuthSubmit'), toggle = $('gnAuthModeToggle');
-  if (submit) submit.textContent = authMode === 'recovery' ? 'UPDATE PASSWORD' : authMode === 'signin' ? 'SIGN IN TO CLOUD' : 'CREATE CLOUD ACCOUNT';
-  if (toggle) toggle.textContent = authMode === 'signin' ? 'CREATE ACCOUNT' : 'BACK TO SIGN IN';
+  if (submit) submit.textContent = authMode === 'recovery' ? tx('auth.updatePassword', 'UPDATE PASSWORD') : authMode === 'signin' ? tx('auth.signIn', 'SIGN IN TO CLOUD') : tx('auth.createCloudAccount', 'CREATE CLOUD ACCOUNT');
+  if (toggle) toggle.textContent = authMode === 'signin' ? tx('auth.createAccount', 'CREATE ACCOUNT') : tx('auth.backToSignIn', 'BACK TO SIGN IN');
 }
 function toggleAuthMode() { if (authMode === 'recovery') { passwordRecoveryActive = false; authMode = 'signin'; authShell(); return; } authMode = authMode === 'signin' ? 'signup' : 'signin'; updateAuthMode(); setAuthMessage('', false); }
 function setAuthMessage(message, error = false) { const element = $('loginMsg'); if (element) { element.textContent = message; element.style.color = error ? '#ff5577' : '#8295a0'; } }
@@ -133,12 +171,12 @@ function renderGoogleFallback(host, message) {
 async function renderGoogleIdentityButton() {
   const host = $('gnGoogleButtonMount');
   if (!host) return;
-  renderGoogleFallback(host, 'CHECKING GOOGLE...');
+  renderGoogleFallback(host, tx('auth.checkingGoogle', 'CHECKING GOOGLE...'));
   const enabled = await isCloudProviderEnabled('google');
   if (!host.isConnected) return;
   if (!enabled) {
-    renderGoogleFallback(host, 'GOOGLE SIGN-IN SETUP PENDING');
-    setAuthMessage('// GOOGLE SIGN-IN IS NOT ENABLED YET — USE EMAIL OR CONTINUE LOCALLY', false);
+    renderGoogleFallback(host, tx('auth.googleSignInSetupPending', 'GOOGLE SIGN-IN SETUP PENDING'));
+    setAuthMessage(tx('auth.googleAuthIsNotEnabled', '// GOOGLE SIGN-IN IS NOT ENABLED YET — USE EMAIL OR CONTINUE LOCALLY'), false);
     return;
   }
   try {
@@ -167,43 +205,43 @@ async function renderGoogleIdentityButton() {
     });
   } catch (error) {
     console.warn('[GRID//NODE Google identity]', error);
-    renderGoogleFallback(host, 'GOOGLE SIGN-IN UNAVAILABLE');
-    setAuthMessage('// GOOGLE SIGN-IN COULD NOT LOAD — USE EMAIL OR CONTINUE LOCALLY', true);
+    renderGoogleFallback(host, tx('auth.googleSignInUnavailable', 'GOOGLE SIGN-IN UNAVAILABLE'));
+    setAuthMessage(tx('auth.googleAuthCouldNotStart', '// GOOGLE SIGN-IN COULD NOT LOAD — USE EMAIL OR CONTINUE LOCALLY'), true);
   }
 }
 
 async function handleGoogleCredential(response) {
   const host = $('gnGoogleButtonMount');
   host?.classList.add('loading');
-  setAuthMessage('// VERIFYING GOOGLE IDENTITY...', false);
+  setAuthMessage(tx('auth.checkingGoogle', '// VERIFYING GOOGLE IDENTITY...'), false);
   try {
     const session = await signInWithGoogleIdToken(response?.credential);
     if (!session) throw new Error('NO_SESSION');
     await completeCloudSession(session);
   } catch (error) {
-    setAuthMessage('// GOOGLE SIGN-IN COULD NOT COMPLETE — RETRY OR USE EMAIL', true);
+    setAuthMessage(tx('auth.googleAuthCouldNotStart', '// GOOGLE SIGN-IN COULD NOT COMPLETE — RETRY OR USE EMAIL'), true);
     host?.classList.remove('loading');
   }
 }
 
 async function requestPasswordReset() {
   const email = $('gnAuthEmail')?.value?.trim();
-  if (!email || !email.includes('@')) { setAuthMessage('// ENTER YOUR ACCOUNT EMAIL FIRST', true); return; }
+  if (!email || !email.includes('@')) { setAuthMessage(tx('auth.enterEmailFirst', '// ENTER YOUR ACCOUNT EMAIL FIRST'), true); return; }
   const button = $('gnAuthReset'); if (button) button.disabled = true;
   try {
     await resetPasswordCloud(email);
-    setAuthMessage('// RECOVERY LINK SENT — CHECK YOUR EMAIL', false);
+    setAuthMessage(tx('auth.recoveryLinkSent', '// RECOVERY LINK SENT — CHECK YOUR EMAIL'), false);
   } catch (error) {
-    setAuthMessage(error.message === 'CLOUD_UNAVAILABLE' ? '// CLOUD RECOVERY UNAVAILABLE — RETRY WHEN ONLINE' : `// RECOVERY ERROR: ${error.message || 'TRY AGAIN'}`, true);
+    const detail = error.message || 'TRY AGAIN'; setAuthMessage(error.message === 'CLOUD_UNAVAILABLE' ? tx('auth.cloudRecoveryUnavailable', '// CLOUD RECOVERY UNAVAILABLE — RETRY WHEN ONLINE') : tx('auth.recoveryError', '// RECOVERY ERROR: {message}', { message: detail }), true);
   } finally { if (button) button.disabled = false; }
 }
 
 async function submitAuth() {
   const email = $('gnAuthEmail')?.value?.trim();
   const password = $('gnAuthPassword')?.value || '';
-  if (authMode !== 'recovery' && (!email || !email.includes('@'))) { setAuthMessage('// ENTER A VALID EMAIL ADDRESS', true); return; }
-  if (password.length < 8) { setAuthMessage('// PASSWORD MUST BE AT LEAST 8 CHARACTERS', true); return; }
-  const submit = $('gnAuthSubmit'); if (submit) { submit.disabled = true; submit.textContent = 'CONNECTING...'; }
+  if (authMode !== 'recovery' && (!email || !email.includes('@'))) { setAuthMessage(tx('auth.checkYourDetails', '// ENTER A VALID EMAIL ADDRESS'), true); return; }
+  if (password.length < 8) { setAuthMessage(tx('auth.checkYourDetails', '// PASSWORD MUST BE AT LEAST 8 CHARACTERS'), true); return; }
+  const submit = $('gnAuthSubmit'); if (submit) { submit.disabled = true; submit.textContent = tx('auth.connecting', 'CONNECTING...'); }
   try {
     if (authMode === 'recovery') {
       await updateCloudPassword(password);
@@ -213,28 +251,28 @@ async function submitAuth() {
       await completeCloudSession(session);
     } else if (authMode === 'signup') {
       const result = await signUpCloud(email, password);
-      if (result?.session) { await completeCloudSession(result.session); } else { setAuthMessage('// ACCOUNT CREATED — CHECK YOUR EMAIL TO CONFIRM', false); }
+      if (result?.session) { await completeCloudSession(result.session); } else { setAuthMessage(tx('auth.accountCreated', '// ACCOUNT CREATED — CHECK YOUR EMAIL TO CONFIRM'), false); }
     } else {
       const session = await signInCloud(email, password);
       if (!session) throw new Error('NO_SESSION');
       await completeCloudSession(session);
     }
   } catch (error) {
-    setAuthMessage(error.message === 'CLOUD_UNAVAILABLE' ? '// CLOUD AUTH UNAVAILABLE — CONTINUE LOCALLY OR RETRY WHEN ONLINE' : `// AUTH ERROR: ${error.message || 'CHECK YOUR DETAILS'}`, true);
+    const detail = error.message || 'CHECK YOUR DETAILS'; setAuthMessage(error.message === 'CLOUD_UNAVAILABLE' ? tx('auth.cloudAuthUnavailable', '// CLOUD AUTH UNAVAILABLE — CONTINUE LOCALLY OR RETRY WHEN ONLINE') : tx('auth.authError', '// AUTH ERROR: {message}', { message: detail }), true);
   } finally {
     if (submit) { submit.disabled = false; updateAuthMode(); }
   }
 }
 
 async function handleGoogleSignIn() {
-  const button = $('loginGoogleBtn'); if (button) { button.disabled = true; button.textContent = 'CONNECTING...'; }
-  setAuthMessage('// OPENING GOOGLE AUTHENTICATION...', false);
+  const button = $('loginGoogleBtn'); if (button) { button.disabled = true; button.textContent = tx('auth.connecting', 'CONNECTING...'); }
+  setAuthMessage(tx('auth.connecting', '// OPENING GOOGLE AUTHENTICATION...'), false);
   try {
     await signInWithGoogle();
   } catch (error) {
     const disabled = error.message === 'GOOGLE_AUTH_DISABLED';
-    setAuthMessage(disabled ? '// GOOGLE SIGN-IN IS NOT ENABLED YET — USE EMAIL OR CONTINUE LOCALLY' : error.message === 'CLOUD_UNAVAILABLE' ? '// GOOGLE AUTH UNAVAILABLE — CONTINUE LOCALLY OR RETRY WHEN ONLINE' : '// GOOGLE AUTH COULD NOT START — RETRY OR USE EMAIL', true);
-    if (button) { button.disabled = disabled; button.textContent = disabled ? 'GOOGLE SIGN-IN SETUP PENDING' : 'CONTINUE WITH GOOGLE'; }
+    setAuthMessage(disabled ? tx('auth.googleAuthIsNotEnabled', '// GOOGLE SIGN-IN IS NOT ENABLED YET — USE EMAIL OR CONTINUE LOCALLY') : error.message === 'CLOUD_UNAVAILABLE' ? tx('auth.cloudAuthUnavailable', '// GOOGLE AUTH UNAVAILABLE — CONTINUE LOCALLY OR RETRY WHEN ONLINE') : tx('auth.googleAuthCouldNotStart', '// GOOGLE AUTH COULD NOT START — RETRY OR USE EMAIL'), true);
+    if (button) { button.disabled = disabled; button.textContent = disabled ? tx('auth.googleSignInSetupPending', 'GOOGLE SIGN-IN SETUP PENDING') : tx('auth.continueWithGoogle', 'CONTINUE WITH GOOGLE'); }
   }
 }
 
@@ -349,6 +387,10 @@ function wireGlobalEvents() {
     const lang = button.getAttribute('data-lang-choice');
     if (lang) window.GN_I18N?.setLang(lang);
   });
+  document.addEventListener('gn:langchange', () => {
+    if ($('login')?.classList.contains('active')) authShell();
+    if (state.session) modules.refreshAll();
+  });
   window.addEventListener('storage', event => { if (!event.key?.includes('_shots') && !event.key?.includes('_weights')) return; if (state.session) modules.refreshAll(); });
   window.addEventListener('error', event => console.warn('[GRID//NODE runtime]', event.error || event.message));
 }
@@ -356,7 +398,7 @@ function wireGlobalEvents() {
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   navigator.serviceWorker
-    .register('/sw.js?v=20260718.6', { updateViaCache: 'none' })
+    .register('/sw.js?v=20260802.1', { updateViaCache: 'none' })
     .then(registration => registration.update())
     .catch(() => {});
 }

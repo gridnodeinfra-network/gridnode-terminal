@@ -3779,7 +3779,7 @@ function wireGlobalEvents() {
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   navigator.serviceWorker
-    .register('/sw.js?v=20260731.9', { updateViaCache: 'none' })
+    .register('/sw.js?v=20260802.1', { updateViaCache: 'none' })
     .then(registration => registration.update())
     .catch(() => {});
 }

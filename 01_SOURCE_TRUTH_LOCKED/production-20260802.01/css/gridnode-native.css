@@ -1,0 +1,65 @@
+/* GRID//NODE native-feel layer — keyboard, motion, touch hygiene.
+ * Loaded by js/gridnode-native.js. Kept deliberately restrained: the NEXUS
+ * identity (scanlines, neon, boot sequence) is protected; this only makes
+ * the chrome behave like a native app.
+ */
+
+/* Inputs at 16px so iOS never auto-zooms into focused fields. */
+#logOv input, #wtOv input, .form-input,
+input[type="number"], input[type="text"], input[type="time"],
+textarea, select {
+  font-size: 16px !important;
+}
+
+/* Keyboard reflow: cap open sheets while the on-screen keyboard is visible. */
+html.gn-keyboard-open #logOv,
+html.gn-keyboard-open #wtOv,
+html.gn-keyboard-open #signOutOverlay {
+  max-height: calc(100dvh - var(--safe-top, 0px) - 16px) !important;
+}
+
+/* Touch hygiene: no double-tap zoom on controls, no pull-to-refresh fights,
+   no accidental text selection on app chrome. */
+.bottom-nav, .fab, .nav-item, .dose-pill, .gn-ampm-btn,
+.gn-stable-zone-btn, .cal-day, .gn-select-trigger, .cp-select-trigger {
+  touch-action: manipulation;
+}
+#app, .scroll-body, #scrollBody {
+  overscroll-behavior-y: contain;
+}
+.bottom-nav, .nav-lbl, .fab, .topbar, .gn-node-pill {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* One purposeful page transition (NEXUS: precise, brief, no bounce). */
+.page.active {
+  animation: gnPageIn 0.22s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+@keyframes gnPageIn {
+  from { opacity: 0.35; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Bottom sheets slide up like native sheets. */
+#logOv.active, #wtOv.active, #signOutOverlay.active {
+  animation: gnSheetIn 0.24s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+@keyframes gnSheetIn {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Press feedback on primary controls. */
+.nav-item:active, .fab:active {
+  transform: scale(0.96);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page.active, #logOv.active, #wtOv.active, #signOutOverlay.active {
+    animation: none !important;
+  }
+  .nav-item:active, .fab:active {
+    transform: none;
+  }
+}

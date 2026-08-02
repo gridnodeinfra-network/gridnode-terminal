@@ -35,26 +35,34 @@
       "bytes": 65179,
       "sha256": "f8070c01688e279d667f85ab207ba13b4fa3e9d6119b64b58204ccdd39b5e886"
     },
+    "css/gridnode-native.css": {
+      "bytes": 2065,
+      "sha256": "0ab5997fd42655244c2ec02537f5b5578e73903fd547e73f39ce6314e7e9b1b4"
+    },
     "index.html": {
-      "bytes": 607078,
-      "sha256": "79dae4e469c343efd95e69018a9d70baae53c2f5f00b3918a68929ea21f988d9"
+      "bytes": 607180,
+      "sha256": "904a85211765ab6ffb2034af0856501e7bf6db4bb0bd92a83b3480e6726c12db"
     },
     "js/gridnode-bundle.js": {
       "bytes": 287490,
-      "sha256": "cf6c394805ab05106b598833d4cbaaacbae86047235ba1a8ad3a968f8580d33a"
+      "sha256": "76c25a5869940b6bed147a8e4a565a3cda45f332701d8c72caaabce0956e16fe"
+    },
+    "js/gridnode-native.js": {
+      "bytes": 6015,
+      "sha256": "a981b80e7ea5a0e7898446a9c0ebb474deb6864cca68f315802b45b48b4a6d3b"
     },
     "manifest.json": {
       "bytes": 987,
       "sha256": "a2a48d9e42b686598299bc4c043af7f8038330c9a4b0a6faa1416ee07f94042c"
     },
     "sw.js": {
-      "bytes": 1462,
-      "sha256": "b7746fc2bc0082809f2ad847ab93cbcc3221b334746fcc06811b0a78e5da9f89"
+      "bytes": 1542,
+      "sha256": "f1226a075a97267029257ac121a422daa5dc62ceb066e6d8ef340407873d2eaa"
     }
   },
-  "metadata_note": "Re-locked 2026-08-02 (refresh after Operation Financial Freedom Phase 1 bundle edits): storage shape coercion, save-path S.set honoring, double-submit guards, cloud sync serialization/backlog, newest-wins hydrate merge, validation and CSV formula escaping. Byte-identical to live production at lock time; bundle is the canonical protected runtime.",
+  "metadata_note": "Re-locked 2026-08-02 (Phase 3 native-feel): added js/gridnode-native.js + css/gridnode-native.css, version marker 20260802.1.",
   "production_branch": null,
   "release_marker": "20260802.01",
-  "retrieved_at_utc": "2026-08-02T16:47:07Z",
+  "retrieved_at_utc": "2026-08-02T17:38:05Z",
   "runtime_version": "2.1.7"
 }
