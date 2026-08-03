@@ -710,3 +710,96 @@ html[data-theme="light"] .card-title::before, html[data-theme="light"] .card-tit
 .gn-whatsnew-close:focus-visible, .gn-onb-next:focus-visible, .gn-onb-skip:focus-visible {
   outline: 2px solid rgba(0, 212, 255, .9) !important; outline-offset: 2px !important;
 }
+
+/* ═══ Landing mobile header: safe top zone, protected brand lockup ═══ */
+/* Theme toggle pinned top-LEFT, language control top-RIGHT, both inside a
+   safe-area-aware vertical zone; the hero content starts BELOW the zone so
+   the NODE mark + GRID//NODE wordmark are never overlapped. */
+#landing .landing-theme-toggle-host {
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top, 0px));
+  left: 0;
+  right: auto;
+  z-index: 6;
+}
+#landing .landing-language-control {
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top, 0px));
+  right: 0;
+  z-index: 6;
+}
+@media (max-width: 480px) {
+  #landing .landing-hero {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 58px) !important;
+  }
+  .landing-theme-toggle-host .gn-theme-opt {
+    min-width: 40px !important;
+    min-height: 40px !important;
+  }
+  .landing-language-control button {
+    min-height: 38px !important;
+  }
+}
+
+/* ═══ Shared destructive/critical action — red-lava (no flat raspberry) ═══ */
+.gn-confirm-danger,
+.archive-confirm-panel.danger .btn-primary,
+.btn-primary,
+.fab,
+.landing-btn.primary,
+.gn-pwa-ios-hint-card button:not(.gn-pwa-ios-later),
+.future-confirm-save {
+  background: radial-gradient(130% 170% at 50% 0%,
+    var(--lava-core-hi, #ff5a6e) 0%,
+    var(--lava-core, #ff2d4d) 46%,
+    var(--lava-edge, #8f0f28) 100%) !important;
+  border: 1px solid rgba(143, 15, 40, .55) !important;
+  box-shadow: 0 4px 18px var(--lava-glow, rgba(255, 45, 77, .42)),
+    inset 0 1px 0 rgba(255, 255, 255, .22) !important;
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(60, 0, 12, .65) !important;
+}
+.gn-confirm-danger:focus-visible,
+.archive-confirm-panel.danger .btn-primary:focus-visible {
+  outline: 2px solid rgba(255, 90, 110, .95) !important;
+  outline-offset: 2px !important;
+}
+.gn-confirm-danger:active,
+.archive-confirm-panel.danger .btn-primary:active {
+  transform: scale(.97);
+}
+html[data-theme="light"] .gn-confirm-danger,
+html[data-theme="light"] .archive-confirm-panel.danger .btn-primary,
+html[data-theme="light"] .btn-primary,
+html[data-theme="light"] .landing-btn.primary,
+html[data-theme="light"] .future-confirm-save {
+  background: radial-gradient(130% 170% at 50% 0%,
+    #ff5a6e 0%, #ff2d4d 42%, #8f0f28 100%) !important;
+  box-shadow: 0 4px 16px rgba(143, 15, 40, .35),
+    inset 0 1px 0 rgba(255, 255, 255, .28) !important;
+}
+/* Neutral secondary confirmations (CANCELAR / CANCEL) stay neutral. */
+.gn-confirm-cancel,
+.archive-confirm-panel.danger .btn-secondary {
+  background: transparent !important;
+  border: 1px solid var(--border, rgba(255,255,255,.15)) !important;
+  color: var(--text-mid, #b7c7d3) !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gn-confirm-danger:active, .archive-confirm-panel.danger .btn-primary:active { transform: none !important; }
+}
+
+/* iOS/Android install hint: secondary "later" stays neutral. */
+.gn-pwa-ios-later {
+  background: transparent !important;
+  border: 1px solid var(--border, rgba(255,255,255,.15)) !important;
+  color: var(--text-mid, #b7c7d3) !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+html[data-theme="light"] .gn-pwa-ios-later {
+  color: #4d6b75 !important;
+  border-color: rgba(20, 60, 70, .3) !important;
+}
