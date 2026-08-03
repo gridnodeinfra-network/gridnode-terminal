@@ -1150,5 +1150,6 @@
   "lab.expansionLayer": "EXPANSION LAYER",
   "research.updated": "RESEARCH RECORD UPDATED",
   "research.captured": "RESEARCH RECORD CAPTURED",
-  "research.timelineSignal": "TIMELINE UPDATED // USER-ENTERED ONLY"
+  "research.timelineSignal": "TIMELINE UPDATED // USER-ENTERED ONLY",
+  "lab.chooseSystemPhrase": "CHOOSE A SYSTEM"
 }

@@ -1150,5 +1150,6 @@
   "lab.expansionLayer": "CAPA DE EXPANSIÓN",
   "research.updated": "REGISTRO DE INVESTIGACIÓN ACTUALIZADO",
   "research.captured": "REGISTRO DE INVESTIGACIÓN GUARDADO",
-  "research.timelineSignal": "LÍNEA DE TIEMPO ACTUALIZADA // SOLO INGRESO DEL USUARIO"
+  "research.timelineSignal": "LÍNEA DE TIEMPO ACTUALIZADA // SOLO INGRESO DEL USUARIO",
+  "lab.chooseSystemPhrase": "ELIGE UN SISTEMA"
 }
