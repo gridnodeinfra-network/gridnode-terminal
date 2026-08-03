@@ -22,6 +22,10 @@
     ['#gnInventoryNotes', 'Notas ingresadas por el usuario'],
     ['#gnInventorySave', 'GUARDAR ARTÍCULO DE INVENTARIO'],
     ['#gnInventoryExport', 'EXPORTAR INVENTARIO'],
+    // Scanner / log modal location reads (bundle writes via textContent)
+    ['#scannerSelectedDisplay', 'Sin ubicación seleccionada'],
+    ['#scannerHistoryDisplay', 'Aún no hay ubicaciones registradas'],
+    ['#modalSelectedLocation', 'Sin ubicación seleccionada'],
     // Measurements card
     ['#gnMeasurementsTitle', 'PESO + MEDIDAS'],
     ['#gnMeasurementsForm label span', 'UNIDAD'],

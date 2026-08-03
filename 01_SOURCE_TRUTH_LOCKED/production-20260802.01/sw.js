@@ -1,8 +1,8 @@
 /* GRID//NODE cache-safe service worker
  * Network-first by design so production releases do not strand users on stale app shells.
  */
-const CACHE_NAME = 'gridnode-shell-20260802-10';
-const SHELL = ['/', '/index.html', '/manifest.json', '/assets/gridnode-icon.svg', '/assets/scanner-body-rear.jpg', '/js/gridnode-bundle.js?v=20260802.10', '/js/gridnode-native.js?v=20260802.10', '/css/gridnode-native.css?v=20260802.10'];
+const CACHE_NAME = 'gridnode-shell-20260802-11';
+const SHELL = ['/', '/index.html', '/manifest.json', '/assets/gridnode-icon.svg', '/assets/scanner-body-rear.jpg', '/js/gridnode-bundle.js?v=20260802.11', '/js/gridnode-native.js?v=20260802.11', '/css/gridnode-native.css?v=20260802.11'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));
