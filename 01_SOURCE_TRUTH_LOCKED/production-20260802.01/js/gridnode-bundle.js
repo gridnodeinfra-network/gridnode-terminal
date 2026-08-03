@@ -563,7 +563,8 @@ async function hydrateCloudData() {
       archived: Boolean(item.archived),
       createdAt: item.created_at || item.date
     }));
-    const mergedShots = mergeRecords(localShots, cloudShots, record => record.cloudId || record.id);
+    const pendingDeleteIds = new Set(S.get('cloudDeletes', []).map(item => item.id));
+    const mergedShots = mergeRecords(localShots, cloudShots.filter(item => !(item.cloudId && pendingDeleteIds.has(item.cloudId))), record => record.cloudId || record.id);
     if (mergedShots.length) S.set('shots', mergedShots);
 
     const localWeights = getWeights();
@@ -575,7 +576,7 @@ async function hydrateCloudData() {
       weightKg: Number(item.weight_kg),
       notes: item.notes || null
     }));
-    const mergedWeights = mergeRecords(localWeights, cloudWeights, record => record.cloudId || record.id);
+    const mergedWeights = mergeRecords(localWeights, cloudWeights.filter(item => !(item.cloudId && pendingDeleteIds.has(item.cloudId))), record => record.cloudId || record.id);
     if (mergedWeights.length) S.set('weights', mergedWeights);
 
     const remoteProfile = profileResult.data;
@@ -645,7 +646,8 @@ function mergeRecords(localRecords, remoteRecords, identity) {
     if (!local) { byId.set(id, record); continue; }
     const localTime = new Date(local.updatedAt || local.modifiedAt || local.createdAt || local.date || 0).getTime();
     const remoteTime = new Date(record.updatedAt || record.modifiedAt || record.createdAt || record.date || 0).getTime();
-    if (Number.isNaN(localTime) || remoteTime > localTime) byId.set(id, record);
+    const remoteNewer = !Number.isNaN(remoteTime) && (Number.isNaN(localTime) || remoteTime > localTime);
+    if (remoteNewer) byId.set(id, record);
   }
   return [...byId.values()].sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
 }
@@ -724,7 +726,7 @@ function migrateLegacyLocalData() {
       const current = localStorage.getItem(`gn_local_${key}`);
       if (current !== null) continue;
       const legacy = localStorage.getItem(`gn_0_${key}`);
-      if (legacy !== null) localStorage.setItem(`gn_local_${key}`, legacy);
+      if (legacy !== null) { try { localStorage.setItem(`gn_local_${key}`, legacy); } catch (error) { console.warn('[GRID//NODE storage.migrate]', key, error); } }
     }
   }
   repairStorageShapes();
@@ -739,6 +741,7 @@ function repairStorageShapes() {
     let parsed;
     try { parsed = JSON.parse(raw); } catch { continue; }
     if (!Array.isArray(parsed)) {
+      try { localStorage.setItem('gn_backup_' + accountStorageKey(key), raw); } catch (error) { console.warn('[GRID//NODE storage repair backup]', key, error); }
       try { localStorage.setItem(accountStorageKey(key), '[]'); } catch (error) { console.warn('[GRID//NODE storage repair]', key, error); }
     }
   }
@@ -748,6 +751,7 @@ function repairStorageShapes() {
     let parsed;
     try { parsed = JSON.parse(raw); } catch { continue; }
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      try { localStorage.setItem('gn_backup_' + accountStorageKey(key), raw); } catch (error) { console.warn('[GRID//NODE storage repair backup]', key, error); }
       try { localStorage.setItem(accountStorageKey(key), '{}'); } catch (error) { console.warn('[GRID//NODE storage repair]', key, error); }
     }
   }
@@ -2710,7 +2714,7 @@ function csvCell(value) {
 }
 
 function exportBackup() {
-  const backup = { app: 'GRID//NODE', version: APP_VERSION, exportedAt: new Date().toISOString(), profile: getProfile(), shots: getAllShots(), weights: getWeights(), measurements: S.get('measurements', []), results: S.get('results', []), notes: S.get('notes', []), symptoms: S.get('symptoms', []), labs: S.get('labs', []), preferences: S.get('preferences', {}), settings: S.get('settings', {}), arsenal: S.get('arsenal', []), researchRecords: S.get('researchRecords', []), devices: S.get('devices', []), inventory: S.get('inventory', []), loadouts: S.get('loadouts', []), eventLedger: S.get('eventLedger', []) };
+  const backup = { app: 'GRID//NODE', version: APP_VERSION, exportedAt: new Date().toISOString(), profile: getProfile(), shots: getAllShots(), weights: getWeights(), measurements: S.get('measurements', []), results: S.get('results', []), notes: S.get('notes', []), symptoms: S.get('symptoms', []), labs: S.get('labs', []), preferences: S.get('preferences', {}), settings: S.get('settings', {}), arsenal: S.get('arsenal', []), researchRecords: S.get('researchRecords', []), devices: S.get('devices', []), inventory: S.get('inventory', []), loadouts: S.get('loadouts', []), eventLedger: S.get('eventLedger', []), selectedLocation: S.get('selectedLocation', ''), importQueue: S.get('importQueue', []), cloudDeletes: S.get('cloudDeletes', []), workspaces: S.get('workspaces', {}) };
   downloadFile('gridnode-backup.json', JSON.stringify(backup, null, 2), 'application/json');
   showToast('VAULT backup prepared.');
 }
