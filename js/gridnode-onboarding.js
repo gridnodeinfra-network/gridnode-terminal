@@ -31,8 +31,8 @@
     { title: 'onb.register', body: 'onb.registerBody', sel: '.fab', action: 'tap', nav: 'Log' },
     { title: 'onb.medication', body: 'onb.medicationBody', sel: '#cpShotMed', action: 'select', nav: 'Log' },
     { title: 'onb.dose', body: 'onb.doseBody', sel: '#sDose', action: 'input', nav: 'Log' },
-    { title: 'onb.location', body: 'onb.locationBody', sel: '.gn-stable-zone-btn, #shotsRegionScanner', action: 'tap', nav: 'Log' },
-    { title: 'onb.save', body: 'onb.saveBody', sel: '#logOv .btn-primary, #logOv .modal-btn.save, [onclick*="saveShot"]', action: 'tap', nav: 'Log' },
+    { title: 'onb.location', body: 'onb.locationBody', sel: '.gn-stable-zone-btn, #shotsRegionScanner', action: 'tap', nav: 'Log', prep: 'openScanner' },
+    { title: 'onb.save', body: 'onb.saveBody', sel: '#logOv .btn-primary, #logOv .modal-btn.save, [onclick*="saveShot"]', action: 'tap', nav: 'Log', prep: 'openLogModal' },
     { title: 'onb.results', body: 'onb.resultsBody', sel: '#navRes', action: 'tap', nav: 'Results' },
     { title: 'onb.weight', body: 'onb.weightBody', sel: '#pageResults .results-card, #pageResults', action: null, nav: 'Results' },
     { title: 'onb.lab', body: 'onb.labBody', sel: '#navLab', action: 'tap', nav: 'Lab' },
@@ -166,34 +166,34 @@
     if (!overlay) return;
     var card = overlay.querySelector('.gn-onb-card');
     if (!card) return;
-    if (!el) { card.style.top = ''; card.style.left = ''; card.style.bottom = ''; card.style.right = ''; card.style.margin = ''; return; }
+    if (!el) { card.style.top = ''; card.style.left = ''; card.style.bottom = ''; card.style.right = ''; card.style.margin = ''; card.style.transform = ''; return; }
     var r = el.getBoundingClientRect();
     var vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
-    var cardH = 240; // approx card height; measured below
     card.style.left = '50%';
     card.style.right = 'auto';
-    card.style.top = 'auto';
-    card.style.bottom = 'auto';
     card.style.transform = 'translateX(-50%)';
-    var measured = card.offsetHeight || cardH;
-    var center = r.top + r.height / 2;
-    if (center > vh * 0.62) {
-      // target low: card at top
-      card.style.top = 'max(10px, calc(env(safe-area-inset-top) + 10px))';
-    } else if (center < vh * 0.30) {
-      // target high: card at bottom
-      card.style.bottom = 'max(10px, calc(env(safe-area-inset-bottom) + 10px))';
+    card.style.width = 'min(92vw, 400px)';
+    var measured = card.offsetHeight || 250;
+    var margin = 12;
+    // Compute both placements and pick the one with the most room so the card
+    // NEVER overlaps the spotlighted control.
+    var spaceAbove = r.top - margin;
+    var spaceBelow = vh - r.bottom - margin;
+    var placeAbove = spaceAbove >= measured + 20;
+    var placeBelow = spaceBelow >= measured + 20;
+    if (placeAbove) {
       card.style.top = 'auto';
+      card.style.bottom = (vh - r.top + margin) + 'px';
+    } else if (placeBelow) {
+      card.style.top = (r.bottom + margin) + 'px';
+      card.style.bottom = 'auto';
+    } else if (spaceAbove >= spaceBelow) {
+      // not enough room anywhere: put it at the top, target still clickable via hole
+      card.style.top = 'max(10px, calc(env(safe-area-inset-top) + 10px))';
+      card.style.bottom = 'auto';
     } else {
-      // middle: card above the target if room, else below
-      var spaceAbove = r.top - 8;
-      if (spaceAbove > measured + 12) {
-        card.style.top = 'auto';
-        card.style.bottom = (vh - r.top + 8) + 'px';
-      } else {
-        card.style.top = (r.bottom + 8) + 'px';
-        card.style.bottom = 'auto';
-      }
+      card.style.top = 'auto';
+      card.style.bottom = 'max(10px, calc(env(safe-area-inset-bottom) + 10px))';
     }
   }
 
@@ -211,14 +211,24 @@
     var el = targetEl(step);
     if (!el) return;
     if (step.action === 'tap') {
-      el.addEventListener('click', function once(e) {
+      // Delegated listener on the document: the real control may be replaced
+      // by the app's own re-render when clicked (e.g. renderScanner rebuilds
+      // the zone picker), so binding to the element itself would be lost.
+      var onTap = function (e) {
+        if (!e.target || !e.target.closest) return;
+        if (!e.target.closest(step.sel)) return;
         if (e.defaultPrevented) return;
-        // Only advance if this IS the real control (not a bubble from a child of another control)
-        var t = e.target;
-        if (t && t.closest && !t.closest(step.sel)) return;
-        safeAdvance();
-        el.removeEventListener('click', once);
-      }, { capture: true });
+        // Do NOT preventDefault/stopPropagation: the app's own handler must
+        // run (e.g. selectScannerLocation / selectOpt) for the step to be real.
+        // Advance on a microtask so the app state updates first.
+        setTimeout(safeAdvance, 50);
+        document.removeEventListener('click', onTap, true);
+      };
+      document.addEventListener('click', onTap, true);
+      window.addEventListener('gn:onb-step-leave', function cleanup() {
+        document.removeEventListener('click', onTap, true);
+        window.removeEventListener('gn:onb-step-leave', cleanup);
+      }, { once: true });
     } else if (step.action === 'select') {
       // Dropdown control: advance when a real option is selected inside it.
       var onPick = function (e) {
@@ -269,6 +279,56 @@
 
     // Give the page a beat to render, then spotlight.
     setTimeout(function () {
+      if (step.prep === 'openLogModal' && window.GNModules && window.GNModules.openLogModal) {
+        try { window.GNModules.openLogModal(); } catch (_) {}
+        // Re-position the hole/card after the modal becomes visible (the
+        // modal re-layout changes the save button's rect).
+        setTimeout(function () {
+          var t = document.querySelector('#logOv .btn-primary, #logOv .modal-btn.save, [onclick*="saveShot"]') ||
+                  document.querySelector('.gn-stable-zone-btn') ||
+                  document.querySelector('#sDose');
+          if (t) { positionHole(t); positionCard(t); }
+        }, 150);
+        setTimeout(function () {
+          var t = document.querySelector('#logOv .btn-primary, #logOv .modal-btn.save, [onclick*="saveShot"]');
+          if (t) { positionHole(t); positionCard(t); }
+        }, 450);
+      }
+      if (step.prep === 'openScanner') {
+        // Close the log modal and show the Log page ourselves (instant, no
+        // smooth-scroll race with the modal-close re-render).
+        var modalEl = document.getElementById('logOv');
+        if (modalEl) modalEl.classList.remove('active');
+        if (window.GNModules && window.GNModules.showPage) {
+          try { window.GNModules.showPage('Log', null); } catch (_) {}
+        }
+        if (window.GNModules && window.GNModules.renderScanner) {
+          try { window.GNModules.renderScanner(); } catch (_) {}
+        }
+        // Scroll the page so the zone picker is centered. The modal-close
+        // re-render can reset .scroll-body, so re-apply until it sticks.
+        var scrollerSel = '.scroll-body';
+        setTimeout(function scrollToPicker(attempt) {
+          var sc = document.querySelector(scrollerSel) ||
+                   document.querySelector('#scrollBody') ||
+                   document.querySelector('#app.screen.active') ||
+                   document.documentElement;
+          var picker = document.querySelector('.gn-stable-zone-picker');
+          var zone = document.querySelector('.gn-stable-zone-btn');
+          if (!picker || !sc) return;
+          var zr = (zone || picker).getBoundingClientRect();
+          var onScreen = zr.top >= 0 && zr.bottom <= (sc.clientHeight || window.innerHeight);
+          if (!onScreen && attempt < 6) {
+            sc.scrollTop = Math.max(0, (sc.scrollTop || 0) + zr.top - (sc.clientHeight / 2) + 40);
+            setTimeout(function () { scrollToPicker(attempt + 1); }, 120);
+          } else {
+            // Scroll settled: re-measure hole + card with the FINAL rect so
+            // neither covers the spotlighted control.
+            var target = document.querySelector('.gn-stable-zone-btn') || zone || picker;
+            if (target) { positionHole(target); positionCard(target); }
+          }
+        }(0), 180);
+      }
       var el = step.sel ? targetEl(step) : null;
       if (step.sel && !el) {
         // Target temporarily missing: wait up to 3s (6 x 500ms), else degrade to explain step.
@@ -287,7 +347,22 @@
           var vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
           var onScreen = rect.top >= 4 && rect.bottom <= vh - 4 && rect.left >= 4 && rect.right <= vw - 4;
           if (!onScreen) {
-            el.scrollIntoView({ block: 'center', inline: 'center', behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'auto' : 'smooth' });
+            // 1) scrollIntoView with center alignment
+            el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'auto' });
+            // 2) also scroll scrollable ancestors (modals like #logOv have their
+            //    own overflow container that scrollIntoView may miss)
+            var a = el.parentElement;
+            while (a) {
+              var csA = getComputedStyle(a);
+              if ((csA.overflowY === 'auto' || csA.overflowY === 'scroll') && a.scrollHeight > a.clientHeight) {
+                var r2 = el.getBoundingClientRect();
+                var aRect = a.getBoundingClientRect();
+                a.scrollTop += (r2.top - aRect.top) - a.clientHeight / 2 + r2.height / 2;
+              }
+              a = a.parentElement;
+            }
+            // 3) window fallback
+            rect = el.getBoundingClientRect();
             if (rect.top < 0 || rect.bottom > vh) { try { window.scrollBy({ top: (rect.top + rect.height / 2) - vh / 2, behavior: 'auto' }); } catch (_) {} }
           }
         } catch (_) {}
@@ -321,9 +396,30 @@
     dismiss(true);
   }
 
+  function onLangChange() {
+    langCache = null;
+    if (!overlay) return;
+    // Re-render the visible step copy (title/body/hint/buttons) in the new language.
+    var step = STEPS[cur];
+    if (!step) return;
+    overlay.querySelector('[data-onb-title]').textContent = t(step.title, step.title);
+    overlay.querySelector('[data-onb-body]').textContent = t(step.body, step.body);
+    var hint = overlay.querySelector('.gn-onb-hint');
+    if (hint && hint.style.display !== 'none') {
+      hint.textContent = step.action ? (isEs() ? 'TOCA EL CONTROL DESTACADO PARA CONTINUAR' : 'TAP THE HIGHLIGHTED CONTROL TO CONTINUE') : (isEs() ? 'PULSA SIGUIENTE' : 'PRESS NEXT');
+    }
+    var skip = overlay.querySelector('[data-onb-skip]');
+    if (skip) skip.textContent = isEs() ? 'OMITIR' : 'SKIP';
+    var back = overlay.querySelector('[data-onb-back]');
+    if (back) back.textContent = isEs() ? 'ATRÁS' : 'BACK';
+    var next = overlay.querySelector('[data-onb-next]');
+    if (next && next.style.display !== 'none') next.textContent = isEs() ? 'SIGUIENTE' : 'NEXT';
+  }
+
   function dismiss(complete) {
     if (overlay) { overlay.remove(); overlay = null; }
     removeSpotlight();
+    document.removeEventListener('gn:langchange', onLangChange);
     document.removeEventListener('keydown', esc);
     window.removeEventListener('scroll', onViewportMove, { capture: true });
     window.removeEventListener('resize', onViewportMove);
@@ -336,7 +432,14 @@
   function onViewportMove() {
     if (!overlay) return;
     if (moveTimer) clearTimeout(moveTimer);
-    moveTimer = setTimeout(function () { renderStep(cur); }, 120);
+    moveTimer = setTimeout(function () {
+      // Only re-position the hole/card — NEVER re-render the step (re-render
+      // re-runs prep scrolls, which re-fires scroll events: infinite loop).
+      var step = STEPS[cur];
+      if (!step || !step.sel) return;
+      var el = targetEl(step);
+      if (el) { positionHole(el); positionCard(el); }
+    }, 120);
   }
 
   function start(resume) {
@@ -393,6 +496,7 @@
     document.addEventListener('keydown', esc);
     window.addEventListener('scroll', onViewportMove, { passive: true, capture: true });
     window.addEventListener('resize', onViewportMove);
+    document.addEventListener('gn:langchange', onLangChange);
     renderStep(startAt);
   }
 

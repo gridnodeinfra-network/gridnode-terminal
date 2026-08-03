@@ -1093,7 +1093,9 @@ html[data-theme="light"] #boot { background: #0b0f16 !important; }
   transition: top .12s ease, left .12s ease, width .12s ease, height .12s ease;
 }
 .gn-onb-card {
-  position: relative; z-index: 9001;
+  position: fixed; z-index: 9001;       /* fixed so top/bottom placement works
+                                            (flex centering would ignore them) */
+  left: 50%; transform: translateX(-50%);
   width: min(92vw, 400px);
   background: #0b1018 !important;
   border: 1px solid rgba(0, 212, 255, .45);
