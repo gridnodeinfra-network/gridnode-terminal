@@ -5,7 +5,7 @@
  * No UI code belongs in this file.
  */
 
-const APP_VERSION = '0.9.0';
+const APP_VERSION = (typeof window !== 'undefined' && window.GN_VERSION && window.GN_VERSION.semver) || '0.9.0';
 
 const GOOGLE_OAUTH_CLIENT_ID = '305099332421-u752btn6p8cbaq8opapvdkfau9gnd9a3.apps.googleusercontent.com';
 
@@ -3741,7 +3741,7 @@ function wireGlobalEvents() {
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   navigator.serviceWorker
-    .register('/sw.js?v=20260802.9', { updateViaCache: 'none' })
+    .register('/sw.js?v=20260802.10', { updateViaCache: 'none' })
     .then(registration => registration.update())
     .catch(() => {});
 }

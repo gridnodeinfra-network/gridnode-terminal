@@ -11,10 +11,10 @@
 (function () {
   'use strict';
 
-  var VERSION = {
-    semver: '0.9.0',
-    release: '20260802.9',
-    title: 'PREMIUM MOBILE REFINEMENT',
+  var VERSION = (typeof window !== 'undefined' && window.GN_VERSION) || {
+    semver: '0.9.1',
+    release: '20260802.10',
+    title: 'MOBILE POLISH PHASE TWO',
     date: '2026-08-02'
   };
 
@@ -168,7 +168,7 @@
   // front (before showApp can display it) for the current APP_VERSION.
   try { localStorage.setItem('gn_whatsnew_seen', VERSION.semver); } catch (_) { /* storage unavailable */ }
 
-  window.GN_VERSION = Object.freeze(VERSION);
+  // GN_VERSION is owned by js/gridnode-version.js (single source).
   window.GN_WHATS_NEW = Object.freeze({ show: show });
 
   boot();

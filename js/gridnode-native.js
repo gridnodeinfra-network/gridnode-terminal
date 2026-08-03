@@ -5,7 +5,7 @@
 (function () {
   'use strict';
 
-  const V = '20260802.9';
+  const V = '20260802.10';
   const OVERLAY_SELECTOR = '#logOv, #wtOv, #signOutOverlay, #archiveConfirmOv, #permanentDeleteConfirmOv, #futureTimestampConfirm, #csvImportOverlay';
 
   // 1. Styles — injected once so the static shell never needs editing for css.
