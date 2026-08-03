@@ -1169,13 +1169,17 @@
   "onb.save": "GUARDA LA DOSIS",
   "onb.saveBody": "Pulsa GUARDAR DOSIS para almacenar el registro. Nada se guarda hasta que lo hagas.",
   "onb.results": "ABRE RESULTADOS",
-  "onb.resultsBody": "Abre la página SEÑAL - aquí viven tus tendencias y tu progreso.",
+  "onb.resultsBody": "Abre SEÑAL - aquí viven tus tendencias y tu progreso. El Motor de Fases estima tu ciclo de referencia desde tu historial de dosis.",
   "onb.weight": "PESO Y PROGRESO",
   "onb.weightBody": "Las tendencias de peso, señales de progreso y registros de línea de tiempo se guardan en esta pantalla.",
   "onb.lab": "ABRE LA CALCULADORA / LAB",
-  "onb.labBody": "El LAB contiene jeringa, reconstitución, proyección de dosis y herramientas de investigación.",
+  "onb.labBody": "El LAB contiene jeringa, reconstitución, proyección de dosis y herramientas de investigación. Tu perfil contiene la BÓVEDA para almacenamiento local y respaldos.",
   "onb.vault": "BÓVEDA Y TUS DATOS",
   "onb.vaultBody": "Tu perfil contiene la BÓVEDA: almacenamiento local primero, exportación, respaldo y estado de sincronización.",
   "onb.done": "YA ESTÁS LISTO",
-  "onb.doneBody": "Ese es el ciclo principal. Puedes repetir este tour cuando quieras desde tu perfil, y todo vive primero en este dispositivo."
+  "onb.doneBody": "Registra tu primera DOSIS para activar tu grilla. Puedes repetir este tour cuando quieras desde tu perfil.",
+  "landing.previewCaption": "Un sistema de comando biotecnológico funcional: registros de protocolo, estimaciones de fases y tendencias en tu dispositivo.",
+  "shots.activateYourGrid": "REGISTRA TU PRIMERA DOSIS PARA ACTIVAR TU GRILLA",
+  "shots.firstShotSub": "Una dosis desbloquea el Motor de Fases, RESULTADOS y tu tablero completo.",
+  "shots.logFirstShot": "REGISTRA TU PRIMERA DOSIS"
 }

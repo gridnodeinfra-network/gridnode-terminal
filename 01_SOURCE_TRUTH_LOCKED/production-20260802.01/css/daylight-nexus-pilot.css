@@ -1468,3 +1468,41 @@ html[data-theme="light"] .gn-stable-zone-btn.selected {
   color: #005f73 !important;
   border-color: rgba(0, 111, 130, .45) !important;
 }
+
+/* First-five-minutes pass: DAY OPS dropdown/date/selected-state hardening. */
+html[data-theme="light"] .cp-dropdown { border-color: rgba(0, 111, 130, .4) !important; }
+html[data-theme="light"] .cp-dropdown .cp-option { color: #1a2328 !important; }
+html[data-theme="light"] .cp-dropdown .cp-option:hover { background: rgba(0, 111, 130, .14) !important; color: #0d3c48 !important; }
+html[data-theme="light"] .cp-group-minimized { color: #1a2328 !important; border-color: rgba(0, 111, 130, .3) !important; background: rgba(0, 111, 130, .06) !important; }
+html[data-theme="light"] .gn-date-panel { background: #f8f5ed !important; color: #1a2328 !important; border-color: rgba(0, 111, 130, .35) !important; }
+html[data-theme="light"] .gn-date-panel .cal-day { color: #1a2328 !important; }
+html[data-theme="light"] .gn-date-panel .cal-day.selected,
+html[data-theme="light"] .gn-date-panel .cal-day:hover { background: #006f82 !important; color: #fff !important; }
+
+/* Day OPS dropdowns: beat the bundle's ID-scoped dark rules (e.g. #logOv #cpShotMedDrop .cp-option). */
+html[data-theme="light"] #logOv .cp-dropdown,
+html[data-theme="light"] #wtOv .cp-dropdown,
+html[data-theme="light"] .cp-dropdown {
+  background: var(--surface-elevated, #f8f5ed) !important;
+  color: #1a2328 !important;
+  border-color: rgba(0, 111, 130, .4) !important;
+  box-shadow: 0 14px 40px rgba(30, 40, 45, .22) !important;
+}
+html[data-theme="light"] #logOv #cpShotMedDrop .cp-option,
+html[data-theme="light"] #logOv #cpShotMedDrop .cp-group-minimized,
+html[data-theme="light"] #wtOv .cp-option,
+html[data-theme="light"] .cp-dropdown .cp-option {
+  color: #1a2328 !important;
+  background: transparent !important;
+}
+html[data-theme="light"] #logOv #cpShotMedDrop .cp-option:hover,
+html[data-theme="light"] .cp-dropdown .cp-option:hover,
+html[data-theme="light"] .cp-dropdown .cp-option.selected {
+  background: rgba(0, 111, 130, .14) !important;
+  color: #0d3c48 !important;
+}
+html[data-theme="light"] #logOv #cpShotMedDrop .cp-group-minimized {
+  color: #1a2328 !important;
+  border-color: rgba(0, 111, 130, .3) !important;
+  background: rgba(0, 111, 130, .06) !important;
+}

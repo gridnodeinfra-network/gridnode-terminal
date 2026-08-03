@@ -373,7 +373,7 @@ export function renderShots() {
   setText('shotHistoryHelper', moduleState.shotHistoryView === 'archived' ? 'Archived records remain stored for review and can be restored.' : 'Active SHOT records are retained in your local VAULT.');
   qa('[data-shot-history-view]').forEach(button => button.classList.toggle('active', button.dataset.shotHistoryView === moduleState.shotHistoryView));
   if (!visible.length) {
-    list.innerHTML = `<div class="empty"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span>${moduleState.shotHistoryView === 'archived' ? 'NO ARCHIVED SHOTS' : 'NO SHOTS LOGGED YET'}<br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>LOG YOUR FIRST SHOT</button></div>`;
+    list.innerHTML = `<div class="empty gn-first-run-card"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${moduleState.shotHistoryView === 'archived' ? 'NO ARCHIVED SHOTS' : tx('shots.activateYourGrid', 'LOG YOUR FIRST SHOT TO ACTIVATE YOUR GRID')}</b><span class="gn-first-run-sub">${tx('shots.firstShotSub', 'One shot unlocks the Phase Engine, RESULTS, and your full dashboard.')}</span><br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>${tx('shots.logYourFirst', 'LOG YOUR FIRST SHOT')}</button></div>`;
     return;
   }
   list.innerHTML = visible.map(record => {

@@ -28,15 +28,8 @@
   var STEPS = [
     { title: 'onb.welcome', body: 'onb.welcomeBody', action: null },
     { title: 'onb.shots', body: 'onb.shotsBody', sel: '#navLog', action: 'tap', nav: 'Log' },
-    { title: 'onb.register', body: 'onb.registerBody', sel: '.fab', action: 'tap', nav: 'Log' },
-    { title: 'onb.medication', body: 'onb.medicationBody', sel: '#cpShotMed', action: 'select', nav: 'Log' },
-    { title: 'onb.dose', body: 'onb.doseBody', sel: '#sDose', action: 'input', nav: 'Log' },
-    { title: 'onb.location', body: 'onb.locationBody', sel: '.gn-stable-zone-btn, #shotsRegionScanner', action: 'tap', nav: 'Log', prep: 'openScanner' },
-    { title: 'onb.save', body: 'onb.saveBody', sel: '#logOv .btn-primary, #logOv .modal-btn.save, [onclick*="saveShot"]', action: 'tap', nav: 'Log', prep: 'openLogModal' },
     { title: 'onb.results', body: 'onb.resultsBody', sel: '#navRes', action: 'tap', nav: 'Results' },
-    { title: 'onb.weight', body: 'onb.weightBody', sel: '#pageResults .results-card, #pageResults', action: null, nav: 'Results' },
     { title: 'onb.lab', body: 'onb.labBody', sel: '#navLab', action: 'tap', nav: 'Lab' },
-    { title: 'onb.vault', body: 'onb.vaultBody', sel: '#topAva, #navPro', action: 'tap', nav: 'Profile' },
     { title: 'onb.done', body: 'onb.doneBody', action: null }
   ];
 

@@ -1500,7 +1500,7 @@ function renderShots() {
   qa('[data-shot-history-view]').forEach(button => button.classList.toggle('active', button.dataset.shotHistoryView === moduleState.shotHistoryView));
   if (!visible.length) {
     const activeFilters = Object.values(moduleState.shotFilters).some(value => value && value !== 'all');
-    list.innerHTML = `<div class="empty"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span>${activeFilters ? tx('shots.noFilterMatch', 'NO SHOTS MATCH THESE FILTERS.') : moduleState.shotHistoryView === 'archived' ? tx('shots.noArchivedShots', 'NO ARCHIVED SHOTS') : tx('shots.noShotsLoggedYet', 'NO SHOTS LOGGED YET')}${activeFilters ? '<br><button class="btn-full btn-secondary empty-cta" type="button" id="gnShotFilterEmptyClear">' + tx('shots.clearFilters', 'CLEAR FILTERS') + '</button>' : '<br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>' + tx('shots.logYourFirst', 'LOG YOUR FIRST SHOT') + '</button>'}</div>`;
+    list.innerHTML = `<div class="empty${activeFilters ? '' : ' gn-first-run-card'}"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${activeFilters ? tx('shots.noFilterMatch', 'NO SHOTS MATCH THESE FILTERS.') : moduleState.shotHistoryView === 'archived' ? tx('shots.noArchivedShots', 'NO ARCHIVED SHOTS') : tx('shots.activateYourGrid', 'LOG YOUR FIRST SHOT TO ACTIVATE YOUR GRID')}</b>${activeFilters ? '<br><button class="btn-full btn-secondary empty-cta" type="button" id="gnShotFilterEmptyClear">' + tx('shots.clearFilters', 'CLEAR FILTERS') + '</button>' : '<span class="gn-first-run-sub">' + tx('shots.firstShotSub', 'One shot unlocks the Phase Engine, RESULTS, and your full dashboard.') + '</span><br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>' + tx('shots.logYourFirst', 'LOG YOUR FIRST SHOT') + '</button>'}</div>`;
     $('gnShotFilterEmptyClear')?.addEventListener('click', () => { moduleState.shotFilters = { medication: '', site: '', range: 'all', query: '' }; renderShots(); });
     return;
   }
@@ -2309,6 +2309,12 @@ function openLabTool(tool) {
   if (!toolNodes.length) return;
   restoreLabNodes();
   toolNodes.forEach(labSlot);
+  // LAB focus: bring the selected tool into view and subdue the directory.
+  page.classList.add('gn-tool-focus');
+  requestAnimationFrame(function () {
+    var first = toolNodes[0];
+    if (first) { try { first.scrollIntoView({ block: 'start', behavior: 'auto' }); } catch (_) {} }
+  });
   toolNodes.forEach(node => host.appendChild(node));
   [$('gnResearchSection'), $('gnLedgerSection'), $('gnSupplySection')].forEach(section => { if (section) section.open = section.id === (tool === 'research' ? 'gnResearchSection' : tool === 'inventory' ? 'gnSupplySection' : 'gnLedgerSection'); });
   const titles = { calculators: tx('lab.calculators', 'CALCULATORS'), research: tx('lab.researchPeptides', 'RESEARCH PEPTIDES'), inventory: tx('lab.inventory', 'INVENTORY'), devices: tx('lab.deviceVault', 'DEVICE VAULT'), ledger: tx('lab.eventLedger', 'EVENT LEDGER') };
@@ -2325,15 +2331,8 @@ function openLabTool(tool) {
 }
 
 function closeLabTool() {
-  const overlay = $('gnLabToolOverlay'), page = $('pageLab');
-  if (!overlay) return;
-  restoreLabNodes();
-  overlay.classList.remove('active');
-  overlay.hidden = true;
-  page?.classList.remove('gn-lab-tool-open');
-  document.body.classList.remove('gn-lab-tool-open');
-  qa('[data-lab-focus]').forEach(tile => tile.classList.remove('active'));
-  renderLabFoundations();
+  const page = $('pageLab');
+  if (page) page.classList.remove('gn-tool-focus');
 }
 
 function renderLabFoundations() {
@@ -3175,7 +3174,8 @@ function authShell() {
   login.innerHTML = `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:0"><div class="gn-auth-card">
     <div class="gn-auth-kicker">// PERSONAL BIOTECH OPERATING SYSTEM //</div>
     <div class="gn-auth-title">${recovering ? 'RESET ACCESS' : 'JACK IN'}</div>
-    <p class="gn-auth-copy">${recovering ? 'Enter a new password for this GRID//NODE cloud account.' : 'Use a cloud account when you want recovery across devices. Local session keeps your record on this device.'}</p>
+    <p class="gn-auth-subtitle">${recovering ? 'Enter a new password for this GRID//NODE cloud account.' : 'Choose how to enter your workspace'}</p>
+    <p class="gn-auth-copy">${recovering ? '' : 'Use a cloud account when you want recovery across devices. Local session keeps your record on this device.'}</p>
     ${recovering ? '' : '<div class="gn-auth-primary-label">PRIMARY CLOUD PATH</div><div class="gn-google-button-shell" id="gnGoogleButtonMount" aria-label="Continue with Google"></div><button class="gn-auth-passkey" id="gnPasskeyBtn" type="button" data-i18n-aria-label="auth.passkeyAria"><span class="gn-passkey-icon" aria-hidden="true">⌘</span><span data-i18n="auth.continueWithPasskey">CONTINUE WITH PASSKEY</span></button><div class="gn-auth-privacy"><strong>YOUR DATA STAYS YOURS.</strong><span>Connect cloud recovery only when you choose. GRID//NODE remains a tracking and educational system, not medical advice.</span></div><button class="gn-auth-secondary" id="gnLocalBtn" type="button">CONTINUE LOCALLY</button><details class="gn-auth-options"><summary>OTHER SIGN-IN OPTIONS</summary>'}
     <form id="gnAuthForm" novalidate>
       <input class="gn-auth-field" id="gnAuthEmail" type="email" autocomplete="email" placeholder="EMAIL ADDRESS" aria-label="Email address"${recovering ? ' hidden' : ''}>

@@ -1169,13 +1169,17 @@
   "onb.save": "SAVE THE SHOT",
   "onb.saveBody": "Press SAVE SHOT to store the record. Nothing is saved until you do.",
   "onb.results": "OPEN RESULTS",
-  "onb.resultsBody": "Open the SIGNAL page - your trends and progress live here.",
+  "onb.resultsBody": "Open SIGNAL - your trends and progress live here. Phase Engine estimates your reference cycle from your shot history.",
   "onb.weight": "WEIGHT & PROGRESS",
   "onb.weightBody": "Weight trends, progress signals, and timeline records are recorded on this screen.",
   "onb.lab": "OPEN THE CALCULATOR / LAB",
-  "onb.labBody": "The LAB holds syringe draw, reconstitution, dose projection, and research tools.",
+  "onb.labBody": "The LAB holds syringe draw, reconstitution, dose projection, and research tools. Your profile holds the VAULT for local-first storage and backups.",
   "onb.vault": "VAULT & YOUR DATA",
   "onb.vaultBody": "Your profile holds the VAULT: local-first storage, export, backup, and sync status.",
   "onb.done": "YOU'RE READY",
-  "onb.doneBody": "That's the core loop. You can replay this tour any time from your profile, and everything stays on this device first."
+  "onb.doneBody": "Log your first SHOT to activate your grid. You can replay this tour any time from your profile.",
+  "landing.previewCaption": "A functioning biotech command system - protocol logs, phase estimates, and trends on your device.",
+  "shots.activateYourGrid": "LOG YOUR FIRST SHOT TO ACTIVATE YOUR GRID",
+  "shots.firstShotSub": "One shot unlocks the Phase Engine, RESULTS, and your full dashboard.",
+  "shots.logFirstShot": "LOG YOUR FIRST SHOT"
 }
