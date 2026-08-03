@@ -6,7 +6,7 @@
   'use strict';
 
   const V = '20260802.12';
-  const OVERLAY_SELECTOR = '#logOv, #wtOv, #signOutOverlay, #archiveConfirmOv, #permanentDeleteConfirmOv, #futureTimestampConfirm, #csvImportOverlay';
+  const OVERLAY_SELECTOR = '#logOv, #wtOv, #signOutOverlay, #archiveConfirmOv, #permanentDeleteConfirmOv, #futureTimestampConfirm, #csvImportOverlay, #gnWhatsNewOverlay, .gn-onb-overlay';
 
   // 1. Styles — injected once so the static shell never needs editing for css.
   function injectCss() {
@@ -118,6 +118,19 @@
     try { navigator.vibrate(pattern); } catch (_) { /* unsupported */ }
   }
 
+  // Keyboard activation for role=button divs (nav items, custom triggers).
+  function wireKeyboardActivation() {
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      const target = event.target;
+      if (!target || !target.closest) return;
+      const trigger = target.closest('[role="button"][tabindex="0"], .nav-item[tabindex="0"]');
+      if (!trigger) return;
+      event.preventDefault();
+      trigger.click();
+    });
+  }
+
   function wireHaptics() {
     document.addEventListener('click', (event) => {
       const el = event.target && event.target.closest ? event.target.closest('.nav-item, .fab') : null;
@@ -143,6 +156,8 @@
   function wireOffline() {
     var banner = document.createElement('div');
     banner.className = 'gn-offline-banner';
+    banner.setAttribute('role', 'status');
+    banner.setAttribute('aria-live', 'polite');
     banner.textContent = '// OFFLINE — LOCAL DATA ACTIVE / SIN CONEXIÓN — DATOS LOCALES ACTIVOS';
     document.body.prepend(banner);
     var sync = function () {
@@ -158,6 +173,7 @@
     wireOffline();
     watchKeyboard();
     wirePageFocus();
+    wireKeyboardActivation();
     wireHaptics();
     pollUpgrades();
     window.setInterval(pollUpgrades, 1200);

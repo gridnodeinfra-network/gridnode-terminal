@@ -666,3 +666,47 @@ html[data-theme="light"] .gn-empty-state, html[data-theme="light"] .gn-loading-s
 html.gn-offline .gn-offline-banner { display: flex; }
 html[data-theme="light"] .gn-offline-banner { background: #f6e9c8; color: #6b5210; }
 @media (prefers-reduced-motion: reduce) { .gn-loading-state .gn-state-ico { animation: none !important; } }
+
+/* ═══ Design-lens fix batch ═══ */
+/* F8: 44px touch targets on controls (all widths). */
+.topbar-btn, .modal-btn, .time-tab, .scanner-mode-btn, .cp-option { min-width: 44px !important; min-height: 44px !important; }
+/* F9: lava button label contrast: deeper mid stop + stronger shadow. */
+.btn-primary, .gn-auth-primary, .future-confirm-save, .gn-whatsnew-close {
+  text-shadow: 0 1px 3px rgba(60, 0, 12, .65) !important;
+}
+/* F12: press feedback extended to controls. */
+.topbar-btn:active, .modal-btn:active, .btn-primary:active, .btn-full:active,
+.dose-pill:active, .time-tab:active, .gn-stable-zone-btn:active, .cp-option:active,
+.gn-theme-opt:active, .gn-onb-next:active {
+  transform: scale(.96);
+  transition: transform .1s ease;
+}
+/* F14: global reduced-motion for legacy motion sources. */
+@media (prefers-reduced-motion: reduce) {
+  .scan-sweep, .screen.active, .ticker, .glitch, .neon-flicker,
+  .boot-ring, [class*="boot-"] { animation: none !important; }
+}
+/* Art direction: instrument-well depth on data cards. */
+.stat-card, .s6-card, .gn-wanda-card, .card {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .045), inset 0 0 0 1px rgba(0, 212, 255, .035) !important;
+}
+html[data-theme="light"] .stat-card, html[data-theme="light"] .s6-card,
+html[data-theme="light"] .gn-wanda-card, html[data-theme="light"] .card {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), inset 0 0 0 1px rgba(0, 111, 130, .06) !important;
+}
+/* HUD corner ticks on hero cards. */
+.card-title { position: relative; }
+.card-title::before, .card-title::after {
+  content: ""; position: absolute; width: 8px; height: 8px;
+  border-color: rgba(0, 212, 255, .55); border-style: solid;
+}
+.card-title::before { top: -2px; left: -2px; border-width: 2px 0 0 2px; }
+.card-title::after { bottom: -2px; right: -2px; border-width: 0 2px 2px 0; }
+html[data-theme="light"] .card-title::before, html[data-theme="light"] .card-title::after {
+  border-color: rgba(0, 111, 130, .5);
+}
+/* Whatsnew: single close spec + focus ring. */
+.gn-whatsnew-close { min-height: 46px !important; }
+.gn-whatsnew-close:focus-visible, .gn-onb-next:focus-visible, .gn-onb-skip:focus-visible {
+  outline: 2px solid rgba(0, 212, 255, .9) !important; outline-offset: 2px !important;
+}

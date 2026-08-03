@@ -96,7 +96,7 @@
   --border2:   rgba(255,255,255,0.12);
   --text:      #eeeef5;
   --text-mid:  #9898b0;
-  --text-dim:  #484860;
+  --text-dim:  #6f6f88;
   --font-d:    'Orbitron', monospace;
   --font-m:    'Share Tech Mono', monospace;
   --font-b:    'Rajdhani', sans-serif;
@@ -219,7 +219,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 /* TOPBAR */
 .topbar,.gn-topbar{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 16px;padding-top:calc(6px + var(--safe-top));padding-bottom:10px;background:#0a0a14;background:var(--surface, #0a0a14);border-bottom:1px solid var(--border);backdrop-filter:blur(16px);z-index:50;position:sticky;top:0}
 .topbar-actions{display:flex;align-items:center;gap:8px}
-.topbar-btn{width:34px;height:34px;border-radius:50%;background:#0e0e16;background:var(--panel, #0e0e16);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.9rem;transition:all 0.2s;position:relative}
+.topbar-btn{width:44px;height:44px;border-radius:50%;background:#0e0e16;background:var(--panel, #0e0e16);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.9rem;transition:all 0.2s;position:relative}
 .topbar-btn:hover{border-color:var(--cyan)}
 
 /* LIVE NODE status pill */
@@ -4488,11 +4488,11 @@ function continueLocallyFromWelcome() {
     </div></div>
 
   <div class="bottom-nav">
-    <div class="nav-item active" id="navDash" onclick="showPage('Dash',this)"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-command-grid"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.home">HOME</div></div>
-    <div class="nav-item" id="navLog" onclick="showPage('Log',this)"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-protocol-event"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.shots">SHOTS</div></div>
-    <div class="nav-item" id="navRes" onclick="showPage('Results',this)"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-trend-signal"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.trends">SIGNAL</div></div>
-    <div class="nav-item" id="navLab" onclick="showPage('Lab',this)"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-lab-vessel"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.lab">LAB</div></div>
-    <div class="nav-item gn-nav-hidden" id="navPro" onclick="showPage('Profile',this)"></div>
+    <div class="nav-item active" id="navDash" role="button" tabindex="0" aria-current="page" onclick="showPage('Dash',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Dash',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-command-grid"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.home">HOME</div></div>
+    <div class="nav-item" id="navLog" role="button" tabindex="0" onclick="showPage('Log',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Log',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-protocol-event"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.shots">SHOTS</div></div>
+    <div class="nav-item" id="navRes" role="button" tabindex="0" onclick="showPage('Results',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Results',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-trend-signal"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.trends">SIGNAL</div></div>
+    <div class="nav-item" id="navLab" role="button" tabindex="0" onclick="showPage('Lab',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Lab',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-lab-vessel"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.lab">LAB</div></div>
+    <div class="nav-item gn-nav-hidden" id="navPro" role="button" tabindex="0" onclick="showPage('Profile',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Profile',this)}"></div>
   </div>
 
   <button class="fab" onclick="handleShotFab()" aria-label="Open SHOTS scanner flow"><span class="gn-icon"><svg><use href="#gn-protocol-event"></use></svg></span></button>
@@ -4502,9 +4502,9 @@ function continueLocallyFromWelcome() {
 <div class="overlay" id="logOv">
   <div class="modal">
     <div class="modal-hdr">
-      <div class="modal-actions"><button class="modal-btn close" onclick="closeLog()"><span class="gn-icon"><svg><use href="#gn-close"></use></svg></span></button></div>
+      <div class="modal-actions"><button class="modal-btn close" aria-label="Close" onclick="closeLog()"><span class="gn-icon"><svg><use href="#gn-close"></use></svg></span></button></div>
       <div class="modal-title" data-i18n="shot.logShot">LOG SHOT</div>
-      <div class="modal-actions"><button class="modal-btn save" onclick="saveShot()"><span class="gn-icon"><svg><use href="#gn-check"></use></svg></span></button></div>
+      <div class="modal-actions"><button class="modal-btn save" aria-label="Save shot" onclick="saveShot()"><span class="gn-icon"><svg><use href="#gn-check"></use></svg></span></button></div>
     </div>
     <div class="form-group gn-shot-datetime-group">
       <label class="form-label" data-i18n="shot.date">DATE</label>
@@ -6931,7 +6931,7 @@ function continueLocallyFromWelcome() {
 @media(max-width:360px){
   .app-wordmark-b2b{width:118px;min-width:112px;max-width:38vw}
   .topbar-actions{gap:6px}
-  .topbar-btn{width:32px;height:32px}
+  .topbar-btn{width:44px;height:44px}
   .landing-logo.b2b-logo-surface{width:min(90vw,360px)}
 }
 

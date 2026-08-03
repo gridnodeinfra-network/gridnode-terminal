@@ -138,6 +138,11 @@
       '</div>';
     document.body.appendChild(overlay);
     overlay.classList.add('active');
+    var closeBtn = overlay.querySelector('.gn-whatsnew-close');
+    if (closeBtn) closeBtn.focus();
+    overlay.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') dismiss();
+    });
 
     function dismiss() {
       overlay.classList.remove('active');

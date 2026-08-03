@@ -1134,5 +1134,6 @@
   "whatsnew.catFixed": "FIXED",
   "whatsnew.catA11y": "ACCESSIBILITY",
   "whatsnew.catMobile": "MOBILE",
-  "whatsnew.catSecurity": "SECURITY"
+  "whatsnew.catSecurity": "SECURITY",
+  "shot.weightPlaceholder": "e.g. 215.5"
 }

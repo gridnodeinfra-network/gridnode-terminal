@@ -180,7 +180,7 @@ html[data-theme="light"] .landing-phase-visual::after { border-color: rgba(0, 11
 html[data-theme="light"] .landing-phase-core { border-color: rgba(0, 111, 130, .42); background: rgba(248, 245, 237, .76); color: var(--accent-cyan); box-shadow: var(--shadow-soft); }
 html[data-theme="light"] .landing-phase-core span { color: var(--accent-cyan) !important; }
 html[data-theme="light"] .landing-phase-core b { color: var(--accent-amber) !important; }
-html[data-theme="light"] .landing-btn.primary { background: linear-gradient(135deg, #7d415e, #633247); color: var(--text-inverse); box-shadow: 0 12px 30px rgba(87, 48, 66, .22); }
+html[data-theme="light"] .landing-btn.primary { background: linear-gradient(135deg, #8f0f28, #633247); color: var(--text-inverse); box-shadow: 0 12px 30px rgba(87, 48, 66, .22); }
 html[data-theme="light"] .landing-btn.secondary { border-color: var(--border-strong); color: var(--accent-cyan); background: rgba(248, 245, 237, .58); }
 html[data-theme="light"] .landing-btn:focus-visible,
 html[data-theme="light"] .landing-local-link:focus-visible,
@@ -233,7 +233,7 @@ html[data-theme="light"] .gn-auth-field {
 }
 html[data-theme="light"] .gn-auth-field::placeholder { color: var(--text-muted); opacity: 1; }
 html[data-theme="light"] .gn-auth-field:focus { border-color: var(--focus-ring); box-shadow: 0 0 0 3px rgba(0, 111, 130, .14), inset 0 2px 6px rgba(76, 61, 43, .06); }
-html[data-theme="light"] .gn-auth-primary { background: linear-gradient(135deg, #7d415e, #633247); color: var(--text-inverse); box-shadow: 0 10px 24px rgba(87, 48, 66, .18); }
+html[data-theme="light"] .gn-auth-primary { background: linear-gradient(135deg, #8f0f28, #633247); color: var(--text-inverse); box-shadow: 0 10px 24px rgba(87, 48, 66, .18); }
 html[data-theme="light"] .gn-auth-secondary,
 html[data-theme="light"] .gn-auth-google { border-color: var(--border-strong); background: rgba(248, 245, 237, .5); color: var(--accent-cyan); }
 html[data-theme="light"] .gn-auth-link:hover { color: var(--accent-cyan); text-decoration: underline; text-underline-offset: 3px; }
@@ -771,7 +771,7 @@ html[data-theme="light"] .modal-actions .modal-btn.close,
 html[data-theme="light"] .gn-import-actions .gn-import-close { border-color: var(--border-strong) !important; background: var(--surface-elevated) !important; color: var(--text-secondary) !important; }
 html[data-theme="light"] .modal-actions .modal-btn.save,
 html[data-theme="light"] .csv-import-save,
-html[data-theme="light"] .gn-import-actions .csv-import-save { background: linear-gradient(135deg, #7d415e, #633247) !important; color: var(--text-inverse) !important; }
+html[data-theme="light"] .gn-import-actions .csv-import-save { background: linear-gradient(135deg, #8f0f28, #633247) !important; color: var(--text-inverse) !important; }
 
 /* DAYLIGHT NODE MARK — soft chip, right-aligned, no hardcoded glow. */
 .landing-node-mark svg { filter: none !important; width: 24px !important; height: 24px !important; }

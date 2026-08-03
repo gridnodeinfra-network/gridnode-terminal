@@ -1134,5 +1134,6 @@
   "whatsnew.catFixed": "CORREGIDO",
   "whatsnew.catA11y": "ACCESIBILIDAD",
   "whatsnew.catMobile": "MÓVIL",
-  "whatsnew.catSecurity": "SEGURIDAD"
+  "whatsnew.catSecurity": "SEGURIDAD",
+  "shot.weightPlaceholder": "ej. 215.5"
 }
