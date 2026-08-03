@@ -554,10 +554,11 @@ html[lang="es"] .nav-lbl { font-size: .6rem !important; letter-spacing: .6px !im
 }
 /* Spotlight ring on the target element. */
 .gn-onb-target {
-  position: relative !important;
-  z-index: 945 !important;
+  /* never change position/transform of the spotlighted control —
+     fixed elements (nav, fab) must stay put so the click-through hole works */
   box-shadow: 0 0 0 2px #00d4ff, 0 0 24px rgba(0, 212, 255, .5) !important;
   border-radius: 8px;
+  transition: box-shadow .18s ease;
 }
 /* Reduced motion: no glow pulses, instant transitions. */
 @media (prefers-reduced-motion: reduce) {
@@ -948,3 +949,190 @@ html[data-theme="light"] #gnResearchList .gn-empty-state span { color: #2e424b !
 html[data-theme="light"] .gn-foundation-section summary > span { color: #1c2b31 !important; }
 html[data-theme="light"] .gn-foundation-section summary > em,
 html[data-theme="light"] .gn-lab-breadcrumb { color: #4d6b75 !important; }
+
+/* ============================================================
+   READABILITY FLOOR — corrective pass 2026-08-03
+   Shared overrides: meaningful text is never microtext, never
+   decorative-opacity, never thin. DAY OPS gets stronger contrast.
+   Wins over earlier rules by being later + !important where needed.
+   ============================================================ */
+:root {
+  --text-dim: #6f6f88;            /* dark-theme dim floor */
+  --text-helper: .78rem;
+  --text-label: .75rem;
+}
+html[data-theme="light"] {
+  --text-primary: #1a2328;
+  --text-secondary: #33454c;
+  --text-muted: #3f535a;
+  --text-dim: #3f535a;            /* was near-invisible gray */
+  --text-helper: .78rem;
+  --text-label: .75rem;
+}
+
+/* Microtext floor: .52–.59rem monospace labels -> .68rem, weight 600+ */
+.font-m, [class*="font-m"], .gn-kicker, .gn-micro, .gn-hud-label,
+.gn-stable-zone-title, .gn-stable-zone-btn, .gn-ledger-copy,
+.gn-empty-state span, .gn-research-context, .gn-research-disclaimer,
+.gn-record-row small, .gn-weight-record small, .gn-progress-signal small,
+.boot-deck-kicker, .boot-slogan, .boot-prog-pct, .boot-deck-footer,
+.boot-line, .form-label, .gn-helper, .gn-hint, .gn-footnote,
+.gn-tab-label, .gn-badge, .gn-chip, .gn-sec-label, .gn-caption {
+  font-size: .72rem !important;
+  letter-spacing: .02em !important;
+  font-weight: 600 !important;
+  opacity: 1 !important;
+}
+/* Real sentences/paragraphs: normal letter spacing */
+p, .gn-body, .gn-empty-state span, .gn-research-notice span,
+.gn-disclaimer, .gn-description, .gn-copy {
+  letter-spacing: .01em !important;
+  font-weight: 450 !important;
+}
+/* Buttons & controls: readable weight, no thinning */
+button, .btn, .gn-btn, .gn-stable-zone-btn, .gn-record-delete,
+.gn-tab, .gn-chip, [role="button"] {
+  font-weight: 600 !important;
+}
+/* Helper text never invisible */
+.gn-helper, .gn-hint, .gn-footnote, .gn-caption,
+.gn-empty-state span, .gn-research-disclaimer {
+  color: var(--text-mid, #8295a0) !important;
+  opacity: 1 !important;
+}
+html[data-theme="light"] .gn-helper,
+html[data-theme="light"] .gn-hint,
+html[data-theme="light"] .gn-footnote,
+html[data-theme="light"] .gn-caption,
+html[data-theme="light"] .gn-research-disclaimer {
+  color: #3a4c54 !important;   /* strong slate — WCAG-AA on light surfaces */
+}
+/* Empty states readable in both themes */
+.gn-empty-state b { font-size: .92rem !important; color: var(--text-primary, #eef6f8) !important; }
+.gn-empty-state span { font-size: .8rem !important; color: var(--text-mid, #8295a0) !important; }
+
+/* DAY OPS: strengthen all text tiers */
+html[data-theme="light"] .gn-empty-state b { color: #1a2328 !important; }
+html[data-theme="light"] .gn-empty-state span { color: #3f535a !important; }
+html[data-theme="light"] .gn-record-row small,
+html[data-theme="light"] .gn-weight-record small,
+html[data-theme="light"] .gn-progress-signal small,
+html[data-theme="light"] .gn-ledger-copy { color: #2c3f47 !important; }
+html[data-theme="light"] .gn-research-notice span { color: #4a3d20 !important; }
+html[data-theme="light"] .form-label,
+html[data-theme="light"] .gn-sec-label { color: #1a2328 !important; }
+
+/* Educational / info cards */
+.gn-info-card, .gn-educ-card, .gn-tip, .gn-phase-card, .gn-calc-card p,
+.gn-card-body { font-size: .8rem !important; line-height: 1.55 !important; color: var(--text-primary, #eef6f8) !important; }
+html[data-theme="light"] .gn-info-card,
+html[data-theme="light"] .gn-educ-card,
+html[data-theme="light"] .gn-tip,
+html[data-theme="light"] .gn-phase-card { color: #1a2328 !important; }
+
+/* Loading screen: both themes keep a dark branded deck; text must read */
+#boot { background: #05070c !important; }
+html[data-theme="light"] #boot { background: #0b0f16 !important; }
+#boot .boot-command-deck {
+  background: linear-gradient(180deg, rgba(13,20,30,.97), rgba(7,9,14,.99)) !important;
+  border-color: rgba(0,212,255,.45) !important;
+}
+#boot .boot-deck-kicker { font-size: .72rem !important; font-weight: 700 !important; color: #9fd8e4 !important; letter-spacing: .06em !important; }
+#boot .boot-deck-kicker b { color: #00e6f0 !important; }
+#boot .boot-slogan { font-size: .86rem !important; font-weight: 600 !important; color: #d7edf2 !important; letter-spacing: .03em !important; }
+#boot .boot-prog-pct { font-size: .72rem !important; font-weight: 700 !important; color: #7fd4e2 !important; }
+#boot .boot-deck-footer { font-size: .66rem !important; font-weight: 600 !important; color: #8fa8b2 !important; }
+#boot .boot-terminal { background: rgba(5,10,16,.85) !important; border-color: rgba(0,212,255,.35) !important; color: #b8e8f0 !important; }
+#boot .gn-b2b-wordmark tspan { fill: #00e6f0 !important; }
+#boot .gn-b2b-wordmark tspan:nth-child(2) { fill: #ff2d55 !important; }
+#boot .gn-b2b-symbol circle { fill: #ff2d55 !important; }
+#boot .gn-b2b-symbol path { fill: #00e6f0 !important; }
+
+/* ============================================================
+   MOBILE LAYOUT FIXES — corrective pass 2026-08-03
+   History-card actions: no overlap, ≥44px targets, room to breathe.
+   ============================================================ */
+@media (max-width: 430px) {
+  .gn-record-row, .gn-ledger-row, .gn-shot-card, .gn-history-card {
+    gap: 8px !important;
+    padding: 12px 10px !important;
+  }
+  .gn-record-row > div, .gn-shot-card > div { min-width: 0; flex: 1 1 auto; }
+  .gn-record-delete, .gn-record-edit, .gn-shot-actions button,
+  .gn-archive-btn, .gn-restore-edit {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    padding: 10px 12px !important;
+    margin: 0 !important;
+  }
+  .gn-record-state, .gn-shot-dose, .gn-dose-badge { font-size: .74rem !important; }
+  #logOv .gn-modal-body, .gn-modal-body { padding: 14px !important; }
+  #logOv input, #logOv select, #logOv textarea,
+  .gn-form input, .gn-form select, .gn-form textarea {
+    font-size: 16px !important;   /* iOS zoom prevention */
+    min-height: 46px !important;
+  }
+  .gn-tab, .scanner-mode-btn { min-height: 44px !important; font-size: .76rem !important; }
+}
+
+/* ============================================================
+   INTERACTIVE ONBOARDING — corrective pass 2026-08-03
+   Spotlight tour over the real UI: darken+block, highlight one
+   real control, hint line for action steps, both themes.
+   ============================================================ */
+.gn-onb-overlay {
+  position: fixed; inset: 0; z-index: 9000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 18px;
+  pointer-events: none;                 /* container never blocks; dims do */
+}
+.gn-onb-dim {
+  position: fixed; z-index: 9000;
+  background: rgba(3, 6, 10, .78);
+  pointer-events: auto;                 /* blocks clicks outside the hole */
+  transition: top .12s ease, left .12s ease, width .12s ease, height .12s ease;
+}
+.gn-onb-card {
+  position: relative; z-index: 9001;
+  width: min(92vw, 400px);
+  background: #0b1018 !important;
+  border: 1px solid rgba(0, 212, 255, .45);
+  border-radius: 14px;
+  padding: 20px 18px;
+  color: #eef6f8;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .6);
+  pointer-events: auto;                 /* card interactive */
+}
+.gn-onb-kicker { font-size: .68rem !important; font-weight: 700; letter-spacing: .08em; color: #7fd4e2 !important; margin-bottom: 8px; }
+.gn-onb-title { font-size: 1.06rem !important; font-weight: 800; margin: 0 0 8px; color: #eef6f8 !important; letter-spacing: .02em; }
+.gn-onb-body { font-size: .84rem !important; line-height: 1.55; font-weight: 500; color: #c9d8dd !important; margin: 0 0 10px; letter-spacing: .01em !important; }
+.gn-onb-hint { font-size: .76rem !important; font-weight: 700; color: #ffd9a0 !important; margin: 0 0 10px; letter-spacing: .02em; }
+.gn-onb-dots { display: flex; gap: 6px; margin: 0 0 14px; }
+.gn-onb-dots i { width: 8px; height: 8px; border-radius: 50%; background: #2a3a44; }
+.gn-onb-dots i.active { background: #00d4ff; box-shadow: 0 0 8px rgba(0, 212, 255, .8); }
+.gn-onb-dots i.done { background: #ff2d55; }
+.gn-onb-actions { display: flex; gap: 8px; }
+.gn-onb-actions button {
+  flex: 1; min-height: 46px; border-radius: 8px; font-size: .78rem !important;
+  font-weight: 700 !important; letter-spacing: .03em;
+  border: 1px solid rgba(0, 212, 255, .35); background: rgba(0, 212, 255, .08);
+  color: #9fe8f2 !important;
+}
+.gn-onb-actions .gn-onb-next { background: linear-gradient(135deg, #00d4ff, #0087a8); color: #04131a !important; }
+.gn-onb-actions button:disabled { opacity: .35; }
+.gn-onb-target {
+  box-shadow: 0 0 0 3px #00d4ff, 0 0 26px rgba(0, 212, 255, .65) !important;
+  border-radius: 8px;
+  transition: box-shadow .18s ease;
+}
+html[data-theme="light"] .gn-onb-dim { background: rgba(30, 36, 40, .72) !important; }
+html[data-theme="light"] .gn-onb-card { background: #f8f5ed !important; color: #1a2328 !important; border-color: rgba(0, 111, 130, .5); }
+html[data-theme="light"] .gn-onb-title { color: #1a2328 !important; }
+html[data-theme="light"] .gn-onb-body { color: #2c3f47 !important; }
+html[data-theme="light"] .gn-onb-hint { color: #8b5b08 !important; }
+html[data-theme="light"] .gn-onb-kicker { color: #006f82 !important; }
+html[data-theme="light"] .gn-onb-actions button { color: #0d4a58 !important; border-color: rgba(0, 111, 130, .4); background: rgba(0, 111, 130, .07); }
+html[data-theme="light"] .gn-onb-actions .gn-onb-next { background: linear-gradient(135deg, #006f82, #003d4a); color: #f4fbfc !important; }
+@media (prefers-reduced-motion: reduce) {
+  .gn-onb-overlay, .gn-onb-card, .gn-onb-target { transition: none !important; }
+}

@@ -23,9 +23,6 @@
     ['#gnInventorySave', 'GUARDAR ARTÍCULO DE INVENTARIO'],
     ['#gnInventoryExport', 'EXPORTAR INVENTARIO'],
     // Scanner / log modal location reads (bundle writes via textContent)
-    ['#scannerSelectedDisplay', 'Sin ubicación seleccionada'],
-    ['#scannerHistoryDisplay', 'Aún no hay ubicaciones registradas'],
-    ['#modalSelectedLocation', 'Sin ubicación seleccionada'],
     // Measurements card
     ['#gnMeasurementsTitle', 'PESO + MEDIDAS'],
     ['#gnMeasurementsForm label span', 'UNIDAD'],
@@ -46,6 +43,11 @@
       try { nodes = root.querySelectorAll ? root.querySelectorAll(selector) : []; } catch (_) { return; }
       nodes.forEach(function (node) {
         if (node.dataset && node.dataset.gnI18nOverlay === esText) return;
+        // Race guard: never clobber the scanner/location displays the main
+        // renderer now localizes itself (those were removed from ES_MAP).
+        if (node.id === 'scannerSelectedDisplay' || node.id === 'scannerHistoryDisplay' || node.id === 'modalSelectedLocation') {
+          if (node.textContent && node.textContent.trim() && node.textContent.trim() !== esText) return;
+        }
         if (node.tagName === 'INPUT' || node.tagName === 'TEXTAREA') {
           if (node.dataset && node.dataset.gnI18nOverlayOriginal === undefined) node.dataset.gnI18nOverlayOriginal = node.placeholder || '';
           node.placeholder = esText;

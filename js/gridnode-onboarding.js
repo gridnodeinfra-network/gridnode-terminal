@@ -1,129 +1,398 @@
-/* GRID//NODE — Interactive first-run onboarding.
- * Spotlight tour over the real UI: 10 steps, NEXT/BACK/SKIP, progress dots,
- * resume-after-skip, replay from the profile hub. Mobile-first, EN/ES,
- * reduced-motion safe. NEVER injects sample data; the guided task logs a real
- * (or cancelled) SHOT entry.
+/* GRID//NODE — REAL interactive first-run onboarding (corrective pass 2026-08-03).
+ * Spotlight tour over the LIVE UI: darkens + blocks the rest of the screen,
+ * highlights one real control at a time, requires the correct interaction on
+ * action steps (auto-advance), uses NEXT only for explanation steps, survives
+ * navigation + refresh, resumes from the saved step, supports BACK/SKIP/
+ * RESUME/RESTART/REPLAY, EN/ES, both themes, mobile widths 320-430.
+ * State: localStorage 'gn_onboarding_v1' = 'complete' | step index number.
+ * Never freezes the app: every step has a recovery timeout if the target is
+ * temporarily missing; missing targets degrade to an explanation step.
  */
 (function () {
   'use strict';
 
   var KEY = 'gn_onboarding_v1';
-  var STEPS = null;
+  var overlay = null;
+  var cur = 0;
+  var waiting = false;
+  var retries = 0;
+  var langCache = null;
 
-  var COPY = {
-    en: [
-      { title: 'WELCOME TO GRID//NODE', body: 'Your personal biotech command system. Every record stays on this device first — your body, your data, your grid.' },
-      { title: 'LANGUAGE & THEME', body: 'Switch between English and Spanish, and between the NIGHT GRID and DAY OPS themes, any time from the top bar.' },
-      { title: 'SHOTS', body: 'Log your protocol doses with medication, dose, date, time, and a body location from the holographic scanner.' },
-      { title: 'PHASE ENGINE', body: 'The phase sphere estimates your 7-day reference cycle from your shot history. Educational — not medical advice.' },
-      { title: 'RESULTS', body: 'Weight trends, progress signals, and timeline records — your changes over time, in one place.' },
-      { title: 'LAB', body: 'Research peptides, syringe draw, reconstitution, dose projection, and inventory — all calculators, no guesswork.' },
-      { title: 'NODE', body: 'Your profile hub: body metrics, passkeys, device vault, export/backup, and sign out.' },
-      { title: 'VAULT', body: 'Device vault and backups keep your data safe. Export CSV or a full backup any time.' },
-      { title: 'YOUR FIRST SHOT', body: 'Tap the + button and log one real SHOT — or cancel to try later. Nothing is saved until you press SAVE SHOT.' },
-      { title: 'YOU ARE IN', body: 'That\u2019s the core loop. Skip and resume any time, or replay this tour from your profile.' }
-    ],
-    es: [
-      { title: 'BIENVENIDO A GRID//NODE', body: 'Tu sistema de comando biotecnol\u00f3gico personal. Cada registro vive primero en este dispositivo: tu cuerpo, tus datos, tu grilla.' },
-      { title: 'IDIOMA Y TEMA', body: 'Cambia entre ingl\u00e9s y espa\u00f1ol, y entre los temas NIGHT GRID y DAY OPS, cuando quieras desde la barra superior.' },
-      { title: 'DOSIS (SHOTS)', body: 'Registra tus dosis con medicamento, dosis, fecha, hora y una ubicaci\u00f3n corporal desde el esc\u00e1ner hologr\u00e1fico.' },
-      { title: 'MOTOR DE FASES', body: 'La esfera de fases estima tu ciclo de referencia de 7 d\u00edas desde tu historial. Educativo — no es consejo m\u00e9dico.' },
-      { title: 'RESULTADOS', body: 'Tendencias de peso, se\u00f1ales de progreso y l\u00ednea de tiempo: tus cambios a lo largo del tiempo, en un solo lugar.' },
-      { title: 'LAB', body: 'P\u00e9ptidos de investigaci\u00f3n, jeringa, reconstituci\u00f3n, proyecci\u00f3n de dosis e inventario — pura calculadora, sin conjeturas.' },
-      { title: 'NODE', body: 'Tu centro de perfil: m\u00e9tricas corporales, passkeys, b\u00f3veda de dispositivos, exportaci\u00f3n/respaldo y cerrar sesi\u00f3n.' },
-      { title: 'VAULT', body: 'La b\u00f3veda de dispositivos y los respaldos protegen tus datos. Exporta CSV o un respaldo completo cuando quieras.' },
-      { title: 'TU PRIMERA DOSIS', body: 'Toca el bot\u00f3n + y registra una DOSIS real — o cancela para intentarlo luego. Nada se guarda hasta que pulses GUARDAR DOSIS.' },
-      { title: 'YA EST\u00c1S DENTRO', body: 'Ese es el ciclo principal. Omite y retoma cuando quieras, o repite este tour desde tu perfil.' }
-    ]
-  };
-
-  var TARGETS = [
-    null,
-    '.gn-theme-toggle',
-    '#navLog',
-    '#phaseCard',
-    '#navRes',
-    '#navLab',
-    '#topAva',
-    null,
-    '.fab',
-    null
+  /* Step model:
+   *   title/body : i18n keys (resolved via GN_I18N or copy table)
+   *   sel        : CSS selector of the real control to spotlight (action steps)
+   *   action     : 'tap' (require click on sel) | 'input' (require a value in sel) | null (explain only)
+   *   advanceOn  : optional event the step listens for to auto-advance
+   *   nav        : optional page name to switch to when the step activates (to survive navigation)
+   */
+  var STEPS = [
+    { title: 'onb.welcome', body: 'onb.welcomeBody', action: null },
+    { title: 'onb.shots', body: 'onb.shotsBody', sel: '#navLog', action: 'tap', nav: 'Log' },
+    { title: 'onb.register', body: 'onb.registerBody', sel: '.fab', action: 'tap', nav: 'Log' },
+    { title: 'onb.medication', body: 'onb.medicationBody', sel: '#cpShotMed', action: 'select', nav: 'Log' },
+    { title: 'onb.dose', body: 'onb.doseBody', sel: '#sDose', action: 'input', nav: 'Log' },
+    { title: 'onb.location', body: 'onb.locationBody', sel: '.gn-stable-zone-btn, #shotsRegionScanner', action: 'tap', nav: 'Log' },
+    { title: 'onb.save', body: 'onb.saveBody', sel: '#logOv .btn-primary, #logOv .modal-btn.save, [onclick*="saveShot"]', action: 'tap', nav: 'Log' },
+    { title: 'onb.results', body: 'onb.resultsBody', sel: '#navRes', action: 'tap', nav: 'Results' },
+    { title: 'onb.weight', body: 'onb.weightBody', sel: '#pageResults .results-card, #pageResults', action: null, nav: 'Results' },
+    { title: 'onb.lab', body: 'onb.labBody', sel: '#navLab', action: 'tap', nav: 'Lab' },
+    { title: 'onb.vault', body: 'onb.vaultBody', sel: '#topAva, #navPro', action: 'tap', nav: 'Profile' },
+    { title: 'onb.done', body: 'onb.doneBody', action: null }
   ];
 
-  function lang() { return (document.documentElement && document.documentElement.lang === 'es') ? 'es' : 'en'; }
-  function copy(i) { return (COPY[lang()] || COPY.en)[i] || { title: '', body: '' }; }
-  function getState() { try { return localStorage.getItem(KEY) || '0'; } catch (_) { return '0'; } }
+  var COPY = {
+    en: {
+      'onb.welcome': 'WELCOME TO GRID//NODE',
+      'onb.welcomeBody': 'Your personal biotech command system. Every record stays on this device first — your body, your data, your grid.',
+      'onb.shots': 'OPEN SHOTS',
+      'onb.shotsBody': 'Tap the SHOTS tab in the bottom navigation. This is where every dose gets logged.',
+      'onb.register': 'START REGISTERING A DOSE',
+      'onb.registerBody': 'Tap the + button to open the dose log.',
+      'onb.medication': 'SELECT THE MEDICATION',
+      'onb.medicationBody': 'Choose the medication for this dose from the selector.',
+      'onb.dose': 'ENTER OR CONFIRM THE DOSE',
+      'onb.doseBody': 'Enter or confirm the dose amount in mg.',
+      'onb.location': 'SELECT THE INJECTION LOCATION',
+      'onb.locationBody': 'Pick the body location for this shot from the scanner zones.',
+      'onb.save': 'SAVE THE SHOT',
+      'onb.saveBody': 'Press SAVE SHOT to store the record. Nothing is saved until you do.',
+      'onb.results': 'OPEN RESULTS',
+      'onb.resultsBody': 'Open the SIGNAL page — your trends and progress live here.',
+      'onb.weight': 'WEIGHT & PROGRESS',
+      'onb.weightBody': 'Weight trends, progress signals, and timeline records are recorded on this screen.',
+      'onb.lab': 'OPEN THE CALCULATOR / LAB',
+      'onb.labBody': 'The LAB holds syringe draw, reconstitution, dose projection, and research tools.',
+      'onb.vault': 'VAULT & YOUR DATA',
+      'onb.vaultBody': 'Your profile holds the VAULT: local-first storage, export, backup, and sync status.',
+      'onb.done': 'YOU\'RE READY',
+      'onb.doneBody': 'That\'s the core loop. You can replay this tour any time from your profile, and everything stays on this device first.'
+    },
+    es: {
+      'onb.welcome': 'BIENVENIDO A GRID//NODE',
+      'onb.welcomeBody': 'Tu sistema de comando biotecnológico personal. Cada registro vive primero en este dispositivo: tu cuerpo, tus datos, tu grilla.',
+      'onb.shots': 'ABRE DOSIS (SHOTS)',
+      'onb.shotsBody': 'Toca la pestaña DOSIS en la navegación inferior. Aquí se registra cada dosis.',
+      'onb.register': 'EMPIEZA A REGISTRAR UNA DOSIS',
+      'onb.registerBody': 'Toca el botón + para abrir el registro de dosis.',
+      'onb.medication': 'SELECCIONA EL MEDICAMENTO',
+      'onb.medicationBody': 'Elige el medicamento para esta dosis en el selector.',
+      'onb.dose': 'INGRESA O CONFIRMA LA DOSIS',
+      'onb.doseBody': 'Ingresa o confirma la cantidad de dosis en mg.',
+      'onb.location': 'SELECCIONA LA UBICACIÓN DE INYECCIÓN',
+      'onb.locationBody': 'Elige la ubicación corporal para esta dosis en las zonas del escáner.',
+      'onb.save': 'GUARDA LA DOSIS',
+      'onb.saveBody': 'Pulsa GUARDAR DOSIS para almacenar el registro. Nada se guarda hasta que lo hagas.',
+      'onb.results': 'ABRE RESULTADOS',
+      'onb.resultsBody': 'Abre la página SEÑAL — aquí viven tus tendencias y tu progreso.',
+      'onb.weight': 'PESO Y PROGRESO',
+      'onb.weightBody': 'Las tendencias de peso, señales de progreso y registros de línea de tiempo se guardan en esta pantalla.',
+      'onb.lab': 'ABRE LA CALCULADORA / LAB',
+      'onb.labBody': 'El LAB contiene jeringa, reconstitución, proyección de dosis y herramientas de investigación.',
+      'onb.vault': 'BÓVEDA Y TUS DATOS',
+      'onb.vaultBody': 'Tu perfil contiene la BÓVEDA: almacenamiento local primero, exportación, respaldo y estado de sincronización.',
+      'onb.done': 'YA ESTÁS LISTO',
+      'onb.doneBody': 'Ese es el ciclo principal. Puedes repetir este tour cuando quieras desde tu perfil, y todo vive primero en este dispositivo.'
+    }
+  };
+
+  function lang() {
+    if (langCache === null) langCache = (document.documentElement && document.documentElement.lang === 'es') ? 'es' : 'en';
+    return langCache;
+  }
+  function t(key, fallback) {
+    var i18n = window.GN_I18N;
+    if (i18n && typeof i18n.t === 'function') { var v = i18n.t(key); if (v && v !== key) return v; }
+    var c = COPY[lang()] || COPY.en;
+    return c[key] || fallback || key;
+  }
+  function state() { try { return localStorage.getItem(KEY) || '0'; } catch (_) { return '0'; } }
   function setState(v) { try { localStorage.setItem(KEY, String(v)); } catch (_) {} }
+  function stepCount() { return STEPS.length; }
+  function isEs() { return lang() === 'es'; }
+  function btn(txt) { return isEs() ? txt : txt; }
 
-  var overlay = null;
+  function targetEl(step) {
+    if (!step.sel) return null;
+    var el = null;
+    try { el = document.querySelector(step.sel.split(',')[0]); } catch (_) { el = null; }
+    return el;
+  }
 
-  function stepCount() { return COPY.en.length; }
+  function removeSpotlight() {
+    document.querySelectorAll('.gn-onb-target').forEach(function (el) { el.classList.remove('gn-onb-target'); });
+  }
+
+  function holeRect(el) {
+    if (!el) return null;
+    var r = el.getBoundingClientRect();
+    // Select steps: include the open dropdown list so its options stay clickable.
+    var step = STEPS[cur];
+    if (step && step.action === 'select') {
+      var drop = document.querySelector('#cpShotMedDrop');
+      if (drop) {
+        var dr = drop.getBoundingClientRect();
+        if (dr.height > 4 && getComputedStyle(drop).visibility !== 'hidden') {
+          return {
+            top: Math.min(r.top, dr.top), bottom: Math.max(r.bottom, dr.bottom),
+            left: Math.min(r.left, dr.left), right: Math.max(r.right, dr.right)
+          };
+        }
+      }
+    }
+    return { top: r.top, bottom: r.bottom, left: r.left, right: r.right };
+  }
+
+  function positionHole(el) {
+    if (!el || !overlay) return;
+    var box = holeRect(el);
+    if (!box) return;
+    var vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+    var vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+    var pad = 6;
+    var dims = {
+      t: { top: 0, left: 0, width: vw, height: Math.max(0, box.top - pad) },
+      b: { top: box.bottom + pad, left: 0, width: vw, height: Math.max(0, vh - box.bottom - pad) },
+      l: { top: box.top - pad, left: 0, width: Math.max(0, box.left - pad), height: box.bottom - box.top + pad * 2 },
+      r: { top: box.top - pad, left: box.right + pad, width: Math.max(0, vw - box.right - pad), height: box.bottom - box.top + pad * 2 }
+    };
+    overlay.querySelectorAll('.gn-onb-dim').forEach(function (dim) {
+      var k = dim.dataset.onbDim, cfg = dims[k];
+      dim.style.top = cfg.top + 'px'; dim.style.left = cfg.left + 'px';
+      dim.style.width = cfg.width + 'px'; dim.style.height = cfg.height + 'px';
+    });
+  }
+
+  function positionCard(el) {
+    if (!overlay) return;
+    var card = overlay.querySelector('.gn-onb-card');
+    if (!card) return;
+    if (!el) { card.style.top = ''; card.style.left = ''; card.style.bottom = ''; card.style.right = ''; card.style.margin = ''; return; }
+    var r = el.getBoundingClientRect();
+    var vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+    var cardH = 240; // approx card height; measured below
+    card.style.left = '50%';
+    card.style.right = 'auto';
+    card.style.top = 'auto';
+    card.style.bottom = 'auto';
+    card.style.transform = 'translateX(-50%)';
+    var measured = card.offsetHeight || cardH;
+    var center = r.top + r.height / 2;
+    if (center > vh * 0.62) {
+      // target low: card at top
+      card.style.top = 'max(10px, calc(env(safe-area-inset-top) + 10px))';
+    } else if (center < vh * 0.30) {
+      // target high: card at bottom
+      card.style.bottom = 'max(10px, calc(env(safe-area-inset-bottom) + 10px))';
+      card.style.top = 'auto';
+    } else {
+      // middle: card above the target if room, else below
+      var spaceAbove = r.top - 8;
+      if (spaceAbove > measured + 12) {
+        card.style.top = 'auto';
+        card.style.bottom = (vh - r.top + 8) + 'px';
+      } else {
+        card.style.top = (r.bottom + 8) + 'px';
+        card.style.bottom = 'auto';
+      }
+    }
+  }
+
+  function safeAdvance() {
+    if (waiting) return;
+    waiting = true;
+    setTimeout(function () {
+      waiting = false;
+      renderStep(cur + 1);
+    }, 350);
+  }
+
+  function bindStep(step) {
+    if (!step.sel) return;
+    var el = targetEl(step);
+    if (!el) return;
+    if (step.action === 'tap') {
+      el.addEventListener('click', function once(e) {
+        if (e.defaultPrevented) return;
+        // Only advance if this IS the real control (not a bubble from a child of another control)
+        var t = e.target;
+        if (t && t.closest && !t.closest(step.sel)) return;
+        safeAdvance();
+        el.removeEventListener('click', once);
+      }, { capture: true });
+    } else if (step.action === 'select') {
+      // Dropdown control: advance when a real option is selected inside it.
+      var onPick = function (e) {
+        if (!e.target || !e.target.closest) return;
+        if (!e.target.closest('#cpShotMedDrop .cp-option, #cpShotMed .cp-option')) return;
+        setTimeout(function () {
+          var val = document.querySelector('#cpShotMedVal');
+          var picked = val && val.textContent && val.textContent.trim() !== 'Select medication' && !/Select medication/i.test(val.textContent);
+          if (picked) safeAdvance();
+        }, 200);
+      };
+      document.addEventListener('click', onPick);
+      // re-hole when the dropdown opens so options are clickable
+      document.addEventListener('click', function onAnyClick() {
+        if (overlay && STEPS[cur] && STEPS[cur].action === 'select') {
+          setTimeout(function () { var t = targetEl(STEPS[cur]); if (t) { positionHole(t); positionCard(t); } }, 60);
+        }
+      });
+      var onPickCleanup = function () { document.removeEventListener('click', onPick); };
+      window.addEventListener('gn:onb-step-leave', onPickCleanup, { once: true });
+    } else if (step.action === 'input') {
+      var probe = function () {
+        var v = el.value || '';
+        if (v && v.trim().length > 0) {
+          safeAdvance();
+          el.removeEventListener('input', probe);
+          el.removeEventListener('change', probe);
+        }
+      };
+      el.addEventListener('input', probe);
+      el.addEventListener('change', probe);
+    }
+  }
 
   function renderStep(i) {
     if (!overlay) return;
-    var c = copy(i);
-    var target = TARGETS[i];
-    document.querySelectorAll('.gn-onb-target').forEach(function (el) { el.classList.remove('gn-onb-target'); });
-    var targetEl = target ? document.querySelector(target) : null;
-    if (targetEl) {
-      targetEl.classList.add('gn-onb-target');
-      targetEl.scrollIntoView({ block: 'center', behavior: (window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth') });
+    if (i >= stepCount()) { finish(); return; }
+    if (i < 0) i = 0;
+    cur = i;
+    var step = STEPS[i];
+    document.dispatchEvent(new CustomEvent('gn:onb-step-leave'));
+    removeSpotlight();
+
+    // Navigation steps: switch to the target page so the control is actually visible.
+    if (step.nav && typeof showPage === 'function' && step.action === 'tap') {
+      try { showPage(step.nav, null); } catch (_) {}
     }
-    overlay.querySelector('[data-onb-kicker]').textContent = '// SYSTEM ORIENTATION  ' + (i + 1) + ' / ' + stepCount();
-    overlay.querySelector('[data-onb-title]').textContent = c.title;
-    overlay.querySelector('[data-onb-body]').textContent = c.body;
-    overlay.querySelector('[data-onb-dots]').innerHTML = Array.from({ length: stepCount() }, function (_, d) {
-      return '<i class="' + (d === i ? 'active' : '') + (d < i ? ' done' : '') + '"></i>';
-    }).join('');
-    overlay.querySelector('[data-onb-back]').disabled = i === 0;
-    var next = overlay.querySelector('[data-onb-next]');
-    next.textContent = i === stepCount() - 1 ? (lang() === 'es' ? 'TERMINAR' : 'FINISH') : (lang() === 'es' ? 'SIGUIENTE' : 'NEXT');
-    setState(String(i));
+
+    // Give the page a beat to render, then spotlight.
+    setTimeout(function () {
+      var el = step.sel ? targetEl(step) : null;
+      if (step.sel && !el) {
+        // Target temporarily missing: wait up to 3s (6 x 500ms), else degrade to explain step.
+        if (retries < 6) { retries++; setTimeout(function () { renderStep(i); }, 500); return; }
+        retries = 0;
+      } else {
+        retries = 0;
+      }
+      if (el) {
+        el.classList.add('gn-onb-target');
+        // Bring the target fully into the viewport (some controls are fixed or
+        // inside transformed containers; scroll window + element).
+        try {
+          var rect = el.getBoundingClientRect();
+          var vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+          var vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+          var onScreen = rect.top >= 4 && rect.bottom <= vh - 4 && rect.left >= 4 && rect.right <= vw - 4;
+          if (!onScreen) {
+            el.scrollIntoView({ block: 'center', inline: 'center', behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'auto' : 'smooth' });
+            if (rect.top < 0 || rect.bottom > vh) { try { window.scrollBy({ top: (rect.top + rect.height / 2) - vh / 2, behavior: 'auto' }); } catch (_) {} }
+          }
+        } catch (_) {}
+        // Re-measure after layout settles (late nav render / scroll completion).
+        setTimeout(function () { positionHole(el); positionCard(el); }, 120);
+        setTimeout(function () { positionHole(el); positionCard(el); }, 420);
+      } else {
+        overlay.querySelectorAll('.gn-onb-dim').forEach(function (dim) { dim.style.top = '0px'; dim.style.left = '0px'; dim.style.width = '0px'; dim.style.height = '0px'; });
+        positionCard(null);
+      }
+      var c = t(step.title, step.title);
+      positionCard(el);
+      overlay.querySelector('[data-onb-title]').textContent = c;
+      overlay.querySelector('[data-onb-body]').textContent = t(step.body, step.body);
+      overlay.querySelector('[data-onb-kicker]').textContent = '// SYSTEM ORIENTATION  ' + (i + 1) + ' / ' + stepCount();
+      overlay.querySelector('[data-onb-dots]').innerHTML = Array.from({ length: stepCount() }, function (_, d) {
+        return '<i class="' + (d === i ? 'active' : '') + (d < i ? ' done' : '') + '"></i>';
+      }).join('');
+      overlay.querySelector('[data-onb-back]').disabled = i === 0;
+      var next = overlay.querySelector('[data-onb-next]');
+      var action = step.action;
+      next.style.display = action ? 'none' : '';
+      overlay.querySelector('.gn-onb-hint').style.display = action ? '' : 'none';
+      overlay.querySelector('.gn-onb-hint').textContent = action ? (isEs() ? 'TOCA EL CONTROL DESTACADO PARA CONTINUAR' : 'TAP THE HIGHLIGHTED CONTROL TO CONTINUE') : (isEs() ? 'PULSA SIGUIENTE' : 'PRESS NEXT');
+      setState(String(i));
+      bindStep(step);
+    }, 220);
+  }
+
+  function finish() {
+    dismiss(true);
   }
 
   function dismiss(complete) {
     if (overlay) { overlay.remove(); overlay = null; }
-    document.querySelectorAll('.gn-onb-target').forEach(function (el) { el.classList.remove('gn-onb-target'); });
+    removeSpotlight();
+    document.removeEventListener('keydown', esc);
+    window.removeEventListener('scroll', onViewportMove, { capture: true });
+    window.removeEventListener('resize', onViewportMove);
     if (complete) setState('complete');
+  }
+
+  function esc(e) { if (e.key === 'Escape' && overlay) dismiss(false); }
+
+  var moveTimer = null;
+  function onViewportMove() {
+    if (!overlay) return;
+    if (moveTimer) clearTimeout(moveTimer);
+    moveTimer = setTimeout(function () { renderStep(cur); }, 120);
   }
 
   function start(resume) {
     if (overlay) return;
     var startAt = 0;
     if (resume) {
-      var s = parseInt(getState(), 10);
+      var s = parseInt(state(), 10);
       if (!isNaN(s) && s > 0 && s < stepCount()) startAt = s;
     }
+    langCache = null;
     overlay = document.createElement('div');
     overlay.className = 'gn-onb-overlay';
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
     overlay.setAttribute('aria-label', 'GRID//NODE orientation');
+    // Four dim panes leave a hole over the spotlighted control so the real
+    // control stays visible AND clickable (classic coach-mark pattern; the
+    // container itself is pointer-events:none).
     overlay.innerHTML =
+      '<div class="gn-onb-dim" data-onb-dim="t"></div>' +
+      '<div class="gn-onb-dim" data-onb-dim="b"></div>' +
+      '<div class="gn-onb-dim" data-onb-dim="l"></div>' +
+      '<div class="gn-onb-dim" data-onb-dim="r"></div>' +
       '<div class="gn-onb-card">' +
         '<div class="gn-onb-kicker" data-onb-kicker></div>' +
         '<h2 class="gn-onb-title" data-onb-title></h2>' +
         '<p class="gn-onb-body" data-onb-body></p>' +
+        '<p class="gn-onb-hint" style="display:none"></p>' +
         '<div class="gn-onb-dots" data-onb-dots aria-hidden="true"></div>' +
         '<div class="gn-onb-actions">' +
-          '<button type="button" class="gn-onb-skip" data-onb-skip>' + (lang() === 'es' ? 'OMITIR' : 'SKIP') + '</button>' +
-          '<button type="button" class="gn-onb-back" data-onb-back>' + (lang() === 'es' ? 'ATRÁS' : 'BACK') + '</button>' +
-          '<button type="button" class="gn-onb-next" data-onb-next>' + (lang() === 'es' ? 'SIGUIENTE' : 'NEXT') + '</button>' +
+          '<button type="button" class="gn-onb-skip" data-onb-skip>' + (isEs() ? 'OMITIR' : 'SKIP') + '</button>' +
+          '<button type="button" class="gn-onb-back" data-onb-back>' + (isEs() ? 'ATRÁS' : 'BACK') + '</button>' +
+          '<button type="button" class="gn-onb-next" data-onb-next>' + (isEs() ? 'SIGUIENTE' : 'NEXT') + '</button>' +
         '</div>' +
       '</div>';
     document.body.appendChild(overlay);
     overlay.querySelector('[data-onb-skip]').addEventListener('click', function () { dismiss(false); });
-    overlay.querySelector('[data-onb-back]').addEventListener('click', function () {
-      var cur = parseInt(overlay.querySelector('[data-onb-kicker]').textContent.match(/\d+ \//)[0], 10);
-      renderStep(Math.max(0, cur - 2));
-    });
+    overlay.querySelector('[data-onb-back]').addEventListener('click', function () { renderStep(cur - 1); });
     overlay.querySelector('[data-onb-next]').addEventListener('click', function () {
-      var cur = parseInt(overlay.querySelector('[data-onb-kicker]').textContent.match(/\d+ \//)[0], 10);
-      if (cur >= stepCount()) { dismiss(true); return; }
-      renderStep(cur);
+      var step = STEPS[cur];
+      if (step && step.action) return; // action steps: NEXT hidden anyway
+      safeAdvance();
     });
-    overlay.addEventListener('click', function (e) { if (e.target === overlay) dismiss(false); });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && overlay) dismiss(false); }, { once: true });
+    // Block clicks outside the card (and outside the spotlighted control on action steps).
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay) return; // allow nothing outside card; not even dismiss
+      var step = STEPS[cur];
+      if (step && step.action) {
+        var el = targetEl(step);
+        if (el && el.contains(e.target)) return; // handled by capture listener
+        e.stopPropagation(); e.preventDefault();
+      }
+    });
+    document.addEventListener('keydown', esc);
+    window.addEventListener('scroll', onViewportMove, { passive: true, capture: true });
+    window.addEventListener('resize', onViewportMove);
     renderStep(startAt);
   }
 
@@ -134,7 +403,7 @@
     row.type = 'button';
     row.className = 'gn-vault-row gn-onb-replay';
     row.dataset.gnTourReplay = '';
-    row.innerHTML = '<span class="gn-vault-row-ico" aria-hidden="true">◆</span><span>' + (lang() === 'es' ? 'TOUR GUIADO' : 'GUIDED TOUR') + '</span><span class="gn-vault-row-arrow" aria-hidden="true">›</span>';
+    row.innerHTML = '<span class="gn-vault-row-ico" aria-hidden="true">◆</span><span>' + (isEs() ? 'TOUR GUIADO' : 'GUIDED TOUR') + '</span><span class="gn-vault-row-arrow" aria-hidden="true">›</span>';
     row.addEventListener('click', function () { start(true); });
     var anchor = hub.querySelector('[data-vault-action], .gn-vault-row');
     if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(row, anchor);
@@ -142,12 +411,12 @@
   }
 
   function maybeAutoStart() {
-    if (getState() === 'complete') return;
+    if (state() === 'complete') return;
     var landing = document.getElementById('landing');
     var app = document.getElementById('app');
     var inApp = app && getComputedStyle(app).display !== 'none' && (!landing || getComputedStyle(landing).display === 'none');
     if (!inApp) { window.setTimeout(maybeAutoStart, 1200); return; }
-    start(true); // resume from the saved step when the visitor left mid-tour
+    start(true);
   }
 
   function boot() {
@@ -162,7 +431,11 @@
     }
   }
 
-  window.GN_ONBOARDING = Object.freeze({ start: start, state: getState });
+  window.GN_ONBOARDING = Object.freeze({
+    start: start,
+    restart: function () { setState('0'); start(false); },
+    state: state
+  });
 
   boot();
 })();

@@ -49,6 +49,27 @@ const ZONES = Object.freeze({
   ]
 });
 
+const ZONE_IDS = Object.freeze({
+  'Right Abdomen — Upper': 'zone.rightAbdomenUpper',
+  'Right Abdomen — Lower': 'zone.rightAbdomenLower',
+  'Left Abdomen — Upper': 'zone.leftAbdomenUpper',
+  'Left Abdomen — Lower': 'zone.leftAbdomenLower',
+  'Right Thigh — Upper': 'zone.rightThighUpper',
+  'Right Thigh — Lower': 'zone.rightThighLower',
+  'Left Thigh — Upper': 'zone.leftThighUpper',
+  'Left Thigh — Lower': 'zone.leftThighLower',
+  'Left Back Upper Arm — Upper': 'zone.leftBackUpperArmUpper',
+  'Left Back Upper Arm — Lower': 'zone.leftBackUpperArmLower',
+  'Right Back Upper Arm — Upper': 'zone.rightBackUpperArmUpper',
+  'Right Back Upper Arm — Lower': 'zone.rightBackUpperArmLower'
+});
+const zoneLabel = function (stored) {
+  if (!stored) return '';
+  const key = ZONE_IDS[stored];
+  if (key) { const t = tx(key, stored); if (t && t !== key) return t; }
+  return stored;
+};
+
 const MEDICATIONS = Object.freeze({
   Zepbound: 'Zepbound (Tirzepatide)',
   Mounjaro: 'Mounjaro (Tirzepatide)',
@@ -359,7 +380,7 @@ export function renderShots() {
     return `<article class="log-entry ${archived ? 'archived' : ''}">
       <div class="log-main"><div><div class="log-date">${archived ? 'ARCHIVED ' : ''}${safeText(formatDateTime(record.date))}</div><div class="log-med">${safeText(MEDICATIONS[record.med] || record.med || 'CUSTOM')}</div></div>
       <div class="log-dose">${safeText(record.dose || '—')}mg</div></div>
-      <div class="log-chips">${record.site ? `<span class="log-chip lc-site">${safeText(record.site)}</span>` : ''}${record.wt ? `<span class="log-chip lc-wt">${safeText(record.wt)}lb</span>` : ''}${record.se?.length ? `<span class="log-chip lc-se">${safeText(record.se.join(', '))}</span>` : ''}</div>
+      <div class="log-chips">${record.site ? `<span class="log-chip lc-site">${safeText(zoneLabel(record.site))}</span>` : ''}${record.wt ? `<span class="log-chip lc-wt">${safeText(record.wt)}lb</span>` : ''}${record.se?.length ? `<span class="log-chip lc-se">${safeText(record.se.join(', '))}</span>` : ''}</div>
       ${record.notes ? `<div class="log-notes">${safeText(record.notes)}</div>` : ''}
       <div class="log-actions"><button type="button" class="log-action-btn" data-shot-action="edit" data-shot-id="${safeText(record.id)}" ${archived ? 'disabled' : ''}>EDIT</button><button type="button" class="log-action-btn ${archived ? '' : 'del'}" data-shot-action="${archived ? 'restore' : 'archive'}" data-shot-id="${safeText(record.id)}">${archived ? 'RESTORE' : 'ARCHIVE'}</button></div>
     </article>`;
@@ -376,7 +397,7 @@ export function setScannerMode(mode, button) {
   qa('.scanner-mode-btn').forEach(item => item.classList.toggle('active', item === button || item.dataset.mode === moduleState.scannerMode));
   const stage = document.querySelector('.asset-scan-stage');
   if (stage) { stage.classList.remove('mode-core', 'mode-lower', 'mode-upper'); stage.classList.add(`mode-${moduleState.scannerMode}`); }
-  setText('scannerModeLabel', `${moduleState.scannerMode.toUpperCase()} TRACKABLE ZONES`);
+  setText('scannerModeLabel', tx('shots.trackableZones', moduleState.scannerMode.toUpperCase() + ' TRACKABLE ZONES', { zone: moduleState.scannerMode.toUpperCase() }));
   renderScanner();
 }
 
@@ -385,7 +406,7 @@ export function selectScannerLocation(label) {
   S.set('selectedLocation', label);
   queueCloudSync('workspace');
   renderScanner();
-  showToast(`Location staged: ${label}`);
+  showToast(tx('shots.locationStaged', 'Location staged: ') + zoneLabel(label));
 }
 
 export function renderScanner() {
@@ -393,10 +414,10 @@ export function renderScanner() {
   if (!panel) return;
   let picker = panel.querySelector('.gn-stable-zone-picker');
   if (!picker) { picker = document.createElement('div'); picker.className = 'gn-stable-zone-picker'; panel.appendChild(picker); }
-  picker.innerHTML = `<div class="gn-stable-zone-title">TRACKABLE ${moduleState.scannerMode.toUpperCase()} ZONES</div>${ZONES[moduleState.scannerMode].map(label => `<button type="button" class="gn-stable-zone-btn ${label === moduleState.selectedLocation ? 'selected' : ''}" data-stable-zone="${safeText(label)}">${safeText(label)}</button>`).join('')}`;
-  setText('scannerSelectedDisplay', moduleState.selectedLocation || 'No location selected');
+  picker.innerHTML = `<div class="gn-stable-zone-title">${tx('shots.trackableZones', 'TRACKABLE ' + moduleState.scannerMode.toUpperCase() + ' ZONES', { zone: moduleState.scannerMode.toUpperCase() })}</div>${ZONES[moduleState.scannerMode].map(label => `<button type="button" class="gn-stable-zone-btn ${label === moduleState.selectedLocation ? 'selected' : ''}" data-stable-zone="${safeText(label)}" data-zone-key="${safeText(ZONE_IDS[label] || '')}">${safeText(zoneLabel(label))}</button>`).join('')}`;
+  setText('scannerSelectedDisplay', zoneLabel(moduleState.selectedLocation) || tx('shots.noLocationSelected', 'No location selected'));
   const recent = sortedShots().slice(-4).reverse().map(item => item.site).filter(Boolean);
-  setText('scannerHistoryDisplay', recent.length ? recent.join(' · ') : 'No logged location yet');
+  setText('scannerHistoryDisplay', recent.length ? recent.map(zoneLabel).join(' · ') : tx('shots.noLoggedLocationYet', 'No logged location yet'));
   qa('.zone-overlay').forEach(button => {
     const visible = button.dataset.mode === moduleState.scannerMode;
     button.style.pointerEvents = visible ? 'auto' : 'none';
@@ -435,7 +456,7 @@ export function editShot(id) {
   const record = getAllShots().find(item => item.id === id && !item.archived);
   if (!record) return;
   moduleState.editingShotId = id;
-  setText('modalSelectedLocation', record.site || 'No location selected');
+  setText('modalSelectedLocation', zoneLabel(record.site) || tx('shots.noLocationSelected', 'No location selected'));
   moduleState.selectedLocation = record.site || moduleState.selectedLocation;
   if ($('sDate')) $('sDate').value = record.date?.slice(0, 10) || todayISO();
   if ($('sTime')) $('sTime').value = formatTime12(new Date(record.date));
