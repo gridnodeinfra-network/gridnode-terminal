@@ -857,6 +857,7 @@ const moduleState = {
   shotFilters: { medication: '', site: '', range: 'all', query: '' },
   pendingFutureShot: false,
   pendingLocationDraft: false,
+  shotDraft: null,
   pendingImport: null,
   pendingImportMeta: null,
   pendingBackup: null,
@@ -1568,8 +1569,23 @@ function openLogModal(options = {}) {
     $('cpShotMed')?.closest('.form-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="protocol">' + tx('shot.protocol', '02 // PROTOCOL') + '</div>');
     $('modalSelectedLocation')?.closest('.form-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="location">' + tx('shot.location', '03 // LOCATION') + '</div>');
   }
-  const preserveDraft = Boolean(options.preserve || moduleState.pendingLocationDraft);
+  const preserveDraft = Boolean(options.preserve || moduleState.pendingLocationDraft || moduleState.shotDraft);
   moduleState.pendingLocationDraft = false;
+  if (preserveDraft && moduleState.shotDraft) {
+    // Restore the full unsaved draft (canonical med key + every entered field).
+    const d = moduleState.shotDraft;
+    if (d.med) setSelect('cpShotMed', d.med, MEDICATIONS[d.med] || d.med);
+    if ($('sDose')) $('sDose').value = d.dose || '';
+    if ($('sDate')) $('sDate').value = d.date || todayISO();
+    if ($('sTime')) $('sTime').value = d.time || '';
+    if (d.meridiem) moduleState.meridiem = d.meridiem;
+    if ($('sWt')) $('sWt').value = d.wt || '';
+    if ($('sNotes')) $('sNotes').value = d.notes || '';
+    if (Array.isArray(d.se)) {
+      qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = d.se.includes(input.value); });
+    }
+    moduleState.shotDraft = null; // consumed once
+  }
   if (!preserveDraft) {
     moduleState.editingShotId = null;
     document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode(tx('shot.logShot', 'LOG SHOT')));
@@ -1598,6 +1614,7 @@ function renderShotDevicePicker(selectedId = '') {
 function closeLog() {
   $('logOv')?.classList.remove('active');
   moduleState.pendingLocationDraft = false;
+  moduleState.shotDraft = null;
   moduleState.editingShotId = null;
 }
 
@@ -1682,6 +1699,13 @@ function saveShot(allowFuture = false) {
     const time = getShotTime24($('sTime')?.value);
     const site = moduleState.selectedLocation;
     if (!med || !(Number.isFinite(dose) && dose > 0) || !date || !time || !site) { showToast('Add medication, dose, date, time, and a logged location.', true); return; }
+    // FAIL CLOSED: never persist a medication that isn't a known canonical key.
+    // Ambiguous/invalid historical values must be corrected, never silently mapped.
+    if (!Object.prototype.hasOwnProperty.call(MEDICATIONS, med)) {
+      showToast('Select a valid medication for this record.', true);
+      moduleState.savingShot = false;
+      return;
+    }
     const dateTime = new Date(`${date}T${time}`);
     if (!allowFuture && dateTime > new Date()) { moduleState.pendingFutureShot = true; $('futureTimestampConfirm')?.classList.add('active'); return; }
     const existing = moduleState.editingShotId ? getAllShots().find(item => item.id === moduleState.editingShotId) : null;
@@ -1753,6 +1777,17 @@ function confirmFutureTimestampSave() { $('futureTimestampConfirm')?.classList.r
 function handleShotFab() { openLogModal(); }
 function goToScannerForLocationFromLog() {
   moduleState.pendingLocationDraft = true;
+  // Snapshot the ENTIRE unsaved draft so reopening restores every field.
+  moduleState.shotDraft = {
+    med: selectState.cpShotMed?.val || null,
+    dose: $('sDose')?.value || '',
+    date: $('sDate')?.value || '',
+    time: $('sTime')?.value || '',
+    meridiem: moduleState.meridiem || null,
+    wt: $('sWt')?.value || '',
+    notes: $('sNotes')?.value || '',
+    se: qa('#logOv input[type="checkbox"]:checked').map(input => input.value)
+  };
   $('logOv')?.classList.remove('active');
   showPage('Log', $('navLog'));
   document.querySelector('.gn-stable-zone-picker')?.scrollIntoView({ behavior: 'smooth', block: 'center' });

@@ -45,27 +45,31 @@
     },
     "index.html": {
       "bytes": 611032,
-      "sha256": "48dd691b4dc31dd8fdb1bc231a6790f4b2d55e483041d11f2d6fb7a675fc89cd"
+      "sha256": "08fed5bdf946c3eee8e4159cdde363cca1e37b485d31c8fe1ca92dd7209695f6"
     },
     "js/gridnode-app.js": {
       "bytes": 25863,
-      "sha256": "70bd7c9b4d2d147979f151b1dffde5507d89cee7003abafb225b354ec61dddd8"
+      "sha256": "d17e90949c55020bbe389a0b6b50049be5bb1963c76c876b1fb270597d498a97"
     },
     "js/gridnode-bundle.js": {
-      "bytes": 286256,
-      "sha256": "f57eb761bb2c7661d49abb9d3ca556196db1ad406ca2863a5435dc9a5ddfc6b1"
+      "bytes": 287906,
+      "sha256": "c77043ea01c1872aa3f20390bfdf5a5371dbf579dd541d8ee6a29d3847c99714"
     },
     "js/gridnode-i18n-overlay.js": {
       "bytes": 3913,
       "sha256": "fbaa59331bcaaa5a7967c5dbb92d8afa449cff0e68549f827215108a7a2b9b58"
     },
+    "js/gridnode-modules.js": {
+      "bytes": 55333,
+      "sha256": "e6e0b50c70740ffe61adc944b7cb1145b43af8ee4879cd42c484cb4803f1ac65"
+    },
     "js/gridnode-native.js": {
       "bytes": 7231,
-      "sha256": "e2ab3ed61381eb8f97c4708b07c2fb1398afdc5ed71c09bc7ac6ab905fe7c96c"
+      "sha256": "f485c2ad9dde0bca5d8263b9dc3e7685bf1f77b6ae20fe6dda2e38ace8291dae"
     },
     "js/gridnode-onboarding.js": {
-      "bytes": 27408,
-      "sha256": "023f911e3ca2c86c6590115a9fe90bc98be9f00f61a3cb0c62f3903a98f8949b"
+      "bytes": 27880,
+      "sha256": "076fd4f8ffc6946f1bf39c01ea4feaf0e1419babcf51b782db5825e6d5ebde06"
     },
     "js/gridnode-product-completion.js": {
       "bytes": 31871,
@@ -73,7 +77,7 @@
     },
     "js/gridnode-version.js": {
       "bytes": 444,
-      "sha256": "1906f33c2542b49f0e5974ba5699f99e1f805967c889b66301ea74df264a8de8"
+      "sha256": "1e78f1a1d18b09889a36d475bb2829bc1cc4fa29a3aba08a830b3d4212fb3956"
     },
     "js/gridnode-whatsnew.js": {
       "bytes": 7570,
@@ -90,7 +94,7 @@
   },
   "metadata_note": "Corrective pass 2026-08-03: readability floor, ES zone IDs, onboarding v2, boot theming; bundle patched in-place (legacy section).",
   "production_branch": null,
-  "release_marker": "20260802.17",
+  "release_marker": "20260802.18",
   "retrieved_at_utc": "2026-08-03T13:29:08Z",
   "runtime_version": "2.1.7"
 }

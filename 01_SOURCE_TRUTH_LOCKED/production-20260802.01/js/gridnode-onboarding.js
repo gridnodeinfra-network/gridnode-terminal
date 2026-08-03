@@ -295,6 +295,13 @@
         }, 450);
       }
       if (step.prep === 'openScanner') {
+        // CRITICAL: mark the draft as pending BEFORE closing so the save-step
+        // reopen preserves the user's entered medication/dose/etc. Without this,
+        // openLogModal() resets the form from profile and can silently swap the
+        // selected medication (release-blocking identity defect).
+        if (window.GNModules && window.GNModules.moduleState) {
+          try { window.GNModules.moduleState.pendingLocationDraft = true; } catch (_) {}
+        }
         // Close the log modal and show the Log page ourselves (instant, no
         // smooth-scroll race with the modal-close re-render).
         var modalEl = document.getElementById('logOv');
