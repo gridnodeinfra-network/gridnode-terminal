@@ -52,16 +52,16 @@
       "sha256": "d17e90949c55020bbe389a0b6b50049be5bb1963c76c876b1fb270597d498a97"
     },
     "js/gridnode-bundle.js": {
-      "bytes": 287906,
-      "sha256": "c77043ea01c1872aa3f20390bfdf5a5371dbf579dd541d8ee6a29d3847c99714"
+      "bytes": 288009,
+      "sha256": "462898e87324c51f7cd545b2ef0309ccbf08475b4cb3925529859b9072dfac66"
     },
     "js/gridnode-i18n-overlay.js": {
       "bytes": 3913,
       "sha256": "fbaa59331bcaaa5a7967c5dbb92d8afa449cff0e68549f827215108a7a2b9b58"
     },
     "js/gridnode-modules.js": {
-      "bytes": 55333,
-      "sha256": "e6e0b50c70740ffe61adc944b7cb1145b43af8ee4879cd42c484cb4803f1ac65"
+      "bytes": 55436,
+      "sha256": "0242a0e60c2d23b50f361b14c1cd9ed73c973c2a81969bf0c1c9b3f757f5b977"
     },
     "js/gridnode-native.js": {
       "bytes": 7231,
@@ -94,7 +94,7 @@
   },
   "metadata_note": "Corrective pass 2026-08-03: readability floor, ES zone IDs, onboarding v2, boot theming; bundle patched in-place (legacy section).",
   "production_branch": null,
-  "release_marker": "20260802.18",
+  "release_marker": "20260802.17",
   "retrieved_at_utc": "2026-08-03T13:29:08Z",
   "runtime_version": "2.1.7"
 }

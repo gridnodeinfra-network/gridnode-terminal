@@ -472,6 +472,8 @@ export function closeLog() {
 export function editShot(id) {
   const record = getAllShots().find(item => item.id === id && !item.archived);
   if (!record) return;
+  // Never let a pending location-detour draft hijack an EDIT session.
+  moduleState.shotDraft = null;
   moduleState.editingShotId = id;
   setText('modalSelectedLocation', zoneLabel(record.site) || tx('shots.noLocationSelected', 'No location selected'));
   moduleState.selectedLocation = record.site || moduleState.selectedLocation;
