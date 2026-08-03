@@ -3745,7 +3745,7 @@ function wireGlobalEvents() {
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   navigator.serviceWorker
-    .register('/sw.js?v=20260802.12', { updateViaCache: 'none' })
+    .register('/sw.js?v=20260802.13', { updateViaCache: 'none' })
     .then(registration => registration.update())
     .catch(() => {});
 }
