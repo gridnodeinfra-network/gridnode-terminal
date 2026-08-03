@@ -1223,3 +1223,22 @@ html[data-theme="light"] .cp-group-minimized { color: #1a2328 !important; backgr
 html[data-theme="light"] .gn-date-panel { background: var(--surface-elevated, #f8f5ed) !important; color: #1a2328 !important; }
 html[data-theme="light"] .gn-date-panel .cal-day { color: #1a2328 !important; }
 html[data-theme="light"] .gn-date-panel .cal-day.selected { background: #006f82 !important; color: #fff !important; }
+
+/* LAB focused view: keep the back control reachable while the tool content
+   scrolls (the overlay is the scroll container; the header must stay on top). */
+.gn-lab-tool-head {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 5 !important;
+  background: #080b10 !important;
+  padding-top: 10px !important;
+  margin: -14px -14px 12px !important;
+  padding-left: 14px !important;
+  padding-right: 14px !important;
+}
+html[data-theme="light"] .gn-lab-tool-head { background: var(--surface-elevated, #f8f5ed) !important; }
+.gn-lab-back {
+  min-height: 44px !important;
+  padding: 10px 12px !important;
+  font-size: .64rem !important;
+}

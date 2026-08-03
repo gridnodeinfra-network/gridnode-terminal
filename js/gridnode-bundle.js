@@ -876,7 +876,8 @@ const moduleState = {
   researchEditId: null,
   deviceEditId: null,
   labTool: null,
-  labOriginalSlots: new Map()
+  labOriginalSlots: new Map(),
+  labToolHistoryState: null
 };
 
 const ZONES = Object.freeze({
@@ -2328,12 +2329,44 @@ function openLabTool(tool) {
   renderLabFoundations();
   if (tool === 'devices') renderDeviceVault();
   overlay.querySelector('[data-lab-back]')?.focus({ preventScroll: true });
+  // Browser-Back integration: remember this tool-open state so Back closes it.
+  try {
+    moduleState.labToolHistoryState = { tool: tool };
+    history.pushState({ labToolOpen: true, tool: tool }, '');
+  } catch (_) {}
 }
 
 function closeLabTool() {
+  // Close the focused LAB tool view fully: hide the overlay, restore the DOM
+  // nodes to their original slots, and release the focused-view state.
+  const overlay = $('gnLabToolOverlay');
   const page = $('pageLab');
-  if (page) page.classList.remove('gn-tool-focus');
+  if (overlay) {
+    overlay.classList.remove('active');
+    overlay.hidden = true;
+  }
+  try { restoreLabNodes(); } catch (_) {}
+  if (page) page.classList.remove('gn-tool-focus', 'gn-lab-tool-open');
+  document.body?.classList.remove('gn-lab-tool-open');
+  // Balance the history entry pushed on open (only if we opened it).
+  try {
+    if (moduleState.labToolHistoryState) { history.back(); moduleState.labToolHistoryState = null; }
+  } catch (_) {}
 }
+
+window.addEventListener('popstate', function () {
+  // Browser Back while the LAB tool overlay is open -> close the tool view.
+  const overlay = $('gnLabToolOverlay');
+  if (overlay && overlay.classList.contains('active')) {
+    overlay.classList.remove('active');
+    overlay.hidden = true;
+    try { restoreLabNodes(); } catch (_) {}
+    const page = $('pageLab');
+    if (page) page.classList.remove('gn-tool-focus', 'gn-lab-tool-open');
+    document.body?.classList.remove('gn-lab-tool-open');
+  }
+  moduleState.labToolHistoryState = null;
+});
 
 function renderLabFoundations() {
   const list = $('gnResearchList');

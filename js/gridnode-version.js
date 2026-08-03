@@ -7,7 +7,7 @@
   'use strict';
   window.GN_VERSION = Object.freeze({
     semver: '0.10.0',
-    release: '20260802.19',
+    release: '20260802.20',
     title: 'MOBILE POLISH PHASE TWO',
     date: '2026-08-02'
   });
