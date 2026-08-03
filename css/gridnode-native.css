@@ -572,3 +572,61 @@ html[data-theme="light"] .gn-onb-skip { color: #4d6b75; border-color: rgba(20, 6
 html[data-theme="light"] .gn-onb-back { color: #2e424b; border-color: rgba(20, 60, 70, .3); }
 /* Profile replay row. */
 .gn-onb-replay { width: 100%; text-align: left; }
+
+/* ═══ P2: hologram progressive enhancement (CSS-only, safe) ═══ */
+/* Framing + depth: instrument bezel around the scan stage. */
+.site-scanner {
+  border: 1px solid rgba(0, 212, 255, .28) !important;
+  box-shadow: inset 0 0 28px rgba(0, 212, 255, .08), 0 10px 34px rgba(0, 0, 0, .45) !important;
+  border-radius: 14px !important;
+}
+/* Slow holographic scan sweep (cheap, one repaint layer). */
+.asset-scan-stage::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, transparent 0%, rgba(0, 212, 255, .10) 48%, transparent 100%);
+  pointer-events: none;
+  z-index: 2;
+  animation: gnScanSweep 5.2s linear infinite;
+}
+@keyframes gnScanSweep {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+/* Selected-zone energy pulse (contained, no layout impact). */
+.zone-overlay[data-selected="true"], .zone-overlay.selected {
+  animation: gnZonePulse 2.4s ease-in-out infinite;
+}
+@keyframes gnZonePulse {
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(0, 212, 255, .5)); }
+  50% { filter: drop-shadow(0 0 10px rgba(0, 212, 255, .85)); }
+}
+/* Zone hotspot hit areas + visible focus. */
+.gn-stable-zone-btn {
+  min-height: 42px !important;
+  min-width: 42px !important;
+}
+.gn-stable-zone-btn:focus-visible, .zone-overlay:focus-within {
+  outline: 2px solid rgba(0, 212, 255, .9) !important;
+  outline-offset: 2px !important;
+}
+/* DAY OPS hologram: deeper teal, softer glow. */
+html[data-theme="light"] .site-scanner {
+  border-color: rgba(0, 111, 130, .35) !important;
+  box-shadow: inset 0 0 24px rgba(0, 111, 130, .10), 0 10px 30px rgba(30, 45, 55, .16) !important;
+}
+html[data-theme="light"] .asset-scan-stage::after {
+  background: linear-gradient(to bottom, transparent 0%, rgba(0, 111, 130, .12) 48%, transparent 100%);
+}
+html[data-theme="light"] .zone-overlay[data-selected="true"], html[data-theme="light"] .zone-overlay.selected {
+  animation: gnZonePulseLight 2.4s ease-in-out infinite;
+}
+@keyframes gnZonePulseLight {
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(0, 111, 130, .4)); }
+  50% { filter: drop-shadow(0 0 8px rgba(0, 111, 130, .7)); }
+}
+/* Reduced motion: static hologram, instant states. */
+@media (prefers-reduced-motion: reduce) {
+  .asset-scan-stage::after { animation: none !important; opacity: .35 !important; }
+  .zone-overlay[data-selected="true"], .zone-overlay.selected { animation: none !important; }
+}

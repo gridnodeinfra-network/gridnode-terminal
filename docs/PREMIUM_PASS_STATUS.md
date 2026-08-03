@@ -5,7 +5,7 @@ Updated continuously through the completion loop. Status: COMPLETE / PARTIAL / B
 | Phase | Item | Status | Evidence |
 |-------|------|--------|----------|
 | P1 | Interactive first-run onboarding | **COMPLETE** | js/gridnode-onboarding.js + css; QA 13/13 (auto-start, next, skip+resume, complete, no re-show, replay, ES/DAY); release 20260802.12 |
-| P2 | Hologram progressive enhancement | NOT STARTED | |
+| P2 | Hologram progressive enhancement | **COMPLETE** | CSS-only bezel, scan sweep, zone pulse, DAY OPS, reduced-motion; QA 0 errors both themes | |
 | P3 | Empty/loading/error/offline-state polish | NOT STARTED | |
 | P4 | Accessibility + keyboard/focus review | NOT STARTED | |
 | P5 | Calculator correctness tests | NOT STARTED | |
