@@ -803,3 +803,148 @@ html[data-theme="light"] .gn-pwa-ios-later {
   color: #4d6b75 !important;
   border-color: rgba(20, 60, 70, .3) !important;
 }
+
+/* ═══ Research Peptides premium hierarchy (shared, both themes) ═══ */
+/* Panel structure: clearer section boundaries + breathing room. */
+.gn-foundation-panel { padding: 18px 16px !important; }
+.gn-foundation-head { margin-bottom: 14px; }
+.gn-foundation-head h2 { font-size: 1.02rem; letter-spacing: 1.6px; }
+.gn-lab-breadcrumb { font-size: .68rem; color: var(--text-dim, #6f6f88); margin-bottom: 10px; }
+
+/* Section summaries: bigger, tappable, clear open state. */
+.gn-foundation-section summary { padding: 14px 12px !important; }
+.gn-foundation-section summary > span { font: 800 .78rem var(--font-d, monospace); letter-spacing: 1.8px; color: var(--text, #eef6f8); }
+.gn-foundation-section summary > em { font-size: .66rem; color: var(--text-dim, #6f6f88); }
+
+/* Warning/notice block: readable, accent-bordered. */
+.gn-research-notice {
+  margin: 12px 0 14px; padding: 12px 14px;
+  border: 1px solid var(--border, rgba(255,255,255,.15));
+  border-left: 3px solid #ffd166;
+  border-radius: 8px; background: rgba(255, 209, 102, .06);
+  font: .78rem/1.7 var(--font-b, system-ui); color: var(--text-mid, #b7c7d3);
+}
+.gn-research-notice strong {
+  display: block; margin-bottom: 4px;
+  font: 800 .68rem var(--font-d, monospace); letter-spacing: 1.6px; color: #ffd166;
+}
+
+/* Library: category heading, context, chips. */
+.gn-research-library { display: grid; gap: 12px; margin: 14px 0 16px; }
+.gn-research-group {
+  padding: 12px 12px 14px;
+  border: 1px solid var(--border, rgba(255,255,255,.14));
+  border-radius: 10px; background: var(--panel, #0e0e16);
+}
+.gn-research-group > span {
+  display: block; margin-bottom: 4px;
+  font: 800 .72rem var(--font-d, monospace); letter-spacing: 1.6px; color: #00d4ff;
+}
+.gn-research-context {
+  display: block; margin-bottom: 10px;
+  font: .74rem/1.6 var(--font-b, system-ui); color: var(--text-mid, #b7c7d3);
+}
+.gn-research-group > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.gn-research-group > div button {
+  min-height: 44px; padding: 8px 14px;
+  border: 1px solid rgba(0, 212, 255, .32); border-radius: 8px;
+  background: rgba(0, 212, 255, .07); color: var(--text, #eef6f8);
+  font: 700 .78rem var(--font-b, system-ui); letter-spacing: .4px;
+  transition: background .15s ease, transform .1s ease;
+}
+.gn-research-group > div button:hover { background: rgba(0, 212, 255, .16); }
+.gn-research-group > div button:active { transform: scale(.96); }
+.gn-research-group > div button:focus-visible { outline: 2px solid rgba(0,212,255,.9); outline-offset: 2px; }
+.gn-research-disclaimer {
+  margin: 0 0 16px; padding: 10px 12px;
+  border-left: 3px solid var(--warning, #ffd166);
+  font: .76rem/1.65 var(--font-b, system-ui); color: var(--text-mid, #b7c7d3);
+}
+
+/* Form hierarchy: labels, fields, spacing. */
+#gnResearchForm .gn-form-grid { display: grid; gap: 12px; margin-bottom: 14px; grid-template-columns: 1fr 1fr; }
+#gnResearchForm label > span,
+#gnResearchForm label:first-child > span { display: block; margin-bottom: 6px; font: 800 .74rem var(--font-d, monospace); letter-spacing: 1.4px; color: var(--text, #eef6f8); }
+#gnResearchForm input, #gnResearchForm select, #gnResearchForm textarea {
+  width: 100%; box-sizing: border-box;
+  min-height: 44px; padding: 10px 12px;
+  border: 1px solid var(--border, rgba(255,255,255,.15)); border-radius: 8px;
+  background: var(--surface, #0a0a14); color: var(--text, #eef6f8);
+  font-size: 16px; font-family: var(--font-b, system-ui);
+}
+#gnResearchForm textarea { min-height: 88px; line-height: 1.55; }
+#gnResearchForm input:focus-visible, #gnResearchForm select:focus-visible, #gnResearchForm textarea:focus-visible {
+  outline: 2px solid rgba(0, 212, 255, .7); outline-offset: 1px; border-color: rgba(0, 212, 255, .5);
+}
+#gnResearchForm > label { display: block; margin-bottom: 14px; }
+#gnResearchSave { min-height: 48px !important; font-size: .8rem !important; letter-spacing: 1.8px !important; }
+
+/* Record list: readable rows. */
+.gn-record-list { display: grid; gap: 10px; margin-top: 16px; }
+.gn-record-row {
+  display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border, rgba(255,255,255,.13)); border-radius: 10px;
+  background: var(--panel, #0e0e16);
+}
+.gn-record-row b { font: 700 .84rem var(--font-b, system-ui); color: var(--text, #eef6f8); }
+.gn-record-row small { display: block; font: .72rem/1.55 var(--font-b, system-ui); color: var(--text-mid, #b7c7d3); }
+.gn-record-state { font: 800 .64rem var(--font-d, monospace); letter-spacing: 1.4px; color: #00d4ff; }
+.gn-record-delete { min-width: 40px; min-height: 40px; font-size: 1rem; }
+
+/* Empty state: polished, centered, readable. */
+#gnResearchList .gn-empty-state {
+  padding: 32px 16px; text-align: center;
+  border: 1px dashed var(--border, rgba(255,255,255,.16)); border-radius: 12px;
+  background: var(--panel, #0e0e16);
+}
+#gnResearchList .gn-empty-state b { display: block; margin-bottom: 8px; font: 800 .8rem var(--font-d, monospace); letter-spacing: 1.8px; color: var(--text, #eef6f8); }
+#gnResearchList .gn-empty-state span { font: .78rem/1.65 var(--font-b, system-ui); color: var(--text-mid, #b7c7d3); }
+
+/* Modal/tool overlay: reduce density, add structure. */
+#gnLabToolOverlay .gn-lab-tool-head { padding: 14px 16px !important; }
+#gnLabToolHost .gn-foundation-panel { margin: 0; }
+#gnLabToolHost .gn-foundation-grid { gap: 10px; margin-bottom: 16px; }
+
+/* Small screens: one column, stacked controls. */
+@media (max-width: 480px) {
+  #gnResearchForm .gn-form-grid { grid-template-columns: 1fr; }
+  .gn-research-group > div button { flex: 1 1 calc(50% - 4px); }
+  .gn-record-row { grid-template-columns: 1fr; }
+  .gn-record-row > div:last-child { justify-content: flex-end; display: flex; }
+}
+/* Desktop/tablet: spacious modal + two-column library. */
+@media (min-width: 768px) {
+  .gn-research-library { grid-template-columns: 1fr 1fr; }
+  #gnResearchForm .gn-form-grid { grid-template-columns: 1fr 1fr 1fr; }
+}
+
+/* ── DAY OPS research overrides ── */
+html[data-theme="light"] .gn-research-group { background: var(--surface, #f4f1e9) !important; border-color: rgba(20,60,70,.22) !important; }
+html[data-theme="light"] .gn-research-group > span { color: #006f82 !important; }
+html[data-theme="light"] .gn-research-context,
+html[data-theme="light"] .gn-research-disclaimer { color: #2e424b !important; }
+html[data-theme="light"] .gn-research-group > div button {
+  background: #ffffff !important; color: #1c2b31 !important; border-color: rgba(20,60,70,.3) !important;
+}
+html[data-theme="light"] .gn-research-group > div button:hover { background: #e8f4f5 !important; }
+html[data-theme="light"] .gn-research-notice {
+  background: #f6efe0 !important; color: #4d3f1f !important; border-left-color: #b98a1f !important;
+}
+html[data-theme="light"] .gn-research-notice strong { color: #7a5a10 !important; }
+html[data-theme="light"] #gnResearchForm input,
+html[data-theme="light"] #gnResearchForm select,
+html[data-theme="light"] #gnResearchForm textarea {
+  background: #ffffff !important; color: #1c2b31 !important; border-color: rgba(20,60,70,.3) !important;
+}
+html[data-theme="light"] #gnResearchForm label > span { color: #1c2b31 !important; }
+html[data-theme="light"] .gn-record-row { background: #fbf9f2 !important; border-color: rgba(20,60,70,.2) !important; }
+html[data-theme="light"] .gn-record-row b { color: #1c2b31 !important; }
+html[data-theme="light"] .gn-record-row small { color: #2e424b !important; }
+html[data-theme="light"] .gn-record-state { color: #006f82 !important; }
+html[data-theme="light"] #gnResearchList .gn-empty-state { background: #f4f1e9 !important; }
+html[data-theme="light"] #gnResearchList .gn-empty-state b { color: #1c2b31 !important; }
+html[data-theme="light"] #gnResearchList .gn-empty-state span { color: #2e424b !important; }
+html[data-theme="light"] .gn-foundation-section summary > span { color: #1c2b31 !important; }
+html[data-theme="light"] .gn-foundation-section summary > em,
+html[data-theme="light"] .gn-lab-breadcrumb { color: #4d6b75 !important; }

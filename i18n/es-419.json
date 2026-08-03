@@ -1135,5 +1135,20 @@
   "whatsnew.catA11y": "ACCESIBILIDAD",
   "whatsnew.catMobile": "MÓVIL",
   "whatsnew.catSecurity": "SEGURIDAD",
-  "shot.weightPlaceholder": "ej. 215.5"
+  "shot.weightPlaceholder": "ej. 215.5",
+  "research.archivedHeading": "REGISTROS ARCHIVADOS · Restaura el registro antes de editar.",
+  "research.archivedState": "ARCHIVADO",
+  "research.restoreToEdit": "RESTAURAR PARA EDITAR",
+  "research.manualEntry": "Entrada manual",
+  "research.selectDate": "SELECCIONAR FECHA",
+  "research.emptyTitle": "AÚN NO HAY REGISTROS DE INVESTIGACIÓN",
+  "research.emptyBody": "Elige una entrada de la biblioteca o crea un registro personalizado cuando tengas algo que conservar.",
+  "research.archivedPrefix": "Archivado",
+  "research.noticeTitle": "REGISTROS DE INVESTIGACIÓN INGRESADOS POR EL USUARIO",
+  "research.noticeBody": "Algunos de los compuestos anteriores tienen indicaciones aprobadas por la FDA en contextos clínicos específicos. Este organizador no distingue entre uso regulado y de investigación. Todos los registros son ingresados por el usuario. Verifica de forma independiente.",
+  "lab.organizedSystems": "// SISTEMAS ORGANIZADOS",
+  "lab.expansionLayer": "CAPA DE EXPANSIÓN",
+  "research.updated": "REGISTRO DE INVESTIGACIÓN ACTUALIZADO",
+  "research.captured": "REGISTRO DE INVESTIGACIÓN GUARDADO",
+  "research.timelineSignal": "LÍNEA DE TIEMPO ACTUALIZADA // SOLO INGRESO DEL USUARIO"
 }

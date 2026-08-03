@@ -2104,7 +2104,7 @@ function renderCustomDatePopover(wrapper) {
   const label = wrapper.querySelector('[data-gn-date-label]');
   const grid = wrapper.querySelector('[data-gn-date-grid]');
   if (!label || !grid) return;
-  label.textContent = month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  label.textContent = month.toLocaleDateString(document.documentElement.lang === 'es' ? 'es-419' : 'en-US', { month: 'long', year: 'numeric' });
   const first = new Date(year, monthIndex, 1).getDay();
   const total = new Date(year, monthIndex + 1, 0).getDate();
   const selected = wrapper.input.value || '';
@@ -2115,7 +2115,7 @@ function syncCustomDate(input) {
   const wrapper = input?.closest('.gn-custom-date');
   const trigger = wrapper?.querySelector('[data-gn-date-trigger]');
   if (!wrapper || !trigger) return;
-  trigger.textContent = input.value ? formatDate(input.value, { month: 'short', day: 'numeric', year: 'numeric' }) : 'SELECT DATE';
+  trigger.textContent = input.value ? formatDate(input.value, { month: 'short', day: 'numeric', year: 'numeric' }) : tx('research.selectDate', 'SELECT DATE');
 }
 
 function installCustomDate(input) {
@@ -2180,8 +2180,8 @@ function ensureLabFoundations() {
   const header = page.querySelector('.page-hdr');
   if (!header) return;
   header.insertAdjacentHTML('afterend', `<section class="gn-foundation-panel" data-gn-lab-foundation aria-labelledby="gnLabFoundationTitle">
-    <div class="gn-foundation-head"><div><div class="gn-foundation-kicker">// ORGANIZED SYSTEMS</div><h2 id="gnLabFoundationTitle">LAB <span>EXPANSION LAYER</span></h2></div><span class="gn-foundation-signal">LOCAL RECORDS</span></div>
-    <div class="gn-lab-breadcrumb">LAB <b>›</b> CHOOSE A SYSTEM</div>
+    <div class="gn-foundation-head"><div><div class="gn-foundation-kicker" data-i18n="lab.organizedSystems">// ORGANIZED SYSTEMS</div><h2 id="gnLabFoundationTitle">LAB <span data-i18n="lab.expansionLayer">EXPANSION LAYER</span></h2></div><span class="gn-foundation-signal" data-i18n="lab.localRecords">LOCAL RECORDS</span></div>
+    <div class="gn-lab-breadcrumb" data-i18n="lab.chooseSystem">LAB <b>›</b> CHOOSE A SYSTEM</div>
     <div class="gn-foundation-grid">
       <button type="button" class="gn-foundation-tile" data-lab-focus="calculators"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-g"><svg><use href="#gn-biometric-gauge"></use></svg></span></span><b data-i18n="lab.calculators">CALCULATORS</b><small data-i18n="lab.calculatorsHelp">Focused educational tools</small></button>
       <button type="button" class="gn-foundation-tile active" data-lab-focus="research"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-lab-vessel"></use></svg></span></span><b data-i18n="lab.researchPeptides">RESEARCH PEPTIDES</b><small data-i18n="lab.researchPeptidesHelp">Personal record tracking</small></button>
@@ -2190,9 +2190,9 @@ function ensureLabFoundations() {
       <button type="button" class="gn-foundation-tile" data-lab-focus="ledger"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-r"><svg><use href="#gn-timeline-node"></use></svg></span></span><b data-i18n="lab.eventLedger">EVENT LEDGER</b><small data-i18n="lab.eventLedgerHelp">Source-aware history</small></button>
     </div>
     <details class="gn-foundation-section" open id="gnResearchSection"><summary><span data-i18n="lab.researchPeptides">RESEARCH PEPTIDES</span><em data-i18n="research.organize">ORGANIZE · OBSERVE · REVIEW</em></summary>
-      <div class="gn-research-notice"><strong>USER-ENTERED RESEARCH RECORDS</strong><span>Some compounds above have FDA-approved indications in specific clinical contexts. This organizer does not distinguish regulated from research use. All records are user-entered. Verify independently.</span></div>
+      <div class="gn-research-notice"><strong data-i18n="research.noticeTitle">USER-ENTERED RESEARCH RECORDS</strong><span data-i18n="research.noticeBody">Some compounds above have FDA-approved indications in specific clinical contexts. This organizer does not distinguish regulated from research use. All records are user-entered. Verify independently.</span></div>
       <div class="gn-research-library">${RESEARCH_LIBRARY.map(({ category, names, context }) => { const catKey = { 'RECOVERY & REPAIR': 'lab.recoveryRepair', 'METABOLIC & BODY COMPOSITION': 'lab.metabolic', 'CELLULAR & MITOCHONDRIAL': 'lab.cellular', 'IMMUNE & NEUROLOGICAL': 'lab.immune' }[category]; const ctxKey = context === 'RESEARCH-FOCUSED RECORDS · REGULATORY STATUS IS NOT VERIFIED HERE.' ? 'lab.researchKicker' : null; return `<div class="gn-research-group"><span>${safeText(catKey ? tx(catKey, category) : category)}</span><small class="gn-research-context">${safeText(ctxKey ? tx(ctxKey, context) : context)}</small><div>${names.map(name => `<button type="button" data-research-name="${safeText(name)}" data-research-category="${safeText(category)}">${safeText(name)}</button>`).join('')}</div></div>`; }).join('')}<div class="gn-research-group"><span data-i18n="lab.customEntry">CUSTOM ENTRY</span><small class="gn-research-context" data-i18n="lab.customEntryHelp">USER-ENTERED RECORD · REGULATORY STATUS IS NOT VERIFIED HERE.</small><div><button type="button" data-research-name="" data-research-category="Custom Research" data-i18n="lab.customEntry">CUSTOM ENTRY</button></div></div></div>
-      <div class="gn-research-disclaimer">Some compounds above have FDA-approved indications in specific clinical contexts. This organizer does not distinguish regulated from research use. All records are user-entered. Verify independently.</div>
+      <div class="gn-research-disclaimer" data-i18n="research.noticeBody">Some compounds above have FDA-approved indications in specific clinical contexts. This organizer does not distinguish regulated from research use. All records are user-entered. Verify independently.</div>
       <form class="gn-record-form" id="gnResearchForm"><div class="gn-form-grid"><label><span data-i18n="research.recordName">RECORD NAME</span><input id="gnResearchName" required placeholder="Select a library entry or type a custom name" data-i18n-placeholder="research.recordNamePlaceholder"></label><label><span data-i18n="research.category">CATEGORY</span><input id="gnResearchCategory" placeholder="Research category" data-i18n-placeholder="research.categoryPlaceholder"></label><label><span data-i18n="research.date">DATE</span><input id="gnResearchDate" type="date"></label></div><div class="gn-form-grid"><label><span data-i18n="research.status">STATUS</span><select id="gnResearchState"><option data-i18n="research.tracking">TRACKING</option><option data-i18n="research.completed">COMPLETED</option><option data-i18n="research.archived">ARCHIVED</option><option data-i18n="research.noteOnly">RESEARCH NOTE ONLY</option></select></label><label><span data-i18n="research.source">SOURCE</span><input id="gnResearchSource" placeholder="User-entered source or note" data-i18n-placeholder="research.sourcePlaceholder"></label></div><label><span data-i18n="research.observations">OBSERVATIONS / NOTES</span><textarea id="gnResearchNotes" rows="3" placeholder="User-entered observations only" data-i18n-placeholder="research.observationsPlaceholder"></textarea></label><button class="btn-full btn-primary" type="submit" id="gnResearchSave" data-i18n="research.save">SAVE RESEARCH RECORD</button></form>
       <div class="gn-record-list" id="gnResearchList"></div>
     </details>
@@ -2284,7 +2284,7 @@ function renderLabFoundations() {
     const records = S.get('researchRecords', []);
     const active = records.filter(record => !record.archived);
     const archived = records.filter(record => record.archived);
-    list.innerHTML = records.length ? `${active.slice().reverse().map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(record.category || tx('lab.customResearch', 'CUSTOM RESEARCH'))} · ${safeText(formatDate(record.date || record.createdAt))} · ${safeText(record.source || 'Manual Entry')}</small></div><span class="gn-record-state">${safeText(record.state || tx('lab.tracking', 'TRACKING'))}</span><div style="display:flex;gap:4px"><button type="button" class="gn-record-delete" data-research-edit="${safeText(record.id)}" aria-label="${tx('lab.editResearch', 'Edit research record')}">✎</button><button type="button" class="gn-record-delete" data-research-archive="${safeText(record.id)}" aria-label="${tx('lab.archiveResearch', 'Archive research record')}">×</button></div></article>`).join('')}${archived.length ? `<div class="gn-ledger-copy" style="margin-top:10px">ARCHIVED RECORDS · Restore the record before editing.</div>${archived.slice().reverse().map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(record.category || tx('lab.customResearch', 'CUSTOM RESEARCH'))} · Archived ${safeText(formatDate(record.modifiedAt || record.createdAt))}</small></div><span class="gn-record-state">ARCHIVED</span><button type="button" class="gn-record-delete gn-restore-edit" data-research-restore="${safeText(record.id)}" aria-label="${tx('lab.restoreResearch', 'Restore research record to edit')}">RESTORE TO EDIT</button></article>`).join('')}` : ''}` : '<div class="gn-empty-state"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-lab-vessel"></use></svg></span><b>NO RESEARCH RECORDS YET</b><span>Choose a library entry or create a custom record when you have something to preserve.</span></div>';
+    list.innerHTML = records.length ? `${active.slice().reverse().map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(record.category || tx('lab.customResearch', 'CUSTOM RESEARCH'))} · ${safeText(formatDate(record.date || record.createdAt))} · ${safeText(record.source || tx('research.manualEntry', 'Manual Entry'))}</small></div><span class="gn-record-state">${safeText(record.state || tx('lab.tracking', 'TRACKING'))}</span><div style="display:flex;gap:4px"><button type="button" class="gn-record-delete" data-research-edit="${safeText(record.id)}" aria-label="${tx('lab.editResearch', 'Edit research record')}">✎</button><button type="button" class="gn-record-delete" data-research-archive="${safeText(record.id)}" aria-label="${tx('lab.archiveResearch', 'Archive research record')}">×</button></div></article>`).join('')}${archived.length ? `<div class="gn-ledger-copy" style="margin-top:10px">${tx("research.archivedHeading", "ARCHIVED RECORDS · Restore the record before editing.")}</div>${archived.slice().reverse().map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(record.category || tx('lab.customResearch', 'CUSTOM RESEARCH'))} · ${tx('research.archivedPrefix', 'Archived')} ${safeText(formatDate(record.modifiedAt || record.createdAt))}</small></div><span class="gn-record-state">${tx("research.archivedState", "ARCHIVED")}</span><button type="button" class="gn-record-delete gn-restore-edit" data-research-restore="${safeText(record.id)}" aria-label="${tx('lab.restoreResearch', 'Restore research record to edit')}">${tx("research.restoreToEdit", "RESTORE TO EDIT")}</button></article>`).join('')}` : ''}` : `<div class="gn-empty-state"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-lab-vessel"></use></svg></span><b>${tx("research.emptyTitle", "NO RESEARCH RECORDS YET")}</b><span>${tx("research.emptyBody", "Choose a library entry or create a custom record when you have something to preserve.")}</span></div>`;
   }
   const ledger = $('gnLedgerList');
   if (ledger) {
@@ -2348,7 +2348,7 @@ function saveResearchRecord() {
   const index = records.findIndex(item => item.id === id);
   if (index >= 0) records[index] = record; else records.push(record);
   S.set('researchRecords', records); appendEventLedger({ type: 'RESEARCH', recordId: record.id, date: record.date, label: existing ? 'RESEARCH RECORD UPDATED' : 'RESEARCH RECORD CAPTURED' });
-  queueCloudSync('workspace'); moduleState.researchEditId = null; $('gnResearchForm')?.reset(); setText('gnResearchSave', 'SAVE RESEARCH RECORD'); renderLabFoundations(); actionFeedback(existing ? 'RESEARCH RECORD UPDATED' : 'RESEARCH RECORD CAPTURED', 'TIMELINE UPDATED // USER-ENTERED ONLY');
+  queueCloudSync('workspace'); moduleState.researchEditId = null; $('gnResearchForm')?.reset(); setText('gnResearchSave', tx('research.save', 'SAVE RESEARCH RECORD')); renderLabFoundations(); actionFeedback(existing ? tx('research.updated', 'RESEARCH RECORD UPDATED') : tx('research.captured', 'RESEARCH RECORD CAPTURED'), tx('research.timelineSignal', 'TIMELINE UPDATED // USER-ENTERED ONLY'));
 }
 
 function handleResearchAction(event) {
@@ -2907,7 +2907,7 @@ function renderShotDatePicker() {
   const label = $('gnDatePickerMonth');
   const grid = $('gnDatePickerGrid');
   if (!label || !grid) return;
-  label.textContent = month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  label.textContent = month.toLocaleDateString(document.documentElement.lang === 'es' ? 'es-419' : 'en-US', { month: 'long', year: 'numeric' });
   const year = month.getFullYear(), monthIndex = month.getMonth(), first = new Date(year, monthIndex, 1).getDay(), total = new Date(year, monthIndex + 1, 0).getDate();
   const selected = moduleState.shotPickerSelected || '';
   grid.innerHTML = `${['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => `<div class="gn-date-dow">${day}</div>`).join('')}${Array.from({ length: first }, () => '<button type="button" class="gn-date-day blank" tabindex="-1"></button>').join('')}${Array.from({ length: total }, (_, index) => { const day = index + 1, value = `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; return `<button type="button" class="gn-date-day${value === selected ? ' selected' : ''}" data-gn-picker-date="${value}"><span>${day}</span></button>`; }).join('')}`;
@@ -3745,7 +3745,7 @@ function wireGlobalEvents() {
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   navigator.serviceWorker
-    .register('/sw.js?v=20260802.13', { updateViaCache: 'none' })
+    .register('/sw.js?v=20260802.15', { updateViaCache: 'none' })
     .then(registration => registration.update())
     .catch(() => {});
 }
