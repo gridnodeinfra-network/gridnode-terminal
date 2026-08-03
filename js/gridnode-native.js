@@ -139,8 +139,23 @@
     document.querySelectorAll(OVERLAY_SELECTOR).forEach(wireOverlay);
   }
 
+  // Offline awareness: class + banner, updated live.
+  function wireOffline() {
+    var banner = document.createElement('div');
+    banner.className = 'gn-offline-banner';
+    banner.textContent = '// OFFLINE — LOCAL DATA ACTIVE / SIN CONEXIÓN — DATOS LOCALES ACTIVOS';
+    document.body.prepend(banner);
+    var sync = function () {
+      document.documentElement.classList.toggle('gn-offline', !navigator.onLine);
+    };
+    window.addEventListener('online', sync);
+    window.addEventListener('offline', sync);
+    sync();
+  }
+
   function boot() {
     injectCss();
+    wireOffline();
     watchKeyboard();
     wirePageFocus();
     wireHaptics();

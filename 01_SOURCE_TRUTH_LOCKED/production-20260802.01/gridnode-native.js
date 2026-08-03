@@ -5,7 +5,7 @@
 (function () {
   'use strict';
 
-  const V = '20260802.8';
+  const V = '20260802.12';
   const OVERLAY_SELECTOR = '#logOv, #wtOv, #signOutOverlay, #archiveConfirmOv, #permanentDeleteConfirmOv, #futureTimestampConfirm, #csvImportOverlay';
 
   // 1. Styles — injected once so the static shell never needs editing for css.
@@ -139,8 +139,23 @@
     document.querySelectorAll(OVERLAY_SELECTOR).forEach(wireOverlay);
   }
 
+  // Offline awareness: class + banner, updated live.
+  function wireOffline() {
+    var banner = document.createElement('div');
+    banner.className = 'gn-offline-banner';
+    banner.textContent = '// OFFLINE — LOCAL DATA ACTIVE / SIN CONEXIÓN — DATOS LOCALES ACTIVOS';
+    document.body.prepend(banner);
+    var sync = function () {
+      document.documentElement.classList.toggle('gn-offline', !navigator.onLine);
+    };
+    window.addEventListener('online', sync);
+    window.addEventListener('offline', sync);
+    sync();
+  }
+
   function boot() {
     injectCss();
+    wireOffline();
     watchKeyboard();
     wirePageFocus();
     wireHaptics();

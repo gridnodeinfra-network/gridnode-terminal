@@ -630,3 +630,39 @@ html[data-theme="light"] .zone-overlay[data-selected="true"], html[data-theme="l
   .asset-scan-stage::after { animation: none !important; opacity: .35 !important; }
   .zone-overlay[data-selected="true"], .zone-overlay.selected { animation: none !important; }
 }
+
+/* ═══ P3: shared state components (empty / loading / error / offline) ═══ */
+.gn-empty-state, .gn-loading-state, .gn-error-state {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  text-align: center; padding: 26px 18px;
+  color: var(--text-mid, #b7c7d3);
+  font: .8rem/1.55 var(--font-b, system-ui);
+}
+.gn-empty-state .gn-state-ico, .gn-loading-state .gn-state-ico, .gn-error-state .gn-state-ico {
+  font-size: 1.5rem; opacity: .8;
+}
+.gn-empty-state b, .gn-loading-state b, .gn-error-state b {
+  font: 800 .72rem var(--font-d, monospace); letter-spacing: 1.8px;
+  color: var(--text, #eef6f8);
+}
+.gn-empty-state[data-kind="data"], .empty, .results-empty {
+  border: 1px dashed var(--border, rgba(255,255,255,.14));
+  border-radius: var(--radius-card, 12px);
+}
+.gn-error-state b { color: #ff5577 !important; }
+.gn-loading-state .gn-state-ico { animation: gnLoadSpin 1.1s linear infinite; }
+@keyframes gnLoadSpin { to { transform: rotate(360deg); } }
+html[data-theme="light"] .gn-empty-state b,
+html[data-theme="light"] .gn-loading-state b { color: var(--text-primary, #1c2b31) !important; }
+html[data-theme="light"] .gn-empty-state, html[data-theme="light"] .gn-loading-state { color: #3c5660 !important; }
+
+/* Offline banner: appears when the browser loses connectivity. */
+.gn-offline-banner {
+  display: none; align-items: center; justify-content: center; gap: 8px;
+  padding: 8px 14px; font: 800 .6rem var(--font-d, monospace); letter-spacing: 1.6px;
+  color: #ffd166; background: rgba(80, 60, 10, .92);
+  border-bottom: 1px solid rgba(255, 209, 102, .4);
+}
+html.gn-offline .gn-offline-banner { display: flex; }
+html[data-theme="light"] .gn-offline-banner { background: #f6e9c8; color: #6b5210; }
+@media (prefers-reduced-motion: reduce) { .gn-loading-state .gn-state-ico { animation: none !important; } }
