@@ -5,7 +5,7 @@
  * No UI code belongs in this file.
  */
 
-const APP_VERSION = '2.1.7';
+const APP_VERSION = '0.9.0';
 
 const GOOGLE_OAUTH_CLIENT_ID = '305099332421-u752btn6p8cbaq8opapvdkfau9gnd9a3.apps.googleusercontent.com';
 
@@ -1977,7 +1977,7 @@ function drawCanvasChart(canvas, values, color) {
   context.strokeStyle = 'rgba(255,255,255,.09)'; context.lineWidth = 1;
   for (let i = 1; i < 4; i++) { const y = (height / 4) * i; context.beginPath(); context.moveTo(0, y); context.lineTo(width, y); context.stroke(); }
   context.strokeStyle = color; context.shadowColor = color; context.shadowBlur = 8; context.lineWidth = 2; context.beginPath();
-  values.forEach((value, index) => { const x = values.length === 1 ? width / 2 : (index / (values.length - 1)) * (width - 16) + 8; const y = height - 12 - ((value - min) / span) * (height - 28); if (index === 0) context.moveTo(x, y); else context.lineTo(x, y); });
+  values.forEach((value, index) => { const x = values.length === 1 ? width / 2 : (index / (values.length - 1)) * (width - 16) + 8; const y = height - 18 - ((value - min) / span) * (height - 36); if (index === 0) context.moveTo(x, y); else context.lineTo(x, y); });
   context.stroke(); context.shadowBlur = 0;
 }
 
@@ -2377,7 +2377,7 @@ function ensureProfileHub() {
       <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.tools">// TOOLS</div><button type="button" class="gn-profile-row" onclick="document.querySelector('.gn-device-vault')?.scrollIntoView({behavior:'smooth',block:'start'})"><span><b data-i18n="vault.deviceVaultLink">Device Vault</b><small data-i18n="vault.deviceVaultLinkHelp">Private identity registry</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.connectedAccount">Connected Account</b><small id="gnProfileAccount">Local device session</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row gn-profile-danger-row" onclick="openDeleteCloudAccount()"><span><b data-i18n="vault.deleteCloudAccount">Delete Cloud Account</b><small data-i18n="vault.deleteCloudAccountHelp">Requires server deletion control</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.appVersion">App Version</b><small id="gnProfileVersion">v2.1.7</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row" onclick="window.location.reload()"><span><b data-i18n="vault.reloadApp">Reload App</b><small data-i18n="vault.reloadAppHelp">Refresh the current build</small></span><span class="gn-profile-chevron">›</span></button></section>
     </div>
     <button type="button" class="gn-profile-signout" onclick="openSignOutModal()"><span><b data-i18n="vault.signOut">SIGN OUT</b><small data-i18n="vault.localOnlyFooter">Your data stays on this device.</small></span><span class="gn-profile-chevron">›</span></button>
-    <div class="system-update-card" id="gnSystemUpdateCard"><div class="system-update-head"><strong>SYSTEM UPDATE // v2.1.7</strong><button type="button" id="gnSystemUpdateDismiss" data-i18n="vault.dismiss">DISMISS</button></div><p>v2.1.7 — First-run orientation, SIGNAL, a focused dashboard, weekly record summaries, LAB launch controls, and inventory deduction are now connected.</p><ul><li>Phase language stays educational and grounded in user-entered history.</li><li>Weight charts distinguish SHOTS, dose changes, and personal milestones.</li><li>Clinical comparison remains off until reference data is verified.</li></ul></div>
+    <div class="system-update-card" id="gnSystemUpdateCard"><div class="system-update-head"><strong>SYSTEM UPDATE // v0.9.0</strong><button type="button" id="gnSystemUpdateDismiss" data-i18n="vault.dismiss">DISMISS</button></div><p>v0.9.0 — Premium mobile refinement: readable typography, red-lava action system, Day Ops light theme, cloud login in a grey city, smarter passkey prompts, and a new system update experience.</p><ul><li>Phase language stays educational and grounded in user-entered history.</li><li>Weight charts distinguish SHOTS, dose changes, and personal milestones.</li><li>Clinical comparison remains off until reference data is verified.</li></ul></div>
     <div class="gn-device-vault"><div class="gn-device-vault-head"><div><div class="gn-foundation-kicker" data-i18n="vault.deviceVaultKicker">// DEVICE VAULT</div><h3 data-i18n="vault.deviceVaultSubhead">PHYSICAL OBJECT IDENTITY</h3></div><span class="gn-record-state" data-i18n="vault.deviceVaultPrivate">PRIVATE REGISTRY</span></div><p class="gn-ledger-copy">The device is not the cartridge. The cartridge is not the dose. The dose is not the plan. Device identity, inventory, SHOT events, and LOADOUT remain separate records.</p><form class="gn-record-form" id="gnDeviceForm"><div class="gn-form-grid"><label><span data-i18n="vault.deviceName">DEVICE NAME</span><input id="gnDeviceName" required placeholder="e.g. Home pen A"></label><label><span data-i18n="vault.deviceType">DEVICE TYPE</span><select id="gnDeviceType"><option data-i18n="vault.deviceTypeReusable">Reusable pen</option><option data-i18n="vault.deviceTypeDisposable">Disposable pen</option><option data-i18n="vault.deviceTypeAutoinjector">Autoinjector</option><option data-i18n="vault.deviceTypeOther">Other device</option></select></label><label><span data-i18n="vault.deviceStatus">STATUS</span><select id="gnDeviceStatus">${DEVICE_STATUSES.map(status => `<option>${status}</option>`).join('')}</select></label></div><label><span data-i18n="vault.deviceLabelNotes">LABEL / NOTES</span><textarea id="gnDeviceNotes" rows="2" placeholder="User-entered identity notes"></textarea></label><button class="btn-full btn-secondary" type="submit" data-i18n="vault.deviceRegister">REGISTER DEVICE IDENTITY</button></form><div class="gn-device-list" id="gnDeviceList"></div></div>
   </section>`);
   installCustomPickers(hero.parentElement || page);
@@ -3578,7 +3578,13 @@ ${copy}`);
   async function maybeOfferPasskeyRegistration() {
     try {
       if (!(await isWebAuthnSupported())) return;
-      if (!(await getCloudSession())) return;
+      const passkeySession = await getCloudSession();
+      if (!passkeySession) return;
+      // Only offer registration once we know the CURRENT account has none.
+      try {
+        const passkeys = await listPasskeys();
+        if (Array.isArray(passkeys) && passkeys.length > 0) return;
+      } catch (_) { /* unknown state: the offer itself is safe */ }
       let overlay = document.getElementById('gnPasskeyUpsell');
       if (!overlay) {
         overlay = document.createElement('div');
@@ -3735,7 +3741,7 @@ function wireGlobalEvents() {
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   navigator.serviceWorker
-    .register('/sw.js?v=20260802.8', { updateViaCache: 'none' })
+    .register('/sw.js?v=20260802.9', { updateViaCache: 'none' })
     .then(registration => registration.update())
     .catch(() => {});
 }

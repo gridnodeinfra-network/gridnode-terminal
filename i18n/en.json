@@ -1127,5 +1127,12 @@
   "shot.saveShot": "SAVE SHOT",
   "shot.closeReturn": "CLOSE / RETURN",
   "shots.locationHistory": "LOCATION HISTORY",
-  "whatsnew.gotIt": "GOT IT"
+  "whatsnew.gotIt": "GOT IT",
+  "whatsnew.systemUpdate": "SYSTEM UPDATE",
+  "whatsnew.catNew": "NEW",
+  "whatsnew.catImproved": "IMPROVED",
+  "whatsnew.catFixed": "FIXED",
+  "whatsnew.catA11y": "ACCESSIBILITY",
+  "whatsnew.catMobile": "MOBILE",
+  "whatsnew.catSecurity": "SECURITY"
 }

@@ -1127,5 +1127,12 @@
   "shot.saveShot": "GUARDAR DOSIS",
   "shot.closeReturn": "CERRAR / VOLVER",
   "shots.locationHistory": "HISTORIAL DE UBICACIONES",
-  "whatsnew.gotIt": "ENTENDIDO"
+  "whatsnew.gotIt": "ENTENDIDO",
+  "whatsnew.systemUpdate": "ACTUALIZACIÓN DEL SISTEMA",
+  "whatsnew.catNew": "NUEVO",
+  "whatsnew.catImproved": "MEJORADO",
+  "whatsnew.catFixed": "CORREGIDO",
+  "whatsnew.catA11y": "ACCESIBILIDAD",
+  "whatsnew.catMobile": "MÓVIL",
+  "whatsnew.catSecurity": "SEGURIDAD"
 }

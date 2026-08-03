@@ -237,3 +237,102 @@ html[data-theme="light"] #pageLab .cheat-table { background: var(--surface, #f4f
 
 /* Hidden nav items (e.g. #navPro) must never render. */
 .gn-nav-hidden { display: none !important; }
+
+/* ═══ Premium refinement pass (v0.9.0) ═══
+ * Typography by role, red-lava action system, mobile header, chart lanes. */
+
+/* ── 1. Typography by role ── */
+:root {
+  --lava-core: #ff2d4d;
+  --lava-core-hi: #ff5a6e;
+  --lava-edge: #8f0f28;
+  --lava-glow: rgba(255, 45, 77, .42);
+}
+body { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+/* Form guidance + helper copy: readable companion font, relaxed leading. */
+.form-label { font-size: .7rem !important; line-height: 1.5 !important; }
+.gn-shot-time-helper, .gn-shot-date-helper, .phase-sphere-note,
+.protocol-curve-copy, .results-copy, .asset-helper, .csv-import-body,
+.gn-auth-privacy, .landing-copy, .shot-history-helper, .phase-edu-note span {
+  line-height: 1.6 !important;
+}
+.phase-sphere-note { font-size: .74rem !important; }
+.protocol-curve-copy { font-size: .8rem !important; }
+.phase-edu-note { font-size: .72rem !important; }
+.results-card-sub, .card-sub, .sec-act, .stat-sub { font-size: .68rem !important; }
+/* Data values: strong, never pale. */
+.card-val, .gn-wanda-value, .stat-val { color: var(--text, #eef6f8) !important; }
+html[data-theme="light"] .card-val,
+html[data-theme="light"] .gn-wanda-value,
+html[data-theme="light"] .stat-val { color: var(--text-primary, #1c2b31) !important; }
+/* Empty states read as guidance, not errors. */
+.empty, .results-empty { font-size: .78rem !important; color: var(--text-mid, #b7c7d3) !important; }
+
+/* ── 2. Red-lava action system (theme-aware) ── */
+.btn-primary, .btn-full.btn-primary, .gn-auth-primary,
+.future-confirm-save, .gn-whatsnew-close, .gn-passkey-upsell .btn-primary {
+  background: radial-gradient(130% 170% at 50% 0%, var(--lava-core-hi) 0%, var(--lava-core) 46%, var(--lava-edge) 100%) !important;
+  border: 1px solid rgba(255, 120, 140, .38) !important;
+  box-shadow: 0 4px 18px var(--lava-glow), inset 0 1px 0 rgba(255, 255, 255, .18) !important;
+  color: #fff !important;
+  text-shadow: 0 1px 2px rgba(60, 0, 12, .45) !important;
+}
+.btn-primary:hover, .btn-full.btn-primary:hover, .gn-auth-primary:hover,
+.future-confirm-save:hover, .gn-whatsnew-close:hover {
+  background: radial-gradient(130% 170% at 50% 0%, #ff6b7e 0%, var(--lava-core) 48%, var(--lava-edge) 100%) !important;
+  box-shadow: 0 6px 26px var(--lava-glow), inset 0 1px 0 rgba(255, 255, 255, .22) !important;
+}
+html[data-theme="light"] .btn-primary,
+html[data-theme="light"] .btn-full.btn-primary,
+html[data-theme="light"] .gn-auth-primary,
+html[data-theme="light"] .future-confirm-save,
+html[data-theme="light"] .gn-whatsnew-close {
+  background: radial-gradient(130% 170% at 50% 0%, #ff5a6e 0%, #f01f3f 48%, #8f0f28 100%) !important;
+  box-shadow: 0 4px 16px rgba(255, 45, 77, .32), inset 0 1px 0 rgba(255, 255, 255, .25) !important;
+}
+
+/* ── 3. Mobile header (320-430px): brand, mark, toggles, avatar, no overlap ── */
+#app .topbar { flex-wrap: nowrap !important; gap: 6px !important; padding-left: 12px !important; padding-right: 12px !important; }
+.app-wordmark-b2b { flex-shrink: 1 !important; min-width: 0 !important; }
+.app-wordmark-b2b svg { width: auto !important; max-width: 100% !important; height: 24px !important; }
+.node-pill { flex-shrink: 1 !important; min-width: 0 !important; overflow: hidden !important; white-space: nowrap !important; }
+.node-pill .node-pill-phase { overflow: hidden !important; text-overflow: ellipsis !important; }
+@media (max-width: 400px) {
+  .node-pill .node-pill-state { display: none !important; }
+  .app-wordmark-b2b svg { height: 22px !important; }
+  .gn-theme-toggle .gn-theme-opt { min-width: 28px !important; padding: 0 6px !important; }
+}
+@media (max-width: 340px) {
+  .node-pill { max-width: 34vw !important; }
+}
+
+/* ── 4. Chart lanes: reserved label space, controls never on top ── */
+.card .chart-wrap { height: auto !important; padding-bottom: 18px !important; }
+.card .chart-wrap canvas { height: 112px !important; }
+
+/* ── 5. Premium SYSTEM UPDATE sheet ── */
+.gn-whatsnew-overlay { position: fixed; inset: 0; z-index: 950; display: grid; place-items: center; padding: 20px; background: rgba(2, 2, 8, .8); backdrop-filter: blur(10px); }
+.gn-whatsnew-card { width: min(100%, 380px); box-sizing: border-box; padding: 22px; border: 1px solid rgba(0, 212, 255, .4); border-top: 2px solid #00d4ff; border-radius: 12px; background: var(--panel, #0e0e16); color: var(--text, #eef6f8); box-shadow: 0 28px 80px rgba(0, 0, 0, .65); max-height: 86vh; overflow-y: auto; }
+.gn-whatsnew-kicker { color: #00d4ff; font: 800 .66rem var(--font-d, monospace); letter-spacing: 2.6px; }
+.gn-whatsnew-version { margin: 6px 0 0; color: var(--text, #eef6f8); font: 800 1.05rem var(--font-d, monospace); letter-spacing: 1.4px; }
+.gn-whatsnew-title { margin-top: 2px; color: #00d4ff; font: 700 .68rem var(--font-m, monospace); letter-spacing: 1.6px; }
+.gn-whatsnew-date { margin: 3px 0 12px; color: var(--text-dim, #8295a0); font: .56rem var(--font-m, monospace); letter-spacing: 1.2px; }
+.gn-whatsnew-body { text-align: left; }
+.gn-wn-cat { margin: 10px 0 0; }
+.gn-wn-cat-tag { display: inline-block; padding: 2px 8px; border-radius: 999px; border: 1px solid rgba(0, 212, 255, .35); color: #00d4ff; font: 800 .52rem var(--font-m, monospace); letter-spacing: 1.6px; }
+.gn-wn-cat[data-cat="fixed"] .gn-wn-cat-tag { border-color: rgba(0, 255, 136, .4); color: #00ff88; }
+.gn-wn-cat[data-cat="new"] .gn-wn-cat-tag { border-color: rgba(255, 45, 77, .45); color: #ff5577; }
+.gn-wn-cat[data-cat="accessibility"] .gn-wn-cat-tag { border-color: rgba(255, 209, 102, .4); color: #ffd166; }
+.gn-wn-cat ul { margin: 6px 0 0; padding: 0 0 0 16px; }
+.gn-wn-cat li { margin: 4px 0; color: var(--text-mid, #b7c7d3); font: .76rem/1.5 var(--font-b, system-ui); }
+.gn-whatsnew-close { width: 100%; min-height: 46px; margin-top: 16px; border: 0; border-radius: 8px; font: 800 .68rem var(--font-d, monospace); letter-spacing: 1.8px; cursor: pointer; }
+html[data-theme="light"] .gn-whatsnew-overlay { background: rgba(240, 236, 226, .72); }
+html[data-theme="light"] .gn-whatsnew-card { background: var(--surface, #f4f1e9); color: var(--text-primary, #1c2b31); border-color: rgba(0, 111, 130, .35); border-top-color: #00718a; }
+html[data-theme="light"] .gn-whatsnew-version { color: var(--text-primary, #1c2b31); }
+html[data-theme="light"] .gn-whatsnew-title { color: #00718a; }
+html[data-theme="light"] .gn-whatsnew-date { color: #4d6b75; }
+html[data-theme="light"] .gn-wn-cat li { color: #2e424b; }
+html[data-theme="light"] .gn-wn-cat-tag { border-color: rgba(0, 111, 130, .4); color: #005f73; }
+html[data-theme="light"] .gn-wn-cat[data-cat="fixed"] .gn-wn-cat-tag { border-color: rgba(0, 130, 80, .45); color: #006b42; }
+html[data-theme="light"] .gn-wn-cat[data-cat="new"] .gn-wn-cat-tag { border-color: rgba(200, 30, 60, .45); color: #a30f2e; }
+html[data-theme="light"] .gn-wn-cat[data-cat="accessibility"] .gn-wn-cat-tag { border-color: rgba(150, 110, 20, .5); color: #7a5a10; }
