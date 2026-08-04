@@ -60,7 +60,11 @@ async function navigationResponse(request) {
   // (SKIP_WAITING) and controllerchange reloads. Fall back to network only
   // when this release cache has no shell.
   const cache = await caches.open(CACHE_NAME);
-  const cachedShell = (await cache.match(request, { ignoreSearch: true })) || (await cache.match('/'));
+  // Literal /index.html navigations are served from the '/' shell entry: a
+  // pre-fix worker's cache still holds /index.html as a redirected:true entry
+  // (Cloudflare 308), which Chromium refuses (ERR_FAILED) on navigation.
+  const navTarget = new URL(request.url).pathname === '/index.html' ? new Request(request.url.replace(/\/index\.html$/, '/')) : request;
+  const cachedShell = (await cache.match(navTarget, { ignoreSearch: true })) || (await cache.match('/'));
   if (cachedShell) return cachedShell;
   try {
     const response = await fetch(request);
