@@ -10,8 +10,8 @@
 | Item | Value |
 |------|-------|
 | Release version | `0.12.0` / `20260804.1` |
-| Candidate commit | `8ca3071bb2cc3613a1bd2c1e1fbf35db3f7b74cb` |
-| Preview URL | https://90850416.gridnode.pages.dev (alias `preview.gridnode.pages.dev`) |
+| Candidate commit | `d41e910` (hardened after independent review) — chain: `42dc1f3` release → `8ca3071` cleanup → `d41e910` SW hardening |
+| Preview URL | https://b9ded1a5.gridnode.pages.dev (alias `preview.gridnode.pages.dev`) |
 | Rollback commit | `9764766d` (pre-WIP production-safe source) |
 | Production | gridnode.network — **untouched** (still v0.10.0 / 20260802.14) |
 | Branch | `feature/gridnode-product-completion` (pushed) |
@@ -28,8 +28,10 @@
   shell); **fixed a real defect** — Cloudflare 308s `/index.html`, and serving a
   redirected cache entry for navigation crashed Chromium with ERR_FAILED on
   every SW-controlled reload. Fix: drop `/index.html` from SHELL, match the
-  request URL first (`ignoreSearch`). Deliberate update preserved
-  (SKIP_WAITING + controllerchange), drafts survive, What's New once per release.
+  request URL first (`ignoreSearch`), and map literal `/index.html` navigations
+  to the `/` shell entry (independent-review hardening, commit `d41e910`).
+  Deliberate update preserved (SKIP_WAITING + controllerchange), drafts
+  survive, What's New once per release.
 - **B3 — LAB sticky-header**: `openLabTool` scrolls the overlay to top after
   layout; scroll-padding-top reserves the sticky header; 61/61 verified.
 - **B1 — Spanish localization**: all functional strings via `tx()`; +71 keys
@@ -50,7 +52,7 @@
 | 6 Navigation | ✅ | Browser Back exits focused LAB tools; nested dropdown keeps tool open; lab-back matrix 192/224 (all 32 fails = known harness `hasTouch` artifact); every Back/VOLVER control works. |
 | 7 Themes | ✅ | DAY OPS + NIGHT GRID complete; dropdowns/calendars/modals themed; no leakage; selection states clear. |
 | 8 Versioning/Changelog | ✅ | Served markers 13× `20260804.1`; served bundle SHA == committed bundle SHA; What's New exactly once + ack persists; EN+ES notes. |
-| 9 SW/cache | ✅ | Transition test **8/8** (old worker isolates new server → SKIP_WAITING → new release, draft intact, What's New once) + real-app reload probe PASS after 308 fix; no loop, no stale bundle (served SHA == HEAD SHA). |
+| 9 SW/cache | ✅ | Transition test **8/8** (old worker isolates new server → SKIP_WAITING → new release, draft intact, What's New once) + real-app reload probe PASS after 308 fix; **literal /index.html navigation PASS** after hardening; no loop, no stale bundle (served SHA == HEAD SHA). |
 | 10 Performance | ✅ | Startup DCL 157ms; no long main-thread tasks ≥500ms in new-user flow; 75-check run 38s; reduced motion respected. |
 | 11 Accessibility | ✅ | 44px touch targets, programmatic labels, Enter/Space activation, visible focus, reduced motion, no overflow at 320px. |
 | 12 Data safety | ✅ | Records/profile/lang/theme/onboarding survive reload (official test); drafts intentional; no destructive migration; B4 rollback proven. |
@@ -106,7 +108,8 @@ results — captured during visual pass 13/14.
 ---
 
 **VERDICT: READY FOR FOUNDER PRODUCTION APPROVAL** — one exact commit
-(`8ca3071`), one exact release (`0.12.0 / 20260804.1`), one exact preview
-(`90850416.gridnode.pages.dev`), rollback point `9764766d`, all 12 gates green.
-No code changes between approval and production: the tested artifact IS the
-production candidate.
+(`d41e910`), one exact release (`0.12.0 / 20260804.1`), one exact preview
+(`b9ded1a5.gridnode.pages.dev`), rollback point `9764766d`, all 12 gates green
+after an independent review pass (dead-CSS verification + SW `/index.html`
+hardening, both re-gated). No code changes between approval and production:
+the tested artifact IS the production candidate.
