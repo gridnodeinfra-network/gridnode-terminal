@@ -697,11 +697,6 @@ html[lang="es"] .nav-lbl { font-size: .6rem !important; letter-spacing: .6px !im
 .gn-onb-dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255, 255, 255, .18); }
 .gn-onb-dots i.active { background: #00d4ff; box-shadow: 0 0 8px rgba(0, 212, 255, .8); }
 .gn-onb-dots i.done { background: rgba(0, 212, 255, .5); }
-.gn-onb-actions { display: flex; gap: 8px; }
-.gn-onb-actions button {
-  min-height: 44px; border-radius: 8px; cursor: pointer;
-  font: 800 .62rem var(--font-d, monospace); letter-spacing: 1.4px;
-}
 .gn-onb-skip { flex: 0 0 auto; padding: 0 12px; background: transparent; border: 1px solid var(--border, rgba(255,255,255,.15)); color: var(--text-dim, #8295a0); }
 .gn-onb-back { flex: 0 0 auto; padding: 0 12px; background: transparent; border: 1px solid var(--border, rgba(255,255,255,.15)); color: var(--text-mid, #b7c7d3); }
 .gn-onb-back:disabled { opacity: .35; cursor: default; }
