@@ -40,7 +40,7 @@
   history accessible.
 - **Cleanup**: one dead CSS block removed; no behavior change.
 
-## 3. Production Gates (all against served preview 90850416)
+## 3. Production Gates (all against served preview b9ded1a5)
 
 | Gate | Result | Evidence |
 |------|--------|----------|
