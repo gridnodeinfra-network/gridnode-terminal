@@ -120,11 +120,15 @@ function normalizeLegacyText(value) {
 
 function normalizeShotRecord(record) {
   if (!record || typeof record !== 'object') return record;
+  const legacyMedication = normalizeLegacyText(record.medicationId || record.med);
+  const medicationId = normalizeMedicationId(legacyMedication);
   return {
     ...record,
-    med: normalizeLegacyText(record.med),
+    med: medicationId || legacyMedication,
     site: normalizeLegacyText(record.site),
-    notes: normalizeLegacyText(record.notes)
+    notes: normalizeLegacyText(record.notes),
+    se: Array.isArray(record.se) ? record.se.map(normalizeSideEffectId).filter(Boolean) : [],
+    ...(medicationId ? {} : { legacyMedication })
   };
 }
 
@@ -368,7 +372,7 @@ function cloudShotPayload(record, userId) {
   const payload = {
     user_id: userId,
     date: record.date,
-    compound: record.med || 'CUSTOM',
+    compound: normalizeMedicationId(record.med),
     dose_mg: Number(record.dose) || 0,
     site: record.site || null,
     notes: record.notes || null,
@@ -392,6 +396,7 @@ function cloudWeightPayload(record, userId) {
 
 async function syncShot(record) {
   if (!state.cloud || !state.cloudClient || !state.session?.user?.id) return;
+  if (!normalizeMedicationId(record?.med)) { console.warn('[GRID//NODE cloud shot sync] invalid medication identity; sync skipped'); return; }
   if (!record?.id || syncInFlight.has(`shot:${record.id}`)) return;
   syncInFlight.add(`shot:${record.id}`);
   try {
@@ -692,7 +697,7 @@ function enqueueSync(kind, record) {
 }
 
 function sessionLabel() {
-  return state.session?.user?.email || (state.cloud ? 'CLOUD ACCOUNT' : 'LOCAL DEVICE SESSION');
+  return state.session?.user?.email || (state.cloud ? tx('vault.cloudAccount', 'CLOUD ACCOUNT') : tx('profile.localDeviceSession', 'LOCAL DEVICE SESSION'));
 }
 
 async function deleteCloudAccount() {
@@ -769,7 +774,7 @@ function formatDate(value, options = { month: 'short', day: 'numeric', year: 'nu
   if (!value) return '—';
   const date = parseLocalDate(value);
   if (Number.isNaN(date.getTime())) return '—';
-  const locale = document.documentElement?.lang === 'es' ? 'es-419' : 'en-US';
+  const locale = document.documentElement?.lang?.startsWith('es') ? 'es-419' : 'en-US';
   return date.toLocaleDateString(locale, options);
 }
 
@@ -777,7 +782,7 @@ function formatDateTime(value) {
   if (!value) return '—';
   const date = parseLocalDate(value);
   if (Number.isNaN(date.getTime())) return '—';
-  const locale = document.documentElement?.lang === 'es' ? 'es-419' : 'en-US';
+  const locale = document.documentElement?.lang?.startsWith('es') ? 'es-419' : 'en-US';
   return date.toLocaleString(locale, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
@@ -799,6 +804,41 @@ function normalizeDateInput(value) {
 
 function todayISO(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function formatEditableDate(value) {
+  const date = parseLocalDate(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return document.documentElement?.lang?.startsWith('es') ? `${day}/${month}/${year}` : `${month}/${day}/${year}`;
+}
+
+function parseEditableDate(value) {
+  const raw = String(value || '').trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return normalizeDateInput(raw);
+  const parts = raw.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+  if (!parts) return '';
+  const spanish = document.documentElement?.lang?.startsWith('es');
+  const month = spanish ? parts[2] : parts[1];
+  const day = spanish ? parts[1] : parts[2];
+  return normalizeDateInput(`${parts[3]}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+}
+
+function setHumanDateInput(input, value, compact = false) {
+  if (!input) return;
+  const iso = normalizeDateInput(value) || todayISO();
+  const display = compact ? formatEditableDate(iso) : formatDate(iso, { month: 'short', day: 'numeric', year: 'numeric' });
+  input.dataset.isoDate = iso;
+  input.dataset.dateDisplay = display;
+  input.value = display;
+}
+
+function readHumanDateInput(input, compact = false) {
+  if (!input) return '';
+  if (input.dataset.isoDate && input.dataset.dateDisplay === input.value) return input.dataset.isoDate;
+  return compact ? parseEditableDate(input.value) : normalizeDateInput(input.value);
 }
 
 function downloadFile(filename, contents, type = 'application/octet-stream') {
@@ -876,8 +916,7 @@ const moduleState = {
   researchEditId: null,
   deviceEditId: null,
   labTool: null,
-  labOriginalSlots: new Map(),
-  labToolHistoryState: null
+  labOriginalSlots: new Map()
 };
 
 const ZONES = Object.freeze({
@@ -915,17 +954,153 @@ const zoneLabel = function (stored) {
   if (key) { const t = tx(key, stored); if (t && t !== key) return t; }
   return stored;
 };
+function scannerModeLabel(mode) {
+  const labels = {
+    core: ['shots.modeCore', 'CORE'],
+    lower: ['shots.modeLower', 'LOWER'],
+    upper: ['shots.modeUpper', 'UPPER']
+  };
+  const [key, fallback] = labels[mode] || labels.core;
+  return tx(key, fallback);
+}
+
+function deviceStatusLabel(status) {
+  const canonical = String(status || 'READY').toUpperCase();
+  return tx(`vault.status${canonical.replace(/\s+/g, '')}`, canonical);
+}
+
+const DEVICE_TYPE_KEYS = Object.freeze({
+  REUSABLE: 'vault.deviceTypeReusable',
+  DISPOSABLE: 'vault.deviceTypeDisposable',
+  AUTOINJECTOR: 'vault.deviceTypeAutoinjector',
+  OTHER: 'vault.deviceTypeOther'
+});
+function normalizeDeviceType(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (['reusable', 'reusable pen', 'pluma reutilizable'].includes(normalized)) return 'REUSABLE';
+  if (['disposable', 'disposable pen', 'pluma desechable'].includes(normalized)) return 'DISPOSABLE';
+  if (['autoinjector', 'autoinyector'].includes(normalized)) return 'AUTOINJECTOR';
+  return Object.prototype.hasOwnProperty.call(DEVICE_TYPE_KEYS, String(value || '').toUpperCase()) ? String(value).toUpperCase() : 'OTHER';
+}
+function deviceTypeLabel(type) {
+  const canonical = normalizeDeviceType(type);
+  const fallback = { REUSABLE: 'Reusable pen', DISPOSABLE: 'Disposable pen', AUTOINJECTOR: 'Autoinjector', OTHER: 'Other device' }[canonical];
+  return tx(DEVICE_TYPE_KEYS[canonical], fallback);
+}
+
+function researchStateLabel(state) {
+  const canonical = String(state || 'TRACKING').toUpperCase();
+  const keys = { TRACKING: 'research.tracking', COMPLETED: 'research.completed', ARCHIVED: 'research.archived', 'RESEARCH NOTE ONLY': 'research.noteOnly' };
+  return tx(keys[canonical] || 'research.tracking', canonical);
+}
+
+const RESEARCH_CATEGORY_KEYS = Object.freeze({
+  'RECOVERY & REPAIR': 'lab.recoveryRepair',
+  'METABOLIC & BODY COMPOSITION': 'lab.metabolic',
+  'CELLULAR & MITOCHONDRIAL': 'lab.cellular',
+  'IMMUNE & NEUROLOGICAL': 'lab.immune'
+});
+function normalizeResearchCategory(value) {
+  const raw = String(value || '').trim();
+  if (Object.values(RESEARCH_CATEGORY_KEYS).includes(raw)) return raw;
+  const match = Object.entries(RESEARCH_CATEGORY_KEYS).find(([label, key]) => raw === label || raw === tx(key, label));
+  return match?.[1] || raw || 'lab.customResearch';
+}
+function researchCategoryLabel(value) {
+  const canonical = normalizeResearchCategory(value);
+  const fallback = Object.entries(RESEARCH_CATEGORY_KEYS).find(([, key]) => key === canonical)?.[0] || tx('lab.customResearch', 'CUSTOM RESEARCH');
+  return canonical.startsWith('lab.') ? tx(canonical, fallback) : canonical;
+}
+
+const INVENTORY_TYPE_KEYS = Object.freeze({
+  VIAL: 'lab.typeVial',
+  CARTRIDGE: 'lab.typeCartridge',
+  DISPOSABLE_PEN: 'lab.typeDisposable',
+  BOX_PACKAGE: 'lab.typeBox',
+  SUPPLY: 'lab.typeSupply',
+  CUSTOM: 'lab.typeCustom'
+});
+function normalizeInventoryType(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  const aliases = {
+    vial: 'VIAL', frasco: 'VIAL',
+    cartridge: 'CARTRIDGE', cartucho: 'CARTRIDGE',
+    'disposable pen': 'DISPOSABLE_PEN', 'pluma desechable': 'DISPOSABLE_PEN',
+    'box or package': 'BOX_PACKAGE', 'caja o paquete': 'BOX_PACKAGE',
+    'general supply item': 'SUPPLY', 'artículo de suministro general': 'SUPPLY',
+    'custom item': 'CUSTOM', 'artículo personalizado': 'CUSTOM'
+  };
+  const canonical = String(value || '').toUpperCase();
+  return Object.prototype.hasOwnProperty.call(INVENTORY_TYPE_KEYS, canonical) ? canonical : aliases[normalized] || 'CUSTOM';
+}
+function inventoryTypeLabel(type) {
+  const canonical = normalizeInventoryType(type);
+  const fallback = { VIAL: 'Vial', CARTRIDGE: 'Cartridge', DISPOSABLE_PEN: 'Disposable pen', BOX_PACKAGE: 'Box or package', SUPPLY: 'General supply item', CUSTOM: 'Custom item' }[canonical];
+  return tx(INVENTORY_TYPE_KEYS[canonical], fallback);
+}
 
 const MEDICATIONS = Object.freeze({
-  Zepbound: 'Zepbound (Tirzepatide)',
-  Mounjaro: 'Mounjaro (Tirzepatide)',
-  Tirzepatide: 'Tirzepatide (Compound)',
-  Wegovy: 'Wegovy (Semaglutide)',
-  Ozempic: 'Ozempic (Semaglutide)',
-  Semaglutide: 'Semaglutide (Compound)',
-  Retatrutide: 'Retatrutide',
-  Custom: 'Custom Compound'
+  zepbound_tirzepatide: 'Zepbound (Tirzepatide)',
+  mounjaro_tirzepatide: 'Mounjaro (Tirzepatide)',
+  tirzepatide_compound: 'Tirzepatide (Compound)',
+  wegovy_semaglutide: 'Wegovy (Semaglutide)',
+  ozempic_semaglutide: 'Ozempic (Semaglutide)',
+  semaglutide_compound: 'Semaglutide (Compound)',
+  retatrutide: 'Retatrutide',
+  custom_compound: 'Custom Compound'
 });
+
+const MEDICATION_ALIASES = Object.freeze({
+  zepbound: 'zepbound_tirzepatide',
+  'zepbound (tirzepatide)': 'zepbound_tirzepatide',
+  mounjaro: 'mounjaro_tirzepatide',
+  'mounjaro (tirzepatide)': 'mounjaro_tirzepatide',
+  tirzepatide: 'tirzepatide_compound',
+  'tirzepatide compound': 'tirzepatide_compound',
+  'tirzepatide (compound)': 'tirzepatide_compound',
+  wegovy: 'wegovy_semaglutide',
+  'wegovy (semaglutide)': 'wegovy_semaglutide',
+  ozempic: 'ozempic_semaglutide',
+  'ozempic (semaglutide)': 'ozempic_semaglutide',
+  semaglutide: 'semaglutide_compound',
+  'semaglutide compound': 'semaglutide_compound',
+  'semaglutide (compound)': 'semaglutide_compound',
+  retatrutide: 'retatrutide',
+  custom: 'custom_compound',
+  'custom compound': 'custom_compound'
+});
+
+function normalizeMedicationId(value) {
+  const raw = String(value || '').trim();
+  if (Object.prototype.hasOwnProperty.call(MEDICATIONS, raw)) return raw;
+  return MEDICATION_ALIASES[raw.toLowerCase()] || '';
+}
+
+function medicationLabel(value) {
+  const id = normalizeMedicationId(value);
+  return id ? MEDICATIONS[id] : tx('shots.invalidMedication', 'Unknown medication');
+}
+
+window.GN_MEDICATION_IDENTITY = Object.freeze({
+  ids: Object.freeze(Object.keys(MEDICATIONS)),
+  normalize: normalizeMedicationId,
+  label: medicationLabel
+});
+
+const SIDE_EFFECT_KEYS = Object.freeze({
+  nausea: 'shot.nausea', fatigue: 'shot.fatigue', headache: 'shot.headache',
+  diarrhea: 'shot.diarrhea', constipation: 'shot.constipation', vomiting: 'shot.vomiting',
+  insomnia: 'shot.insomnia', bloating: 'shot.bloating', reflux: 'shot.reflux', dizziness: 'shot.dizziness'
+});
+function normalizeSideEffectId(value) {
+  const raw = String(value || '').trim();
+  const canonical = raw.toLowerCase();
+  return SIDE_EFFECT_KEYS[canonical] ? canonical : raw;
+}
+function sideEffectLabel(value) {
+  const canonical = normalizeSideEffectId(value);
+  return SIDE_EFFECT_KEYS[canonical] ? tx(SIDE_EFFECT_KEYS[canonical], canonical) : canonical;
+}
 
 const PHASES = [
   { name: 'ONSET', support: 'Early cycle after the latest logged SHOT. New observations begin shaping this signal.', context: 'Early cycle after the latest logged SHOT. Your own appetite, energy, symptoms, and notes may begin shaping this signal.', color: '#00d4ff', start: 0, end: 0.08 },
@@ -944,9 +1119,6 @@ const RESEARCH_LIBRARY = Object.freeze([
 ]);
 
 const DEVICE_STATUSES = Object.freeze(['READY', 'EMPTY', 'NEEDS CHECKING', 'FAILED', 'RETIRED', 'LOST']);
-const EVENT_SOURCES = Object.freeze(['Manual Entry', 'Import', 'Device Reported', 'System Generated']);
-const EVENT_STATES = Object.freeze(['User Confirmed', 'Needs Review', 'Corrected']);
-
 function activeShots() { return getAllShots().filter(record => !record.archived); }
 function sortedShots() { return activeShots().sort((a, b) => new Date(a.date) - new Date(b.date)); }
 function sortedWeights() { return [...getWeights()].sort((a, b) => new Date(a.date) - new Date(b.date)); }
@@ -1012,10 +1184,62 @@ function weightMilestone(previousWeight, nextWeight, profile) {
   return null;
 }
 
+const EVENT_LABEL_TOKENS = Object.freeze({
+  'SHOT UPDATED': 'shot.updated', 'SHOT EVENT CONFIRMED': 'shot.confirmed',
+  'INVENTORY UPDATED': 'inventory.updated', 'INVENTORY ITEM SAVED': 'inventory.saved',
+  'INVENTORY ARCHIVED': 'inventory.archived', 'INVENTORY RESTORED': 'inventory.restored',
+  'CALCULATOR REFERENCE SAVED': 'reference.saved',
+  'RESEARCH RECORD UPDATED': 'research.updated', 'RESEARCH RECORD CAPTURED': 'research.captured',
+  'RESEARCH RECORD ARCHIVED': 'research.archived', 'RESEARCH RECORD RESTORED': 'research.restored',
+  'DEVICE IDENTITY UPDATED': 'device.updated', 'DEVICE IDENTITY REGISTERED': 'device.registered',
+  'DEVICE RETIRED': 'device.retired', 'DEVICE RESTORED': 'device.restored',
+  'GRID//NODE BACKUP RESTORED': 'backup.restored', 'CSV IMPORT SAVED': 'csv.saved',
+  'RESULTS UPDATED': 'results.updated'
+});
+const EVENT_LABEL_KEYS = Object.freeze({
+  'shot.updated': ['ledger.shotUpdated', 'SHOT UPDATED'], 'shot.confirmed': ['ledger.shotConfirmed', 'SHOT EVENT CONFIRMED'],
+  'inventory.updated': ['ledger.inventoryUpdated', 'INVENTORY UPDATED'], 'inventory.saved': ['ledger.inventorySaved', 'INVENTORY ITEM SAVED'],
+  'inventory.archived': ['ledger.inventoryArchived', 'INVENTORY ARCHIVED'], 'inventory.restored': ['ledger.inventoryRestored', 'INVENTORY RESTORED'],
+  'reference.saved': ['ledger.referenceSaved', 'CALCULATOR REFERENCE SAVED'],
+  'research.updated': ['ledger.researchUpdated', 'RESEARCH RECORD UPDATED'], 'research.captured': ['ledger.researchCaptured', 'RESEARCH RECORD CAPTURED'],
+  'research.archived': ['ledger.researchArchived', 'RESEARCH RECORD ARCHIVED'], 'research.restored': ['ledger.researchRestored', 'RESEARCH RECORD RESTORED'],
+  'device.updated': ['ledger.deviceUpdated', 'DEVICE IDENTITY UPDATED'], 'device.registered': ['ledger.deviceRegistered', 'DEVICE IDENTITY REGISTERED'],
+  'device.retired': ['ledger.deviceRetired', 'DEVICE RETIRED'], 'device.restored': ['ledger.deviceRestored', 'DEVICE RESTORED'],
+  'backup.restored': ['ledger.backupRestored', 'GRID//NODE BACKUP RESTORED'], 'csv.saved': ['ledger.csvSaved', 'CSV IMPORT SAVED'],
+  'results.updated': ['ledger.resultsUpdated', 'RESULTS UPDATED']
+});
+const EVENT_SOURCE_TOKENS = Object.freeze({
+  manual: 'manual', 'manual entry': 'manual', import: 'import', 'device reported': 'device', device: 'device',
+  'system generated': 'system', system: 'system', 'grid//node backup': 'backup', backup: 'backup',
+  'csv import': 'csv', csv_import_shotsy: 'csv', csv_import_glapp: 'csv'
+});
+const EVENT_STATE_TOKENS = Object.freeze({
+  confirmed: 'confirmed', 'user confirmed': 'confirmed', review: 'review', 'needs review': 'review', corrected: 'corrected'
+});
+
+function eventLabelToken(value) {
+  const raw = String(value || '').trim();
+  return EVENT_LABEL_KEYS[raw] ? raw : EVENT_LABEL_TOKENS[raw.toUpperCase()] || 'event.generic';
+}
+function eventSourceToken(value) { return EVENT_SOURCE_TOKENS[String(value || 'manual').trim().toLowerCase()] || 'manual'; }
+function eventStateToken(value) { return EVENT_STATE_TOKENS[String(value || 'confirmed').trim().toLowerCase()] || 'confirmed'; }
+function eventLabelText(value) { const token = eventLabelToken(value); const entry = EVENT_LABEL_KEYS[token]; return entry ? tx(entry[0], entry[1]) : tx('ledger.eventGeneric', 'EVENT'); }
+function eventSourceText(value) {
+  const token = eventSourceToken(value);
+  const entry = { manual: ['ledger.sourceManual', 'Manual Entry'], import: ['ledger.sourceImport', 'Import'], device: ['ledger.sourceDevice', 'Device Reported'], system: ['ledger.sourceSystem', 'System Generated'], backup: ['ledger.sourceBackup', 'GRID//NODE Backup'], csv: ['ledger.sourceCsv', 'CSV Import'] }[token];
+  return tx(entry[0], entry[1]);
+}
+function eventStateText(value) {
+  const token = eventStateToken(value);
+  const entry = { confirmed: ['ledger.stateConfirmed', 'User Confirmed'], review: ['ledger.stateReview', 'Needs Review'], corrected: ['ledger.stateCorrected', 'Corrected'] }[token];
+  return tx(entry[0], entry[1]);
+}
+
 function actionFeedback(title, detail, isError = false) {
   const toast = $('toastEl');
   if (!toast) return;
-  toast.innerHTML = `<span class="gn-toast-message">${safeText(`${isError ? '// SYSTEM CHECK — ' : 'NODE CONFIRMED — '}${title}${detail ? ` · ${detail}` : ''}`)}</span>`;
+  const prefix = isError ? tx('toast.systemCheck', 'SYSTEM CHECK') : tx('toast.nodeConfirmed', 'NODE CONFIRMED');
+  toast.innerHTML = `<span class="gn-toast-message">${safeText(`// ${prefix} — ${title}${detail ? ` · ${detail}` : ''}`)}</span>`;
   toast.className = `toast active${isError ? ' err' : ''}`;
   clearTimeout(toast._timer);
   toast._timer = setTimeout(() => toast.classList.remove('active'), 2000);
@@ -1031,7 +1255,7 @@ function nodeSyncLabel() {
 function nodeDateTime(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return tx('runtime.notAvailable', 'NOT AVAILABLE');
-  const locale = document.documentElement?.lang === 'es' ? 'es-419' : 'en-US';
+  const locale = document.documentElement?.lang?.startsWith('es') ? 'es-419' : 'en-US';
   return [date.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' }), date.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' })].join(' · ');
 }
 
@@ -1054,7 +1278,12 @@ function refreshNodeHeader({ phase } = {}) {
 
 function appendEventLedger(event) {
   const ledger = S.get('eventLedger', []);
-  ledger.push({ id: createId('event'), createdAt: new Date().toISOString(), source: 'Manual Entry', state: 'User Confirmed', ...event });
+  ledger.push({
+    id: createId('event'), createdAt: new Date().toISOString(), ...event,
+    label: eventLabelToken(event.label || event.type),
+    source: eventSourceToken(event.source),
+    state: eventStateToken(event.state)
+  });
   S.set('eventLedger', ledger.slice(-250));
   queueCloudSync('workspace');
 }
@@ -1080,8 +1309,10 @@ function showScreen(id) {
 }
 
 function showPage(name, navElement) {
+  const previousPage = document.querySelector('.page.active')?.id || '';
   const page = $(`page${name}`);
   if (!page) return;
+  document.body.classList.toggle('gn-fab-hidden-context', ['Lab', 'Profile', 'Cal'].includes(name));
   qa('.page').forEach(item => item.classList.remove('active'));
   page.classList.add('active');
   qa('.nav-item').forEach(item => item.classList.remove('active'));
@@ -1093,6 +1324,7 @@ function showPage(name, navElement) {
   if (name === 'Lab') renderLab();
   if (name === 'Profile') renderProfile();
   if (name === 'Cal') renderCalendar();
+  document.dispatchEvent(new CustomEvent('gn:pagechange', { detail: { name, previousPage } }));
 }
 
 function refreshAll() {
@@ -1113,7 +1345,7 @@ function loadApp() {
   setText('profSub', `// ${window.CU?.defaultName || profile.name || 'NODE_USER'} //`);
   setText('profNameTxt', window.CU?.defaultName || profile.name || tx('profile.anonFallback', 'NODE_USER'));
   setText('profEmail', sessionLabel());
-  setText('profMedTxt', profile.med ? `// ${profile.med.toUpperCase()}` : tx('profile.noMedicationSet', '// NO MEDICATION SET'));
+  setText('profMedTxt', normalizeMedicationId(profile.med) ? `// ${medicationLabel(profile.med).toUpperCase()}` : tx('profile.noMedicationSet', '// NO MEDICATION SET'));
   hydrateProfileFields(profile);
   setTodayDefaults();
   refreshAll();
@@ -1163,9 +1395,9 @@ function setTodayDefaults() {
   const date = $('sDate');
   const time = $('sTime');
   const wtDate = $('wtDate');
-  if (date && !date.value) date.value = todayISO();
+  if (date && !date.value) setHumanDateInput(date, todayISO());
   if (time && !time.value) time.value = formatTime12(now);
-  if (wtDate && !wtDate.value) wtDate.value = todayISO();
+  if (wtDate && !wtDate.value) setHumanDateInput(wtDate, todayISO(), true);
   moduleState.meridiem = now.getHours() >= 12 ? 'PM' : 'AM';
   updateMeridiemButtons();
   syncCustomPickers(document);
@@ -1177,7 +1409,8 @@ function hydrateProfileFields(profile) {
     profAge: profile.age, profStartWt: profile.startWt, profGoalWt: profile.goalWt
   };
   Object.entries(fields).forEach(([id, value]) => { if ($(id) && value != null) $(id).value = value; });
-  if (profile.med) setSelect('cpMedProf', profile.med, MEDICATIONS[profile.med] || profile.med);
+  const medicationId = normalizeMedicationId(profile.med);
+  if (medicationId) setSelect('cpMedProf', medicationId, medicationLabel(medicationId));
   if (profile.shotDay !== undefined && profile.shotDay !== '') {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     setSelect('cpShotDayProf', String(profile.shotDay), days[Number(profile.shotDay)] || 'Select shot day');
@@ -1189,7 +1422,7 @@ function hydrateProfileFields(profile) {
 function profileSnapshot() {
   const profile = getProfile();
   profile.name = profile.name || window.CU?.defaultName || 'NODE_USER';
-  profile.med = selectState.cpMedProf?.val || profile.med || '';
+  profile.med = normalizeMedicationId(selectState.cpMedProf?.val || profile.med);
   profile.dose = $('profDose')?.value || profile.dose || '';
   profile.shotDay = selectState.cpShotDayProf?.val !== undefined ? Number(selectState.cpShotDayProf.val) : profile.shotDay;
   profile.htFt = $('profHtFt')?.value || profile.htFt || '';
@@ -1204,9 +1437,9 @@ function profileSnapshot() {
 function saveProfileMed() {
   const profile = profileSnapshot();
   const saved = S.set('profile', profile);
-  setText('profMedTxt', profile.med ? `// ${profile.med.toUpperCase()}` : tx('profile.noMedicationSet', '// NO MEDICATION SET'));
+  setText('profMedTxt', normalizeMedicationId(profile.med) ? `// ${medicationLabel(profile.med).toUpperCase()}` : tx('profile.noMedicationSet', '// NO MEDICATION SET'));
   if (saved) queueCloudSync('profile', profile);
-  showToast(saved ? 'Profile protocol context saved.' : 'Profile could not be saved — storage is full.', !saved);
+  showToast(saved ? tx('profile.protocolSaved', 'Profile protocol context saved.') : tx('profile.storageFull', 'Profile could not be saved — storage is full.'), !saved);
 }
 
 function saveProfileMetrics() {
@@ -1233,6 +1466,11 @@ function setSelect(id, value, label) {
   selectState[id] = { val: value, label };
   const valueElement = $(`${id}Val`);
   if (valueElement) { valueElement.textContent = label; valueElement.classList.remove('placeholder'); }
+  qa(`#${id}Drop .cp-option`).forEach(option => {
+    const selected = option.textContent.trim() === String(label).trim();
+    option.classList.toggle('selected', selected);
+    option.setAttribute('aria-selected', String(selected));
+  });
 }
 
 function toggleSelect(id) {
@@ -1240,10 +1478,11 @@ function toggleSelect(id) {
   const trigger = dropdown?.previousElementSibling;
   if (!dropdown || !trigger) return;
   qa('.cp-dropdown.open').forEach(item => item.classList.remove('open'));
-  qa('.cp-select-trigger.open').forEach(item => item.classList.remove('open'));
+  qa('.cp-select-trigger.open').forEach(item => { item.classList.remove('open'); item.setAttribute('aria-expanded', 'false'); });
   const willOpen = !dropdown.classList.contains('open');
   dropdown.classList.toggle('open', willOpen);
   trigger.classList.toggle('open', willOpen);
+  trigger.setAttribute('aria-expanded', String(willOpen));
 }
 
 function selectOpt(id, value, label, callback) {
@@ -1251,6 +1490,7 @@ function selectOpt(id, value, label, callback) {
   const dropdown = $(`${id}Drop`);
   dropdown?.classList.remove('open');
   dropdown?.previousElementSibling?.classList.remove('open');
+  dropdown?.previousElementSibling?.setAttribute('aria-expanded', 'false');
   if (typeof callback === 'function') callback();
 }
 
@@ -1261,6 +1501,10 @@ function renderDashboard() {
   const lastShot = shots.at(-1);
   const lastWeight = weights.at(-1);
   const profile = getProfile();
+  const dashboard = document.getElementById('pageDash');
+  const firstShotMission = document.getElementById('gnFirstShotMission');
+  if (dashboard) dashboard.dataset.activation = shots.length ? 'active' : 'pending';
+  if (firstShotMission) firstShotMission.hidden = shots.length > 0;
   const weightMetrics = computeTotalChange(weights, profile, 'profile');
   setText('stShots', shots.length);
   setText('stDose', lastShot?.dose ? `${lastShot.dose}mg` : '—');
@@ -1304,7 +1548,9 @@ function renderDashboard() {
 function ensureWandaDashboard() {
   const header = document.getElementById('pageDash')?.querySelector('.page-hdr');
   if (!header || document.getElementById('gnWandaDashboard')) return;
-  const markup = '<section id="gnWandaDashboard" aria-label="' + safeText(tx('dashboard.currentProtocolSignals', 'Current protocol signals')) + '"><div class="gn-wanda-grid">'
+  const markup = '<section id="gnWandaDashboard" aria-label="' + safeText(tx('dashboard.currentProtocolSignals', 'Current protocol signals')) + '">'
+    + '<section class="gn-dashboard-mission" id="gnFirstShotMission" aria-labelledby="gnFirstShotMissionTitle"><span class="gn-dashboard-mission-kicker" data-i18n="dashboard.firstShotKicker">START HERE</span><h2 id="gnFirstShotMissionTitle" data-i18n="shots.activateYourGrid">LOG YOUR FIRST SHOT TO ACTIVATE YOUR GRID</h2><p data-i18n="shots.firstShotSub">One shot unlocks the Phase Engine, RESULTS, and your full dashboard.</p><button type="button" onclick="openLogModal()" data-i18n="shots.logYourFirst">LOG YOUR FIRST SHOT</button></section>'
+    + '<div class="gn-wanda-grid">'
     + '<button class="gn-wanda-card" id="gnWandaNext" type="button" onclick="openLogModal()"><span class="gn-wanda-label" data-i18n="dashboard.nextShotLabel">NEXT SHOT</span><b class="gn-wanda-value" id="gnWandaNextValue">' + tx('runtime.logShot', 'LOG SHOT') + '</b><small class="gn-wanda-note" id="gnWandaNextNote" data-i18n="dashboard.logShotStartTimeline">Log a shot to start your timeline</small></button>'
     + '<button class="gn-wanda-card" id="gnWandaPhase" type="button" onclick="showPhasesModal()"><span class="gn-wanda-label" data-i18n="dashboard.currentPhase">CURRENT PHASE</span><b class="gn-wanda-value" id="gnWandaPhaseValue">' + tx('dashboard.startWithShot', 'START WITH A SHOT') + '</b><small class="gn-wanda-note" data-i18n="phase.educationalEstimate">EDUCATIONAL ESTIMATE</small></button>'
     + '<button class="gn-wanda-card" id="gnWandaWeight" type="button" onclick="openWeightModal()"><span class="gn-wanda-label" data-i18n="dashboard.currentWeight">CURRENT WEIGHT</span><b class="gn-wanda-value" id="gnWandaWeightValue">' + tx('dashboard.logWeight', 'LOG WEIGHT') + '</b><small class="gn-wanda-note" data-i18n="dashboard.latestRecord">Latest record</small></button>'
@@ -1421,7 +1667,7 @@ function renderPhase(lastShot, shots) {
   setText('ringPct', tx('phase.cyclePositionRing', '{pct}% CYCLE POSITION', { pct: Math.round(cyclePosition * 100) }));
   setText('phaseNext', tx(shots.length === 1 ? 'phase.activeRecords_one' : 'phase.activeRecords_other', '> {phase} // {n} ACTIVE SHOT RECORDS', { phase: phaseName, n: shots.length }));
   setText('pibBody', tx('phase.pibBody', '{phase} visibility is estimated from {since} since the most recent user-entered SHOT.', { phase: phaseName, since }));
-  setText('pibSE', lastShot.se?.length ? tx('phase.recentObservations', 'Recent logged observations: {items}.', { items: lastShot.se.join(', ') }) : tx('phase.noRecentObservations', 'No side effects were attached to the most recent SHOT record.'));
+  setText('pibSE', lastShot.se?.length ? tx('phase.recentObservations', 'Recent logged observations: {items}.', { items: lastShot.se.map(sideEffectLabel).join(', ') }) : tx('phase.noRecentObservations', 'No side effects were attached to the most recent SHOT record.'));
   setText('pibPay', tx('phase.appetiteSymptoms', 'Track appetite, symptoms, energy, side effects, and notes as your protocol history develops.'));
   const arc = document.getElementById('phaseArc');
   if (arc) { const circumference = 678.6; arc.style.strokeDashoffset = String(circumference * (1 - cyclePosition)); arc.style.stroke = phase.color; }
@@ -1449,7 +1695,8 @@ function closePhases() { $('phasesOv')?.classList.remove('active'); }
 function ensureShotHistoryFilters() {
   const controls = $('shotHistoryControls');
   if (!controls || $('gnShotFilters')) return;
-  controls.insertAdjacentHTML('afterend', `<details class="gn-shot-filters" id="gnShotFilters"><summary>FILTER SHOT HISTORY <span class="gn-filter-count" id="gnShotFilterCount"></span></summary><div class="gn-shot-filter-grid"><label>MEDICATION<select id="gnShotFilterMedication"><option value="">ALL MEDICATIONS</option></select></label><label>LOCATION<select id="gnShotFilterSite"><option value="">ALL LOCATIONS</option></select></label><label>DATE RANGE<select id="gnShotFilterRange"><option value="all">ALL TIME</option><option value="30">LAST 30 DAYS</option><option value="90">LAST 90 DAYS</option><option value="year">THIS YEAR</option></select></label><label>NOTES SEARCH<input id="gnShotFilterQuery" type="search" placeholder="Search notes"></label></div><button type="button" class="gn-shot-filter-clear" id="gnShotFilterClear" hidden>CLEAR ALL FILTERS</button></details>`);
+  controls.insertAdjacentHTML('afterend', `<details class="gn-shot-filters" id="gnShotFilters"><summary><span data-i18n="shots.filterHistory">FILTER SHOT HISTORY</span> <span class="gn-filter-count" id="gnShotFilterCount"></span></summary><div class="gn-shot-filter-grid"><label><span data-i18n="shot.medication">MEDICATION</span><select id="gnShotFilterMedication"><option value="" data-i18n="shots.allMedications">ALL MEDICATIONS</option></select></label><label><span data-i18n="shot.location">LOCATION</span><select id="gnShotFilterSite"><option value="" data-i18n="shots.allLocations">ALL LOCATIONS</option></select></label><label><span data-i18n="shots.dateRange">DATE RANGE</span><select id="gnShotFilterRange"><option value="all" data-i18n="shots.allTime">ALL TIME</option><option value="30" data-i18n="shots.last30">LAST 30 DAYS</option><option value="90" data-i18n="shots.last90">LAST 90 DAYS</option><option value="year" data-i18n="shots.thisYear">THIS YEAR</option></select></label><label><span data-i18n="shots.notesSearch">NOTES SEARCH</span><input id="gnShotFilterQuery" type="search" placeholder="Search notes" data-i18n-placeholder="shots.searchNotes"></label></div><button type="button" class="gn-shot-filter-clear" id="gnShotFilterClear" hidden data-i18n="shots.clearAllFilters">CLEAR ALL FILTERS</button></details>`);
+  window.GN_I18N?.applyTo?.($('gnShotFilters'));
   $('gnShotFilters')?.addEventListener('input', event => {
     const id = event.target.id;
     if (id === 'gnShotFilterMedication') moduleState.shotFilters.medication = event.target.value;
@@ -1466,7 +1713,7 @@ function filterShots(records) {
   const query = filters.query.trim().toLowerCase();
   const cutoff = filters.range === '30' || filters.range === '90' ? Date.now() - Number(filters.range) * 86400000 : filters.range === 'year' ? new Date(new Date().getFullYear(), 0, 1).getTime() : null;
   return records.filter(record => {
-    if (filters.medication && (record.med || 'Custom') !== filters.medication) return false;
+    if (filters.medication && normalizeMedicationId(record.med) !== filters.medication) return false;
     if (filters.site && (record.site || '') !== filters.site) return false;
     if (cutoff && new Date(record.date).getTime() < cutoff) return false;
     if (query && !String(record.notes || '').toLowerCase().includes(query)) return false;
@@ -1478,12 +1725,12 @@ function renderShotFilterOptions(records) {
   const filters = moduleState.shotFilters;
   const med = $('gnShotFilterMedication');
   const site = $('gnShotFilterSite');
-  if (med) { const values = [...new Set(records.map(record => record.med || 'Custom'))].sort(); med.innerHTML = '<option value="">ALL MEDICATIONS</option>' + values.map(value => `<option value="${safeText(value)}">${safeText(MEDICATIONS[value] || value)}</option>`).join(''); med.value = filters.medication; }
-  if (site) { const values = [...new Set(records.map(record => record.site).filter(Boolean))].sort(); site.innerHTML = '<option value="">ALL LOCATIONS</option>' + values.map(value => `<option value="${safeText(value)}">${safeText(value)}</option>`).join(''); site.value = filters.site; }
+  if (med) { const values = [...new Set(records.map(record => normalizeMedicationId(record.med)).filter(Boolean))].sort(); med.innerHTML = `<option value="">${tx('shots.allMedications', 'ALL MEDICATIONS')}</option>` + values.map(value => `<option value="${safeText(value)}">${safeText(medicationLabel(value))}</option>`).join(''); med.value = filters.medication; }
+  if (site) { const values = [...new Set(records.map(record => record.site).filter(Boolean))].sort(); site.innerHTML = `<option value="">${tx('shots.allLocations', 'ALL LOCATIONS')}</option>` + values.map(value => `<option value="${safeText(value)}">${safeText(value)}</option>`).join(''); site.value = filters.site; }
   const query = $('gnShotFilterQuery'); if (query && query.value !== filters.query) query.value = filters.query;
   const range = $('gnShotFilterRange'); if (range) range.value = filters.range;
   const count = Object.values(filters).filter(value => value && value !== 'all').length;
-  setText('gnShotFilterCount', count ? `${count} FILTER${count === 1 ? '' : 'S'} ACTIVE` : '');
+  setText('gnShotFilterCount', count ? tx(count === 1 ? 'shots.filterActive_one' : 'shots.filterActive_other', '{count} FILTERS ACTIVE', { count }) : '');
   const clear = $('gnShotFilterClear'); if (clear) clear.hidden = !count;
 }
 
@@ -1496,6 +1743,18 @@ function renderShots() {
   const visible = filterShots(all.filter(record => moduleState.shotHistoryView === 'archived' ? record.archived : !record.archived).sort((a, b) => new Date(b.date) - new Date(a.date)));
   renderShotFilterOptions(all);
   installCustomPickers(document);
+  document.addEventListener('gn:langchange', () => {
+    const shotDate = $('sDate');
+    const weightDate = $('wtDate');
+    if (shotDate?.dataset.isoDate) setHumanDateInput(shotDate, shotDate.dataset.isoDate);
+    if (weightDate?.dataset.isoDate) setHumanDateInput(weightDate, weightDate.dataset.isoDate, true);
+    window.requestAnimationFrame(() => {
+      installCustomPickers(document);
+      syncCustomPickers(document);
+      qa('.gn-custom-date').forEach(renderCustomDatePopover);
+      renderScanner();
+    });
+  });
   syncCustomPickers($('gnShotFilters') || document);
   setText('shotHistoryHelper', moduleState.shotHistoryView === 'archived' ? tx('shots.archivedRetained', 'Archived records remain stored for review and can be restored.') : tx('shots.activeRecordsRetained', 'Active SHOT records are retained in your local VAULT.'));
   qa('[data-shot-history-view]').forEach(button => button.classList.toggle('active', button.dataset.shotHistoryView === moduleState.shotHistoryView));
@@ -1508,9 +1767,9 @@ function renderShots() {
   list.innerHTML = visible.map(record => {
     const archived = Boolean(record.archived);
     return `<article class="log-entry ${archived ? 'archived' : ''}">
-      <div class="log-main"><div><div class="log-date">${archived ? 'ARCHIVED ' : ''}${safeText(formatDateTime(record.date))}</div><div class="log-med">${safeText(MEDICATIONS[record.med] || record.med || 'CUSTOM')}</div></div>
+      <div class="log-main"><div><div class="log-date">${archived ? tx('shots.archivedPrefix', 'ARCHIVED') + ' ' : ''}${safeText(formatDateTime(record.date))}</div><div class="log-med">${safeText(medicationLabel(record.med))}</div></div>
       <div class="log-dose">${safeText(record.dose || '—')}mg</div></div>
-      <div class="log-chips">${record.site ? `<span class="log-chip lc-site">${safeText(zoneLabel(record.site))}</span>` : ''}${record.deviceId ? `<span class="log-chip lc-site">DEVICE: ${safeText(deviceLabel(record.deviceId) || 'UNKNOWN')}</span>` : ''}${record.wt ? `<span class="log-chip lc-wt">${safeText(record.wt)}lb</span>` : ''}${record.se?.length ? `<span class="log-chip lc-se">${safeText(record.se.join(', '))}</span>` : ''}</div>
+      <div class="log-chips">${record.site ? `<span class="log-chip lc-site">${safeText(zoneLabel(record.site))}</span>` : ''}${record.deviceId ? `<span class="log-chip lc-site">${tx('shot.deviceUsed', 'DEVICE')}: ${safeText(deviceLabel(record.deviceId) || tx('runtime.notAvailable', 'NOT AVAILABLE'))}</span>` : ''}${record.wt ? `<span class="log-chip lc-wt">${safeText(record.wt)}lb</span>` : ''}${record.se?.length ? `<span class="log-chip lc-se">${safeText(record.se.map(sideEffectLabel).join(', '))}</span>` : ''}</div>
       ${record.notes ? `<div class="log-notes">${safeText(record.notes)}</div>` : ''}
       <div class="log-actions">${archived ? `<button type="button" class="log-action-btn" data-shot-action="restore-edit" data-shot-id="${safeText(record.id)}">${tx('shots.restoreToEdit', 'RESTORE TO EDIT')}</button>` : `<button type="button" class="log-action-btn" data-shot-action="edit" data-shot-id="${safeText(record.id)}">${tx('shots.edit', 'EDIT')}</button><button type="button" class="log-action-btn del" data-shot-action="archive" data-shot-id="${safeText(record.id)}">${tx('shots.archive', 'ARCHIVE')}</button>`}</div>
       ${archived ? `<div class="shot-history-helper">${tx('shots.archivedRestoreNote', 'Restore the record before editing.')}</div>` : ''}
@@ -1534,7 +1793,7 @@ function setScannerMode(mode, button) {
     if (frontAsset) asset.dataset.front = frontAsset;
     asset.src = moduleState.scannerMode === 'upper' ? (asset.dataset.back || '/assets/scanner-body-rear.jpg') : frontAsset;
   }
-  setText('scannerModeLabel', tx('shots.trackableZones', moduleState.scannerMode.toUpperCase() + ' TRACKABLE ZONES', { zone: moduleState.scannerMode.toUpperCase() }));
+  setText('scannerModeLabel', tx('shots.trackableZones', 'TRACKABLE {zone} ZONES', { zone: scannerModeLabel(moduleState.scannerMode) }));
   renderScanner();
 }
 
@@ -1551,7 +1810,7 @@ function renderScanner() {
   if (!panel) return;
   let picker = panel.querySelector('.gn-stable-zone-picker');
   if (!picker) { picker = document.createElement('div'); picker.className = 'gn-stable-zone-picker'; panel.appendChild(picker); }
-  picker.innerHTML = `<div class="gn-stable-zone-title">${tx('shots.trackableZones', 'TRACKABLE ' + moduleState.scannerMode.toUpperCase() + ' ZONES', { zone: moduleState.scannerMode.toUpperCase() })}</div>${ZONES[moduleState.scannerMode].map(label => `<button type="button" class="gn-stable-zone-btn ${label === moduleState.selectedLocation ? 'selected' : ''}" data-stable-zone="${safeText(label)}" data-zone-key="${safeText(ZONE_IDS[label] || '')}">${safeText(zoneLabel(label))}</button>`).join('')}`;
+  picker.innerHTML = `<div class="gn-stable-zone-title">${tx('shots.trackableZones', 'TRACKABLE {zone} ZONES', { zone: scannerModeLabel(moduleState.scannerMode) })}</div>${ZONES[moduleState.scannerMode].map(label => `<button type="button" class="gn-stable-zone-btn ${label === moduleState.selectedLocation ? 'selected' : ''}" data-stable-zone="${safeText(label)}" data-zone-key="${safeText(ZONE_IDS[label] || '')}">${safeText(zoneLabel(label))}</button>`).join('')}`;
   setText('scannerSelectedDisplay', zoneLabel(moduleState.selectedLocation) || tx('shots.noLocationSelected', 'No location selected'));
   const recent = sortedShots().slice(-4).reverse().map(item => item.site).filter(Boolean);
   setText('scannerHistoryDisplay', recent.length ? recent.map(zoneLabel).join(' · ') : tx('shots.noLoggedLocationYet', 'No logged location yet'));
@@ -1565,6 +1824,7 @@ function renderScanner() {
 function openLogModal(options = {}) {
   const modal = $('logOv');
   if (!modal) return;
+  let draftDeviceId = '';
   if (!modal.querySelector('[data-gn-shot-step="timing"]')) {
     modal.querySelector('.gn-shot-datetime-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="timing">' + tx('shot.timing', '01 // TIMING') + '</div>');
     $('cpShotMed')?.closest('.form-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="protocol">' + tx('shot.protocol', '02 // PROTOCOL') + '</div>');
@@ -1575,15 +1835,18 @@ function openLogModal(options = {}) {
   if (preserveDraft && moduleState.shotDraft) {
     // Restore the full unsaved draft (canonical med key + every entered field).
     const d = moduleState.shotDraft;
-    if (d.med) setSelect('cpShotMed', d.med, MEDICATIONS[d.med] || d.med);
+    const draftMedicationId = normalizeMedicationId(d.med);
+    if (draftMedicationId) setSelect('cpShotMed', draftMedicationId, medicationLabel(draftMedicationId));
     if ($('sDose')) $('sDose').value = d.dose || '';
-    if ($('sDate')) $('sDate').value = d.date || todayISO();
+    setHumanDateInput($('sDate'), d.date || todayISO());
     if ($('sTime')) $('sTime').value = d.time || '';
     if (d.meridiem) moduleState.meridiem = d.meridiem;
     if ($('sWt')) $('sWt').value = d.wt || '';
     if ($('sNotes')) $('sNotes').value = d.notes || '';
+    draftDeviceId = d.deviceId || '';
     if (Array.isArray(d.se)) {
-      qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = d.se.includes(input.value); });
+      const draftSideEffects = d.se.map(normalizeSideEffectId);
+      qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = draftSideEffects.includes(input.value); });
     }
     moduleState.shotDraft = null; // consumed once
   }
@@ -1592,15 +1855,16 @@ function openLogModal(options = {}) {
     document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode(tx('shot.logShot', 'LOG SHOT')));
     setTodayDefaults();
     const profile = getProfile();
-    if (profile.med) setSelect('cpShotMed', profile.med, MEDICATIONS[profile.med] || profile.med);
+    const profileMedicationId = normalizeMedicationId(profile.med);
+    if (profileMedicationId) setSelect('cpShotMed', profileMedicationId, medicationLabel(profileMedicationId));
     if (profile.dose && $('sDose')) $('sDose').value = profile.dose;
     if ($('sWt')) $('sWt').value = '';
     if ($('sNotes')) $('sNotes').value = '';
     qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = false; });
   }
-  setText('modalSelectedLocation', moduleState.selectedLocation || 'No location selected');
-  setText('logLocationAction', moduleState.selectedLocation ? 'CHANGE LOGGED LOCATION' : 'SELECT LOGGED LOCATION');
-  renderShotDevicePicker();
+  setText('modalSelectedLocation', zoneLabel(moduleState.selectedLocation) || tx('shots.noLocationSelected', 'No location selected'));
+  setText('logLocationAction', moduleState.selectedLocation ? tx('shots.changeLoggedLocation', 'CHANGE LOGGED LOCATION') : tx('shots.selectLoggedLocation', 'SELECT LOGGED LOCATION'));
+  renderShotDevicePicker(draftDeviceId);
   modal.classList.add('active');
 }
 
@@ -1608,7 +1872,7 @@ function renderShotDevicePicker(selectedId = '') {
   const picker = $('shotDeviceId');
   if (!picker) return;
   const devices = S.get('devices', []).filter(device => !device.archived);
-  picker.innerHTML = `<option value="">${tx('shot.unknownDevice', 'Unknown / Not applicable')}</option>${devices.map(device => `<option value="${safeText(device.id)}">${safeText(device.name)} · ${safeText(device.status || 'READY')}</option>`).join('')}`;
+  picker.innerHTML = `<option value="">${tx('shot.unknownDevice', 'Unknown / Not applicable')}</option>${devices.map(device => `<option value="${safeText(device.id)}">${safeText(device.name)} · ${safeText(deviceStatusLabel(device.status))}</option>`).join('')}`;
   picker.value = selectedId || '';
 }
 
@@ -1629,16 +1893,18 @@ function editShot(id) {
   moduleState.selectedLocation = record.site || moduleState.selectedLocation;
   const recordDate = new Date(record.date);
   const safeRecordDate = Number.isNaN(recordDate.getTime()) ? new Date() : recordDate;
-  if ($('sDate')) $('sDate').value = record.date?.slice(0, 10) || todayISO();
+  setHumanDateInput($('sDate'), record.date?.slice(0, 10) || todayISO());
   if ($('sTime')) $('sTime').value = formatTime12(safeRecordDate);
   moduleState.meridiem = safeRecordDate.getHours() >= 12 ? 'PM' : 'AM';
   updateMeridiemButtons();
-  setSelect('cpShotMed', record.med, MEDICATIONS[record.med] || record.med);
+  const medicationId = normalizeMedicationId(record.med);
+  setSelect('cpShotMed', medicationId, medicationLabel(medicationId));
   if ($('sDose')) $('sDose').value = record.dose || '';
   if ($('sWt')) $('sWt').value = record.wt || '';
   if ($('sNotes')) $('sNotes').value = record.notes || '';
   renderShotDevicePicker(record.deviceId || '');
-  qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = record.se?.includes(input.value); });
+  const recordSideEffects = (record.se || []).map(normalizeSideEffectId);
+  qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = recordSideEffects.includes(input.value); });
   document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode(tx('shot.editShot', 'EDIT SHOT')));
   openLogModal({ preserve: true });
 }
@@ -1653,10 +1919,10 @@ function confirmArchiveShot() {
   if (!record) return;
   record.archived = true;
   record.archivedAt = new Date().toISOString();
-  if (!S.set('shots', all)) { showToast('Could not archive — storage unavailable.', true); return; }
+  if (!S.set('shots', all)) { showToast(tx('shots.archiveStorageError', 'Could not archive — storage unavailable.'), true); return; }
   queueCloudSync('shot', record);
   refreshAll();
-  showToast('SHOT record archived.');
+  showToast(tx('runtime.shotArchived', 'SHOT record archived.'));
 }
 
 function restoreArchivedShot(id) {
@@ -1665,11 +1931,11 @@ function restoreArchivedShot(id) {
   if (!record) return;
   record.archived = false;
   record.archivedAt = null;
-  if (!S.set('shots', all)) { showToast('Could not restore — storage unavailable.', true); return; }
+  if (!S.set('shots', all)) { showToast(tx('shots.restoreStorageError', 'Could not restore — storage unavailable.'), true); return; }
   queueCloudSync('shot', record);
   moduleState.shotHistoryView = 'active';
   refreshAll();
-  showToast('SHOT record restored.');
+  showToast(tx('shots.restored', 'SHOT record restored.'));
 }
 
 function restoreArchivedShotToEdit(id) {
@@ -1686,26 +1952,26 @@ async function confirmPermanentDeleteShot() {
   cancelPermanentDeleteShot();
   const record = getAllShots().find(item => item.id === id);
   const next = getAllShots().filter(item => item.id !== id);
-  if (!S.set('shots', next)) { showToast('Could not delete — storage unavailable.', true); return; }
+  if (!S.set('shots', next)) { showToast(tx('shots.deleteStorageUnavailable', 'Could not delete — storage unavailable.'), true); return; }
   refreshAll();
   const cloudDeleted = await deleteCloudShot(record);
-  showToast(cloudDeleted ? 'Archived record deleted.' : 'Deleted locally. Cloud deletion queued for retry.');
+  showToast(cloudDeleted ? tx('shots.deletedCloud', 'Archived record deleted.') : tx('shots.deletedLocalQueued', 'Deleted locally. Cloud deletion queued for retry.'));
 }
 
 function saveShot(allowFuture = false) {
   if (moduleState.savingShot) return;
   moduleState.savingShot = true;
   try {
-    const med = selectState.cpShotMed?.val;
+    const med = normalizeMedicationId(selectState.cpShotMed?.val);
     const dose = Number($('sDose')?.value);
-    const date = normalizeDateInput($('sDate')?.value);
+    const date = readHumanDateInput($('sDate'));
     const time = getShotTime24($('sTime')?.value);
     const site = moduleState.selectedLocation;
-    if (!med || !(Number.isFinite(dose) && dose > 0) || !date || !time || !site) { showToast('Add medication, dose, date, time, and a logged location.', true); return; }
+    if (!med || !(Number.isFinite(dose) && dose > 0) || !date || !time || !site) { showToast(tx('shots.requiredFields', 'Add medication, dose, date, time, and a logged location.'), true); return; }
     // FAIL CLOSED: never persist a medication that isn't a known canonical key.
     // Ambiguous/invalid historical values must be corrected, never silently mapped.
     if (!Object.prototype.hasOwnProperty.call(MEDICATIONS, med)) {
-      showToast('Select a valid medication for this record.', true);
+      showToast(tx('shots.validMedicationRequired', 'Select a valid medication for this record.'), true);
       moduleState.savingShot = false;
       return;
     }
@@ -1716,15 +1982,15 @@ function saveShot(allowFuture = false) {
       ...(existing || {}), id: existing?.id || createId('shot'), date: `${date}T${time}`,
       med, dose, site, deviceId: $('shotDeviceId')?.value || null, wt: Number($('sWt')?.value) || null,
       notes: $('sNotes')?.value?.trim() || null,
-      se: qa('#logOv input[type="checkbox"]:checked').map(input => input.value),
+      se: qa('#logOv input[type="checkbox"]:checked').map(input => normalizeSideEffectId(input.value)),
       archived: false, archivedAt: null, createdAt: existing?.createdAt || new Date().toISOString(),
-      source: existing?.source || 'Manual Entry', state: existing?.state || 'User Confirmed'
+      source: existing?.source || 'manual', state: existing?.state || 'confirmed'
     };
     const all = getAllShots();
     const index = all.findIndex(item => item.id === record.id);
     reconcileInventoryForShot(record, existing);
     if (index >= 0) all[index] = record; else all.push(record);
-    if (!S.set('shots', all)) { showToast('SHOT could not be saved — storage is full.', true); return; }
+    if (!S.set('shots', all)) { showToast(tx('shots.storageFull', 'SHOT could not be saved — storage is full.'), true); return; }
     queueCloudSync('shot', record);
     if (record.wt) {
       const weights = getWeights();
@@ -1739,14 +2005,14 @@ function saveShot(allowFuture = false) {
       };
       if (linkedIndex >= 0) weights[linkedIndex] = weightRecord; else weights.push(weightRecord);
       if (S.set('weights', weights)) queueCloudSync('weight', weightRecord);
-      else showToast('Linked weight could not be saved — storage is full.', true);
+      else showToast(tx('weight.storageFull', 'Linked weight could not be saved — storage is full.'), true);
     }
     appendEventLedger({ type: 'SHOT', recordId: record.id, date: record.date, label: existing ? 'SHOT UPDATED' : 'SHOT EVENT CONFIRMED' });
     moduleState.pendingFutureShot = false;
     $('futureTimestampConfirm')?.classList.remove('active');
     closeLog();
     refreshAll();
-    showToast(`${existing ? 'SHOT UPDATED' : 'SHOT RECORDED'} · ${site} ✓`);
+    showToast(`${tx(existing ? 'runtime.shotUpdated' : 'runtime.shotRecorded', existing ? 'SHOT UPDATED' : 'SHOT RECORDED')} · ${zoneLabel(site)} ✓`);
   } finally {
     moduleState.savingShot = false;
   }
@@ -1760,8 +2026,11 @@ function reconcileInventoryForShot(record, existing) {
     if (previousItem) { previousItem.quantity = Number(previousItem.quantity || 0) + Number(existing.inventoryDeduction.amount); changed = true; }
   }
   delete record.inventoryDeduction;
-  const medKey = String(record.med || '').toLowerCase();
-  const item = inventory.find(candidate => !candidate.archived && candidate.autoDeduct && String(candidate.units || '').toLowerCase() === 'mg' && String(candidate.medication || candidate.name || '').toLowerCase().includes(medKey));
+  const medicationKeys = [record.med, medicationLabel(record.med)].map(value => String(value || '').toLowerCase()).filter(Boolean);
+  const item = inventory.find(candidate => {
+    const identity = String(candidate.medication || candidate.name || '').toLowerCase();
+    return !candidate.archived && candidate.autoDeduct && String(candidate.units || '').toLowerCase() === 'mg' && medicationKeys.some(key => identity.includes(key) || key.includes(identity));
+  });
   if (item && Number(item.quantity) >= Number(record.dose)) {
     item.quantity = Number(item.quantity) - Number(record.dose);
     item.modifiedAt = new Date().toISOString();
@@ -1784,21 +2053,22 @@ function goToScannerForLocationFromLog() {
   moduleState.shotDraft = {
     med: selectState.cpShotMed?.val || null,
     dose: $('sDose')?.value || '',
-    date: $('sDate')?.value || '',
+    date: readHumanDateInput($('sDate')) || todayISO(),
     time: $('sTime')?.value || '',
     meridiem: moduleState.meridiem || null,
     wt: $('sWt')?.value || '',
     notes: $('sNotes')?.value || '',
+    deviceId: $('shotDeviceId')?.value || '',
     se: qa('#logOv input[type="checkbox"]:checked').map(input => input.value)
   };
   $('logOv')?.classList.remove('active');
   showPage('Log', $('navLog'));
   document.querySelector('.gn-stable-zone-picker')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  showToast('Select a trackable zone, then open LOG SHOT again.');
+  showToast(tx('shots.selectZoneAgain', 'Select a trackable zone, then open LOG SHOT again.'));
 }
 
 function openWeightModal() {
-  if ($('wtDate')) $('wtDate').value = todayISO();
+  setHumanDateInput($('wtDate'), todayISO(), true);
   if ($('wtTime')) $('wtTime').value = formatTime24(new Date());
   syncCustomPickers(document);
   window.GN_I18N?.applyTo?.(document.getElementById('wtOv'));
@@ -1814,16 +2084,16 @@ function saveWt() {
   moduleState.savingWt = true;
   try {
     const raw = Number($('wtVal')?.value);
-    const date = normalizeDateInput($('wtDate')?.value) || todayISO();
-    if (!Number.isFinite(raw) || raw <= 0) { setText('wtError', 'ENTER A VALID WEIGHT VALUE'); setDisplay('wtError', true); return; }
+    const date = readHumanDateInput($('wtDate'), true) || todayISO();
+    if (!Number.isFinite(raw) || raw <= 0) { setText('wtError', tx('weight.invalid', 'ENTER A VALID WEIGHT VALUE')); setDisplay('wtError', true); return; }
     const dateTime = new Date(`${date}T${$('wtTime')?.value || '12:00'}`);
-    if (Number.isNaN(dateTime.getTime()) || dateTime > new Date()) { setText('wtError', 'FUTURE DATE NOT ALLOWED'); setDisplay('wtError', true); return; }
+    if (Number.isNaN(dateTime.getTime()) || dateTime > new Date()) { setText('wtError', tx('weight.futureNotAllowed', 'FUTURE DATE NOT ALLOWED')); setDisplay('wtError', true); return; }
     const weight = moduleState.weightUnit === 'kg' ? raw * 2.2046226218 : raw;
     const previousWeight = sortedWeights().at(-1)?.weight;
     const milestone = weightMilestone(previousWeight, weight, getProfile());
-    const record = { id: createId('weight'), date: `${date}T${$('wtTime')?.value || '12:00'}`, weight, weightKg: moduleState.weightUnit === 'kg' ? raw : raw / 2.2046226218, unit: moduleState.weightUnit, notes: $('wtNotes')?.value?.trim() || null, source: 'Manual Entry', state: 'User Confirmed' };
+    const record = { id: createId('weight'), date: `${date}T${$('wtTime')?.value || '12:00'}`, weight, weightKg: moduleState.weightUnit === 'kg' ? raw : raw / 2.2046226218, unit: moduleState.weightUnit, notes: $('wtNotes')?.value?.trim() || null, source: 'manual', state: 'confirmed' };
     const weights = getWeights(); weights.push(record);
-    if (!S.set('weights', weights)) { setText('wtError', 'STORAGE UNAVAILABLE — WEIGHT NOT SAVED'); setDisplay('wtError', true); return; }
+    if (!S.set('weights', weights)) { setText('wtError', tx('weight.storageUnavailable', 'STORAGE UNAVAILABLE — WEIGHT NOT SAVED')); setDisplay('wtError', true); return; }
     queueCloudSync('weight', record);
     appendEventLedger({ type: 'WEIGHT', recordId: record.id, date: record.date, label: 'RESULTS UPDATED' });
     closeWt();
@@ -1831,7 +2101,7 @@ function saveWt() {
     if ($('wtNotes')) $('wtNotes').value = '';
     refreshAll();
     if (milestone) celebrateMilestone(milestone.type, milestone.value);
-    else actionFeedback('RESULTS UPDATED', 'NEW DATA POINT CAPTURED // PROGRESS TIMELINE EXPANDED');
+    else actionFeedback(tx('weight.resultsUpdated', 'RESULTS UPDATED'), tx('weight.newDataCaptured', 'NEW DATA POINT CAPTURED // PROGRESS TIMELINE EXPANDED'));
   } finally {
     moduleState.savingWt = false;
   }
@@ -2013,7 +2283,7 @@ function renderPhaseSource(shot) {
   const readout = document.getElementById('phaseEngineSourceReadout');
   if (!readout || !shot) return;
   const elapsed = Math.max(0, (Date.now() - new Date(shot.date).getTime()) / 86400000);
-  readout.innerHTML = '<div><span>' + tx('runtime.lastShot', 'LAST SHOT') + '</span><b>' + safeText(formatDateTime(shot.date)) + '</b></div><div><span>' + tx('runtime.medication', 'MEDICATION') + '</span><b>' + safeText(MEDICATIONS[shot.med] || shot.med || tx('med.customCompound', 'Custom Compound')) + '</b></div><div><span>' + tx('runtime.timeSince', 'TIME SINCE') + '</span><b>' + Math.floor(elapsed) + 'd</b></div><div><span>' + tx('runtime.dataSource', 'DATA SOURCE') + '</span><b>' + tx('runtime.userHistory', 'USER-ENTERED HISTORY') + '</b></div>';
+  readout.innerHTML = '<div><span>' + tx('runtime.lastShot', 'LAST SHOT') + '</span><b>' + safeText(formatDateTime(shot.date)) + '</b></div><div><span>' + tx('runtime.medication', 'MEDICATION') + '</span><b>' + safeText(medicationLabel(shot.med)) + '</b></div><div><span>' + tx('runtime.timeSince', 'TIME SINCE') + '</span><b>' + Math.floor(elapsed) + 'd</b></div><div><span>' + tx('runtime.dataSource', 'DATA SOURCE') + '</span><b>' + tx('runtime.userHistory', 'USER-ENTERED HISTORY') + '</b></div>';
 }
 
 function renderTrendLists(shots) {
@@ -2022,7 +2292,7 @@ function renderTrendLists(shots) {
   const sideEffectTrend = document.getElementById('sideEffectTrendLive');
   if (sideEffectTrend) {
     sideEffectTrend.innerHTML = effects.length
-      ? effects.slice(-6).reverse().map(effect => '<div class="results-list-row"><b>' + safeText(effect) + '</b><span>' + tx('runtime.loggedObservation', 'logged observation') + '</span></div>').join('')
+      ? effects.slice(-6).reverse().map(effect => '<div class="results-list-row"><b>' + safeText(sideEffectLabel(effect)) + '</b><span>' + tx('runtime.loggedObservation', 'logged observation') + '</span></div>').join('')
       : '';
   }
   setDisplay('appetiteTrendEmpty', true); setDisplay('energyTrendEmpty', true);
@@ -2098,16 +2368,54 @@ function showYouSeg(segment, button) {
 }
 
 function closeCustomPickers(except) {
-  qa('.gn-custom-picker.open,.gn-custom-date.open').forEach(wrapper => { if (wrapper !== except) wrapper.classList.remove('open'); });
+  qa('.gn-custom-picker.open,.gn-custom-date.open').forEach(wrapper => {
+    if (wrapper === except) return;
+    wrapper.classList.remove('open');
+    wrapper.querySelector('[aria-expanded="true"]')?.setAttribute('aria-expanded', 'false');
+  });
+}
+
+function populateCustomPickerMenu(select, menu, wrapper, trigger) {
+  menu.replaceChildren();
+  Array.from(select.options).forEach(option => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'gn-custom-picker-option';
+    button.dataset.gnPickerValue = option.value;
+    button.setAttribute('role', 'option');
+    button.disabled = option.disabled;
+    button.textContent = option.textContent;
+    button.addEventListener('click', () => {
+      select.value = option.value;
+      select.dispatchEvent(new Event('input', { bubbles: true }));
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      syncCustomPicker(select);
+      wrapper.classList.remove('open');
+      trigger.setAttribute('aria-expanded', 'false');
+      trigger.focus({ preventScroll: true });
+    });
+    menu.appendChild(button);
+  });
 }
 
 function syncCustomPicker(select) {
   const wrapper = select?.closest('.gn-custom-picker');
   const trigger = wrapper?.querySelector('[data-gn-picker-trigger]');
+  const menu = wrapper?.querySelector('.gn-custom-picker-menu');
   const option = Array.from(select?.options || []).find(item => item.value === select.value) || select?.options?.[0];
-  if (!wrapper || !trigger || !option) return;
+  if (!wrapper || !trigger || !menu || !option) return;
+  const sourceValues = Array.from(select.options).map(item => item.value);
+  const renderedValues = Array.from(menu.querySelectorAll('[data-gn-picker-value]')).map(item => item.dataset.gnPickerValue);
+  if (sourceValues.length !== renderedValues.length || sourceValues.some((value, index) => renderedValues[index] !== value)) {
+    populateCustomPickerMenu(select, menu, wrapper, trigger);
+  }
   trigger.textContent = option.textContent;
-  wrapper.querySelectorAll('[data-gn-picker-value]').forEach(button => button.setAttribute('aria-selected', String(button.dataset.gnPickerValue === select.value)));
+  wrapper.querySelectorAll('[data-gn-picker-value]').forEach(button => {
+    const source = Array.from(select.options).find(item => item.value === button.dataset.gnPickerValue);
+    if (source) button.textContent = source.textContent;
+    button.setAttribute('aria-selected', String(button.dataset.gnPickerValue === select.value));
+    button.disabled = Boolean(source?.disabled);
+  });
 }
 
 function installCustomSelect(select) {
@@ -2123,34 +2431,40 @@ function installCustomSelect(select) {
   const menu = document.createElement('div');
   menu.className = 'gn-custom-picker-menu';
   menu.setAttribute('role', 'listbox');
-  Array.from(select.options).forEach(option => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'gn-custom-picker-option';
-    button.dataset.gnPickerValue = option.value;
-    button.setAttribute('role', 'option');
-    button.textContent = option.textContent;
-    button.addEventListener('click', () => {
-      select.value = option.value;
-      select.dispatchEvent(new Event('input', { bubbles: true }));
-      select.dispatchEvent(new Event('change', { bubbles: true }));
-      syncCustomPicker(select);
-      wrapper.classList.remove('open');
-      trigger.setAttribute('aria-expanded', 'false');
-    });
-    menu.appendChild(button);
-  });
   select.hidden = true;
   select.setAttribute('aria-hidden', 'true');
   select.dataset.gnPickerWired = 'true';
   select.parentNode.insertBefore(wrapper, select);
   wrapper.append(trigger, menu, select);
+  populateCustomPickerMenu(select, menu, wrapper, trigger);
   trigger.addEventListener('click', () => {
     const open = !wrapper.classList.contains('open');
     closeCustomPickers(wrapper);
     wrapper.classList.toggle('open', open);
     trigger.setAttribute('aria-expanded', String(open));
-    if (open) syncCustomPicker(select);
+    if (open) {
+      syncCustomPicker(select);
+      window.requestAnimationFrame(() => (menu.querySelector('[aria-selected="true"]:not(:disabled)') || menu.querySelector('button:not(:disabled)'))?.focus());
+    }
+  });
+  trigger.addEventListener('keydown', event => {
+    if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return;
+    event.preventDefault();
+    closeCustomPickers(wrapper);
+    wrapper.classList.add('open');
+    trigger.setAttribute('aria-expanded', 'true');
+    syncCustomPicker(select);
+    const options = Array.from(menu.querySelectorAll('button:not(:disabled)'));
+    (event.key === 'ArrowUp' ? options.at(-1) : options.find(item => item.getAttribute('aria-selected') === 'true') || options[0])?.focus();
+  });
+  menu.addEventListener('keydown', event => {
+    const options = Array.from(menu.querySelectorAll('button:not(:disabled)'));
+    const index = options.indexOf(document.activeElement);
+    if (event.key === 'Escape') { event.preventDefault(); wrapper.classList.remove('open'); trigger.setAttribute('aria-expanded', 'false'); trigger.focus(); return; }
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const next = event.key === 'Home' ? 0 : event.key === 'End' ? options.length - 1 : event.key === 'ArrowDown' ? Math.min(options.length - 1, index + 1) : Math.max(0, index - 1);
+    options[next]?.focus();
   });
   select.addEventListener('change', () => syncCustomPicker(select));
   syncCustomPicker(select);
@@ -2163,11 +2477,12 @@ function renderCustomDatePopover(wrapper) {
   const label = wrapper.querySelector('[data-gn-date-label]');
   const grid = wrapper.querySelector('[data-gn-date-grid]');
   if (!label || !grid) return;
-  label.textContent = month.toLocaleDateString(document.documentElement.lang === 'es' ? 'es-419' : 'en-US', { month: 'long', year: 'numeric' });
+  label.textContent = month.toLocaleDateString(document.documentElement.lang?.startsWith('es') ? 'es-419' : 'en-US', { month: 'long', year: 'numeric' });
   const first = new Date(year, monthIndex, 1).getDay();
   const total = new Date(year, monthIndex + 1, 0).getDate();
   const selected = wrapper.input.value || '';
-  grid.innerHTML = `${['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => `<span class="gn-custom-date-dow">${day}</span>`).join('')}${Array.from({ length: first }, () => '<span class="gn-custom-date-blank"></span>').join('')}${Array.from({ length: total }, (_, index) => { const day = index + 1, value = `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; return `<button type="button" class="gn-custom-date-day${value === selected ? ' selected' : ''}" data-gn-date-value="${value}">${day}</button>`; }).join('')}`;
+  const dayLabels = document.documentElement.lang?.startsWith('es') ? ['D', 'L', 'M', 'X', 'J', 'V', 'S'] : ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  grid.innerHTML = `${dayLabels.map(day => `<span class="gn-custom-date-dow">${day}</span>`).join('')}${Array.from({ length: first }, () => '<span class="gn-custom-date-blank"></span>').join('')}${Array.from({ length: total }, (_, index) => { const day = index + 1, value = `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; return `<button type="button" class="gn-custom-date-day${value === selected ? ' selected' : ''}" data-gn-date-value="${value}">${day}</button>`; }).join('')}`;
 }
 
 function syncCustomDate(input) {
@@ -2191,7 +2506,7 @@ function installCustomDate(input) {
   trigger.setAttribute('aria-haspopup', 'dialog');
   const popover = document.createElement('div');
   popover.className = 'gn-custom-date-popover';
-  popover.innerHTML = '<div class="gn-custom-date-head"><button type="button" data-gn-date-prev aria-label="' + tx('date.prevMonth', 'Previous month') + '">‹</button><strong data-gn-date-label></strong><button type="button" data-gn-date-next aria-label="' + tx('date.nextMonth', 'Next month') + '">›</button></div><div class="gn-custom-date-grid" data-gn-date-grid></div><div class="gn-custom-date-foot"><button type="button" data-gn-date-today>' + tx('date.useToday', 'USE TODAY') + '</button><button type="button" data-gn-date-close>' + tx('date.close', 'CLOSE') + '</button></div>';
+  popover.innerHTML = '<div class="gn-custom-date-head"><button type="button" data-gn-date-prev aria-label="' + tx('date.prevMonth', 'Previous month') + '">‹</button><strong data-gn-date-label></strong><button type="button" data-gn-date-next aria-label="' + tx('date.nextMonth', 'Next month') + '">›</button></div><div class="gn-custom-date-grid" data-gn-date-grid></div><div class="gn-custom-date-foot"><button type="button" data-gn-date-today data-i18n="date.useToday">' + tx('date.useToday', 'USE TODAY') + '</button><button type="button" data-gn-date-close data-i18n="date.close">' + tx('date.close', 'CLOSE') + '</button></div>';
   input.type = 'text';
   input.readOnly = true;
   input.hidden = true;
@@ -2199,6 +2514,7 @@ function installCustomDate(input) {
   input.dataset.gnDateWired = 'true';
   input.parentNode.insertBefore(wrapper, input);
   wrapper.append(trigger, popover, input);
+  window.GN_I18N?.applyTo?.(popover);
   trigger.addEventListener('click', () => {
     const open = !wrapper.classList.contains('open');
     closeCustomPickers(wrapper);
@@ -2250,18 +2566,18 @@ function ensureLabFoundations() {
     </div>
     <details class="gn-foundation-section" open id="gnResearchSection"><summary><span data-i18n="lab.researchPeptides">RESEARCH PEPTIDES</span><em data-i18n="research.organize">ORGANIZE · OBSERVE · REVIEW</em></summary>
       <div class="gn-research-notice"><strong data-i18n="research.noticeTitle">USER-ENTERED RESEARCH RECORDS</strong><span data-i18n="research.noticeBody">Some compounds above have FDA-approved indications in specific clinical contexts. This organizer does not distinguish regulated from research use. All records are user-entered. Verify independently.</span></div>
-      <div class="gn-research-library">${RESEARCH_LIBRARY.map(({ category, names, context }) => { const catKey = { 'RECOVERY & REPAIR': 'lab.recoveryRepair', 'METABOLIC & BODY COMPOSITION': 'lab.metabolic', 'CELLULAR & MITOCHONDRIAL': 'lab.cellular', 'IMMUNE & NEUROLOGICAL': 'lab.immune' }[category]; const ctxKey = context === 'RESEARCH-FOCUSED RECORDS · REGULATORY STATUS IS NOT VERIFIED HERE.' ? 'lab.researchKicker' : null; return `<div class="gn-research-group"><span>${safeText(catKey ? tx(catKey, category) : category)}</span><small class="gn-research-context">${safeText(ctxKey ? tx(ctxKey, context) : context)}</small><div>${names.map(name => `<button type="button" data-research-name="${safeText(name)}" data-research-category="${safeText(category)}">${safeText(name)}</button>`).join('')}</div></div>`; }).join('')}<div class="gn-research-group"><span data-i18n="lab.customEntry">CUSTOM ENTRY</span><small class="gn-research-context" data-i18n="lab.customEntryHelp">USER-ENTERED RECORD · REGULATORY STATUS IS NOT VERIFIED HERE.</small><div><button type="button" data-research-name="" data-research-category="Custom Research" data-i18n="lab.customEntry">CUSTOM ENTRY</button></div></div></div>
+      <div class="gn-research-library">${RESEARCH_LIBRARY.map(({ category, names, context }) => { const catKey = RESEARCH_CATEGORY_KEYS[category]; const ctxKey = context === 'RESEARCH-FOCUSED RECORDS · REGULATORY STATUS IS NOT VERIFIED HERE.' ? 'lab.researchKicker' : 'lab.mixedResearchContext'; return `<div class="gn-research-group"><span>${safeText(catKey ? tx(catKey, category) : category)}</span><small class="gn-research-context">${safeText(tx(ctxKey, context))}</small><div>${names.map(name => `<button type="button" data-research-name="${safeText(name)}" data-research-category="${safeText(catKey)}">${safeText(name)}</button>`).join('')}</div></div>`; }).join('')}<div class="gn-research-group"><span data-i18n="lab.customEntry">CUSTOM ENTRY</span><small class="gn-research-context" data-i18n="lab.customEntryHelp">USER-ENTERED RECORD · REGULATORY STATUS IS NOT VERIFIED HERE.</small><div><button type="button" data-research-name="" data-research-category="lab.customResearch" data-i18n="lab.customEntry">CUSTOM ENTRY</button></div></div></div>
       <div class="gn-research-disclaimer" data-i18n="research.noticeBody">Some compounds above have FDA-approved indications in specific clinical contexts. This organizer does not distinguish regulated from research use. All records are user-entered. Verify independently.</div>
       <form class="gn-record-form" id="gnResearchForm"><div class="gn-form-grid"><label><span data-i18n="research.recordName">RECORD NAME</span><input id="gnResearchName" required placeholder="Select a library entry or type a custom name" data-i18n-placeholder="research.recordNamePlaceholder"></label><label><span data-i18n="research.category">CATEGORY</span><input id="gnResearchCategory" placeholder="Research category" data-i18n-placeholder="research.categoryPlaceholder"></label><label><span data-i18n="research.date">DATE</span><input id="gnResearchDate" type="date"></label></div><div class="gn-form-grid"><label><span data-i18n="research.status">STATUS</span><select id="gnResearchState"><option value="TRACKING" data-i18n="research.tracking">TRACKING</option><option value="COMPLETED" data-i18n="research.completed">COMPLETED</option><option value="ARCHIVED" data-i18n="research.archived">ARCHIVED</option><option value="RESEARCH NOTE ONLY" data-i18n="research.noteOnly">RESEARCH NOTE ONLY</option></select></label><label><span data-i18n="research.source">SOURCE</span><input id="gnResearchSource" placeholder="User-entered source or note" data-i18n-placeholder="research.sourcePlaceholder"></label></div><label><span data-i18n="research.observations">OBSERVATIONS / NOTES</span><textarea id="gnResearchNotes" rows="3" placeholder="User-entered observations only" data-i18n-placeholder="research.observationsPlaceholder"></textarea></label><button class="btn-full btn-primary" type="submit" id="gnResearchSave" data-i18n="research.save">SAVE RESEARCH RECORD</button></form>
       <div class="gn-record-list" id="gnResearchList"></div>
     </details>
-    <details class="gn-foundation-section" id="gnLedgerSection"><summary><span>SOURCE-AWARE EVENT LEDGER</span><em>NO SILENT REWRITES</em></summary><div class="gn-ledger-copy">Every important record keeps its origin and review state. Manual Entry, Import, Device Reported, and System Generated events remain distinguishable.</div><div class="gn-ledger-list" id="gnLedgerList"></div></details>
-    <details class="gn-foundation-section" id="gnSupplySection"><summary><span>SAVED INVENTORY</span><em>SEPARATE FROM CALCULATORS</em></summary><div class="gn-ledger-copy"><strong>CALCULATOR / REFERENCE ESTIMATE</strong> remains educational math. Saved Inventory is user-entered supply records and does not verify product, storage, potency, or safety.</div><form class="gn-record-form" id="gnInventoryForm"><div class="gn-form-grid"><label>ITEM NAME<input id="gnInventoryName" required placeholder="e.g. cartridge A"></label><label>ITEM TYPE<select id="gnInventoryType"><option>Vial</option><option>Cartridge</option><option>Disposable pen</option><option>Box or package</option><option>General supply item</option><option>Custom item</option></select></label><label>QUANTITY<input id="gnInventoryQuantity" type="number" min="0" step="any" placeholder="0"></label></div><div class="gn-form-grid"><label>UNITS<input id="gnInventoryUnits" placeholder="items, mL, boxes"></label><label>EXPIRATION / BUD<input id="gnInventoryExpiry" type="date"></label><label>STORAGE LOCATION<input id="gnInventoryLocation" placeholder="User-entered location"></label></div><label>NOTES<textarea id="gnInventoryNotes" rows="2" placeholder="User-entered supply notes"></textarea></label><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-full btn-secondary" type="submit" style="flex:1 1 180px" id="gnInventorySave">SAVE INVENTORY ITEM</button><button class="btn-full btn-secondary" type="button" id="gnInventoryExport" style="flex:0 1 170px">EXPORT INVENTORY</button></div></form><div class="gn-record-list" id="gnInventoryList"></div></details>
+    <details class="gn-foundation-section" id="gnLedgerSection"><summary><span data-i18n="lab.ledgerTitle">SOURCE-AWARE EVENT LEDGER</span><em data-i18n="lab.noSilentRewrites">NO SILENT REWRITES</em></summary><div class="gn-ledger-copy" data-i18n="lab.ledgerCopy">Every important record keeps its origin and review state. Manual Entry, Import, Device Reported, and System Generated events remain distinguishable.</div><div class="gn-ledger-list" id="gnLedgerList"></div></details>
+    <details class="gn-foundation-section" id="gnSupplySection"><summary><span data-i18n="lab.savedInventory">SAVED INVENTORY</span><em data-i18n="lab.separateCalculators">SEPARATE FROM CALCULATORS</em></summary><div class="gn-ledger-copy"><strong data-i18n="lab.calculatorEstimate">CALCULATOR / REFERENCE ESTIMATE</strong> <span data-i18n="lab.inventoryBoundary">remains educational math. Saved Inventory is user-entered supply records and does not verify product, storage, potency, or safety.</span></div><form class="gn-record-form" id="gnInventoryForm"><div class="gn-form-grid"><label><span data-i18n="lab.itemName">ITEM NAME</span><input id="gnInventoryName" required placeholder="e.g. cartridge A" data-i18n-placeholder="lab.itemNamePlaceholder"></label><label><span data-i18n="lab.itemType">ITEM TYPE</span><select id="gnInventoryType"><option value="VIAL" data-i18n="lab.typeVial">Vial</option><option value="CARTRIDGE" data-i18n="lab.typeCartridge">Cartridge</option><option value="DISPOSABLE_PEN" data-i18n="lab.typeDisposable">Disposable pen</option><option value="BOX_PACKAGE" data-i18n="lab.typeBox">Box or package</option><option value="SUPPLY" data-i18n="lab.typeSupply">General supply item</option><option value="CUSTOM" data-i18n="lab.typeCustom">Custom item</option></select></label><label><span data-i18n="lab.quantity">QUANTITY</span><input id="gnInventoryQuantity" type="number" min="0" step="any" placeholder="0"></label></div><div class="gn-form-grid"><label><span data-i18n="lab.units">UNITS</span><input id="gnInventoryUnits" placeholder="items, mL, boxes" data-i18n-placeholder="lab.unitsPlaceholder"></label><label><span data-i18n="lab.expiration">EXPIRATION / BUD</span><input id="gnInventoryExpiry" type="date"></label><label><span data-i18n="lab.storageLocation">STORAGE LOCATION</span><input id="gnInventoryLocation" placeholder="User-entered location" data-i18n-placeholder="lab.storagePlaceholder"></label></div><label><span data-i18n="lab.notes">NOTES</span><textarea id="gnInventoryNotes" rows="2" placeholder="User-entered supply notes" data-i18n-placeholder="lab.supplyNotesPlaceholder"></textarea></label><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-full btn-secondary" type="submit" style="flex:1 1 180px" id="gnInventorySave" data-i18n="lab.saveInventory">SAVE INVENTORY ITEM</button><button class="btn-full btn-secondary" type="button" id="gnInventoryExport" style="flex:0 1 170px" data-i18n="lab.exportInventory">EXPORT INVENTORY</button></div></form><div class="gn-record-list" id="gnInventoryList"></div></details>
   </section>`);
   $('gnResearchForm')?.addEventListener('submit', event => { event.preventDefault(); saveResearchRecord(); });
   $('gnResearchList')?.addEventListener('click', handleResearchAction);
   const inventoryNotesLabel = $('gnInventoryNotes')?.closest('label');
-  inventoryNotesLabel?.insertAdjacentHTML('beforebegin', `<div class="gn-form-grid"><label>CONCENTRATION<input id="gnInventoryConcentration" placeholder="User-entered label"></label><label>VOLUME<input id="gnInventoryVolume" placeholder="User-entered volume"></label><label>ACQUIRED DATE<input id="gnInventoryAcquired" type="date"></label></div><div class="gn-form-grid"><label>SOURCE<input id="gnInventorySource" placeholder="User-entered source"></label><label>LINKED MEDICATION<input id="gnInventoryMedication" placeholder="e.g. Zepbound"></label><label style="display:flex;align-items:center;gap:8px;grid-template-columns:auto 1fr"><input id="gnInventoryAutoDeduct" type="checkbox" style="width:auto"> AUTO-DEDUCT SHOTS <small>Requires quantity unit mg and a matching medication.</small></label></div>`);
+  inventoryNotesLabel?.insertAdjacentHTML('beforebegin', `<div class="gn-form-grid"><label><span data-i18n="lab.concentration">CONCENTRATION</span><input id="gnInventoryConcentration" placeholder="User-entered label" data-i18n-placeholder="lab.userLabelPlaceholder"></label><label><span data-i18n="lab.volume">VOLUME</span><input id="gnInventoryVolume" placeholder="User-entered volume" data-i18n-placeholder="lab.userVolumePlaceholder"></label><label><span data-i18n="lab.acquiredDate">ACQUIRED DATE</span><input id="gnInventoryAcquired" type="date"></label></div><div class="gn-form-grid"><label><span data-i18n="research.source">SOURCE</span><input id="gnInventorySource" placeholder="User-entered source" data-i18n-placeholder="lab.userSourcePlaceholder"></label><label><span data-i18n="lab.linkedMedication">LINKED MEDICATION</span><input id="gnInventoryMedication" placeholder="e.g. Zepbound"></label><label style="display:flex;align-items:center;gap:8px;grid-template-columns:auto 1fr"><input id="gnInventoryAutoDeduct" type="checkbox" style="width:auto"><span data-i18n="lab.autoDeduct">AUTO-DEDUCT SHOTS</span> <small data-i18n="lab.autoDeductHelp">Requires quantity unit mg and a matching medication.</small></label></div>`);
   installCustomPickers(page);
   $('gnInventoryForm')?.addEventListener('submit', event => { event.preventDefault(); saveInventoryRecord(); });
   $('gnInventoryExport')?.addEventListener('click', exportInventory);
@@ -2272,7 +2588,9 @@ function ensureLabFoundations() {
   overlay.id = 'gnLabToolOverlay';
   overlay.hidden = true;
   overlay.setAttribute('aria-modal', 'true');
-  overlay.innerHTML = `<div class="gn-lab-tool-shell"><header class="gn-lab-tool-head"><button type="button" class="gn-lab-back" data-lab-back>${tx('lab.back', '← BACK TO LAB')}</button><div><div class="gn-foundation-kicker" data-i18n="lab.kicker">// LAB SYSTEM</div><h2 id="gnLabToolTitle">${tx('lab.chooseSystem', 'LAB > CHOOSE A SYSTEM')}</h2></div><span class="gn-foundation-signal" data-i18n="lab.localRecords">LOCAL RECORDS</span></header><div id="gnLabToolHost" class="gn-lab-tool-host"></div></div>`;
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-labelledby', 'gnLabToolTitle');
+  overlay.innerHTML = `<div class="gn-lab-tool-shell"><header class="gn-lab-tool-head"><button type="button" class="gn-lab-back" data-lab-back data-i18n="lab.back">${tx('lab.back', '← BACK TO LAB')}</button><div><div class="gn-foundation-kicker" data-i18n="lab.kicker">// LAB SYSTEM</div><h2 id="gnLabToolTitle">${tx('lab.chooseSystem', 'LAB > CHOOSE A SYSTEM')}</h2></div><span class="gn-foundation-signal" data-i18n="lab.localRecords">LOCAL RECORDS</span></header><div id="gnLabToolHost" class="gn-lab-tool-host"></div></div>`;
   document.body.appendChild(overlay);
   overlay.querySelector('[data-lab-back]')?.addEventListener('click', closeLabTool);
   qa('[data-lab-focus]').forEach(tile => tile.addEventListener('click', () => openLabTool(tile.dataset.labFocus)));
@@ -2300,6 +2618,7 @@ function openLabTool(tool) {
   if (tool === 'devices') ensureProfileHub();
   const overlay = $('gnLabToolOverlay'), host = $('gnLabToolHost'), page = $('pageLab');
   if (!overlay || !host || !page) return;
+  moduleState.labToolLauncher = document.activeElement?.closest?.('[data-lab-focus]') || document.querySelector(`[data-lab-focus="${tool}"]`);
   const toolNodes = {
     calculators: ['labSegTabs', 'labSeg-draw', 'labSeg-recon', 'labSeg-supply', 'gnDoseProjection'].map($),
     research: [$('gnResearchSection')],
@@ -2310,12 +2629,8 @@ function openLabTool(tool) {
   if (!toolNodes.length) return;
   restoreLabNodes();
   toolNodes.forEach(labSlot);
-  // LAB focus: bring the selected tool into view and subdue the directory.
+  // LAB focus: subdue the directory while the tool content is moved.
   page.classList.add('gn-tool-focus');
-  requestAnimationFrame(function () {
-    var first = toolNodes[0];
-    if (first) { try { first.scrollIntoView({ block: 'start', behavior: 'auto' }); } catch (_) {} }
-  });
   toolNodes.forEach(node => host.appendChild(node));
   [$('gnResearchSection'), $('gnLedgerSection'), $('gnSupplySection')].forEach(section => { if (section) section.open = section.id === (tool === 'research' ? 'gnResearchSection' : tool === 'inventory' ? 'gnSupplySection' : 'gnLedgerSection'); });
   const titles = { calculators: tx('lab.calculators', 'CALCULATORS'), research: tx('lab.researchPeptides', 'RESEARCH PEPTIDES'), inventory: tx('lab.inventory', 'INVENTORY'), devices: tx('lab.deviceVault', 'DEVICE VAULT'), ledger: tx('lab.eventLedger', 'EVENT LEDGER') };
@@ -2328,12 +2643,16 @@ function openLabTool(tool) {
   if (tool === 'calculators') showLabSeg('draw', document.querySelector('[data-labseg="draw"]'));
   renderLabFoundations();
   if (tool === 'devices') renderDeviceVault();
+  // Focus scroll position: the overlay is the scroll container. For a newly
+  // opened tool, reset scrollTop to 0 after layout — the shell's layout already
+  // places the first content block below the sticky header (gap >= 12px).
+  // scrollIntoView is deliberately avoided here: it scrolls the container down
+  // and lands the content behind the sticky header. (CSS scroll-padding-top on
+  // .gn-lab-tool-overlay keeps later anchor jumps clear of the header.)
+  requestAnimationFrame(function () {
+    overlay.scrollTop = 0;
+  });
   overlay.querySelector('[data-lab-back]')?.focus({ preventScroll: true });
-  // Browser-Back integration: remember this tool-open state so Back closes it.
-  try {
-    moduleState.labToolHistoryState = { tool: tool };
-    history.pushState({ labToolOpen: true, tool: tool }, '');
-  } catch (_) {}
 }
 
 function closeLabTool() {
@@ -2348,15 +2667,17 @@ function closeLabTool() {
   try { restoreLabNodes(); } catch (_) {}
   if (page) page.classList.remove('gn-tool-focus', 'gn-lab-tool-open');
   document.body?.classList.remove('gn-lab-tool-open');
-  // Balance the history entry pushed on open (only if we opened it).
-  try {
-    if (moduleState.labToolHistoryState) { history.back(); moduleState.labToolHistoryState = null; }
-  } catch (_) {}
+  const launcher = moduleState.labToolLauncher;
+  moduleState.labToolLauncher = null;
+  if (launcher?.isConnected) window.setTimeout(() => launcher.focus({ preventScroll: true }), 0);
 }
 
-window.addEventListener('popstate', function () {
+window.addEventListener('popstate', function (event) {
   // Browser Back while the LAB tool overlay is open -> close the tool view.
   const overlay = $('gnLabToolOverlay');
+  // A nested picker/popover returning to the LAB layer must not also dismiss
+  // the focused tool. The native shell owns that inner history entry first.
+  if (overlay && event.state?.gnLayer === overlay.id) return;
   if (overlay && overlay.classList.contains('active')) {
     overlay.classList.remove('active');
     overlay.hidden = true;
@@ -2364,22 +2685,29 @@ window.addEventListener('popstate', function () {
     const page = $('pageLab');
     if (page) page.classList.remove('gn-tool-focus', 'gn-lab-tool-open');
     document.body?.classList.remove('gn-lab-tool-open');
+    const launcher = moduleState.labToolLauncher;
+    moduleState.labToolLauncher = null;
+    if (launcher?.isConnected) window.setTimeout(() => launcher.focus({ preventScroll: true }), 0);
   }
-  moduleState.labToolHistoryState = null;
 });
 
 function renderLabFoundations() {
   const list = $('gnResearchList');
   if (list) {
     const records = S.get('researchRecords', []);
-    const active = records.filter(record => !record.archived);
-    const archived = records.filter(record => record.archived);
-    list.innerHTML = records.length ? `${active.slice().reverse().map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(record.category || tx('lab.customResearch', 'CUSTOM RESEARCH'))} · ${safeText(formatDate(record.date || record.createdAt))} · ${safeText(record.source || tx('research.manualEntry', 'Manual Entry'))}</small></div><span class="gn-record-state">${safeText(record.state || tx('lab.tracking', 'TRACKING'))}</span><div style="display:flex;gap:4px"><button type="button" class="gn-record-delete" data-research-edit="${safeText(record.id)}" aria-label="${tx('lab.editResearch', 'Edit research record')}">✎</button><button type="button" class="gn-record-delete" data-research-archive="${safeText(record.id)}" aria-label="${tx('lab.archiveResearch', 'Archive research record')}">×</button></div></article>`).join('')}${archived.length ? `<div class="gn-ledger-copy" style="margin-top:10px">${tx("research.archivedHeading", "ARCHIVED RECORDS · Restore the record before editing.")}</div>${archived.slice().reverse().map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(record.category || tx('lab.customResearch', 'CUSTOM RESEARCH'))} · ${tx('research.archivedPrefix', 'Archived')} ${safeText(formatDate(record.modifiedAt || record.createdAt))}</small></div><span class="gn-record-state">${tx("research.archivedState", "ARCHIVED")}</span><button type="button" class="gn-record-delete gn-restore-edit" data-research-restore="${safeText(record.id)}" aria-label="${tx('lab.restoreResearch', 'Restore research record to edit')}">${tx("research.restoreToEdit", "RESTORE TO EDIT")}</button></article>`).join('')}` : ''}` : `<div class="gn-empty-state"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-lab-vessel"></use></svg></span><b>${tx("research.emptyTitle", "NO RESEARCH RECORDS YET")}</b><span>${tx("research.emptyBody", "Choose a library entry or create a custom record when you have something to preserve.")}</span></div>`;
+    const localizedRecords = records.map(record => ({
+      ...record,
+      category: researchCategoryLabel(record.category),
+      source: ['manual', 'Manual Entry', ''].includes(record.source || '') ? eventSourceText('manual') : record.source
+    }));
+    const active = localizedRecords.filter(record => !record.archived);
+    const archived = localizedRecords.filter(record => record.archived);
+    list.innerHTML = records.length ? `${active.slice().reverse().map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(record.category || tx('lab.customResearch', 'CUSTOM RESEARCH'))} · ${safeText(formatDate(record.date || record.createdAt))} · ${safeText(record.source || tx('research.manualEntry', 'Manual Entry'))}</small></div><span class="gn-record-state">${safeText(researchStateLabel(record.state))}</span><div style="display:flex;gap:4px"><button type="button" class="gn-record-delete" data-research-edit="${safeText(record.id)}" aria-label="${tx('lab.editResearch', 'Edit research record')}">✎</button><button type="button" class="gn-record-delete" data-research-archive="${safeText(record.id)}" aria-label="${tx('lab.archiveResearch', 'Archive research record')}">×</button></div></article>`).join('')}${archived.length ? `<div class="gn-ledger-copy" style="margin-top:10px">${tx("research.archivedHeading", "ARCHIVED RECORDS · Restore the record before editing.")}</div>${archived.slice().reverse().map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(record.category || tx('lab.customResearch', 'CUSTOM RESEARCH'))} · ${tx('research.archivedPrefix', 'Archived')} ${safeText(formatDate(record.modifiedAt || record.createdAt))}</small></div><span class="gn-record-state">${tx("research.archivedState", "ARCHIVED")}</span><button type="button" class="gn-record-delete gn-restore-edit" data-research-restore="${safeText(record.id)}" aria-label="${tx('lab.restoreResearch', 'Restore research record to edit')}">${tx("research.restoreToEdit", "RESTORE TO EDIT")}</button></article>`).join('')}` : ''}` : `<div class="gn-empty-state"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-lab-vessel"></use></svg></span><b>${tx("research.emptyTitle", "NO RESEARCH RECORDS YET")}</b><span>${tx("research.emptyBody", "Choose a library entry or create a custom record when you have something to preserve.")}</span></div>`;
   }
   const ledger = $('gnLedgerList');
   if (ledger) {
     const events = S.get('eventLedger', []).slice(-8).reverse();
-    ledger.innerHTML = events.length ? events.map(event => `<div class="gn-ledger-row"><span class="gn-ledger-dot"></span><div><b>${safeText(event.label || event.type || 'EVENT')}</b><small>${safeText(formatDateTime(event.date || event.createdAt))}</small></div><em>${safeText(event.source || 'Manual Entry')} · ${safeText(event.state || 'User Confirmed')}</em></div>`).join('') : '<div class="gn-empty-state"><b>LEDGER READY</b><span>New SHOTS and RESULTS events will appear here with their origin.</span></div>';
+    ledger.innerHTML = events.length ? events.map(event => `<div class="gn-ledger-row"><span class="gn-ledger-dot"></span><div><b>${safeText(eventLabelText(event.label || event.type))}</b><small>${safeText(formatDateTime(event.date || event.createdAt))}</small></div><em>${safeText(eventSourceText(event.source))} · ${safeText(eventStateText(event.state))}</em></div>`).join('') : `<div class="gn-empty-state"><b>${tx('lab.ledgerReady', 'LEDGER READY')}</b><span>${tx('lab.ledgerEmpty', 'New SHOTS and RESULTS events will appear here with their origin.')}</span></div>`;
   }
   renderInventory();
   syncCustomPickers($('pageLab') || document);
@@ -2391,22 +2719,22 @@ function renderInventory() {
   const records = S.get('inventory', []);
   const visible = records.filter(record => !record.archived);
   const archived = records.filter(record => record.archived);
-  list.innerHTML = records.length ? `${visible.map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(record.type)} · ${safeText(record.quantity ?? '—')} ${safeText(record.units || '')} · ${safeText(record.location || 'LOCATION NOT ENTERED')}</small></div><span class="gn-record-state">${safeText(record.status || 'ACTIVE')}</span><div style="display:flex;gap:4px"><button type="button" class="gn-record-delete" data-inventory-edit="${safeText(record.id)}" aria-label="Edit inventory item">✎</button><button type="button" class="gn-record-delete" data-inventory-archive="${safeText(record.id)}" aria-label="Archive inventory item">×</button></div></article>`).join('')}${archived.length ? `<div class="gn-ledger-copy" style="margin-top:10px">ARCHIVED RECORDS · Restore the record before editing.</div>${archived.map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(record.type)} · Archived ${safeText(formatDate(record.modifiedAt || record.createdAt))}</small></div><span class="gn-record-state">ARCHIVED</span><button type="button" class="gn-record-delete gn-restore-edit" data-inventory-restore="${safeText(record.id)}" aria-label="Restore inventory item to edit">RESTORE TO EDIT</button></article>`).join('')}` : ''}` : '<div class="gn-empty-state"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-archive-core"></use></svg></span><b>SAVED INVENTORY READY</b><span>Record supplies separately from educational calculators when you want a persistent list.</span></div>';
+  list.innerHTML = records.length ? `${visible.map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(inventoryTypeLabel(record.type))} · ${safeText(record.quantity ?? '—')} ${safeText(record.units || '')} · ${safeText(record.location || tx('lab.locationNotEntered', 'LOCATION NOT ENTERED'))}</small></div><span class="gn-record-state">${safeText(record.status === 'ARCHIVED' ? tx('research.archivedState', 'ARCHIVED') : tx('lab.active', 'ACTIVE'))}</span><div style="display:flex;gap:4px"><button type="button" class="gn-record-delete" data-inventory-edit="${safeText(record.id)}" aria-label="Edit inventory item">✎</button><button type="button" class="gn-record-delete" data-inventory-archive="${safeText(record.id)}" aria-label="Archive inventory item">×</button></div></article>`).join('')}${archived.length ? `<div class="gn-ledger-copy" style="margin-top:10px">${tx('research.archivedHeading', 'ARCHIVED RECORDS · Restore the record before editing.')}</div>${archived.map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(inventoryTypeLabel(record.type))} · ${tx('research.archivedPrefix', 'Archived')} ${safeText(formatDate(record.modifiedAt || record.createdAt))}</small></div><span class="gn-record-state">${tx('research.archivedState', 'ARCHIVED')}</span><button type="button" class="gn-record-delete gn-restore-edit" data-inventory-restore="${safeText(record.id)}" aria-label="Restore inventory item to edit">${tx('research.restoreToEdit', 'RESTORE TO EDIT')}</button></article>`).join('')}` : ''}` : `<div class="gn-empty-state"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-archive-core"></use></svg></span><b>${tx('lab.inventoryReady', 'SAVED INVENTORY READY')}</b><span>${tx('lab.inventoryEmpty', 'Record supplies separately from educational calculators when you want a persistent list.')}</span></div>`;
 }
 
 function saveInventoryRecord() {
   const name = $('gnInventoryName')?.value?.trim();
-  if (!name) { actionFeedback('INVENTORY NOT SAVED', 'ADD AN ITEM NAME BEFORE COMMITTING', true); return; }
+  if (!name) { actionFeedback(tx('inventory.notSaved', 'INVENTORY NOT SAVED'), tx('inventory.addName', 'ADD AN ITEM NAME BEFORE COMMITTING'), true); return; }
   const records = S.get('inventory', []);
   const now = new Date().toISOString();
   const id = moduleState.inventoryEditId || createId('inventory');
   const existing = records.find(record => record.id === id);
-  const history = [...(existing?.history || []), { at: now, action: existing ? 'UPDATED' : 'CREATED', source: 'Manual Entry' }];
-  const record = { id, name, type: $('gnInventoryType')?.value || 'Custom item', quantity: Number($('gnInventoryQuantity')?.value) || 0, units: $('gnInventoryUnits')?.value?.trim() || '', medication: $('gnInventoryMedication')?.value?.trim() || '', autoDeduct: Boolean($('gnInventoryAutoDeduct')?.checked), concentration: $('gnInventoryConcentration')?.value?.trim() || '', volume: $('gnInventoryVolume')?.value?.trim() || '', acquired: $('gnInventoryAcquired')?.value || '', expires: $('gnInventoryExpiry')?.value || '', inventorySource: $('gnInventorySource')?.value?.trim() || '', location: $('gnInventoryLocation')?.value?.trim() || '', notes: $('gnInventoryNotes')?.value?.trim() || '', status: existing?.status || 'ACTIVE', archived: existing?.archived || false, source: existing?.source || 'Manual Entry', state: existing?.state || 'User Confirmed', history, createdAt: existing?.createdAt || now, modifiedAt: now };
+  const history = [...(existing?.history || []), { at: now, action: existing ? 'UPDATED' : 'CREATED', source: 'manual' }];
+  const record = { id, name, type: normalizeInventoryType($('gnInventoryType')?.value), quantity: Number($('gnInventoryQuantity')?.value) || 0, units: $('gnInventoryUnits')?.value?.trim() || '', medication: $('gnInventoryMedication')?.value?.trim() || '', autoDeduct: Boolean($('gnInventoryAutoDeduct')?.checked), concentration: $('gnInventoryConcentration')?.value?.trim() || '', volume: $('gnInventoryVolume')?.value?.trim() || '', acquired: $('gnInventoryAcquired')?.value || '', expires: $('gnInventoryExpiry')?.value || '', inventorySource: $('gnInventorySource')?.value?.trim() || '', location: $('gnInventoryLocation')?.value?.trim() || '', notes: $('gnInventoryNotes')?.value?.trim() || '', status: existing?.status || 'ACTIVE', archived: existing?.archived || false, source: existing?.source || 'manual', state: existing?.state || 'confirmed', history, createdAt: existing?.createdAt || now, modifiedAt: now };
   const index = records.findIndex(item => item.id === id);
   if (index >= 0) records[index] = record; else records.push(record);
   S.set('inventory', records); appendEventLedger({ type: 'INVENTORY', recordId: record.id, label: existing ? 'INVENTORY UPDATED' : 'INVENTORY ITEM SAVED' }); queueCloudSync('workspace');
-  moduleState.inventoryEditId = null; $('gnInventoryForm')?.reset(); setText('gnInventorySave', 'SAVE INVENTORY ITEM'); renderInventory(); actionFeedback(existing ? 'INVENTORY UPDATED' : 'INVENTORY SAVED', 'SAVED INVENTORY // TIMELINE UPDATED');
+  moduleState.inventoryEditId = null; $('gnInventoryForm')?.reset(); setText('gnInventorySave', 'SAVE INVENTORY ITEM'); renderInventory(); actionFeedback(existing ? tx('inventory.updated', 'INVENTORY UPDATED') : tx('inventory.saved', 'INVENTORY SAVED'), tx('inventory.timelineUpdated', 'SAVED INVENTORY // TIMELINE UPDATED'));
 }
 
 function handleInventoryAction(event) {
@@ -2418,23 +2746,24 @@ function handleInventoryAction(event) {
   if (!record) return;
   if (button.dataset.inventoryEdit) {
     moduleState.inventoryEditId = id;
-    $('gnInventoryName').value = record.name || ''; $('gnInventoryType').value = record.type || 'Custom item'; $('gnInventoryQuantity').value = record.quantity || ''; $('gnInventoryUnits').value = record.units || ''; $('gnInventoryMedication').value = record.medication || ''; $('gnInventoryAutoDeduct').checked = Boolean(record.autoDeduct); $('gnInventoryConcentration').value = record.concentration || ''; $('gnInventoryVolume').value = record.volume || ''; $('gnInventoryAcquired').value = record.acquired || ''; $('gnInventoryExpiry').value = record.expires || ''; $('gnInventorySource').value = record.inventorySource || ''; $('gnInventoryLocation').value = record.location || ''; $('gnInventoryNotes').value = record.notes || ''; setText('gnInventorySave', 'UPDATE INVENTORY ITEM'); $('gnInventoryForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
+    $('gnInventoryName').value = record.name || ''; $('gnInventoryType').value = normalizeInventoryType(record.type); $('gnInventoryQuantity').value = record.quantity || ''; $('gnInventoryUnits').value = record.units || ''; $('gnInventoryMedication').value = record.medication || ''; $('gnInventoryAutoDeduct').checked = Boolean(record.autoDeduct); $('gnInventoryConcentration').value = record.concentration || ''; $('gnInventoryVolume').value = record.volume || ''; $('gnInventoryAcquired').value = record.acquired || ''; $('gnInventoryExpiry').value = record.expires || ''; $('gnInventorySource').value = record.inventorySource || ''; $('gnInventoryLocation').value = record.location || ''; $('gnInventoryNotes').value = record.notes || ''; setText('gnInventorySave', tx('lab.updateInventory', 'UPDATE INVENTORY ITEM')); syncCustomPicker($('gnInventoryType')); syncCustomDate($('gnInventoryAcquired')); syncCustomDate($('gnInventoryExpiry')); $('gnInventoryForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
   }
-  if (button.dataset.inventoryArchive) { record.archived = true; record.status = 'ARCHIVED'; record.modifiedAt = new Date().toISOString(); record.history = [...(record.history || []), { at: record.modifiedAt, action: 'ARCHIVED', source: 'Manual Entry' }]; actionFeedback('INVENTORY ARCHIVED', 'HISTORY PRESERVED // RECORD REMAINS RECOVERABLE'); }
-  else { record.archived = false; record.status = 'ACTIVE'; record.modifiedAt = new Date().toISOString(); record.history = [...(record.history || []), { at: record.modifiedAt, action: 'RESTORED', source: 'Manual Entry' }]; actionFeedback('INVENTORY RESTORED', 'SAVED INVENTORY // TIMELINE UPDATED'); }
+  if (button.dataset.inventoryArchive) { record.archived = true; record.status = 'ARCHIVED'; record.modifiedAt = new Date().toISOString(); record.history = [...(record.history || []), { at: record.modifiedAt, action: 'ARCHIVED', source: 'manual' }]; actionFeedback(tx('inventory.archived', 'INVENTORY ARCHIVED'), tx('inventory.historyPreserved', 'HISTORY PRESERVED // RECORD REMAINS RECOVERABLE')); }
+  else { record.archived = false; record.status = 'ACTIVE'; record.modifiedAt = new Date().toISOString(); record.history = [...(record.history || []), { at: record.modifiedAt, action: 'RESTORED', source: 'manual' }]; actionFeedback(tx('inventory.restored', 'INVENTORY RESTORED'), tx('inventory.timelineUpdated', 'SAVED INVENTORY // TIMELINE UPDATED')); }
   S.set('inventory', records); appendEventLedger({ type: 'INVENTORY', recordId: record.id, label: record.archived ? 'INVENTORY ARCHIVED' : 'INVENTORY RESTORED' }); queueCloudSync('workspace'); renderInventory();
 }
 
 function exportInventory() {
   downloadFile('gridnode-inventory.json', JSON.stringify({ app: 'GRID//NODE', exportedAt: new Date().toISOString(), inventory: S.get('inventory', []) }, null, 2), 'application/json');
-  actionFeedback('INVENTORY EXPORT READY', 'USER-CONTROLLED RECORDS PREPARED');
+  actionFeedback(tx('inventory.exportReady', 'INVENTORY EXPORT READY'), tx('inventory.recordsPrepared', 'USER-CONTROLLED RECORDS PREPARED'));
 }
 
 function saveResearchRecord() {
   const name = $('gnResearchName')?.value?.trim();
-  if (!name) { actionFeedback('RESEARCH RECORD NOT SAVED', 'ADD A NAME BEFORE COMMITTING', true); return; }
+  if (!name) { actionFeedback(tx('research.notSaved', 'RESEARCH RECORD NOT SAVED'), tx('research.addName', 'ADD A NAME BEFORE COMMITTING'), true); return; }
   const records = S.get('researchRecords', []), now = new Date().toISOString(), id = moduleState.researchEditId || createId('research'), existing = records.find(item => item.id === id);
-  const record = { id, name, category: $('gnResearchCategory')?.value?.trim() || 'Custom Research', date: $('gnResearchDate')?.value || todayISO(), notes: $('gnResearchNotes')?.value?.trim() || '', source: $('gnResearchSource')?.value?.trim() || existing?.source || 'Manual Entry', state: $('gnResearchState')?.value || existing?.state || 'TRACKING', archived: existing?.archived || false, createdAt: existing?.createdAt || now, modifiedAt: now };
+  const categoryInput = $('gnResearchCategory');
+  const record = { id, name, category: normalizeResearchCategory(categoryInput?.dataset.categoryId || categoryInput?.value), date: $('gnResearchDate')?.value || todayISO(), notes: $('gnResearchNotes')?.value?.trim() || '', source: $('gnResearchSource')?.value?.trim() || existing?.source || 'manual', state: $('gnResearchState')?.value || existing?.state || 'TRACKING', archived: existing?.archived || false, createdAt: existing?.createdAt || now, modifiedAt: now };
   const index = records.findIndex(item => item.id === id);
   if (index >= 0) records[index] = record; else records.push(record);
   S.set('researchRecords', records); appendEventLedger({ type: 'RESEARCH', recordId: record.id, date: record.date, label: existing ? 'RESEARCH RECORD UPDATED' : 'RESEARCH RECORD CAPTURED' });
@@ -2448,13 +2777,13 @@ function handleResearchAction(event) {
   const records = S.get('researchRecords', []), record = records.find(item => item.id === id);
   if (!record) return;
   if (button.dataset.researchEdit) {
-    moduleState.researchEditId = id; $('gnResearchName').value = record.name || ''; $('gnResearchCategory').value = record.category || ''; $('gnResearchDate').value = record.date || ''; $('gnResearchState').value = record.state || 'TRACKING'; $('gnResearchSource').value = record.source || ''; $('gnResearchNotes').value = record.notes || ''; setText('gnResearchSave', 'UPDATE RESEARCH RECORD'); $('gnResearchForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
+    moduleState.researchEditId = id; $('gnResearchName').value = record.name || ''; $('gnResearchCategory').dataset.categoryId = normalizeResearchCategory(record.category); $('gnResearchCategory').value = researchCategoryLabel(record.category); $('gnResearchDate').value = record.date || ''; $('gnResearchState').value = record.state || 'TRACKING'; $('gnResearchSource').value = record.source || ''; $('gnResearchNotes').value = record.notes || ''; setText('gnResearchSave', tx('research.update', 'UPDATE RESEARCH RECORD')); syncCustomPicker($('gnResearchState')); syncCustomDate($('gnResearchDate')); $('gnResearchForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
   }
-  record.archived = Boolean(button.dataset.researchArchive); record.state = record.archived ? 'ARCHIVED' : (record.state === 'ARCHIVED' ? 'TRACKING' : record.state); record.modifiedAt = new Date().toISOString(); S.set('researchRecords', records); appendEventLedger({ type: 'RESEARCH', recordId: record.id, label: record.archived ? 'RESEARCH RECORD ARCHIVED' : 'RESEARCH RECORD RESTORED' }); queueCloudSync('workspace'); renderLabFoundations(); actionFeedback(record.archived ? 'RESEARCH RECORD ARCHIVED' : 'RESEARCH RECORD RESTORED', 'HISTORY PRESERVED // TIMELINE UPDATED');
+  record.archived = Boolean(button.dataset.researchArchive); record.state = record.archived ? 'ARCHIVED' : (record.state === 'ARCHIVED' ? 'TRACKING' : record.state); record.modifiedAt = new Date().toISOString(); S.set('researchRecords', records); appendEventLedger({ type: 'RESEARCH', recordId: record.id, label: record.archived ? 'RESEARCH RECORD ARCHIVED' : 'RESEARCH RECORD RESTORED' }); queueCloudSync('workspace'); renderLabFoundations(); actionFeedback(record.archived ? tx('research.archived', 'RESEARCH RECORD ARCHIVED') : tx('research.restored', 'RESEARCH RECORD RESTORED'), tx('inventory.historyPreserved', 'HISTORY PRESERVED // TIMELINE UPDATED'));
 }
 
 function deleteResearchRecord(id) {
-  S.set('researchRecords', S.get('researchRecords', []).filter(record => record.id !== id)); queueCloudSync('workspace'); renderLabFoundations(); actionFeedback('RESEARCH RECORD REMOVED', 'LOCAL RECORD UPDATED');
+  S.set('researchRecords', S.get('researchRecords', []).filter(record => record.id !== id)); queueCloudSync('workspace'); renderLabFoundations(); actionFeedback(tx('research.removed', 'RESEARCH RECORD REMOVED'), tx('research.localUpdated', 'LOCAL RECORD UPDATED'));
 }
 
 function ensureProfileHub() {
@@ -2466,27 +2795,26 @@ function ensureProfileHub() {
   hero.insertAdjacentHTML('afterend', `<section class="gn-profile-hub" data-gn-profile-hub aria-labelledby="gnProfileHubTitle">
     <div class="gn-foundation-head"><div><div class="gn-foundation-kicker" data-i18n="vault.kicker">// NODE PROFILE HUB</div><h2 id="gnProfileHubTitle" data-i18n="vault.hubTitle">YOUR NODE</h2></div><span class="gn-foundation-signal" id="gnProfileSync">LOCAL MODE</span></div>
     <div class="gn-profile-sections">
-      <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.node">// YOUR NODE</div><div class="gn-profile-row"><span><b data-i18n="vault.medicationLabel">Medication</b><small id="gnProfileMedication">Not entered</small></span><span class="gn-profile-chevron">›</span></div><div class="gn-profile-row"><span><b data-i18n="vault.bodyMetrics">Body Metrics</b><small id="gnProfileBody">Not entered</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row" onclick="openSystemUpdate()"><span><b data-i18n="vault.whatsNew">What's New</b><small>v2.1.7</small></span><span class="gn-profile-chevron">›</span></button></section>
+      <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.node">// YOUR NODE</div><div class="gn-profile-row"><span><b data-i18n="vault.medicationLabel">Medication</b><small id="gnProfileMedication">Not entered</small></span><span class="gn-profile-chevron">›</span></div><div class="gn-profile-row"><span><b data-i18n="vault.bodyMetrics">Body Metrics</b><small id="gnProfileBody">Not entered</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row" onclick="openSystemUpdate()"><span><b data-i18n="vault.whatsNew">What's New</b><small>v0.12.0</small></span><span class="gn-profile-chevron">›</span></button></section>
       <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.yourData">// YOUR DATA</div><button type="button" class="gn-profile-row" onclick="exportCSV()"><span><b data-i18n="vault.exportCsv">Export CSV</b><small data-i18n="vault.exportCsvHelp">Download readable records</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="exportBackup()"><span><b data-i18n="vault.exportBackup">Export Backup</b><small data-i18n="vault.exportBackupHelp">Save a complete local copy</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.dataOwnership">Data Ownership</b><small data-i18n="vault.dataOwnershipHelp">Export or delete anytime</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row gn-profile-danger-row" onclick="openDeleteLocalData()"><span><b data-i18n="vault.deleteAllData">Delete All Local Data</b><small data-i18n="vault.deleteAllDataHelp">Remove this device record</small></span><span class="gn-profile-chevron">›</span></button></section>
-      <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.tools">// TOOLS</div><button type="button" class="gn-profile-row" onclick="document.querySelector('.gn-device-vault')?.scrollIntoView({behavior:'smooth',block:'start'})"><span><b data-i18n="vault.deviceVaultLink">Device Vault</b><small data-i18n="vault.deviceVaultLinkHelp">Private identity registry</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.connectedAccount">Connected Account</b><small id="gnProfileAccount">Local device session</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row gn-profile-danger-row" onclick="openDeleteCloudAccount()"><span><b data-i18n="vault.deleteCloudAccount">Delete Cloud Account</b><small data-i18n="vault.deleteCloudAccountHelp">Requires server deletion control</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.appVersion">App Version</b><small id="gnProfileVersion">v2.1.7</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row" onclick="window.location.reload()"><span><b data-i18n="vault.reloadApp">Reload App</b><small data-i18n="vault.reloadAppHelp">Refresh the current build</small></span><span class="gn-profile-chevron">›</span></button></section>
+      <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.tools">// TOOLS</div><button type="button" class="gn-profile-row" onclick="document.querySelector('.gn-device-vault')?.scrollIntoView({behavior:'smooth',block:'start'})"><span><b data-i18n="vault.deviceVaultLink">Device Vault</b><small data-i18n="vault.deviceVaultLinkHelp">Private identity registry</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.connectedAccount">Connected Account</b><small id="gnProfileAccount">Local device session</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row gn-profile-danger-row" onclick="openDeleteCloudAccount()"><span><b data-i18n="vault.deleteCloudAccount">Delete Cloud Account</b><small data-i18n="vault.deleteCloudAccountHelp">Requires server deletion control</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.appVersion">App Version</b><small id="gnProfileVersion">0.12.0</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row" onclick="window.location.reload()"><span><b data-i18n="vault.reloadApp">Reload App</b><small data-i18n="vault.reloadAppHelp">Refresh the current build</small></span><span class="gn-profile-chevron">›</span></button></section>
     </div>
     <button type="button" class="gn-profile-signout" onclick="openSignOutModal()"><span><b data-i18n="vault.signOut">SIGN OUT</b><small data-i18n="vault.localOnlyFooter">Your data stays on this device.</small></span><span class="gn-profile-chevron">›</span></button>
-    <div class="system-update-card" id="gnSystemUpdateCard"><div class="system-update-head"><strong>SYSTEM UPDATE // v0.9.0</strong><button type="button" id="gnSystemUpdateDismiss" data-i18n="vault.dismiss">DISMISS</button></div><p>v0.9.0 — Premium mobile refinement: readable typography, red-lava action system, Day Ops light theme, cloud login in a grey city, smarter passkey prompts, and a new system update experience.</p><ul><li>Phase language stays educational and grounded in user-entered history.</li><li>Weight charts distinguish SHOTS, dose changes, and personal milestones.</li><li>Clinical comparison remains off until reference data is verified.</li></ul></div>
-    <div class="gn-device-vault"><div class="gn-device-vault-head"><div><div class="gn-foundation-kicker" data-i18n="vault.deviceVaultKicker">// DEVICE VAULT</div><h3 data-i18n="vault.deviceVaultSubhead">PHYSICAL OBJECT IDENTITY</h3></div><span class="gn-record-state" data-i18n="vault.deviceVaultPrivate">PRIVATE REGISTRY</span></div><p class="gn-ledger-copy">The device is not the cartridge. The cartridge is not the dose. The dose is not the plan. Device identity, inventory, SHOT events, and LOADOUT remain separate records.</p><form class="gn-record-form" id="gnDeviceForm"><div class="gn-form-grid"><label><span data-i18n="vault.deviceName">DEVICE NAME</span><input id="gnDeviceName" required placeholder="e.g. Home pen A"></label><label><span data-i18n="vault.deviceType">DEVICE TYPE</span><select id="gnDeviceType"><option data-i18n="vault.deviceTypeReusable">Reusable pen</option><option data-i18n="vault.deviceTypeDisposable">Disposable pen</option><option data-i18n="vault.deviceTypeAutoinjector">Autoinjector</option><option data-i18n="vault.deviceTypeOther">Other device</option></select></label><label><span data-i18n="vault.deviceStatus">STATUS</span><select id="gnDeviceStatus">${DEVICE_STATUSES.map(status => `<option>${status}</option>`).join('')}</select></label></div><label><span data-i18n="vault.deviceLabelNotes">LABEL / NOTES</span><textarea id="gnDeviceNotes" rows="2" placeholder="User-entered identity notes"></textarea></label><button class="btn-full btn-secondary" type="submit" data-i18n="vault.deviceRegister">REGISTER DEVICE IDENTITY</button></form><div class="gn-device-list" id="gnDeviceList"></div></div>
+    <div class="gn-device-vault"><div class="gn-device-vault-head"><div><div class="gn-foundation-kicker" data-i18n="vault.deviceVaultKicker">// DEVICE VAULT</div><h3 data-i18n="vault.deviceVaultSubhead">PHYSICAL OBJECT IDENTITY</h3></div><span class="gn-record-state" data-i18n="vault.deviceVaultPrivate">PRIVATE REGISTRY</span></div><p class="gn-ledger-copy" data-i18n="vault.deviceVaultPhilosophy">The device is not the cartridge. The cartridge is not the dose. The dose is not the plan. Device identity, inventory, SHOT events, and LOADOUT remain separate records.</p><form class="gn-record-form" id="gnDeviceForm"><div class="gn-form-grid"><label><span data-i18n="vault.deviceName">DEVICE NAME</span><input id="gnDeviceName" required placeholder="e.g. Home pen A" data-i18n-placeholder="vault.deviceNamePlaceholder"></label><label><span data-i18n="vault.deviceType">DEVICE TYPE</span><select id="gnDeviceType"><option value="REUSABLE" data-i18n="vault.deviceTypeReusable">Reusable pen</option><option value="DISPOSABLE" data-i18n="vault.deviceTypeDisposable">Disposable pen</option><option value="AUTOINJECTOR" data-i18n="vault.deviceTypeAutoinjector">Autoinjector</option><option value="OTHER" data-i18n="vault.deviceTypeOther">Other device</option></select></label><label><span data-i18n="vault.deviceStatus">STATUS</span><select id="gnDeviceStatus">${DEVICE_STATUSES.map(status => { const key = 'vault.status' + status.replace(/\s+/g, ''); return `<option value="${status}" data-i18n="${key}">${tx(key, status)}</option>`; }).join('')}</select></label></div><label><span data-i18n="vault.deviceLabelNotes">LABEL / NOTES</span><textarea id="gnDeviceNotes" rows="2" placeholder="User-entered identity notes" data-i18n-placeholder="vault.deviceNotesPlaceholder"></textarea></label><button class="btn-full btn-secondary" type="submit" data-i18n="vault.deviceRegister">REGISTER DEVICE IDENTITY</button></form><div class="gn-device-list" id="gnDeviceList"></div></div>
   </section>`);
   installCustomPickers(hero.parentElement || page);
   window.GN_I18N?.applyTo?.(page);
-  const updateTitle = hero.parentElement?.querySelector('.system-update-head strong');
-  if (updateTitle) updateTitle.textContent = `WHAT'S NEW // ${APP_VERSION}`;
+  const updateVersion = hero.parentElement?.querySelector('[data-system-update-version]');
+  if (updateVersion) updateVersion.textContent = APP_VERSION;
   const updateCopy = hero.parentElement?.querySelector('#gnSystemUpdateCard p');
-  if (updateCopy) updateCopy.textContent = `${APP_VERSION} — LAB tools now open in focused views, the Phase Engine adds neutral cycle context, and the LIVE NODE status is compact on mobile and desktop.`;
+  if (updateCopy) updateCopy.textContent = tx('vault.systemUpdateNotes', `${APP_VERSION} — LAB tools now open in focused views, the Phase Engine adds neutral cycle context, and the LIVE NODE status is compact on mobile and desktop.`).replace(/^v[^ ]+/, APP_VERSION);
   const whatsNewVersion = hero.parentElement?.querySelector('.gn-profile-section:first-of-type button small');
   if (whatsNewVersion) whatsNewVersion.textContent = `v${APP_VERSION}`;
   const deviceVault = hero.parentElement?.querySelector('.gn-device-vault');
   const deviceKicker = deviceVault?.querySelector('.gn-foundation-kicker');
   const deviceSignal = deviceVault?.querySelector('.gn-record-state');
-  if (deviceKicker) deviceKicker.textContent = '// DEVICE VAULT';
-  if (deviceSignal) deviceSignal.textContent = 'PRIVATE REGISTRY';
+  if (deviceKicker) deviceKicker.textContent = tx('vault.deviceVaultKicker', '// DEVICE VAULT');
+  if (deviceSignal) deviceSignal.textContent = tx('vault.deviceVaultPrivate', 'PRIVATE REGISTRY');
   $('gnSystemUpdateDismiss')?.addEventListener('click', dismissSystemUpdate);
   document.querySelector('[data-system-update-open]')?.addEventListener('click', openSystemUpdate);
   $('gnDeviceForm')?.addEventListener('submit', event => { event.preventDefault(); saveDeviceRecord(); });
@@ -2500,14 +2828,14 @@ function renderDeviceVault() {
   if (!list) return;
   const devices = S.get('devices', []);
   const active = devices.filter(device => !device.archived), archived = devices.filter(device => device.archived);
-  list.innerHTML = devices.length ? `${active.slice().reverse().map(device => `<article class="gn-record-row"><div><b>${safeText(device.name)}</b><small>${safeText(device.type)} · PRIVATE ID ${safeText(device.qrIdentity || 'PENDING')}</small></div><span class="gn-record-state">${safeText(device.status)}</span><div style="display:flex;gap:4px"><button type="button" class="gn-record-delete" data-device-edit="${safeText(device.id)}" aria-label="Edit device">✎</button><button type="button" class="gn-record-delete" data-device-retire="${safeText(device.id)}" aria-label="Retire device">×</button></div></article>`).join('')}${archived.length ? `<div class="gn-ledger-copy" style="margin-top:10px">RETIRED / ARCHIVED DEVICES</div>${archived.slice().reverse().map(device => `<article class="gn-record-row"><div><b>${safeText(device.name)}</b><small>${safeText(device.type)} · Private identity preserved</small></div><span class="gn-record-state">${safeText(device.status || 'RETIRED')}</span><button type="button" class="gn-record-delete" data-device-restore="${safeText(device.id)}" aria-label="Restore device">↺</button></article>`).join('')}` : ''}` : '<div class="gn-empty-state"><span class="gn-icon gn-icon-md gn-accent-y"><svg><use href="#gn-vault-core"></use></svg></span><b>DEVICE VAULT READY</b><span>Register a physical object when you want its identity and lifecycle preserved.</span></div>';
+  list.innerHTML = devices.length ? `${active.slice().reverse().map(device => `<article class="gn-record-row"><div><b>${safeText(device.name)}</b><small>${safeText(deviceTypeLabel(device.type))} · ${tx('vault.privateId', 'PRIVATE ID')} ${safeText(device.qrIdentity || tx('vault.devicePending', 'PENDING'))}</small></div><span class="gn-record-state">${safeText(deviceStatusLabel(device.status))}</span><div style="display:flex;gap:4px"><button type="button" class="gn-record-delete" data-device-edit="${safeText(device.id)}" aria-label="${tx('vault.editDevice', 'Edit device')}">✎</button><button type="button" class="gn-record-delete" data-device-retire="${safeText(device.id)}" aria-label="${tx('vault.retireDevice', 'Retire device')}">×</button></div></article>`).join('')}${archived.length ? `<div class="gn-ledger-copy" style="margin-top:10px">${tx('vault.deviceArchived', 'RETIRED / ARCHIVED DEVICES')}</div>${archived.slice().reverse().map(device => `<article class="gn-record-row"><div><b>${safeText(device.name)}</b><small>${safeText(deviceTypeLabel(device.type))} · ${tx('vault.privateIdentityPreserved', 'Private identity preserved')}</small></div><span class="gn-record-state">${safeText(deviceStatusLabel(device.status || 'RETIRED'))}</span><button type="button" class="gn-record-delete" data-device-restore="${safeText(device.id)}" aria-label="${tx('vault.restoreDevice', 'Restore device')}">↺</button></article>`).join('')}` : ''}` : `<div class="gn-empty-state"><span class="gn-icon gn-icon-md gn-accent-y"><svg><use href="#gn-vault-core"></use></svg></span><b>${tx('vault.deviceReadyEmpty', 'DEVICE VAULT READY')}</b><span>${tx('vault.deviceReadyEmptyHelp', 'Register a physical object when you want its identity and lifecycle preserved.')}</span></div>`;
 }
 
 function saveDeviceRecord() {
   const name = $('gnDeviceName')?.value?.trim();
-  if (!name) { actionFeedback('DEVICE NOT REGISTERED', 'ADD A DEVICE NAME BEFORE COMMITTING', true); return; }
+  if (!name) { actionFeedback(tx('device.notRegistered', 'DEVICE NOT REGISTERED'), tx('device.addName', 'ADD A DEVICE NAME BEFORE COMMITTING'), true); return; }
   const devices = S.get('devices', []), now = new Date().toISOString(), id = moduleState.deviceEditId || createId('device'), existing = devices.find(item => item.id === id);
-  const device = { ...(existing || {}), id, name, type: $('gnDeviceType')?.value || 'Other device', status: $('gnDeviceStatus')?.value || 'NEEDS CHECKING', notes: $('gnDeviceNotes')?.value?.trim() || '', qrIdentity: existing?.qrIdentity || `GN-${Math.random().toString(36).slice(2, 10).toUpperCase()}`, source: existing?.source || 'Manual Entry', state: existing?.state || 'User Confirmed', archived: existing?.archived || false, createdAt: existing?.createdAt || now, modifiedAt: now };
+  const device = { ...(existing || {}), id, name, type: normalizeDeviceType($('gnDeviceType')?.value), status: $('gnDeviceStatus')?.value || 'NEEDS CHECKING', notes: $('gnDeviceNotes')?.value?.trim() || '', qrIdentity: existing?.qrIdentity || `GN-${Math.random().toString(36).slice(2, 10).toUpperCase()}`, source: existing?.source || 'manual', state: existing?.state || 'confirmed', archived: existing?.archived || false, createdAt: existing?.createdAt || now, modifiedAt: now };
   const index = devices.findIndex(item => item.id === id); if (index >= 0) devices[index] = device; else devices.push(device);
   S.set('devices', devices); appendEventLedger({ type: 'DEVICE', recordId: device.id, label: existing ? 'DEVICE IDENTITY UPDATED' : 'DEVICE IDENTITY REGISTERED' }); queueCloudSync('workspace'); moduleState.deviceEditId = null; $('gnDeviceForm')?.reset(); renderDeviceVault(); actionFeedback(existing ? 'DEVICE IDENTITY UPDATED' : 'DEVICE IDENTITY REGISTERED', 'DEVICE VAULT UPDATED // HISTORY PRESERVED');
 }
@@ -2518,14 +2846,14 @@ function handleDeviceAction(event) {
   const id = button.dataset.deviceEdit || button.dataset.deviceRetire || button.dataset.deviceRestore;
   const devices = S.get('devices', []), device = devices.find(item => item.id === id);
   if (!device) return;
-  if (button.dataset.deviceEdit) { moduleState.deviceEditId = id; $('gnDeviceName').value = device.name || ''; $('gnDeviceType').value = device.type || 'Other device'; $('gnDeviceStatus').value = device.status || 'NEEDS CHECKING'; $('gnDeviceNotes').value = device.notes || ''; const submit = document.querySelector('#gnDeviceForm button[type="submit"]'); if (submit) submit.textContent = 'UPDATE DEVICE IDENTITY'; $('gnDeviceForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+  if (button.dataset.deviceEdit) { moduleState.deviceEditId = id; $('gnDeviceName').value = device.name || ''; $('gnDeviceType').value = normalizeDeviceType(device.type); $('gnDeviceStatus').value = device.status || 'NEEDS CHECKING'; $('gnDeviceNotes').value = device.notes || ''; const submit = document.querySelector('#gnDeviceForm button[type="submit"]'); if (submit) submit.textContent = tx('vault.updateDevice', 'UPDATE DEVICE IDENTITY'); syncCustomPicker($('gnDeviceType')); syncCustomPicker($('gnDeviceStatus')); $('gnDeviceForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
   device.archived = Boolean(button.dataset.deviceRetire); device.status = device.archived ? 'RETIRED' : 'READY'; device.modifiedAt = new Date().toISOString(); S.set('devices', devices); appendEventLedger({ type: 'DEVICE', recordId: id, label: device.archived ? 'DEVICE RETIRED' : 'DEVICE RESTORED' }); queueCloudSync('workspace'); renderDeviceVault(); actionFeedback(device.archived ? 'DEVICE RETIRED' : 'DEVICE RESTORED', 'HARDWARE HISTORY PRESERVED // TIMELINE UPDATED');
 }
 
 function ensureDoseProjection() {
   const page = $('pageLab');
   if (!page || $('gnDoseProjection')) return;
-  page.insertAdjacentHTML('beforeend', `<section class="gn-dose-projection" id="gnDoseProjection" aria-labelledby="gnDoseProjectionTitle"><div class="gn-foundation-kicker">// EDUCATIONAL REFERENCE</div><h2 id="gnDoseProjectionTitle">DOSE PROJECTION</h2><p class="gn-dose-copy">Map a user-entered dose progression as a text timeline. This stores no protocol and makes no recommendation.</p><div class="gn-dose-grid"><label>CURRENT DOSE (mg)<input id="gnDoseCurrent" type="number" min="0" step="0.1" inputmode="decimal" oninput="updateDoseProjection()"></label><label>STEP INCREASE (mg)<input id="gnDoseStep" type="number" min="0" step="0.1" inputmode="decimal" oninput="updateDoseProjection()"></label><label>STEP INTERVAL (weeks)<input id="gnDoseInterval" type="number" min="1" step="1" inputmode="numeric" oninput="updateDoseProjection()"></label><label>TARGET DOSE (mg)<input id="gnDoseTarget" type="number" min="0" step="0.1" inputmode="decimal" oninput="updateDoseProjection()"></label></div><div class="gn-dose-output" id="gnDoseOutput">Enter all four values to view a text reference timeline.</div><div class="gn-dose-disclaimer"><strong>EDUCATIONAL REFERENCE ONLY.</strong> This is not a dosing recommendation. Titration schedules vary by individual protocol. Verify with prescribing guidance.</div></section>`);
+  page.insertAdjacentHTML('beforeend', `<section class="gn-dose-projection" id="gnDoseProjection" aria-labelledby="gnDoseProjectionTitle"><div class="gn-foundation-kicker" data-i18n="vault.educationalRefKicker">// EDUCATIONAL REFERENCE</div><h2 id="gnDoseProjectionTitle" data-i18n="vault.educationalRefTitle">DOSE PROJECTION</h2><p class="gn-dose-copy" data-i18n="vault.educationalRefCopy">Map a user-entered dose progression as a text timeline. This stores no protocol and makes no recommendation.</p><div class="gn-dose-grid"><label><span data-i18n="vault.currentDose">CURRENT DOSE (mg)</span><input id="gnDoseCurrent" type="number" min="0" step="0.1" inputmode="decimal" oninput="updateDoseProjection()"></label><label><span data-i18n="vault.stepIncrease">STEP INCREASE (mg)</span><input id="gnDoseStep" type="number" min="0" step="0.1" inputmode="decimal" oninput="updateDoseProjection()"></label><label><span data-i18n="vault.stepInterval">STEP INTERVAL (weeks)</span><input id="gnDoseInterval" type="number" min="1" step="1" inputmode="numeric" oninput="updateDoseProjection()"></label><label><span data-i18n="vault.targetDose">TARGET DOSE (mg)</span><input id="gnDoseTarget" type="number" min="0" step="0.1" inputmode="decimal" oninput="updateDoseProjection()"></label></div><div class="gn-dose-output" id="gnDoseOutput" data-i18n="vault.educationalRefAllValues">Enter all four values to view a text reference timeline.</div><div class="gn-dose-disclaimer"><strong data-i18n="vault.educationalRefOnly">EDUCATIONAL REFERENCE ONLY.</strong> <span data-i18n="vault.educationalRefDisclaimer">This is not a dosing recommendation. Titration schedules vary by individual protocol. Verify with prescribing guidance.</span></div></section>`);
   const profile = getProfile();
   if ($('gnDoseCurrent') && profile.dose) $('gnDoseCurrent').value = profile.dose;
   if ($('gnDoseInterval')) $('gnDoseInterval').value = 4;
@@ -2536,7 +2864,7 @@ function updateDoseProjection() {
   if (!output) return;
   const current = Number($('gnDoseCurrent')?.value), step = Number($('gnDoseStep')?.value), interval = Number($('gnDoseInterval')?.value), target = Number($('gnDoseTarget')?.value);
   if (![current, step, interval, target].every(value => Number.isFinite(value)) || current < 0 || step <= 0 || interval < 1 || target < current) {
-    output.textContent = 'Enter a current dose, positive step, interval, and target at or above the current dose.';
+    output.textContent = tx('vault.educationalRefInvalid', 'Enter a current dose, positive step, interval, and target at or above the current dose.');
     return;
   }
   const segments = [];
@@ -2555,7 +2883,7 @@ function ensureCalculatorInventoryActions() {
   [['labSeg-draw', 'draw'], ['labSeg-recon', 'recon'], ['labSeg-supply', 'supply']].forEach(([id, type]) => {
     const segment = $(id);
     if (!segment || segment.querySelector('[data-save-calculator]')) return;
-    segment.insertAdjacentHTML('beforeend', `<button type="button" class="btn-full btn-secondary" data-save-calculator="${type}" onclick="saveCalculatorReference('${type}')">SAVE REFERENCE TO INVENTORY</button>`);
+    segment.insertAdjacentHTML('beforeend', `<button type="button" class="btn-full btn-secondary" data-save-calculator="${type}" onclick="saveCalculatorReference('${type}')" data-i18n="vault.saveReference">SAVE REFERENCE TO INVENTORY</button>`);
   });
 }
 
@@ -2566,56 +2894,56 @@ function saveCalculatorReference(type) {
     supply: { name: 'Supply calculator reference', notes: $('supOut')?.textContent || '' }
   };
   const snapshot = snapshots[type];
-  if (!snapshot?.notes || /ENTER VALID|INVALID INPUT|—/.test(snapshot.notes)) { actionFeedback('REFERENCE NOT SAVED', 'ENTER VALID CALCULATOR VALUES FIRST', true); return; }
+  if (!snapshot?.notes || /ENTER VALID|INVALID INPUT|—/.test(snapshot.notes)) { actionFeedback(tx('lab.referenceNotSaved', 'REFERENCE NOT SAVED'), tx('lab.enterValidFirst', 'ENTER VALID CALCULATOR VALUES FIRST'), true); return; }
   const records = S.get('inventory', []), now = new Date().toISOString();
   records.push({ id: createId('inventory'), name: snapshot.name, type: 'Calculator reference', quantity: 0, units: '', medication: '', autoDeduct: false, notes: snapshot.notes, status: 'REFERENCE', archived: false, source: 'System Generated', state: 'User Confirmed', history: [{ at: now, action: 'CALCULATOR REFERENCE SAVED', source: 'System Generated' }], createdAt: now, modifiedAt: now });
-  S.set('inventory', records); appendEventLedger({ type: 'INVENTORY', recordId: records.at(-1).id, label: 'CALCULATOR REFERENCE SAVED' }); queueCloudSync('workspace'); renderInventory(); actionFeedback('REFERENCE SAVED', 'INVENTORY UPDATED // EDUCATIONAL MATH ONLY');
+  S.set('inventory', records); appendEventLedger({ type: 'INVENTORY', recordId: records.at(-1).id, label: 'CALCULATOR REFERENCE SAVED' }); queueCloudSync('workspace'); renderInventory(); actionFeedback(tx('lab.referenceSaved', 'REFERENCE SAVED'), tx('lab.referenceSavedDetail', 'INVENTORY UPDATED // EDUCATIONAL MATH ONLY'));
 }
 
 function renderLab() { ensureLabFoundations(); ensureDoseProjection(); ensureCalculatorInventoryActions(); updateSyr(); updateRecon(); updateSupply(); updateDoseProjection(); renderLabFoundations(); window.GN_I18N?.applyTo?.(document.getElementById('pageLab')); }
 function positiveNumberField(id, label, maximum) {
   const raw = String($(id)?.value ?? '').trim();
-  if (!raw) return { valid: false, message: `ENTER VALID VALUES · ${label} IS REQUIRED` };
+  if (!raw) return { valid: false, message: tx('lab.requiredField', 'ENTER VALID VALUES · {label} IS REQUIRED', { label }) };
   const value = Number(raw);
-  if (!Number.isFinite(value) || value <= 0 || value > maximum) return { valid: false, message: `INVALID INPUT · CHECK ${label}` };
+  if (!Number.isFinite(value) || value <= 0 || value > maximum) return { valid: false, message: tx('lab.invalidField', 'INVALID INPUT · CHECK {label}', { label }) };
   return { valid: true, value };
 }
 function updateSyr() {
-  setText('syrUnits', '—'); setText('syrText', 'ENTER VALID VALUES'); setText('syrML', '— mL'); setText('syrConcDisplay', '— mg/mL'); setText('syrResultLine', '—'); setText('syrVolResult', '— mL'); setDisplay('syrTarget', false);
-  const doseField = positiveNumberField('cDose', 'USER-ENTERED AMOUNT', 1000), concentrationField = positiveNumberField('cConc', 'CONCENTRATION', 10000);
+  setText('syrUnits', '—'); setText('syrText', tx('lab.enterValidValues', 'ENTER VALID VALUES')); setText('syrML', '— mL'); setText('syrConcDisplay', '— mg/mL'); setText('syrResultLine', '—'); setText('syrVolResult', '— mL'); setDisplay('syrTarget', false);
+  const doseField = positiveNumberField('cDose', tx('lab.userAmount', 'USER-ENTERED AMOUNT'), 1000), concentrationField = positiveNumberField('cConc', tx('lab.concentration', 'CONCENTRATION'), 10000);
   if (!doseField.valid || !concentrationField.valid) { setText('syrFormula', !doseField.valid ? doseField.message : concentrationField.message); return; }
   const dose = doseField.value, concentration = concentrationField.value;
   const volume = dose / concentration, units = volume * 100;
-  if (!Number.isFinite(volume) || !Number.isFinite(units) || volume > 1000 || units > 100000) { setText('syrFormula', 'INVALID INPUT · CALCULATED RESULT IS OUTSIDE THE SUPPORTED RANGE'); return; }
-  setText('syrUnits', `${units.toFixed(1)}u`); setText('syrText', `DRAW TO THE ${units.toFixed(1)} UNIT LINE`); setText('syrML', `${volume.toFixed(3)} mL`); setText('syrConcDisplay', `${concentration} mg/mL`); setText('syrResultLine', `${dose} mg`); setText('syrVolResult', `${volume.toFixed(3)} mL`); setText('syrFormula', `${dose} mg ÷ ${concentration} mg/mL = ${volume.toFixed(3)} mL = ${units.toFixed(1)} U-100 units. Educational math only.`); setDisplay('syrTarget', true);
+  if (!Number.isFinite(volume) || !Number.isFinite(units) || volume > 1000 || units > 100000) { setText('syrFormula', tx('lab.outOfRange', 'INVALID INPUT · CALCULATED RESULT IS OUTSIDE THE SUPPORTED RANGE')); return; }
+  setText('syrUnits', `${units.toFixed(1)}u`); setText('syrText', tx('lab.drawToUnit', 'DRAW TO THE {units} UNIT LINE', { units: units.toFixed(1) })); setText('syrML', `${volume.toFixed(3)} mL`); setText('syrConcDisplay', `${concentration} mg/mL`); setText('syrResultLine', `${dose} mg`); setText('syrVolResult', `${volume.toFixed(3)} mL`); setText('syrFormula', `${dose} mg ÷ ${concentration} mg/mL = ${volume.toFixed(3)} mL = ${units.toFixed(1)} U-100 units. ${tx('lab.educationalMathOnly', 'Educational math only.')}`); setDisplay('syrTarget', true);
   const target = $('syrTarget'); if (target) target.style.left = `${Math.min(100, Math.max(0, units))}%`;
 }
 function updateRecon() {
   setDisplay('reconRes', true); setText('bacAmt', '— mL');
-  const vialField = positiveNumberField('rVial', 'TOTAL AMOUNT', 10000), concField = positiveNumberField('rConc', 'TARGET CONCENTRATION', 10000);
+  const vialField = positiveNumberField('rVial', tx('lab.totalAmount', 'TOTAL AMOUNT'), 10000), concField = positiveNumberField('rConc', tx('lab.targetConcentration', 'TARGET CONCENTRATION'), 10000);
   if (!vialField.valid || !concField.valid) { setText('reconOut', !vialField.valid ? vialField.message : concField.message); return; }
   const volume = vialField.value / concField.value;
-  if (!Number.isFinite(volume) || volume > 10000) { setText('reconOut', 'INVALID INPUT · CALCULATED RESULT IS OUTSIDE THE SUPPORTED RANGE'); return; }
+  if (!Number.isFinite(volume) || volume > 10000) { setText('reconOut', tx('lab.outOfRange', 'INVALID INPUT · CALCULATED RESULT IS OUTSIDE THE SUPPORTED RANGE')); return; }
   setText('reconOut', `Reference math: ${vialField.value} mg ÷ ${concField.value} mg/mL = ${volume.toFixed(3)} mL total reference volume.`); setText('bacAmt', `${volume.toFixed(3)} mL`);
 }
 function updateSupply() {
   setDisplay('supRes', true);
-  const volumeField = positiveNumberField('sVol', 'VOLUME', 10000), concField = positiveNumberField('sConc', 'CONCENTRATION', 10000), weeklyField = positiveNumberField('sDose2', 'WEEKLY AMOUNT', 1000);
+  const volumeField = positiveNumberField('sVol', tx('lab.volume', 'VOLUME'), 10000), concField = positiveNumberField('sConc', tx('lab.concentration', 'CONCENTRATION'), 10000), weeklyField = positiveNumberField('sDose2', tx('lab.weeklyAmount', 'WEEKLY AMOUNT'), 1000);
   const invalid = [volumeField, concField, weeklyField].find(field => !field.valid);
   if (invalid) { setText('supOut', invalid.message); return; }
   const total = volumeField.value * concField.value, coverage = total / weeklyField.value;
-  if (!Number.isFinite(total) || !Number.isFinite(coverage) || coverage > 100000) { setText('supOut', 'INVALID INPUT · CALCULATED RESULT IS OUTSIDE THE SUPPORTED RANGE'); return; }
-  setText('supOut', `Reference total: ${total.toFixed(2)} mg · User-entered weekly amount: ${weeklyField.value.toFixed(2)} mg · Approximate record coverage: ${coverage.toFixed(1)} weeks. Educational record keeping only.`);
+  if (!Number.isFinite(total) || !Number.isFinite(coverage) || coverage > 100000) { setText('supOut', tx('lab.outOfRange', 'INVALID INPUT · CALCULATED RESULT IS OUTSIDE THE SUPPORTED RANGE')); return; }
+  setText('supOut', tx('lab.referenceTotal', 'Reference total: {total} mg · User-entered weekly amount: {weekly} mg · Approximate record coverage: {coverage} weeks. Educational record keeping only.', { total: total.toFixed(2), weekly: weeklyField.value.toFixed(2), coverage: coverage.toFixed(1) }));
 }
 
 const MEASUREMENT_TYPES = [
-  ['waist', 'WAIST CIRCUMFERENCE'],
-  ['hip', 'HIP CIRCUMFERENCE'],
-  ['chest', 'CHEST CIRCUMFERENCE'],
-  ['left_arm', 'LEFT ARM CIRCUMFERENCE'],
-  ['right_arm', 'RIGHT ARM CIRCUMFERENCE'],
-  ['left_thigh', 'LEFT THIGH CIRCUMFERENCE'],
-  ['right_thigh', 'RIGHT THIGH CIRCUMFERENCE']
+  ['waist', 'WAIST CIRCUMFERENCE', 'vault.waist'],
+  ['hip', 'HIP CIRCUMFERENCE', 'vault.hip'],
+  ['chest', 'CHEST CIRCUMFERENCE', 'vault.chest'],
+  ['left_arm', 'LEFT ARM CIRCUMFERENCE', 'vault.leftArm'],
+  ['right_arm', 'RIGHT ARM CIRCUMFERENCE', 'vault.rightArm'],
+  ['left_thigh', 'LEFT THIGH CIRCUMFERENCE', 'vault.leftThigh'],
+  ['right_thigh', 'RIGHT THIGH CIRCUMFERENCE', 'vault.rightThigh']
 ];
 
 function measurementUnit() {
@@ -2640,17 +2968,18 @@ function ensureProfileMeasurements() {
   const bodyCard = bodyInput?.closest('div[style*="background:#0e0e16"]');
   if (!bodyCard) return;
   bodyCard.insertAdjacentHTML('afterend', `<section class="gn-measurements-card" id="gnMeasurementsCard" aria-labelledby="gnMeasurementsTitle">
-    <div class="gn-foundation-kicker">// BODY METRICS</div>
-    <h3 id="gnMeasurementsTitle">WEIGHT + MEASUREMENTS</h3>
-    <p class="gn-measurements-copy">Use this profile section as the single entry point for weight and user-entered body measurements.</p>
-    <button type="button" class="btn-full btn-primary" onclick="openWeightModal()" style="margin-bottom:10px">LOG WEIGHT</button>
+    <div class="gn-foundation-kicker" data-i18n="vault.measurementsKicker">// BODY METRICS</div>
+    <h3 id="gnMeasurementsTitle" data-i18n="vault.measurementsTitle">WEIGHT + MEASUREMENTS</h3>
+    <p class="gn-measurements-copy" data-i18n="vault.measurementsCopy">Use this profile section as the single entry point for weight and user-entered body measurements.</p>
+    <button type="button" class="btn-full btn-primary" onclick="openWeightModal()" style="margin-bottom:10px" data-i18n="dashboard.logWeight">LOG WEIGHT</button>
     <form id="gnMeasurementsForm" class="gn-measurements-form">
-      <div class="gn-measurements-tools"><label>UNIT<select id="gnMeasurementUnit" onchange="setMeasurementUnit(this.value)"><option value="in">INCHES</option><option value="cm">CENTIMETERS</option></select></label><label>DATE<input id="gnMeasurementDate" type="date"></label></div>
-      <div class="gn-measurements-grid">${MEASUREMENT_TYPES.map(([type, label]) => `<label><span>${label}<small id="gnMeasurementLatest_${type}">NO RECORD</small></span><input type="number" min="0" step="0.1" inputmode="decimal" data-measurement-type="${type}" aria-label="${label}"></label>`).join('')}</div>
-      <button type="submit" class="btn-full btn-secondary">SAVE MEASUREMENTS</button>
+      <div class="gn-measurements-tools"><label><span data-i18n="vault.measurementUnit">UNIT</span><select id="gnMeasurementUnit" onchange="setMeasurementUnit(this.value)"><option value="in" data-i18n="vault.inches">INCHES</option><option value="cm" data-i18n="vault.centimeters">CENTIMETERS</option></select></label><label><span data-i18n="vault.measurementDate">DATE</span><input id="gnMeasurementDate" type="date"></label></div>
+      <div class="gn-measurements-grid">${MEASUREMENT_TYPES.map(([type, label, key]) => `<label><span><b data-i18n="${key}">${label}</b><small id="gnMeasurementLatest_${type}" data-i18n="vault.noRecord">NO RECORD</small></span><input type="number" min="0" step="0.1" inputmode="decimal" data-measurement-type="${type}" aria-label="${label}"></label>`).join('')}</div>
+      <button type="submit" class="btn-full btn-secondary" data-i18n="vault.saveMeasurements">SAVE MEASUREMENTS</button>
     </form>
     <div class="gn-measurements-empty" id="gnMeasurementsEmpty">No measurements logged yet.</div>
   </section>`);
+  window.GN_I18N?.applyTo?.($('gnMeasurementsCard'));
   $('gnMeasurementsForm')?.addEventListener('submit', event => { event.preventDefault(); saveMeasurements(); });
   installCustomPickers(page);
 }
@@ -2668,7 +2997,7 @@ function renderMeasurements() {
   MEASUREMENT_TYPES.forEach(([type]) => {
     const latest = latestMeasurement(type);
     const converted = latest ? convertMeasurement(latest.value, latest.unit || 'in', unit) : null;
-    const latestText = latest && converted !== null ? `${converted.toFixed(1)} ${unit} · ${formatDate(latest.date || latest.createdAt)}` : 'NO RECORD';
+    const latestText = latest && converted !== null ? `${converted.toFixed(1)} ${unit} · ${formatDate(latest.date || latest.createdAt)}` : tx('vault.noRecord', 'NO RECORD');
     setText(`gnMeasurementLatest_${type}`, latestText);
     const field = card.querySelector(`[data-measurement-type="${type}"]`);
     if (field && document.activeElement !== field) field.value = converted === null ? '' : converted.toFixed(1);
@@ -2695,13 +3024,13 @@ function saveMeasurements() {
     records.push({ id: createId('measurement'), type, value, unit, date, createdAt: new Date().toISOString() });
     saved += 1;
   });
-  if (!saved) { actionFeedback('NO MEASUREMENTS SAVED', 'ENTER AT LEAST ONE POSITIVE VALUE', true); return; }
+  if (!saved) { actionFeedback(tx('vault.noMeasurementsSaved', 'NO MEASUREMENTS SAVED'), tx('vault.enterPositiveValue', 'ENTER AT LEAST ONE POSITIVE VALUE'), true); return; }
   S.set('measurements', records);
   const preferences = S.get('preferences', {}); preferences.measurementUnit = unit; S.set('preferences', preferences);
   queueCloudSync('workspace');
   renderMeasurements();
   renderResults();
-  actionFeedback('MEASUREMENTS SAVED', `${saved} USER-ENTERED VALUE${saved === 1 ? '' : 'S'} // TIMELINE UPDATED`);
+  actionFeedback(tx('vault.measurementsSaved', 'MEASUREMENTS SAVED'), tx('vault.measurementsSavedDetail', '{count} USER-ENTERED VALUE{plural} // TIMELINE UPDATED', { count: saved, plural: saved === 1 ? '' : 'S' }));
 }
 
 function ensureDestructiveDialogs() {
@@ -2730,7 +3059,7 @@ function closeDeleteCloudAccount() { $('gnDeleteCloudOverlay')?.classList.remove
 async function confirmDeleteCloudAccount() {
   const result = await deleteCloudAccount();
   closeDeleteCloudAccount();
-  if (!result?.ok) { actionFeedback('CLOUD ACCOUNT NOT DELETED', 'ACCOUNT DELETION FAILED // LOCAL DATA UNCHANGED', true); return; }
+  if (!result?.ok) { actionFeedback(tx('auth.accountNotDeleted', 'CLOUD ACCOUNT NOT DELETED'), tx('auth.deletionFailed', 'ACCOUNT DELETION FAILED // LOCAL DATA UNCHANGED'), true); return; }
   clearLocalGridNodeData();
   await signOutCloud();
   clearSession();
@@ -2749,10 +3078,10 @@ function renderProfile() {
   const profile = getProfile();
   setText('profNameTxt', window.CU?.defaultName || profile.name || tx('profile.anonFallback', 'NODE_USER'));
   setText('profEmail', sessionLabel());
-  setText('profMedTxt', profile.med ? `// ${profile.med.toUpperCase()}` : tx('profile.noMedicationSet', '// NO MEDICATION SET'));
+  setText('profMedTxt', normalizeMedicationId(profile.med) ? `// ${medicationLabel(profile.med).toUpperCase()}` : tx('profile.noMedicationSet', '// NO MEDICATION SET'));
   const currentWeight = latestWeight()?.weight;
   const height = profile.htFt ? `${profile.htFt}'${profile.htIn || 0}"` : tx('profile.heightNotEntered', 'Height not entered');
-  setText('gnProfileMedication', profile.med ? `${profile.med}${profile.dose ? ` · ${profile.dose}mg` : ''}` : tx('vault.notEntered', 'Not entered'));
+  setText('gnProfileMedication', normalizeMedicationId(profile.med) ? `${medicationLabel(profile.med)}${profile.dose ? ` · ${profile.dose}mg` : ''}` : tx('vault.notEntered', 'Not entered'));
   setText('gnProfileBody', `${height}${currentWeight ? ` · ${Number(currentWeight).toFixed(1)} lb` : ''}`);
   setText('gnProfileVersion', APP_VERSION);
   setText('gnProfileAccount', state.cloud ? `${state.session?.user?.app_metadata?.provider === 'google' ? tx('profile.signedInWithGoogle', 'Signed in with Google') : tx('vault.cloudConnected', 'Cloud account connected')} · ${state.session?.user?.email || sessionLabel()}` : tx('profile.localDeviceSession', 'Local device session'));
@@ -2763,7 +3092,7 @@ function renderProfile() {
   let status = document.querySelector('.gn-cloud-status');
   const hero = $('profAvaWrap')?.closest('[style*="background:#0e0e16"]');
   if (!status && hero) { status = document.createElement('div'); status.className = 'gn-cloud-status'; hero.parentElement.insertBefore(status, hero.nextSibling); }
-  if (status) status.innerHTML = `<span class="gn-cloud-dot ${state.cloud ? 'cloud' : 'local'}"></span><span>VAULT: ${safeText(state.cloudStatus)} · ${state.cloud ? tx('vault.cloudConnected', 'Cloud account connected') : tx('vault.cloudLocal', 'Data stays on this device until you connect an account')}</span>`;
+  if (status) status.innerHTML = `<span class="gn-cloud-dot ${state.cloud ? 'cloud' : 'local'}"></span><span>${tx('vault.vaultLabel', 'VAULT')}: ${safeText(nodeSyncLabel())} · ${state.cloud ? tx('vault.cloudConnected', 'Cloud account connected') : tx('vault.cloudLocal', 'Data stays on this device until you connect an account')}</span>`;
   renderDeviceVault();
   ensurePasskeySection();
 }
@@ -2777,6 +3106,7 @@ function dismissSystemUpdate() {
 }
 
 function openSystemUpdate() {
+  if (window.GN_WHATS_NEW?.history) { window.GN_WHATS_NEW.history(); return; }
   const card = $('gnSystemUpdateCard');
   if (!card) return;
   card.hidden = false;
@@ -2790,11 +3120,11 @@ function openSystemUpdate() {
 
 function exportCSV() {
   const rows = [['record_type', 'date', 'medication', 'dose_mg', 'location', 'weight_lb', 'side_effects', 'notes', 'archived', 'measurement_type', 'measurement_value', 'measurement_unit']];
-  getAllShots().forEach(record => rows.push(['shot', record.date || '', record.med || '', record.dose || '', record.site || '', record.wt || '', (record.se || []).join('|'), record.notes || '', record.archived ? 'true' : 'false', '', '', '']));
+  getAllShots().forEach(record => rows.push(['shot', record.date || '', medicationLabel(record.med), record.dose || '', record.site || '', record.wt || '', (record.se || []).map(sideEffectLabel).join('|'), record.notes || '', record.archived ? 'true' : 'false', '', '', '']));
   getWeights().forEach(record => rows.push(['weight', record.date || '', '', '', '', record.weight || '', '', record.notes || '', 'false', '', '', '']));
   S.get('measurements', []).forEach(record => rows.push(['measurement', record.date || '', '', '', '', '', '', '', 'false', record.type || '', record.value || '', record.unit || 'in']));
   downloadFile('gridnode-records.csv', rows.map(row => row.map(csvCell).join(',')).join('\n'), 'text/csv;charset=utf-8');
-  showToast('CSV export prepared.');
+  showToast(tx('vault.csvExportReady', 'CSV export prepared.'));
 }
 
 function csvCell(value) {
@@ -2806,7 +3136,7 @@ function csvCell(value) {
 function exportBackup() {
   const backup = { app: 'GRID//NODE', version: APP_VERSION, exportedAt: new Date().toISOString(), profile: getProfile(), shots: getAllShots(), weights: getWeights(), measurements: S.get('measurements', []), results: S.get('results', []), notes: S.get('notes', []), symptoms: S.get('symptoms', []), labs: S.get('labs', []), preferences: S.get('preferences', {}), settings: S.get('settings', {}), arsenal: S.get('arsenal', []), researchRecords: S.get('researchRecords', []), devices: S.get('devices', []), inventory: S.get('inventory', []), loadouts: S.get('loadouts', []), eventLedger: S.get('eventLedger', []), selectedLocation: S.get('selectedLocation', ''), importQueue: S.get('importQueue', []), cloudDeletes: S.get('cloudDeletes', []), workspaces: S.get('workspaces', {}) };
   downloadFile('gridnode-backup.json', JSON.stringify(backup, null, 2), 'application/json');
-  showToast('VAULT backup prepared.');
+  showToast(tx('vault.backupReady', 'VAULT backup prepared.'));
 }
 
 function rawCSVRows(text) {
@@ -2860,7 +3190,7 @@ function handleCSVImportFile(event) {
     if (confirm) { confirm.disabled = counts.newRecords === 0; confirm.textContent = counts.newRecords ? `IMPORT ${counts.newRecords} NEW RECORD${counts.newRecords === 1 ? '' : 'S'}` : 'NO NEW RECORDS'; }
     $('csvImportOverlay')?.classList.add('active');
   };
-  reader.onerror = () => actionFeedback('IMPORT NOT OPENED', 'THE SELECTED CSV COULD NOT BE READ', true);
+  reader.onerror = () => actionFeedback(tx('backup.importNotOpened', 'IMPORT NOT OPENED'), tx('backup.csvCouldNotRead', 'THE SELECTED CSV COULD NOT BE READ'), true);
   reader.readAsText(file);
   event.target.value = '';
 }
@@ -2883,42 +3213,42 @@ function handleBackupImportFile(event) {
       const backup = JSON.parse(String(reader.result || '{}'));
       if (backup.app !== 'GRID//NODE' || !Array.isArray(backup.shots) || !Array.isArray(backup.weights)) throw new Error('BACKUP_FORMAT_NOT_RECOGNIZED');
       moduleState.pendingBackup = backup; moduleState.pendingImportMeta = { fileName: file.name, format: 'GRID//NODE Backup' };
-      setText('csvImportTitle', 'GRID//NODE BACKUP PREVIEW'); setText('csvImportFormat', `DETECTED FORMAT // GRID//NODE BACKUP · ${file.name}`); setText('csvImportSummary', `${backup.shots.length} shots · ${backup.weights.length} weights · ${(backup.measurements || []).length} measurements. Review before commit.`);
-      const confirm = $('csvImportConfirmBtn'); if (confirm) { confirm.disabled = false; confirm.textContent = 'RESTORE BACKUP'; confirm.setAttribute('onclick', 'confirmBackupImport()'); }
+      setText('csvImportTitle', tx('backup.previewTitle', 'GRID//NODE BACKUP PREVIEW')); setText('csvImportFormat', tx('backup.detectedFormat', 'DETECTED FORMAT // GRID//NODE BACKUP · {file}', { file: file.name })); setText('csvImportSummary', tx('backup.summary', '{shots} shots · {weights} weights · {measurements} measurements. Review before commit.', { shots: backup.shots.length, weights: backup.weights.length, measurements: (backup.measurements || []).length }));
+      const confirm = $('csvImportConfirmBtn'); if (confirm) { confirm.disabled = false; confirm.textContent = tx('backup.restoreButton', 'RESTORE BACKUP'); confirm.setAttribute('onclick', 'confirmBackupImport()'); }
       $('csvImportOverlay')?.classList.add('active');
-    } catch (error) { actionFeedback('BACKUP NOT OPENED', error.message === 'BACKUP_FORMAT_NOT_RECOGNIZED' ? 'THIS FILE IS NOT A GRID//NODE BACKUP' : 'THE SELECTED BACKUP COULD NOT BE READ', true); }
+    } catch (error) { actionFeedback(tx('backup.notOpened', 'BACKUP NOT OPENED'), error.message === 'BACKUP_FORMAT_NOT_RECOGNIZED' ? tx('backup.notBackup', 'THIS FILE IS NOT A GRID//NODE BACKUP') : tx('backup.couldNotRead', 'THE SELECTED BACKUP COULD NOT BE READ'), true); }
   };
-  reader.onerror = () => actionFeedback('BACKUP NOT OPENED', 'THE SELECTED BACKUP COULD NOT BE READ', true);
+  reader.onerror = () => actionFeedback(tx('backup.notOpened', 'BACKUP NOT OPENED'), tx('backup.couldNotRead', 'THE SELECTED BACKUP COULD NOT BE READ'), true);
   reader.readAsText(file); event.target.value = '';
 }
 function confirmBackupImport() {
   const backup = moduleState.pendingBackup; if (!backup) return;
   const merge = (key, incoming) => { if (!Array.isArray(incoming)) return; S.set(key, mergeImportRecords(S.get(key, []), incoming)); };
   merge('shots', backup.shots); merge('weights', backup.weights); merge('measurements', backup.measurements); merge('results', backup.results); merge('notes', backup.notes); merge('symptoms', backup.symptoms); merge('labs', backup.labs); merge('arsenal', backup.arsenal); merge('researchRecords', backup.researchRecords); merge('devices', backup.devices); merge('inventory', backup.inventory); merge('loadouts', backup.loadouts); merge('eventLedger', backup.eventLedger); if (backup.profile && typeof backup.profile === 'object') S.set('profile', { ...getProfile(), ...backup.profile }); if (backup.preferences && typeof backup.preferences === 'object') S.set('preferences', { ...S.get('preferences', {}), ...backup.preferences }); if (backup.settings && typeof backup.settings === 'object') S.set('settings', { ...S.get('settings', {}), ...backup.settings }); if (backup.selectedLocation) S.set('selectedLocation', backup.selectedLocation);
-  appendEventLedger({ type: 'IMPORT', label: 'GRID//NODE BACKUP RESTORED', source: 'GRID//NODE Backup', state: 'Needs Review' }); queueCloudSync('workspace'); const count = (backup.shots?.length || 0) + (backup.weights?.length || 0); cancelCSVImport(); refreshAll(); actionFeedback('BACKUP RESTORED', `${count} RECORD${count === 1 ? '' : 'S'} REVIEWED // LOCAL HISTORY UPDATED`);
+  appendEventLedger({ type: 'IMPORT', label: 'GRID//NODE BACKUP RESTORED', source: 'GRID//NODE Backup', state: 'Needs Review' }); queueCloudSync('workspace'); const count = (backup.shots?.length || 0) + (backup.weights?.length || 0); cancelCSVImport(); refreshAll(); actionFeedback(tx('backup.restored', 'BACKUP RESTORED'), tx('backup.restoredDetail', '{count} RECORD{plural} REVIEWED // LOCAL HISTORY UPDATED', { count, plural: count === 1 ? '' : 'S' }));
 }
-function cancelCSVImport() { moduleState.pendingImport = null; moduleState.pendingImportMeta = null; moduleState.pendingBackup = null; const confirm = $('csvImportConfirmBtn'); if (confirm) { confirm.setAttribute('onclick', 'confirmCSVImport()'); confirm.textContent = 'IMPORT TO SHOTS HISTORY'; } setText('csvImportTitle', 'CSV IMPORT PREVIEW'); setText('csvImportFormat', 'Review detected user-entered protocol records before appending them to SHOTS HISTORY.'); $('csvImportOverlay')?.classList.remove('active'); }
+function cancelCSVImport() { moduleState.pendingImport = null; moduleState.pendingImportMeta = null; moduleState.pendingBackup = null; const confirm = $('csvImportConfirmBtn'); if (confirm) { confirm.setAttribute('onclick', 'confirmCSVImport()'); confirm.textContent = tx('backup.importButton', 'IMPORT TO SHOTS HISTORY'); } setText('csvImportTitle', tx('backup.csvPreviewTitle', 'CSV IMPORT PREVIEW')); setText('csvImportFormat', tx('backup.csvReviewCopy', 'Review detected user-entered protocol records before appending them to SHOTS HISTORY.')); $('csvImportOverlay')?.classList.remove('active'); }
 function confirmCSVImport() {
   const pending = moduleState.pendingImport || [];
   const rechecked = classifyCSVRows(pending.map(item => item.row || item), getAllShots(), getWeights());
   const additions = rechecked.rows.filter(item => item.status === 'new').map(item => item.row);
-  if (!additions.length) { actionFeedback('NO NEW RECORDS', 'EXISTING HISTORY WAS NOT CHANGED'); cancelCSVImport(); return; }
+  if (!additions.length) { actionFeedback(tx('backup.noNewRecords', 'NO NEW RECORDS'), tx('backup.historyUnchanged', 'EXISTING HISTORY WAS NOT CHANGED')); cancelCSVImport(); return; }
   const beforeShots = getAllShots(), beforeWeights = getWeights();
   const shots = [...beforeShots], weights = [...beforeWeights];
   const importedAt = new Date().toISOString();
   additions.forEach(row => {
     const provenance = { importedAt, fileName: moduleState.pendingImportMeta?.fileName || 'CSV file' };
-    if (row.record_type === 'weight') weights.push({ id: createId('weight'), date: row.date, weight: row.weight_lb, notes: row.notes || null, source: moduleState.pendingImportMeta?.source || 'CSV Import', state: 'Needs Review', importProvenance: provenance });
-    else shots.push({ id: createId('shot'), date: row.date, med: row.medication || 'Custom', dose: row.dose_mg, site: row.location || '', wt: row.weight_lb || null, se: row.side_effects, notes: row.notes || null, archived: row.archived, createdAt: importedAt, source: moduleState.pendingImportMeta?.source || 'CSV Import', state: 'Needs Review', importProvenance: provenance });
+    if (row.record_type === 'weight') weights.push({ id: createId('weight'), date: row.date, weight: row.weight_lb, notes: row.notes || null, source: moduleState.pendingImportMeta?.source || 'csv', state: 'review', importProvenance: provenance });
+    else shots.push({ id: createId('shot'), date: row.date, med: normalizeMedicationId(row.medication), dose: row.dose_mg, site: row.location || '', wt: row.weight_lb || null, se: row.side_effects, notes: row.notes || null, archived: row.archived, createdAt: importedAt, source: moduleState.pendingImportMeta?.source || 'csv', state: 'review', importProvenance: provenance });
   });
   if (!S.set('shots', shots) || !S.set('weights', weights)) {
     S.set('shots', beforeShots); S.set('weights', beforeWeights);
-    actionFeedback('IMPORT ROLLED BACK', 'LOCAL STORAGE DID NOT ACCEPT THE COMPLETE TRANSACTION', true);
+    actionFeedback(tx('backup.importRolledBack', 'IMPORT ROLLED BACK'), tx('backup.storageRejectedTransaction', 'LOCAL STORAGE DID NOT ACCEPT THE COMPLETE TRANSACTION'), true);
     return;
   }
   appendEventLedger({ type: 'IMPORT', label: 'CSV IMPORT SAVED', source: moduleState.pendingImportMeta?.source || 'CSV Import', state: 'Needs Review', recordCount: additions.length });
   queueCloudSync('workspace');
-  const count = additions.length; cancelCSVImport(); refreshAll(); actionFeedback('IMPORT SAVED', `${count} NEW RECORD${count === 1 ? '' : 'S'} // REVIEW STATE PRESERVED`);
+  const count = additions.length; cancelCSVImport(); refreshAll(); actionFeedback(tx('backup.importSaved', 'IMPORT SAVED'), tx('backup.importSavedDetail', '{count} NEW RECORD{plural} // REVIEW STATE PRESERVED', { count, plural: count === 1 ? '' : 'S' }));
 }
 function parseCSV(text) {
   const lines = text.split(/\r?\n/).filter(Boolean); if (lines.length < 2) return [];
@@ -2938,7 +3268,7 @@ function normalizeImportDate(value) {
   if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return `${raw}T12:00`;
   return Number.isNaN(new Date(raw).getTime()) ? '' : raw;
 }
-function csvShotKey(record) { return [record.date || '', record.medication || record.med || 'Custom', Number(record.dose_mg ?? record.dose).toFixed(4), record.location || record.site || ''].join('|').toLowerCase(); }
+function csvShotKey(record) { const medicationId = normalizeMedicationId(record.medication || record.med); return [record.date || '', medicationId, Number(record.dose_mg ?? record.dose).toFixed(4), record.location || record.site || ''].join('|').toLowerCase(); }
 function csvWeightKey(record) { return [record.date || '', Number(record.weight_lb ?? record.weight).toFixed(4)].join('|').toLowerCase(); }
 function classifyCSVRows(rows, shots, weights) {
   const shotKeys = new Set(shots.map(csvShotKey)), weightKeys = new Set(weights.map(csvWeightKey));
@@ -2946,7 +3276,7 @@ function classifyCSVRows(rows, shots, weights) {
   const classified = rows.map(row => {
     const validType = row.record_type === 'shot' || row.record_type === 'weight';
     const validDate = Boolean(row.date) && !Number.isNaN(new Date(row.date).getTime());
-    const validValue = row.record_type === 'shot' ? Number.isFinite(row.dose_mg) && row.dose_mg > 0 : Number.isFinite(row.weight_lb) && row.weight_lb > 0;
+    const validValue = row.record_type === 'shot' ? Number.isFinite(row.dose_mg) && row.dose_mg > 0 && Boolean(normalizeMedicationId(row.medication)) : Number.isFinite(row.weight_lb) && row.weight_lb > 0;
     if (!validType || !validDate || !validValue) return { row, status: 'invalid' };
     const key = row.record_type === 'shot' ? csvShotKey(row) : csvWeightKey(row);
     const stored = row.record_type === 'shot' ? shotKeys : weightKeys;
@@ -2964,24 +3294,26 @@ function previewCSVImportForTesting(text, shots = [], weights = []) {
 function renderCalendar() {
   const grid = $('calGrid'); if (!grid) return;
   const date = moduleState.calendarDate, year = date.getFullYear(), month = date.getMonth();
-  const months = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
-  setText('calTitle', `${months[month]} ${year}`);
+  const locale = document.documentElement?.lang?.startsWith('es') ? 'es-419' : 'en-US';
+  const monthLabel = new Date(year, month, 1).toLocaleDateString(locale, { month: 'long', year: 'numeric' }).toLocaleUpperCase(locale);
+  const weekdayLabels = Array.from({ length: 7 }, (_, index) => new Date(2026, 7, 2 + index).toLocaleDateString(locale, { weekday: 'short' }).replace('.', '').toLocaleUpperCase(locale));
+  setText('calTitle', monthLabel);
   const first = new Date(year, month, 1).getDay(), total = new Date(year, month + 1, 0).getDate();
   const shots = new Set(sortedShots().map(item => item.date?.slice(0, 10))), weights = new Set(sortedWeights().map(item => item.date?.slice(0, 10)));
-  grid.innerHTML = `${['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => `<div class="cal-day-head">${day}</div>`).join('')}${Array.from({ length: first }, () => '<div class="cal-day empty-day"></div>').join('')}${Array.from({ length: total }, (_, index) => { const day = index + 1, key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; return `<button type="button" class="cal-day ${moduleState.selectedCalendarDay === key ? 'selected' : ''}" data-calendar-day="${key}"><span>${day}</span>${shots.has(key) ? '<i class="cal-mark shot"></i>' : ''}${weights.has(key) ? '<i class="cal-mark weight"></i>' : ''}</button>`; }).join('')}`;
+  grid.innerHTML = `${weekdayLabels.map(day => `<div class="cal-day-head">${day}</div>`).join('')}${Array.from({ length: first }, () => '<div class="cal-day empty-day"></div>').join('')}${Array.from({ length: total }, (_, index) => { const day = index + 1, key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; return `<button type="button" class="cal-day ${moduleState.selectedCalendarDay === key ? 'selected' : ''}" data-calendar-day="${key}"><span>${day}</span>${shots.has(key) ? '<i class="cal-mark shot"></i>' : ''}${weights.has(key) ? '<i class="cal-mark weight"></i>' : ''}</button>`; }).join('')}`;
   const selected = moduleState.selectedCalendarDay;
-  if (selected) { const records = [...getAllShots().filter(item => item.date?.slice(0, 10) === selected), ...getWeights().filter(item => item.date?.slice(0, 10) === selected)]; $('calDetail').innerHTML = records.length ? records.map(item => `<div class="gn-calendar-detail">${safeText(item.med || 'WEIGHT')} · ${safeText(formatDateTime(item.date))}</div>`).join('') : '<div class="gn-calendar-detail">No records on this day.</div>'; }
+  if (selected) { const records = [...getAllShots().filter(item => item.date?.slice(0, 10) === selected), ...getWeights().filter(item => item.date?.slice(0, 10) === selected)]; $('calDetail').innerHTML = records.length ? records.map(item => `<div class="gn-calendar-detail">${safeText(item.med ? medicationLabel(item.med) : tx('results.weight', 'WEIGHT'))} · ${safeText(formatDateTime(item.date))}</div>`).join('') : `<div class="gn-calendar-detail">${tx('calendar.noRecords', 'No records on this day.')}</div>`; }
 }
 function calPrev() { moduleState.calendarDate.setMonth(moduleState.calendarDate.getMonth() - 1); renderCalendar(); }
 function calNext() { moduleState.calendarDate.setMonth(moduleState.calendarDate.getMonth() + 1); renderCalendar(); }
 function calDayClick(day) { moduleState.selectedCalendarDay = day; renderCalendar(); }
 
-function openArsenalMod(type = 'compound', editId = null) { moduleState.arsenalEditId = editId; $('arsTitle')?.replaceChildren(document.createTextNode(editId ? 'EDIT CONTEXT' : 'ADD CONTEXT')); $('arsOv')?.classList.add('active'); }
+function openArsenalMod(type = 'compound', editId = null) { moduleState.arsenalEditId = editId; $('arsTitle')?.replaceChildren(document.createTextNode(editId ? tx('shots.editContext', 'EDIT CONTEXT') : tx('shots.addContext', 'ADD CONTEXT'))); $('arsOv')?.classList.add('active'); }
 function closeArs() { $('arsOv')?.classList.remove('active'); moduleState.arsenalEditId = null; }
-function saveArs() { const items = S.get('arsenal', []); const record = { id: moduleState.arsenalEditId || createId('context'), name: $('aName')?.value?.trim(), concentration: Number($('aConc')?.value) || null, volume: Number($('aVol')?.value) || null, quantity: Number($('aQty')?.value) || 1, reviewDate: $('aExpiry')?.value || '' }; if (!record.name) { showToast('Enter a context name.', true); return; } const index = items.findIndex(item => item.id === record.id); if (index >= 0) items[index] = record; else items.push(record); S.set('arsenal', items); queueCloudSync('workspace'); closeArs(); showToast('VAULT context saved.'); }
+function saveArs() { const items = S.get('arsenal', []); const record = { id: moduleState.arsenalEditId || createId('context'), name: $('aName')?.value?.trim(), concentration: Number($('aConc')?.value) || null, volume: Number($('aVol')?.value) || null, quantity: Number($('aQty')?.value) || 1, reviewDate: $('aExpiry')?.value || '' }; if (!record.name) { showToast(tx('shots.contextNameRequired', 'Enter a context name.'), true); return; } const index = items.findIndex(item => item.id === record.id); if (index >= 0) items[index] = record; else items.push(record); S.set('arsenal', items); queueCloudSync('workspace'); closeArs(); showToast(tx('lab.saveContext', 'VAULT context saved.')); }
 function requestLoadoutRemove(id) { moduleState.pendingArsenalId = id; $('loadoutRemoveOverlay')?.classList.add('active'); }
 function cancelLoadoutRemove() { moduleState.pendingArsenalId = null; $('loadoutRemoveOverlay')?.classList.remove('active'); }
-function confirmLoadoutRemove() { const next = S.get('arsenal', []).filter(item => item.id !== moduleState.pendingArsenalId); S.set('arsenal', next); queueCloudSync('workspace'); cancelLoadoutRemove(); showToast('Context removed.'); }
+function confirmLoadoutRemove() { const next = S.get('arsenal', []).filter(item => item.id !== moduleState.pendingArsenalId); S.set('arsenal', next); queueCloudSync('workspace'); cancelLoadoutRemove(); showToast(tx('shots.contextRemoved', 'Context removed.')); }
 
 function formatTime24(date) { return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`; }
 function formatTime12(date) { const hour = date.getHours() % 12 || 12; return `${hour}:${String(date.getMinutes()).padStart(2, '0')}`; }
@@ -2990,36 +3322,42 @@ function gnSetShotMeridiem(value) { moduleState.meridiem = value === 'PM' ? 'PM'
 function updateMeridiemButtons() { $('sTimeAM')?.classList.toggle('active', moduleState.meridiem === 'AM'); $('sTimePM')?.classList.toggle('active', moduleState.meridiem === 'PM'); }
 function gnShotClockLiveFormat(input) { if (!input) return; input.value = input.value.replace(/[^0-9]/g, '').slice(0, 4).replace(/^(\d{1,2})(\d{2})$/, '$1:$2'); }
 function gnNormalizeShotClockField(input) { if (!input) return; const parsed = getShotTime24(input.value); if (parsed) { const date = new Date(`2000-01-01T${parsed}`); input.value = formatTime12(date); } }
-function gnWeightDateInput(input) { if (input) input.value = input.value.replace(/[^0-9\/-]/g, '').slice(0, 10); }
+function gnWeightDateInput(input) {
+  if (!input) return;
+  input.value = input.value.replace(/[^0-9\/-]/g, '').slice(0, 10);
+  delete input.dataset.isoDate;
+  delete input.dataset.dateDisplay;
+}
 function gnWeightTimeInput(input) { if (input) input.value = input.value.replace(/[^0-9:]/g, '').slice(0, 5); }
 function renderShotDatePicker() {
   const month = moduleState.shotPickerMonth;
   const label = $('gnDatePickerMonth');
   const grid = $('gnDatePickerGrid');
   if (!label || !grid) return;
-  label.textContent = month.toLocaleDateString(document.documentElement.lang === 'es' ? 'es-419' : 'en-US', { month: 'long', year: 'numeric' });
+  label.textContent = month.toLocaleDateString(document.documentElement.lang?.startsWith('es') ? 'es-419' : 'en-US', { month: 'long', year: 'numeric' });
   const year = month.getFullYear(), monthIndex = month.getMonth(), first = new Date(year, monthIndex, 1).getDay(), total = new Date(year, monthIndex + 1, 0).getDate();
   const selected = moduleState.shotPickerSelected || '';
-  grid.innerHTML = `${['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => `<div class="gn-date-dow">${day}</div>`).join('')}${Array.from({ length: first }, () => '<button type="button" class="gn-date-day blank" tabindex="-1"></button>').join('')}${Array.from({ length: total }, (_, index) => { const day = index + 1, value = `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; return `<button type="button" class="gn-date-day${value === selected ? ' selected' : ''}" data-gn-picker-date="${value}"><span>${day}</span></button>`; }).join('')}`;
+  const weekdays = document.documentElement.lang?.startsWith('es') ? ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'] : ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  grid.innerHTML = `${weekdays.map(day => `<div class="gn-date-dow">${day}</div>`).join('')}${Array.from({ length: first }, () => '<button type="button" class="gn-date-day blank" tabindex="-1"></button>').join('')}${Array.from({ length: total }, (_, index) => { const day = index + 1, value = `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; return `<button type="button" class="gn-date-day${value === selected ? ' selected' : ''}" data-gn-picker-date="${value}"><span>${day}</span></button>`; }).join('')}`;
 }
 function gnOpenShotDatePicker() {
   const input = $('sDate');
   if (!input) return;
-  const selected = normalizeDateInput(input.value) || todayISO();
-  moduleState.shotPickerOriginal = input.value;
+  const selected = readHumanDateInput(input) || todayISO();
+  moduleState.shotPickerOriginal = { value: input.value, isoDate: input.dataset.isoDate || selected, dateDisplay: input.dataset.dateDisplay || input.value };
   moduleState.shotPickerSelected = selected;
   const parsed = parseLocalDate(selected);
   moduleState.shotPickerMonth = new Date(parsed.getFullYear(), parsed.getMonth(), 1);
-  input.value = formatDate(selected, { month: 'short', day: 'numeric', year: 'numeric' });
+  setHumanDateInput(input, selected);
   input.type = 'text'; input.setAttribute('readonly', 'readonly');
   renderShotDatePicker();
   $('gnDatePickerOverlay')?.classList.add('active');
 }
-function gnCloseShotDatePicker() { const input = $('sDate'); if (input && moduleState.shotPickerOriginal !== null) input.value = moduleState.shotPickerOriginal; $('gnDatePickerOverlay')?.classList.remove('active'); if (input) { input.type = 'text'; input.setAttribute('readonly', 'readonly'); } }
+function gnCloseShotDatePicker() { const input = $('sDate'); if (input && moduleState.shotPickerOriginal !== null) { input.value = moduleState.shotPickerOriginal.value; input.dataset.isoDate = moduleState.shotPickerOriginal.isoDate; input.dataset.dateDisplay = moduleState.shotPickerOriginal.dateDisplay; } moduleState.shotPickerOriginal = null; $('gnDatePickerOverlay')?.classList.remove('active'); if (input) { input.type = 'text'; input.setAttribute('readonly', 'readonly'); } }
 function gnDatePickerMove(delta) { moduleState.shotPickerMonth.setMonth(moduleState.shotPickerMonth.getMonth() + Number(delta || 0)); renderShotDatePicker(); }
-function gnSelectPickerDate(date) { moduleState.shotPickerSelected = normalizeDateInput(date) || todayISO(); const input = $('sDate'); if (input) input.value = formatDate(moduleState.shotPickerSelected, { month: 'short', day: 'numeric', year: 'numeric' }); renderShotDatePicker(); }
-function gnSetShotDateFromPicker() { const input = $('sDate'); if (input && moduleState.shotPickerSelected) input.value = formatDate(moduleState.shotPickerSelected, { month: 'short', day: 'numeric', year: 'numeric' }); moduleState.shotPickerOriginal = null; $('gnDatePickerOverlay')?.classList.remove('active'); }
-function gnSetShotDateValue(value) { if ($('sDate')) $('sDate').value = value; }
+function gnSelectPickerDate(date) { moduleState.shotPickerSelected = normalizeDateInput(date) || todayISO(); setHumanDateInput($('sDate'), moduleState.shotPickerSelected); renderShotDatePicker(); }
+function gnSetShotDateFromPicker() { if (moduleState.shotPickerSelected) setHumanDateInput($('sDate'), moduleState.shotPickerSelected); moduleState.shotPickerOriginal = null; $('gnDatePickerOverlay')?.classList.remove('active'); }
+function gnSetShotDateValue(value) { setHumanDateInput($('sDate'), value); }
 function gnSetShotTimeValue(value) { if ($('sTime')) $('sTime').value = formatTime12(new Date(`2000-01-01T${value}`)); }
 function gnMedRevealGroup(dropId, group) {
   const drop = $(dropId);
@@ -3030,7 +3368,7 @@ function gnMedRevealGroup(dropId, group) {
     block.style.display = '';
   });
 }
-function updatePills() { const med = selectState.cpShotMed?.val; const dose = Number(getProfile().dose); const container = $('dosePills'); if (!container) return; const values = dose ? [dose] : [0.5, 1, 2.5, 5, 7.5, 10]; container.innerHTML = values.map(value => `<button type="button" class="dose-pill" data-dose="${value}">${value} mg</button>`).join(''); setText('profMedTxt', med ? `// ${med.toUpperCase()}` : '// NO MEDICATION SET'); }
+function updatePills() { const med = normalizeMedicationId(selectState.cpShotMed?.val); const dose = Number(getProfile().dose); const container = $('dosePills'); if (!container) return; const values = dose ? [dose] : [0.5, 1, 2.5, 5, 7.5, 10]; container.innerHTML = values.map(value => `<button type="button" class="dose-pill" data-dose="${value}">${value} mg</button>`).join(''); setText('profMedTxt', med ? `// ${medicationLabel(med).toUpperCase()}` : tx('profile.noMedicationSet', '// NO MEDICATION SET')); }
 function selPill(button, dose) { if ($('sDose')) $('sDose').value = dose; qa('.dose-pill').forEach(item => item.classList.toggle('active', item === button)); }
 
 function wireSelectOptions() {
@@ -3061,12 +3399,18 @@ function initModules() {
     const calendarDay = event.target.closest('[data-calendar-day]'); if (calendarDay) calDayClick(calendarDay.dataset.calendarDay);
     const dosePill = event.target.closest('.dose-pill'); if (dosePill) selPill(dosePill, Number(dosePill.dataset.dose));
     const researchPick = event.target.closest('[data-research-name]');
-    if (researchPick) { if ($('gnResearchName')) $('gnResearchName').value = researchPick.dataset.researchName || ''; if ($('gnResearchCategory')) $('gnResearchCategory').value = researchPick.dataset.researchCategory || 'Custom Research'; $('gnResearchName')?.focus(); }
+    if (researchPick) {
+      if ($('gnResearchName')) $('gnResearchName').value = researchPick.dataset.researchName || '';
+      const category = $('gnResearchCategory');
+      if (category) { category.dataset.categoryId = researchPick.dataset.researchCategory || 'lab.customResearch'; category.value = researchCategoryLabel(category.dataset.categoryId); }
+      $('gnResearchName')?.focus();
+    }
     const researchDelete = event.target.closest('[data-research-delete]'); if (researchDelete) deleteResearchRecord(researchDelete.dataset.researchDelete);
   });
   document.addEventListener('click', event => { if (!event.target.closest('.cp-select')) { qa('.cp-dropdown.open').forEach(item => item.classList.remove('open')); qa('.cp-select-trigger.open').forEach(item => item.classList.remove('open')); } });
   wireSelectOptions();
   installCustomPickers(document);
+  $('gnResearchCategory')?.addEventListener('input', event => { delete event.currentTarget.dataset.categoryId; });
   const scrollBody = $('scrollBody');
   if (scrollBody && !scrollBody.dataset.gnSwipeWired) {
     let touchStartX = 0;
@@ -3135,6 +3479,7 @@ function bridge() {
   ];
   names.forEach(name => { window[name] = modules[name]; });
   window.refreshAll = modules.refreshAll;
+  window.GN_NATIVE?.bridgeReady?.();
 }
 
 function injectStableStyles() {
@@ -3234,9 +3579,11 @@ function authShell() {
 function applyAuthTranslations(recovering) {
   const login = $('login');
   const title = login?.querySelector('.gn-auth-title');
+  const subtitle = login?.querySelector('.gn-auth-subtitle');
   const copy = login?.querySelector('.gn-auth-copy');
   const note = login?.querySelector('.gn-auth-note');
   if (title) title.setAttribute('data-i18n', recovering ? 'auth.resetAccess' : 'auth.jackIn');
+  if (subtitle) subtitle.setAttribute('data-i18n', recovering ? 'auth.enterNewPassword' : 'auth.chooseEntryPath');
   if (copy) copy.setAttribute('data-i18n', recovering ? 'auth.enterNewPassword' : 'landing.cloudVsLocal');
   if (note) note.setAttribute('data-i18n', 'landing.vaultPolicy');
   const kicker = login?.querySelector('.gn-auth-kicker');
@@ -3277,7 +3624,13 @@ function updateAuthMode() {
   if (toggle) toggle.textContent = authMode === 'signin' ? tx('auth.createAccount', 'CREATE ACCOUNT') : tx('auth.backToSignIn', 'BACK TO SIGN IN');
 }
 function toggleAuthMode() { if (authMode === 'recovery') { passwordRecoveryActive = false; authMode = 'signin'; authShell(); return; } authMode = authMode === 'signin' ? 'signup' : 'signin'; updateAuthMode(); setAuthMessage('', false); }
-function setAuthMessage(message, error = false) { const element = $('loginMsg'); if (element) { element.textContent = message; element.style.color = error ? '#ff5577' : '#8295a0'; } }
+function setAuthMessage(message, error = false) {
+  const element = $('loginMsg');
+  if (!element) return;
+  element.textContent = message;
+  element.dataset.tone = error ? 'error' : 'status';
+  element.style.removeProperty('color');
+}
 
 function loadGoogleIdentityLibrary() {
   if (window.google?.accounts?.id) return Promise.resolve(window.google);
@@ -3319,7 +3672,7 @@ async function renderGoogleIdentityButton() {
   if (!host.isConnected) return;
   if (!enabled) {
     renderGoogleFallback(host, 'GOOGLE SIGN-IN SETUP PENDING');
-    setAuthMessage('// GOOGLE SIGN-IN IS NOT ENABLED YET — USE EMAIL OR CONTINUE LOCALLY', false);
+    setAuthMessage(tx('auth.googleNotEnabled', '// GOOGLE SIGN-IN IS NOT ENABLED YET — USE EMAIL OR CONTINUE LOCALLY'), false);
     return;
   }
   try {
@@ -3349,43 +3702,43 @@ async function renderGoogleIdentityButton() {
   } catch (error) {
     console.warn('[GRID//NODE Google identity]', error);
     renderGoogleFallback(host, 'GOOGLE SIGN-IN UNAVAILABLE');
-    setAuthMessage('// GOOGLE SIGN-IN COULD NOT LOAD — USE EMAIL OR CONTINUE LOCALLY', true);
+    setAuthMessage(tx('auth.googleCouldNotLoad', '// GOOGLE SIGN-IN COULD NOT LOAD — USE EMAIL OR CONTINUE LOCALLY'), true);
   }
 }
 
 async function handleGoogleCredential(response) {
   const host = $('gnGoogleButtonMount');
   host?.classList.add('loading');
-  setAuthMessage('// VERIFYING GOOGLE IDENTITY...', false);
+  setAuthMessage(tx('auth.verifyingGoogle', '// VERIFYING GOOGLE IDENTITY...'), false);
   try {
     const session = await signInWithGoogleIdToken(response?.credential);
     if (!session) throw new Error('NO_SESSION');
     await completeCloudSession(session);
     maybeOfferPasskeyRegistration();
   } catch (error) {
-    setAuthMessage('// GOOGLE SIGN-IN COULD NOT COMPLETE — RETRY OR USE EMAIL', true);
+    setAuthMessage(tx('auth.googleCouldNotComplete', '// GOOGLE SIGN-IN COULD NOT COMPLETE — RETRY OR USE EMAIL'), true);
     host?.classList.remove('loading');
   }
 }
 
 async function requestPasswordReset() {
   const email = $('gnAuthEmail')?.value?.trim();
-  if (!email || !email.includes('@')) { setAuthMessage('// ENTER YOUR ACCOUNT EMAIL FIRST', true); return; }
+  if (!email || !email.includes('@')) { setAuthMessage(tx('auth.enterEmailFirst', '// ENTER YOUR ACCOUNT EMAIL FIRST'), true); return; }
   const button = $('gnAuthReset'); if (button) button.disabled = true;
   try {
     await resetPasswordCloud(email);
-    setAuthMessage('// RECOVERY LINK SENT — CHECK YOUR EMAIL', false);
+    setAuthMessage(tx('auth.recoveryLinkSent', '// RECOVERY LINK SENT — CHECK YOUR EMAIL'), false);
   } catch (error) {
-    setAuthMessage(error.message === 'CLOUD_UNAVAILABLE' ? '// CLOUD RECOVERY UNAVAILABLE — RETRY WHEN ONLINE' : `// RECOVERY ERROR: ${error.message || 'TRY AGAIN'}`, true);
+    setAuthMessage(error.message === 'CLOUD_UNAVAILABLE' ? tx('auth.recoveryUnavailable', '// CLOUD RECOVERY UNAVAILABLE — RETRY WHEN ONLINE') : `// RECOVERY ERROR: ${error.message || 'TRY AGAIN'}`, true);
   } finally { if (button) button.disabled = false; }
 }
 
 async function submitAuth() {
   const email = $('gnAuthEmail')?.value?.trim();
   const password = $('gnAuthPassword')?.value || '';
-  if (authMode !== 'recovery' && (!email || !email.includes('@'))) { setAuthMessage('// ENTER A VALID EMAIL ADDRESS', true); return; }
-  if (password.length < 8) { setAuthMessage('// PASSWORD MUST BE AT LEAST 8 CHARACTERS', true); return; }
-  const submit = $('gnAuthSubmit'); if (submit) { submit.disabled = true; submit.textContent = 'CONNECTING...'; }
+  if (authMode !== 'recovery' && (!email || !email.includes('@'))) { setAuthMessage(tx('auth.validEmail', '// ENTER A VALID EMAIL ADDRESS'), true); return; }
+  if (password.length < 8) { setAuthMessage(tx('auth.passwordMin', '// PASSWORD MUST BE AT LEAST 8 CHARACTERS'), true); return; }
+  const submit = $('gnAuthSubmit'); if (submit) { submit.disabled = true; submit.textContent = tx('auth.connecting', 'CONNECTING...'); }
   try {
     if (authMode === 'recovery') {
       await updateCloudPassword(password);
@@ -3395,28 +3748,28 @@ async function submitAuth() {
       await completeCloudSession(session);
     } else if (authMode === 'signup') {
       const result = await signUpCloud(email, password);
-      if (result?.session) { await completeCloudSession(result.session); maybeOfferPasskeyRegistration(); } else { setAuthMessage('// ACCOUNT CREATED — CHECK YOUR EMAIL TO CONFIRM', false); }
+      if (result?.session) { await completeCloudSession(result.session); maybeOfferPasskeyRegistration(); } else { setAuthMessage(tx('auth.accountCreated', '// ACCOUNT CREATED — CHECK YOUR EMAIL TO CONFIRM'), false); }
     } else {
       const session = await signInCloud(email, password);
       if (!session) throw new Error('NO_SESSION');
       await completeCloudSession(session);
     }
   } catch (error) {
-    setAuthMessage(error.message === 'CLOUD_UNAVAILABLE' ? '// CLOUD AUTH UNAVAILABLE — CONTINUE LOCALLY OR RETRY WHEN ONLINE' : `// AUTH ERROR: ${error.message || 'CHECK YOUR DETAILS'}`, true);
+    setAuthMessage(error.message === 'CLOUD_UNAVAILABLE' ? tx('auth.cloudUnavailable', '// CLOUD AUTH UNAVAILABLE — CONTINUE LOCALLY OR RETRY WHEN ONLINE') : `// AUTH ERROR: ${error.message || 'CHECK YOUR DETAILS'}`, true);
   } finally {
     if (submit) { submit.disabled = false; updateAuthMode(); }
   }
 }
 
 async function handleGoogleSignIn() {
-  const button = $('loginGoogleBtn'); if (button) { button.disabled = true; button.textContent = 'CONNECTING...'; }
-  setAuthMessage('// OPENING GOOGLE AUTHENTICATION...', false);
+  const button = $('loginGoogleBtn'); if (button) { button.disabled = true; button.textContent = tx('auth.connecting', 'CONNECTING...'); }
+  setAuthMessage(tx('auth.openingGoogle', '// OPENING GOOGLE AUTHENTICATION...'), false);
   try {
     await signInWithGoogle();
     maybeOfferPasskeyRegistration();
   } catch (error) {
     const disabled = error.message === 'GOOGLE_AUTH_DISABLED';
-    setAuthMessage(disabled ? '// GOOGLE SIGN-IN IS NOT ENABLED YET — USE EMAIL OR CONTINUE LOCALLY' : error.message === 'CLOUD_UNAVAILABLE' ? '// GOOGLE AUTH UNAVAILABLE — CONTINUE LOCALLY OR RETRY WHEN ONLINE' : '// GOOGLE AUTH COULD NOT START — RETRY OR USE EMAIL', true);
+    setAuthMessage(disabled ? tx('auth.googleNotEnabled', '// GOOGLE SIGN-IN IS NOT ENABLED YET — USE EMAIL OR CONTINUE LOCALLY') : error.message === 'CLOUD_UNAVAILABLE' ? tx('auth.googleUnavailable', '// GOOGLE AUTH UNAVAILABLE — CONTINUE LOCALLY OR RETRY WHEN ONLINE') : tx('auth.googleCouldNotStart', '// GOOGLE AUTH COULD NOT START — RETRY OR USE EMAIL'), true);
     if (button) { button.disabled = disabled; button.textContent = disabled ? 'GOOGLE SIGN-IN SETUP PENDING' : 'CONTINUE WITH GOOGLE'; }
   }
 }
@@ -3456,7 +3809,6 @@ async function completeCloudSession(session) {
 }
 
 function showApp() {
-  maybeShowWhatsNew();
   modules.showScreen('app');
   modules.loadApp();
 }
@@ -3761,41 +4113,6 @@ async function confirmSignOut() {
   modules.showScreen('landing');
 }
 
-  const whatsNewKey = 'gn_whatsnew_seen';
-  function maybeShowWhatsNew() {
-    try {
-      if (localStorage.getItem(whatsNewKey) === APP_VERSION) return;
-      if (!document.getElementById('gnWhatsNewOverlay')) {
-        const overlay = document.createElement('div');
-        overlay.className = 'gn-whatsnew-overlay';
-        overlay.id = 'gnWhatsNewOverlay';
-        overlay.innerHTML = `<div class="gn-whatsnew-card" role="dialog" aria-modal="true" aria-labelledby="gnWhatsNewTitle">
-          <div class="gn-whatsnew-kicker" data-i18n="whatsnew.title">WHAT'S NEW</div>
-          <div class="gn-whatsnew-version">v${APP_VERSION}</div>
-          <h2 id="gnWhatsNewTitle" data-i18n="whatsnew.headline">A CLEANER GRID, IN ANY LIGHT</h2>
-          <ul>
-            <li data-i18n="whatsnew.b1">Daylight theme now covers every surface — Vault, LAB, and every modal.</li>
-            <li data-i18n="whatsnew.b2">Mobile-first polish: bigger touch targets, full bottom nav, no clipped Spanish.</li>
-            <li data-i18n="whatsnew.b3">Faster reloads with a refreshed service worker and safer security headers.</li>
-          </ul>
-          <div class="gn-whatsnew-actions">
-            <button type="button" class="btn-full btn-primary" data-whatsnew-dismiss data-i18n="whatsnew.cta">ENTER THE GRID</button>
-            <button type="button" class="btn-full btn-secondary" data-whatsnew-dismiss data-i18n="whatsnew.dismiss">DISMISS</button>
-          </div>
-        </div>`;
-        overlay.addEventListener('click', event => {
-          if (event.target === overlay || event.target.closest('[data-whatsnew-dismiss]')) {
-            try { localStorage.setItem(whatsNewKey, APP_VERSION); } catch (_) {}
-            overlay.classList.remove('active');
-          }
-        });
-        document.body.appendChild(overlay);
-      }
-      window.GN_I18N?.applyTo?.(document.getElementById('gnWhatsNewOverlay'));
-      document.getElementById('gnWhatsNewOverlay')?.classList.add('active');
-    } catch (_) { /* storage or DOM unavailable */ }
-  }
-
 async function restoreSession() {
   if (passwordRecoveryActive) { authShell(); modules.showScreen('login'); return; }
   const local = restoreLocalSession();
@@ -3835,8 +4152,9 @@ function wireGlobalEvents() {
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
+  if (window.GN_SW?.register) { window.GN_SW.register(); return; }
   navigator.serviceWorker
-    .register('/sw.js?v=20260802.16', { updateViaCache: 'none' })
+    .register('/sw.js?v=20260804.1', { updateViaCache: 'none' })
     .then(registration => registration.update())
     .catch(() => {});
 }

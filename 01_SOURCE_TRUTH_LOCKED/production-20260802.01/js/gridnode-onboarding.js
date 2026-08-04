@@ -1,7 +1,7 @@
 /* GRID//NODE — REAL interactive first-run onboarding (corrective pass 2026-08-03).
  * Spotlight tour over the LIVE UI: darkens + blocks the rest of the screen,
  * highlights one real control at a time, requires the correct interaction on
- * action steps (auto-advance), uses NEXT only for explanation steps, survives
+ * action steps (auto-advance), uses CONTINUE only for explanation steps, survives
  * navigation + refresh, resumes from the saved step, supports BACK/SKIP/
  * RESUME/RESTART/REPLAY, EN/ES, both themes, mobile widths 320-430.
  * State: localStorage 'gn_onboarding_v1' = 'complete' | step index number.
@@ -29,8 +29,7 @@
     { title: 'onb.welcome', body: 'onb.welcomeBody', action: null },
     { title: 'onb.shots', body: 'onb.shotsBody', sel: '#navLog', action: 'tap', nav: 'Log' },
     { title: 'onb.results', body: 'onb.resultsBody', sel: '#navRes', action: 'tap', nav: 'Results' },
-    { title: 'onb.lab', body: 'onb.labBody', sel: '#navLab', action: 'tap', nav: 'Lab' },
-    { title: 'onb.done', body: 'onb.doneBody', action: null }
+    { title: 'onb.finish', body: 'onb.finishBody', action: null }
   ];
 
   var COPY = {
@@ -50,7 +49,7 @@
       'onb.save': 'SAVE THE SHOT',
       'onb.saveBody': 'Press SAVE SHOT to store the record. Nothing is saved until you do.',
       'onb.results': 'OPEN RESULTS',
-      'onb.resultsBody': 'Open the SIGNAL page — your trends and progress live here.',
+      'onb.resultsBody': 'Tap RESULTS to see the signal and Phase Engine built from your records.',
       'onb.weight': 'WEIGHT & PROGRESS',
       'onb.weightBody': 'Weight trends, progress signals, and timeline records are recorded on this screen.',
       'onb.lab': 'OPEN THE CALCULATOR / LAB',
@@ -58,7 +57,9 @@
       'onb.vault': 'VAULT & YOUR DATA',
       'onb.vaultBody': 'Your profile holds the VAULT: local-first storage, export, backup, and sync status.',
       'onb.done': 'YOU\'RE READY',
-      'onb.doneBody': 'That\'s the core loop. You can replay this tour any time from your profile, and everything stays on this device first.'
+      'onb.doneBody': 'That\'s the core loop. You can replay this tour any time from your profile, and everything stays on this device first.',
+      'onb.finish': 'LAB, VAULT, AND YOU\'RE READY',
+      'onb.finishBody': 'LAB holds focused tools. VAULT holds your settings, exports, and local-first data controls.'
     },
     es: {
       'onb.welcome': 'BIENVENIDO A GRID//NODE',
@@ -76,7 +77,7 @@
       'onb.save': 'GUARDA LA DOSIS',
       'onb.saveBody': 'Pulsa GUARDAR DOSIS para almacenar el registro. Nada se guarda hasta que lo hagas.',
       'onb.results': 'ABRE RESULTADOS',
-      'onb.resultsBody': 'Abre la página SEÑAL — aquí viven tus tendencias y tu progreso.',
+      'onb.resultsBody': 'Toca RESULTADOS para ver la señal y el Motor de Fases creado con tus registros.',
       'onb.weight': 'PESO Y PROGRESO',
       'onb.weightBody': 'Las tendencias de peso, señales de progreso y registros de línea de tiempo se guardan en esta pantalla.',
       'onb.lab': 'ABRE LA CALCULADORA / LAB',
@@ -84,7 +85,9 @@
       'onb.vault': 'BÓVEDA Y TUS DATOS',
       'onb.vaultBody': 'Tu perfil contiene la BÓVEDA: almacenamiento local primero, exportación, respaldo y estado de sincronización.',
       'onb.done': 'YA ESTÁS LISTO',
-      'onb.doneBody': 'Ese es el ciclo principal. Puedes repetir este tour cuando quieras desde tu perfil, y todo vive primero en este dispositivo.'
+      'onb.doneBody': 'Ese es el ciclo principal. Puedes repetir este tour cuando quieras desde tu perfil, y todo vive primero en este dispositivo.',
+      'onb.finish': 'LAB, BÓVEDA Y LISTO',
+      'onb.finishBody': 'LAB contiene herramientas enfocadas. BÓVEDA contiene tus ajustes, exportaciones y controles de datos locales.'
     }
   };
 
@@ -385,8 +388,11 @@
       var next = overlay.querySelector('[data-onb-next]');
       var action = step.action;
       next.style.display = action ? 'none' : '';
+      next.textContent = isEs()
+        ? (i === stepCount() - 1 ? 'FINALIZAR' : 'CONTINUAR')
+        : (i === stepCount() - 1 ? 'FINISH' : 'CONTINUE');
       overlay.querySelector('.gn-onb-hint').style.display = action ? '' : 'none';
-      overlay.querySelector('.gn-onb-hint').textContent = action ? (isEs() ? 'TOCA EL CONTROL DESTACADO PARA CONTINUAR' : 'TAP THE HIGHLIGHTED CONTROL TO CONTINUE') : (isEs() ? 'PULSA SIGUIENTE' : 'PRESS NEXT');
+      overlay.querySelector('.gn-onb-hint').textContent = action ? (isEs() ? 'TOCA EL CONTROL DESTACADO PARA CONTINUAR' : 'TAP THE HIGHLIGHTED CONTROL TO CONTINUE') : '';
       setState(String(i));
       bindStep(step);
     }, 220);
@@ -406,14 +412,18 @@
     overlay.querySelector('[data-onb-body]').textContent = t(step.body, step.body);
     var hint = overlay.querySelector('.gn-onb-hint');
     if (hint && hint.style.display !== 'none') {
-      hint.textContent = step.action ? (isEs() ? 'TOCA EL CONTROL DESTACADO PARA CONTINUAR' : 'TAP THE HIGHLIGHTED CONTROL TO CONTINUE') : (isEs() ? 'PULSA SIGUIENTE' : 'PRESS NEXT');
+      hint.textContent = step.action ? (isEs() ? 'TOCA EL CONTROL DESTACADO PARA CONTINUAR' : 'TAP THE HIGHLIGHTED CONTROL TO CONTINUE') : '';
     }
     var skip = overlay.querySelector('[data-onb-skip]');
     if (skip) skip.textContent = isEs() ? 'OMITIR' : 'SKIP';
     var back = overlay.querySelector('[data-onb-back]');
     if (back) back.textContent = isEs() ? 'ATRÁS' : 'BACK';
     var next = overlay.querySelector('[data-onb-next]');
-    if (next && next.style.display !== 'none') next.textContent = isEs() ? 'SIGUIENTE' : 'NEXT';
+    if (next && next.style.display !== 'none') {
+      next.textContent = isEs()
+        ? (cur === stepCount() - 1 ? 'FINALIZAR' : 'CONTINUAR')
+        : (cur === stepCount() - 1 ? 'FINISH' : 'CONTINUE');
+    }
   }
 
   function dismiss(complete) {
@@ -472,7 +482,7 @@
         '<div class="gn-onb-actions">' +
           '<button type="button" class="gn-onb-skip" data-onb-skip>' + (isEs() ? 'OMITIR' : 'SKIP') + '</button>' +
           '<button type="button" class="gn-onb-back" data-onb-back>' + (isEs() ? 'ATRÁS' : 'BACK') + '</button>' +
-          '<button type="button" class="gn-onb-next" data-onb-next>' + (isEs() ? 'SIGUIENTE' : 'NEXT') + '</button>' +
+          '<button type="button" class="gn-onb-next" data-onb-next>' + (isEs() ? 'CONTINUAR' : 'CONTINUE') + '</button>' +
         '</div>' +
       '</div>';
     document.body.appendChild(overlay);
@@ -507,7 +517,7 @@
     row.type = 'button';
     row.className = 'gn-vault-row gn-onb-replay';
     row.dataset.gnTourReplay = '';
-    row.innerHTML = '<span class="gn-vault-row-ico" aria-hidden="true">◆</span><span>' + (isEs() ? 'TOUR GUIADO' : 'GUIDED TOUR') + '</span><span class="gn-vault-row-arrow" aria-hidden="true">›</span>';
+    row.innerHTML = '<span class="gn-vault-row-ico" aria-hidden="true">◆</span><span data-i18n="onb.guidedTour">' + (isEs() ? 'TOUR GUIADO' : 'GUIDED TOUR') + '</span><span class="gn-vault-row-arrow" aria-hidden="true">›</span>';
     row.addEventListener('click', function () { start(true); });
     var anchor = hub.querySelector('[data-vault-action], .gn-vault-row');
     if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(row, anchor);

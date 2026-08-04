@@ -6,9 +6,9 @@
 (function () {
   'use strict';
   window.GN_VERSION = Object.freeze({
-    semver: '0.10.0',
-    release: '20260802.20',
-    title: 'MOBILE POLISH PHASE TWO',
-    date: '2026-08-02'
+    semver: '0.12.0',
+    release: '20260804.1',
+    title: 'PRODUCTION READINESS + MEDICATION INTEGRITY',
+    date: '2026-08-04'
   });
 })();

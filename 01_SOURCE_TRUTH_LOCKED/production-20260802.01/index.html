@@ -27,8 +27,8 @@
   <meta name="color-scheme" content="dark light">
   <meta name="supported-color-schemes" content="dark light">
 
-<script src="./js/gridnode-theme.js?v=20260802.20"></script>
-<link rel="stylesheet" href="./css/daylight-nexus-pilot.css?v=20260802.20">
+<script src="./js/gridnode-theme.js?v=20260804.1"></script>
+<link rel="stylesheet" href="./css/daylight-nexus-pilot.css?v=20260804.1">
 
 <link rel="manifest" href="/manifest.json">
 <title>GRID//NODE — Your body. Your data. Your grid.</title>
@@ -52,7 +52,7 @@
 
 <style>
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   GRID//NODE v2.1.7
+   GRID//NODE v0.12.0
    "Your body. Your data. Your grid."
    
    CHANGELOG v1.1:
@@ -3956,23 +3956,23 @@ function continueLocallyFromWelcome() {
     
     <div class="page" id="pageLog">
       <div class="page-hdr">
-        <div class="page-title">SHOT <span class="a">HISTORY</span></div>
-        <div class="page-sub">// ALL ENTRIES //</div>
+        <div class="page-title" data-i18n-html="shots.historyHeadingHtml">SHOT <span class="a">HISTORY</span></div>
+        <div class="page-sub" data-i18n="shots.allEntries">// ALL ENTRIES //</div>
       </div>
       
       
       <section class="shots-scanner-card" id="shotsRegionScanner">
         <div class="shots-scanner-head">
           <div>
-            <h2>// SHOTS HOLOGRAPHIC REGION SCANNER</h2>
+            <h2 data-i18n="shots.scannerTitle">// SHOTS HOLOGRAPHIC REGION SCANNER</h2>
             <p data-i18n="shots.userEnteredLocation">USER-ENTERED LOCATION TRACKING</p>
           </div>
           <span class="scanner-source-tag" data-i18n="shots.scannerSource">SCANNER SOURCE</span>
         </div>
         <div class="scanner-mode-tabs" role="tablist" aria-label="Tracking zone mode">
-          <button class="scanner-mode-btn active" type="button" data-mode="core" onclick="setScannerMode('core',this)">CORE</button>
-          <button class="scanner-mode-btn" type="button" data-mode="lower" onclick="setScannerMode('lower',this)">LOWER</button>
-          <button class="scanner-mode-btn" type="button" data-mode="upper" onclick="setScannerMode('upper',this)">UPPER</button>
+          <button class="scanner-mode-btn active" type="button" data-mode="core" onclick="setScannerMode('core',this)" data-i18n="shots.modeCore">CORE</button>
+          <button class="scanner-mode-btn" type="button" data-mode="lower" onclick="setScannerMode('lower',this)" data-i18n="shots.modeLower">LOWER</button>
+          <button class="scanner-mode-btn" type="button" data-mode="upper" onclick="setScannerMode('upper',this)" data-i18n="shots.modeUpper">UPPER</button>
         </div>
         <div class="site-scanner" aria-label="GRID//NODE user-entered location scanner">
           <div class="asset-matrix-title"><b data-i18n="shots.selectLoggedLocation">SELECT LOGGED LOCATION</b><span id="scannerModeLabel" data-i18n="shots.coreTrackableZones">CORE TRACKABLE ZONES</span></div>
@@ -3996,7 +3996,7 @@ function continueLocallyFromWelcome() {
             <button class="zone-overlay track12-zone zone-upper-ru" type="button" data-mode="upper" data-site="Right Back Upper Arm — Upper" aria-label="Right Back Upper Arm — Upper"></button>
             <button class="zone-overlay track12-zone zone-upper-rl" type="button" data-mode="upper" data-site="Right Back Upper Arm — Lower" aria-label="Right Back Upper Arm — Lower"></button>
           </div>
-          <div class="scanner-status-helper"><b>SELECTED</b> = active choice · LAST = last logged location · READY = available tracking zone · RECENT = recently logged</div>
+          <div class="scanner-status-helper" data-i18n="shots.scannerLegend"><b>SELECTED</b> = active choice · LAST = last logged location · READY = available tracking zone · RECENT = recently logged</div>
         </div>
         <div class="scanner-selected-panel">
           <small data-i18n="shot.selectedLocationLabel">SELECTED LOCATION</small>
@@ -4004,7 +4004,7 @@ function continueLocallyFromWelcome() {
           <small data-i18n="shots.locationHistory">LOCATION HISTORY</small>
           <b id="scannerHistoryDisplay" data-i18n="shots.noLoggedLocation">Log a zone to see recent locations</b>
         </div>
-        <div class="shots-safety-note">// SYSTEM NOTICE: USER-ENTERED LOCATION TRACKING ONLY. GRID//NODE DOES NOT PROVIDE LOCATION RECOMMENDATIONS OR MEDICAL ADVICE.</div>
+        <div class="shots-safety-note" data-i18n="shots.scannerSafety">// SYSTEM NOTICE: USER-ENTERED LOCATION TRACKING ONLY. GRID//NODE DOES NOT PROVIDE LOCATION RECOMMENDATIONS OR MEDICAL ADVICE.</div>
       </section>
 
       
@@ -4181,9 +4181,9 @@ function continueLocallyFromWelcome() {
       </div>
 
       <div class="time-tabs" id="labSegTabs" style="margin-bottom:12px">
-        <button class="time-tab active" data-labseg="draw" onclick="showLabSeg('draw',this)">DRAW</button>
-        <button class="time-tab" data-labseg="recon" onclick="showLabSeg('recon',this)">MIX</button>
-        <button class="time-tab" data-labseg="supply" onclick="showLabSeg('supply',this)">STOCK</button>
+        <button class="time-tab active" data-labseg="draw" onclick="showLabSeg('draw',this)" data-i18n="lab.draw">DRAW</button>
+        <button class="time-tab" data-labseg="recon" onclick="showLabSeg('recon',this)" data-i18n="lab.mix">MIX</button>
+        <button class="time-tab" data-labseg="supply" onclick="showLabSeg('supply',this)" data-i18n="lab.stock">STOCK</button>
       </div>
 
       <div id="labSeg-draw" data-labseg-block="draw">
@@ -4256,10 +4256,10 @@ function continueLocallyFromWelcome() {
               <span data-i18n="lab.u100Ref">U-100 INSULIN REFERENCE</span>
             </div>
           </div>
-          <div class="gn-syr-oskar">FOR O. — SEE YOU IN THE NEXT RENDER.</div>
+          <div class="gn-syr-oskar" data-i18n="lab.oskarLine">FOR O. — SEE YOU IN THE NEXT RENDER.</div>
         </div>
-        <div class="form-group"><label class="form-label" data-i18n="lab.desiredDose">DESIRED DOSE (mg)</label><input class="form-input" type="number" id="cDose" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="decimal" placeholder="e.g. 2.5" step="0.1" oninput="updateSyr()"></div>
-        <div class="form-group"><label class="form-label" data-i18n="lab.vialConc">VIAL CONCENTRATION (mg/mL)</label><input class="form-input" type="number" id="cConc" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="decimal" placeholder="e.g. 5" step="0.5" oninput="updateSyr()"></div>
+        <div class="form-group"><label class="form-label" for="cDose" data-i18n="lab.desiredDose">DESIRED DOSE (mg)</label><input class="form-input" type="number" id="cDose" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="decimal" placeholder="e.g. 2.5" step="0.1" oninput="updateSyr()"></div>
+        <div class="form-group"><label class="form-label" for="cConc" data-i18n="lab.vialConc">VIAL CONCENTRATION (mg/mL)</label><input class="form-input" type="number" id="cConc" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="decimal" placeholder="e.g. 5" step="0.5" oninput="updateSyr()"></div>
         <div id="cheatSec" style="display:none">
           <div class="divider"></div>
           <div class="sec-title" style="margin-bottom:6px"><span class="a" data-i18n="lab.doseCheatSheet">// DOSE CHEAT SHEET</span></div><div class="cheat-context" data-i18n="lab.cheatContext">Using your entered concentration. Educational math only — not a recommendation.</div>
@@ -4272,8 +4272,8 @@ function continueLocallyFromWelcome() {
       <div id="labSeg-recon" data-labseg-block="recon" style="display:none">
       <div class="sec-hdr" style="margin-top:4px"><div class="sec-title"><span class="a" data-i18n="lab.mixReference">// MIX REFERENCE</span></div></div>
       <div class="card">
-        <div class="form-group"><label class="form-label" data-i18n="lab.vialSize">VIAL SIZE (mg)</label><input class="form-input" type="number" id="rVial" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="decimal" placeholder="e.g. 10" oninput="updateRecon()"></div>
-        <div class="form-group"><label class="form-label" data-i18n="lab.desiredConc">DESIRED CONCENTRATION (mg/mL)</label><input class="form-input" type="number" id="rConc" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="decimal" placeholder="e.g. 5" oninput="updateRecon()"></div>
+        <div class="form-group"><label class="form-label" for="rVial" data-i18n="lab.vialSize">VIAL SIZE (mg)</label><input class="form-input" type="number" id="rVial" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="decimal" placeholder="e.g. 10" oninput="updateRecon()"></div>
+        <div class="form-group"><label class="form-label" for="rConc" data-i18n="lab.desiredConc">DESIRED CONCENTRATION (mg/mL)</label><input class="form-input" type="number" id="rConc" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="decimal" placeholder="e.g. 5" oninput="updateRecon()"></div>
         <div id="reconRes" style="display:none">
           <div class="divider"></div>
           <div style="background:var(--bg2);border:1px solid var(--border2);border-left:3px solid var(--cyan);padding:14px;margin-bottom:14px;border-radius:0 var(--r) var(--r) 0"><div id="reconOut" style="font-family:var(--font-b);font-size:0.95rem;color:var(--text-mid);line-height:2.2"></div></div>
@@ -4294,10 +4294,10 @@ function continueLocallyFromWelcome() {
       <div class="sec-hdr"><div class="sec-title"><span class="a" data-i18n="lab.trackSupply">// TRACK SUPPLY</span></div></div>
       <div class="card">
         <div class="form-row">
-          <div class="form-group"><label class="form-label" data-i18n="lab.vialVolume">VIAL VOLUME (mL)</label><input class="form-input" type="number" id="sVol" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="decimal" placeholder="e.g. 2" oninput="updateSupply()"></div>
-          <div class="form-group"><label class="form-label" data-i18n="lab.concentration">CONCENTRATION (mg/mL)</label><input class="form-input" type="number" id="sConc" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="decimal" placeholder="e.g. 5" oninput="updateSupply()"></div>
+          <div class="form-group"><label class="form-label" for="sVol" data-i18n="lab.vialVolume">VIAL VOLUME (mL)</label><input class="form-input" type="number" id="sVol" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="decimal" placeholder="e.g. 2" oninput="updateSupply()"></div>
+          <div class="form-group"><label class="form-label" for="sConc" data-i18n="lab.concentration">CONCENTRATION (mg/mL)</label><input class="form-input" type="number" id="sConc" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="decimal" placeholder="e.g. 5" oninput="updateSupply()"></div>
         </div>
-        <div class="form-group"><label class="form-label" data-i18n="lab.weeklyAmount">USER-ENTERED WEEKLY AMOUNT (mg)</label><input class="form-input" type="number" id="sDose2" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="decimal" placeholder="e.g. 2.5" oninput="updateSupply()"></div>
+        <div class="form-group"><label class="form-label" for="sDose2" data-i18n="lab.weeklyAmount">USER-ENTERED WEEKLY AMOUNT (mg)</label><input class="form-input" type="number" id="sDose2" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="decimal" placeholder="e.g. 2.5" oninput="updateSupply()"></div>
         <div id="supRes" style="display:none"><div class="divider"></div><div id="supOut" style="background:var(--bg2);border:1px solid var(--border2);border-left:3px solid var(--yellow);padding:14px;font-family:var(--font-b);font-size:0.95rem;color:var(--text-mid);line-height:2.2;border-radius:0 var(--r) var(--r) 0"></div></div>
       </div>
       </div>
@@ -4339,7 +4339,7 @@ function continueLocallyFromWelcome() {
         white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
       "></div>
       <div style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);letter-spacing:2px">
-        GRID//NODE v2.1.7
+        GRID//NODE v0.12.0
       </div>
     </div>
   </div>
@@ -4351,26 +4351,26 @@ function continueLocallyFromWelcome() {
       <label class="form-label" data-i18n="shot.medication">MEDICATION</label>
       <div class="cp-select" id="cpMedProf">
         <div class="cp-select-trigger" onclick="toggleSelect('cpMedProf')">
-          <span class="placeholder" id="cpMedProfVal">Select medication</span>
+          <span class="placeholder" id="cpMedProfVal" data-i18n="shot.selectMedication">Select medication</span>
           <span class="cp-select-arrow">▼</span>
         </div>
         <div class="cp-dropdown" id="cpMedProfDrop">
           <div class="cp-group-label">TIRZEPATIDE</div>
-          <div class="cp-option" onclick="selectOpt('cpMedProf','Zepbound','Zepbound (Tirzepatide)',saveProfileMed)">Zepbound (Tirzepatide)</div>
-          <div class="cp-option" onclick="selectOpt('cpMedProf','Mounjaro','Mounjaro (Tirzepatide)',saveProfileMed)">Mounjaro (Tirzepatide)</div>
-          <div class="cp-option" onclick="selectOpt('cpMedProf','Tirzepatide','Tirzepatide (Compound)',saveProfileMed)">Tirzepatide (Compound)</div>
+          <div class="cp-option" onclick="selectOpt('cpMedProf','zepbound_tirzepatide','Zepbound (Tirzepatide)',saveProfileMed)">Zepbound (Tirzepatide)</div>
+          <div class="cp-option" onclick="selectOpt('cpMedProf','mounjaro_tirzepatide','Mounjaro (Tirzepatide)',saveProfileMed)">Mounjaro (Tirzepatide)</div>
+          <div class="cp-option" onclick="selectOpt('cpMedProf','tirzepatide_compound','Tirzepatide (Compound)',saveProfileMed)">Tirzepatide (Compound)</div>
           <div class="cp-group-label">SEMAGLUTIDE</div>
-          <div class="cp-option" onclick="selectOpt('cpMedProf','Wegovy','Wegovy (Semaglutide)',saveProfileMed)">Wegovy (Semaglutide)</div>
-          <div class="cp-option" onclick="selectOpt('cpMedProf','Ozempic','Ozempic (Semaglutide)',saveProfileMed)">Ozempic (Semaglutide)</div>
-          <div class="cp-option" onclick="selectOpt('cpMedProf','Semaglutide','Semaglutide (Compound)',saveProfileMed)">Semaglutide (Compound)</div>
+          <div class="cp-option" onclick="selectOpt('cpMedProf','wegovy_semaglutide','Wegovy (Semaglutide)',saveProfileMed)">Wegovy (Semaglutide)</div>
+          <div class="cp-option" onclick="selectOpt('cpMedProf','ozempic_semaglutide','Ozempic (Semaglutide)',saveProfileMed)">Ozempic (Semaglutide)</div>
+          <div class="cp-option" onclick="selectOpt('cpMedProf','semaglutide_compound','Semaglutide (Compound)',saveProfileMed)">Semaglutide (Compound)</div>
           <div class="cp-group-label" data-i18n="shot.other">OTHER</div>
-          <div class="cp-option" onclick="selectOpt('cpMedProf','Retatrutide','Retatrutide',saveProfileMed)">Retatrutide</div>
-          <div class="cp-option" onclick="selectOpt('cpMedProf','Custom','Custom Compound',saveProfileMed)">Custom Compound</div>
+          <div class="cp-option" onclick="selectOpt('cpMedProf','retatrutide','Retatrutide',saveProfileMed)">Retatrutide</div>
+          <div class="cp-option" onclick="selectOpt('cpMedProf','custom_compound','Custom Compound',saveProfileMed)">Custom Compound</div>
         </div>
       </div>
     </div>
     <div class="form-group">
-      <label class="form-label" data-i18n="profile.currentDose">CURRENT DOSE (mg)</label>
+      <label class="form-label" for="profDose" data-i18n="profile.currentDose">CURRENT DOSE (mg)</label>
       <input class="form-input" id="profDose" type="number" placeholder="e.g. 2.5" step="0.1" oninput="saveProfileMed()">
     </div>
     <div class="form-group">
@@ -4398,41 +4398,41 @@ function continueLocallyFromWelcome() {
   <div style="background:#0e0e16;background:var(--panel, #0e0e16);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:16px;margin-bottom:20px">
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label" data-i18n="profile.heightFt">HEIGHT (ft)</label>
+        <label class="form-label" for="profHtFt" data-i18n="profile.heightFt">HEIGHT (ft)</label>
         <input class="form-input" id="profHtFt" type="number" placeholder="5" min="3" max="8" oninput="saveProfileMetrics()">
       </div>
       <div class="form-group">
-        <label class="form-label" data-i18n="profile.heightIn">HEIGHT (in)</label>
+        <label class="form-label" for="profHtIn" data-i18n="profile.heightIn">HEIGHT (in)</label>
         <input class="form-input" id="profHtIn" type="number" placeholder="8" min="0" max="11" oninput="saveProfileMetrics()">
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label" data-i18n="profile.age">AGE</label>
+        <label class="form-label" for="profAge" data-i18n="profile.age">AGE</label>
         <input class="form-input" id="profAge" type="number" placeholder="35" oninput="saveProfileMetrics()">
       </div>
       <div class="form-group">
           <label class="form-label" data-i18n="profile.sex">SEX</label>
         <div class="cp-select" id="cpSexProf">
           <div class="cp-select-trigger" onclick="toggleSelect('cpSexProf')">
-            <span class="placeholder" id="cpSexProfVal">Select</span>
+            <span class="placeholder" id="cpSexProfVal" data-i18n="profile.select">Select</span>
             <span class="cp-select-arrow">▼</span>
           </div>
           <div class="cp-dropdown" id="cpSexProfDrop">
             <div class="cp-option" onclick="selectOpt('cpSexProf','Male','Male',saveProfileMetrics)" data-i18n="profile.male">Male</div>
             <div class="cp-option" onclick="selectOpt('cpSexProf','Female','Female',saveProfileMetrics)" data-i18n="profile.female">Female</div>
-            <div class="cp-option" onclick="selectOpt('cpSexProf','Other','Other',saveProfileMetrics)">Other</div>
+            <div class="cp-option" onclick="selectOpt('cpSexProf','Other','Other',saveProfileMetrics)" data-i18n="profile.other">Other</div>
           </div>
         </div>
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label" data-i18n="profile.startWeight">START WEIGHT (lbs)</label>
+        <label class="form-label" for="profStartWt" data-i18n="profile.startWeight">START WEIGHT (lbs)</label>
         <input class="form-input" id="profStartWt" type="number" placeholder="220" oninput="saveProfileMetrics()">
       </div>
       <div class="form-group">
-        <label class="form-label" data-i18n="profile.goalWeight">GOAL WEIGHT (lbs)</label>
+        <label class="form-label" for="profGoalWt" data-i18n="profile.goalWeight">GOAL WEIGHT (lbs)</label>
         <input class="form-input" id="profGoalWt" type="number" placeholder="180" oninput="saveProfileMetrics()">
       </div>
     </div>
@@ -4469,7 +4469,7 @@ function continueLocallyFromWelcome() {
   <div style="background:#0e0e16;background:var(--panel, #0e0e16);border:1px solid rgba(255,255,255,0.07);border-radius:8px;overflow:hidden;margin-bottom:20px">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid rgba(255,255,255,0.05)">
       <span style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:2px" data-i18n="profile.version">VERSION</span>
-<span style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:2px">v2.1.7</span>
+<span style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:2px">v0.12.0</span>
     </div>
     <button type="button" class="gn-utility-row" onclick="window.location.reload()">
       <div style="display:flex;align-items:center;gap:12px">
@@ -4535,27 +4535,27 @@ function continueLocallyFromWelcome() {
         <div class="cp-dropdown" id="cpShotMedDrop" data-gn-med-minimized>
           <div class="cp-group-minimized" data-gn-med-group="TIRZEPATIDE" onclick="gnMedRevealGroup('cpShotMedDrop','TIRZEPATIDE')" role="button" tabindex="0"><span class="cp-group-minimized-label">TIRZEPATIDE</span><span class="cp-group-minimized-count">3</span></div>
           <div class="cp-group-options" data-gn-med-options="TIRZEPATIDE">
-            <div class="cp-option" onclick="selectOpt('cpShotMed','Zepbound','Zepbound (Tirzepatide)',typeof updatePills === 'function' ? updatePills : null)">Zepbound (Tirzepatide)</div>
-            <div class="cp-option" onclick="selectOpt('cpShotMed','Mounjaro','Mounjaro (Tirzepatide)',typeof updatePills === 'function' ? updatePills : null)">Mounjaro (Tirzepatide)</div>
-            <div class="cp-option" onclick="selectOpt('cpShotMed','Tirzepatide','Tirzepatide (Compound)',typeof updatePills === 'function' ? updatePills : null)">Tirzepatide (Compound)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','zepbound_tirzepatide','Zepbound (Tirzepatide)',typeof updatePills === 'function' ? updatePills : null)">Zepbound (Tirzepatide)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','mounjaro_tirzepatide','Mounjaro (Tirzepatide)',typeof updatePills === 'function' ? updatePills : null)">Mounjaro (Tirzepatide)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','tirzepatide_compound','Tirzepatide (Compound)',typeof updatePills === 'function' ? updatePills : null)">Tirzepatide (Compound)</div>
           </div>
           <div class="cp-group-minimized" data-gn-med-group="SEMAGLUTIDE" onclick="gnMedRevealGroup('cpShotMedDrop','SEMAGLUTIDE')" role="button" tabindex="0"><span class="cp-group-minimized-label">SEMAGLUTIDE</span><span class="cp-group-minimized-count">3</span></div>
           <div class="cp-group-options" data-gn-med-options="SEMAGLUTIDE">
-            <div class="cp-option" onclick="selectOpt('cpShotMed','Wegovy','Wegovy (Semaglutide)',typeof updatePills === 'function' ? updatePills : null)">Wegovy (Semaglutide)</div>
-            <div class="cp-option" onclick="selectOpt('cpShotMed','Ozempic','Ozempic (Semaglutide)',typeof updatePills === 'function' ? updatePills : null)">Ozempic (Semaglutide)</div>
-            <div class="cp-option" onclick="selectOpt('cpShotMed','Semaglutide','Semaglutide (Compound)',typeof updatePills === 'function' ? updatePills : null)">Semaglutide (Compound)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','wegovy_semaglutide','Wegovy (Semaglutide)',typeof updatePills === 'function' ? updatePills : null)">Wegovy (Semaglutide)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','ozempic_semaglutide','Ozempic (Semaglutide)',typeof updatePills === 'function' ? updatePills : null)">Ozempic (Semaglutide)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','semaglutide_compound','Semaglutide (Compound)',typeof updatePills === 'function' ? updatePills : null)">Semaglutide (Compound)</div>
           </div>
           <div class="cp-group-minimized" data-gn-med-group="OTHER" onclick="gnMedRevealGroup('cpShotMedDrop','OTHER')" role="button" tabindex="0"><span class="cp-group-minimized-label" data-i18n="shot.other">OTHER</span><span class="cp-group-minimized-count">2</span></div>
           <div class="cp-group-options" data-gn-med-options="OTHER">
-            <div class="cp-option" onclick="selectOpt('cpShotMed','Retatrutide','Retatrutide',typeof updatePills === 'function' ? updatePills : null)">Retatrutide</div>
-            <div class="cp-option" onclick="selectOpt('cpShotMed','Custom','Custom Compound',typeof updatePills === 'function' ? updatePills : null)">Custom Compound</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','retatrutide','Retatrutide',typeof updatePills === 'function' ? updatePills : null)">Retatrutide</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','custom_compound','Custom Compound',typeof updatePills === 'function' ? updatePills : null)">Custom Compound</div>
           </div>
         </div>
       </div>
     </div>
-    <div class="form-group"><label class="form-label" data-i18n="shot.doseLabel">DOSE — TAP TO SELECT OR ENTER CUSTOM</label><div class="dose-pills" id="dosePills"></div><input class="form-input" type="number" id="sDose" placeholder="Custom dose (mg)" step="0.1" style="margin-top:7px"></div>
+    <div class="form-group"><label class="form-label" for="sDose" data-i18n="shot.doseLabel">DOSE — TAP TO SELECT OR ENTER CUSTOM</label><div class="dose-pills" id="dosePills"></div><input class="form-input" type="number" id="sDose" placeholder="Custom dose (mg)" data-i18n-placeholder="shot.customDose" step="0.1" style="margin-top:7px"></div>
     <div class="form-group">
-      <label class="form-label">SELECTED LOCATION</label>
+      <label class="form-label" data-i18n="shot.selectedLocationLabel">SELECTED LOCATION</label>
       <div class="scanner-location-display">
         <span class="form-label" style="margin-bottom:0" data-i18n="shots.userEnteredLocation">USER-ENTERED LOCATION</span>
         <b id="modalSelectedLocation" data-i18n="shots.noLocationSelected">No location selected</b>
@@ -4568,22 +4568,22 @@ function continueLocallyFromWelcome() {
       <span class="gn-shot-advanced-chevron" aria-hidden="true">▼</span>
     </button>
     <div id="gnShotAdvanced" class="gn-shot-advanced-body gn-hidden">
-      <div class="form-group"><label class="form-label" data-i18n="shot.weightToday">WEIGHT TODAY (lbs) — OPTIONAL</label><input class="form-input" type="number" id="sWt" placeholder="e.g. 215.5" step="0.1"></div>
+      <div class="form-group"><label class="form-label" for="sWt" data-i18n="shot.weightToday">WEIGHT TODAY (lbs) — OPTIONAL</label><input class="form-input" type="number" id="sWt" placeholder="e.g. 215.5" step="0.1"></div>
       <div class="form-group"><label class="form-label" data-i18n="shot.sideEffects">SIDE EFFECTS</label>
         <div class="se-grid">
-          <label class="se-check"><input type="checkbox" value="Nausea"> Nausea</label>
-          <label class="se-check"><input type="checkbox" value="Fatigue"> Fatigue</label>
-          <label class="se-check"><input type="checkbox" value="Headache"> Headache</label>
-          <label class="se-check"><input type="checkbox" value="Diarrhea"> Diarrhea</label>
-          <label class="se-check"><input type="checkbox" value="Constipation"> Constipation</label>
-          <label class="se-check"><input type="checkbox" value="Vomiting"> Vomiting</label>
-          <label class="se-check"><input type="checkbox" value="Insomnia"> Insomnia</label>
-          <label class="se-check"><input type="checkbox" value="Bloating"> Bloating</label>
-          <label class="se-check"><input type="checkbox" value="Reflux"> Reflux</label>
-          <label class="se-check"><input type="checkbox" value="Dizziness"> Dizziness</label>
+          <label class="se-check"><input type="checkbox" value="nausea"> <span data-i18n="shot.nausea">Nausea</span></label>
+          <label class="se-check"><input type="checkbox" value="fatigue"> <span data-i18n="shot.fatigue">Fatigue</span></label>
+          <label class="se-check"><input type="checkbox" value="headache"> <span data-i18n="shot.headache">Headache</span></label>
+          <label class="se-check"><input type="checkbox" value="diarrhea"> <span data-i18n="shot.diarrhea">Diarrhea</span></label>
+          <label class="se-check"><input type="checkbox" value="constipation"> <span data-i18n="shot.constipation">Constipation</span></label>
+          <label class="se-check"><input type="checkbox" value="vomiting"> <span data-i18n="shot.vomiting">Vomiting</span></label>
+          <label class="se-check"><input type="checkbox" value="insomnia"> <span data-i18n="shot.insomnia">Insomnia</span></label>
+          <label class="se-check"><input type="checkbox" value="bloating"> <span data-i18n="shot.bloating">Bloating</span></label>
+          <label class="se-check"><input type="checkbox" value="reflux"> <span data-i18n="shot.reflux">Reflux</span></label>
+          <label class="se-check"><input type="checkbox" value="dizziness"> <span data-i18n="shot.dizziness">Dizziness</span></label>
         </div>
       </div>
-      <div class="form-group"><label class="form-label" data-i18n="shots.notesOptional">NOTES — OPTIONAL</label><textarea class="form-textarea" id="sNotes" placeholder="How do you feel?" maxlength="500"></textarea></div>
+      <div class="form-group"><label class="form-label" for="sNotes" data-i18n="shots.notesOptional">NOTES — OPTIONAL</label><textarea class="form-textarea" id="sNotes" placeholder="How do you feel?" maxlength="500"></textarea></div>
     </div>
     <button class="btn-full btn-primary" onclick="saveShot()" data-i18n="shot.saveShot">SAVE SHOT</button>
     <button class="btn-full btn-secondary log-modal-bottom-close" onclick="closeLog()" data-i18n="shot.closeReturn">CLOSE / RETURN</button>
@@ -4647,16 +4647,16 @@ function continueLocallyFromWelcome() {
       <div class="modal-title" id="arsTitle">ADD CONTEXT</div>
       <div class="modal-actions"><button class="modal-btn save" onclick="saveArs()"><span class="gn-icon"><svg><use href="#gn-check"></use></svg></span></button></div>
     </div>
-    <div class="form-group"><label class="form-label">NAME</label><input class="form-input" id="aName" placeholder="e.g. GLP-1 reference item"></div>
+    <div class="form-group"><label class="form-label" for="aName" data-i18n="lab.arsenalName">CONTEXT NAME</label><input class="form-input" id="aName" placeholder="e.g. GLP-1 reference item"></div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label" data-i18n="lab.concentration">CONCENTRATION (mg/mL)</label><input class="form-input" type="number" id="aConc" placeholder="e.g. 10"></div>
-      <div class="form-group"><label class="form-label">VOLUME (mL)</label><input class="form-input" type="number" id="aVol" placeholder="e.g. 3"></div>
+      <div class="form-group"><label class="form-label" for="aConc" data-i18n="lab.concentration">CONCENTRATION (mg/mL)</label><input class="form-input" type="number" id="aConc" placeholder="e.g. 10"></div>
+      <div class="form-group"><label class="form-label" for="aVol" data-i18n="lab.volume">VOLUME (mL)</label><input class="form-input" type="number" id="aVol" placeholder="e.g. 3"></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">QUANTITY</label><input class="form-input" type="number" id="aQty" placeholder="1" value="1"></div>
-      <div class="form-group"><label class="form-label">REVIEW DATE</label><input class="form-input" type="date" id="aExpiry"></div>
+      <div class="form-group"><label class="form-label" for="aQty" data-i18n="lab.quantity">QUANTITY</label><input class="form-input" type="number" id="aQty" placeholder="1" value="1"></div>
+      <div class="form-group"><label class="form-label" for="aExpiry" data-i18n="lab.peerReviewDate">REVIEW DATE</label><input class="form-input" type="date" id="aExpiry"></div>
     </div>
-    <button class="btn-full btn-primary" id="arsSaveBtn" onclick="saveArs()">ADD MED</button>
+    <button class="btn-full btn-primary" id="arsSaveBtn" onclick="saveArs()" data-i18n="shots.saveContext">SAVE CONTEXT</button>
   </div>
 </div>
 
@@ -9132,7 +9132,7 @@ body.gn-log-shot-picker-open .fab{
 @media(prefers-reduced-motion:reduce){.boot-command-deck::before,#boot .boot-b2b-symbol,#boot .boot-b2b-symbol-wrap::after{animation:none !important}}
 </style>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="./js/gridnode-version.js?v=20260802.20" defer></script><script src="./js/gridnode-i18n.js?v=20260802.20" defer></script><script src="./js/gridnode-bundle.js?v=20260802.20" defer></script><script src="./js/gridnode-phase-sphere.js?v=20260802.20" defer></script><script src="./js/gridnode-product-completion.js?v=20260802.20" defer></script><script src="./js/gridnode-motivation.js?v=20260802.20" defer></script><script src="./js/gridnode-telemetry.js?v=20260802.20" defer></script><script src="./js/gridnode-native.js?v=20260802.20" defer></script><script src="./js/gridnode-i18n-overlay.js?v=20260802.20" defer></script><script src="./js/gridnode-whatsnew.js?v=20260802.20" defer></script><script src="./js/gridnode-onboarding.js?v=20260802.20" defer></script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="./js/gridnode-version.js?v=20260804.1" defer></script><script src="./js/gridnode-i18n.js?v=20260804.1" defer></script><script src="./js/gridnode-bundle.js?v=20260804.1" defer></script><script src="./js/gridnode-phase-sphere.js?v=20260804.1" defer></script><script src="./js/gridnode-product-completion.js?v=20260804.1" defer></script><script src="./js/gridnode-motivation.js?v=20260804.1" defer></script><script src="./js/gridnode-telemetry.js?v=20260804.1" defer></script><script src="./js/gridnode-native.js?v=20260804.1" defer></script><script src="./js/gridnode-i18n-overlay.js?v=20260804.1" defer></script><script src="./js/gridnode-whatsnew.js?v=20260804.1" defer></script><script src="./js/gridnode-onboarding.js?v=20260804.1" defer></script>
 <script>
 (function() {
   try {
@@ -9144,4 +9144,3 @@ body.gn-log-shot-picker-open .fab{
 </script>
 </body>
 </html>
-

@@ -4,12 +4,13 @@
 
 import {
   APP_VERSION, S, state, getProfile, getShots, getAllShots, getWeights, normalizeLegacyText,
-  createId, safeText, formatDate, formatDateTime, normalizeDateInput,
+  normalizeMedicationId, normalizeSideEffectId, createId, safeText, formatDate, formatDateTime, normalizeDateInput,
   todayISO, downloadFile, queueCloudSync, deleteCloudShot, sessionLabel
 } from './gridnode-core.js';
 
 const $ = id => document.getElementById(id);
 const qa = selector => Array.from(document.querySelectorAll(selector));
+const tx = (key, fallback, vars) => window.GN_I18N?.text?.(key, fallback, vars) || fallback;
 
 export const selectState = {};
 window.selectState = selectState;
@@ -70,17 +71,54 @@ const zoneLabel = function (stored) {
   if (key) { const t = tx(key, stored); if (t && t !== key) return t; }
   return stored;
 };
+function scannerModeLabel(mode) {
+  const labels = { core: ['shots.modeCore', 'CORE'], lower: ['shots.modeLower', 'LOWER'], upper: ['shots.modeUpper', 'UPPER'] };
+  const [key, fallback] = labels[mode] || labels.core;
+  return tx(key, fallback);
+}
+function formatEditableDate(value) {
+  const iso = normalizeDateInput(value);
+  if (!iso) return '';
+  const [year, month, day] = iso.split('-');
+  return document.documentElement?.lang?.startsWith('es') ? `${day}/${month}/${year}` : `${month}/${day}/${year}`;
+}
+function parseEditableDate(value) {
+  const raw = String(value || '').trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return normalizeDateInput(raw);
+  const parts = raw.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+  if (!parts) return '';
+  const spanish = document.documentElement?.lang?.startsWith('es');
+  const month = spanish ? parts[2] : parts[1];
+  const day = spanish ? parts[1] : parts[2];
+  return normalizeDateInput(`${parts[3]}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+}
+function setHumanDateInput(input, value, compact = false) {
+  if (!input) return;
+  const iso = normalizeDateInput(value) || todayISO();
+  const display = compact ? formatEditableDate(iso) : formatDate(iso);
+  input.dataset.isoDate = iso;
+  input.dataset.dateDisplay = display;
+  input.value = display;
+}
+function readHumanDateInput(input, compact = false) {
+  if (!input) return '';
+  if (input.dataset.isoDate && input.dataset.dateDisplay === input.value) return input.dataset.isoDate;
+  return compact ? parseEditableDate(input.value) : normalizeDateInput(input.value);
+}
 
 const MEDICATIONS = Object.freeze({
-  Zepbound: 'Zepbound (Tirzepatide)',
-  Mounjaro: 'Mounjaro (Tirzepatide)',
-  Tirzepatide: 'Tirzepatide (Compound)',
-  Wegovy: 'Wegovy (Semaglutide)',
-  Ozempic: 'Ozempic (Semaglutide)',
-  Semaglutide: 'Semaglutide (Compound)',
-  Retatrutide: 'Retatrutide',
-  Custom: 'Custom Compound'
+  zepbound_tirzepatide: 'Zepbound (Tirzepatide)',
+  mounjaro_tirzepatide: 'Mounjaro (Tirzepatide)',
+  tirzepatide_compound: 'Tirzepatide (Compound)',
+  wegovy_semaglutide: 'Wegovy (Semaglutide)',
+  ozempic_semaglutide: 'Ozempic (Semaglutide)',
+  semaglutide_compound: 'Semaglutide (Compound)',
+  retatrutide: 'Retatrutide',
+  custom_compound: 'Custom Compound'
 });
+function medicationLabel(value) { const id = normalizeMedicationId(value); return id ? MEDICATIONS[id] : tx('shots.invalidMedication', 'Unknown medication'); }
+const SIDE_EFFECT_KEYS = Object.freeze({ nausea: 'shot.nausea', fatigue: 'shot.fatigue', headache: 'shot.headache', diarrhea: 'shot.diarrhea', constipation: 'shot.constipation', vomiting: 'shot.vomiting', insomnia: 'shot.insomnia', bloating: 'shot.bloating', reflux: 'shot.reflux', dizziness: 'shot.dizziness' });
+function sideEffectLabel(value) { const id = normalizeSideEffectId(value); return SIDE_EFFECT_KEYS[id] ? tx(SIDE_EFFECT_KEYS[id], id) : id; }
 
 const PHASES = [
   { name: 'ONSET', support: 'Early cycle visibility from the most recent logged SHOT.', color: '#00d4ff', start: 0, end: 0.08 },
@@ -127,8 +165,10 @@ export function showScreen(id) {
 }
 
 export function showPage(name, navElement) {
+  const previousPage = document.querySelector('.page.active')?.id || '';
   const page = $(`page${name}`);
   if (!page) return;
+  document.body.classList.toggle('gn-fab-hidden-context', ['Lab', 'Profile', 'Cal'].includes(name));
   qa('.page').forEach(item => item.classList.remove('active'));
   page.classList.add('active');
   qa('.nav-item').forEach(item => item.classList.remove('active'));
@@ -140,6 +180,7 @@ export function showPage(name, navElement) {
   if (name === 'Lab') renderLab();
   if (name === 'Profile') renderProfile();
   if (name === 'Cal') renderCalendar();
+  document.dispatchEvent(new CustomEvent('gn:pagechange', { detail: { name, previousPage } }));
 }
 
 export function refreshAll() {
@@ -159,7 +200,7 @@ export function loadApp() {
   setText('profSub', `// ${window.CU?.defaultName || profile.name || 'NODE_USER'} //`);
   setText('profNameTxt', window.CU?.defaultName || profile.name || 'NODE_USER');
   setText('profEmail', sessionLabel());
-  setText('profMedTxt', profile.med ? `// ${profile.med.toUpperCase()}` : '// NO MEDICATION SET');
+  setText('profMedTxt', normalizeMedicationId(profile.med) ? `// ${medicationLabel(profile.med).toUpperCase()}` : '// NO MEDICATION SET');
   hydrateProfileFields(profile);
   setTodayDefaults();
   refreshAll();
@@ -173,9 +214,9 @@ function setTodayDefaults() {
   const date = $('sDate');
   const time = $('sTime');
   const wtDate = $('wtDate');
-  if (date && !date.value) date.value = todayISO();
+  if (date && !date.value) setHumanDateInput(date, todayISO());
   if (time && !time.value) time.value = formatTime12(now);
-  if (wtDate && !wtDate.value) wtDate.value = todayISO();
+  if (wtDate && !wtDate.value) setHumanDateInput(wtDate, todayISO(), true);
   moduleState.meridiem = now.getHours() >= 12 ? 'PM' : 'AM';
   updateMeridiemButtons();
 }
@@ -186,7 +227,8 @@ function hydrateProfileFields(profile) {
     profAge: profile.age, profStartWt: profile.startWt, profGoalWt: profile.goalWt
   };
   Object.entries(fields).forEach(([id, value]) => { if ($(id) && value != null) $(id).value = value; });
-  if (profile.med) setSelect('cpMedProf', profile.med, MEDICATIONS[profile.med] || profile.med);
+  const medicationId = normalizeMedicationId(profile.med);
+  if (medicationId) setSelect('cpMedProf', medicationId, medicationLabel(medicationId));
   if (profile.shotDay !== undefined && profile.shotDay !== '') {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     setSelect('cpShotDayProf', String(profile.shotDay), days[Number(profile.shotDay)] || 'Select shot day');
@@ -198,7 +240,7 @@ function hydrateProfileFields(profile) {
 function profileSnapshot() {
   const profile = getProfile();
   profile.name = profile.name || window.CU?.defaultName || 'NODE_USER';
-  profile.med = selectState.cpMedProf?.val || profile.med || '';
+  profile.med = normalizeMedicationId(selectState.cpMedProf?.val || profile.med);
   profile.dose = $('profDose')?.value || profile.dose || '';
   profile.shotDay = selectState.cpShotDayProf?.val !== undefined ? Number(selectState.cpShotDayProf.val) : profile.shotDay;
   profile.htFt = $('profHtFt')?.value || profile.htFt || '';
@@ -213,7 +255,7 @@ function profileSnapshot() {
 export function saveProfileMed() {
   const profile = profileSnapshot();
   S.set('profile', profile);
-  setText('profMedTxt', profile.med ? `// ${profile.med.toUpperCase()}` : '// NO MEDICATION SET');
+  setText('profMedTxt', normalizeMedicationId(profile.med) ? `// ${medicationLabel(profile.med).toUpperCase()}` : '// NO MEDICATION SET');
   queueCloudSync('profile', profile);
   showToast('Profile protocol context saved.');
 }
@@ -243,6 +285,11 @@ function setSelect(id, value, label) {
   selectState[id] = { val: value, label };
   const valueElement = $(`${id}Val`);
   if (valueElement) { valueElement.textContent = label; valueElement.classList.remove('placeholder'); }
+  qa(`#${id}Drop .cp-option`).forEach(option => {
+    const selected = option.textContent.trim() === String(label).trim();
+    option.classList.toggle('selected', selected);
+    option.setAttribute('aria-selected', String(selected));
+  });
 }
 
 export function toggleSelect(id) {
@@ -250,10 +297,11 @@ export function toggleSelect(id) {
   const trigger = dropdown?.previousElementSibling;
   if (!dropdown || !trigger) return;
   qa('.cp-dropdown.open').forEach(item => item.classList.remove('open'));
-  qa('.cp-select-trigger.open').forEach(item => item.classList.remove('open'));
+  qa('.cp-select-trigger.open').forEach(item => { item.classList.remove('open'); item.setAttribute('aria-expanded', 'false'); });
   const willOpen = !dropdown.classList.contains('open');
   dropdown.classList.toggle('open', willOpen);
   trigger.classList.toggle('open', willOpen);
+  trigger.setAttribute('aria-expanded', String(willOpen));
 }
 
 export function selectOpt(id, value, label, callback) {
@@ -261,6 +309,7 @@ export function selectOpt(id, value, label, callback) {
   const dropdown = $(`${id}Drop`);
   dropdown?.classList.remove('open');
   dropdown?.previousElementSibling?.classList.remove('open');
+  dropdown?.previousElementSibling?.setAttribute('aria-expanded', 'false');
   if (typeof callback === 'function') callback();
 }
 
@@ -270,6 +319,14 @@ function renderDashboard() {
   const lastShot = shots.at(-1);
   const lastWeight = weights.at(-1);
   const profile = getProfile();
+  const dashboard = $('pageDash');
+  let firstShotMission = $('gnFirstShotMission');
+  if (!firstShotMission && dashboard?.querySelector('.page-hdr')) {
+    dashboard.querySelector('.page-hdr').insertAdjacentHTML('afterend', `<section class="gn-dashboard-mission" id="gnFirstShotMission" aria-labelledby="gnFirstShotMissionTitle"><span class="gn-dashboard-mission-kicker">START HERE</span><h2 id="gnFirstShotMissionTitle">LOG YOUR FIRST SHOT TO ACTIVATE YOUR GRID</h2><p>One shot unlocks the Phase Engine, RESULTS, and your full dashboard.</p><button type="button" onclick="openLogModal()">LOG YOUR FIRST SHOT</button></section>`);
+    firstShotMission = $('gnFirstShotMission');
+  }
+  if (dashboard) dashboard.dataset.activation = shots.length ? 'active' : 'pending';
+  if (firstShotMission) firstShotMission.hidden = shots.length > 0;
   setText('stShots', shots.length);
   setText('stDose', lastShot?.dose ? `${lastShot.dose}mg` : '—');
   setText('stDoseDate', lastShot ? formatDate(lastShot.date, { month: 'short', day: 'numeric' }) : 'NO DATA');
@@ -379,9 +436,9 @@ export function renderShots() {
   list.innerHTML = visible.map(record => {
     const archived = Boolean(record.archived);
     return `<article class="log-entry ${archived ? 'archived' : ''}">
-      <div class="log-main"><div><div class="log-date">${archived ? 'ARCHIVED ' : ''}${safeText(formatDateTime(record.date))}</div><div class="log-med">${safeText(MEDICATIONS[record.med] || record.med || 'CUSTOM')}</div></div>
+      <div class="log-main"><div><div class="log-date">${archived ? 'ARCHIVED ' : ''}${safeText(formatDateTime(record.date))}</div><div class="log-med">${safeText(medicationLabel(record.med))}</div></div>
       <div class="log-dose">${safeText(record.dose || '—')}mg</div></div>
-      <div class="log-chips">${record.site ? `<span class="log-chip lc-site">${safeText(zoneLabel(record.site))}</span>` : ''}${record.wt ? `<span class="log-chip lc-wt">${safeText(record.wt)}lb</span>` : ''}${record.se?.length ? `<span class="log-chip lc-se">${safeText(record.se.join(', '))}</span>` : ''}</div>
+      <div class="log-chips">${record.site ? `<span class="log-chip lc-site">${safeText(zoneLabel(record.site))}</span>` : ''}${record.wt ? `<span class="log-chip lc-wt">${safeText(record.wt)}lb</span>` : ''}${record.se?.length ? `<span class="log-chip lc-se">${safeText(record.se.map(sideEffectLabel).join(', '))}</span>` : ''}</div>
       ${record.notes ? `<div class="log-notes">${safeText(record.notes)}</div>` : ''}
       <div class="log-actions"><button type="button" class="log-action-btn" data-shot-action="edit" data-shot-id="${safeText(record.id)}" ${archived ? 'disabled' : ''}>EDIT</button><button type="button" class="log-action-btn ${archived ? '' : 'del'}" data-shot-action="${archived ? 'restore' : 'archive'}" data-shot-id="${safeText(record.id)}">${archived ? 'RESTORE' : 'ARCHIVE'}</button></div>
     </article>`;
@@ -398,7 +455,7 @@ export function setScannerMode(mode, button) {
   qa('.scanner-mode-btn').forEach(item => item.classList.toggle('active', item === button || item.dataset.mode === moduleState.scannerMode));
   const stage = document.querySelector('.asset-scan-stage');
   if (stage) { stage.classList.remove('mode-core', 'mode-lower', 'mode-upper'); stage.classList.add(`mode-${moduleState.scannerMode}`); }
-  setText('scannerModeLabel', tx('shots.trackableZones', moduleState.scannerMode.toUpperCase() + ' TRACKABLE ZONES', { zone: moduleState.scannerMode.toUpperCase() }));
+  setText('scannerModeLabel', tx('shots.trackableZones', 'TRACKABLE {zone} ZONES', { zone: scannerModeLabel(moduleState.scannerMode) }));
   renderScanner();
 }
 
@@ -415,7 +472,7 @@ export function renderScanner() {
   if (!panel) return;
   let picker = panel.querySelector('.gn-stable-zone-picker');
   if (!picker) { picker = document.createElement('div'); picker.className = 'gn-stable-zone-picker'; panel.appendChild(picker); }
-  picker.innerHTML = `<div class="gn-stable-zone-title">${tx('shots.trackableZones', 'TRACKABLE ' + moduleState.scannerMode.toUpperCase() + ' ZONES', { zone: moduleState.scannerMode.toUpperCase() })}</div>${ZONES[moduleState.scannerMode].map(label => `<button type="button" class="gn-stable-zone-btn ${label === moduleState.selectedLocation ? 'selected' : ''}" data-stable-zone="${safeText(label)}" data-zone-key="${safeText(ZONE_IDS[label] || '')}">${safeText(zoneLabel(label))}</button>`).join('')}`;
+  picker.innerHTML = `<div class="gn-stable-zone-title">${tx('shots.trackableZones', 'TRACKABLE {zone} ZONES', { zone: scannerModeLabel(moduleState.scannerMode) })}</div>${ZONES[moduleState.scannerMode].map(label => `<button type="button" class="gn-stable-zone-btn ${label === moduleState.selectedLocation ? 'selected' : ''}" data-stable-zone="${safeText(label)}" data-zone-key="${safeText(ZONE_IDS[label] || '')}">${safeText(zoneLabel(label))}</button>`).join('')}`;
   setText('scannerSelectedDisplay', zoneLabel(moduleState.selectedLocation) || tx('shots.noLocationSelected', 'No location selected'));
   const recent = sortedShots().slice(-4).reverse().map(item => item.site).filter(Boolean);
   setText('scannerHistoryDisplay', recent.length ? recent.map(zoneLabel).join(' · ') : tx('shots.noLoggedLocationYet', 'No logged location yet'));
@@ -429,20 +486,24 @@ export function renderScanner() {
 export function openLogModal(options = {}) {
   const modal = $('logOv');
   if (!modal) return;
+  let draftDeviceId = '';
   const preserveDraft = Boolean(options.preserve || moduleState.pendingLocationDraft || moduleState.shotDraft);
   moduleState.pendingLocationDraft = false;
   if (preserveDraft && moduleState.shotDraft) {
     // Restore the full unsaved draft (canonical med key + every entered field).
     const d = moduleState.shotDraft;
-    if (d.med) setSelect('cpShotMed', d.med, MEDICATIONS[d.med] || d.med);
+    const draftMedicationId = normalizeMedicationId(d.med);
+    if (draftMedicationId) setSelect('cpShotMed', draftMedicationId, medicationLabel(draftMedicationId));
     if ($('sDose')) $('sDose').value = d.dose || '';
-    if ($('sDate')) $('sDate').value = d.date || todayISO();
+    setHumanDateInput($('sDate'), d.date || todayISO());
     if ($('sTime')) $('sTime').value = d.time || '';
     if (d.meridiem) moduleState.meridiem = d.meridiem;
     if ($('sWt')) $('sWt').value = d.wt || '';
     if ($('sNotes')) $('sNotes').value = d.notes || '';
+    draftDeviceId = d.deviceId || '';
     if (Array.isArray(d.se)) {
-      qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = d.se.includes(input.value); });
+      const draftSideEffects = d.se.map(normalizeSideEffectId);
+      qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = draftSideEffects.includes(input.value); });
     }
     moduleState.shotDraft = null; // consumed once
   }
@@ -451,14 +512,17 @@ export function openLogModal(options = {}) {
     document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode('LOG SHOT'));
     setTodayDefaults();
     const profile = getProfile();
-    if (profile.med) setSelect('cpShotMed', profile.med, MEDICATIONS[profile.med] || profile.med);
+    const profileMedicationId = normalizeMedicationId(profile.med);
+    if (profileMedicationId) setSelect('cpShotMed', profileMedicationId, medicationLabel(profileMedicationId));
     if (profile.dose && $('sDose')) $('sDose').value = profile.dose;
     if ($('sWt')) $('sWt').value = '';
     if ($('sNotes')) $('sNotes').value = '';
     qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = false; });
   }
-  setText('modalSelectedLocation', moduleState.selectedLocation || 'No location selected');
-  setText('logLocationAction', moduleState.selectedLocation ? 'CHANGE LOGGED LOCATION' : 'SELECT LOGGED LOCATION');
+  setText('modalSelectedLocation', zoneLabel(moduleState.selectedLocation) || tx('shots.noLocationSelected', 'No location selected'));
+  setText('logLocationAction', moduleState.selectedLocation ? tx('shots.changeLoggedLocation', 'CHANGE LOGGED LOCATION') : tx('shots.selectLoggedLocation', 'SELECT LOGGED LOCATION'));
+  const devicePicker = $('shotDeviceId');
+  if (devicePicker) devicePicker.value = draftDeviceId;
   modal.classList.add('active');
 }
 
@@ -477,15 +541,17 @@ export function editShot(id) {
   moduleState.editingShotId = id;
   setText('modalSelectedLocation', zoneLabel(record.site) || tx('shots.noLocationSelected', 'No location selected'));
   moduleState.selectedLocation = record.site || moduleState.selectedLocation;
-  if ($('sDate')) $('sDate').value = record.date?.slice(0, 10) || todayISO();
+  setHumanDateInput($('sDate'), record.date?.slice(0, 10) || todayISO());
   if ($('sTime')) $('sTime').value = formatTime12(new Date(record.date));
   moduleState.meridiem = new Date(record.date).getHours() >= 12 ? 'PM' : 'AM';
   updateMeridiemButtons();
-  setSelect('cpShotMed', record.med, MEDICATIONS[record.med] || record.med);
+  const medicationId = normalizeMedicationId(record.med);
+  setSelect('cpShotMed', medicationId, medicationLabel(medicationId));
   if ($('sDose')) $('sDose').value = record.dose || '';
   if ($('sWt')) $('sWt').value = record.wt || '';
   if ($('sNotes')) $('sNotes').value = record.notes || '';
-  qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = record.se?.includes(input.value); });
+  const recordSideEffects = (record.se || []).map(normalizeSideEffectId);
+  qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = recordSideEffects.includes(input.value); });
   document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode('EDIT SHOT'));
   openLogModal({ preserve: true });
 }
@@ -533,9 +599,9 @@ export async function confirmPermanentDeleteShot() {
 }
 
 export function saveShot(allowFuture = false) {
-  const med = selectState.cpShotMed?.val;
+  const med = normalizeMedicationId(selectState.cpShotMed?.val);
   const dose = Number($('sDose')?.value);
-  const date = normalizeDateInput($('sDate')?.value);
+  const date = readHumanDateInput($('sDate'));
   const time = getShotTime24($('sTime')?.value);
   const site = moduleState.selectedLocation;
   if (!med || !dose || !date || !time || !site) { showToast('Add medication, dose, date, time, and a logged location.', true); return; }
@@ -546,7 +612,7 @@ export function saveShot(allowFuture = false) {
     ...(existing || {}), id: existing?.id || createId('shot'), date: `${date}T${time}`,
     med, dose, site, wt: Number($('sWt')?.value) || null,
     notes: $('sNotes')?.value?.trim() || null,
-    se: qa('#logOv input[type="checkbox"]:checked').map(input => input.value),
+    se: qa('#logOv input[type="checkbox"]:checked').map(input => normalizeSideEffectId(input.value)),
     archived: false, archivedAt: null, createdAt: existing?.createdAt || new Date().toISOString()
   };
   const all = getAllShots();
@@ -587,11 +653,12 @@ export function goToScannerForLocationFromLog() {
   moduleState.shotDraft = {
     med: selectState.cpShotMed?.val || null,
     dose: $('sDose')?.value || '',
-    date: $('sDate')?.value || '',
+    date: readHumanDateInput($('sDate')) || todayISO(),
     time: $('sTime')?.value || '',
     meridiem: moduleState.meridiem || null,
     wt: $('sWt')?.value || '',
     notes: $('sNotes')?.value || '',
+    deviceId: $('shotDeviceId')?.value || '',
     se: qa('#logOv input[type="checkbox"]:checked').map(input => input.value)
   };
   $('logOv')?.classList.remove('active');
@@ -601,7 +668,7 @@ export function goToScannerForLocationFromLog() {
 }
 
 export function openWeightModal() {
-  if ($('wtDate')) $('wtDate').value = todayISO();
+  setHumanDateInput($('wtDate'), todayISO(), true);
   if ($('wtTime')) $('wtTime').value = formatTime24(new Date());
   $('wtOv')?.classList.add('active');
 }
@@ -612,7 +679,7 @@ export function setWeightUnit(unit) {
 }
 export function saveWt() {
   const raw = Number($('wtVal')?.value);
-  const date = normalizeDateInput($('wtDate')?.value) || todayISO();
+  const date = readHumanDateInput($('wtDate'), true) || todayISO();
   if (!raw || raw <= 0) { setText('wtError', 'ENTER A VALID WEIGHT VALUE'); setDisplay('wtError', true); return; }
   const weight = moduleState.weightUnit === 'kg' ? raw * 2.2046226218 : raw;
   const record = { id: createId('weight'), date: `${date}T${$('wtTime')?.value || '12:00'}`, weight, weightKg: moduleState.weightUnit === 'kg' ? raw : raw / 2.2046226218, unit: moduleState.weightUnit, notes: $('wtNotes')?.value?.trim() || null };
@@ -669,7 +736,7 @@ function renderPhaseSource(shot) {
   const readout = $('phaseEngineSourceReadout');
   if (!readout || !shot) return;
   const elapsed = Math.max(0, (Date.now() - new Date(shot.date).getTime()) / 86400000);
-  readout.innerHTML = `<div><span>LAST SHOT</span><b>${safeText(formatDateTime(shot.date))}</b></div><div><span>MEDICATION</span><b>${safeText(MEDICATIONS[shot.med] || shot.med || 'CUSTOM')}</b></div><div><span>TIME SINCE</span><b>${Math.floor(elapsed)}d</b></div><div><span>DATA SOURCE</span><b>USER-ENTERED HISTORY</b></div>`;
+  readout.innerHTML = `<div><span>LAST SHOT</span><b>${safeText(formatDateTime(shot.date))}</b></div><div><span>MEDICATION</span><b>${safeText(medicationLabel(shot.med))}</b></div><div><span>TIME SINCE</span><b>${Math.floor(elapsed)}d</b></div><div><span>DATA SOURCE</span><b>USER-ENTERED HISTORY</b></div>`;
 }
 
 function renderTrendLists(shots) {
@@ -778,7 +845,7 @@ export function renderProfile() {
   const profile = getProfile();
   setText('profNameTxt', window.CU?.defaultName || profile.name || 'NODE_USER');
   setText('profEmail', sessionLabel());
-  setText('profMedTxt', profile.med ? `// ${profile.med.toUpperCase()}` : '// NO MEDICATION SET');
+  setText('profMedTxt', normalizeMedicationId(profile.med) ? `// ${medicationLabel(profile.med).toUpperCase()}` : '// NO MEDICATION SET');
   hydrateProfileFields(profile);
   let status = document.querySelector('.gn-cloud-status');
   const hero = $('profAvaWrap')?.closest('[style*="background:#0e0e16"]');
@@ -788,7 +855,7 @@ export function renderProfile() {
 
 export function exportCSV() {
   const rows = [['record_type', 'date', 'medication', 'dose_mg', 'location', 'weight_lb', 'side_effects', 'notes', 'archived']];
-  getAllShots().forEach(record => rows.push(['shot', record.date || '', record.med || '', record.dose || '', record.site || '', record.wt || '', (record.se || []).join('|'), record.notes || '', record.archived ? 'true' : 'false']));
+  getAllShots().forEach(record => rows.push(['shot', record.date || '', medicationLabel(record.med), record.dose || '', record.site || '', record.wt || '', (record.se || []).join('|'), record.notes || '', record.archived ? 'true' : 'false']));
   getWeights().forEach(record => rows.push(['weight', record.date || '', '', '', '', record.weight || '', '', record.notes || '', 'false']));
   downloadFile('gridnode-records.csv', rows.map(row => row.map(csvCell).join(',')).join('\n'), 'text/csv;charset=utf-8');
   showToast('CSV export prepared.');
@@ -817,7 +884,7 @@ export function cancelCSVImport() { moduleState.pendingImport = null; $('csvImpo
 export function confirmCSVImport() {
   const rows = moduleState.pendingImport || [];
   const shots = getAllShots(), weights = getWeights();
-  rows.forEach(row => { if (row.type === 'weight' || (!row.medication && row.weight)) weights.push({ id: createId('weight'), date: row.date || `${todayISO()}T12:00`, weight: Number(row.weight) || 0, notes: row.notes || null }); else shots.push({ id: createId('shot'), date: row.date || new Date().toISOString(), med: row.medication || 'Custom', dose: Number(row.dose) || 0, site: row.location || '', wt: Number(row.weight) || null, se: row.sideEffects || [], notes: row.notes || null, archived: row.archived === 'true', createdAt: new Date().toISOString() }); });
+  rows.forEach(row => { if (row.type === 'weight' || (!row.medication && row.weight)) weights.push({ id: createId('weight'), date: row.date || `${todayISO()}T12:00`, weight: Number(row.weight) || 0, notes: row.notes || null }); else { const medicationId = normalizeMedicationId(row.medication); if (!medicationId) return; shots.push({ id: createId('shot'), date: row.date || new Date().toISOString(), med: medicationId, dose: Number(row.dose) || 0, site: row.location || '', wt: Number(row.weight) || null, se: row.sideEffects || [], notes: row.notes || null, archived: row.archived === 'true', createdAt: new Date().toISOString() }); } });
   S.set('shots', shots); S.set('weights', weights); cancelCSVImport(); refreshAll(); showToast(`${rows.length} record${rows.length === 1 ? '' : 's'} imported.`);
 }
 function parseCSV(text) {
@@ -830,24 +897,26 @@ function parseCSV(text) {
 export function renderCalendar() {
   const grid = $('calGrid'); if (!grid) return;
   const date = moduleState.calendarDate, year = date.getFullYear(), month = date.getMonth();
-  const months = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
-  setText('calTitle', `${months[month]} ${year}`);
+  const locale = document.documentElement?.lang?.startsWith('es') ? 'es-419' : 'en-US';
+  const monthLabel = new Date(year, month, 1).toLocaleDateString(locale, { month: 'long', year: 'numeric' }).toLocaleUpperCase(locale);
+  const weekdayLabels = Array.from({ length: 7 }, (_, index) => new Date(2026, 7, 2 + index).toLocaleDateString(locale, { weekday: 'short' }).replace('.', '').toLocaleUpperCase(locale));
+  setText('calTitle', monthLabel);
   const first = new Date(year, month, 1).getDay(), total = new Date(year, month + 1, 0).getDate();
   const shots = new Set(sortedShots().map(item => item.date?.slice(0, 10))), weights = new Set(sortedWeights().map(item => item.date?.slice(0, 10)));
-  grid.innerHTML = `${['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => `<div class="cal-day-head">${day}</div>`).join('')}${Array.from({ length: first }, () => '<div class="cal-day empty-day"></div>').join('')}${Array.from({ length: total }, (_, index) => { const day = index + 1, key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; return `<button type="button" class="cal-day ${moduleState.selectedCalendarDay === key ? 'selected' : ''}" data-calendar-day="${key}"><span>${day}</span>${shots.has(key) ? '<i class="cal-mark shot"></i>' : ''}${weights.has(key) ? '<i class="cal-mark weight"></i>' : ''}</button>`; }).join('')}`;
+  grid.innerHTML = `${weekdayLabels.map(day => `<div class="cal-day-head">${day}</div>`).join('')}${Array.from({ length: first }, () => '<div class="cal-day empty-day"></div>').join('')}${Array.from({ length: total }, (_, index) => { const day = index + 1, key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; return `<button type="button" class="cal-day ${moduleState.selectedCalendarDay === key ? 'selected' : ''}" data-calendar-day="${key}"><span>${day}</span>${shots.has(key) ? '<i class="cal-mark shot"></i>' : ''}${weights.has(key) ? '<i class="cal-mark weight"></i>' : ''}</button>`; }).join('')}`;
   const selected = moduleState.selectedCalendarDay;
-  if (selected) { const records = [...getAllShots().filter(item => item.date?.slice(0, 10) === selected), ...getWeights().filter(item => item.date?.slice(0, 10) === selected)]; $('calDetail').innerHTML = records.length ? records.map(item => `<div class="gn-calendar-detail">${safeText(item.med || 'WEIGHT')} · ${safeText(formatDateTime(item.date))}</div>`).join('') : '<div class="gn-calendar-detail">No records on this day.</div>'; }
+  if (selected) { const records = [...getAllShots().filter(item => item.date?.slice(0, 10) === selected), ...getWeights().filter(item => item.date?.slice(0, 10) === selected)]; $('calDetail').innerHTML = records.length ? records.map(item => `<div class="gn-calendar-detail">${safeText(item.med ? medicationLabel(item.med) : tx('results.weight', 'WEIGHT'))} · ${safeText(formatDateTime(item.date))}</div>`).join('') : `<div class="gn-calendar-detail">${tx('calendar.noRecords', 'No records on this day.')}</div>`; }
 }
 export function calPrev() { moduleState.calendarDate.setMonth(moduleState.calendarDate.getMonth() - 1); renderCalendar(); }
 export function calNext() { moduleState.calendarDate.setMonth(moduleState.calendarDate.getMonth() + 1); renderCalendar(); }
 export function calDayClick(day) { moduleState.selectedCalendarDay = day; renderCalendar(); }
 
-export function openArsenalMod(type = 'compound', editId = null) { moduleState.arsenalEditId = editId; $('arsTitle')?.replaceChildren(document.createTextNode(editId ? 'EDIT CONTEXT' : 'ADD CONTEXT')); $('arsOv')?.classList.add('active'); }
+export function openArsenalMod(type = 'compound', editId = null) { moduleState.arsenalEditId = editId; $('arsTitle')?.replaceChildren(document.createTextNode(editId ? tx('shots.editContext', 'EDIT CONTEXT') : tx('shots.addContext', 'ADD CONTEXT'))); $('arsOv')?.classList.add('active'); }
 export function closeArs() { $('arsOv')?.classList.remove('active'); moduleState.arsenalEditId = null; }
-export function saveArs() { const items = S.get('arsenal', []); const record = { id: moduleState.arsenalEditId || createId('context'), name: $('aName')?.value?.trim(), concentration: Number($('aConc')?.value) || null, volume: Number($('aVol')?.value) || null, quantity: Number($('aQty')?.value) || 1, reviewDate: $('aExpiry')?.value || '' }; if (!record.name) { showToast('Enter a context name.', true); return; } const index = items.findIndex(item => item.id === record.id); if (index >= 0) items[index] = record; else items.push(record); S.set('arsenal', items); queueCloudSync('workspace'); closeArs(); showToast('VAULT context saved.'); }
+export function saveArs() { const items = S.get('arsenal', []); const record = { id: moduleState.arsenalEditId || createId('context'), name: $('aName')?.value?.trim(), concentration: Number($('aConc')?.value) || null, volume: Number($('aVol')?.value) || null, quantity: Number($('aQty')?.value) || 1, reviewDate: $('aExpiry')?.value || '' }; if (!record.name) { showToast(tx('shots.contextNameRequired', 'Enter a context name.'), true); return; } const index = items.findIndex(item => item.id === record.id); if (index >= 0) items[index] = record; else items.push(record); S.set('arsenal', items); queueCloudSync('workspace'); closeArs(); showToast(tx('lab.saveContext', 'VAULT context saved.')); }
 export function requestLoadoutRemove(id) { moduleState.pendingArsenalId = id; $('loadoutRemoveOverlay')?.classList.add('active'); }
 export function cancelLoadoutRemove() { moduleState.pendingArsenalId = null; $('loadoutRemoveOverlay')?.classList.remove('active'); }
-export function confirmLoadoutRemove() { const next = S.get('arsenal', []).filter(item => item.id !== moduleState.pendingArsenalId); S.set('arsenal', next); queueCloudSync('workspace'); cancelLoadoutRemove(); showToast('Context removed.'); }
+export function confirmLoadoutRemove() { const next = S.get('arsenal', []).filter(item => item.id !== moduleState.pendingArsenalId); S.set('arsenal', next); queueCloudSync('workspace'); cancelLoadoutRemove(); showToast(tx('shots.contextRemoved', 'Context removed.')); }
 
 export function toggleSound() { window.GN_SOUND_ON = window.GN_SOUND_ON === false; const button = $('sndBtn'); if (button) button.style.opacity = window.GN_SOUND_ON ? '1' : '.4'; }
 
@@ -858,14 +927,14 @@ export function gnSetShotMeridiem(value) { moduleState.meridiem = value === 'PM'
 function updateMeridiemButtons() { $('sTimeAM')?.classList.toggle('active', moduleState.meridiem === 'AM'); $('sTimePM')?.classList.toggle('active', moduleState.meridiem === 'PM'); }
 export function gnShotClockLiveFormat(input) { if (!input) return; input.value = input.value.replace(/[^0-9]/g, '').slice(0, 4).replace(/^(\d{1,2})(\d{2})$/, '$1:$2'); }
 export function gnNormalizeShotClockField(input) { if (!input) return; const parsed = getShotTime24(input.value); if (parsed) { const date = new Date(`2000-01-01T${parsed}`); input.value = formatTime12(date); } }
-export function gnWeightDateInput(input) { if (input) input.value = input.value.replace(/[^0-9\/-]/g, '').slice(0, 10); }
+export function gnWeightDateInput(input) { if (input) { input.value = input.value.replace(/[^0-9\/-]/g, '').slice(0, 10); delete input.dataset.isoDate; delete input.dataset.dateDisplay; } }
 export function gnWeightTimeInput(input) { if (input) input.value = input.value.replace(/[^0-9:]/g, '').slice(0, 5); }
-export function gnOpenShotDatePicker() { const input = $('sDate'); if (input) { input.removeAttribute('readonly'); input.type = 'date'; input.value = normalizeDateInput(input.value) || todayISO(); input.focus(); } }
-export function gnCloseShotDatePicker() { const input = $('sDate'); if (input) { input.type = 'text'; input.setAttribute('readonly', 'readonly'); } }
+export function gnOpenShotDatePicker() { const input = $('sDate'); if (input) { input.removeAttribute('readonly'); input.type = 'date'; input.value = readHumanDateInput(input) || todayISO(); input.focus(); } }
+export function gnCloseShotDatePicker() { const input = $('sDate'); if (input) { const value = normalizeDateInput(input.value) || input.dataset.isoDate || todayISO(); input.type = 'text'; input.setAttribute('readonly', 'readonly'); setHumanDateInput(input, value); } }
 export function gnDatePickerMove() {}
-export function gnSelectPickerDate(date) { if ($('sDate')) $('sDate').value = date; gnCloseShotDatePicker(); }
+export function gnSelectPickerDate(date) { setHumanDateInput($('sDate'), date); gnCloseShotDatePicker(); }
 export function gnSetShotDateFromPicker() { gnCloseShotDatePicker(); }
-export function gnSetShotDateValue(value) { if ($('sDate')) $('sDate').value = value; }
+export function gnSetShotDateValue(value) { setHumanDateInput($('sDate'), value); }
 export function gnSetShotTimeValue(value) { if ($('sTime')) $('sTime').value = formatTime12(new Date(`2000-01-01T${value}`)); }
 export function gnMedRevealGroup(dropId, group) {
   const drop = $(dropId);
@@ -876,7 +945,7 @@ export function gnMedRevealGroup(dropId, group) {
     block.style.display = '';
   });
 }
-export function updatePills() { const med = selectState.cpShotMed?.val; const dose = Number(getProfile().dose); const container = $('dosePills'); if (!container) return; const values = dose ? [dose] : [0.5, 1, 2.5, 5, 7.5, 10]; container.innerHTML = values.map(value => `<button type="button" class="dose-pill" data-dose="${value}">${value} mg</button>`).join(''); setText('profMedTxt', med ? `// ${med.toUpperCase()}` : '// NO MEDICATION SET'); }
+export function updatePills() { const med = normalizeMedicationId(selectState.cpShotMed?.val); const dose = Number(getProfile().dose); const container = $('dosePills'); if (!container) return; const values = dose ? [dose] : [0.5, 1, 2.5, 5, 7.5, 10]; container.innerHTML = values.map(value => `<button type="button" class="dose-pill" data-dose="${value}">${value} mg</button>`).join(''); setText('profMedTxt', med ? `// ${medicationLabel(med).toUpperCase()}` : '// NO MEDICATION SET'); }
 export function selPill(button, dose) { if ($('sDose')) $('sDose').value = dose; qa('.dose-pill').forEach(item => item.classList.toggle('active', item === button)); }
 
 export function initModules() {
@@ -898,4 +967,3 @@ export function initModules() {
   setTodayDefaults();
   renderScanner();
 }
-

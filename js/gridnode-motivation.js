@@ -153,7 +153,7 @@
     const name = tx(`level.name${level.level}`, ['OPERATOR', 'ANALYST', 'ARCHITECT', 'OVERSEER'][level.level]);
     const pct = Math.round(level.progress * 100);
     return `<div class="gn-level-card" role="group" aria-label="${safe(tx('level.title', 'OPERATOR LEVEL'))}">
-      <div class="gn-level-head"><span class="gn-level-kicker" data-i18n="level.title">OPERATOR LEVEL</span><b>${safe(name)}</b></div>
+      <div class="gn-level-head"><span class="gn-level-kicker" data-i18n="level.title">${safe(tx('level.title', 'OPERATOR LEVEL'))}</span><b>${safe(name)}</b></div>
       <div class="gn-level-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="${safe(name)} XP"><i style="width:${pct}%"></i></div>
       <div class="gn-level-xp">${level.xp} ${safe(tx('level.xp', 'XP'))}${level.next ? ` · ${level.next - level.xp} ${safe(tx('level.xp', 'XP'))} →` : ' · MAX'}</div>
     </div>`;
@@ -174,7 +174,7 @@
     const strip = document.createElement('section');
     strip.id = 'gnMotivationStrip';
     strip.className = 'gn-motivation-strip';
-    strip.innerHTML = `<div class="gn-arc-card"><div class="gn-foundation-kicker" data-i18n="progress.arcTitle">GOAL VECTOR</div><div data-gn-arc></div><div data-gn-arc-readouts></div></div><div data-gn-level></div>`;
+    strip.innerHTML = `<div class="gn-arc-card"><div class="gn-foundation-kicker" data-i18n="progress.arcTitle">${safe(tx('progress.arcTitle', 'GOAL VECTOR'))}</div><div data-gn-arc></div><div data-gn-arc-readouts></div></div><div data-gn-level></div>`;
     anchor.insertAdjacentElement('afterend', strip);
   }
   function ensureBadges() {

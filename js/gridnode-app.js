@@ -41,6 +41,7 @@ function bridge() {
   ];
   names.forEach(name => { window[name] = modules[name]; });
   window.refreshAll = modules.refreshAll;
+  window.GN_NATIVE?.bridgeReady?.();
 }
 
 function injectStableStyles() {
@@ -134,7 +135,13 @@ function updateAuthMode() {
   if (toggle) toggle.textContent = authMode === 'signin' ? tx('auth.createAccount', 'CREATE ACCOUNT') : tx('auth.backToSignIn', 'BACK TO SIGN IN');
 }
 function toggleAuthMode() { if (authMode === 'recovery') { passwordRecoveryActive = false; authMode = 'signin'; authShell(); return; } authMode = authMode === 'signin' ? 'signup' : 'signin'; updateAuthMode(); setAuthMessage('', false); }
-function setAuthMessage(message, error = false) { const element = $('loginMsg'); if (element) { element.textContent = message; element.style.color = error ? '#ff5577' : '#8295a0'; } }
+function setAuthMessage(message, error = false) {
+  const element = $('loginMsg');
+  if (!element) return;
+  element.textContent = message;
+  element.dataset.tone = error ? 'error' : 'status';
+  element.style.removeProperty('color');
+}
 
 function loadGoogleIdentityLibrary() {
   if (window.google?.accounts?.id) return Promise.resolve(window.google);
@@ -397,8 +404,9 @@ function wireGlobalEvents() {
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
+  if (window.GN_SW?.register) { window.GN_SW.register(); return; }
   navigator.serviceWorker
-    .register('/sw.js?v=20260802.20', { updateViaCache: 'none' })
+    .register('/sw.js?v=20260804.1', { updateViaCache: 'none' })
     .then(registration => registration.update())
     .catch(() => {});
 }
@@ -432,4 +440,3 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Load the cloud library in the background so the local-first boot is immediate.
   loadCloudLibrary().catch(() => null);
 });
-

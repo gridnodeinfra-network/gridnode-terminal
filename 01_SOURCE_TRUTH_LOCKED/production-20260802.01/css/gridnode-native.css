@@ -63,6 +63,164 @@ html.gn-keyboard-open #signOutOverlay {
     transform: none;
   }
 }
+
+/* ── DAY OPS semantic type system ─────────────────────────────────────
+   This is the final cascade layer for functional copy. Legacy component
+   CSS contains many NIGHT GRID literals; mapping roles here prevents those
+   literals from washing out in the light theme without changing dark mode. */
+html[data-theme="light"] {
+  color-scheme: light;
+  --text: var(--text-primary);
+  --text-mid: var(--text-secondary);
+  --text-dim: var(--text-muted);
+  --muted: var(--text-muted);
+  --cyan: var(--text-accent);
+  --green: var(--text-success);
+  --yellow: var(--text-warning);
+  --orange: var(--text-warning);
+  --red: var(--text-error);
+}
+
+html[data-theme="light"] :is(#login, #app, .overlay, .gn-delete-overlay, .gn-lab-tool-overlay, .gn-whatsnew-overlay, .gn-onb-overlay) {
+  color: var(--text-primary);
+}
+
+html[data-theme="light"] :is(
+  .page-title, .card-title, .modal-title, .gn-auth-title,
+  .gn-foundation-head h2, .gn-lab-tool-head h2, .gn-profile-row b,
+  .gn-whatsnew-title, .gn-whatsnew-version, .gn-onb-title,
+  .gn-empty-state b, .results-title, .phase-name, .syr-result-big
+) { color: var(--text-primary) !important; opacity: 1 !important; font-weight: 700 !important; }
+
+html[data-theme="light"] :is(
+  .card p, .card-copy, .landing-copy, .gn-auth-copy, .gn-ledger-copy,
+  .gn-profile-row small, .gn-empty-state span, .gn-onb-copy,
+  .gn-whatsnew-body, .gn-whatsnew-body li, .mixing-text,
+  .phase-transparency-block p, .phase-transparency-block li,
+  .log-notes, .pib-text, .results-direction, .syr-math-helper,
+  .gn-syr-formula, .gn-syr-helper p, .gn-syr-caution
+) { color: var(--text-secondary) !important; opacity: 1 !important; font-weight: 500 !important; }
+
+html[data-theme="light"] :is(
+  .page-sub, .form-helper, .gn-shot-date-helper, .gn-auth-note,
+  .gn-research-context, .gn-cloud-status, .gn-date-dow,
+  .gn-calendar-detail, .gn-wanda-copy, .gn-dashboard-support,
+  .empty-state, .phase-sphere-status, .gn-syr-meta, .syr-result-sub,
+  .syr-scale-lbl, .gn-syr-forensic
+) { color: var(--text-helper) !important; opacity: 1 !important; font-weight: 500 !important; }
+
+html[data-theme="light"] :is(
+  .form-label, .gn-form-grid label > span, .gn-record-form label > span,
+  .gn-profile-section-label, .sec-title, .gn-stable-zone-title,
+  .gn-foundation-kicker, .gn-whatsnew-kicker, .gn-wn-cat-tag,
+  .gn-auth-kicker, .gn-auth-primary-label, .gn-dashboard-mission-kicker
+) { color: var(--text-label) !important; opacity: 1 !important; font-weight: 700 !important; }
+
+html[data-theme="light"] :is(
+  .page-title .a, .sec-title .a, .gn-accent-c, .gn-profile-chevron,
+  .gn-utility-chevron, .gn-lab-back, .tab.active, .seg-tab.active,
+  .time-tab.active, .scanner-mode-btn.active, .gn-record-state
+) { color: var(--text-accent) !important; opacity: 1 !important; }
+
+html[data-theme="light"] :is(
+  input, textarea, select, .form-input, .form-textarea,
+  .cp-select-trigger, .gn-select-trigger, .cp-option, .gn-select-option
+) {
+  color: var(--text-primary) !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  opacity: 1 !important;
+  font-weight: 500 !important;
+}
+html[data-theme="light"] :is(input, textarea, .form-input, .form-textarea)::placeholder {
+  color: var(--text-placeholder) !important;
+  -webkit-text-fill-color: var(--text-placeholder) !important;
+  opacity: 1 !important;
+}
+html[data-theme="light"] :is(.cp-dropdown, .gn-select-menu, select) {
+  color: var(--text-primary) !important;
+  background: #fffdf8 !important;
+  border-color: rgba(32, 61, 71, .34) !important;
+}
+html[data-theme="light"] :is(.cp-option, .gn-select-option, option) {
+  color: var(--text-primary) !important;
+  background: #fffdf8 !important;
+  border-bottom-color: rgba(32, 61, 71, .16) !important;
+}
+html[data-theme="light"] :is(.cp-option, .gn-select-option):is(:hover, :focus-visible, .selected, [aria-selected="true"]) {
+  color: #003f4d !important;
+  background: #dceff1 !important;
+}
+html[data-theme="light"] .cp-group-label { color: var(--text-label) !important; background: #e8eff0 !important; opacity: 1 !important; }
+
+html[data-theme="light"] :is(button, .btn, .btn-full, .nav-item, .tab, .seg-tab, .time-tab, .scanner-mode-btn) {
+  opacity: 1;
+}
+html[data-theme="light"] :is(button, input, textarea, select, [role="button"]):disabled,
+html[data-theme="light"] :is(button, input, textarea, select, [role="button"])[aria-disabled="true"] {
+  color: var(--text-disabled) !important;
+  -webkit-text-fill-color: var(--text-disabled) !important;
+  opacity: 1 !important;
+  background-image: none !important;
+}
+html[data-theme="light"] :is(.nav-item:not(.active) .nav-lbl, .nav-item:not(.active) .nav-ico) {
+  color: var(--text-muted) !important;
+  opacity: 1 !important;
+}
+html[data-theme="light"] :is(.nav-item.active .nav-lbl, .nav-item.active .nav-ico) { color: var(--text-accent) !important; }
+html[data-theme="light"] :is(.mixing-warn, .warning, .warn, .gn-syr-safety, .syr-safety-boundary) { color: var(--text-warning) !important; opacity: 1 !important; }
+html[data-theme="light"] :is(.error, .err, .vault-date-error, .gn-delete-note, .gn-profile-danger-row b) { color: var(--text-error) !important; opacity: 1 !important; }
+html[data-theme="light"] :is(.success, .ok, .gn-cloud-dot.cloud + span) { color: var(--text-success) !important; opacity: 1 !important; }
+
+/* Functional microcopy has a 12px floor. Decorative telemetry may remain
+   smaller only when it carries no instruction, state, or required meaning. */
+html[data-theme="light"] :is(
+  .page-sub, .form-label, .form-helper, .gn-shot-date-helper,
+  .gn-auth-copy, .gn-auth-message, .gn-auth-note, .gn-auth-privacy,
+  .nav-lbl, .cp-group-label, .cp-option, .gn-select-option,
+  .gn-profile-row small, .gn-profile-section-label, .gn-ledger-copy,
+  .gn-empty-state, .gn-onb-copy, .gn-onb-instruction,
+  .gn-whatsnew-body, .gn-whatsnew-date, .gn-wanda-copy,
+  .mixing-text, .mixing-warn, .phase-transparency-block p,
+  .phase-transparency-block li, .syr-math-helper, .gn-syr-helper p,
+  .gn-syr-formula, .gn-syr-caution, .gn-syr-safety
+) {
+  font-size: max(12px, .75rem) !important;
+  line-height: 1.5 !important;
+  letter-spacing: min(.06em, 1px) !important;
+}
+
+/* Inline legacy literals on the visible profile shell are converted back to
+   semantic roles here; this also protects lazily-rendered copies. */
+html[data-theme="light"] #pageProfile [style*="color:#eeeef5"],
+html[data-theme="light"] #pageProfile [style*="color: #eeeef5"] { color: var(--text-primary) !important; }
+html[data-theme="light"] #pageProfile [style*="color:#9898b0"],
+html[data-theme="light"] #pageProfile [style*="color: #9898b0"],
+html[data-theme="light"] #pageProfile [style*="color:var(--text-dim)"] { color: var(--text-secondary) !important; }
+html[data-theme="light"] #pageProfile [style*="color:#00d4ff"] { color: var(--text-accent) !important; }
+
+/* Mobile application viewport: one stable shell, one internal scroll area. */
+html, body { width: 100%; min-height: 100%; }
+body.gn-private-active { overflow: hidden; overscroll-behavior: none; }
+#app.active { height: var(--gn-viewport-height, 100dvh); min-height: var(--gn-viewport-height, 100dvh); overflow: hidden; }
+#app .scroll-body, #app #scrollBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+}
+.bottom-nav { padding-bottom: env(safe-area-inset-bottom, 0px) !important; }
+:is(button, [role="button"], .nav-item, summary, label) { -webkit-tap-highlight-color: rgba(0, 212, 255, .13); touch-action: manipulation; }
+:is(button, [role="button"], .nav-item, summary) { -webkit-user-select: none; user-select: none; }
+:is(input, textarea, [contenteditable="true"]) { -webkit-user-select: text; user-select: text; }
+html.gn-keyboard-open .bottom-nav, html.gn-keyboard-open .fab { visibility: hidden; pointer-events: none; }
+
+@media (max-width: 600px) {
+  :is(button, [role="button"], input, select, textarea, summary, .cp-option, .gn-select-option) { min-height: 44px; }
+  #app .page { max-width: 100%; overflow-x: hidden; }
+  .overlay .modal, .gn-delete-panel, .gn-whatsnew-card { max-height: calc(var(--gn-viewport-height, 100dvh) - env(safe-area-inset-top, 0px) - 12px); }
+}
 /* Visible focus in BOTH themes (dark default cyan, daylight deep teal). */
 :focus-visible {
   outline: 2px solid var(--gn-focus-ring, rgba(0, 212, 255, 0.85));
@@ -346,9 +504,9 @@ html[data-theme="light"] .gn-wn-cat[data-cat="accessibility"] .gn-wn-cat-tag { b
   --card-pad: 16px;
   --card-gap: 14px;
   --radius-card: 12px;
-  --text-label: .72rem;
+  --type-label: .72rem;
   --text-body: .88rem;
-  --text-helper: .76rem;
+  --type-helper: .76rem;
 }
 html[data-theme="light"] {
   --ctl-bg: #ffffff;
@@ -358,7 +516,7 @@ html[data-theme="light"] {
 /* ── 1. Research Peptides: hierarchy, spacing, 44px targets ── */
 #pageLab .gn-research-notice,
 #pageLab .gn-research-disclaimer {
-  font-size: var(--text-helper) !important;
+  font-size: var(--type-helper) !important;
   line-height: 1.6 !important;
   color: var(--text-mid, #b7c7d3) !important;
   background: var(--panel2, #121218) !important;
@@ -380,12 +538,12 @@ html[data-theme="light"] {
 }
 #pageLab .gn-research-group > span {
   display: block; margin-bottom: 4px;
-  font: 800 var(--text-label) var(--font-d, monospace) !important;
+  font: 800 var(--type-label) var(--font-d, monospace) !important;
   letter-spacing: 1.6px !important; color: var(--cyan, #00d4ff) !important;
 }
 #pageLab .gn-research-context {
   display: block; margin-bottom: 10px;
-  font: 500 var(--text-helper)/1.5 var(--font-b, system-ui) !important;
+  font: 500 var(--type-helper)/1.5 var(--font-b, system-ui) !important;
   color: var(--text-mid, #b7c7d3) !important;
 }
 #pageLab .gn-research-group > div {
@@ -431,12 +589,12 @@ html[data-theme="light"] #pageLab .gn-research-notice strong { color: #3a2f15 !i
   font-size: .76rem !important; line-height: 1.6 !important;
   color: var(--text-mid, #b7c7d3) !important;
 }
-#labSeg-draw .form-label, #labSeg-recon .form-label, #labSeg-supply .form-label { font-size: var(--text-label) !important; }
+#labSeg-draw .form-label, #labSeg-recon .form-label, #labSeg-supply .form-label { font-size: var(--type-label) !important; }
 html[data-theme="light"] .gn-syr-result { background: var(--surface-elevated, #ffffff) !important; border-color: rgba(20,60,70,.22) !important; }
 html[data-theme="light"] .gn-syr-result .v { color: var(--text-primary, #1c2b31) !important; }
 
 /* ── 3. Dose Projection form hierarchy ── */
-#gnDoseProjection .form-label { font-size: var(--text-label) !important; }
+#gnDoseProjection .form-label { font-size: var(--type-label) !important; }
 #gnDoseProjection input, #gnDoseProjection select {
   min-height: var(--ctl-h) !important;
   border-radius: 8px !important;
@@ -958,16 +1116,16 @@ html[data-theme="light"] .gn-lab-breadcrumb { color: #4d6b75 !important; }
    ============================================================ */
 :root {
   --text-dim: #6f6f88;            /* dark-theme dim floor */
-  --text-helper: .78rem;
-  --text-label: .75rem;
+  --type-helper: .78rem;
+  --type-label: .75rem;
 }
 html[data-theme="light"] {
   --text-primary: #1a2328;
   --text-secondary: #33454c;
   --text-muted: #3f535a;
   --text-dim: #3f535a;            /* was near-invisible gray */
-  --text-helper: .78rem;
-  --text-label: .75rem;
+  --type-helper: .78rem;
+  --type-label: .75rem;
 }
 
 /* Microtext floor: .52–.59rem monospace labels -> .68rem, weight 600+ */
@@ -1073,6 +1231,55 @@ html[data-theme="light"] #boot { background: #0b0f16 !important; }
     min-height: 46px !important;
   }
   .gn-tab, .scanner-mode-btn { min-height: 44px !important; font-size: .76rem !important; }
+}
+
+/* Served readability inventory closure. These are the remaining functional
+   roles found by the rendered DAY OPS audit; all inherit the semantic colors
+   above and keep a phone-readable floor without altering NIGHT GRID. */
+html[data-theme="light"] :is(#landing,#login,#app,.overlay,.gn-lab-tool-overlay,.gn-whatsnew-overlay) :is(button,label,summary,input,textarea,select,option,small,p,li,th,td) {
+  font-size: max(12px,.75rem) !important;
+  font-weight: max(400,var(--gn-role-weight,400)) !important;
+  opacity: 1 !important;
+}
+html[data-theme="light"] :is(
+  .landing-language-control span,.landing-kicker,.landing-note strong,.landing-note>span,
+  .landing-local-link,.landing-preview-tag,.landing-preview-caption,.landing-footer-label,
+  .gn-auth-kicker,.gn-auth-primary-label,.gn-auth-message,.gn-auth-note,
+  .gn-topbar-language-control button,#nodeHeaderPhase,
+  .gn-dashboard-mission-kicker,.gn-wanda-label,.gn-wanda-note,.gn-instrument-code,
+  .gn-data-quality,.gn-chart-state,.gn-target-empty,.gn-telemetry-summary,.gn-arc-empty,.gn-level-kicker,
+  .scanner-source-tag,#scannerModeLabel,.scanner-status-helper,.shots-safety-note,
+  .shot-history-toggle,#shotHistoryHelper,.gn-log-step,.gn-shot-time-helper,.gn-shot-date-helper,
+  .gn-foundation-kicker,.gn-foundation-signal,.gn-lab-breadcrumb,.gn-dose-copy,
+  .results-metric-label,.empty-subline,.s6-label,.phase-readout-label,.phase-readout-copy,
+  .gn-measurements-copy,.gn-preferences-status,.gn-record-state,.gn-data-quality,
+  .cal-day-head,#calTitle,.gn-custom-picker-trigger,.gn-custom-date-trigger,
+  .gn-stable-zone-title,.gn-stable-zone-btn,.gn-research-context,.gn-research-disclaimer,
+  .gn-dose-output,.gn-profile-section-label,#gnProfileSync,#profEmail
+) {
+  font-size: max(12px,.75rem) !important;
+  line-height: 1.45 !important;
+  letter-spacing: min(.055em,1px) !important;
+  font-weight: 500 !important;
+  opacity: 1 !important;
+}
+html[data-theme="light"] :is(.gn-foundation-kicker,.gn-foundation-signal,.gn-log-step,.scanner-source-tag,.phase-readout-label,.gn-wanda-label,.results-metric-label,.cal-day-head,.gn-profile-section-label) { font-weight: 700 !important; }
+html[data-theme="light"] :is(.gn-custom-picker-trigger,.gn-custom-date-trigger,.se-check,#cpShotMedVal,#modalSelectedLocation,#gnDoseOutput,#profNameTxt,#profEmail,#gnProfileSync,#cpMedProfVal,#cpShotDayProfVal,#cpSexProfVal) { color: var(--text-primary) !important; opacity: 1 !important; }
+html[data-theme="light"] :is(.gn-measurements-copy,.scanner-status-helper,.shots-safety-note,#shotHistoryHelper,.gn-dose-copy,.empty-subline,.phase-readout-copy,.gn-wanda-note) { color: var(--text-secondary) !important; }
+html[data-theme="light"] :is(.gn-foundation-signal,.gn-lab-breadcrumb,.scanner-source-tag,#scannerModeLabel,.gn-log-step,.results-metric-label,.cal-day-head,#calTitle) { color: var(--text-label) !important; }
+html[data-theme="light"] :is(.gn-topbar-language-control button,.landing-language-control button) { color: var(--text-muted) !important; }
+html[data-theme="light"] :is(.gn-topbar-language-control button.active,.landing-language-control button.active) { color: var(--text-accent) !important; }
+
+/* Inactive dashboard instruments stay secondary through surface/filter cues,
+   while their words remain readable. */
+html[data-theme="light"] #pageDash[data-activation="pending"] > :not(.page-hdr):not(#gnWandaDashboard),
+html[data-theme="light"] #pageDash[data-activation="pending"] #gnWandaDashboard > :not(#gnFirstShotMission) {
+  opacity: .76 !important;
+  filter: saturate(.35) contrast(.96) !important;
+}
+
+@media (max-width: 430px) {
+  html[data-theme="light"] :is(.gn-topbar-language-control button,.landing-language-control button) { min-width: 42px !important; }
 }
 
 /* ============================================================
@@ -1241,4 +1448,1209 @@ html[data-theme="light"] .gn-lab-tool-head { background: var(--surface-elevated,
   min-height: 44px !important;
   padding: 10px 12px !important;
   font-size: .64rem !important;
+}
+
+/* ============================================================
+   PREMIUM SYSTEM PASS — 2026-08-03
+   One hierarchy, one readable control language, both lighting modes.
+   ============================================================ */
+:root {
+  --gn-control-height: 46px;
+  --gn-radius-sm: 8px;
+  --gn-radius-md: 12px;
+  --gn-space-1: 6px;
+  --gn-space-2: 10px;
+  --gn-space-3: 14px;
+  --gn-space-4: 18px;
+  --gn-motion-fast: 140ms;
+  --gn-motion-base: 220ms;
+}
+
+/* Four-stage coach marks: preserve context while keeping the target obvious. */
+.gn-onb-dim { background: rgba(3, 6, 10, .42) !important; }
+html[data-theme="light"] .gn-onb-dim { background: rgba(24, 31, 35, .36) !important; }
+.gn-onb-target {
+  outline: 2px solid #00d4ff !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 5px rgba(0, 212, 255, .16), 0 0 28px rgba(0, 212, 255, .72) !important;
+  filter: brightness(1.16) saturate(1.08);
+}
+#app .bottom-nav .nav-item.gn-onb-target {
+  outline: 2px solid #00e6f0 !important;
+  outline-offset: -2px !important;
+  box-shadow: 0 0 0 3px rgba(0, 230, 240, .3), 0 0 30px rgba(0, 230, 240, .9) !important;
+  background: rgba(0, 230, 240, .16) !important;
+  filter: brightness(1.24) saturate(1.12) drop-shadow(0 0 12px rgba(0, 230, 240, .92)) !important;
+}
+.gn-onb-actions .gn-onb-skip { flex: 0 0 auto; opacity: .78; }
+.gn-onb-actions .gn-onb-back { flex: 0 0 auto; }
+
+/* First-run dashboard: one mission dominates until the first valid SHOT. */
+.gn-dashboard-mission[hidden] { display: none !important; }
+.gn-dashboard-mission {
+  display: grid;
+  justify-items: start;
+  gap: 9px;
+  margin: 2px 0 16px;
+  padding: 20px 18px;
+  border: 1px solid rgba(0, 212, 255, .46);
+  border-top: 3px solid #00d4ff;
+  border-radius: var(--gn-radius-md);
+  background: linear-gradient(145deg, rgba(0, 212, 255, .12), rgba(6, 12, 19, .96) 62%);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, .28), inset 0 1px rgba(255, 255, 255, .04);
+}
+.gn-dashboard-mission-kicker {
+  color: #83eaf5;
+  font: 700 .68rem/1.2 var(--font-m, monospace);
+  letter-spacing: .08em;
+}
+.gn-dashboard-mission h2 {
+  max-width: 23ch;
+  margin: 0;
+  color: #f3fbff;
+  font: 900 clamp(1.08rem, 4.7vw, 1.4rem)/1.18 var(--font-d, monospace);
+  letter-spacing: .025em;
+}
+.gn-dashboard-mission p {
+  max-width: 42ch;
+  margin: 0;
+  color: #b9cbd2;
+  font: 600 .86rem/1.5 var(--font-b, system-ui);
+}
+.gn-dashboard-mission button {
+  width: 100%;
+  min-height: 50px;
+  margin-top: 4px;
+  border: 1px solid #ff4d68;
+  border-radius: var(--gn-radius-sm);
+  background: linear-gradient(135deg, #ff3d5d, #a80f31);
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(255, 45, 85, .26);
+  font: 800 .76rem var(--font-d, monospace);
+  letter-spacing: .08em;
+  cursor: pointer;
+}
+#pageDash[data-activation="pending"] > :not(.page-hdr):not(#gnWandaDashboard) {
+  opacity: .5;
+  filter: saturate(.45);
+  transition: opacity var(--gn-motion-base) ease, filter var(--gn-motion-base) ease;
+}
+#pageDash[data-activation="pending"] #gnWandaDashboard > :not(#gnFirstShotMission) {
+  opacity: .48;
+  filter: saturate(.45);
+  transition: opacity var(--gn-motion-base) ease, filter var(--gn-motion-base) ease;
+}
+#pageDash[data-activation="active"] > *,
+#pageDash[data-activation="active"] #gnWandaDashboard > * {
+  opacity: 1;
+  filter: none;
+}
+html[data-theme="light"] .gn-dashboard-mission {
+  border-color: rgba(0, 111, 130, .48);
+  border-top-color: #006f82;
+  background: linear-gradient(145deg, rgba(0, 111, 130, .12), #f8f5ed 66%);
+  box-shadow: 0 16px 36px rgba(55, 48, 40, .14), inset 0 1px #fff;
+}
+html[data-theme="light"] .gn-dashboard-mission-kicker { color: #006f82; }
+html[data-theme="light"] .gn-dashboard-mission h2 { color: #18272d; }
+html[data-theme="light"] .gn-dashboard-mission p { color: #33484f; }
+
+/* Functional copy: decorative telemetry may stay small; controls and guidance may not. */
+.form-label,
+.cp-group-label,
+.cp-group-minimized,
+.cp-option,
+.gn-custom-picker-option,
+.gn-custom-date-day,
+.gn-shot-date-helper,
+.gn-shot-time-helper,
+.results-card-sub,
+.phase-readout-label,
+.gn-foundation-tile small,
+.gn-record-row small,
+.gn-ledger-copy,
+.gn-research-disclaimer,
+.gn-research-context {
+  font-size: max(.72rem, 12px) !important;
+  line-height: 1.45 !important;
+  letter-spacing: .035em !important;
+}
+.cp-option,
+.gn-custom-picker-option { min-height: var(--gn-control-height) !important; padding: 11px 12px !important; }
+.form-input,
+.gn-record-form input,
+.gn-record-form select,
+.gn-record-form textarea { min-height: var(--gn-control-height); }
+
+/* Shared menu family: selected, hover and keyboard focus are explicit. */
+.cp-option,
+.gn-custom-picker-option,
+.gn-custom-date-day {
+  border-bottom: 1px solid rgba(255, 255, 255, .08) !important;
+}
+.cp-option:hover,
+.cp-option.selected,
+.cp-option[aria-selected="true"],
+.gn-custom-picker-option:hover,
+.gn-custom-picker-option:focus-visible,
+.gn-custom-picker-option[aria-selected="true"] {
+  background: rgba(0, 212, 255, .12) !important;
+  color: #eafbff !important;
+}
+html[data-theme="light"] .cp-dropdown,
+html[data-theme="light"] .gn-custom-picker-menu,
+html[data-theme="light"] .gn-custom-date-popover,
+html[data-theme="light"] .gn-record-form select {
+  color-scheme: light !important;
+  background: #fff !important;
+  color: #17272e !important;
+  border-color: rgba(30, 64, 73, .32) !important;
+  box-shadow: 0 18px 42px rgba(42, 48, 50, .2) !important;
+}
+html[data-theme="light"] .cp-option,
+html[data-theme="light"] .gn-custom-picker-option,
+html[data-theme="light"] .gn-custom-date-day,
+html[data-theme="light"] select option {
+  background: #fff !important;
+  color: #17272e !important;
+  border-bottom-color: rgba(30, 64, 73, .14) !important;
+}
+html[data-theme="light"] .cp-group-label,
+html[data-theme="light"] .cp-group-minimized,
+html[data-theme="light"] .gn-custom-date-head strong {
+  background: #eef4f4 !important;
+  color: #24464f !important;
+}
+html[data-theme="light"] .cp-option:hover,
+html[data-theme="light"] .cp-option.selected,
+html[data-theme="light"] .cp-option[aria-selected="true"],
+html[data-theme="light"] .gn-custom-picker-option:hover,
+html[data-theme="light"] .gn-custom-picker-option:focus-visible,
+html[data-theme="light"] .gn-custom-picker-option[aria-selected="true"] {
+  background: #dceff1 !important;
+  color: #003f4d !important;
+}
+
+/* DAY OPS is a complete light system, including focused LAB destinations. */
+/* Focused tools are true destinations, not translucent sheets over LAB. */
+.gn-lab-tool-overlay {
+  z-index: 2147483001 !important;
+  background: #02070b !important;
+  isolation: isolate;
+}
+html[data-theme="light"] .gn-lab-tool-overlay { background: #ebe8df !important; }
+html[data-theme="light"] #gnLabToolOverlay { background: #ebe8df !important; }
+.gn-lab-tool-shell { background: #080b10 !important; }
+html[data-theme="light"] .gn-lab-tool-shell,
+html[data-theme="light"] #gnLabToolHost,
+html[data-theme="light"] #gnLabToolHost .gn-foundation-section,
+html[data-theme="light"] #gnLabToolHost .card,
+html[data-theme="light"] #gnLabToolHost .gn-research-group,
+html[data-theme="light"] #gnLabToolHost .gn-record-row {
+  background: #f8f5ed !important;
+  color: #1b2a30 !important;
+  border-color: rgba(30, 64, 73, .24) !important;
+}
+body.gn-lab-tool-open .topbar,
+body.gn-lab-tool-open .bottom-nav,
+body.gn-lab-tool-open .fab,
+body.gn-fab-hidden-context .fab { visibility: hidden !important; pointer-events: none !important; }
+html[data-theme="light"] #gnLabToolHost :is(h2, h3, b, label, summary span, .gn-record-state) { color: #1b2a30 !important; }
+html[data-theme="light"] #gnLabToolHost :is(p, small, em, .gn-ledger-copy, .gn-research-context, .gn-research-disclaimer) { color: #344a52 !important; }
+.gn-lab-tool-overlay.active .gn-lab-tool-shell { animation: gn-tool-arrive var(--gn-motion-base) cubic-bezier(.2,.75,.25,1) both; }
+@keyframes gn-tool-arrive { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* The SHOT picker has a high-specificity HUD layout in the shell. DAY OPS
+   keeps that placement but supplies a complete light modal/menu treatment. */
+html[data-theme="light"] #logOv .modal,
+html[data-theme="light"] #logOv .modal-hdr {
+  background: #f8f5ed !important;
+  color: #17272e !important;
+  border-color: rgba(30, 64, 73, .2) !important;
+  box-shadow: 0 12px 28px rgba(42, 48, 50, .14) !important;
+}
+html[data-theme="light"] #logOv #cpShotMedDrop.cp-dropdown {
+  color-scheme: light !important;
+  background: #fff !important;
+  border-color: rgba(0, 111, 130, .45) !important;
+  box-shadow: 0 24px 64px rgba(42, 48, 50, .28) !important;
+}
+html[data-theme="light"] #logOv #cpShotMedDrop .cp-group-label {
+  color: #15505d !important;
+  background: #e8f1f1 !important;
+  border-bottom-color: rgba(30, 64, 73, .18) !important;
+}
+html[data-theme="light"] #logOv #cpShotMedDrop .cp-group-minimized-label {
+  color: #103942 !important;
+  font-size: max(.72rem, 12px) !important;
+  font-weight: 700 !important;
+  letter-spacing: .12em !important;
+}
+html[data-theme="light"] #logOv #cpShotMedDrop .cp-group-minimized-count {
+  color: #003f4d !important;
+  background: #dceff1 !important;
+  font-size: .65rem !important;
+  font-weight: 700 !important;
+}
+html[data-theme="light"] #logOv #cpShotMedDrop .cp-option {
+  color: #17272e !important;
+  background: #fff !important;
+  border-bottom-color: rgba(30, 64, 73, .14) !important;
+}
+html[data-theme="light"] #logOv #cpShotMedDrop .cp-option:is(:hover, :focus-visible, .selected, [aria-selected="true"]) {
+  color: #003f4d !important;
+  background: #dceff1 !important;
+}
+html[data-theme="light"] body.gn-log-shot-picker-open #logOv::before { background: rgba(31, 43, 47, .28) !important; }
+
+/* Landing correction: the product is the hero. The decorative phase-ring was
+   competing with the real interface and made the first viewport feel like a
+   low-resolution concept render. Keep the approved GRID//NODE typography and
+   controls, but give the actual dashboard the visual authority. */
+#landing .landing-phase-visual,
+#landing .landing-node-mark { display: none !important; }
+
+#landing {
+  color-scheme: dark !important;
+  --bg: #050508;
+  --bg2: #080b10;
+  --panel: #0a1016;
+  --panel2: #0d151d;
+  --surface: #080d13;
+  --surface-elevated: #0d151d;
+  --text: #f1f4f7;
+  --text-primary: #f1f4f7;
+  --text-mid: #b6cbd3;
+  --text-secondary: #b6cbd3;
+  --text-dim: #78909a;
+  --border: rgba(0, 212, 255, .17);
+}
+html[data-theme="light"] #landing {
+  color-scheme: light !important;
+  --text: #17272e;
+  --text-primary: #17272e;
+  --text-mid: #38515a;
+  --text-secondary: #38515a;
+  --text-dim: #60777f;
+  --border: rgba(0, 111, 130, .22);
+  background-color: #f4f1e9 !important;
+  background-image:
+    linear-gradient(rgba(16, 64, 75, .035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16, 64, 75, .035) 1px, transparent 1px),
+    radial-gradient(circle at 78% 24%, rgba(0, 125, 145, .08), transparent 29%),
+    linear-gradient(145deg, #f7f4ed, #ede9df) !important;
+  background-size: 44px 44px, 44px 44px, auto, auto !important;
+  background-attachment: scroll !important;
+}
+html[data-theme="light"] #landing::before {
+  background: linear-gradient(115deg, transparent 0 72%, rgba(0, 111, 130, .045) 72.2% 72.5%, transparent 72.7%) !important;
+}
+html[data-theme="light"] #landing .landing-hero { background: transparent !important; }
+html[data-theme="light"] #landing .landing-logo { filter: none !important; }
+html[data-theme="light"] #landing .landing-kicker { color: #006f82 !important; }
+html[data-theme="light"] #landing .landing-headline { color: #17272e !important; text-shadow: none !important; }
+html[data-theme="light"] #landing .landing-copy,
+html[data-theme="light"] #landing .landing-copy span { color: #38515a !important; }
+html[data-theme="light"] #landing .landing-trust { color: #38515a !important; }
+html[data-theme="light"] #landing .landing-trust strong { color: #17272e !important; }
+html[data-theme="light"] #landing .landing-preview-caption { color: #49616a !important; }
+html[data-theme="light"] #landing .landing-btn.primary {
+  background: linear-gradient(135deg, #f32f55, #bd0f35) !important;
+  color: #fff !important;
+  box-shadow: 0 12px 28px rgba(143, 15, 40, .22) !important;
+}
+html[data-theme="light"] #landing .landing-btn.secondary {
+  border-color: rgba(0, 111, 130, .42) !important;
+  color: #005f73 !important;
+  background: rgba(255, 255, 255, .56) !important;
+}
+#landing .landing-shell { width: min(1180px, 100%) !important; }
+#landing .landing-hero {
+  width: 100% !important;
+  max-width: none !important;
+  min-height: calc(100vh - 44px - var(--safe-top)) !important;
+  margin: 0 !important;
+  padding: clamp(78px, 9vh, 112px) 0 clamp(54px, 7vh, 84px) !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 520px) minmax(440px, 1fr) !important;
+  grid-template-rows: repeat(6, auto) !important;
+  align-content: center !important;
+  align-items: start !important;
+  column-gap: clamp(44px, 5vw, 78px) !important;
+  row-gap: 17px !important;
+}
+#landing .landing-logo,
+#landing .landing-kicker,
+#landing .landing-headline,
+#landing .landing-copy,
+#landing .landing-cta-row,
+#landing .landing-trust { grid-column: 1 !important; }
+#landing .landing-logo { grid-row: 1; width: min(330px, 82%) !important; margin-bottom: 20px; }
+#landing .landing-kicker { grid-row: 2; }
+#landing .landing-headline {
+  grid-row: 3;
+  max-width: 9.5ch !important;
+  font-size: clamp(3.35rem, 5vw, 4.65rem) !important;
+  line-height: .98 !important;
+}
+#landing .landing-copy { grid-row: 4; max-width: 43ch !important; }
+#landing .landing-cta-row { grid-row: 5; width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+#landing .landing-trust { grid-row: 6; }
+
+#landing .landing-product-preview {
+  grid-column: 2 !important;
+  grid-row: 1 / span 6 !important;
+  align-self: center !important;
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+  position: relative;
+}
+#landing .landing-product-preview::before {
+  content: "";
+  position: absolute;
+  inset: -22px -18px 28px;
+  z-index: -1;
+  background: radial-gradient(ellipse at 50% 48%, rgba(0, 212, 255, .13), transparent 68%);
+  filter: blur(14px);
+  pointer-events: none;
+}
+#landing .landing-preview-frame {
+  overflow: hidden;
+  border: 1px solid rgba(0, 212, 255, .34);
+  border-top: 2px solid #00d4ff;
+  border-radius: 10px;
+  background: #03070b;
+  box-shadow: 0 34px 84px rgba(0, 0, 0, .62), 0 0 0 1px rgba(255, 255, 255, .025), 0 0 36px rgba(0, 212, 255, .09);
+}
+#landing .landing-preview-bar {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 14px;
+  border-bottom: 1px solid rgba(0, 212, 255, .16);
+  background: linear-gradient(180deg, rgba(12, 22, 29, .98), rgba(4, 9, 14, .98));
+}
+#landing .landing-preview-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #314751;
+}
+#landing .landing-preview-dot:first-child {
+  background: #00d4ff;
+  box-shadow: 0 0 10px rgba(0, 212, 255, .72);
+}
+#landing .landing-preview-tag {
+  margin-left: auto;
+  color: #9fc7d4;
+  font: 700 .55rem var(--font-m);
+  letter-spacing: 1.7px;
+}
+#landing .landing-preview-shot {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  object-position: top center;
+  background: #020509;
+}
+#landing .landing-preview-caption {
+  max-width: 62ch;
+  color: #8fa9b3;
+  font: 500 .66rem/1.55 var(--font-m);
+  letter-spacing: .8px;
+}
+
+@media (max-width: 960px) {
+  #landing .landing-hero {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: repeat(7, auto) !important;
+    max-width: 720px !important;
+    margin: 0 auto !important;
+    row-gap: 18px !important;
+  }
+  #landing .landing-logo,
+  #landing .landing-kicker,
+  #landing .landing-headline,
+  #landing .landing-copy,
+  #landing .landing-cta-row,
+  #landing .landing-trust,
+  #landing .landing-product-preview { grid-column: 1 !important; }
+  #landing .landing-product-preview { grid-row: 7 !important; margin-top: 18px; }
+  #landing .landing-product-preview::before { inset: -14px 0 24px; }
+}
+
+@media (max-width: 480px) {
+  #landing .landing-hero {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 76px) !important;
+    padding-bottom: 42px !important;
+    row-gap: 16px !important;
+  }
+  #landing .landing-logo { width: min(270px, 78%) !important; margin-bottom: 12px; }
+  #landing .landing-headline { font-size: clamp(2.3rem, 11.4vw, 3.05rem) !important; }
+  #landing .landing-cta-row { grid-template-columns: 1fr !important; }
+  #landing .landing-product-preview { margin-top: 12px; }
+  #landing .landing-preview-bar { min-height: 38px; padding: 0 11px; }
+  #landing .landing-preview-shot { aspect-ratio: 16 / 10; }
+  #landing .landing-preview-caption { font-size: .6rem; }
+}
+
+/* Compact header controls retain compact graphics inside full-size targets. */
+#app .app-wordmark-b2b {
+  min-height: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+.gn-language-control button,
+.gn-theme-toggle .gn-theme-opt { min-width: 44px !important; min-height: 44px !important; }
+.gn-language-control,
+.gn-theme-toggle { min-height: 48px !important; }
+.gn-wanda-actions button { min-height: 44px !important; }
+
+/* At the two narrowest phone widths, keep all four segmented choices and the
+   profile target at a true 44px hit area. The live NODE rail directly below
+   retains product identity while the full wordmark yields the scarce row. */
+@media (max-width: 360px) {
+  #app .app-wordmark-b2b { display: none !important; }
+  #app .topbar-actions { width: 100%; justify-content: flex-end; }
+}
+
+/* One focus treatment across navigation, forms, menu options and utilities. */
+:is(button, [role="button"], input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--focus-ring, #00d4ff) !important;
+  outline-offset: 2px !important;
+}
+
+@media (max-width: 430px) {
+  .gn-dashboard-mission { padding: 18px 16px; }
+  .gn-dashboard-mission button { min-height: 52px; }
+  .gn-lab-tool-head { align-items: center !important; }
+  .gn-lab-tool-head .gn-foundation-signal { display: none; }
+  .gn-lab-back { flex: 0 0 auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gn-lab-tool-overlay.active .gn-lab-tool-shell,
+  #pageDash[data-activation] > *,
+  #pageDash[data-activation] #gnWandaDashboard > * { animation: none !important; transition: none !important; }
+}
+
+/* FINAL DAY OPS BINDING — intentionally last. The legacy stylesheet is long
+   and contains later component literals, so every functional role terminates
+   here at the shared semantic palette. */
+html[data-theme="light"] {
+  --text-primary: #15282f;
+  --text-secondary: #304b55;
+  --text-muted: #4b636b;
+  --text-dim: #526970;
+  --text-helper: #395861;
+  --text-label: #203d47;
+  --text-placeholder: #5b7077;
+  --text-disabled: #68777c;
+  --text-accent: #005f73;
+  --text-success: #00643f;
+  --text-warning: #744c00;
+  --text-error: #a51d36;
+  --text-on-dark: #f2fbfd;
+  --text-on-light: #15282f;
+  --text: var(--text-primary);
+  --text-mid: var(--text-secondary);
+  --cyan: var(--text-accent);
+  --green: var(--text-success);
+  --yellow: var(--text-warning);
+  --red: var(--text-error);
+}
+html[data-theme="light"] :is(.page-title,.card-title,.modal-title,.gn-auth-title,.gn-foundation-head h2,.gn-lab-tool-head h2,.gn-profile-row b,.gn-whatsnew-title,.gn-whatsnew-version,.gn-onb-title,.gn-empty-state b,.results-title,.phase-name,.gn-record-row b) {
+  color: var(--text-primary) !important; opacity: 1 !important;
+}
+html[data-theme="light"] :is(.card p,.card-copy,.gn-auth-copy,.gn-ledger-copy,.gn-profile-row small,.gn-empty-state span,.gn-onb-copy,.gn-whatsnew-body,.gn-whatsnew-body li,.mixing-text,.phase-transparency-block p,.phase-transparency-block li,.log-notes,.pib-text,.results-direction,.syr-math-helper,.gn-syr-formula,.gn-syr-helper p,.gn-syr-caution,.gn-record-row small) {
+  color: var(--text-secondary) !important; opacity: 1 !important; font-weight: 500 !important;
+}
+html[data-theme="light"] :is(.page-sub,.form-helper,.gn-shot-date-helper,.gn-auth-note,.gn-research-context,.gn-cloud-status,.gn-date-dow,.gn-calendar-detail,.gn-wanda-copy,.gn-dashboard-support,.phase-sphere-status,.gn-syr-meta,.syr-result-sub,.syr-scale-lbl,.gn-syr-forensic) {
+  color: var(--text-helper) !important; opacity: 1 !important; font-weight: 500 !important;
+}
+html[data-theme="light"] :is(.form-label,.gn-form-grid label>span,.gn-record-form label>span,.gn-profile-section-label,.sec-title,.gn-stable-zone-title,.gn-foundation-kicker,.gn-whatsnew-kicker,.gn-wn-cat-tag,.gn-auth-kicker,.gn-auth-primary-label,.gn-dashboard-mission-kicker) {
+  color: var(--text-label) !important; opacity: 1 !important; font-weight: 700 !important;
+}
+html[data-theme="light"] :is(input,textarea,select,.form-input,.form-textarea,.cp-select-trigger,.gn-select-trigger,.cp-option,.gn-select-option) {
+  color: var(--text-primary) !important; -webkit-text-fill-color: var(--text-primary) !important; opacity: 1 !important; font-weight: 500 !important;
+}
+html[data-theme="light"] :is(input,textarea,.form-input,.form-textarea)::placeholder {
+  color: var(--text-placeholder) !important; -webkit-text-fill-color: var(--text-placeholder) !important; opacity: 1 !important;
+}
+html[data-theme="light"] :is(.cp-dropdown,.gn-select-menu,select,.cp-option,.gn-select-option,option) { color: var(--text-primary) !important; background-color: #fffdf8 !important; }
+html[data-theme="light"] :is(.cp-option,.gn-select-option):is(:hover,:focus-visible,.selected,[aria-selected="true"]) { color: #003f4d !important; background-color: #dceff1 !important; }
+html[data-theme="light"] .cp-group-label { color: var(--text-label) !important; background: #e8eff0 !important; opacity: 1 !important; }
+html[data-theme="light"] :is(button,input,textarea,select,[role="button"]):disabled,
+html[data-theme="light"] :is(button,input,textarea,select,[role="button"])[aria-disabled="true"] { color: var(--text-disabled) !important; -webkit-text-fill-color: var(--text-disabled) !important; opacity: 1 !important; }
+html[data-theme="light"] :is(.nav-item:not(.active) .nav-lbl,.nav-item:not(.active) .nav-ico) { color: var(--text-muted) !important; opacity: 1 !important; }
+html[data-theme="light"] :is(.nav-item.active .nav-lbl,.nav-item.active .nav-ico,.page-title .a,.sec-title .a,.gn-profile-chevron,.gn-utility-chevron,.gn-lab-back,.gn-record-state) { color: var(--text-accent) !important; opacity: 1 !important; }
+html[data-theme="light"] :is(.mixing-warn,.warning,.warn,.gn-syr-safety,.syr-safety-boundary) { color: var(--text-warning) !important; opacity: 1 !important; }
+html[data-theme="light"] :is(.error,.err,.vault-date-error,.gn-delete-note,.gn-profile-danger-row b) { color: var(--text-error) !important; opacity: 1 !important; }
+html[data-theme="light"] :is(.success,.ok) { color: var(--text-success) !important; opacity: 1 !important; }
+html[data-theme="light"] :is(.page-sub,.form-label,.form-helper,.gn-shot-date-helper,.gn-auth-copy,.gn-auth-message,.gn-auth-note,.gn-auth-privacy,.nav-lbl,.cp-group-label,.cp-option,.gn-select-option,.gn-profile-row small,.gn-profile-section-label,.gn-ledger-copy,.gn-empty-state,.gn-onb-copy,.gn-onb-instruction,.gn-whatsnew-body,.gn-whatsnew-date,.gn-wanda-copy,.mixing-text,.mixing-warn,.phase-transparency-block p,.phase-transparency-block li,.syr-math-helper,.gn-syr-helper p,.gn-syr-formula,.gn-syr-caution,.gn-syr-safety) {
+  font-size: max(12px,.75rem) !important; line-height: 1.5 !important; letter-spacing: min(.06em,1px) !important;
+}
+
+/* Runtime connectivity/update state: below the safe area, above app chrome. */
+.gn-runtime-banner {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 8px);
+  left: 50%;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  max-width: calc(100vw - 24px);
+  min-height: 40px;
+  padding: 7px 9px 7px 11px;
+  border: 1px solid rgba(0,212,255,.36);
+  border-radius: 999px;
+  background: rgba(5,10,15,.96);
+  color: var(--text-on-dark, #f2fbfd);
+  box-shadow: 0 12px 34px rgba(0,0,0,.38);
+  transform: translate(-50%, calc(-100% - 22px));
+  opacity: 0;
+  pointer-events: none;
+  transition: transform .18s ease, opacity .18s ease;
+}
+.gn-runtime-banner.active { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
+.gn-runtime-dot { width: 7px; height: 7px; flex: 0 0 auto; border-radius: 50%; background: #00d4ff; box-shadow: 0 0 10px currentColor; }
+.gn-runtime-copy { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 11px/1.2 var(--font-m, monospace); letter-spacing: .6px; }
+.gn-runtime-action { min-height: 32px !important; padding: 0 10px; border: 1px solid currentColor; border-radius: 999px; background: transparent; color: #7ff5ff; font: 800 11px var(--font-m, monospace); letter-spacing: .6px; }
+.gn-runtime-banner[data-kind="offline"] { border-color: rgba(255,209,102,.56); }
+.gn-runtime-banner[data-kind="offline"] .gn-runtime-dot { color: #ffd166; background: #ffd166; }
+.gn-runtime-banner[data-kind="synced"] .gn-runtime-dot { color: #00ff88; background: #00ff88; }
+.gn-runtime-banner[data-kind="update"] { border-color: rgba(0,212,255,.62); }
+html[data-theme="light"] .gn-runtime-banner { background: #fffdf8; color: var(--text-primary); border-color: rgba(0,95,115,.45); box-shadow: 0 12px 34px rgba(43,58,62,.18); }
+html[data-theme="light"] .gn-runtime-action { color: var(--text-accent); }
+
+/* Release history remains a compact mobile sheet, not a desktop dialog. */
+.gn-whatsnew-card > h2 { margin: 7px 0 14px; color: var(--text, #eef6f8); font: 800 1rem/1.25 var(--font-d, monospace); letter-spacing: 1.4px; }
+.gn-wn-history { display: grid; gap: 14px; }
+.gn-wn-release { padding-top: 14px; border-top: 1px solid rgba(255,255,255,.09); }
+.gn-wn-release.current { padding: 14px; border: 1px solid rgba(0,212,255,.25); border-radius: 10px; background: rgba(0,212,255,.035); }
+.gn-wn-release-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.gn-wn-release-head .gn-whatsnew-date { flex: 0 0 auto; margin: 0; text-align: right; line-height: 1.45; }
+.gn-whatsnew-actions { position: sticky; bottom: -22px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 16px -2px -2px; padding: 10px 2px 2px; background: linear-gradient(transparent, var(--panel, #0e0e16) 30%); }
+.gn-whatsnew-actions:has(.gn-whatsnew-close:only-child) { grid-template-columns: 1fr; }
+.gn-whatsnew-history, .gn-whatsnew-close { min-height: 46px; border-radius: 8px; font: 800 .68rem var(--font-d, monospace); letter-spacing: 1.2px; }
+.gn-whatsnew-history { border: 1px solid rgba(0,212,255,.4); background: transparent; color: #9fefff; }
+.gn-whatsnew-close { margin: 0; background: linear-gradient(135deg,#ff3355,#b90d31); color: #fff; }
+html[data-theme="light"] .gn-whatsnew-card > h2 { color: var(--text-primary) !important; }
+html[data-theme="light"] .gn-wn-release { border-color: rgba(32,61,71,.18); }
+html[data-theme="light"] .gn-wn-release.current { border-color: rgba(0,95,115,.3); background: rgba(0,95,115,.045); }
+html[data-theme="light"] .gn-whatsnew-actions { background: linear-gradient(transparent,#f4f1e9 30%); }
+html[data-theme="light"] .gn-whatsnew-history { color: var(--text-accent); border-color: rgba(0,95,115,.42); }
+
+@media (max-width: 430px) {
+  .gn-whatsnew-overlay { place-items: end center; padding: env(safe-area-inset-top, 0px) 0 0; }
+  .gn-whatsnew-card { width: 100%; max-height: calc(var(--gn-viewport-height, 100dvh) - env(safe-area-inset-top, 0px)); border-radius: 16px 16px 0 0; padding: 18px 16px calc(16px + env(safe-area-inset-bottom, 0px)); }
+  .gn-whatsnew-actions { bottom: calc(-16px - env(safe-area-inset-bottom, 0px)); padding-bottom: calc(2px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* Final served-audit type floor. */
+html[data-theme="light"] :is(#app,.overlay,.gn-delete-overlay,.gn-lab-tool-overlay,.gn-whatsnew-overlay,.gn-onb-overlay) {
+  --bg: #e8e4da;
+  --bg2: #eeeae1;
+  --panel: #f8f5ed;
+  --panel2: #efebe2;
+  --panel3: #e2ddd3;
+  --surface: #f8f5ed;
+  --surface-elevated: #fffdf8;
+  --surface-muted: #e2ddd3;
+  --border: rgba(32,61,71,.20);
+  --border2: rgba(32,61,71,.34);
+  --cyan-dim: rgba(0,95,115,.10);
+}
+html[data-theme="light"] #landing { --surface: #f7f4ed; --surface-elevated: #fffdf8; --panel: #f7f4ed; --panel2: #efebe2; }
+html[data-theme="light"] :is(#landing,#login,#app,.overlay,.gn-lab-tool-overlay,.gn-whatsnew-overlay) :is(button,label,summary,input,textarea,select,option,small,p,li,th,td) { font-size: max(12px,.75rem) !important; opacity: 1 !important; }
+html[data-theme="light"] :is(.landing-language-control span,.landing-kicker,.landing-note strong,.landing-note>span,.landing-local-link,.landing-preview-tag,.landing-preview-caption,.landing-footer-label,.gn-auth-kicker,.gn-auth-primary-label,.gn-auth-message,.gn-auth-note,.gn-topbar-language-control button,#nodeHeaderPhase,.gn-dashboard-mission-kicker,.gn-wanda-label,.gn-wanda-note,.gn-instrument-code,.gn-data-quality,.gn-chart-state,.gn-target-empty,.gn-telemetry-summary,.gn-arc-empty,.gn-level-kicker,.scanner-source-tag,#scannerModeLabel,.scanner-status-helper,.shots-safety-note,.shot-history-toggle,#shotHistoryHelper,.gn-log-step,.gn-shot-time-helper,.gn-shot-date-helper,.gn-foundation-kicker,.gn-foundation-signal,.gn-lab-breadcrumb,.gn-dose-copy,.results-metric-label,.empty-subline,.s6-label,.phase-readout-label,.phase-readout-copy,.gn-measurements-copy,.gn-preferences-status,.gn-record-state,.cal-day-head,#calTitle,.gn-custom-picker-trigger,.gn-custom-date-trigger,.gn-stable-zone-title,.gn-stable-zone-btn,.gn-research-context,.gn-research-disclaimer,.gn-dose-output,.gn-profile-section-label,#gnProfileSync,#profEmail) {
+  font-size: max(12px,.75rem) !important; line-height: 1.45 !important; letter-spacing: min(.055em,1px) !important; font-weight: 500 !important; opacity: 1 !important;
+}
+html[data-theme="light"] :is(.gn-foundation-kicker,.gn-foundation-signal,.gn-log-step,.scanner-source-tag,.phase-readout-label,.gn-wanda-label,.results-metric-label,.cal-day-head,.gn-profile-section-label) { font-weight: 700 !important; }
+html[data-theme="light"] :is(.gn-custom-picker-trigger,.gn-custom-date-trigger,.se-check,#cpShotMedVal,#modalSelectedLocation,#gnDoseOutput,#profNameTxt,#profEmail,#gnProfileSync,#cpMedProfVal,#cpShotDayProfVal,#cpSexProfVal) { color: var(--text-primary) !important; opacity: 1 !important; }
+html[data-theme="light"] :is(.gn-measurements-copy,.scanner-status-helper,.shots-safety-note,#shotHistoryHelper,.gn-dose-copy,.empty-subline,.phase-readout-copy,.gn-wanda-note) { color: var(--text-secondary) !important; }
+html[data-theme="light"] :is(.gn-foundation-signal,.gn-lab-breadcrumb,.scanner-source-tag,#scannerModeLabel,.gn-log-step,.results-metric-label,.cal-day-head,#calTitle) { color: var(--text-label) !important; }
+html[data-theme="light"] :is(.gn-topbar-language-control button,.landing-language-control button) { color: var(--text-muted) !important; }
+html[data-theme="light"] :is(.gn-topbar-language-control button.active,.landing-language-control button.active) { color: var(--text-accent) !important; }
+html[data-theme="light"] #pageDash[data-activation="pending"] > :not(.page-hdr):not(#gnWandaDashboard),
+html[data-theme="light"] #pageDash[data-activation="pending"] #gnWandaDashboard > :not(#gnFirstShotMission) { opacity: .76 !important; filter: saturate(.35) contrast(.96) !important; }
+html[data-theme="light"] :is(.cp-select-trigger,.gn-select-trigger,.gn-custom-picker-trigger,.gn-custom-date-trigger) {
+  background: #fffdf8 !important; color: var(--text-primary) !important; border-color: rgba(32,61,71,.34) !important; -webkit-text-fill-color: var(--text-primary) !important;
+}
+html[data-theme="light"] :is(.gn-shot-date-helper,.gn-shot-time-helper) { color: var(--text-helper) !important; background: rgba(0,95,115,.055) !important; }
+html[data-theme="light"] :is(.time-tab,.scanner-mode-btn,.shot-history-toggle):not(.active) { color: var(--text-muted) !important; background: #e4e9e7 !important; }
+html[data-theme="light"] :is(.time-tab,.scanner-mode-btn,.shot-history-toggle).active { color: var(--text-on-dark) !important; background: #006579 !important; }
+html[data-theme="light"] :is(.btn-primary,.landing-btn.primary,.gn-auth-primary,.gn-dashboard-mission button,.empty-cta,.gn-whatsnew-close) {
+  color: #fff !important; -webkit-text-fill-color: #fff !important; background: linear-gradient(135deg,#b51536,#760b22) !important; border-color: #8e112e !important;
+}
+html[data-theme="light"] :is(.cal-wrap,.cal-header,.cal-grid,.cal-detail) { background: var(--panel) !important; border-color: var(--border) !important; }
+html[data-theme="light"] :is(.cal-day,.cal-day-name) { background: transparent !important; border-color: var(--border) !important; color: var(--text-secondary) !important; }
+html[data-theme="light"] .cal-day-num { color: var(--text-secondary) !important; }
+html[data-theme="light"] .cal-day:is(:hover,.selected,.today) { background: rgba(0,95,115,.10) !important; }
+html[data-theme="light"] .gn-shot-advanced-trigger { color: var(--text-label) !important; background: #e3e7e4 !important; border-color: rgba(32,61,71,.28) !important; }
+html[data-theme="light"] :is(.btn-secondary,.log-modal-bottom-close) { color: var(--text-accent) !important; -webkit-text-fill-color: var(--text-accent) !important; border-color: rgba(0,95,115,.42) !important; background: rgba(255,253,248,.82) !important; }
+html[data-theme="light"] .gn-language-control > span { font-size: 12px !important; color: var(--text-secondary) !important; opacity: 1 !important; }
+html[data-theme="light"] :is(.scanner-selected-panel b,.results-signal-note b,.gn-reference-pending strong,.gn-foundation-tile b,.gn-research-group>span,.gn-research-notice strong,.gn-wn-cat-tag,.gn-whatsnew-kicker,.gn-whatsnew-title) { font-size: 12px !important; opacity: 1 !important; }
+html[data-theme="light"] :is(.results-signal-note,.results-signal-note span,.gn-reference-pending span,.gn-weekly-report p,.gn-research-notice span,.gn-research-disclaimer) { font-size: 13px !important; line-height: 1.5 !important; color: var(--text-secondary) !important; opacity: 1 !important; }
+html[data-theme="light"] :is(.gn-syr-result .k,.gn-syr-result .v,#syrText,#syrML,#syrConcDisplay,.gn-syr-headroom,.gn-syr-pk-hud .k,.gn-syr-pk-hud .v) { font-size: 12px !important; opacity: 1 !important; }
+html[data-theme="light"] .gn-syr-u100 { font-size: 12px !important; color: var(--text-warning) !important; opacity: 1 !important; }
+html[data-theme="light"] #landing .landing-btn.primary { background: linear-gradient(135deg,#98132f,#65091d) !important; color: #fff !important; -webkit-text-fill-color: #fff !important; }
+html[data-theme="light"] .scanner-selected-panel b { font-size: 12px !important; }
+html[data-theme="light"] :is(.gn-ampm-btn,.time-tab):not(.active) { color: var(--text-primary) !important; -webkit-text-fill-color: var(--text-primary) !important; background: #dfe5e3 !important; border-color: rgba(32,61,71,.28) !important; }
+html[data-theme="light"] :is(.gn-ampm-btn,.time-tab).active { color: #fff !important; -webkit-text-fill-color: #fff !important; background: #006579 !important; border-color: #005466 !important; }
+html[data-theme="light"] #gnWeeklyTitle { color: var(--text-primary) !important; text-shadow: none !important; }
+html[data-theme="light"] .gn-weekly-actions button:first-child { color: var(--text-error) !important; -webkit-text-fill-color: var(--text-error) !important; border-color: rgba(165,29,54,.48) !important; background: #fffdf8 !important; }
+html[data-theme="light"] .gn-weekly-actions button:last-child { color: var(--text-accent) !important; -webkit-text-fill-color: var(--text-accent) !important; border-color: rgba(0,95,115,.48) !important; background: #fffdf8 !important; }
+html[data-theme="light"] #gnLabFoundationTitle span { color: var(--text-warning) !important; }
+html[data-theme="light"] #gnLabToolHost :is(.k,.gn-syr-headroom,#syrHeadroom) { font-size: 12px !important; opacity: 1 !important; }
+html[data-theme="light"] #gnLabToolHost :is(.gn-syr-headroom,#syrHeadroom) { color: var(--text-success) !important; text-shadow: none !important; }
+html[data-theme="light"] #gnLabToolHost .sec-title .a { font-size: 12px !important; color: var(--text-label) !important; }
+html[data-theme="light"] #gnLabToolHost .mixing-warn,
+html[data-theme="light"] #gnLabToolHost .mixing-warn span { color: var(--text-warning) !important; }
+html[data-theme="light"] .asset-matrix-title b { font-size: 12px !important; }
+html[data-theme="light"] #labSegTabs .time-tab:not(.active) { color: var(--text-primary) !important; -webkit-text-fill-color: var(--text-primary) !important; background: #dfe5e3 !important; background-image: none !important; }
+html[data-theme="light"] #labSegTabs .time-tab.active { color: #fff !important; -webkit-text-fill-color: #fff !important; background: #006579 !important; background-image: none !important; }
+html[data-theme="light"] #gnLabToolHost #labSegTabs .time-tab:not(.active) { color: #102229 !important; -webkit-text-fill-color: #102229 !important; background: #fffdf8 !important; background-image: none !important; }
+html[data-theme="light"] #gnLabToolHost #labSegTabs .time-tab.active { color: #fff !important; -webkit-text-fill-color: #fff !important; background: #004252 !important; background-image: none !important; }
+html[data-theme="light"] .gn-auth-google { color: var(--text-primary) !important; -webkit-text-fill-color: var(--text-primary) !important; background: #fffdf8 !important; }
+
+/* REAL-DEVICE DAY OPS READABILITY GATE
+   This is the final semantic binding for functional app copy. Decorative HUD
+   metadata remains compact; instructions, labels, values and controls do not. */
+html[data-theme="light"] {
+  --text-primary-light: #10252d;
+  --text-secondary-light: #294750;
+  --text-helper-light: #36565e;
+  --text-label-light: #173942;
+  --text-muted-functional-light: #476169;
+  --text-placeholder-light: #566c72;
+  --text-disabled-light: #66757a;
+  --text-accent-light: #00576a;
+  --text-success-light: #00613d;
+  --text-warning-light: #6e4700;
+  --text-error-light: #9a1724;
+  --text-on-dark: #f7fcfd;
+  --text-on-light: var(--text-primary-light);
+  --text-primary: var(--text-primary-light);
+  --text-secondary: var(--text-secondary-light);
+  --text-helper: var(--text-helper-light);
+  --text-label: var(--text-label-light);
+  --text-muted: var(--text-muted-functional-light);
+  --text-dim: var(--text-muted-functional-light);
+  --text-placeholder: var(--text-placeholder-light);
+  --text-disabled: var(--text-disabled-light);
+  --text-accent: var(--text-accent-light);
+  --text-success: var(--text-success-light);
+  --text-warning: var(--text-warning-light);
+  --text-error: var(--text-error-light);
+  --lava-hot: #d92a18;
+  --lava-core: #c41512;
+  --lava-edge: #8f050c;
+  --lava-glow: rgba(255, 79, 34, .28);
+}
+
+html[data-theme="light"] :is(#app,.overlay,.gn-lab-tool-overlay,.gn-delete-overlay,.gn-whatsnew-overlay) {
+  color: var(--text-primary-light) !important;
+}
+html[data-theme="light"] :is(
+  .page-title,.modal-title,.card-title,.results-title,.phase-name,
+  .gn-foundation-head h2,.gn-device-vault-head h3,.gn-profile-hub h2,
+  .gn-preferences-card h3,.gn-dose-projection h2,.gn-lab-tool-head h2,
+  .gn-weekly-report h3,.gn-reference-pending strong,.gn-empty-state b,
+  .scanner-selected-panel b,.gn-record-row b,.gn-foundation-tile b
+) {
+  color: var(--text-primary-light) !important;
+  -webkit-text-fill-color: var(--text-primary-light) !important;
+  text-shadow: none !important;
+  opacity: 1 !important;
+}
+html[data-theme="light"] :is(
+  .page-sub,.card-copy,.card p,.results-copy,.results-empty,.empty-subline,
+  .gn-ledger-copy,.gn-dose-copy,.gn-measurements-copy,.gn-profile-row small,
+  .gn-record-row small,.gn-empty-state span,.gn-weekly-report p,
+  .gn-reference-pending span,.phase-readout-copy,.phase-context-text,
+  .phase-transparency-block p,.phase-transparency-block li,.phase-edu-note,
+  .scanner-status-helper,.shots-safety-note,.gn-research-notice,
+  .gn-research-context,.gn-research-disclaimer,.gn-dose-disclaimer,
+  .mixing-text,.mixing-warn,.gn-syr-helper p,.gn-syr-formula,.gn-syr-caution,
+  .results-weight-helper,.shot-history-helper,#shotHistoryHelper
+) {
+  color: var(--text-secondary-light) !important;
+  -webkit-text-fill-color: var(--text-secondary-light) !important;
+  opacity: 1 !important;
+  font-weight: 500 !important;
+  text-shadow: none !important;
+}
+html[data-theme="light"] :is(
+  .form-label,.gn-form-grid label>span,.gn-record-form label>span,
+  .gn-dose-grid label>span,.gn-measurements-grid label>span,
+  .gn-preferences-grid label>span,.gn-profile-section-label,.sec-title,
+  .gn-stable-zone-title,.results-metric-label,.phase-readout-label,
+  .gn-shot-filter-grid label>span,.scanner-selected-panel small
+) {
+  color: var(--text-label-light) !important;
+  -webkit-text-fill-color: var(--text-label-light) !important;
+  opacity: 1 !important;
+  font-weight: 700 !important;
+}
+
+/* The browser screenshots are the acceptance floor: real instructions and
+   values use mobile app sizing, not decorative terminal microtype. */
+@media (max-width: 600px) {
+  html[data-theme="light"] :is(
+    #app,.overlay,.gn-lab-tool-overlay,.gn-delete-overlay,.gn-whatsnew-overlay
+  ) :is(input,textarea,select,.form-input,.form-textarea,.cp-select-trigger,
+       .gn-select-trigger,.gn-custom-picker-trigger,.gn-custom-date-trigger,
+       .gn-custom-picker-option,.cp-option,.gn-select-option,.btn-full) {
+    font-size: 16px !important;
+    line-height: 1.35 !important;
+    font-weight: 550 !important;
+    letter-spacing: 0 !important;
+  }
+  html[data-theme="light"] :is(
+    .card-copy,.card p,.results-copy,.results-empty,.empty-subline,
+    .gn-ledger-copy,.gn-dose-copy,.gn-measurements-copy,.gn-profile-row small,
+    .gn-empty-state,.gn-weekly-report p,.gn-reference-pending span,
+    .phase-readout-copy,.phase-context-text,.phase-transparency-block p,
+    .phase-transparency-block li,.phase-edu-note,.scanner-status-helper,
+    .shots-safety-note,.gn-research-notice,.gn-research-context,
+    .gn-research-disclaimer,.gn-dose-disclaimer,.mixing-text,.mixing-warn,
+    .gn-syr-helper p,.gn-syr-formula,.gn-syr-caution,.results-weight-helper,
+    .shot-history-helper,#shotHistoryHelper
+  ) {
+    font-size: 16px !important;
+    line-height: 1.55 !important;
+    letter-spacing: 0 !important;
+  }
+  html[data-theme="light"] :is(
+    .form-helper,.gn-shot-date-helper,.gn-shot-time-helper,.syr-math-helper,
+    .syr-result-sub,.gn-syr-meta,.gn-syr-forensic,.gn-preferences-status,
+    .gn-record-row small,.gn-measurements-grid small
+  ) {
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    letter-spacing: 0 !important;
+  }
+  html[data-theme="light"] :is(
+    .form-label,.gn-form-grid label>span,.gn-record-form label>span,
+    .gn-dose-grid label>span,.gn-measurements-grid label>span,
+    .gn-preferences-grid label>span,.gn-profile-section-label,.sec-title,
+    .gn-stable-zone-title,.results-metric-label,.phase-readout-label,
+    .gn-shot-filter-grid label>span,.scanner-selected-panel small,
+    .scanner-source-tag,.gn-foundation-kicker,.gn-foundation-signal,
+    .gn-log-step,.asset-matrix-title b,#scannerModeLabel
+  ) {
+    font-size: 14px !important;
+    line-height: 1.35 !important;
+    letter-spacing: .035em !important;
+  }
+  html[data-theme="light"] :is(
+    .gn-foundation-tile b,.scanner-selected-panel b,.gn-record-row b,
+    .gn-record-state,.gn-dose-output,.gn-syr-result .v,#syrText,#syrML,
+    #syrConcDisplay,.gn-profile-row b
+  ) {
+    font-size: 15px !important;
+    line-height: 1.4 !important;
+  }
+}
+
+/* Native-feeling select family. The runtime bundle injects NIGHT GRID rules
+   later, so these theme-scoped declarations intentionally carry !important. */
+html[data-theme="light"] .gn-custom-picker-menu {
+  overflow: auto !important;
+  max-height: min(52dvh, 360px) !important;
+  padding: 4px !important;
+  border: 1px solid #6e8389 !important;
+  border-radius: 10px !important;
+  background: #fffdf8 !important;
+  color: var(--text-primary-light) !important;
+  box-shadow: 0 18px 42px rgba(29, 48, 54, .24) !important;
+  color-scheme: light !important;
+}
+html[data-theme="light"] .gn-custom-picker-option {
+  min-height: 48px !important;
+  padding: 12px 13px !important;
+  border: 0 !important;
+  border-bottom: 1px solid #d2d9d8 !important;
+  border-radius: 0 !important;
+  background: #fffdf8 !important;
+  color: var(--text-primary-light) !important;
+  -webkit-text-fill-color: var(--text-primary-light) !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  opacity: 1 !important;
+}
+html[data-theme="light"] .gn-custom-picker-option:last-child { border-bottom: 0 !important; }
+html[data-theme="light"] .gn-custom-picker-option:is(:hover,:focus-visible) {
+  background: #e5f0f1 !important;
+  color: #003e4b !important;
+  -webkit-text-fill-color: #003e4b !important;
+  box-shadow: inset 3px 0 #00758a !important;
+}
+html[data-theme="light"] .gn-custom-picker-option[aria-selected="true"] {
+  background: #d7eaed !important;
+  color: #003845 !important;
+  -webkit-text-fill-color: #003845 !important;
+  box-shadow: inset 4px 0 #00576a !important;
+}
+html[data-theme="light"] .gn-custom-picker-option:disabled {
+  background: #eceeea !important;
+  color: var(--text-disabled-light) !important;
+  -webkit-text-fill-color: var(--text-disabled-light) !important;
+  text-decoration: line-through;
+}
+@media (max-width: 600px) {
+  html[data-theme="light"] .gn-custom-picker-menu,
+  html[data-theme="light"] .gn-custom-date-popover {
+    position: fixed !important;
+    inset: auto 12px calc(12px + env(safe-area-inset-bottom, 0px)) 12px !important;
+    z-index: 1400 !important;
+    width: auto !important;
+    max-height: min(58dvh, 440px) !important;
+    overscroll-behavior: contain;
+  }
+  html[data-theme="light"] .gn-custom-date-popover {
+    padding: 14px !important;
+    border-color: #6e8389 !important;
+    background: #fffdf8 !important;
+    box-shadow: 0 18px 42px rgba(29,48,54,.28) !important;
+  }
+  html[data-theme="light"] .gn-custom-date-day,
+  html[data-theme="light"] .gn-custom-date-head button,
+  html[data-theme="light"] .gn-custom-date-foot button { min-height: 44px !important; }
+}
+
+/* Active, inactive and disabled must be distinguishable without color guessing. */
+html[data-theme="light"] :is(.gn-ampm-btn,.time-tab,.scanner-mode-btn,.shot-history-toggle,.results-weight-unit):not(.active):not(:disabled) {
+  border-color: #758b90 !important;
+  background: #f7f7f1 !important;
+  color: #173740 !important;
+  -webkit-text-fill-color: #173740 !important;
+  box-shadow: none !important;
+}
+html[data-theme="light"] :is(.gn-ampm-btn,.time-tab,.scanner-mode-btn,.shot-history-toggle,.results-weight-unit).active {
+  border-color: #003f4d !important;
+  background: #00586b !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.18) !important;
+}
+html[data-theme="light"] :is(.gn-ampm-btn,.time-tab,.scanner-mode-btn,.shot-history-toggle,.results-weight-unit):disabled {
+  border-color: #aeb8b7 !important;
+  background: #e2e4e1 !important;
+  color: var(--text-disabled-light) !important;
+  -webkit-text-fill-color: var(--text-disabled-light) !important;
+  opacity: 1 !important;
+}
+
+/* Non-critical primary actions stay GRID cyan. Commit/destructive actions use
+   a single lava-red system: hot center, crimson edge, no pink or purple. */
+html[data-theme="light"] :is(#app,.overlay,.gn-lab-tool-overlay) .btn-primary {
+  border-color: #004b5a !important;
+  background: linear-gradient(180deg, #08788b, #005568) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.2), 0 8px 18px rgba(0,87,106,.16) !important;
+}
+html[data-theme="light"] :is(
+  #logOv .btn-primary,#logOv .modal-btn.save,
+  #wtOv .btn-primary,#wtOv .modal-btn.save,
+  #gnResearchSave,#gnPreferencesSave,.fab,
+  .future-confirm-save,.archive-confirm-delete,.gn-delete-confirm
+) {
+  border-color: var(--lava-edge) !important;
+  background: linear-gradient(180deg, var(--lava-hot) 0%, var(--lava-core) 52%, var(--lava-edge) 100%) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  box-shadow: inset 0 1px rgba(255,190,128,.72), inset 0 -1px rgba(82,0,0,.42), 0 8px 20px var(--lava-glow) !important;
+  text-shadow: 0 1px 1px rgba(70,0,0,.38) !important;
+}
+html[data-theme="light"] :is(
+  #logOv .btn-primary,#logOv .modal-btn.save,
+  #wtOv .btn-primary,#wtOv .modal-btn.save,
+  #gnResearchSave,#gnPreferencesSave,.fab,
+  .future-confirm-save,.archive-confirm-delete,.gn-delete-confirm
+):active {
+  background: linear-gradient(180deg, #ed2d1c 0%, #c71112 55%, #87060d 100%) !important;
+  transform: translateY(1px);
+}
+
+/* Light panels that inherited NIGHT text from the runtime enhancement bundle. */
+html[data-theme="light"] :is(.gn-measurements-card,.gn-dose-projection,.gn-foundation-panel,.gn-profile-hub,.gn-preferences-card,.gn-device-vault) {
+  background: var(--surface-elevated) !important;
+  color: var(--text-primary-light) !important;
+  border-color: rgba(23,57,66,.24) !important;
+  box-shadow: 0 10px 28px rgba(34,53,58,.09) !important;
+}
+html[data-theme="light"] :is(.gn-dose-output,.gn-dose-disclaimer,.gn-research-notice,.phase-context-text) {
+  background: #f1eee5 !important;
+}
+html[data-theme="light"] :is(.gn-dose-output,.gn-dose-disclaimer,.gn-dose-disclaimer strong,.gn-research-notice,.gn-research-notice strong,.phase-context-text) {
+  color: var(--text-secondary-light) !important;
+  -webkit-text-fill-color: var(--text-secondary-light) !important;
+  text-shadow: none !important;
+}
+
+html:not([data-theme="light"]) .gn-custom-picker-menu {
+  max-height: min(52dvh, 360px) !important;
+  padding: 4px !important;
+  border-color: rgba(0,212,255,.42) !important;
+  background: #0b1118 !important;
+}
+html:not([data-theme="light"]) .gn-custom-picker-option {
+  min-height: 48px !important;
+  padding: 12px 13px !important;
+  border-bottom: 1px solid rgba(160,220,230,.15) !important;
+  background: #0b1118 !important;
+  color: #d8eef2 !important;
+  -webkit-text-fill-color: #d8eef2 !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  opacity: 1 !important;
+}
+html:not([data-theme="light"]) .gn-custom-picker-option:is(:hover,:focus-visible,[aria-selected="true"]) {
+  background: #12313a !important;
+  color: #7ff5ff !important;
+  -webkit-text-fill-color: #7ff5ff !important;
+  box-shadow: inset 3px 0 #00d4ff !important;
+}
+
+@media (max-width: 600px) {
+  html:not([data-theme="light"]) .gn-custom-picker-menu,
+  html:not([data-theme="light"]) .gn-custom-date-popover {
+    position: fixed !important;
+    inset: auto 12px calc(12px + env(safe-area-inset-bottom, 0px)) 12px !important;
+    z-index: 1400 !important;
+    width: auto !important;
+    max-height: min(58dvh, 440px) !important;
+    overscroll-behavior: contain;
+  }
+  :is(.gn-custom-date-day,.gn-custom-date-head button,.gn-custom-date-foot button) { min-height: 44px !important; }
+  :is(.gn-custom-date-dow,.gn-date-dow) { font-size: 12px !important; font-weight: 650 !important; opacity: 1 !important; }
+  :is(.gn-custom-date-head strong,.gn-custom-date-foot button,.gn-date-picker-head strong) { font-size: 14px !important; }
+  html:not([data-theme="light"]) :is(
+    .card-copy,.card p,.results-copy,.results-empty,.empty-subline,
+    .gn-ledger-copy,.gn-dose-copy,.gn-measurements-copy,.gn-profile-row small,
+    .gn-empty-state,.gn-weekly-report p,.gn-reference-pending span,
+    .phase-readout-copy,.phase-context-text,.phase-transparency-block p,
+    .phase-transparency-block li,.phase-edu-note,.scanner-status-helper,
+    .shots-safety-note,.gn-research-notice,.gn-research-context,
+    .gn-research-disclaimer,.gn-dose-disclaimer,.mixing-text,.mixing-warn,
+    .gn-syr-helper p,.gn-syr-formula,.gn-syr-caution,.results-weight-helper
+  ) {
+    font-size: 15px !important;
+    line-height: 1.55 !important;
+    letter-spacing: 0 !important;
+    opacity: 1 !important;
+  }
+  html:not([data-theme="light"]) :is(
+    .form-label,.gn-form-grid label>span,.gn-record-form label>span,
+    .gn-dose-grid label>span,.gn-measurements-grid label>span,
+    .gn-preferences-grid label>span,.gn-profile-section-label,
+    .gn-stable-zone-title,.results-metric-label,.phase-readout-label,
+    .scanner-selected-panel small,.scanner-source-tag,.gn-log-step
+  ) {
+    font-size: 14px !important;
+    line-height: 1.35 !important;
+    letter-spacing: .035em !important;
+    opacity: 1 !important;
+  }
+}
+
+/* FUNCTIONAL TYPOGRAPHY ACCEPTANCE GATE
+   GRID//NODE may use terminal microtype for decoration. Required meaning,
+   instructions and controls never inherit that decorative scale. This block
+   is intentionally last because the runtime enhancement sheet is injected
+   after the legacy bundle styles. */
+:is(#landing,#login,#app,.overlay,.gn-lab-tool-overlay,.gn-whatsnew-overlay,.gn-onb-overlay) :is(
+  .landing-copy span,.landing-note>span,
+  .gn-auth-subtitle,.gn-auth-copy,.gn-auth-privacy span,.gn-auth-message,.gn-auth-note,
+  .gn-dashboard-mission p,.gn-wanda-note,.asset-helper,.scanner-status-helper,
+  .shots-safety-note,.gn-shot-date-helper,.gn-shot-time-helper,
+  .results-signal-note span,#resultRange,#gnWeeklyCopy,.gn-weekly-report p,
+  .gn-reference-pending span,.gn-foundation-tile small,.gn-research-notice span,
+  .gn-research-context,.gn-research-disclaimer,.gn-dose-disclaimer,
+  .gn-measurements-copy,.gn-preferences-grid label:has(input[type="checkbox"]),
+  .gn-profile-signout small,.gn-ledger-copy,.gn-whatsnew-body li
+) {
+  font-size: 15px !important;
+  line-height: 1.5 !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  opacity: 1 !important;
+}
+
+:is(#landing,#login,#app,.overlay,.gn-lab-tool-overlay,.gn-whatsnew-overlay,.gn-onb-overlay) :is(
+  button,.form-label,.gn-form-grid label>span,.gn-record-form label>span,
+  .gn-dose-grid label>span,.gn-measurements-grid label>span,
+  .gn-profile-section-label,.gn-auth-primary-label,.gn-wanda-label,.nav-lbl,
+  .cp-group-minimized-label,.gn-research-group>span,.gn-whatsnew-title,
+  .gn-whatsnew-history,.gn-whatsnew-close,.gn-profile-signout b
+) {
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+  font-weight: 650 !important;
+  letter-spacing: .025em !important;
+  opacity: 1 !important;
+}
+
+#pageLog .asset-hdr h2 {
+  font-size: 18px !important;
+  line-height: 1.25 !important;
+  letter-spacing: .035em !important;
+}
+
+:is(#landing,#login,#app) .gn-language-control button {
+  min-width: 44px !important;
+  min-height: 44px !important;
+  font-size: 14px !important;
+}
+
+.gn-auth-message[data-tone="status"] {
+  color: var(--text-secondary, #b7c7d3) !important;
+  -webkit-text-fill-color: var(--text-secondary, #b7c7d3) !important;
+}
+.gn-auth-message[data-tone="error"] {
+  color: var(--text-error, #ff738b) !important;
+  -webkit-text-fill-color: var(--text-error, #ff738b) !important;
+}
+html[data-theme="light"] .gn-auth-message[data-tone="status"] {
+  color: var(--text-secondary-light, #294750) !important;
+  -webkit-text-fill-color: var(--text-secondary-light, #294750) !important;
+}
+html[data-theme="light"] .gn-auth-message[data-tone="error"] {
+  color: var(--text-error-light, #9a1724) !important;
+  -webkit-text-fill-color: var(--text-error-light, #9a1724) !important;
+}
+
+/* Components mounted beside the app root and legacy high-specificity roles. */
+html body .bottom-nav .nav-lbl {
+  font-size: 14px !important;
+  line-height: 1.15 !important;
+  font-weight: 700 !important;
+  letter-spacing: .015em !important;
+  opacity: 1 !important;
+}
+.shots-scanner-head h2 {
+  font-size: 18px !important;
+  line-height: 1.25 !important;
+  letter-spacing: .035em !important;
+}
+#app #pageLog .shots-scanner-head p,
+#gnLabToolOverlay #gnInventoryForm label small,
+#gnPreferencesCard .gn-preferences-grid .gn-pref-wide span,
+#gnWhatsNewOverlay .gn-wn-release .gn-whatsnew-title {
+  font-size: 15px !important;
+  line-height: 1.5 !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  opacity: 1 !important;
+}
+html[data-theme] #logOv .form-label,
+html[data-theme] #wtOv .form-label {
+  font-size: 15px !important;
+  line-height: 1.4 !important;
+  letter-spacing: .02em !important;
+}
+html[data-theme="light"] #logOv #cpShotMedDrop .cp-group-minimized-label {
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+  letter-spacing: .04em !important;
+}
+
+/* NIGHT GRID production gate — preserve the dark identity while ensuring
+   functional status, navigation, safety copy and instrument labels remain
+   usable at phone distance. */
+:root {
+  --lava-hot: #d92a18;
+  --lava-core: #c41512;
+  --lava-edge: #8f050c;
+  --lava-glow: rgba(255, 79, 34, .28);
+}
+:is(
+  #logOv .btn-primary,#logOv .modal-btn.save,
+  #wtOv .btn-primary,#wtOv .modal-btn.save,
+  #gnResearchSave,#gnPreferencesSave,.fab,
+  .future-confirm-save,.archive-confirm-delete,.gn-delete-confirm,
+  .gn-dashboard-mission button,.gn-whatsnew-close,.landing-btn.primary
+) {
+  border-color: var(--lava-edge) !important;
+  background: linear-gradient(180deg, var(--lava-hot) 0%, var(--lava-core) 52%, var(--lava-edge) 100%) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  box-shadow: inset 0 1px rgba(255,190,128,.62), inset 0 -1px rgba(82,0,0,.42), 0 8px 20px var(--lava-glow) !important;
+  text-shadow: 0 1px 1px rgba(70,0,0,.38) !important;
+}
+:is(
+  #logOv .btn-primary,#logOv .modal-btn.save,
+  #wtOv .btn-primary,#wtOv .modal-btn.save,
+  #gnResearchSave,#gnPreferencesSave,.fab,
+  .future-confirm-save,.archive-confirm-delete,.gn-delete-confirm,
+  .gn-dashboard-mission button,.gn-whatsnew-close,.landing-btn.primary
+):active {
+  background: linear-gradient(180deg, #c91f12 0%, #b8180f 55%, #79050a 100%) !important;
+}
+
+html:not([data-theme="light"]) #pageDash[data-activation="pending"] > :not(.page-hdr):not(#gnWandaDashboard),
+html:not([data-theme="light"]) #pageDash[data-activation="pending"] #gnWandaDashboard > :not(#gnFirstShotMission) {
+  opacity: .74 !important;
+  filter: saturate(.42) contrast(.96) !important;
+}
+
+:is(#landing,#login,#app,.overlay,.gn-lab-tool-overlay,.gn-whatsnew-overlay) :is(
+  #nodeHeaderPhase,.page-sub,.landing-trust strong,.gn-auth-privacy strong,
+  .gn-auth-options summary,.results-signal-note b,.gn-reference-pending strong,
+  .gn-foundation-signal,.gn-lab-breadcrumb,.gn-foundation-tile b,
+  .gn-research-notice strong,.gn-record-state,.gn-whatsnew-date,.gn-wn-cat-tag,
+  .asset-matrix-title b,#scannerModeLabel
+) {
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+  font-weight: 700 !important;
+  letter-spacing: .035em !important;
+  opacity: 1 !important;
+}
+
+:is(#landing,#login,#app,.overlay,.gn-lab-tool-overlay,.gn-whatsnew-overlay) :is(
+  .results-card-sub,.gn-auth-note,#syrFormula
+) {
+  font-size: 15px !important;
+  line-height: 1.5 !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  opacity: 1 !important;
+}
+
+html[data-theme] body #logOv .modal .form-label,
+html[data-theme] body #wtOv .modal .form-label {
+  font-size: 15px !important;
+}
+
+#gnLabToolOverlay #gnLabToolHost :is(
+  .k,.gn-syr-pk-hud .k,.gn-syr-result .k,.gn-syr-result .v,
+  #syrText,#syrML,#syrConcDisplay,.gn-syr-u100,#syrHeadroom,
+  .gn-syr-scale-bottom,.gn-syr-headroom
+) {
+  min-width: 0;
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+  letter-spacing: .02em !important;
+  opacity: 1 !important;
+}
+html:not([data-theme="light"]) #gnLabToolOverlay #gnLabToolHost :is(.k,.gn-syr-pk-hud .k,.gn-syr-result .k) {
+  color: #b7c7d3 !important;
+  -webkit-text-fill-color: #b7c7d3 !important;
+}
+html:not([data-theme="light"]) .gn-auth-note {
+  color: #a9bec7 !important;
+  -webkit-text-fill-color: #a9bec7 !important;
 }

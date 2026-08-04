@@ -32,73 +32,77 @@
       "sha256": "a79dd5a4f6e621d8afa0b847a34b103c97d0186bc20d2141271dd89432723225"
     },
     "assets/preview-dashboard.png": {
-      "bytes": 407235,
-      "sha256": "83c0d0ed01638a0a34da42ef6af4673b2b61ffc411943f4d4c01d053bb890eb7"
+      "bytes": 233643,
+      "sha256": "1c9188fee62802b5b6888e9da7062066e9cb994ca1350417cedb93b3aae02ba2"
     },
     "assets/scanner-body-rear.jpg": {
       "bytes": 65179,
       "sha256": "f8070c01688e279d667f85ab207ba13b4fa3e9d6119b64b58204ccdd39b5e886"
     },
     "css/daylight-nexus-pilot.css": {
-      "bytes": 77107,
-      "sha256": "47486051939b5d2202e0e94e5c70ad3e93634861cbfc253d7a1e7ef50b2e43ef"
+      "bytes": 77693,
+      "sha256": "ab4ebd6f83df82c9cf76b6c0643e1804b2f1d6dd4fdbc5117ce926b3bfca284d"
     },
     "css/gridnode-native.css": {
-      "bytes": 60344,
-      "sha256": "3bb92918c3d4bbf1458f517e90265368b555f95423efff24fc35fbe82522b859"
+      "bytes": 132439,
+      "sha256": "802a1b6197175982ffef9a851ddc580bb9bac64d8f965020e3cc91a740d9ec47"
     },
     "index.html": {
-      "bytes": 611722,
-      "sha256": "dcf4b9799070b8ae08fb2c5c55a89d7d6817ae253913cdfe0366a5b68c7ea967"
+      "bytes": 613178,
+      "sha256": "ea96cce16b3d72d333155d884b740f687e748b3e9c94f60acae2963c25961c65"
     },
     "js/gridnode-app.js": {
-      "bytes": 25863,
-      "sha256": "846342bc359d2dded11f287f522671318b0b48b6e9557805998200ac92f65b05"
+      "bytes": 26017,
+      "sha256": "2c67cd2b70106222cb847bbd71de230a8225b7468589daedf372eb568614723e"
     },
     "js/gridnode-bundle.js": {
-      "bytes": 289735,
-      "sha256": "99ff17f3363146673b02510648caa2b9f2095e99ceafa954bad5b93e14f1a985"
+      "bytes": 312572,
+      "sha256": "a9c8a113a9c4c6e8ecbd41d849dd51e19540b17f29b17a2de52060eb125d3647"
+    },
+    "js/gridnode-core.js": {
+      "bytes": 27795,
+      "sha256": "d21eca457ebcd109c4b4de8ec8db489b1d9ba3e2ef628630f860829d7490bc20"
     },
     "js/gridnode-i18n-overlay.js": {
       "bytes": 3913,
       "sha256": "fbaa59331bcaaa5a7967c5dbb92d8afa449cff0e68549f827215108a7a2b9b58"
     },
     "js/gridnode-modules.js": {
-      "bytes": 55708,
-      "sha256": "39720965835558b8f1af99cafb5c3ffb2deafe669869dd2c4bc74bcb5b7d0cdd"
+      "bytes": 61269,
+      "sha256": "6cbf616f0c1d36e26e4d3eae551ba165f101cbfda45050c49fc631063cca6785"
     },
     "js/gridnode-native.js": {
-      "bytes": 7231,
-      "sha256": "185b3ce43430496ff49d13fe7678171e1c26320ab2caf545cc567fd8c4fa02df"
+      "bytes": 21856,
+      "sha256": "392a16ff806af170cbd2a9a0cc9e1063246c3488462edf5f6579c1995f90fad2"
     },
     "js/gridnode-onboarding.js": {
-      "bytes": 27014,
-      "sha256": "249058ccf9f4e45d8f759be27f2ab07118a57d7a0878f8d7ead193e46a99d7cc"
+      "bytes": 27526,
+      "sha256": "7c6f8ff99acdfcb4bd4666656506d3472a01cb263c1518e99c9f19699ebd57ae"
     },
     "js/gridnode-product-completion.js": {
-      "bytes": 31871,
-      "sha256": "d9da993854445ac8612dcb237a375c9d3e4b043150a270053dc56741beb2054d"
+      "bytes": 32181,
+      "sha256": "dec863187ddbef061398207b1172864f5a2b26f8799a2c382d540bdb91cab19b"
     },
     "js/gridnode-version.js": {
-      "bytes": 444,
-      "sha256": "05eaa48e2d9d4bc238557ef56ba2f640beb2929eb6d1444088f9edf2f4532541"
+      "bytes": 463,
+      "sha256": "e10f8de0feb97bcc8e381fc5c42f4e0d77a0457f96d00cadbcdb835f9fc5701e"
     },
     "js/gridnode-whatsnew.js": {
-      "bytes": 7570,
-      "sha256": "d8d46b7238c51bfd5bee8bbb611bbcb6e6572ed9ca659076a58029dfed5481fd"
+      "bytes": 15295,
+      "sha256": "f9dbd975417dc8c7a931db9d583bd97f3d22e199a58fcf495a1c05a5729b7b68"
     },
     "manifest.json": {
       "bytes": 1547,
       "sha256": "bc3b6ad8fa6992bd8c5555477756cd2bc3ac6179b6a258aca9dcfd7f5a68f413"
     },
     "sw.js": {
-      "bytes": 1747,
-      "sha256": "023ba47139698586a76d464f37d154d2b501d691cb22058e6398257a876824ab"
+      "bytes": 3079,
+      "sha256": "91c345d2ab30344b3cb067c76b7dab898ba2f4350e83d11be3cd2d19e03bd665"
     }
   },
-  "metadata_note": "Corrective pass 2026-08-03: readability floor, ES zone IDs, onboarding v2, boot theming; bundle patched in-place (legacy section).",
+  "metadata_note": "Candidate 2026-08-04: production-readiness and medication-integrity release with semantic DAY OPS readability, four-stage onboarding, first-SHOT activation, stable mobile/PWA shell, bilingual release history, and safe update activation; production untouched.",
   "production_branch": null,
-  "release_marker": "20260802.17",
-  "retrieved_at_utc": "2026-08-03T13:29:08Z",
-  "runtime_version": "2.1.7"
+  "release_marker": "20260804.1",
+  "retrieved_at_utc": "2026-08-04T02:12:11.747Z",
+  "runtime_version": "0.12.0"
 }

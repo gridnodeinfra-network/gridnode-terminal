@@ -1,180 +1,231 @@
-/* GRID//NODE — SYSTEM UPDATE (What's New)
- * Premium, categorized release notes. One authoritative user-facing version:
- * window.GN_VERSION. Update VERSION + NOTES per release (keep in sync with
- * scripts/bump-version.sh marker).
- *
- * - shows once per release (localStorage gn_whatsnew_seen_<release>)
- * - never blocks first-time landing-page discovery (waits for the app shell)
- * - reopenable via window.GN_WHATS_NEW.show()
- * - fully themed (NIGHT GRID / DAY OPS) and localized (EN / ES)
+/* GRID//NODE release history — authoritative user-facing update system.
+ * Notes are bundled with the offline shell, localized, acknowledged once per
+ * release, and reopenable from NODE / Profile.
  */
 (function () {
   'use strict';
 
-  var VERSION = (typeof window !== 'undefined' && window.GN_VERSION) || {
-    semver: '0.9.1',
-    release: '20260802.10',
-    title: 'MOBILE POLISH PHASE TWO',
-    date: '2026-08-02'
-  };
-
-  // Categories: NEW / IMPROVED / FIXED / ACCESSIBILITY / MOBILE / SECURITY
-  var NOTES = {
-    '20260802.9': {
-      title: 'PREMIUM MOBILE REFINEMENT',
-      date: '2026-08-02',
+  const VERSION = window.GN_VERSION || { semver: '0.12.0', release: '20260804.1', title: 'PRODUCTION READINESS + MEDICATION INTEGRITY', date: '2026-08-04' };
+  const ACK_KEY = 'gn_whatsnew_acknowledged_release_v2';
+  const ORDER = ['NEW', 'IMPROVED', 'FIXED', 'ACCESSIBILITY', 'MOBILE', 'COMPATIBILITY', 'SECURITY'];
+  const NOTES = Object.freeze({
+    '20260804.1': {
+      version: '0.12.0', title: 'PRODUCTION READINESS + MEDICATION INTEGRITY', date: '2026-08-04',
       en: {
-        NEW: [
-          'GRID//NODE v0.9.0 — formal versioning begins here',
-          'Red-lava action system: deeper, dimensional primary buttons',
-          'Passkey prompts now only appear when you have no passkey yet'
-        ],
         IMPROVED: [
-          'Readable typography across the app — bigger labels, calmer contrast',
-          'Day Ops light theme refined for premium readability',
-          'Phase Curve charts reserve space for labels — no more overlap'
+          'Functional phone text now uses readable semantic roles across DAY OPS screens, forms, menus, focused tools, and update history.',
+          'Human-facing SHOT and weight dates follow the selected language while stored timestamps remain canonical.'
         ],
         FIXED: [
-          'Passkey prompt no longer repeats for accounts that already have one',
-          'Mobile header never overlaps the GRID//NODE brand'
-        ],
-        MOBILE: [
-          'Header layout tested from 320px to 430px',
-          'Chart and controls no longer collide on Android'
+          'Zepbound, Ozempic, and Semaglutide Compound now keep distinct stable identities through save, location selection, History, Edit, Phase Engine, and RESULTS; invalid new values fail closed.',
+          'The first-SHOT draft keeps medication, dose, date, time, location, and side effects while moving through the scanner.',
+          'Side effects, event sources, record states, device types, inventory types, and body zones display in the active language without storing translated labels.',
+          'LAB Back behavior now closes nested menus first, then focused tools, before returning to the previous app destination.'
         ],
         ACCESSIBILITY: [
-          'Larger text roles for adults of every age',
-          'Clearer focus and contrast in both themes'
+          'Functional copy uses practical 14–15px phone floors, form controls and menu options use 16px text, and touch targets remain at least 44px.',
+          'DAY OPS status, helper, selected, inactive, disabled, warning, error, and placeholder text use explicit high-contrast semantic tokens.'
+        ],
+        MOBILE: [
+          'Android and iPhone-sized navigation retains drafts, safe-area spacing, keyboard continuity, and predictable browser or system Back order.',
+          'The offline shell and deliberate update flow now use one synchronized release marker and cache asset set.'
+        ],
+        COMPATIBILITY: [
+          'No records are deleted. Recognized legacy medication and side-effect labels normalize at app boundaries; unknown legacy medication text remains available for review, and new invalid selections are rejected.'
         ]
       },
       es: {
-        NEW: [
-          'GRID//NODE v0.9.0 — el versionado formal comienza aquí',
-          'Sistema de acción lava roja: botones primarios más profundos y dimensionales',
-          'Las invitaciones de passkey solo aparecen si aún no tienes una'
-        ],
         IMPROVED: [
-          'Tipografía legible en toda la app — etiquetas más grandes, contraste más calmado',
-          'Tema claro Day Ops refinado para una lectura premium',
-          'Las gráficas de fases reservan espacio para etiquetas — sin superposiciones'
+          'El texto funcional en teléfonos ahora usa roles semánticos legibles en pantallas, formularios, menús, herramientas enfocadas e historial de actualizaciones de DAY OPS.',
+          'Las fechas visibles de DOSIS y peso siguen el idioma seleccionado mientras las marcas de tiempo guardadas permanecen canónicas.'
         ],
         FIXED: [
-          'La invitación de passkey ya no se repite en cuentas que ya tienen una',
-          'El encabezado móvil ya no se superpone con la marca GRID//NODE'
-        ],
-        MOBILE: [
-          'Diseño del encabezado probado de 320px a 430px',
-          'Las gráficas y controles ya no chocan en Android'
+          'Zepbound, Ozempic y Semaglutide Compound ahora conservan identidades estables y distintas al guardar, elegir ubicación, abrir Historial, Editar, Motor de Fases y RESULTADOS; los valores nuevos no válidos se rechazan.',
+          'El borrador de la primera DOSIS conserva medicamento, cantidad, fecha, hora, ubicación y efectos secundarios al pasar por el escáner.',
+          'Efectos secundarios, orígenes de eventos, estados de registros, tipos de dispositivos, tipos de inventario y zonas corporales se muestran en el idioma activo sin guardar etiquetas traducidas.',
+          'Atrás en LAB ahora cierra primero los menús anidados, luego las herramientas enfocadas y después vuelve al destino anterior de la app.'
         ],
         ACCESSIBILITY: [
-          'Roles de texto más grandes para adultos de todas las edades',
-          'Enfoque y contraste más claros en ambos temas'
+          'El texto funcional usa mínimos prácticos de 14–15 px en teléfono, los controles y opciones de menú usan 16 px y los objetivos táctiles siguen midiendo al menos 44 px.',
+          'Estados, ayudas, selecciones, opciones inactivas o desactivadas, advertencias, errores y marcadores de posición usan tokens semánticos explícitos de alto contraste en DAY OPS.'
+        ],
+        MOBILE: [
+          'La navegación en tamaños Android y iPhone conserva borradores, zonas seguras, continuidad con el teclado y un orden predecible para Atrás del navegador o del sistema.',
+          'La estructura sin conexión y el flujo deliberado de actualización ahora usan un solo marcador de versión y un solo conjunto de recursos en caché.'
+        ],
+        COMPATIBILITY: [
+          'No se elimina ningún registro. Las etiquetas heredadas reconocidas de medicamentos y efectos secundarios se normalizan en los límites de la app; el texto heredado desconocido del medicamento queda disponible para revisión y las selecciones nuevas no válidas se rechazan.'
         ]
       }
+    },
+    '20260803.23': {
+      version: '0.11.0', title: 'MOBILE APP SHELL + DAY OPS READABILITY', date: '2026-08-03',
+      en: {
+        IMPROVED: [
+          'DAY OPS now uses one semantic text system across screens, forms, menus, charts, dialogs, and focused tools.',
+          'The mobile shell now tracks the live browser viewport, safe areas, keyboard state, and installed-app mode.'
+        ],
+        FIXED: [
+          'Browser and system Back now dismiss temporary layers before moving between app destinations.',
+          'Partially completed SHOT entries survive navigation, backgrounding, reload, and a user-applied update.',
+          'Dropdown options, placeholders, helper text, warnings, and disabled states remain distinct in DAY OPS.'
+        ],
+        ACCESSIBILITY: [
+          'Functional microcopy has a readable size, weight, spacing, and opacity floor.',
+          'Touch controls retain 44px targets and visible keyboard focus without relying on hover.'
+        ],
+        MOBILE: [
+          'Update activation waits for the user instead of replacing an active session.',
+          'The offline shell now includes the current interface, localization, and release history.'
+        ],
+        COMPATIBILITY: ['No stored record schema changed. Existing SHOTS, settings, language, and theme data remain compatible.']
+      },
+      es: {
+        IMPROVED: [
+          'DAY OPS ahora usa un solo sistema semántico de texto en pantallas, formularios, menús, gráficas, diálogos y herramientas enfocadas.',
+          'La estructura móvil ahora sigue el área visible del navegador, las zonas seguras, el teclado y el modo de app instalada.'
+        ],
+        FIXED: [
+          'Atrás del navegador y del sistema ahora cierra las capas temporales antes de cambiar de destino.',
+          'Un registro de SHOT sin terminar sobrevive la navegación, el segundo plano, la recarga y una actualización aplicada por el usuario.',
+          'Opciones, marcadores, ayudas, advertencias y estados desactivados se distinguen claramente en DAY OPS.'
+        ],
+        ACCESSIBILITY: [
+          'El microtexto funcional tiene mínimos legibles de tamaño, peso, espaciado y opacidad.',
+          'Los controles táctiles conservan objetivos de 44 px y enfoque visible sin depender del hover.'
+        ],
+        MOBILE: [
+          'La actualización espera la acción del usuario en vez de reemplazar una sesión activa.',
+          'La estructura sin conexión ahora incluye la interfaz, la localización y el historial de versiones.'
+        ],
+        COMPATIBILITY: ['No cambió el esquema de datos. Los SHOTS, ajustes, idioma y tema existentes siguen siendo compatibles.']
+      }
+    },
+    '20260803.22': {
+      version: '0.10.0', title: 'PREMIUM PRODUCT POLISH', date: '2026-08-03',
+      en: {
+        IMPROVED: [
+          'Onboarding is four concise stages with real-target advancement for action steps.',
+          'The first SHOT mission leads the inactive dashboard; RESULTS and Phase Engine strengthen after activation.',
+          'LAB tools open as focused destinations with a reliable Back to LAB control.',
+          'The landing page shows the real GRID//NODE dashboard instead of a decorative hologram.'
+        ],
+        FIXED: [
+          'The loading terminal is a themed system-status deck instead of a white block.',
+          'Zepbound retains its canonical identity through location selection, history, Edit, Phase Engine, and RESULTS.'
+        ],
+        COMPATIBILITY: ['Side effects, height, language, and theme continue to persist with existing local records.']
+      },
+      es: {
+        IMPROVED: [
+          'La introducción tiene cuatro etapas breves y los pasos de acción avanzan solo con el objetivo real.',
+          'La misión del primer SHOT domina el panel inactivo; RESULTS y Phase Engine ganan fuerza después de activarse.',
+          'Las herramientas de LAB se abren como destinos enfocados con un control Atrás a LAB confiable.',
+          'La página inicial muestra el panel real de GRID//NODE en vez de un holograma decorativo.'
+        ],
+        FIXED: [
+          'La terminal de carga es un panel temático de estado del sistema en vez de un bloque blanco.',
+          'Zepbound conserva su identidad canónica en ubicación, historial, Editar, Phase Engine y RESULTS.'
+        ],
+        COMPATIBILITY: ['Efectos secundarios, altura, idioma y tema siguen persistiendo con los registros locales existentes.']
+      }
+    },
+    '20260802.9': {
+      version: '0.9.0', title: 'PREMIUM MOBILE REFINEMENT', date: '2026-08-02',
+      en: {
+        NEW: ['Formal GRID//NODE version history and a reopenable system-update experience.'],
+        IMPROVED: ['Red-lava primary actions and broader DAY OPS coverage.', 'Phase Curve charts reserve space for labels.'],
+        FIXED: ['Passkey prompts no longer repeat after registration.', 'Mobile header controls no longer overlap the GRID//NODE brand.'],
+        ACCESSIBILITY: ['Larger text roles and clearer focus in both themes.']
+      },
+      es: {
+        NEW: ['Historial formal de versiones de GRID//NODE y una experiencia de actualización que puede reabrirse.'],
+        IMPROVED: ['Acciones principales lava roja y mayor cobertura de DAY OPS.', 'Las gráficas Phase Curve reservan espacio para etiquetas.'],
+        FIXED: ['Las invitaciones de passkey ya no se repiten después del registro.', 'Los controles del encabezado móvil ya no cubren la marca GRID//NODE.'],
+        ACCESSIBILITY: ['Roles de texto más grandes y enfoque más claro en ambos temas.']
+      }
     }
-  };
+  });
 
-  function lang() {
-    return (document.documentElement && document.documentElement.lang === 'es') ? 'es' : 'en';
-  }
-
-  function tx(key, fallback) {
-    return (window.GN_I18N && window.GN_I18N.text) ? window.GN_I18N.text(key, fallback) : fallback;
-  }
-
-  function categoryLabels() {
+  function lang() { return document.documentElement.lang === 'es' ? 'es' : 'en'; }
+  function tx(key, fallback) { return window.GN_I18N?.text ? window.GN_I18N.text(key, fallback) : fallback; }
+  function labels() {
     return {
-      NEW: tx('whatsnew.catNew', 'NEW'),
-      IMPROVED: tx('whatsnew.catImproved', 'IMPROVED'),
-      FIXED: tx('whatsnew.catFixed', 'FIXED'),
-      ACCESSIBILITY: tx('whatsnew.catA11y', 'ACCESSIBILITY'),
-      MOBILE: tx('whatsnew.catMobile', 'MOBILE'),
-      SECURITY: tx('whatsnew.catSecurity', 'SECURITY')
+      NEW: tx('whatsnew.catNew', 'NEW'), IMPROVED: tx('whatsnew.catImproved', 'IMPROVED'),
+      FIXED: tx('whatsnew.catFixed', 'FIXED'), ACCESSIBILITY: tx('whatsnew.catA11y', 'ACCESSIBILITY'),
+      MOBILE: tx('whatsnew.catMobile', 'MOBILE'), SECURITY: tx('whatsnew.catSecurity', 'SECURITY'),
+      COMPATIBILITY: lang() === 'es' ? 'COMPATIBILIDAD' : 'COMPATIBILITY'
     };
   }
+  function acknowledged() { try { return localStorage.getItem(ACK_KEY); } catch (_) { return null; } }
+  function acknowledge(release) {
+    try {
+      localStorage.setItem(ACK_KEY, release);
+      localStorage.setItem('gn_whatsnew_seen_premium_' + release, '1');
+      localStorage.setItem('gn_whatsnew_seen', VERSION.semver);
+    } catch (_) {}
+  }
+  function hasCurrentNotes() { return Boolean(NOTES[VERSION.release]?.[lang()]); }
 
-  function buildNotes(release) {
-    var data = (NOTES[release] || {})[lang()] || {};
-    var order = ['NEW', 'IMPROVED', 'FIXED', 'ACCESSIBILITY', 'MOBILE', 'SECURITY'];
-    var out = [];
-    order.forEach(function (cat) {
-      var items = data[cat];
-      if (!items || !items.length) return;
-      var labels = categoryLabels();
-      out.push('<section class="gn-wn-cat" data-cat="' + cat.toLowerCase() + '"><span class="gn-wn-cat-tag">' + (labels[cat] || cat) + '</span><ul>' +
-        items.map(function (item) { return '<li>' + item + '</li>'; }).join('') + '</ul></section>');
-    });
-    return out.join('');
+  function categories(entry) {
+    const data = entry[lang()] || entry.en || {};
+    const names = labels();
+    return ORDER.map(category => {
+      const items = data[category];
+      if (!items?.length) return '';
+      return '<section class="gn-wn-cat" data-cat="' + category.toLowerCase() + '"><span class="gn-wn-cat-tag">' + (names[category] || category) + '</span><ul>' + items.map(item => '<li>' + item + '</li>').join('') + '</ul></section>';
+    }).join('');
   }
 
-  function show(opts) {
-    opts = opts || {};
-    var release = opts.release || VERSION.release;
-    var key = 'gn_whatsnew_seen_premium_' + release;
-    if (!opts.force) {
-      try { if (localStorage.getItem(key)) return; } catch (_) { /* storage unavailable */ }
-    }
-    var data = (NOTES[release] || {})[lang()] || {};
-    if (!Object.keys(data).length) return;
-    if (document.getElementById('gnWhatsNewOverlay')) document.getElementById('gnWhatsNewOverlay').remove();
+  function releasePanel(release, entry, current) {
+    return '<article class="gn-wn-release' + (current ? ' current' : '') + '">' +
+      '<div class="gn-wn-release-head"><div><div class="gn-whatsnew-version">GRID//NODE v' + entry.version + '</div><div class="gn-whatsnew-title">' + entry.title + '</div></div><div class="gn-whatsnew-date">' + entry.date + '<br>' + release + '</div></div>' +
+      '<div class="gn-whatsnew-body">' + categories(entry) + '</div></article>';
+  }
 
-    var overlay = document.createElement('div');
+  function show(options) {
+    const opts = options || {};
+    if (!opts.force && acknowledged() === VERSION.release) return false;
+    if (!hasCurrentNotes()) return false;
+    document.getElementById('gnWhatsNewOverlay')?.remove();
+    const historyMode = Boolean(opts.history);
+    const releases = historyMode ? Object.keys(NOTES).sort().reverse() : [VERSION.release];
+    const overlay = document.createElement('div');
     overlay.id = 'gnWhatsNewOverlay';
-    overlay.className = 'gn-whatsnew-overlay';
+    overlay.className = 'gn-whatsnew-overlay active';
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
-    overlay.setAttribute('aria-label', tx('whatsnew.title', 'WHAT\'S NEW'));
-    var versionLabel = (opts.version && opts.version.semver) ? opts.version.semver : VERSION.semver;
-    var title = (data.title || VERSION.title);
-    var date = (data.date || VERSION.date);
-    overlay.innerHTML =
-      '<div class="gn-whatsnew-card">' +
-        '<div class="gn-whatsnew-kicker">// ' + tx('whatsnew.systemUpdate', 'SYSTEM UPDATE') + '</div>' +
-        '<div class="gn-whatsnew-version">GRID//NODE v' + versionLabel + '</div>' +
-        '<div class="gn-whatsnew-title">' + title + '</div>' +
-        '<div class="gn-whatsnew-date">' + date + ' \u00b7 ' + release + '</div>' +
-        '<div class="gn-whatsnew-body">' + buildNotes(release) + '</div>' +
-        '<button type="button" class="gn-whatsnew-close">' + tx('whatsnew.gotIt', 'GOT IT') + '</button>' +
-      '</div>';
+    overlay.setAttribute('aria-labelledby', 'gnWhatsNewHeading');
+    overlay.innerHTML = '<div class="gn-whatsnew-card">' +
+      '<div class="gn-whatsnew-kicker">// ' + tx('whatsnew.systemUpdate', 'SYSTEM UPDATE') + '</div>' +
+      '<h2 id="gnWhatsNewHeading">' + (historyMode ? (lang() === 'es' ? 'HISTORIAL DE ACTUALIZACIONES' : 'UPDATE HISTORY') : tx('whatsnew.title', 'WHAT\'S NEW')) + '</h2>' +
+      '<div class="gn-wn-history">' + releases.map(release => releasePanel(release, NOTES[release], release === VERSION.release)).join('') + '</div>' +
+      '<div class="gn-whatsnew-actions">' + (!historyMode ? '<button type="button" class="gn-whatsnew-history">' + (lang() === 'es' ? 'VER HISTORIAL' : 'VIEW UPDATE HISTORY') + '</button>' : '') +
+      '<button type="button" class="gn-whatsnew-close">' + tx('whatsnew.gotIt', 'GOT IT') + '</button></div></div>';
     document.body.appendChild(overlay);
-    overlay.classList.add('active');
-    var closeBtn = overlay.querySelector('.gn-whatsnew-close');
-    if (closeBtn) closeBtn.focus();
-    overlay.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') dismiss();
-    });
-
-    function dismiss() {
-      overlay.classList.remove('active');
-      overlay.remove();
-      try { localStorage.setItem(key, '1'); } catch (_) { /* storage unavailable */ }
-    }
-    overlay.querySelector('.gn-whatsnew-close').addEventListener('click', dismiss);
-    overlay.addEventListener('click', function (event) {
-      if (event.target === overlay) dismiss();
-    });
+    const close = () => { acknowledge(VERSION.release); overlay.classList.remove('active'); overlay.remove(); };
+    overlay.querySelector('.gn-whatsnew-close').addEventListener('click', close);
+    overlay.querySelector('.gn-whatsnew-history')?.addEventListener('click', () => show({ force: true, history: true }));
+    overlay.addEventListener('keydown', event => { if (event.key === 'Escape') close(); });
+    overlay.querySelector('.gn-whatsnew-close').focus({ preventScroll: true });
+    return true;
   }
 
   function boot() {
-    // Never block first-time landing discovery: only auto-show once the app
-    // shell is visible, and give the page a beat to settle.
-    function tryAutoShow() {
-      var landing = document.getElementById('landing');
-      var app = document.getElementById('app');
-      var inApp = app && getComputedStyle(app).display !== 'none' && (!landing || getComputedStyle(landing).display === 'none');
-      if (!inApp) { window.setTimeout(tryAutoShow, 1200); return; }
+    const attempt = () => {
+      const app = document.getElementById('app');
+      if (!app || getComputedStyle(app).display === 'none') { window.setTimeout(attempt, 900); return; }
       show();
-    }
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { window.setTimeout(tryAutoShow, 1000); }, { once: true });
-    else window.setTimeout(tryAutoShow, 1000);
+    };
+    window.setTimeout(attempt, 900);
   }
 
-  // The legacy bundle modal is superseded by this sheet: suppress it up
-  // front (before showApp can display it) for the current APP_VERSION.
-  try { localStorage.setItem('gn_whatsnew_seen', VERSION.semver); } catch (_) { /* storage unavailable */ }
-
-  // GN_VERSION is owned by js/gridnode-version.js (single source).
-  window.GN_WHATS_NEW = Object.freeze({ show: show });
-
-  boot();
+  window.GN_WHATS_NEW = Object.freeze({
+    show, history: () => show({ force: true, history: true }), acknowledged,
+    currentRelease: VERSION.release, currentVersion: VERSION.semver,
+    releases: Object.freeze(Object.keys(NOTES).sort().reverse()), notes: NOTES,
+    shouldAutoShow: () => acknowledged() !== VERSION.release && hasCurrentNotes()
+  });
+  try { localStorage.setItem('gn_whatsnew_seen', VERSION.semver); } catch (_) {}
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true }); else boot();
 })();
