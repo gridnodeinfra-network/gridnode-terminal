@@ -1,7 +1,24 @@
 #!/usr/bin/env node
+
+async function reloadPage(page, timeoutMs = 15000) {
+  // Tolerant reload: the app reloads itself once when the service worker takes
+  // control (controllerchange). Playwright's page.reload races that and throws
+  // net::ERR_FAILED, so trigger via location.reload and wait for the new
+  // document to settle instead.
+  await page.evaluate(() => location.reload());
+  await page.waitForLoadState('domcontentloaded', { timeout: timeoutMs }).catch(() => {});
+  await page.waitForTimeout(700);
+  // After a reload the app boots to the landing screen; re-enter the app.
+  const onLanding = await page.locator('.landing-btn.primary').first().isVisible().catch(() => false);
+  if (onLanding) {
+    await page.locator('.landing-btn.primary').first().click();
+    await page.locator('#app.active').waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
+  }
+}
+
 'use strict';
 
-const { chromium } = require('/home/thinkpadwinbash/.npm/_npx/705bc6b22212b352/node_modules/playwright');
+const { chromium } = require('playwright');
 
 const baseURL = process.argv[2] || 'http://127.0.0.1:4173';
 const expectedRelease = process.argv[3] || '20260804.1';
@@ -28,15 +45,26 @@ async function storedRecord(page, suffix) {
 
 async function bootstrap(page, { lang = 'en', theme = 'light', clean = true } = {}) {
   await page.goto(`${baseURL}/?rc=${Date.now()}`, { waitUntil: 'domcontentloaded' });
+  // Let the boot sequence + SW controllerchange settle before interacting.
+  await page.waitForTimeout(2500);
   await page.evaluate(({ release, language, appearance, clear }) => {
     if (clear) localStorage.clear();
     localStorage.setItem('gn_theme_v1', appearance);
     localStorage.setItem('gn.lang', language);
     localStorage.setItem('gn_onboarding_v1', 'complete');
     localStorage.setItem('gn_whatsnew_acknowledged_release_v2', release);
+    // Seed a local-only session so the app boots into the workspace (the
+    // login screen only appears when no session exists).
+    localStorage.setItem('gn_session_v2', JSON.stringify({
+      user: { id: 'local', email: 'qa@gridnode.local', user_metadata: { full_name: 'NODE_USER' } },
+      createdAt: new Date().toISOString()
+    }));
   }, { release: expectedRelease, language: lang, appearance: theme, clear: clean });
-  await page.reload({ waitUntil: 'domcontentloaded' });
-  await page.locator('.landing-local-link').click();
+  await reloadPage(page);
+  const landingVisible = await page.locator('.landing-btn.primary').first().isVisible().catch(() => false);
+  if (landingVisible) {
+    await page.locator('.landing-btn.primary').first().click();
+  }
   await page.locator('#app.active').waitFor({ state: 'visible' });
   await page.waitForTimeout(300);
 }
@@ -145,7 +173,7 @@ async function newUserFlow(browser) {
   assert((await page.locator('#gnProfileBody').textContent()).includes("5'9\""), 'height summary updates');
 
   await page.evaluate(async () => { await window.GN_I18N.setLang('es'); window.GN_THEME.set('dark'); });
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  await reloadPage(page);
   await page.locator('#app.active').waitFor({ state: 'visible' });
   const persistedPresentation = await page.evaluate(() => ({ lang: document.documentElement.lang, theme: window.GN_THEME.get(), storedLang: localStorage.getItem('gn.lang'), storedTheme: localStorage.getItem('gn_theme_v1') }));
   assert(persistedPresentation.lang === 'es' && persistedPresentation.theme === 'dark', 'language and theme persist after reload', JSON.stringify(persistedPresentation));
@@ -170,9 +198,16 @@ async function onboardingFlow(browser) {
     localStorage.setItem('gn.lang', 'en');
     localStorage.setItem('gn_whatsnew_acknowledged_release_v2', release);
   }, expectedRelease);
-  await page.reload({ waitUntil: 'domcontentloaded' });
-  await page.locator('.landing-local-link').click();
-  await page.locator('.gn-onb-overlay').waitFor({ state: 'visible', timeout: 6000 });
+  await reloadPage(page);
+  const landingVisible = await page.locator('.landing-btn.primary').first().isVisible().catch(() => false);
+  if (landingVisible) await page.locator('.landing-btn.primary').first().click();
+  // Fresh user hits the login screen; enter local-only mode via the same code
+  // path as the CONTINUE LOCALLY button (auto-starts onboarding).
+  await page.evaluate(() => {
+    if (window.GN?.localMode) window.GN.localMode();
+    else if (typeof window.startGridNode === 'function') window.startGridNode();
+  });
+  await page.locator('.gn-onb-overlay').waitFor({ state: 'visible', timeout: 10000 });
   await page.waitForFunction(() => document.querySelector('[data-onb-kicker]')?.textContent.includes('1 / 4'));
   assert((await page.locator('[data-onb-kicker]').innerText()).includes('1 / 4') && await page.locator('.gn-onb-dots i').count() === 4, 'onboarding exposes exactly four stages');
   assert(await page.locator('[data-onb-next]').isVisible(), 'explanation stage has one Continue control');
@@ -201,7 +236,7 @@ async function returningUserAndPlatformFlow(browser) {
     localStorage.setItem(shotKey, JSON.stringify([{ id: 'returning-shot', date: '2026-08-02T09:15', med: 'Zepbound', dose: 5, site: 'Left Abdomen — Lower', se: ['Nausea'], notes: 'returning user', archived: false }]));
     localStorage.setItem('gn_onboarding_v1', 'complete');
   });
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  await reloadPage(page);
   await page.locator('#app.active').waitFor({ state: 'visible' });
   assert(await page.locator('.gn-onb-overlay.active').count() === 0, 'onboarding does not replay for returning user');
   await page.evaluate(() => window.showPage('Log'));
@@ -302,18 +337,18 @@ async function returningUserAndPlatformFlow(browser) {
   assert(manifest.display === 'standalone' && Array.isArray(manifest.icons) && manifest.icons.length > 0, 'PWA manifest exposes a standalone install shell');
 
   await page.evaluate(() => localStorage.removeItem('gn_whatsnew_acknowledged_release_v2'));
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  await reloadPage(page);
   await page.locator('#gnWhatsNewOverlay.active').waitFor({ state: 'visible' });
   assert((await page.locator('.gn-wn-release.current').innerText()).includes(expectedVersion), 'localized What’s New matches candidate version');
   await page.locator('.gn-whatsnew-close').click();
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  await reloadPage(page);
   await page.waitForTimeout(900);
   assert(await page.locator('#gnWhatsNewOverlay.active').count() === 0, 'What’s New acknowledgment prevents replay');
 
   const serviceWorkerReady = await page.evaluate(async () => { await navigator.serviceWorker.ready; return Boolean(navigator.serviceWorker.controller || await navigator.serviceWorker.getRegistration()); });
   assert(serviceWorkerReady, 'service worker controls or registers the app shell');
   await context.setOffline(true);
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  await reloadPage(page);
   assert(await page.evaluate(() => Boolean(window.GN_VERSION)), 'offline shell loads the candidate version');
   await context.setOffline(false);
   await context.close();

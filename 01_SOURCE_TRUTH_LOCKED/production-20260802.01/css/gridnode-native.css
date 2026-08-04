@@ -1061,7 +1061,15 @@ html[data-theme="light"] .gn-pwa-ios-later {
 #gnResearchList .gn-empty-state span { font: .78rem/1.65 var(--font-b, system-ui); color: var(--text-mid, #b7c7d3); }
 
 /* Modal/tool overlay: reduce density, add structure. */
-#gnLabToolOverlay .gn-lab-tool-head { padding: 14px 16px !important; }
+#gnLabToolOverlay 
+/* LAB focused-view scroll contract (Blocker 3): the LAB tool overlay is the
+   scroll container; reserve scroll-padding-top (sticky header height + 16px)
+   so scrollIntoView lands the first focused content BELOW the sticky header
+   with a >=12px gap. openLabTool resets overlay.scrollTop = 0 on open. */
+.gn-lab-tool-overlay { scroll-padding-top: calc(76px + var(--safe-top, 0px)) !important; }
+#gnLabToolHost > :first-child { scroll-margin-top: calc(12px + var(--safe-top, 0px)); }
+
+.gn-lab-tool-head { padding: 14px 16px !important; }
 #gnLabToolHost .gn-foundation-panel { margin: 0; }
 #gnLabToolHost .gn-foundation-grid { gap: 10px; margin-bottom: 16px; }
 

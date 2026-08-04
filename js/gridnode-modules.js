@@ -617,9 +617,12 @@ export function saveShot(allowFuture = false) {
   };
   const all = getAllShots();
   const index = all.findIndex(item => item.id === record.id);
+  // B4: pure prep (no writes), then one atomic multiWrite batch.
+  const { inventory, changed } = prepareInventoryForShot(record, existing);
   if (index >= 0) all[index] = record; else all.push(record);
-  S.set('shots', all);
-  queueCloudSync('shot', record);
+  const ops = [{ key: 'shots', value: all }];
+  if (changed) ops.push({ key: 'inventory', value: inventory });
+  let weightRecord = null;
   if (record.wt) {
     const weights = getWeights();
     const linkedIndex = weights.findIndex(item => item.shotId === record.id || (
@@ -627,18 +630,46 @@ export function saveShot(allowFuture = false) {
       && item.date === existing.date && Number(item.weight) === Number(existing.wt)
     ));
     const linkedWeight = linkedIndex >= 0 ? weights[linkedIndex] : null;
-    const weightRecord = {
+    weightRecord = {
       ...(linkedWeight || {}), id: linkedWeight?.id || createId('weight'), shotId: record.id,
       date: record.date, weight: record.wt, notes: 'Logged with SHOT'
     };
     if (linkedIndex >= 0) weights[linkedIndex] = weightRecord; else weights.push(weightRecord);
-    S.set('weights', weights); queueCloudSync('weight', weightRecord);
+    ops.push({ key: 'weights', value: weights });
   }
+  if (!S.multiWrite(ops)) { showToast(tx('shots.storageFull', 'SHOT could not be saved — storage is full.'), true); return; }
+  queueCloudSync('shot', record);
+  if (changed) queueCloudSync('workspace');
+  if (record.wt && weightRecord) queueCloudSync('weight', weightRecord);
   moduleState.pendingFutureShot = false;
   $('futureTimestampConfirm')?.classList.remove('active');
   closeLog();
   refreshAll();
   showToast(existing ? 'SHOT UPDATED' : 'SHOT RECORDED');
+}
+
+function prepareInventoryForShot(record, existing) {
+  // Pure prep (B4): computes the next inventory state WITHOUT writing storage.
+  const inventory = S.get('inventory', []);
+  let changed = false;
+  if (existing?.inventoryDeduction?.itemId && Number(existing.inventoryDeduction.amount) > 0) {
+    const previousItem = inventory.find(item => item.id === existing.inventoryDeduction.itemId);
+    if (previousItem) { previousItem.quantity = Number(previousItem.quantity || 0) + Number(existing.inventoryDeduction.amount); changed = true; }
+  }
+  delete record.inventoryDeduction;
+  const medicationKeys = [record.med, medicationLabel(record.med)].map(value => String(value || '').toLowerCase()).filter(Boolean);
+  const item = inventory.find(candidate => {
+    const identity = String(candidate.medication || candidate.name || '').toLowerCase();
+    return !candidate.archived && candidate.autoDeduct && String(candidate.units || '').toLowerCase() === 'mg' && medicationKeys.some(key => identity.includes(key) || key.includes(identity));
+  });
+  if (item && Number(item.quantity) >= Number(record.dose)) {
+    item.quantity = Number(item.quantity) - Number(record.dose);
+    item.modifiedAt = new Date().toISOString();
+    item.history = [...(item.history || []), { at: item.modifiedAt, action: `AUTO-DEDUCTED ${record.dose} mg FOR SHOT`, source: 'System Generated', shotId: record.id }];
+    record.inventoryDeduction = { itemId: item.id, amount: Number(record.dose), unit: 'mg' };
+    changed = true;
+  }
+  return { inventory, changed };
 }
 
 export function openFutureTimestampConfirm() { $('futureTimestampConfirm')?.classList.add('active'); }

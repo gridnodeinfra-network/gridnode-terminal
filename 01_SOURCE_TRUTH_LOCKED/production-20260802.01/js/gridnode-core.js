@@ -93,6 +93,42 @@ export const S = Object.freeze({
       return false;
     }
   },
+  /* Atomic batch write (B4): all ops serialize FIRST (fail closed before any
+     write), then all keys are written. If any write throws, previous values
+     are restored best-effort and false is returned — no partial state. */
+  multiWrite(ops) {
+    if (!Array.isArray(ops) || ops.length === 0) return true;
+    const prepared = [];
+    for (const op of ops) {
+      if (!op || typeof op.key !== 'string') return false;
+      let raw;
+      try { raw = JSON.stringify(op.value); } catch (error) {
+        console.warn('[GRID//NODE storage.multiWrite.serialize]', op.key, error);
+        return false;
+      }
+      prepared.push({ storageKey: accountStorageKey(op.key), raw });
+    }
+    const snapshot = [];
+    try {
+      for (const p of prepared) {
+        const prior = localStorage.getItem(p.storageKey);
+        snapshot.push({ storageKey: p.storageKey, existed: prior !== null, prior });
+      }
+      for (const p of prepared) localStorage.setItem(p.storageKey, p.raw);
+      return true;
+    } catch (error) {
+      console.warn('[GRID//NODE storage.multiWrite]', error);
+      try {
+        for (const s of snapshot) {
+          if (s.existed) localStorage.setItem(s.storageKey, s.prior);
+          else localStorage.removeItem(s.storageKey);
+        }
+      } catch (rollbackError) {
+        console.warn('[GRID//NODE storage.multiWrite.rollback]', rollbackError);
+      }
+      return false;
+    }
+  },
   remove(key) {
     try {
       localStorage.removeItem(accountStorageKey(key));

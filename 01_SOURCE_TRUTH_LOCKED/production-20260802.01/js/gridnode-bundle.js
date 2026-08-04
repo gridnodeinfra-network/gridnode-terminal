@@ -95,6 +95,42 @@ const S = Object.freeze({
       return false;
     }
   },
+  /* Atomic batch write (B4): all ops serialize FIRST (fail closed before any
+     write), then all keys are written. If any write throws, previous values
+     are restored best-effort and false is returned — no partial state. */
+  multiWrite(ops) {
+    if (!Array.isArray(ops) || ops.length === 0) return true;
+    const prepared = [];
+    for (const op of ops) {
+      if (!op || typeof op.key !== 'string') return false;
+      let raw;
+      try { raw = JSON.stringify(op.value); } catch (error) {
+        console.warn('[GRID//NODE storage.multiWrite.serialize]', op.key, error);
+        return false;
+      }
+      prepared.push({ storageKey: accountStorageKey(op.key), raw });
+    }
+    const snapshot = [];
+    try {
+      for (const p of prepared) {
+        const prior = localStorage.getItem(p.storageKey);
+        snapshot.push({ storageKey: p.storageKey, existed: prior !== null, prior });
+      }
+      for (const p of prepared) localStorage.setItem(p.storageKey, p.raw);
+      return true;
+    } catch (error) {
+      console.warn('[GRID//NODE storage.multiWrite]', error);
+      try {
+        for (const s of snapshot) {
+          if (s.existed) localStorage.setItem(s.storageKey, s.prior);
+          else localStorage.removeItem(s.storageKey);
+        }
+      } catch (rollbackError) {
+        console.warn('[GRID//NODE storage.multiWrite.rollback]', rollbackError);
+      }
+      return false;
+    }
+  },
   remove(key) {
     try {
       localStorage.removeItem(accountStorageKey(key));
@@ -1439,7 +1475,7 @@ function saveProfileMed() {
   const saved = S.set('profile', profile);
   setText('profMedTxt', normalizeMedicationId(profile.med) ? `// ${medicationLabel(profile.med).toUpperCase()}` : tx('profile.noMedicationSet', '// NO MEDICATION SET'));
   if (saved) queueCloudSync('profile', profile);
-  showToast(saved ? 'Profile protocol context saved.' : 'Profile could not be saved — storage is full.', !saved);
+  showToast(saved ? tx('profile.protocolSaved', 'Profile protocol context saved.') : tx('profile.storageFull', 'Profile could not be saved — storage is full.'), !saved);
 }
 
 function saveProfileMetrics() {
@@ -1952,10 +1988,10 @@ async function confirmPermanentDeleteShot() {
   cancelPermanentDeleteShot();
   const record = getAllShots().find(item => item.id === id);
   const next = getAllShots().filter(item => item.id !== id);
-  if (!S.set('shots', next)) { showToast('Could not delete — storage unavailable.', true); return; }
+  if (!S.set('shots', next)) { showToast(tx('shots.deleteStorageUnavailable', 'Could not delete — storage unavailable.'), true); return; }
   refreshAll();
   const cloudDeleted = await deleteCloudShot(record);
-  showToast(cloudDeleted ? 'Archived record deleted.' : 'Deleted locally. Cloud deletion queued for retry.');
+  showToast(cloudDeleted ? tx('shots.deletedCloud', 'Archived record deleted.') : tx('shots.deletedLocalQueued', 'Deleted locally. Cloud deletion queued for retry.'));
 }
 
 function saveShot(allowFuture = false) {
@@ -1988,10 +2024,13 @@ function saveShot(allowFuture = false) {
     };
     const all = getAllShots();
     const index = all.findIndex(item => item.id === record.id);
-    reconcileInventoryForShot(record, existing);
+    // B4: compute the next inventory state WITHOUT writing (pure prep).
+    const { inventory, changed } = prepareInventoryForShot(record, existing);
     if (index >= 0) all[index] = record; else all.push(record);
-    if (!S.set('shots', all)) { showToast(tx('shots.storageFull', 'SHOT could not be saved — storage is full.'), true); return; }
-    queueCloudSync('shot', record);
+    // B4: single atomic batch — SHOT record + inventory + linked weight.
+    const ops = [{ key: 'shots', value: all }];
+    if (changed) ops.push({ key: 'inventory', value: inventory });
+    let weightRecord = null;
     if (record.wt) {
       const weights = getWeights();
       const linkedIndex = weights.findIndex(item => item.shotId === record.id || (
@@ -1999,14 +2038,21 @@ function saveShot(allowFuture = false) {
         && item.date === existing.date && Number(item.weight) === Number(existing.wt)
       ));
       const linkedWeight = linkedIndex >= 0 ? weights[linkedIndex] : null;
-      const weightRecord = {
+      weightRecord = {
         ...(linkedWeight || {}), id: linkedWeight?.id || createId('weight'), shotId: record.id,
         date: record.date, weight: record.wt, notes: 'Logged with SHOT'
       };
       if (linkedIndex >= 0) weights[linkedIndex] = weightRecord; else weights.push(weightRecord);
-      if (S.set('weights', weights)) queueCloudSync('weight', weightRecord);
-      else showToast('Linked weight could not be saved — storage is full.', true);
+      ops.push({ key: 'weights', value: weights });
     }
+    if (!S.multiWrite(ops)) {
+      showToast(tx('shots.storageFull', 'SHOT could not be saved — storage is full.'), true);
+      return;
+    }
+    // Cloud sync ONLY after the local batch committed atomically.
+    queueCloudSync('shot', record);
+    if (changed) queueCloudSync('workspace');
+    if (record.wt && weightRecord) queueCloudSync('weight', weightRecord);
     appendEventLedger({ type: 'SHOT', recordId: record.id, date: record.date, label: existing ? 'SHOT UPDATED' : 'SHOT EVENT CONFIRMED' });
     moduleState.pendingFutureShot = false;
     $('futureTimestampConfirm')?.classList.remove('active');
@@ -2018,7 +2064,8 @@ function saveShot(allowFuture = false) {
   }
 }
 
-function reconcileInventoryForShot(record, existing) {
+function prepareInventoryForShot(record, existing) {
+  // Pure prep (B4): computes the next inventory state WITHOUT writing storage.
   const inventory = S.get('inventory', []);
   let changed = false;
   if (existing?.inventoryDeduction?.itemId && Number(existing.inventoryDeduction.amount) > 0) {
@@ -2038,7 +2085,7 @@ function reconcileInventoryForShot(record, existing) {
     record.inventoryDeduction = { itemId: item.id, amount: Number(record.dose), unit: 'mg' };
     changed = true;
   }
-  if (changed) { S.set('inventory', inventory); queueCloudSync('workspace'); }
+  return { inventory, changed };
 }
 
 function openFutureTimestampConfirm() { $('futureTimestampConfirm')?.classList.add('active'); }
@@ -2629,12 +2676,8 @@ function openLabTool(tool) {
   if (!toolNodes.length) return;
   restoreLabNodes();
   toolNodes.forEach(labSlot);
-  // LAB focus: bring the selected tool into view and subdue the directory.
+  // LAB focus: subdue the directory while the tool content is moved.
   page.classList.add('gn-tool-focus');
-  requestAnimationFrame(function () {
-    var first = toolNodes[0];
-    if (first) { try { first.scrollIntoView({ block: 'start', behavior: 'auto' }); } catch (_) {} }
-  });
   toolNodes.forEach(node => host.appendChild(node));
   [$('gnResearchSection'), $('gnLedgerSection'), $('gnSupplySection')].forEach(section => { if (section) section.open = section.id === (tool === 'research' ? 'gnResearchSection' : tool === 'inventory' ? 'gnSupplySection' : 'gnLedgerSection'); });
   const titles = { calculators: tx('lab.calculators', 'CALCULATORS'), research: tx('lab.researchPeptides', 'RESEARCH PEPTIDES'), inventory: tx('lab.inventory', 'INVENTORY'), devices: tx('lab.deviceVault', 'DEVICE VAULT'), ledger: tx('lab.eventLedger', 'EVENT LEDGER') };
@@ -2647,6 +2690,15 @@ function openLabTool(tool) {
   if (tool === 'calculators') showLabSeg('draw', document.querySelector('[data-labseg="draw"]'));
   renderLabFoundations();
   if (tool === 'devices') renderDeviceVault();
+  // Focus scroll position: the overlay is the scroll container. For a newly
+  // opened tool, reset scrollTop to 0 after layout — the shell's layout already
+  // places the first content block below the sticky header (gap >= 12px).
+  // scrollIntoView is deliberately avoided here: it scrolls the container down
+  // and lands the content behind the sticky header. (CSS scroll-padding-top on
+  // .gn-lab-tool-overlay keeps later anchor jumps clear of the header.)
+  requestAnimationFrame(function () {
+    overlay.scrollTop = 0;
+  });
   overlay.querySelector('[data-lab-back]')?.focus({ preventScroll: true });
 }
 
@@ -2719,7 +2771,7 @@ function renderInventory() {
 
 function saveInventoryRecord() {
   const name = $('gnInventoryName')?.value?.trim();
-  if (!name) { actionFeedback('INVENTORY NOT SAVED', 'ADD AN ITEM NAME BEFORE COMMITTING', true); return; }
+  if (!name) { actionFeedback(tx('inventory.notSaved', 'INVENTORY NOT SAVED'), tx('inventory.addName', 'ADD AN ITEM NAME BEFORE COMMITTING'), true); return; }
   const records = S.get('inventory', []);
   const now = new Date().toISOString();
   const id = moduleState.inventoryEditId || createId('inventory');
@@ -2729,7 +2781,7 @@ function saveInventoryRecord() {
   const index = records.findIndex(item => item.id === id);
   if (index >= 0) records[index] = record; else records.push(record);
   S.set('inventory', records); appendEventLedger({ type: 'INVENTORY', recordId: record.id, label: existing ? 'INVENTORY UPDATED' : 'INVENTORY ITEM SAVED' }); queueCloudSync('workspace');
-  moduleState.inventoryEditId = null; $('gnInventoryForm')?.reset(); setText('gnInventorySave', 'SAVE INVENTORY ITEM'); renderInventory(); actionFeedback(existing ? 'INVENTORY UPDATED' : 'INVENTORY SAVED', 'SAVED INVENTORY // TIMELINE UPDATED');
+  moduleState.inventoryEditId = null; $('gnInventoryForm')?.reset(); setText('gnInventorySave', 'SAVE INVENTORY ITEM'); renderInventory(); actionFeedback(existing ? tx('inventory.updated', 'INVENTORY UPDATED') : tx('inventory.saved', 'INVENTORY SAVED'), tx('inventory.timelineUpdated', 'SAVED INVENTORY // TIMELINE UPDATED'));
 }
 
 function handleInventoryAction(event) {
@@ -2743,19 +2795,19 @@ function handleInventoryAction(event) {
     moduleState.inventoryEditId = id;
     $('gnInventoryName').value = record.name || ''; $('gnInventoryType').value = normalizeInventoryType(record.type); $('gnInventoryQuantity').value = record.quantity || ''; $('gnInventoryUnits').value = record.units || ''; $('gnInventoryMedication').value = record.medication || ''; $('gnInventoryAutoDeduct').checked = Boolean(record.autoDeduct); $('gnInventoryConcentration').value = record.concentration || ''; $('gnInventoryVolume').value = record.volume || ''; $('gnInventoryAcquired').value = record.acquired || ''; $('gnInventoryExpiry').value = record.expires || ''; $('gnInventorySource').value = record.inventorySource || ''; $('gnInventoryLocation').value = record.location || ''; $('gnInventoryNotes').value = record.notes || ''; setText('gnInventorySave', tx('lab.updateInventory', 'UPDATE INVENTORY ITEM')); syncCustomPicker($('gnInventoryType')); syncCustomDate($('gnInventoryAcquired')); syncCustomDate($('gnInventoryExpiry')); $('gnInventoryForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
   }
-  if (button.dataset.inventoryArchive) { record.archived = true; record.status = 'ARCHIVED'; record.modifiedAt = new Date().toISOString(); record.history = [...(record.history || []), { at: record.modifiedAt, action: 'ARCHIVED', source: 'manual' }]; actionFeedback('INVENTORY ARCHIVED', 'HISTORY PRESERVED // RECORD REMAINS RECOVERABLE'); }
-  else { record.archived = false; record.status = 'ACTIVE'; record.modifiedAt = new Date().toISOString(); record.history = [...(record.history || []), { at: record.modifiedAt, action: 'RESTORED', source: 'manual' }]; actionFeedback('INVENTORY RESTORED', 'SAVED INVENTORY // TIMELINE UPDATED'); }
+  if (button.dataset.inventoryArchive) { record.archived = true; record.status = 'ARCHIVED'; record.modifiedAt = new Date().toISOString(); record.history = [...(record.history || []), { at: record.modifiedAt, action: 'ARCHIVED', source: 'manual' }]; actionFeedback(tx('inventory.archived', 'INVENTORY ARCHIVED'), tx('inventory.historyPreserved', 'HISTORY PRESERVED // RECORD REMAINS RECOVERABLE')); }
+  else { record.archived = false; record.status = 'ACTIVE'; record.modifiedAt = new Date().toISOString(); record.history = [...(record.history || []), { at: record.modifiedAt, action: 'RESTORED', source: 'manual' }]; actionFeedback(tx('inventory.restored', 'INVENTORY RESTORED'), tx('inventory.timelineUpdated', 'SAVED INVENTORY // TIMELINE UPDATED')); }
   S.set('inventory', records); appendEventLedger({ type: 'INVENTORY', recordId: record.id, label: record.archived ? 'INVENTORY ARCHIVED' : 'INVENTORY RESTORED' }); queueCloudSync('workspace'); renderInventory();
 }
 
 function exportInventory() {
   downloadFile('gridnode-inventory.json', JSON.stringify({ app: 'GRID//NODE', exportedAt: new Date().toISOString(), inventory: S.get('inventory', []) }, null, 2), 'application/json');
-  actionFeedback('INVENTORY EXPORT READY', 'USER-CONTROLLED RECORDS PREPARED');
+  actionFeedback(tx('inventory.exportReady', 'INVENTORY EXPORT READY'), tx('inventory.recordsPrepared', 'USER-CONTROLLED RECORDS PREPARED'));
 }
 
 function saveResearchRecord() {
   const name = $('gnResearchName')?.value?.trim();
-  if (!name) { actionFeedback('RESEARCH RECORD NOT SAVED', 'ADD A NAME BEFORE COMMITTING', true); return; }
+  if (!name) { actionFeedback(tx('research.notSaved', 'RESEARCH RECORD NOT SAVED'), tx('research.addName', 'ADD A NAME BEFORE COMMITTING'), true); return; }
   const records = S.get('researchRecords', []), now = new Date().toISOString(), id = moduleState.researchEditId || createId('research'), existing = records.find(item => item.id === id);
   const categoryInput = $('gnResearchCategory');
   const record = { id, name, category: normalizeResearchCategory(categoryInput?.dataset.categoryId || categoryInput?.value), date: $('gnResearchDate')?.value || todayISO(), notes: $('gnResearchNotes')?.value?.trim() || '', source: $('gnResearchSource')?.value?.trim() || existing?.source || 'manual', state: $('gnResearchState')?.value || existing?.state || 'TRACKING', archived: existing?.archived || false, createdAt: existing?.createdAt || now, modifiedAt: now };
@@ -2774,11 +2826,11 @@ function handleResearchAction(event) {
   if (button.dataset.researchEdit) {
     moduleState.researchEditId = id; $('gnResearchName').value = record.name || ''; $('gnResearchCategory').dataset.categoryId = normalizeResearchCategory(record.category); $('gnResearchCategory').value = researchCategoryLabel(record.category); $('gnResearchDate').value = record.date || ''; $('gnResearchState').value = record.state || 'TRACKING'; $('gnResearchSource').value = record.source || ''; $('gnResearchNotes').value = record.notes || ''; setText('gnResearchSave', tx('research.update', 'UPDATE RESEARCH RECORD')); syncCustomPicker($('gnResearchState')); syncCustomDate($('gnResearchDate')); $('gnResearchForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
   }
-  record.archived = Boolean(button.dataset.researchArchive); record.state = record.archived ? 'ARCHIVED' : (record.state === 'ARCHIVED' ? 'TRACKING' : record.state); record.modifiedAt = new Date().toISOString(); S.set('researchRecords', records); appendEventLedger({ type: 'RESEARCH', recordId: record.id, label: record.archived ? 'RESEARCH RECORD ARCHIVED' : 'RESEARCH RECORD RESTORED' }); queueCloudSync('workspace'); renderLabFoundations(); actionFeedback(record.archived ? 'RESEARCH RECORD ARCHIVED' : 'RESEARCH RECORD RESTORED', 'HISTORY PRESERVED // TIMELINE UPDATED');
+  record.archived = Boolean(button.dataset.researchArchive); record.state = record.archived ? 'ARCHIVED' : (record.state === 'ARCHIVED' ? 'TRACKING' : record.state); record.modifiedAt = new Date().toISOString(); S.set('researchRecords', records); appendEventLedger({ type: 'RESEARCH', recordId: record.id, label: record.archived ? 'RESEARCH RECORD ARCHIVED' : 'RESEARCH RECORD RESTORED' }); queueCloudSync('workspace'); renderLabFoundations(); actionFeedback(record.archived ? tx('research.archived', 'RESEARCH RECORD ARCHIVED') : tx('research.restored', 'RESEARCH RECORD RESTORED'), tx('inventory.historyPreserved', 'HISTORY PRESERVED // TIMELINE UPDATED'));
 }
 
 function deleteResearchRecord(id) {
-  S.set('researchRecords', S.get('researchRecords', []).filter(record => record.id !== id)); queueCloudSync('workspace'); renderLabFoundations(); actionFeedback('RESEARCH RECORD REMOVED', 'LOCAL RECORD UPDATED');
+  S.set('researchRecords', S.get('researchRecords', []).filter(record => record.id !== id)); queueCloudSync('workspace'); renderLabFoundations(); actionFeedback(tx('research.removed', 'RESEARCH RECORD REMOVED'), tx('research.localUpdated', 'LOCAL RECORD UPDATED'));
 }
 
 function ensureProfileHub() {
@@ -2828,7 +2880,7 @@ function renderDeviceVault() {
 
 function saveDeviceRecord() {
   const name = $('gnDeviceName')?.value?.trim();
-  if (!name) { actionFeedback('DEVICE NOT REGISTERED', 'ADD A DEVICE NAME BEFORE COMMITTING', true); return; }
+  if (!name) { actionFeedback(tx('device.notRegistered', 'DEVICE NOT REGISTERED'), tx('device.addName', 'ADD A DEVICE NAME BEFORE COMMITTING'), true); return; }
   const devices = S.get('devices', []), now = new Date().toISOString(), id = moduleState.deviceEditId || createId('device'), existing = devices.find(item => item.id === id);
   const device = { ...(existing || {}), id, name, type: normalizeDeviceType($('gnDeviceType')?.value), status: $('gnDeviceStatus')?.value || 'NEEDS CHECKING', notes: $('gnDeviceNotes')?.value?.trim() || '', qrIdentity: existing?.qrIdentity || `GN-${Math.random().toString(36).slice(2, 10).toUpperCase()}`, source: existing?.source || 'manual', state: existing?.state || 'confirmed', archived: existing?.archived || false, createdAt: existing?.createdAt || now, modifiedAt: now };
   const index = devices.findIndex(item => item.id === id); if (index >= 0) devices[index] = device; else devices.push(device);
@@ -2889,10 +2941,10 @@ function saveCalculatorReference(type) {
     supply: { name: 'Supply calculator reference', notes: $('supOut')?.textContent || '' }
   };
   const snapshot = snapshots[type];
-  if (!snapshot?.notes || /ENTER VALID|INVALID INPUT|—/.test(snapshot.notes)) { actionFeedback('REFERENCE NOT SAVED', 'ENTER VALID CALCULATOR VALUES FIRST', true); return; }
+  if (!snapshot?.notes || /ENTER VALID|INVALID INPUT|—/.test(snapshot.notes)) { actionFeedback(tx('lab.referenceNotSaved', 'REFERENCE NOT SAVED'), tx('lab.enterValidFirst', 'ENTER VALID CALCULATOR VALUES FIRST'), true); return; }
   const records = S.get('inventory', []), now = new Date().toISOString();
   records.push({ id: createId('inventory'), name: snapshot.name, type: 'Calculator reference', quantity: 0, units: '', medication: '', autoDeduct: false, notes: snapshot.notes, status: 'REFERENCE', archived: false, source: 'System Generated', state: 'User Confirmed', history: [{ at: now, action: 'CALCULATOR REFERENCE SAVED', source: 'System Generated' }], createdAt: now, modifiedAt: now });
-  S.set('inventory', records); appendEventLedger({ type: 'INVENTORY', recordId: records.at(-1).id, label: 'CALCULATOR REFERENCE SAVED' }); queueCloudSync('workspace'); renderInventory(); actionFeedback('REFERENCE SAVED', 'INVENTORY UPDATED // EDUCATIONAL MATH ONLY');
+  S.set('inventory', records); appendEventLedger({ type: 'INVENTORY', recordId: records.at(-1).id, label: 'CALCULATOR REFERENCE SAVED' }); queueCloudSync('workspace'); renderInventory(); actionFeedback(tx('lab.referenceSaved', 'REFERENCE SAVED'), tx('lab.referenceSavedDetail', 'INVENTORY UPDATED // EDUCATIONAL MATH ONLY'));
 }
 
 function renderLab() { ensureLabFoundations(); ensureDoseProjection(); ensureCalculatorInventoryActions(); updateSyr(); updateRecon(); updateSupply(); updateDoseProjection(); renderLabFoundations(); window.GN_I18N?.applyTo?.(document.getElementById('pageLab')); }
@@ -2909,7 +2961,7 @@ function updateSyr() {
   if (!doseField.valid || !concentrationField.valid) { setText('syrFormula', !doseField.valid ? doseField.message : concentrationField.message); return; }
   const dose = doseField.value, concentration = concentrationField.value;
   const volume = dose / concentration, units = volume * 100;
-  if (!Number.isFinite(volume) || !Number.isFinite(units) || volume > 1000 || units > 100000) { setText('syrFormula', 'INVALID INPUT · CALCULATED RESULT IS OUTSIDE THE SUPPORTED RANGE'); return; }
+  if (!Number.isFinite(volume) || !Number.isFinite(units) || volume > 1000 || units > 100000) { setText('syrFormula', tx('lab.outOfRange', 'INVALID INPUT · CALCULATED RESULT IS OUTSIDE THE SUPPORTED RANGE')); return; }
   setText('syrUnits', `${units.toFixed(1)}u`); setText('syrText', tx('lab.drawToUnit', 'DRAW TO THE {units} UNIT LINE', { units: units.toFixed(1) })); setText('syrML', `${volume.toFixed(3)} mL`); setText('syrConcDisplay', `${concentration} mg/mL`); setText('syrResultLine', `${dose} mg`); setText('syrVolResult', `${volume.toFixed(3)} mL`); setText('syrFormula', `${dose} mg ÷ ${concentration} mg/mL = ${volume.toFixed(3)} mL = ${units.toFixed(1)} U-100 units. ${tx('lab.educationalMathOnly', 'Educational math only.')}`); setDisplay('syrTarget', true);
   const target = $('syrTarget'); if (target) target.style.left = `${Math.min(100, Math.max(0, units))}%`;
 }
@@ -2918,7 +2970,7 @@ function updateRecon() {
   const vialField = positiveNumberField('rVial', tx('lab.totalAmount', 'TOTAL AMOUNT'), 10000), concField = positiveNumberField('rConc', tx('lab.targetConcentration', 'TARGET CONCENTRATION'), 10000);
   if (!vialField.valid || !concField.valid) { setText('reconOut', !vialField.valid ? vialField.message : concField.message); return; }
   const volume = vialField.value / concField.value;
-  if (!Number.isFinite(volume) || volume > 10000) { setText('reconOut', 'INVALID INPUT · CALCULATED RESULT IS OUTSIDE THE SUPPORTED RANGE'); return; }
+  if (!Number.isFinite(volume) || volume > 10000) { setText('reconOut', tx('lab.outOfRange', 'INVALID INPUT · CALCULATED RESULT IS OUTSIDE THE SUPPORTED RANGE')); return; }
   setText('reconOut', `Reference math: ${vialField.value} mg ÷ ${concField.value} mg/mL = ${volume.toFixed(3)} mL total reference volume.`); setText('bacAmt', `${volume.toFixed(3)} mL`);
 }
 function updateSupply() {
@@ -2927,8 +2979,8 @@ function updateSupply() {
   const invalid = [volumeField, concField, weeklyField].find(field => !field.valid);
   if (invalid) { setText('supOut', invalid.message); return; }
   const total = volumeField.value * concField.value, coverage = total / weeklyField.value;
-  if (!Number.isFinite(total) || !Number.isFinite(coverage) || coverage > 100000) { setText('supOut', 'INVALID INPUT · CALCULATED RESULT IS OUTSIDE THE SUPPORTED RANGE'); return; }
-  setText('supOut', `Reference total: ${total.toFixed(2)} mg · User-entered weekly amount: ${weeklyField.value.toFixed(2)} mg · Approximate record coverage: ${coverage.toFixed(1)} weeks. Educational record keeping only.`);
+  if (!Number.isFinite(total) || !Number.isFinite(coverage) || coverage > 100000) { setText('supOut', tx('lab.outOfRange', 'INVALID INPUT · CALCULATED RESULT IS OUTSIDE THE SUPPORTED RANGE')); return; }
+  setText('supOut', tx('lab.referenceTotal', 'Reference total: {total} mg · User-entered weekly amount: {weekly} mg · Approximate record coverage: {coverage} weeks. Educational record keeping only.', { total: total.toFixed(2), weekly: weeklyField.value.toFixed(2), coverage: coverage.toFixed(1) }));
 }
 
 const MEASUREMENT_TYPES = [
@@ -3019,13 +3071,13 @@ function saveMeasurements() {
     records.push({ id: createId('measurement'), type, value, unit, date, createdAt: new Date().toISOString() });
     saved += 1;
   });
-  if (!saved) { actionFeedback('NO MEASUREMENTS SAVED', 'ENTER AT LEAST ONE POSITIVE VALUE', true); return; }
+  if (!saved) { actionFeedback(tx('vault.noMeasurementsSaved', 'NO MEASUREMENTS SAVED'), tx('vault.enterPositiveValue', 'ENTER AT LEAST ONE POSITIVE VALUE'), true); return; }
   S.set('measurements', records);
   const preferences = S.get('preferences', {}); preferences.measurementUnit = unit; S.set('preferences', preferences);
   queueCloudSync('workspace');
   renderMeasurements();
   renderResults();
-  actionFeedback('MEASUREMENTS SAVED', `${saved} USER-ENTERED VALUE${saved === 1 ? '' : 'S'} // TIMELINE UPDATED`);
+  actionFeedback(tx('vault.measurementsSaved', 'MEASUREMENTS SAVED'), tx('vault.measurementsSavedDetail', '{count} USER-ENTERED VALUE{plural} // TIMELINE UPDATED', { count: saved, plural: saved === 1 ? '' : 'S' }));
 }
 
 function ensureDestructiveDialogs() {
@@ -3054,7 +3106,7 @@ function closeDeleteCloudAccount() { $('gnDeleteCloudOverlay')?.classList.remove
 async function confirmDeleteCloudAccount() {
   const result = await deleteCloudAccount();
   closeDeleteCloudAccount();
-  if (!result?.ok) { actionFeedback('CLOUD ACCOUNT NOT DELETED', 'ACCOUNT DELETION FAILED // LOCAL DATA UNCHANGED', true); return; }
+  if (!result?.ok) { actionFeedback(tx('auth.accountNotDeleted', 'CLOUD ACCOUNT NOT DELETED'), tx('auth.deletionFailed', 'ACCOUNT DELETION FAILED // LOCAL DATA UNCHANGED'), true); return; }
   clearLocalGridNodeData();
   await signOutCloud();
   clearSession();
@@ -3119,7 +3171,7 @@ function exportCSV() {
   getWeights().forEach(record => rows.push(['weight', record.date || '', '', '', '', record.weight || '', '', record.notes || '', 'false', '', '', '']));
   S.get('measurements', []).forEach(record => rows.push(['measurement', record.date || '', '', '', '', '', '', '', 'false', record.type || '', record.value || '', record.unit || 'in']));
   downloadFile('gridnode-records.csv', rows.map(row => row.map(csvCell).join(',')).join('\n'), 'text/csv;charset=utf-8');
-  showToast('CSV export prepared.');
+  showToast(tx('vault.csvExportReady', 'CSV export prepared.'));
 }
 
 function csvCell(value) {
@@ -3131,7 +3183,7 @@ function csvCell(value) {
 function exportBackup() {
   const backup = { app: 'GRID//NODE', version: APP_VERSION, exportedAt: new Date().toISOString(), profile: getProfile(), shots: getAllShots(), weights: getWeights(), measurements: S.get('measurements', []), results: S.get('results', []), notes: S.get('notes', []), symptoms: S.get('symptoms', []), labs: S.get('labs', []), preferences: S.get('preferences', {}), settings: S.get('settings', {}), arsenal: S.get('arsenal', []), researchRecords: S.get('researchRecords', []), devices: S.get('devices', []), inventory: S.get('inventory', []), loadouts: S.get('loadouts', []), eventLedger: S.get('eventLedger', []), selectedLocation: S.get('selectedLocation', ''), importQueue: S.get('importQueue', []), cloudDeletes: S.get('cloudDeletes', []), workspaces: S.get('workspaces', {}) };
   downloadFile('gridnode-backup.json', JSON.stringify(backup, null, 2), 'application/json');
-  showToast('VAULT backup prepared.');
+  showToast(tx('vault.backupReady', 'VAULT backup prepared.'));
 }
 
 function rawCSVRows(text) {
@@ -3185,7 +3237,7 @@ function handleCSVImportFile(event) {
     if (confirm) { confirm.disabled = counts.newRecords === 0; confirm.textContent = counts.newRecords ? `IMPORT ${counts.newRecords} NEW RECORD${counts.newRecords === 1 ? '' : 'S'}` : 'NO NEW RECORDS'; }
     $('csvImportOverlay')?.classList.add('active');
   };
-  reader.onerror = () => actionFeedback('IMPORT NOT OPENED', 'THE SELECTED CSV COULD NOT BE READ', true);
+  reader.onerror = () => actionFeedback(tx('backup.importNotOpened', 'IMPORT NOT OPENED'), tx('backup.csvCouldNotRead', 'THE SELECTED CSV COULD NOT BE READ'), true);
   reader.readAsText(file);
   event.target.value = '';
 }
@@ -3208,26 +3260,26 @@ function handleBackupImportFile(event) {
       const backup = JSON.parse(String(reader.result || '{}'));
       if (backup.app !== 'GRID//NODE' || !Array.isArray(backup.shots) || !Array.isArray(backup.weights)) throw new Error('BACKUP_FORMAT_NOT_RECOGNIZED');
       moduleState.pendingBackup = backup; moduleState.pendingImportMeta = { fileName: file.name, format: 'GRID//NODE Backup' };
-      setText('csvImportTitle', 'GRID//NODE BACKUP PREVIEW'); setText('csvImportFormat', `DETECTED FORMAT // GRID//NODE BACKUP · ${file.name}`); setText('csvImportSummary', `${backup.shots.length} shots · ${backup.weights.length} weights · ${(backup.measurements || []).length} measurements. Review before commit.`);
-      const confirm = $('csvImportConfirmBtn'); if (confirm) { confirm.disabled = false; confirm.textContent = 'RESTORE BACKUP'; confirm.setAttribute('onclick', 'confirmBackupImport()'); }
+      setText('csvImportTitle', tx('backup.previewTitle', 'GRID//NODE BACKUP PREVIEW')); setText('csvImportFormat', tx('backup.detectedFormat', 'DETECTED FORMAT // GRID//NODE BACKUP · {file}', { file: file.name })); setText('csvImportSummary', tx('backup.summary', '{shots} shots · {weights} weights · {measurements} measurements. Review before commit.', { shots: backup.shots.length, weights: backup.weights.length, measurements: (backup.measurements || []).length }));
+      const confirm = $('csvImportConfirmBtn'); if (confirm) { confirm.disabled = false; confirm.textContent = tx('backup.restoreButton', 'RESTORE BACKUP'); confirm.setAttribute('onclick', 'confirmBackupImport()'); }
       $('csvImportOverlay')?.classList.add('active');
-    } catch (error) { actionFeedback('BACKUP NOT OPENED', error.message === 'BACKUP_FORMAT_NOT_RECOGNIZED' ? 'THIS FILE IS NOT A GRID//NODE BACKUP' : 'THE SELECTED BACKUP COULD NOT BE READ', true); }
+    } catch (error) { actionFeedback(tx('backup.notOpened', 'BACKUP NOT OPENED'), error.message === 'BACKUP_FORMAT_NOT_RECOGNIZED' ? tx('backup.notBackup', 'THIS FILE IS NOT A GRID//NODE BACKUP') : tx('backup.couldNotRead', 'THE SELECTED BACKUP COULD NOT BE READ'), true); }
   };
-  reader.onerror = () => actionFeedback('BACKUP NOT OPENED', 'THE SELECTED BACKUP COULD NOT BE READ', true);
+  reader.onerror = () => actionFeedback(tx('backup.notOpened', 'BACKUP NOT OPENED'), tx('backup.couldNotRead', 'THE SELECTED BACKUP COULD NOT BE READ'), true);
   reader.readAsText(file); event.target.value = '';
 }
 function confirmBackupImport() {
   const backup = moduleState.pendingBackup; if (!backup) return;
   const merge = (key, incoming) => { if (!Array.isArray(incoming)) return; S.set(key, mergeImportRecords(S.get(key, []), incoming)); };
   merge('shots', backup.shots); merge('weights', backup.weights); merge('measurements', backup.measurements); merge('results', backup.results); merge('notes', backup.notes); merge('symptoms', backup.symptoms); merge('labs', backup.labs); merge('arsenal', backup.arsenal); merge('researchRecords', backup.researchRecords); merge('devices', backup.devices); merge('inventory', backup.inventory); merge('loadouts', backup.loadouts); merge('eventLedger', backup.eventLedger); if (backup.profile && typeof backup.profile === 'object') S.set('profile', { ...getProfile(), ...backup.profile }); if (backup.preferences && typeof backup.preferences === 'object') S.set('preferences', { ...S.get('preferences', {}), ...backup.preferences }); if (backup.settings && typeof backup.settings === 'object') S.set('settings', { ...S.get('settings', {}), ...backup.settings }); if (backup.selectedLocation) S.set('selectedLocation', backup.selectedLocation);
-  appendEventLedger({ type: 'IMPORT', label: 'GRID//NODE BACKUP RESTORED', source: 'GRID//NODE Backup', state: 'Needs Review' }); queueCloudSync('workspace'); const count = (backup.shots?.length || 0) + (backup.weights?.length || 0); cancelCSVImport(); refreshAll(); actionFeedback('BACKUP RESTORED', `${count} RECORD${count === 1 ? '' : 'S'} REVIEWED // LOCAL HISTORY UPDATED`);
+  appendEventLedger({ type: 'IMPORT', label: 'GRID//NODE BACKUP RESTORED', source: 'GRID//NODE Backup', state: 'Needs Review' }); queueCloudSync('workspace'); const count = (backup.shots?.length || 0) + (backup.weights?.length || 0); cancelCSVImport(); refreshAll(); actionFeedback(tx('backup.restored', 'BACKUP RESTORED'), tx('backup.restoredDetail', '{count} RECORD{plural} REVIEWED // LOCAL HISTORY UPDATED', { count, plural: count === 1 ? '' : 'S' }));
 }
-function cancelCSVImport() { moduleState.pendingImport = null; moduleState.pendingImportMeta = null; moduleState.pendingBackup = null; const confirm = $('csvImportConfirmBtn'); if (confirm) { confirm.setAttribute('onclick', 'confirmCSVImport()'); confirm.textContent = 'IMPORT TO SHOTS HISTORY'; } setText('csvImportTitle', 'CSV IMPORT PREVIEW'); setText('csvImportFormat', 'Review detected user-entered protocol records before appending them to SHOTS HISTORY.'); $('csvImportOverlay')?.classList.remove('active'); }
+function cancelCSVImport() { moduleState.pendingImport = null; moduleState.pendingImportMeta = null; moduleState.pendingBackup = null; const confirm = $('csvImportConfirmBtn'); if (confirm) { confirm.setAttribute('onclick', 'confirmCSVImport()'); confirm.textContent = tx('backup.importButton', 'IMPORT TO SHOTS HISTORY'); } setText('csvImportTitle', tx('backup.csvPreviewTitle', 'CSV IMPORT PREVIEW')); setText('csvImportFormat', tx('backup.csvReviewCopy', 'Review detected user-entered protocol records before appending them to SHOTS HISTORY.')); $('csvImportOverlay')?.classList.remove('active'); }
 function confirmCSVImport() {
   const pending = moduleState.pendingImport || [];
   const rechecked = classifyCSVRows(pending.map(item => item.row || item), getAllShots(), getWeights());
   const additions = rechecked.rows.filter(item => item.status === 'new').map(item => item.row);
-  if (!additions.length) { actionFeedback('NO NEW RECORDS', 'EXISTING HISTORY WAS NOT CHANGED'); cancelCSVImport(); return; }
+  if (!additions.length) { actionFeedback(tx('backup.noNewRecords', 'NO NEW RECORDS'), tx('backup.historyUnchanged', 'EXISTING HISTORY WAS NOT CHANGED')); cancelCSVImport(); return; }
   const beforeShots = getAllShots(), beforeWeights = getWeights();
   const shots = [...beforeShots], weights = [...beforeWeights];
   const importedAt = new Date().toISOString();
@@ -3238,12 +3290,12 @@ function confirmCSVImport() {
   });
   if (!S.set('shots', shots) || !S.set('weights', weights)) {
     S.set('shots', beforeShots); S.set('weights', beforeWeights);
-    actionFeedback('IMPORT ROLLED BACK', 'LOCAL STORAGE DID NOT ACCEPT THE COMPLETE TRANSACTION', true);
+    actionFeedback(tx('backup.importRolledBack', 'IMPORT ROLLED BACK'), tx('backup.storageRejectedTransaction', 'LOCAL STORAGE DID NOT ACCEPT THE COMPLETE TRANSACTION'), true);
     return;
   }
   appendEventLedger({ type: 'IMPORT', label: 'CSV IMPORT SAVED', source: moduleState.pendingImportMeta?.source || 'CSV Import', state: 'Needs Review', recordCount: additions.length });
   queueCloudSync('workspace');
-  const count = additions.length; cancelCSVImport(); refreshAll(); actionFeedback('IMPORT SAVED', `${count} NEW RECORD${count === 1 ? '' : 'S'} // REVIEW STATE PRESERVED`);
+  const count = additions.length; cancelCSVImport(); refreshAll(); actionFeedback(tx('backup.importSaved', 'IMPORT SAVED'), tx('backup.importSavedDetail', '{count} NEW RECORD{plural} // REVIEW STATE PRESERVED', { count, plural: count === 1 ? '' : 'S' }));
 }
 function parseCSV(text) {
   const lines = text.split(/\r?\n/).filter(Boolean); if (lines.length < 2) return [];
@@ -3667,7 +3719,7 @@ async function renderGoogleIdentityButton() {
   if (!host.isConnected) return;
   if (!enabled) {
     renderGoogleFallback(host, 'GOOGLE SIGN-IN SETUP PENDING');
-    setAuthMessage('// GOOGLE SIGN-IN IS NOT ENABLED YET — USE EMAIL OR CONTINUE LOCALLY', false);
+    setAuthMessage(tx('auth.googleNotEnabled', '// GOOGLE SIGN-IN IS NOT ENABLED YET — USE EMAIL OR CONTINUE LOCALLY'), false);
     return;
   }
   try {
@@ -3697,43 +3749,43 @@ async function renderGoogleIdentityButton() {
   } catch (error) {
     console.warn('[GRID//NODE Google identity]', error);
     renderGoogleFallback(host, 'GOOGLE SIGN-IN UNAVAILABLE');
-    setAuthMessage('// GOOGLE SIGN-IN COULD NOT LOAD — USE EMAIL OR CONTINUE LOCALLY', true);
+    setAuthMessage(tx('auth.googleCouldNotLoad', '// GOOGLE SIGN-IN COULD NOT LOAD — USE EMAIL OR CONTINUE LOCALLY'), true);
   }
 }
 
 async function handleGoogleCredential(response) {
   const host = $('gnGoogleButtonMount');
   host?.classList.add('loading');
-  setAuthMessage('// VERIFYING GOOGLE IDENTITY...', false);
+  setAuthMessage(tx('auth.verifyingGoogle', '// VERIFYING GOOGLE IDENTITY...'), false);
   try {
     const session = await signInWithGoogleIdToken(response?.credential);
     if (!session) throw new Error('NO_SESSION');
     await completeCloudSession(session);
     maybeOfferPasskeyRegistration();
   } catch (error) {
-    setAuthMessage('// GOOGLE SIGN-IN COULD NOT COMPLETE — RETRY OR USE EMAIL', true);
+    setAuthMessage(tx('auth.googleCouldNotComplete', '// GOOGLE SIGN-IN COULD NOT COMPLETE — RETRY OR USE EMAIL'), true);
     host?.classList.remove('loading');
   }
 }
 
 async function requestPasswordReset() {
   const email = $('gnAuthEmail')?.value?.trim();
-  if (!email || !email.includes('@')) { setAuthMessage('// ENTER YOUR ACCOUNT EMAIL FIRST', true); return; }
+  if (!email || !email.includes('@')) { setAuthMessage(tx('auth.enterEmailFirst', '// ENTER YOUR ACCOUNT EMAIL FIRST'), true); return; }
   const button = $('gnAuthReset'); if (button) button.disabled = true;
   try {
     await resetPasswordCloud(email);
-    setAuthMessage('// RECOVERY LINK SENT — CHECK YOUR EMAIL', false);
+    setAuthMessage(tx('auth.recoveryLinkSent', '// RECOVERY LINK SENT — CHECK YOUR EMAIL'), false);
   } catch (error) {
-    setAuthMessage(error.message === 'CLOUD_UNAVAILABLE' ? '// CLOUD RECOVERY UNAVAILABLE — RETRY WHEN ONLINE' : `// RECOVERY ERROR: ${error.message || 'TRY AGAIN'}`, true);
+    setAuthMessage(error.message === 'CLOUD_UNAVAILABLE' ? tx('auth.recoveryUnavailable', '// CLOUD RECOVERY UNAVAILABLE — RETRY WHEN ONLINE') : `// RECOVERY ERROR: ${error.message || 'TRY AGAIN'}`, true);
   } finally { if (button) button.disabled = false; }
 }
 
 async function submitAuth() {
   const email = $('gnAuthEmail')?.value?.trim();
   const password = $('gnAuthPassword')?.value || '';
-  if (authMode !== 'recovery' && (!email || !email.includes('@'))) { setAuthMessage('// ENTER A VALID EMAIL ADDRESS', true); return; }
-  if (password.length < 8) { setAuthMessage('// PASSWORD MUST BE AT LEAST 8 CHARACTERS', true); return; }
-  const submit = $('gnAuthSubmit'); if (submit) { submit.disabled = true; submit.textContent = 'CONNECTING...'; }
+  if (authMode !== 'recovery' && (!email || !email.includes('@'))) { setAuthMessage(tx('auth.validEmail', '// ENTER A VALID EMAIL ADDRESS'), true); return; }
+  if (password.length < 8) { setAuthMessage(tx('auth.passwordMin', '// PASSWORD MUST BE AT LEAST 8 CHARACTERS'), true); return; }
+  const submit = $('gnAuthSubmit'); if (submit) { submit.disabled = true; submit.textContent = tx('auth.connecting', 'CONNECTING...'); }
   try {
     if (authMode === 'recovery') {
       await updateCloudPassword(password);
@@ -3743,28 +3795,28 @@ async function submitAuth() {
       await completeCloudSession(session);
     } else if (authMode === 'signup') {
       const result = await signUpCloud(email, password);
-      if (result?.session) { await completeCloudSession(result.session); maybeOfferPasskeyRegistration(); } else { setAuthMessage('// ACCOUNT CREATED — CHECK YOUR EMAIL TO CONFIRM', false); }
+      if (result?.session) { await completeCloudSession(result.session); maybeOfferPasskeyRegistration(); } else { setAuthMessage(tx('auth.accountCreated', '// ACCOUNT CREATED — CHECK YOUR EMAIL TO CONFIRM'), false); }
     } else {
       const session = await signInCloud(email, password);
       if (!session) throw new Error('NO_SESSION');
       await completeCloudSession(session);
     }
   } catch (error) {
-    setAuthMessage(error.message === 'CLOUD_UNAVAILABLE' ? '// CLOUD AUTH UNAVAILABLE — CONTINUE LOCALLY OR RETRY WHEN ONLINE' : `// AUTH ERROR: ${error.message || 'CHECK YOUR DETAILS'}`, true);
+    setAuthMessage(error.message === 'CLOUD_UNAVAILABLE' ? tx('auth.cloudUnavailable', '// CLOUD AUTH UNAVAILABLE — CONTINUE LOCALLY OR RETRY WHEN ONLINE') : `// AUTH ERROR: ${error.message || 'CHECK YOUR DETAILS'}`, true);
   } finally {
     if (submit) { submit.disabled = false; updateAuthMode(); }
   }
 }
 
 async function handleGoogleSignIn() {
-  const button = $('loginGoogleBtn'); if (button) { button.disabled = true; button.textContent = 'CONNECTING...'; }
-  setAuthMessage('// OPENING GOOGLE AUTHENTICATION...', false);
+  const button = $('loginGoogleBtn'); if (button) { button.disabled = true; button.textContent = tx('auth.connecting', 'CONNECTING...'); }
+  setAuthMessage(tx('auth.openingGoogle', '// OPENING GOOGLE AUTHENTICATION...'), false);
   try {
     await signInWithGoogle();
     maybeOfferPasskeyRegistration();
   } catch (error) {
     const disabled = error.message === 'GOOGLE_AUTH_DISABLED';
-    setAuthMessage(disabled ? '// GOOGLE SIGN-IN IS NOT ENABLED YET — USE EMAIL OR CONTINUE LOCALLY' : error.message === 'CLOUD_UNAVAILABLE' ? '// GOOGLE AUTH UNAVAILABLE — CONTINUE LOCALLY OR RETRY WHEN ONLINE' : '// GOOGLE AUTH COULD NOT START — RETRY OR USE EMAIL', true);
+    setAuthMessage(disabled ? tx('auth.googleNotEnabled', '// GOOGLE SIGN-IN IS NOT ENABLED YET — USE EMAIL OR CONTINUE LOCALLY') : error.message === 'CLOUD_UNAVAILABLE' ? tx('auth.googleUnavailable', '// GOOGLE AUTH UNAVAILABLE — CONTINUE LOCALLY OR RETRY WHEN ONLINE') : tx('auth.googleCouldNotStart', '// GOOGLE AUTH COULD NOT START — RETRY OR USE EMAIL'), true);
     if (button) { button.disabled = disabled; button.textContent = disabled ? 'GOOGLE SIGN-IN SETUP PENDING' : 'CONTINUE WITH GOOGLE'; }
   }
 }

@@ -7,6 +7,10 @@
   "deployment_timestamp_utc": null,
   "deployment_url": null,
   "files": {
+    "_headers": {
+      "bytes": 1263,
+      "sha256": "d865b61d8917de968bd3d903fed04a95a9d408ab13f1576429fa1caa802919cf"
+    },
     "assets/apple-touch-icon.png": {
       "bytes": 3150,
       "sha256": "859ada4275beaf92973a405681932877a170e8e9d7023f55525305622688d6d3"
@@ -44,8 +48,16 @@
       "sha256": "ab4ebd6f83df82c9cf76b6c0643e1804b2f1d6dd4fdbc5117ce926b3bfca284d"
     },
     "css/gridnode-native.css": {
-      "bytes": 132439,
-      "sha256": "802a1b6197175982ffef9a851ddc580bb9bac64d8f965020e3cc91a740d9ec47"
+      "bytes": 132927,
+      "sha256": "dca0fc30335c5861a26e2501e3c17035138d5cfcc97a4218a109fc12452df84b"
+    },
+    "i18n/en.json": {
+      "bytes": 78808,
+      "sha256": "5e41ca1be27aca5e5b1093b8138197f20eee0c86f97f4dae1378ee2cb04f6f6f"
+    },
+    "i18n/es-419.json": {
+      "bytes": 87556,
+      "sha256": "127a7baf6b3b93a1516639911b726a35f193ac94beafa3a97e589463ba9a45f1"
     },
     "index.html": {
       "bytes": 613178,
@@ -56,20 +68,28 @@
       "sha256": "2c67cd2b70106222cb847bbd71de230a8225b7468589daedf372eb568614723e"
     },
     "js/gridnode-bundle.js": {
-      "bytes": 312572,
-      "sha256": "a9c8a113a9c4c6e8ecbd41d849dd51e19540b17f29b17a2de52060eb125d3647"
+      "bytes": 317247,
+      "sha256": "ea29fe89aff7c5a2de231fd6d4b6dad2ed7652db3606da4a49f0700ca4cebc8e"
     },
     "js/gridnode-core.js": {
-      "bytes": 27795,
-      "sha256": "d21eca457ebcd109c4b4de8ec8db489b1d9ba3e2ef628630f860829d7490bc20"
+      "bytes": 29217,
+      "sha256": "fa48f1629a5fef854dc504e793d65520a4a5cddea6221b3c781a9caa1f451e49"
     },
     "js/gridnode-i18n-overlay.js": {
       "bytes": 3913,
       "sha256": "fbaa59331bcaaa5a7967c5dbb92d8afa449cff0e68549f827215108a7a2b9b58"
     },
+    "js/gridnode-i18n.js": {
+      "bytes": 6298,
+      "sha256": "dc6eb685b6faed9966f98771945350ecdb9428b048b85d5819d33888fb960308"
+    },
     "js/gridnode-modules.js": {
-      "bytes": 61269,
-      "sha256": "6cbf616f0c1d36e26e4d3eae551ba165f101cbfda45050c49fc631063cca6785"
+      "bytes": 63488,
+      "sha256": "3b1cc53df6bdea12a3c277c668ce07d0d5602437bd51dbea6e648ace8ae08f54"
+    },
+    "js/gridnode-motivation.js": {
+      "bytes": 14089,
+      "sha256": "fa56116186c5b9ca9114d2317a93b13fd7e7f371fb1eb3938411f56880c9febb"
     },
     "js/gridnode-native.js": {
       "bytes": 21856,
@@ -79,9 +99,21 @@
       "bytes": 27526,
       "sha256": "7c6f8ff99acdfcb4bd4666656506d3472a01cb263c1518e99c9f19699ebd57ae"
     },
+    "js/gridnode-phase-sphere.js": {
+      "bytes": 5583,
+      "sha256": "05f20263610527dfe24799d7cf0c4edf6d3b2cb38c38a304f49a7ab4a56c3cbe"
+    },
     "js/gridnode-product-completion.js": {
-      "bytes": 32181,
-      "sha256": "dec863187ddbef061398207b1172864f5a2b26f8799a2c382d540bdb91cab19b"
+      "bytes": 32274,
+      "sha256": "2db0771835d21715a2bd0d2f11133a454bb9a8c9af30b1845a3c78605a646460"
+    },
+    "js/gridnode-telemetry.js": {
+      "bytes": 31448,
+      "sha256": "0b0d2c0229a202e63f7514332ba422919307f5a147c370d6806e86833f16cd08"
+    },
+    "js/gridnode-theme.js": {
+      "bytes": 5326,
+      "sha256": "2cda7b26e072152c4ec2611f6bf29d02a0fbc4f5f18d72de9dcd76f3b539d22f"
     },
     "js/gridnode-version.js": {
       "bytes": 463,
@@ -96,8 +128,8 @@
       "sha256": "bc3b6ad8fa6992bd8c5555477756cd2bc3ac6179b6a258aca9dcfd7f5a68f413"
     },
     "sw.js": {
-      "bytes": 3079,
-      "sha256": "91c345d2ab30344b3cb067c76b7dab898ba2f4350e83d11be3cd2d19e03bd665"
+      "bytes": 3926,
+      "sha256": "6e42b2e1826bc35681a0915f9f7e8495038bef92d0a721dae7ffb7a8115c974d"
     }
   },
   "metadata_note": "Candidate 2026-08-04: production-readiness and medication-integrity release with semantic DAY OPS readability, four-stage onboarding, first-SHOT activation, stable mobile/PWA shell, bilingual release history, and safe update activation; production untouched.",

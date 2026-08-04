@@ -243,7 +243,7 @@
     };
     const headers = parse(lines[0]); const rows = lines.slice(1).map(parse);
     const guess = names => headers.find(header => names.some(name => header.toLowerCase().includes(name))) || '';
-    const select = (id, label, value, required) => `<label>${label}<select data-map="${id}" ${required ? 'required' : ''}><option value="">— NOT MAPPED —</option>${headers.map(header => `<option value="${safe(header)}" ${header === value ? 'selected' : ''}>${safe(header)}</option>`).join('')}</select></label>`;
+    const select = (id, label, value, required) => `<label>${label}<select data-map="${id}" ${required ? 'required' : ''}><option value="">${tx('mapping.notMapped', '— NOT MAPPED —')}</option>${headers.map(header => `<option value="${safe(header)}" ${header === value ? 'selected' : ''}>${safe(header)}</option>`).join('')}</select></label>`;
     const overlay = document.createElement('div');
     overlay.className = 'gn-import-overlay active'; overlay.id = 'gnMappingOverlay';
     overlay.innerHTML = `<div class="gn-import-panel"><div class="gn-import-title" data-i18n="mapping.title">MAP GENERIC CSV</div><p>${safe(fileName)} · <span data-i18n="mapping.copy">fields are never guessed at commit.</span></p><div class="gn-mapping-grid">${select('type', tx('mapping.recordType', 'RECORD TYPE'), guess(['record type', 'type']), true)}${select('date', tx('mapping.date', 'DATE'), guess(['date', 'timestamp']), true)}${select('medication', tx('mapping.medication', 'MEDICATION'), guess(['medication', 'medicine', 'drug']))}${select('dose', tx('mapping.dose', 'DOSE (MG)'), guess(['dose', 'mg']))}${select('weight', tx('mapping.weight', 'WEIGHT (LB)'), guess(['weight', 'lbs']))}${select('site', tx('mapping.site', 'SITE'), guess(['site', 'location']))}${select('notes', tx('mapping.notes', 'NOTES'), guess(['note', 'comment']))}</div><div class="gn-import-summary" id="gnMappingSummary">${tx('mapping.chooseSummary', 'Choose DATE and RECORD TYPE, then preview.')}</div><div class="gn-import-actions"><button type="button" class="gn-import-close" data-map-cancel>${tx('mapping.cancel', 'CANCEL')}</button><button type="button" class="csv-import-save" data-map-preview>${tx('mapping.previewRows', 'PREVIEW MAPPED ROWS')}</button></div></div>`;
@@ -253,7 +253,7 @@
     overlay.querySelector('[data-map-preview]').addEventListener('click', () => {
       const map = Object.fromEntries(q('[data-map]', overlay).map(field => [field.dataset.map, field.value]));
       const summary = overlay.querySelector('#gnMappingSummary');
-      if (!map.type || !map.date) { summary.textContent = 'Map RECORD TYPE and DATE before previewing.'; return; }
+      if (!map.type || !map.date) { summary.textContent = tx('mapping.required', 'Map RECORD TYPE and DATE before previewing.'); return; }
       const index = Object.fromEntries(headers.map((header, position) => [header, position]));
       const mapped = rows.map((cells, rowIndex) => {
         const value = key => map[key] ? cells[index[map[key]]] || '' : '';
@@ -273,7 +273,7 @@
           fresh.forEach(item => { if (item.record_type === 'weight') nextWeights.push({ id: `weight_import_${crypto.randomUUID()}`, date: item.date, weight: item.weight_lb, source: 'Mapped CSV Import', state: 'Needs Review', importProvenance: { fileName, importedAt } }); else nextShots.push({ id: `shot_import_${crypto.randomUUID()}`, date: item.date, med: item.medication || 'Custom', dose: item.dose_mg, site: item.location || '', se: item.side_effects, notes: item.notes || null, archived: false, source: 'Mapped CSV Import', state: 'Needs Review', importProvenance: { fileName, importedAt } }); });
           if (!store().set('shots', nextShots) || !store().set('weights', nextWeights)) throw new Error('LOCAL_STORAGE_REJECTED');
           window.GNModules?.refreshAll?.(); close();
-        } catch (error) { store().set('shots', beforeShots); store().set('weights', beforeWeights); summary.textContent = `IMPORT ROLLED BACK · ${error.message}`; }
+        } catch (error) { store().set('shots', beforeShots); store().set('weights', beforeWeights); summary.textContent = tx('mapping.rolledBack', 'IMPORT ROLLED BACK · {err}', { err: error.message }); }
       };
     });
   }

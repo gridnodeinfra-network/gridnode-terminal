@@ -257,7 +257,7 @@ export function saveProfileMed() {
   S.set('profile', profile);
   setText('profMedTxt', normalizeMedicationId(profile.med) ? `// ${medicationLabel(profile.med).toUpperCase()}` : '// NO MEDICATION SET');
   queueCloudSync('profile', profile);
-  showToast('Profile protocol context saved.');
+  showToast(tx('profile.protocolSaved', 'Profile protocol context saved.'));
 }
 
 export function saveProfileMetrics() {
@@ -569,7 +569,7 @@ export function confirmArchiveShot() {
   S.set('shots', all);
   queueCloudSync('shot', record);
   refreshAll();
-  showToast('SHOT record archived.');
+  showToast(tx('shots.archived', 'SHOT record archived.'));
 }
 
 export function restoreArchivedShot(id) {
@@ -582,7 +582,7 @@ export function restoreArchivedShot(id) {
   queueCloudSync('shot', record);
   moduleState.shotHistoryView = 'active';
   refreshAll();
-  showToast('SHOT record restored.');
+  showToast(tx('shots.restored', 'SHOT record restored.'));
 }
 
 export function openPermanentDeleteConfirm(id) { moduleState.pendingPermanentDeleteId = id; $('permanentDeleteConfirmOv')?.classList.add('active'); }
@@ -604,7 +604,7 @@ export function saveShot(allowFuture = false) {
   const date = readHumanDateInput($('sDate'));
   const time = getShotTime24($('sTime')?.value);
   const site = moduleState.selectedLocation;
-  if (!med || !dose || !date || !time || !site) { showToast('Add medication, dose, date, time, and a logged location.', true); return; }
+  if (!med || !dose || !date || !time || !site) { showToast(tx('shots.requiredFields', 'Add medication, dose, date, time, and a logged location.'), true); return; }
   const dateTime = new Date(`${date}T${time}`);
   if (!allowFuture && dateTime > new Date()) { moduleState.pendingFutureShot = true; $('futureTimestampConfirm')?.classList.add('active'); return; }
   const existing = moduleState.editingShotId ? getAllShots().find(item => item.id === moduleState.editingShotId) : null;
@@ -617,9 +617,12 @@ export function saveShot(allowFuture = false) {
   };
   const all = getAllShots();
   const index = all.findIndex(item => item.id === record.id);
+  // B4: pure prep (no writes), then one atomic multiWrite batch.
+  const { inventory, changed } = prepareInventoryForShot(record, existing);
   if (index >= 0) all[index] = record; else all.push(record);
-  S.set('shots', all);
-  queueCloudSync('shot', record);
+  const ops = [{ key: 'shots', value: all }];
+  if (changed) ops.push({ key: 'inventory', value: inventory });
+  let weightRecord = null;
   if (record.wt) {
     const weights = getWeights();
     const linkedIndex = weights.findIndex(item => item.shotId === record.id || (
@@ -627,18 +630,46 @@ export function saveShot(allowFuture = false) {
       && item.date === existing.date && Number(item.weight) === Number(existing.wt)
     ));
     const linkedWeight = linkedIndex >= 0 ? weights[linkedIndex] : null;
-    const weightRecord = {
+    weightRecord = {
       ...(linkedWeight || {}), id: linkedWeight?.id || createId('weight'), shotId: record.id,
       date: record.date, weight: record.wt, notes: 'Logged with SHOT'
     };
     if (linkedIndex >= 0) weights[linkedIndex] = weightRecord; else weights.push(weightRecord);
-    S.set('weights', weights); queueCloudSync('weight', weightRecord);
+    ops.push({ key: 'weights', value: weights });
   }
+  if (!S.multiWrite(ops)) { showToast(tx('shots.storageFull', 'SHOT could not be saved — storage is full.'), true); return; }
+  queueCloudSync('shot', record);
+  if (changed) queueCloudSync('workspace');
+  if (record.wt && weightRecord) queueCloudSync('weight', weightRecord);
   moduleState.pendingFutureShot = false;
   $('futureTimestampConfirm')?.classList.remove('active');
   closeLog();
   refreshAll();
   showToast(existing ? 'SHOT UPDATED' : 'SHOT RECORDED');
+}
+
+function prepareInventoryForShot(record, existing) {
+  // Pure prep (B4): computes the next inventory state WITHOUT writing storage.
+  const inventory = S.get('inventory', []);
+  let changed = false;
+  if (existing?.inventoryDeduction?.itemId && Number(existing.inventoryDeduction.amount) > 0) {
+    const previousItem = inventory.find(item => item.id === existing.inventoryDeduction.itemId);
+    if (previousItem) { previousItem.quantity = Number(previousItem.quantity || 0) + Number(existing.inventoryDeduction.amount); changed = true; }
+  }
+  delete record.inventoryDeduction;
+  const medicationKeys = [record.med, medicationLabel(record.med)].map(value => String(value || '').toLowerCase()).filter(Boolean);
+  const item = inventory.find(candidate => {
+    const identity = String(candidate.medication || candidate.name || '').toLowerCase();
+    return !candidate.archived && candidate.autoDeduct && String(candidate.units || '').toLowerCase() === 'mg' && medicationKeys.some(key => identity.includes(key) || key.includes(identity));
+  });
+  if (item && Number(item.quantity) >= Number(record.dose)) {
+    item.quantity = Number(item.quantity) - Number(record.dose);
+    item.modifiedAt = new Date().toISOString();
+    item.history = [...(item.history || []), { at: item.modifiedAt, action: `AUTO-DEDUCTED ${record.dose} mg FOR SHOT`, source: 'System Generated', shotId: record.id }];
+    record.inventoryDeduction = { itemId: item.id, amount: Number(record.dose), unit: 'mg' };
+    changed = true;
+  }
+  return { inventory, changed };
 }
 
 export function openFutureTimestampConfirm() { $('futureTimestampConfirm')?.classList.add('active'); }
@@ -664,7 +695,7 @@ export function goToScannerForLocationFromLog() {
   $('logOv')?.classList.remove('active');
   showPage('Log', $('navLog'));
   document.querySelector('.gn-stable-zone-picker')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  showToast('Select a trackable zone, then open LOG SHOT again.');
+  showToast(tx('shots.selectZone', 'Select a trackable zone, then open LOG SHOT again.'));
 }
 
 export function openWeightModal() {
@@ -687,7 +718,7 @@ export function saveWt() {
   closeWt();
   if ($('wtVal')) $('wtVal').value = '';
   if ($('wtNotes')) $('wtNotes').value = '';
-  refreshAll(); showToast('WEIGHT RECORDED');
+  refreshAll(); showToast(tx('weight.recorded', 'WEIGHT RECORDED'));
 }
 
 export function renderResults() {
@@ -858,7 +889,7 @@ export function exportCSV() {
   getAllShots().forEach(record => rows.push(['shot', record.date || '', medicationLabel(record.med), record.dose || '', record.site || '', record.wt || '', (record.se || []).join('|'), record.notes || '', record.archived ? 'true' : 'false']));
   getWeights().forEach(record => rows.push(['weight', record.date || '', '', '', '', record.weight || '', '', record.notes || '', 'false']));
   downloadFile('gridnode-records.csv', rows.map(row => row.map(csvCell).join(',')).join('\n'), 'text/csv;charset=utf-8');
-  showToast('CSV export prepared.');
+  showToast(tx('vault.csvExportReady', 'CSV export prepared.'));
 }
 
 function csvCell(value) { const text = String(value ?? ''); return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text; }
@@ -866,7 +897,7 @@ function csvCell(value) { const text = String(value ?? ''); return /[",\n]/.test
 export function exportBackup() {
   const backup = { app: 'GRID//NODE', version: APP_VERSION, exportedAt: new Date().toISOString(), profile: getProfile(), shots: getAllShots(), weights: getWeights(), results: S.get('results', []), notes: S.get('notes', []), symptoms: S.get('symptoms', []), labs: S.get('labs', []), preferences: S.get('preferences', {}), settings: S.get('settings', {}), arsenal: S.get('arsenal', []) };
   downloadFile('gridnode-backup.json', JSON.stringify(backup, null, 2), 'application/json');
-  showToast('VAULT backup prepared.');
+  showToast(tx('vault.backupReady', 'VAULT backup prepared.'));
 }
 
 export function handleCSVImportFile(event) {

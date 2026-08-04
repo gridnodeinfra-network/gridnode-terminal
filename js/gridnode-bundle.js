@@ -95,6 +95,42 @@ const S = Object.freeze({
       return false;
     }
   },
+  /* Atomic batch write (B4): all ops serialize FIRST (fail closed before any
+     write), then all keys are written. If any write throws, previous values
+     are restored best-effort and false is returned — no partial state. */
+  multiWrite(ops) {
+    if (!Array.isArray(ops) || ops.length === 0) return true;
+    const prepared = [];
+    for (const op of ops) {
+      if (!op || typeof op.key !== 'string') return false;
+      let raw;
+      try { raw = JSON.stringify(op.value); } catch (error) {
+        console.warn('[GRID//NODE storage.multiWrite.serialize]', op.key, error);
+        return false;
+      }
+      prepared.push({ storageKey: accountStorageKey(op.key), raw });
+    }
+    const snapshot = [];
+    try {
+      for (const p of prepared) {
+        const prior = localStorage.getItem(p.storageKey);
+        snapshot.push({ storageKey: p.storageKey, existed: prior !== null, prior });
+      }
+      for (const p of prepared) localStorage.setItem(p.storageKey, p.raw);
+      return true;
+    } catch (error) {
+      console.warn('[GRID//NODE storage.multiWrite]', error);
+      try {
+        for (const s of snapshot) {
+          if (s.existed) localStorage.setItem(s.storageKey, s.prior);
+          else localStorage.removeItem(s.storageKey);
+        }
+      } catch (rollbackError) {
+        console.warn('[GRID//NODE storage.multiWrite.rollback]', rollbackError);
+      }
+      return false;
+    }
+  },
   remove(key) {
     try {
       localStorage.removeItem(accountStorageKey(key));
@@ -1988,10 +2024,13 @@ function saveShot(allowFuture = false) {
     };
     const all = getAllShots();
     const index = all.findIndex(item => item.id === record.id);
-    reconcileInventoryForShot(record, existing);
+    // B4: compute the next inventory state WITHOUT writing (pure prep).
+    const { inventory, changed } = prepareInventoryForShot(record, existing);
     if (index >= 0) all[index] = record; else all.push(record);
-    if (!S.set('shots', all)) { showToast(tx('shots.storageFull', 'SHOT could not be saved — storage is full.'), true); return; }
-    queueCloudSync('shot', record);
+    // B4: single atomic batch — SHOT record + inventory + linked weight.
+    const ops = [{ key: 'shots', value: all }];
+    if (changed) ops.push({ key: 'inventory', value: inventory });
+    let weightRecord = null;
     if (record.wt) {
       const weights = getWeights();
       const linkedIndex = weights.findIndex(item => item.shotId === record.id || (
@@ -1999,14 +2038,21 @@ function saveShot(allowFuture = false) {
         && item.date === existing.date && Number(item.weight) === Number(existing.wt)
       ));
       const linkedWeight = linkedIndex >= 0 ? weights[linkedIndex] : null;
-      const weightRecord = {
+      weightRecord = {
         ...(linkedWeight || {}), id: linkedWeight?.id || createId('weight'), shotId: record.id,
         date: record.date, weight: record.wt, notes: 'Logged with SHOT'
       };
       if (linkedIndex >= 0) weights[linkedIndex] = weightRecord; else weights.push(weightRecord);
-      if (S.set('weights', weights)) queueCloudSync('weight', weightRecord);
-      else showToast(tx('weight.storageFull', 'Linked weight could not be saved — storage is full.'), true);
+      ops.push({ key: 'weights', value: weights });
     }
+    if (!S.multiWrite(ops)) {
+      showToast(tx('shots.storageFull', 'SHOT could not be saved — storage is full.'), true);
+      return;
+    }
+    // Cloud sync ONLY after the local batch committed atomically.
+    queueCloudSync('shot', record);
+    if (changed) queueCloudSync('workspace');
+    if (record.wt && weightRecord) queueCloudSync('weight', weightRecord);
     appendEventLedger({ type: 'SHOT', recordId: record.id, date: record.date, label: existing ? 'SHOT UPDATED' : 'SHOT EVENT CONFIRMED' });
     moduleState.pendingFutureShot = false;
     $('futureTimestampConfirm')?.classList.remove('active');
@@ -2018,7 +2064,8 @@ function saveShot(allowFuture = false) {
   }
 }
 
-function reconcileInventoryForShot(record, existing) {
+function prepareInventoryForShot(record, existing) {
+  // Pure prep (B4): computes the next inventory state WITHOUT writing storage.
   const inventory = S.get('inventory', []);
   let changed = false;
   if (existing?.inventoryDeduction?.itemId && Number(existing.inventoryDeduction.amount) > 0) {
@@ -2038,7 +2085,7 @@ function reconcileInventoryForShot(record, existing) {
     record.inventoryDeduction = { itemId: item.id, amount: Number(record.dose), unit: 'mg' };
     changed = true;
   }
-  if (changed) { S.set('inventory', inventory); queueCloudSync('workspace'); }
+  return { inventory, changed };
 }
 
 function openFutureTimestampConfirm() { $('futureTimestampConfirm')?.classList.add('active'); }

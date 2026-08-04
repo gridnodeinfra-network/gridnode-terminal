@@ -9,7 +9,10 @@ const CACHE_NAME = 'gridnode-shell-' + RELEASE.replace(/\./g, '-');
 const V = '?v=' + RELEASE;
 const SHELL = [
   '/',
-  '/index.html',
+  // NOTE: /index.html is intentionally NOT cached as a shell entry. Cloudflare
+  // Pages answers /index.html with a 308 redirect to /; the Cache API stores
+  // that entry as redirected:true, and Chromium then fails (ERR_FAILED) when
+  // the service worker serves it for a navigation. '/' is the canonical shell.
   '/manifest.json',
   '/css/daylight-nexus-pilot.css' + V,
   '/css/gridnode-native.css' + V,
@@ -57,7 +60,7 @@ async function navigationResponse(request) {
   // (SKIP_WAITING) and controllerchange reloads. Fall back to network only
   // when this release cache has no shell.
   const cache = await caches.open(CACHE_NAME);
-  const cachedShell = (await cache.match('/index.html')) || (await cache.match('/'));
+  const cachedShell = (await cache.match(request, { ignoreSearch: true })) || (await cache.match('/'));
   if (cachedShell) return cachedShell;
   try {
     const response = await fetch(request);

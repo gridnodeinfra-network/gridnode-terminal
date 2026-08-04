@@ -9,7 +9,10 @@ const CACHE_NAME = 'gridnode-shell-' + RELEASE.replace(/\./g, '-');
 const V = '?v=' + RELEASE;
 const SHELL = [
   '/',
-  '/index.html',
+  // NOTE: /index.html is intentionally NOT cached as a shell entry. Cloudflare
+  // Pages answers /index.html with a 308 redirect to /; the Cache API stores
+  // that entry as redirected:true, and Chromium then fails (ERR_FAILED) when
+  // the service worker serves it for a navigation. '/' is the canonical shell.
   '/manifest.json',
   '/css/daylight-nexus-pilot.css' + V,
   '/css/gridnode-native.css' + V,
@@ -51,25 +54,32 @@ self.addEventListener('activate', event => {
 });
 
 async function navigationResponse(request) {
+  // CACHE-FIRST from this worker's OWN release cache: an active old worker
+  // never serves (or caches) a newer release's unversioned index.html. The
+  // visible release only changes when the user applies the waiting worker
+  // (SKIP_WAITING) and controllerchange reloads. Fall back to network only
+  // when this release cache has no shell.
   const cache = await caches.open(CACHE_NAME);
+  const cachedShell = (await cache.match(request, { ignoreSearch: true })) || (await cache.match('/'));
+  if (cachedShell) return cachedShell;
   try {
     const response = await fetch(request);
     if (response.ok) await cache.put('/index.html', response.clone());
     return response;
   } catch (_) {
-    return (await cache.match('/index.html')) || (await cache.match('/')) || new Response('GRID//NODE is offline.', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+    return new Response('GRID//NODE is offline.', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
   }
 }
 
 async function assetResponse(request) {
-  const cached = await caches.match(request, { ignoreVary: true });
+  // Look up only in THIS worker's own CACHE_NAME so an old active worker can
+  // never read (or serve) a waiting new release's cached assets.
+  const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(request, { ignoreVary: true });
   if (cached) return cached;
   try {
     const response = await fetch(request);
-    if (response.ok) {
-      const cache = await caches.open(CACHE_NAME);
-      await cache.put(request, response.clone());
-    }
+    if (response.ok) await cache.put(request, response.clone());
     return response;
   } catch (_) {
     return new Response('', { status: 504, statusText: 'Offline' });
