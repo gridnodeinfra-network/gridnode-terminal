@@ -182,7 +182,7 @@
         const row = list.querySelector(`[data-inventory-edit="${CSS.escape(item.id)}"]`)?.closest('.gn-record-row');
         if (!row || row.querySelector('.gn-inventory-history')) return;
         const history = Array.isArray(item.history) ? item.history : [];
-        const details = document.createElement('details'); details.className = 'gn-inventory-history'; details.innerHTML = `<summary>HISTORY${item.expires ? ` · BUD ${safe(dateLabel(item.expires))}` : ''}${item.remaining != null ? ` · REMAINING ${safe(item.remaining)}` : ''}</summary><div>${history.length ? history.slice().reverse().map(entry => `<span>${safe(dateLabel(entry.at))} · ${safe(entry.action || 'UPDATED')} · ${safe(entry.source || 'Manual Entry')}</span>`).join('') : '<span>No changes recorded yet.</span>'}</div>`; row.appendChild(details);
+        const details = document.createElement('details'); details.className = 'gn-inventory-history'; details.innerHTML = `<summary>${tx("lab.historySummary", "HISTORY")}${item.expires ? ` · BUD ${safe(dateLabel(item.expires))}` : ''}${item.remaining != null ? ` · REMAINING ${safe(item.remaining)}` : ''}</summary><div>${history.length ? history.slice().reverse().map(entry => `<span>${safe(dateLabel(entry.at))} · ${safe(entry.action || 'UPDATED')} · ${safe(entry.source || 'Manual Entry')}</span>`).join('') : '<span>' + tx('lab.historyNoChanges', 'No changes recorded yet.') + '</span>'}</div>`; row.appendChild(details);
       });
     };
     const observer = new MutationObserver(decorate);

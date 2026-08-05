@@ -274,6 +274,7 @@ html[data-theme="light"] #app .topbar {
   backdrop-filter: blur(18px) saturate(.8);
 }
 html[data-theme="light"] #app .app-wordmark { filter: saturate(.72) brightness(.72); }
+html[data-theme="light"] #app #topAvaIcon { filter: invert(1) hue-rotate(180deg); }
 html[data-theme="light"] #app .topbar-btn { border-color: var(--border); background: rgba(248, 245, 237, .7); color: var(--accent-cyan); }
 html[data-theme="light"] #app .node-header-wrap { background: rgba(232, 228, 218, .88); }
 html[data-theme="light"] #app .node-pill { border-color: rgba(0, 111, 130, .32); background: rgba(248, 245, 237, .7); color: var(--text-primary); box-shadow: inset 0 1px rgba(255, 255, 255, .8); }
@@ -999,6 +1000,7 @@ html[data-theme="light"] .gn-whatsnew-card {
 
 html[data-theme="light"] #pageLab .card,
 html[data-theme="light"] #pageLab .syringe-visual,
+html[data-theme="light"] .syringe-visual::before { color: #00677f; border-color: #00677f; }
 html[data-theme="light"] #pageLab .gn-syr-body,
 html[data-theme="light"] #pageLab .gn-syr-helper {
   background: var(--surface) !important;

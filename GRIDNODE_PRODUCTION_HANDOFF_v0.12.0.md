@@ -115,3 +115,25 @@ results — captured during visual pass 13/14.
 after an independent review pass (dead-CSS verification + SW `/index.html`
 hardening, both re-gated). No code changes between approval and production:
 the tested artifact IS the production candidate.
+
+
+---
+
+## STRESS-TEST FIX PASS (2026-08-04, founder-approved scope: all blockers + visible i18n)
+
+Fixed against the Mavis stress-test report (tested on older previews; all fixes verified on preview 7723f8e0):
+
+| # | Fix | Status |
+|---|-----|--------|
+| B1 | NODE PROFILE HUB: CERRAR button + Escape closes + launcher toggles | 6/6 runtime |
+| B2 | 404 fallback page (// 404 — NODE NOT FOUND + VOLVER AL INICIO), no dashboard dump, tour once-per-user (skip/ESC persists gn_onboarding_dismissed_v1; no re-fire on route change) | 7/7 runtime |
+| B3 | (already fixed pre-report) Save-shot-without-med shows toast — verified still working | — |
+| B5 | Return-to-DASH title+aria now i18n ('Volver al tablero') | in modal 12/12 |
+| B6 | H-logo light variant (invert+hue-rotate, cream bg, brand colors preserved), DRAW VISUALIZER label darkened in DUSK, NODO EN LÍNEA → 'NODO ACTIVO LOCALMENTE' | 4/4 runtime |
+| i18n | SHOT modal: Close/Save/date/time/AM-PM/weight/notes aria+placeholders ES; 12 body-zone aria-labels ES; FAB aria 'Registrar una dosis' | 12/12 |
+| i18n | LAB header 'CALCULADORAS LAB' + '// UTILIDADES EDUCATIVAS //'; calculator help body (Dosis/Concentración/Volumen/Unidades) ES; inventory edit/archive aria; HISTORY disclosure; footer 'private prototype' + live-status + install-banner aria; LOCAL RECORDS boot tx | 8/8 |
+| i18n | Marketing HUB preview: ES screenshot (preview-dashboard-es.png, captured from real ES app with data) swapped live on gn:langchange | 3/3 |
+| Data | Peptide: date now required (toast 'SELECCIONA UNA FECHA ANTES DE GUARDAR', no silent today); FUENTE edit-load no longer shows 'manual' fallback (empty instead); save toast verified ('REGISTRO DE INVESTIGACIÓN GUARDADO') | 5/5 |
+| Doc | Continue-with-Google label is rendered by Google Identity Services (external) — not translatable in-repo; documented. Preset-name fragmentation (report #10) deferred to post-launch design pass (1-2 days). | noted |
+
+**Re-gate:** verify.sh VERIFICATION PASSED (lock re-synced, 32 files, bundle 320,669 B deterministic); official candidate test PASS (75 checks, exit 0); regression suites 45/45 on final preview 7723f8e0.

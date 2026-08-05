@@ -183,6 +183,8 @@ export function showPage(name, navElement) {
   document.dispatchEvent(new CustomEvent('gn:pagechange', { detail: { name, previousPage } }));
 }
 
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.querySelector('.page.active')?.id === 'pageProfile') { closeProfileHub(); } });
+
 export function refreshAll() {
   renderProfile();
   renderDashboard();

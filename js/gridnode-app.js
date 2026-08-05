@@ -337,7 +337,7 @@ export function startGridNode() {
     ['> Preparing Phase Engine', 'info', 'PHASE ENGINE ONLINE'],
     ['> Preparing RESULTS', 'info', 'RESULTS ONLINE'],
     ['> Preparing LAB + VAULT', 'info', 'LAB + VAULT ONLINE'],
-    ['> Loading local records', 'warn', 'LOCAL RECORDS'],
+    ['> Loading local records', 'warn', tx('lab.localRecords', 'LOCAL RECORDS')],
     ['> Protocol workspace ready', 'ok', 'SYSTEM ONLINE']
   ];
   messages.forEach(([message, className, status], index) => setTimeout(() => {
@@ -420,7 +420,27 @@ window.GN = {
   localMode: enterLocalSession
 };
 
+function isKnownRoute() {
+  var p = window.location.pathname.replace(/\/+$/, '');
+  return p === '' || p === '/' || p === '/index.html';
+}
+
+function showNotFound() {
+  var root = document.getElementById('app') || document.body;
+  document.querySelectorAll('.screen').forEach(function (s) { s.style.display = 'none'; });
+  var el = document.createElement('div');
+  el.className = 'gn-404-screen';
+  el.setAttribute('role', 'alert');
+  el.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;background:#0e0e16;color:#e8e6df;font-family:inherit;';
+  el.innerHTML = '<div style="font-size:13px;letter-spacing:.35em;color:#41e0c7;text-transform:uppercase">// 404 — NODE NOT FOUND</div>'
+    + '<div style="font-size:22px;font-weight:700">' + (document.documentElement.lang === 'es' ? 'Página no encontrada' : 'Page not found') + '</div>'
+    + '<div style="opacity:.72;font-size:14px;max-width:320px">' + (document.documentElement.lang === 'es' ? 'La ruta que buscas no existe en la grilla. Vuelve al inicio.' : 'The route you are looking for does not exist on the grid. Return to the start.') + '</div>'
+    + '<button type="button" onclick="location.href=\'/\'" style="margin-top:8px;padding:12px 22px;border-radius:10px;border:1px solid #41e0c7;background:transparent;color:#41e0c7;font-weight:600;cursor:pointer;letter-spacing:.08em">' + (document.documentElement.lang === 'es' ? 'VOLVER AL INICIO' : 'BACK TO START') + '</button>';
+  root.appendChild(el);
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
+  if (!isKnownRoute()) { showNotFound(); return; }
   if (window.GN_I18N?.ready) {
     await window.GN_I18N.ready;
     window.GN_I18N.applyTo(document);

@@ -3507,7 +3507,7 @@ function continueLocallyFromWelcome() {
 <div class="landing-product-preview" aria-label="GRID//NODE live product preview">
   <div class="landing-preview-frame">
     <div class="landing-preview-bar"><span class="landing-preview-dot"></span><span class="landing-preview-dot"></span><span class="landing-preview-dot"></span><span class="landing-preview-tag">GRID//NODE — LIVE</span></div>
-    <img class="landing-preview-shot" src="assets/preview-dashboard.png" alt="GRID//NODE dashboard — SHOTS, Phase Engine, RESULTS" loading="lazy">
+    <img class="landing-preview-shot" id="landingPreviewShot" src="assets/preview-dashboard.png" data-preview-src-en="assets/preview-dashboard.png" data-preview-src-es="assets/preview-dashboard-es.png" alt="GRID//NODE dashboard — SHOTS, Phase Engine, RESULTS" loading="lazy">
   </div>
   <p class="landing-preview-caption" data-i18n="landing.previewCaption">A functioning biotech command system — protocol logs, phase estimates, and trends on your device.</p>
 </div>
@@ -3631,7 +3631,7 @@ function continueLocallyFromWelcome() {
 <div class="early-access-modal" id="earlyAccessModal" role="dialog" aria-modal="true" aria-labelledby="earlyAccessTitle">
   <div class="early-access-panel">
     <h2 id="earlyAccessTitle">Early Access Coming Soon</h2>
-    <p>GRID//NODE is currently in private prototype.</p>
+    <p data-i18n="landing.privatePrototype">GRID//NODE is currently in private prototype.</p>
     <p>Early access requests will open soon as the system moves toward public testing.</p>
     <div class="modal-slogan">Your body. Your data. Your grid.</div>
     <button class="landing-btn secondary" type="button" onclick="closeEarlyAccessModal()">Return to Site</button>
@@ -3725,21 +3725,21 @@ function continueLocallyFromWelcome() {
 <div class="screen" id="app">
   <div class="topbar">
     
-    <div class="app-wordmark app-wordmark-b2b" role="button" tabindex="0" onclick="showPage('Dash',document.getElementById('navDash'))" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Dash',document.getElementById('navDash'));}" title="Return to DASH" aria-label="Return to DASH"><svg class="gn-b2b-wordmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 320" role="img" aria-label="GRID//NODE color wordmark" focusable="false" aria-hidden="false">
+    <div class="app-wordmark app-wordmark-b2b" role="button" tabindex="0" onclick="showPage('Dash',document.getElementById('navDash'))" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Dash',document.getElementById('navDash'));}" title="Return to DASH" aria-label="Return to DASH" data-i18n-title="nav.returnDash" data-i18n-aria-label="nav.returnDash"><svg class="gn-b2b-wordmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 320" role="img" aria-label="GRID//NODE color wordmark" focusable="false" aria-hidden="false">
   <title>GRID//NODE color wordmark</title>
   <text x="800" y="205" text-anchor="middle" font-family="DejaVu Sans Mono, Arial, sans-serif" font-size="150" font-weight="700" letter-spacing="6">
     <tspan fill="#00E6F0">GRID</tspan><tspan fill="#FF2D55">//</tspan><tspan fill="#00E6F0">NODE</tspan>
   </text>
 </svg></div>
     <div class="topbar-actions">
-      <button class="topbar-btn" type="button" onclick="showPage('Profile',document.getElementById('navPro'))" id="topAva" style="overflow:hidden;padding:0" aria-label="Open NODE PROFILE HUB">
+      <button class="topbar-btn" type="button" onclick="toggleProfileHub()" id="topAva" style="overflow:hidden;padding:0" aria-label="Open NODE PROFILE HUB">
         <img src="/assets/gridnode-icon.svg" alt="GRID//NODE NODE mark" width="34" height="34" id="topAvaIcon">
       </button>
     </div>
   </div>
 
   <div class="node-header-wrap" id="nodeHeaderWrap">
-    <div class="node-pill" id="nodeHeaderPill" role="status" aria-label="Live node status">
+    <div class="node-pill" id="nodeHeaderPill" role="status" aria-label="Live node status" data-i18n-aria-label="nav.liveStatus">
       <span class="node-pill-signal" aria-hidden="true"></span>
       <span class="node-pill-phase" id="nodeHeaderPhase">AWAITING FIRST SHOT</span>
       <span class="node-pill-state" id="nodeHeaderState">LOCAL MODE</span>
@@ -3983,18 +3983,18 @@ function continueLocallyFromWelcome() {
             <div class="track12-subdivision-hud track12-core-hud" aria-hidden="true"></div>
             <div class="track12-subdivision-hud track12-lower-hud" aria-hidden="true"></div>
             <div class="track12-subdivision-hud track12-upper-hud" aria-hidden="true"></div>
-            <button class="zone-overlay track12-zone zone-core-q zone-core-lu" type="button" data-mode="core" data-site="Right Abdomen — Upper" aria-label="Right Abdomen — Upper"></button>
-            <button class="zone-overlay track12-zone zone-core-q zone-core-ll" type="button" data-mode="core" data-site="Right Abdomen — Lower" aria-label="Right Abdomen — Lower"></button>
-            <button class="zone-overlay track12-zone zone-core-q zone-core-ru" type="button" data-mode="core" data-site="Left Abdomen — Upper" aria-label="Left Abdomen — Upper"></button>
-            <button class="zone-overlay track12-zone zone-core-q zone-core-rl" type="button" data-mode="core" data-site="Left Abdomen — Lower" aria-label="Left Abdomen — Lower"></button>
-            <button class="zone-overlay track12-zone zone-lower-lu" type="button" data-mode="lower" data-site="Right Thigh — Upper" aria-label="Right Thigh — Upper"></button>
-            <button class="zone-overlay track12-zone zone-lower-ll" type="button" data-mode="lower" data-site="Right Thigh — Lower" aria-label="Right Thigh — Lower"></button>
-            <button class="zone-overlay track12-zone zone-lower-ru" type="button" data-mode="lower" data-site="Left Thigh — Upper" aria-label="Left Thigh — Upper"></button>
-            <button class="zone-overlay track12-zone zone-lower-rl" type="button" data-mode="lower" data-site="Left Thigh — Lower" aria-label="Left Thigh — Lower"></button>
-            <button class="zone-overlay track12-zone zone-upper-lu" type="button" data-mode="upper" data-site="Left Back Upper Arm — Upper" aria-label="Left Back Upper Arm — Upper"></button>
-            <button class="zone-overlay track12-zone zone-upper-ll" type="button" data-mode="upper" data-site="Left Back Upper Arm — Lower" aria-label="Left Back Upper Arm — Lower"></button>
-            <button class="zone-overlay track12-zone zone-upper-ru" type="button" data-mode="upper" data-site="Right Back Upper Arm — Upper" aria-label="Right Back Upper Arm — Upper"></button>
-            <button class="zone-overlay track12-zone zone-upper-rl" type="button" data-mode="upper" data-site="Right Back Upper Arm — Lower" aria-label="Right Back Upper Arm — Lower"></button>
+            <button class="zone-overlay track12-zone zone-core-q zone-core-lu" type="button" data-mode="core" data-site="Right Abdomen — Upper" aria-label="Right Abdomen — Upper" data-i18n-aria-label="zone.rightAbdomenUpper"></button>
+            <button class="zone-overlay track12-zone zone-core-q zone-core-ll" type="button" data-mode="core" data-site="Right Abdomen — Lower" aria-label="Right Abdomen — Lower" data-i18n-aria-label="zone.rightAbdomenLower"></button>
+            <button class="zone-overlay track12-zone zone-core-q zone-core-ru" type="button" data-mode="core" data-site="Left Abdomen — Upper" aria-label="Left Abdomen — Upper" data-i18n-aria-label="zone.leftAbdomenUpper"></button>
+            <button class="zone-overlay track12-zone zone-core-q zone-core-rl" type="button" data-mode="core" data-site="Left Abdomen — Lower" aria-label="Left Abdomen — Lower" data-i18n-aria-label="zone.leftAbdomenLower"></button>
+            <button class="zone-overlay track12-zone zone-lower-lu" type="button" data-mode="lower" data-site="Right Thigh — Upper" aria-label="Right Thigh — Upper" data-i18n-aria-label="zone.rightThighUpper"></button>
+            <button class="zone-overlay track12-zone zone-lower-ll" type="button" data-mode="lower" data-site="Right Thigh — Lower" aria-label="Right Thigh — Lower" data-i18n-aria-label="zone.rightThighLower"></button>
+            <button class="zone-overlay track12-zone zone-lower-ru" type="button" data-mode="lower" data-site="Left Thigh — Upper" aria-label="Left Thigh — Upper" data-i18n-aria-label="zone.leftThighUpper"></button>
+            <button class="zone-overlay track12-zone zone-lower-rl" type="button" data-mode="lower" data-site="Left Thigh — Lower" aria-label="Left Thigh — Lower" data-i18n-aria-label="zone.leftThighLower"></button>
+            <button class="zone-overlay track12-zone zone-upper-lu" type="button" data-mode="upper" data-site="Left Back Upper Arm — Upper" aria-label="Left Back Upper Arm — Upper" data-i18n-aria-label="zone.leftBackUpperArmUpper"></button>
+            <button class="zone-overlay track12-zone zone-upper-ll" type="button" data-mode="upper" data-site="Left Back Upper Arm — Lower" aria-label="Left Back Upper Arm — Lower" data-i18n-aria-label="zone.leftBackUpperArmLower"></button>
+            <button class="zone-overlay track12-zone zone-upper-ru" type="button" data-mode="upper" data-site="Right Back Upper Arm — Upper" aria-label="Right Back Upper Arm — Upper" data-i18n-aria-label="zone.rightBackUpperArmUpper"></button>
+            <button class="zone-overlay track12-zone zone-upper-rl" type="button" data-mode="upper" data-site="Right Back Upper Arm — Lower" aria-label="Right Back Upper Arm — Lower" data-i18n-aria-label="zone.rightBackUpperArmLower"></button>
           </div>
           <div class="scanner-status-helper" data-i18n="shots.scannerLegend"><b>SELECTED</b> = active choice · LAST = last logged location · READY = available tracking zone · RECENT = recently logged</div>
         </div>
@@ -4176,8 +4176,8 @@ function continueLocallyFromWelcome() {
     
     <div class="page" id="pageLab">
       <div class="page-hdr">
-        <div class="page-title">LAB <span class="a">CALCULATORS</span></div>
-        <div class="page-sub">// EDUCATIONAL UTILITIES //</div>
+        <div class="page-title" data-i18n="lab.calcTitle">LAB <span class="a">CALCULATORS</span></div>
+        <div class="page-sub" data-i18n="lab.calcSub">// EDUCATIONAL UTILITIES //</div>
       </div>
 
       <div class="time-tabs" id="labSegTabs" style="margin-bottom:12px">
@@ -4240,10 +4240,10 @@ function continueLocallyFromWelcome() {
           </div>
           <details class="gn-syr-helper">
             <summary data-i18n="lab.helpMath">HELP ME UNDERSTAND THIS MATH</summary>
-            <p><b>Dose (mg)</b> The dose amount entered by the user, measured in milligrams.</p>
-            <p><b>Concentration (mg/mL)</b> How many milligrams are present in each milliliter of liquid, based on the user-entered vial label.</p>
-            <p><b>Volume (mL)</b> The calculated liquid volume from dose divided by concentration.</p>
-            <p><b>Units</b> For a U-100 syringe, 1 mL equals 100 units. Example: 0.50 mL equals 50 units.</p>
+            <p data-i18n="lab.helpDose"><b>Dose (mg)</b> The dose amount entered by the user, measured in milligrams.</p>
+            <p data-i18n="lab.helpConcentration"><b>Concentration (mg/mL)</b> How many milligrams are present in each milliliter of liquid, based on the user-entered vial label.</p>
+            <p data-i18n="lab.helpVolume"><b>Volume (mL)</b> The calculated liquid volume from dose divided by concentration.</p>
+            <p data-i18n="lab.helpUnits"><b>Units</b> For a U-100 syringe, 1 mL equals 100 units. Example: 0.50 mL equals 50 units.</p>
             <p class="gn-syr-safety" data-i18n="lab.syrSafety">Educational math and user-entered tracking only. GRID//NODE does not provide dosing recommendations. Verify protocol decisions independently.</p>
           </details>
           <div class="gn-syr-forensic">
@@ -4503,25 +4503,25 @@ function continueLocallyFromWelcome() {
     <div class="nav-item gn-nav-hidden" id="navPro" role="button" tabindex="0" onclick="showPage('Profile',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Profile',this)}"></div>
   </div>
 
-  <button class="fab" onclick="handleShotFab()" aria-label="Open SHOTS scanner flow"><span class="gn-icon"><svg><use href="#gn-protocol-event"></use></svg></span></button>
+  <button class="fab" onclick="handleShotFab()" aria-label="Log a dose" data-i18n-aria-label="fab.logShot"><span class="gn-icon"><svg><use href="#gn-protocol-event"></use></svg></span></button>
 </div>
 
 
 <div class="overlay" id="logOv">
   <div class="modal">
     <div class="modal-hdr">
-      <div class="modal-actions"><button class="modal-btn close" aria-label="Close" onclick="closeLog()"><span class="gn-icon"><svg><use href="#gn-close"></use></svg></span></button></div>
+      <div class="modal-actions"><button class="modal-btn close" aria-label="Close" data-i18n-aria-label="modal.close" onclick="closeLog()"><span class="gn-icon"><svg><use href="#gn-close"></use></svg></span></button></div>
       <div class="modal-title" data-i18n="shot.logShot">LOG SHOT</div>
-      <div class="modal-actions"><button class="modal-btn save" aria-label="Save shot" onclick="saveShot()"><span class="gn-icon"><svg><use href="#gn-check"></use></svg></span></button></div>
+      <div class="modal-actions"><button class="modal-btn save" aria-label="Save shot" data-i18n-aria-label="modal.saveShot" onclick="saveShot()"><span class="gn-icon"><svg><use href="#gn-check"></use></svg></span></button></div>
     </div>
     <div class="form-group gn-shot-datetime-group">
       <label class="form-label" data-i18n="shot.date">DATE</label>
-      <input class="form-input gn-shot-date-input" type="text" id="sDate" placeholder="Jun 11, 2026" inputmode="none" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" readonly onclick="gnOpenShotDatePicker()" aria-label="Select SHOT date">
+      <input class="form-input gn-shot-date-input" type="text" id="sDate" placeholder="Jun 11, 2026" data-i18n-placeholder="shot.datePlaceholder" inputmode="none" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" readonly onclick="gnOpenShotDatePicker()" aria-label="Select SHOT date" data-i18n-aria-label="shot.dateAria">
       <div class="gn-shot-date-helper" data-i18n="shot.dateHelp">Tap to choose date. Displayed for humans, saved in compatible SHOTS format.</div>
       <label class="form-label gn-shot-time-label" data-i18n="shot.time">TIME</label>
       <div class="gn-shot-time-control" aria-label="SHOT time control">
-        <input class="form-input gn-shot-time-input" type="text" id="sTime" placeholder="8:30" inputmode="numeric" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" aria-label="Enter SHOT time as hours and minutes" oninput="gnShotClockLiveFormat(this)" onblur="gnNormalizeShotClockField(this)">
-        <div class="gn-ampm-toggle" role="group" aria-label="Select AM or PM">
+        <input class="form-input gn-shot-time-input" type="text" id="sTime" placeholder="8:30" data-i18n-placeholder="shot.timePlaceholder" inputmode="numeric" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" aria-label="Enter SHOT time as hours and minutes" data-i18n-aria-label="shot.timeAria" oninput="gnShotClockLiveFormat(this)" onblur="gnNormalizeShotClockField(this)">
+        <div class="gn-ampm-toggle" role="group" aria-label="Select AM or PM" data-i18n-aria-label="shot.ampmAria">
           <button class="gn-ampm-btn" id="sTimeAM" type="button" onclick="gnSetShotMeridiem('AM')" data-i18n="shot.am">AM</button>
           <button class="gn-ampm-btn" id="sTimePM" type="button" onclick="gnSetShotMeridiem('PM')" data-i18n="shot.pm">PM</button>
         </div>
@@ -4568,7 +4568,7 @@ function continueLocallyFromWelcome() {
       <span class="gn-shot-advanced-chevron" aria-hidden="true">▼</span>
     </button>
     <div id="gnShotAdvanced" class="gn-shot-advanced-body gn-hidden">
-      <div class="form-group"><label class="form-label" for="sWt" data-i18n="shot.weightToday">WEIGHT TODAY (lbs) — OPTIONAL</label><input class="form-input" type="number" id="sWt" placeholder="e.g. 215.5" step="0.1"></div>
+      <div class="form-group"><label class="form-label" for="sWt" data-i18n="shot.weightToday">WEIGHT TODAY (lbs) — OPTIONAL</label><input class="form-input" type="number" id="sWt" placeholder="e.g. 215.5" data-i18n-placeholder="shot.weightPlaceholder" step="0.1"></div>
       <div class="form-group"><label class="form-label" data-i18n="shot.sideEffects">SIDE EFFECTS</label>
         <div class="se-grid">
           <label class="se-check"><input type="checkbox" value="nausea"> <span data-i18n="shot.nausea">Nausea</span></label>
@@ -4583,7 +4583,7 @@ function continueLocallyFromWelcome() {
           <label class="se-check"><input type="checkbox" value="dizziness"> <span data-i18n="shot.dizziness">Dizziness</span></label>
         </div>
       </div>
-      <div class="form-group"><label class="form-label" for="sNotes" data-i18n="shots.notesOptional">NOTES — OPTIONAL</label><textarea class="form-textarea" id="sNotes" placeholder="How do you feel?" maxlength="500"></textarea></div>
+      <div class="form-group"><label class="form-label" for="sNotes" data-i18n="shots.notesOptional">NOTES — OPTIONAL</label><textarea class="form-textarea" id="sNotes" placeholder="How do you feel?" data-i18n-placeholder="shot.notesPlaceholder" maxlength="500"></textarea></div>
     </div>
     <button class="btn-full btn-primary" onclick="saveShot()" data-i18n="shot.saveShot">SAVE SHOT</button>
     <button class="btn-full btn-secondary log-modal-bottom-close" onclick="closeLog()" data-i18n="shot.closeReturn">CLOSE / RETURN</button>
@@ -4616,7 +4616,7 @@ function continueLocallyFromWelcome() {
 
     <div class="form-group">
       <label class="form-label" for="wtVal" data-i18n="weight.value">WEIGHT VALUE</label>
-      <input class="form-input" type="number" id="wtVal" placeholder="e.g. 215.5" step="0.1" inputmode="decimal" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done">
+      <input class="form-input" type="number" id="wtVal" placeholder="e.g. 215.5" data-i18n-placeholder="shot.weightPlaceholder" step="0.1" inputmode="decimal" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done">
     </div>
 
     <div class="form-group">
@@ -8892,7 +8892,7 @@ body.gn-log-shot-picker-open .fab{
 </div>
 
 
-<div id="gnPwaInstallBanner" class="gn-pwa-install-banner" role="region" aria-label="Install GRID//NODE app" style="display:none">
+<div id="gnPwaInstallBanner" class="gn-pwa-install-banner" role="region" aria-label="Install GRID//NODE app" data-i18n-aria-label="pwa.installRegion" style="display:none">
   <div class="gn-pwa-text">
     <b data-i18n="pwa.installTitle">INSTALL GRID//NODE</b>
     <span data-i18n="pwa.bannerSub">Add to your home screen for app-like access</span>

@@ -427,6 +427,7 @@
   }
 
   function dismiss(complete) {
+    if (!complete) { try { localStorage.setItem('gn_onboarding_dismissed_v1', '1'); } catch (_) {} }
     if (overlay) { overlay.remove(); overlay = null; }
     removeSpotlight();
     document.removeEventListener('gn:langchange', onLangChange);
@@ -526,6 +527,7 @@
 
   function maybeAutoStart() {
     if (state() === 'complete') return;
+    try { if (localStorage.getItem('gn_onboarding_dismissed_v1') === '1') return; } catch (_) {}
     var landing = document.getElementById('landing');
     var app = document.getElementById('app');
     var inApp = app && getComputedStyle(app).display !== 'none' && (!landing || getComputedStyle(landing).display === 'none');
