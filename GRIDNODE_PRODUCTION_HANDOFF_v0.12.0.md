@@ -167,3 +167,56 @@ Second Mavis report round. All verified on preview cd1bbeae (release 0.12.0/2026
 | R3 | RESULTS 'LOG SHOT' + empty-state 'LOG YOUR FIRST SHOT' now open the full form (openLogModal) — only the FAB quick-logs | 0 handleShotFab call sites outside the FAB; quick-log suite 6/6 |
 
 **Final re-gate (preview cd1bbeae):** verify.sh VERIFICATION PASSED (bundle 327,968 B, 32-file lock); official candidate test PASS (75 checks, 39.7s); full regression 86/86 across 14 suites (404 8/8 · quicklog 6/6 · peplock 11/11 · close-guard 7/7 · polish 5/5 · B1 6/6 · B2 7/7 · B6 4/4 · modal 12/12 · lab 8/8 · preview-swap 3/3 · peptide 5/5 · fresh-404 · hub-aria 2/2). Commits: f5b8de1 (v0.13 pass) + review fixes.
+
+
+## UX OVERHAUL DEPLOY — 2026-08-05 (LIVE)
+
+**Status: DEPLOYED TO PRODUCTION** by founder authorization (full deploy mode).
+
+Commit: `8a3c043` (35 files, +764/−185) — pushed `feature/gridnode-product-completion`.
+Production deployment: `93401857` (Environment=Production, branch=main) → **gridnode.network LIVE**.
+Preview: `https://9443f9a1.gridnode.pages.dev` (final tested build).
+
+### What shipped (12-point UX pass + Blocker 10 structure)
+1. **Terminology**: ES dashboard heading "TU LÍNEA DE TIEMPO" (was PROTOCOLO TABLERO — aligns with locked slogan
+   "Tu biología. Tu línea de tiempo. Tu grid."); NIVEL RELATIVO → TU NIVEL. Form labels Title Case
+   (Fecha/Hora/Medicamento/Dosis/Ubicación/Dispositivo/Estado/…) in EN+ES.
+2. **Brand**: `.gn-brand-strip` (2px cyan gradient) under topbar; topbar launcher = V6 canonical insignia
+   (`assets/gridnode-insignia-v6.png` from brand spec) + "HUB" label (hidden <360px); favicon wrapper
+   `gridnode-favicon-v6.svg`; app icons regenerated from V6 (32/180/192/512/maskables).
+3. **Empty state**: ONE red CTA "REGISTRAR MI PRIMERA DOSIS" + 3 cyan ghosts (Registrar peso / Escanear zona /
+   Ver LAB) + cyan Consejo tip card; wanda cards + FAB hidden until first dose (`body.gn-empty-state`).
+4. **Wanda colors**: weight/goal cards `.info` (cyan); dose cards red only when action needed.
+5. **Drawer forms**: dose + weight now 75vh bottom drawers (`#logOv/#wtOv .modal` 75dvh, rounded top,
+   `.gn-drawer-handle`, dashboard visible above).
+6. **Undoable toasts**: `showToast(msg, isError, undoCb, detail)` — cyan-bordered, ✓, title+detail,
+   DESHACER/UNDO button, 4px 5s progress bar. Wired: saveShot → "Dosis registrada · hh:mm" + detail
+   (dose mg med · zone) → undoShot(id) archives; saveWt → "Peso registrado" → undoWeight(id) removes.
+   Keys toast.*, shots.undone, weight.undone (EN+ES).
+7. **HUB danger**: delete rows `.gn-profile-danger-row` red border + red text (confirm modals unchanged).
+8. **Scanner hint**: first open (per-device `gn_scanner_hint_shown`) pulses one zone + "TOCA UNA ZONA"; cleared
+   on selection.
+9. **Peptide (Blocker 10)**: two-mode structure — LIBRARY: `#gnResearchMode` chips "BIBLIOTECA · SELECCIONADA 🔒"
+   + "CATEGORÍA · ASIGNADA 🔒", name+category readonly/locked, warning hidden, standard save label; CUSTOM:
+   demoted footer link "¿Necesitas un compuesto personalizado? → Crear entrada personalizada" → custom mode
+   (title CREAR ENTRADA PERSONALIZADA, "← Volver a la biblioteca", name free-text, category "Personalizada"
+   display (saved as lab.customResearch), amber `.gn-research-custom-group` + orange warning callout,
+   save "GUARDAR ENTRADA PERSONALIZADA").
+
+### Gates
+- verify.sh: **VERIFICATION PASSED** (38 files; bundle 339,146 B deterministic vs locked baseline; lock
+  re-synced + source-metadata.json regenerated).
+- Official test `test-production-candidate.cjs` (updated: empty-state assertion → .gn-empty-hero/.gn-empty-cta):
+  **result PASS | 76 checks | 0 fails**.
+- Regression suites on final preview: Batch A 12/12, B 13/13, C 11/11, D 11/11, Project2 18/18, Gaps 9/9
+  (+ legacy B1 6/6, B2 7/7, B6 4/4, modal 12/12, LAB 8/8, preview-swap 3/3 green).
+- LIVE production runtime: **15/15** (brand strip, V6, HUB label, empty hero, CTA, ghosts, tip, wanda hidden,
+  drawer 75vh, handle, Title Case labels, 2 danger rows, peptide two-mode).
+
+### Notes / rollback
+- Rollback: redeploy `b4f7470` (previous committed state) via deploy-production.sh, or CF dashboard → previous
+  deployment. Production deployment id `93401857-0a7e-4386-b687-6231d354c6c1`.
+- Known: first curl after deploy can hit CDN edge cache (stale HTML); hard-refresh or cache-bypass headers
+  confirm the new build. "Continue with Google" label is Google Identity Services-rendered (not repo-translatable).
+- The `.gn-empty-hero` overrides `#gnFirstShotMission` in the official test; mission card remains in DOM
+  (hidden) for compat.
