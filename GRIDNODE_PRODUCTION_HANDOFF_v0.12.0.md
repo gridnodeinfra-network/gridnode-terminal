@@ -143,7 +143,7 @@ Fixed against the Mavis stress-test report (tested on older previews; all fixes 
 
 ## v0.13 STRESS-TEST FIX PASS (2026-08-05, founder-approved: all blockers + visible i18n + priority UX)
 
-Second Mavis report round. All verified on preview 40586f5b (release 0.12.0/20260804.1):
+Second Mavis report round. All verified on preview cd1bbeae (release 0.12.0/20260804.1):
 
 | # | Fix | Result |
 |---|-----|--------|
@@ -153,4 +153,17 @@ Second Mavis report round. All verified on preview 40586f5b (release 0.12.0/2026
 | B4 | **Unsaved-changes guard**: dirty dose form close (X / CLOSE·RETURN / Escape) → '¿DESCARTAR DOSIS SIN GUARDAR?' confirm (KEEP EDITING / DISCARD); clean close instant; saveShot force-closes | 7/7 |
 | P5 | What's New + tour **no longer stack** (tour waits for dismissal); tour kicker i18n ('// ORIENTACIÓN DEL SISTEMA 1/4'); DUSK muted-text overrides (#8bb1bc/#9ab3bc/#849ba4/#9ceff4/#a6c5cc → light-safe colors); .gn-hub-close fully styled dark+light | 5/5 |
 
-**Re-gate:** verify.sh VERIFICATION PASSED (bundle 326,820 B, lock re-synced 32 files); official candidate test PASS (75 checks, 39.7s); full regression 84/84 across 13 suites on preview 40586f5b.
+**Re-gate:** verify.sh VERIFICATION PASSED (bundle 326,820 B, lock re-synced 32 files); official candidate test PASS (75 checks, 39.7s); full regression 84/84 across 13 suites on preview cd1bbeae.
+
+
+---
+
+## v0.13 REVIEW FIX PASS (independent review of f5b8de1 → 3 should-fixes resolved)
+
+| # | Fix | Verified |
+|---|-----|----------|
+| R1 | Dirty-check false positive on clean edit close: edit sessions now compare every field against the loaded record (med/dose/date/time/notes/wt/SE) instead of blanket-treating edit mode as dirty | clean edit close → NO prompt; dirty edit → prompt (runtime probe A/B) |
+| R2 | Escape recursion: while the discard confirm is open, Escape dismisses IT (cancelShotDiscard); while the future-timestamp confirm is open, Escape is ignored (own handler owns it); only otherwise does Escape close the log modal | probe C: confirm dismissed, no stack |
+| R3 | RESULTS 'LOG SHOT' + empty-state 'LOG YOUR FIRST SHOT' now open the full form (openLogModal) — only the FAB quick-logs | 0 handleShotFab call sites outside the FAB; quick-log suite 6/6 |
+
+**Final re-gate (preview cd1bbeae):** verify.sh VERIFICATION PASSED (bundle 327,968 B, 32-file lock); official candidate test PASS (75 checks, 39.7s); full regression 86/86 across 14 suites (404 8/8 · quicklog 6/6 · peplock 11/11 · close-guard 7/7 · polish 5/5 · B1 6/6 · B2 7/7 · B6 4/4 · modal 12/12 · lab 8/8 · preview-swap 3/3 · peptide 5/5 · fresh-404 · hub-aria 2/2). Commits: f5b8de1 (v0.13 pass) + review fixes.

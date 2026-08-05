@@ -1365,7 +1365,7 @@ function showPage(name, navElement) {
 }
 
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.querySelector('.page.active')?.id === 'pageProfile') { closeProfileHub(); } });
-document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.querySelector('#logOv.active')) { closeLog(); } });
+document.addEventListener('keydown', function (e) { if (e.key !== 'Escape') return; var disc = document.getElementById('shotDiscardConfirmOv'); if (disc && (disc.classList.contains('active') || getComputedStyle(disc).display !== 'none')) { cancelShotDiscard(); return; } if (document.querySelector('#futureTimestampConfirm.active')) return; if (document.querySelector('#logOv.active')) { closeLog(); } });
 
 function refreshAll() {
   renderProfile();
@@ -1917,23 +1917,39 @@ function renderShotDevicePicker(selectedId = '') {
 }
 
 function isShotFormDirty() {
-  const profile = getProfile();
-  const profileMed = normalizeMedicationId(profile.med);
-  const hasMed = Boolean(selectState.cpShotMed?.val);
-  const hasDose = Number($('sDose')?.value) > 0;
-  const hasDate = Boolean(readHumanDateInput($('sDate')));
-  const hasTime = Boolean($('sTime')?.value);
-  const hasSite = Boolean(moduleState.selectedLocation);
+  const editingId = moduleState.editingShotId;
+  if (editingId) {
+    const original = getAllShots().find(item => item.id === editingId);
+    if (!original) return false;
+    const medNow = selectState.cpShotMed?.val || '';
+    const doseNow = $('sDose')?.value?.trim() || '';
+    const dateNow = readHumanDateInput($('sDate')) || '';
+    const timeNow = $('sTime')?.value?.trim() || '';
+    const notesNow = $('sNotes')?.value?.trim() || '';
+    const wtNow = $('sWt')?.value?.trim() || '';
+    if (medNow && medNow !== normalizeMedicationId(original.med)) return true;
+    if (doseNow && Number(doseNow) !== Number(original.dose)) return true;
+    if (dateNow && dateNow !== String(original.date || '').slice(0, 10)) return true;
+    if (timeNow && timeNow !== formatTime12(new Date(original.date))) return true;
+    if (notesNow !== (original.notes || '')) return true;
+    if (wtNow && Number(wtNow) !== Number(original.wt)) return true;
+    const seNow = qa('#logOv input[type="checkbox"]:checked').map(input => input.value).sort().join(',');
+    const seOrig = (original.se || []).map(normalizeSideEffectId).sort().join(',');
+    if (seNow !== seOrig) return true;
+    return false;
+  }
   const hasNotes = Boolean($('sNotes')?.value?.trim());
   const hasWt = Number($('sWt')?.value) > 0;
   const hasSe = qa('#logOv input[type="checkbox"]:checked').length > 0;
-  const isEdit = Boolean(moduleState.editingShotId);
   if (hasNotes || hasWt || hasSe) return true;
-  if (isEdit) return true;
-  const prefilledFromProfile = Boolean(profileMed) && (Number($('sDose')?.value) === Number(profile.dose) || !profile.dose);
-  if (hasMed && !prefilledFromProfile) return true;
-  if (hasDose && !(prefilledFromProfile && Number($('sDose')?.value) === Number(profile.dose))) return true;
-  return false;
+  const hasMed = Boolean(selectState.cpShotMed?.val);
+  const hasDose = Number($('sDose')?.value) > 0;
+  if (!hasMed && !hasDose) return false;
+  const profile = getProfile();
+  const profileMed = normalizeMedicationId(profile.med);
+  const prefilledFromProfile = Boolean(profileMed) && hasMed && (Number($('sDose')?.value) === Number(profile.dose) || !profile.dose);
+  if (prefilledFromProfile) return false;
+  return true;
 }
 
 function cancelShotDiscard() { $('shotDiscardConfirmOv')?.classList.remove('active'); if ($('shotDiscardConfirmOv')) $('shotDiscardConfirmOv').style.display = 'none'; }
@@ -2296,7 +2312,7 @@ function filterWeightsForChart(weights) {
 function ensureResultsEnhancements() {
   const ledger = document.getElementById('pageResults')?.querySelector('.results-ledger');
   if (ledger && !document.getElementById('gnWeeklyReport')) {
-    const markup = '<section class="gn-weekly-report" id="gnWeeklyReport"><div class="gn-foundation-kicker" data-i18n="results.weeklyKicker">// WEEKLY NODE REPORT</div><h3 id="gnWeeklyTitle" data-i18n="results.moreDataNeeded">MORE DATA NEEDED</h3><p id="gnWeeklyCopy" data-i18n="results.weeklyEmptyCopy">Log a shot or log your weight to begin building your SIGNAL.</p><div class="gn-weekly-signals" id="gnWeeklySignals"></div><div class="gn-weekly-actions" id="gnWeeklyActions"><button type="button" onclick="handleShotFab()" data-i18n="runtime.logShot">LOG SHOT</button><button type="button" onclick="openWeightModal()" data-i18n="dashboard.logWeight">LOG WEIGHT</button></div></section><div class="gn-reference-pending"><strong data-i18n="results.referencePendingTitle">REFERENCE DATA NOT LOADED</strong><br><span data-i18n="results.referencePendingHtml">Clinical comparison remains off until a medication-specific, source-verified dataset and uncertainty model are available. Your SIGNAL uses your own logged history.</span></div>';
+    const markup = '<section class="gn-weekly-report" id="gnWeeklyReport"><div class="gn-foundation-kicker" data-i18n="results.weeklyKicker">// WEEKLY NODE REPORT</div><h3 id="gnWeeklyTitle" data-i18n="results.moreDataNeeded">MORE DATA NEEDED</h3><p id="gnWeeklyCopy" data-i18n="results.weeklyEmptyCopy">Log a shot or log your weight to begin building your SIGNAL.</p><div class="gn-weekly-signals" id="gnWeeklySignals"></div><div class="gn-weekly-actions" id="gnWeeklyActions"><button type="button" onclick="openLogModal()" data-i18n="runtime.logShot">LOG SHOT</button><button type="button" onclick="openWeightModal()" data-i18n="dashboard.logWeight">LOG WEIGHT</button></div></section><div class="gn-reference-pending"><strong data-i18n="results.referencePendingTitle">REFERENCE DATA NOT LOADED</strong><br><span data-i18n="results.referencePendingHtml">Clinical comparison remains off until a medication-specific, source-verified dataset and uncertainty model are available. Your SIGNAL uses your own logged history.</span></div>';
     ledger.insertAdjacentHTML('afterbegin', markup);
   }
   const weightCard = document.getElementById('weightRecordsPanel')?.closest('.results-card');
