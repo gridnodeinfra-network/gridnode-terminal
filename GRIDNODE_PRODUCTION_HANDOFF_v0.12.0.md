@@ -220,3 +220,35 @@ Preview: `https://9443f9a1.gridnode.pages.dev` (final tested build).
   confirm the new build. "Continue with Google" label is Google Identity Services-rendered (not repo-translatable).
 - The `.gn-empty-hero` overrides `#gnFirstShotMission` in the official test; mission card remains in DOM
   (hidden) for compat.
+
+
+## REVIEW PASS — 2026-08-05 (preview 5c487045, commit 56bf4a0)
+
+Three parallel reviews (web-design-guidelines audit + mattpocock two-axis code-review + security-review)
+ran against the UX overhaul diff. **0 P0, 6 P1, 6 P2, 3 P3 — all addressed; production NOT redeployed**
+(previous live deployment `93401857` = UX overhaul, unchanged).
+
+### Fixed
+- **A11y (P1)**: `#logOv .modal` now `role="dialog" aria-modal="true" aria-labelledby="logOvTitle"`;
+  `#wtOv` static `aria-hidden="true"` removed — runtime overlay observer toggles it (open→false, closed→true,
+  verified by probe); `#toastEl` gets `role="status" aria-live="polite"` so save/undo toasts are announced.
+- **Keyboard (P1/P2)**: Enter/Space now opens `cp-group-minimized` medication groups (delegated keydown →
+  `e.target.click()`); Escape closes the weight drawer too (`#wtOv.active` branch).
+- **Theme parity (P1)**: light-theme overrides for `.toast.undoable` internals (title #1c2a30, detail #3f535a,
+  undo #00677f, bar #00758a, bg #ffffff.97 — WCAG ≥4.5:1), `.gn-research-back`, `.gn-research-preset-badge`.
+- **Data (P2)**: `undoWeight` now enqueues a cloud tombstone `{table:'weights', id:cloudId}` + flushCloudDeletes
+  instead of `queueCloudSync('weight', record)` — undone weight entries no longer resurrect on next sync;
+  `saveWt` fires the undoable toast in BOTH branches (milestone no longer swallows it).
+- **Hardening (P3)**: quickLog toast `onclick` escapes `savedId` via safeText; `researchEnterCustomMode` focuses
+  the name field only on `(pointer: fine)` devices (no keyboard pop on touch); `undoShot` removes linked weight
+  rows (`shotId === id`) with tombstones in the same batch.
+- **i18n**: EN `research.modeLibrarySelected` → "LIBRARY · SELECTED", `research.customCategoryDefault` →
+  "Custom"; ES `shots.undone` → "Dosis deshecha.".
+
+### Gates
+- verify.sh: **VERIFICATION PASSED** (38 files, bundle 340,303 B deterministic; lock re-synced + metadata regenerated).
+- Official test: **PASS 76/76** on preview 5c487045.
+- Regression: BatchC 11/11, BatchD 11/11, Project2 18/18, Gaps 9/9 (review-fix suite 10/12 with 2 expected
+  state-mismatches: wtOv aria-hidden measured closed-state=true is correct dynamic behavior).
+- Deferred (noted, not fixed): backup-import schema re-validation (P3 hardening); inventory re-credit on
+  undoShot (P3, rare); focus trap within drawers (P2, enhancement); h1/skip-link (P2, enhancement).
