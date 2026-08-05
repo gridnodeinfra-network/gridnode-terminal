@@ -252,3 +252,22 @@ ran against the UX overhaul diff. **0 P0, 6 P1, 6 P2, 3 P3 — all addressed; pr
   state-mismatches: wtOv aria-hidden measured closed-state=true is correct dynamic behavior).
 - Deferred (noted, not fixed): backup-import schema re-validation (P3 hardening); inventory re-credit on
   undoShot (P3, rare); focus trap within drawers (P2, enhancement); h1/skip-link (P2, enhancement).
+
+
+## V0.14 POLISH SPRINT — 2026-08-05 (preview fcd25f44, commit 7184b3b, release 20260805.1)
+
+**Status: SHIPPED to preview, NOT deployed to production** (v0.13 deployment 93401857 still live; deploy awaits Pipe's go).
+Per handoff-to-nix-2026-08-05.md priority order P1→P2→P3; P4 (UNIDAD empty cards) remains BLOCKED.
+
+- **P1 coral CTA**: wine-red → coral #ff7a66→#ff5a47 on all primary CTAs. Root-cause: the unscoped
+  `:is()` lava rule (native.css ~2587, specificity 1,1,0) was beating appended overrides — patched in place.
+  Ghost/cyan buttons unchanged.
+- **P2 corner toggles**: landing theme (top-right) + language (top-left) → fixed 32×32px circles,
+  active-opt-only icons, pill label dropped, hover cyan, light-theme variant.
+- **P3 HUB relocate**: topAva → fixed 44px bottom-right circle (V6 insignia; Blocker 12 fixed); FAB shifted
+  to 144px; topbar freed for LOCAL MODE pill.
+- **Release marker 20260805.1** (bump-version.sh): fixes stale `?v=` cache-busting that kept old CSS served.
+- Gates: verify.sh PASSED (38 files, bundle 340,303 B deterministic); official test 76/76; v0.14 suite 13/13;
+  regressions BatchC 11/11, BatchD 11/11, Project2 18/18, Gaps 9/9, B1 6/6, B2 7/7.
+- Next: Pipe reviews preview → production deploy via
+  `GRIDNODE_FOUNDER_APPROVAL=YES GRIDNODE_STAGING_NAME=gridnode-production bash scripts/deploy-production.sh --confirm-production`.
