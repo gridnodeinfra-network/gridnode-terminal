@@ -106,7 +106,8 @@ async function newUserFlow(browser) {
   assert(medicationMatrix.zepbound === 'zepbound_tirzepatide', 'Zepbound resolves to its stable canonical ID', JSON.stringify(medicationMatrix));
   assert(medicationMatrix.ozempic === 'ozempic_semaglutide' && medicationMatrix.semaglutideCompound === 'semaglutide_compound' && medicationMatrix.ozempic !== medicationMatrix.semaglutideCompound, 'Ozempic and Semaglutide Compound resolve to distinct IDs', JSON.stringify(medicationMatrix));
   assert(medicationMatrix.invalid === '', 'invalid medication values fail closed');
-  assert(await page.locator('#gnFirstShotMissionTitle').isVisible(), 'first-shot mission dominates clean dashboard');
+  assert(await page.locator('.gn-empty-hero').isVisible(), 'empty-state hero dominates clean dashboard');
+  assert(await page.locator('.gn-empty-cta').isVisible(), 'one red CTA in empty state');
 
   await page.evaluate(() => { window.showPage('Log'); window.openLogModal(); });
   await page.locator('#logOv.active').waitFor({ state: 'visible' });

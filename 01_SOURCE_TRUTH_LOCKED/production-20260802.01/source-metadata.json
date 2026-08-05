@@ -1,39 +1,53 @@
 {
-  "associated_git_commit": null,
-  "baseline": "gridnode.network",
-  "canonical_production_url": "https://gridnode.network/",
-  "classification": "CURRENT PRODUCTION LOCK - WORKTREE == LIVE (verified 2026-08-02)",
-  "deployment_id": null,
-  "deployment_timestamp_utc": null,
-  "deployment_url": null,
+  "generatedAt": "2026-08-05T03:10:00Z",
   "files": {
     "_headers": {
       "bytes": 1263,
       "sha256": "d865b61d8917de968bd3d903fed04a95a9d408ab13f1576429fa1caa802919cf"
     },
     "assets/apple-touch-icon.png": {
-      "bytes": 3150,
-      "sha256": "859ada4275beaf92973a405681932877a170e8e9d7023f55525305622688d6d3"
+      "bytes": 52178,
+      "sha256": "0cc0ce6df4be85cfd3636499d893b76b023aa349a927c18e0c187ac85ef9b4fe"
+    },
+    "assets/gridnode-favicon-v6.svg": {
+      "bytes": 141,
+      "sha256": "8bd66ab70c7f07530f76e95e8d85779d8155cb81a49dca5ff70526e59439c4aa"
     },
     "assets/gridnode-icon-192.png": {
-      "bytes": 3162,
-      "sha256": "de9c4b901d19709f5b15b03d2191c9e1d606681e3d593b6986bb2ba7116bba79"
+      "bytes": 59421,
+      "sha256": "126a728a34ca48875a5dc77274321af9bc434852217d505bf8f516266ac69125"
+    },
+    "assets/gridnode-icon-32.png": {
+      "bytes": 2390,
+      "sha256": "ec0e50e8006d1d3ba810c4daa40c3eb8fbf442543e54fb0b4100ff46d67b4d4e"
     },
     "assets/gridnode-icon-512.png": {
-      "bytes": 10844,
-      "sha256": "57d69d97a0d286def63b32b50aa7784e23e12da264bffbd6a7bf73b990d45d1a"
+      "bytes": 280334,
+      "sha256": "f72968b32012fbadd3c39d65029a703f582790fca910b9dc39533837803a3f28"
     },
     "assets/gridnode-icon-maskable-192.png": {
-      "bytes": 3162,
-      "sha256": "de9c4b901d19709f5b15b03d2191c9e1d606681e3d593b6986bb2ba7116bba79"
+      "bytes": 38907,
+      "sha256": "0a1f5424d19c270cc4ff20454a0b537c3cea228d0a565b2c0f5acaf0af330c13"
     },
     "assets/gridnode-icon-maskable-512.png": {
-      "bytes": 10844,
-      "sha256": "57d69d97a0d286def63b32b50aa7784e23e12da264bffbd6a7bf73b990d45d1a"
+      "bytes": 210629,
+      "sha256": "04c2a673e80d49c5e0ca44df8d8698883e6109741fa3527a176958932e5c4aa4"
     },
     "assets/gridnode-icon.svg": {
       "bytes": 904,
       "sha256": "a79dd5a4f6e621d8afa0b847a34b103c97d0186bc20d2141271dd89432723225"
+    },
+    "assets/gridnode-insignia-v6.png": {
+      "bytes": 79834,
+      "sha256": "66dbfed3de760599228cd2b58ec137f449eeda777b93d932d08769d4fbeb9860"
+    },
+    "assets/nexus-city-daylight-v1.webp": {
+      "bytes": 66424,
+      "sha256": "e56c836d296532835b875b80a49063d2636677afa5801215ae3920e53b6f0de6"
+    },
+    "assets/nexus-city-night-v1.webp": {
+      "bytes": 65372,
+      "sha256": "8e7885c690eaa267ce9b3527f20ed547cb650698d314c922b6708d0800b464f2"
     },
     "assets/preview-dashboard-es.png": {
       "bytes": 620319,
@@ -47,33 +61,37 @@
       "bytes": 65179,
       "sha256": "f8070c01688e279d667f85ab207ba13b4fa3e9d6119b64b58204ccdd39b5e886"
     },
+    "assets/splash-1290x2796.png": {
+      "bytes": 30426,
+      "sha256": "46bc0bed1bdced727ca2967644b6fa771520b801bf323b9c1e054327360fb7c2"
+    },
     "css/daylight-nexus-pilot.css": {
-      "bytes": 79366,
-      "sha256": "e69cb7378218949b393c484a7c97a083ca38a0ceba4db420660842925b4696f9"
+      "bytes": 81586,
+      "sha256": "30bced7b8c9e2d9c6b0a0e08d58d5cdbb008ba094af7d6a9488286f5c6226f4e"
     },
     "css/gridnode-native.css": {
-      "bytes": 136761,
-      "sha256": "183eb42aeb85fe8a44cdb78d5d4b75eac55adee9260c22087f07772fe374b604"
+      "bytes": 143413,
+      "sha256": "07802292b79b1bf508d8edc1cde1dc21c39eceabe4a6e0660ba66ea911357e99"
     },
     "i18n/en.json": {
-      "bytes": 80650,
-      "sha256": "20cc3384d544e5521c458100ae6b9cca2436bb0e706ac8bb432ed1477d8463a9"
+      "bytes": 82032,
+      "sha256": "943f847fa039052dfa8107235b75acf7e67996346304b95d29544686dee34903"
     },
     "i18n/es-419.json": {
-      "bytes": 89606,
-      "sha256": "4a57da8d68de7b8cf472ee828c17781a5904f415d16eb29468182e4a01e976aa"
+      "bytes": 91157,
+      "sha256": "f2dcebeb6b3b93bb86575a9ca7f1499511e584e3a74c9510c6592f78f697192e"
     },
     "index.html": {
-      "bytes": 615430,
-      "sha256": "e6ab7f115f36eb46e4891d6890d11489379797304ed412b3dbfb941fef7c6b36"
+      "bytes": 615491,
+      "sha256": "8d2d7a54e6b9af6e237211d5ffb839b1350ca63d01fdbbc9a17514c21d7005a8"
     },
     "js/gridnode-app.js": {
-      "bytes": 27673,
-      "sha256": "cd2e37ee676028979c07c25384e79398a00e35aae82086641068bb02eb0d0312"
+      "bytes": 27506,
+      "sha256": "e02454cf6404b659afe5bc80eace443fbea2e8c45a2366d715bd77155ef11687"
     },
     "js/gridnode-bundle.js": {
-      "bytes": 327968,
-      "sha256": "28d3998039ebdbaeb64768b06dcb92e3180ea9de22604feddfdd20c694e58b11"
+      "bytes": 339146,
+      "sha256": "1e5e2d74cba1a02006b8b168b2c0aad7e35593473da99e01e0aca5f48b4fcf9c"
     },
     "js/gridnode-core.js": {
       "bytes": 29217,
@@ -135,10 +153,5 @@
       "bytes": 5146,
       "sha256": "3c368f0dd0c93b73c8ffcf35cd172661604aca9e4d1fa1a17769b250f9c3b766"
     }
-  },
-  "metadata_note": "Candidate 2026-08-04: production-readiness and medication-integrity release with semantic DAY OPS readability, four-stage onboarding, first-SHOT activation, stable mobile/PWA shell, bilingual release history, and safe update activation; production untouched.",
-  "production_branch": null,
-  "release_marker": "20260804.1",
-  "retrieved_at_utc": "2026-08-04T02:12:11.747Z",
-  "runtime_version": "0.12.0"
+  }
 }

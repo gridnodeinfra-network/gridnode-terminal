@@ -1162,17 +1162,50 @@ function latestShot() { return sortedShots().at(-1) || null; }
 function latestWeight() { return sortedWeights().at(-1) || null; }
 function deviceLabel(id) { return S.get('devices', []).find(device => device.id === id)?.name || ''; }
 
-function showToast(message, isError = false) {
+function showToast(message, isError = false, undoCallback = null, detail = '') {
   const toast = $('toastEl');
   if (!toast) return;
   const prefix = isError ? '// SYSTEM CHECK — ' : 'NODE CONFIRMED — ';
   const displayMessage = /Shot (?:logged|updated)/.test(String(message))
     ? formatToastLocation(String(message))
     : String(message);
+  if (undoCallback) {
+    toast.innerHTML = '<div class="gn-toast-body"><span class="gn-toast-check" aria-hidden="true">✓</span><div class="gn-toast-main"><div class="gn-toast-title">' + safeText(displayMessage) + '</div>' + (detail ? '<div class="gn-toast-detail">' + safeText(detail) + '</div>' : '') + '</div><button type="button" class="gn-toast-undo">' + safeText(tx('toast.undo', 'UNDO')) + '</button></div><div class="gn-toast-bar" aria-hidden="true"></div>';
+    toast.className = 'toast active undoable';
+    clearTimeout(toast._timer);
+    const doUndo = () => { clearTimeout(toast._timer); toast.classList.remove('active'); if (typeof undoCallback === 'function') undoCallback(); };
+    const btn = toast.querySelector('.gn-toast-undo');
+    if (btn) btn.addEventListener('click', doUndo);
+    toast._timer = setTimeout(() => toast.classList.remove('active'), 5000);
+    return;
+  }
   toast.innerHTML = `<span class="gn-toast-message">${safeText(`${prefix}${displayMessage}`)}</span>`;
   toast.className = `toast active${isError ? ' err' : ''}`;
   clearTimeout(toast._timer);
   toast._timer = setTimeout(() => toast.classList.remove('active'), 2000);
+}
+
+function undoShot(id) {
+  const all = getAllShots();
+  const record = all.find(item => item.id === id);
+  if (!record) return;
+  record.archived = true;
+  record.archivedAt = new Date().toISOString();
+  if (!S.set('shots', all)) { showToast(tx('shots.undoStorageError', 'Could not undo — storage unavailable.'), true); return; }
+  queueCloudSync('shot', record);
+  refreshAll();
+  showToast(tx('shots.undone', 'SHOT undone.'));
+}
+
+function undoWeight(id) {
+  const all = getWeights();
+  const record = all.find(item => item.id === id);
+  if (!record) return;
+  const next = all.filter(item => item.id !== id);
+  if (!S.set('weights', next)) { showToast(tx('weight.undoStorageError', 'Could not undo — storage unavailable.'), true); return; }
+  queueCloudSync('weight', record);
+  refreshAll();
+  showToast(tx('weight.undone', 'WEIGHT ENTRY undone.'));
 }
 
 function formatToastLocation(site) {
@@ -1395,12 +1428,12 @@ function setText(id, value) { const element = $(id); if (element) element.textCo
 function setDisplay(id, visible) { const element = $(id); if (element) element.style.display = visible ? '' : 'none'; }
 
 function syncIdentityAvatars() {
-  const avatarUrl = window.CU?.avatarUrl || '/assets/gridnode-icon.svg';
+  const avatarUrl = window.CU?.avatarUrl || '/assets/gridnode-insignia-v6.png';
   ['topAvaIcon', 'profAvaIcon'].forEach(id => {
     const image = $(id);
     if (!image) return;
     image.src = avatarUrl;
-    image.alt = avatarUrl === '/assets/gridnode-icon.svg' ? 'GRID//NODE NODE mark' : 'Google account profile photo';
+    image.alt = avatarUrl === '/assets/gridnode-insignia-v6.png' ? 'GRID//NODE mark' : 'Google account profile photo';
   });
 }
 
@@ -1545,6 +1578,35 @@ function renderDashboard() {
   const firstShotMission = document.getElementById('gnFirstShotMission');
   if (dashboard) dashboard.dataset.activation = shots.length ? 'active' : 'pending';
   if (firstShotMission) firstShotMission.hidden = shots.length > 0;
+  // Batch B: empty state — ONE red CTA, cyan ghosts, tip card; wanda + FAB hidden.
+  let hero = document.getElementById('gnEmptyHero');
+  if (shots.length === 0) {
+    if (!hero && dashboard) {
+      const heroMarkup = '<section id="gnEmptyHero" class="gn-empty-hero" aria-label="' + safeText(tx('dashboard.emptyTitle', 'Get started')) + '">'
+        + '<h2 data-i18n="dashboard.emptyTitle">' + tx('dashboard.emptyTitle', 'Empieza con tu primera dosis') + '</h2>'
+        + '<p data-i18n="dashboard.emptyBody">' + tx('dashboard.emptyBody', 'Una dosis desbloquea el Motor de Fases, RESULTADOS y tu tablero completo.') + '</p>'
+        + '<button class="btn-full btn-primary gn-empty-cta" type="button" onclick="openLogModal()" data-i18n="dashboard.emptyCta">' + tx('dashboard.emptyCta', 'REGISTRAR MI PRIMERA DOSIS') + '</button>'
+        + '<div class="gn-empty-ghosts">'
+        + '<button class="gn-empty-ghost" type="button" onclick="openWeightModal()" data-i18n="dashboard.emptyWeight">' + tx('dashboard.emptyWeight', 'Registrar peso') + '</button>'
+        + '<button class="gn-empty-ghost" type="button" onclick="showPage(\'Log\',document.getElementById(\'navLog\'))" data-i18n="dashboard.emptyScan">' + tx('dashboard.emptyScan', 'Escanear zona') + '</button>'
+        + '<button class="gn-empty-ghost" type="button" onclick="showPage(\'Lab\',document.getElementById(\'navLab\'))" data-i18n="dashboard.emptyLab">' + tx('dashboard.emptyLab', 'Ver LAB') + '</button>'
+        + '</div>'
+        + '<div class="gn-tip-card"><span class="gn-tip-kicker" data-i18n="dashboard.tipTitle">' + tx('dashboard.tipTitle', 'CONSEJO') + '</span><p data-i18n="dashboard.tipBody">' + tx('dashboard.tipBody', 'Tu primera dosis no requiere medicamento — solo necesitas la fecha, la hora y la zona de aplicación.') + '</p></div>'
+        + '</section>';
+      const wanda = document.getElementById('gnWandaDashboard');
+      if (wanda) wanda.insertAdjacentHTML('beforebegin', heroMarkup);
+      else dashboard.insertAdjacentHTML('afterbegin', heroMarkup);
+      hero = document.getElementById('gnEmptyHero');
+    }
+    const wandaEl = document.getElementById('gnWandaDashboard');
+    if (wandaEl) wandaEl.style.display = 'none';
+    document.body.classList.add('gn-empty-state');
+  } else {
+    if (hero) hero.remove();
+    const wandaEl = document.getElementById('gnWandaDashboard');
+    if (wandaEl) wandaEl.style.display = '';
+    document.body.classList.remove('gn-empty-state');
+  }
   const weightMetrics = computeTotalChange(weights, profile, 'profile');
   setText('stShots', shots.length);
   setText('stDose', lastShot?.dose ? `${lastShot.dose}mg` : '—');
@@ -1593,10 +1655,10 @@ function ensureWandaDashboard() {
     + '<div class="gn-wanda-grid">'
     + '<button class="gn-wanda-card" id="gnWandaNext" type="button" onclick="openLogModal()"><span class="gn-wanda-label" data-i18n="dashboard.nextShotLabel">NEXT SHOT</span><b class="gn-wanda-value" id="gnWandaNextValue">' + tx('runtime.logShot', 'LOG SHOT') + '</b><small class="gn-wanda-note" id="gnWandaNextNote" data-i18n="dashboard.logShotStartTimeline">Log a shot to start your timeline</small></button>'
     + '<button class="gn-wanda-card" id="gnWandaPhase" type="button" onclick="showPhasesModal()"><span class="gn-wanda-label" data-i18n="dashboard.currentPhase">CURRENT PHASE</span><b class="gn-wanda-value" id="gnWandaPhaseValue">' + tx('dashboard.startWithShot', 'START WITH A SHOT') + '</b><small class="gn-wanda-note" data-i18n="phase.educationalEstimate">EDUCATIONAL ESTIMATE</small></button>'
-    + '<button class="gn-wanda-card" id="gnWandaWeight" type="button" onclick="openWeightModal()"><span class="gn-wanda-label" data-i18n="dashboard.currentWeight">CURRENT WEIGHT</span><b class="gn-wanda-value" id="gnWandaWeightValue">' + tx('dashboard.logWeight', 'LOG WEIGHT') + '</b><small class="gn-wanda-note" data-i18n="dashboard.latestRecord">Latest record</small></button>'
+    + '<button class="gn-wanda-card info" id="gnWandaWeight" type="button" onclick="openWeightModal()"><span class="gn-wanda-label" data-i18n="dashboard.currentWeight">CURRENT WEIGHT</span><b class="gn-wanda-value" id="gnWandaWeightValue">' + tx('dashboard.logWeight', 'LOG WEIGHT') + '</b><small class="gn-wanda-note" data-i18n="dashboard.latestRecord">Latest record</small></button>'
     + '<button class="gn-wanda-card" id="gnWandaLevel" type="button" onclick="showPhasesModal()"><span class="gn-wanda-label" data-i18n="dashboard.relativeLevel">RELATIVE LEVEL</span><b class="gn-wanda-value" id="gnWandaLevelValue">' + tx('dashboard.startWithShot', 'START WITH A SHOT') + '</b><small class="gn-wanda-note" data-i18n="dashboard.estimatedNotMeasured">Estimated, not measured</small></button>'
     + '<button class="gn-wanda-card" id="gnWandaRate" type="button" onclick="showPage(\'Results\',document.getElementById(\'navRes\'))"><span class="gn-wanda-label" data-i18n="dashboard.weeklyRateLabel">WEEKLY RATE</span><b class="gn-wanda-value" id="gnWandaRateValue">' + tx('dashboard.keepLogging', 'KEEP LOGGING') + '</b><small class="gn-wanda-note" data-i18n="dashboard.keepLoggingBuilds">Keep logging — data builds over time</small></button>'
-    + '<button class="gn-wanda-card" id="gnWandaGoal" type="button" onclick="showPage(\'Profile\',document.getElementById(\'navPro\'))"><span class="gn-wanda-label" data-i18n="dashboard.toGoal">TO GOAL</span><b class="gn-wanda-value" id="gnWandaGoalValue">' + tx('dashboard.setGoal', 'SET GOAL') + '</b><small class="gn-wanda-note" data-i18n="dashboard.fromLatestWeight">From latest weight</small></button>'
+    + '<button class="gn-wanda-card info" id="gnWandaGoal" type="button" onclick="showPage(\'Profile\',document.getElementById(\'navPro\'))"><span class="gn-wanda-label" data-i18n="dashboard.toGoal">TO GOAL</span><b class="gn-wanda-value" id="gnWandaGoalValue">' + tx('dashboard.setGoal', 'SET GOAL') + '</b><small class="gn-wanda-note" data-i18n="dashboard.fromLatestWeight">From latest weight</small></button>'
     + '</div><div class="gn-wanda-actions"><button type="button" onclick="openLogModal()" data-i18n="runtime.logShot">LOG SHOT</button><button type="button" onclick="openWeightModal()" data-i18n="dashboard.logWeight">LOG WEIGHT</button></div><div class="gn-streak-card" id="gnStreakCard" hidden><b id="gnStreakValue"></b><span id="gnStreakCopy"></span></div></section>';
   header.insertAdjacentHTML('afterend', markup);
   window.GN_I18N?.applyTo?.(document.getElementById('gnWandaDashboard'));
@@ -1838,6 +1900,7 @@ function setScannerMode(mode, button) {
 }
 
 function selectScannerLocation(label) {
+  try { localStorage.setItem('gn_scanner_hint_shown', '1'); const cap = document.querySelector('.gn-zone-hint-caption'); if (cap) cap.remove(); document.querySelectorAll('.gn-zone-hint').forEach(el => el.classList.remove('gn-zone-hint')); } catch (e) {}
   moduleState.selectedLocation = label;
   S.set('selectedLocation', label);
   queueCloudSync('workspace');
@@ -1846,6 +1909,22 @@ function selectScannerLocation(label) {
 }
 
 function renderScanner() {
+  try {
+    if (!localStorage.getItem('gn_scanner_hint_shown')) {
+      setTimeout(() => {
+        if (localStorage.getItem('gn_scanner_hint_shown')) return;
+        const zone = document.querySelector('.gn-stable-zone-btn') || document.querySelector('.zone-overlay');
+        if (zone && !zone.classList.contains('gn-zone-hint')) {
+          zone.classList.add('gn-zone-hint');
+          const cap = document.createElement('div');
+          cap.className = 'gn-zone-hint-caption';
+          cap.textContent = tx('scanner.tapZoneHint', 'TOCA UNA ZONA');
+          zone.parentElement?.insertBefore(cap, zone);
+        }
+      }, 700);
+    }
+  } catch (e) {}
+
   const panel = document.querySelector('#shotsRegionScanner .scanner-selected-panel');
   if (!panel) return;
   let picker = panel.querySelector('.gn-stable-zone-picker');
@@ -1905,6 +1984,7 @@ function openLogModal(options = {}) {
   setText('modalSelectedLocation', zoneLabel(moduleState.selectedLocation) || tx('shots.noLocationSelected', 'No location selected'));
   setText('logLocationAction', moduleState.selectedLocation ? tx('shots.changeLoggedLocation', 'CHANGE LOGGED LOCATION') : tx('shots.selectLoggedLocation', 'SELECT LOGGED LOCATION'));
   renderShotDevicePicker(draftDeviceId);
+  if (!modal.querySelector('.gn-drawer-handle')) modal.insertAdjacentHTML('afterbegin', '<div class="gn-drawer-handle" aria-hidden="true"></div>');
   modal.classList.add('active');
 }
 
@@ -2115,7 +2195,9 @@ function saveShot(allowFuture = false) {
     $('futureTimestampConfirm')?.classList.remove('active');
     closeLog(true);
     refreshAll();
-    showToast(`${tx(existing ? 'runtime.shotUpdated' : 'runtime.shotRecorded', existing ? 'SHOT UPDATED' : 'SHOT RECORDED')} · ${zoneLabel(site)} ✓`);
+    const shotTimeLabel = formatTime12(new Date(record.date));
+    const shotDetail = `${record.dose}mg ${medicationLabel(normalizeMedicationId(record.med))} · ${zoneLabel(record.site)}`;
+    showToast(`${tx('toast.shotLogged', 'Dosis registrada')} · ${shotTimeLabel}`, false, () => undoShot(record.id), shotDetail);
     return record;
   } finally {
     moduleState.savingShot = false;
@@ -2190,6 +2272,44 @@ function quickLogShot() {
     toast._timer = setTimeout(() => toast.classList.remove('active'), 4000);
   }
 }
+function researchEnterCustomMode() {
+  const mode = $('gnResearchMode');
+  if (mode) { mode.style.display = ''; mode.dataset.mode = 'custom'; }
+  const mlc = $('gnModeLibraryChip'), mcc = $('gnModeCategoryChip');
+  if (mlc) mlc.style.display = 'none';
+  if (mcc) mcc.style.display = 'none';
+  const mcb = $('gnModeBack');
+  if (mcb) mcb.style.display = '';
+  const customTitle = document.querySelector('.gn-research-mode-custom .gn-research-mode-title');
+  if (customTitle) customTitle.style.display = '';
+  if ($('gnResearchName')) { $('gnResearchName').value = ''; $('gnResearchName').readOnly = false; $('gnResearchName').removeAttribute('data-research-locked'); }
+  $('gnResearchName')?.setAttribute('placeholder', tx('research.recordNamePlaceholder', 'Select a library entry or type a custom name'));
+  const category = $('gnResearchCategory');
+  if (category) { category.readOnly = false; category.removeAttribute('data-category-locked'); category.dataset.categoryId = 'lab.customResearch'; category.value = tx('research.customCategoryDefault', 'Personalizada'); }
+  const badgeHost = $('gnResearchForm')?.querySelector('[data-research-badge]');
+  if (badgeHost) badgeHost.textContent = '';
+  const customSave = $('gnResearchSave');
+  if (customSave) customSave.textContent = tx('research.customSave', 'GUARDAR ENTRADA PERSONALIZADA');
+  const cw = $('gnCustomWarning');
+  if (cw) cw.style.display = '';
+  $('gnResearchName')?.focus();
+}
+
+function researchBackToLibrary() {
+  const mode = $('gnResearchMode');
+  if (mode) { mode.style.display = 'none'; mode.dataset.mode = 'pick'; }
+  if ($('gnResearchName')) { $('gnResearchName').value = ''; $('gnResearchName').readOnly = false; $('gnResearchName').removeAttribute('data-research-locked'); }
+  const category = $('gnResearchCategory');
+  if (category) { category.readOnly = false; category.removeAttribute('data-category-locked'); category.dataset.categoryId = ''; category.value = ''; }
+  $('gnResearchName')?.setAttribute('placeholder', tx('research.recordNamePlaceholder', 'Select a library entry or type a custom name'));
+  const badgeHost = $('gnResearchForm')?.querySelector('[data-research-badge]');
+  if (badgeHost) badgeHost.textContent = '';
+  const customSave = $('gnResearchSave');
+  if (customSave) customSave.textContent = tx('research.save', 'SAVE RESEARCH RECORD');
+  const cw = $('gnCustomWarning');
+  if (cw) cw.style.display = 'none';
+}
+
 function goToScannerForLocationFromLog() {
   moduleState.pendingLocationDraft = true;
   // Snapshot the ENTIRE unsaved draft so reopening restores every field.
@@ -2211,6 +2331,8 @@ function goToScannerForLocationFromLog() {
 }
 
 function openWeightModal() {
+  const wtOvEl = $('wtOv');
+  if (wtOvEl && !wtOvEl.querySelector('.gn-drawer-handle')) wtOvEl.insertAdjacentHTML('afterbegin', '<div class="gn-drawer-handle" aria-hidden="true"></div>');
   setHumanDateInput($('wtDate'), todayISO(), true);
   if ($('wtTime')) $('wtTime').value = formatTime24(new Date());
   syncCustomPickers(document);
@@ -2244,7 +2366,7 @@ function saveWt() {
     if ($('wtNotes')) $('wtNotes').value = '';
     refreshAll();
     if (milestone) celebrateMilestone(milestone.type, milestone.value);
-    else actionFeedback(tx('weight.resultsUpdated', 'RESULTS UPDATED'), tx('weight.newDataCaptured', 'NEW DATA POINT CAPTURED // PROGRESS TIMELINE EXPANDED'));
+    else showToast(tx('toast.weightLogged', 'Peso registrado'), false, () => undoWeight(record.id), `${raw} ${moduleState.weightUnit === 'kg' ? 'kg' : 'lb'}`);
   } finally {
     moduleState.savingWt = false;
   }
@@ -2709,8 +2831,13 @@ function ensureLabFoundations() {
     </div>
     <details class="gn-foundation-section" open id="gnResearchSection"><summary><span data-i18n="lab.researchPeptides">RESEARCH PEPTIDES</span><em data-i18n="research.organize">ORGANIZE · OBSERVE · REVIEW</em></summary>
       <div class="gn-research-notice"><strong data-i18n="research.noticeTitle">USER-ENTERED RESEARCH RECORDS</strong><span data-i18n="research.noticeBody">Some compounds above have FDA-approved indications in specific clinical contexts. This organizer does not distinguish regulated from research use. All records are user-entered. Verify independently.</span></div>
-      <div class="gn-research-library">${RESEARCH_LIBRARY.map(({ category, names, context }) => { const catKey = RESEARCH_CATEGORY_KEYS[category]; const ctxKey = context === 'RESEARCH-FOCUSED RECORDS · REGULATORY STATUS IS NOT VERIFIED HERE.' ? 'lab.researchKicker' : 'lab.mixedResearchContext'; return `<div class="gn-research-group"><span>${safeText(catKey ? tx(catKey, category) : category)}</span><small class="gn-research-context">${safeText(tx(ctxKey, context))}</small><div>${names.map(name => `<button type="button" data-research-name="${safeText(name)}" data-research-category="${safeText(catKey)}">${safeText(name)}</button>`).join('')}</div></div>`; }).join('')}<div class="gn-research-group"><span data-i18n="lab.customEntry">CUSTOM ENTRY</span><small class="gn-research-context" data-i18n="lab.customEntryHelp">USER-ENTERED RECORD · REGULATORY STATUS IS NOT VERIFIED HERE.</small><div><button type="button" data-research-name="" data-research-category="lab.customResearch" data-i18n="lab.customEntry">CUSTOM ENTRY</button></div></div></div>
+      <div class="gn-research-library">${RESEARCH_LIBRARY.map(({ category, names, context }) => { const catKey = RESEARCH_CATEGORY_KEYS[category]; const ctxKey = context === 'RESEARCH-FOCUSED RECORDS · REGULATORY STATUS IS NOT VERIFIED HERE.' ? 'lab.researchKicker' : 'lab.mixedResearchContext'; return `<div class="gn-research-group"><span>${safeText(catKey ? tx(catKey, category) : category)}</span><small class="gn-research-context">${safeText(tx(ctxKey, context))}</small><div>${names.map(name => `<button type="button" data-research-name="${safeText(name)}" data-research-category="${safeText(catKey)}">${safeText(name)}</button>`).join('')}</div></div>`; }).join('')}<div class="gn-research-group gn-research-custom-group"><span data-i18n="lab.customEntry">CUSTOM ENTRY</span><small class="gn-research-context" data-i18n="lab.customEntryHelp">USER-ENTERED RECORD · REGULATORY STATUS IS NOT VERIFIED HERE.</small><div><button type="button" class="gn-research-custom-link" data-research-name="" data-research-category="lab.customResearch" data-i18n="research.customEntryLink">¿Necesitas un compuesto personalizado? → Crear entrada personalizada</button></div></div>
+      <div class="gn-custom-warning" id="gnCustomWarning" data-i18n="research.customWarning">⚠ CUSTOM ENTRIES ARE NOT VERIFIED AGAINST THE LIBRARY. Verify the name and category independently.</div></div>
       <div class="gn-research-disclaimer" data-i18n="research.noticeBody">Some compounds above have FDA-approved indications in specific clinical contexts. This organizer does not distinguish regulated from research use. All records are user-entered. Verify independently.</div>
+      <div class="gn-research-mode" id="gnResearchMode" data-mode="pick" style="display:none">
+        <div class="gn-research-mode-chips"><span class="gn-research-chip" id="gnModeLibraryChip" data-i18n="research.modeLibrarySelected">BIBLIOTECA · SELECCIONADA</span><span class="gn-research-chip" id="gnModeCategoryChip" data-i18n="research.modeCategoryAssigned">CATEGORÍA · ASIGNADA</span></div>
+        <div class="gn-research-mode-custom"><span class="gn-research-mode-title" data-i18n="research.modeCustomTitle">CREAR ENTRADA PERSONALIZADA</span><button type="button" class="gn-research-back" id="gnModeBack" onclick="researchBackToLibrary()" data-i18n="research.backToLibrary">← Volver a la biblioteca</button></div>
+      </div>
       <form class="gn-record-form" id="gnResearchForm"><div class="gn-form-grid"><label><span data-i18n="research.recordName">RECORD NAME</span> <em data-research-badge class="gn-research-preset-badge"></em><input id="gnResearchName" required placeholder="Select a library entry or type a custom name" data-i18n-placeholder="research.recordNamePlaceholder"></label><label><span data-i18n="research.category">CATEGORY</span><input id="gnResearchCategory" placeholder="Research category" data-i18n-placeholder="research.categoryPlaceholder"></label><label><span data-i18n="research.date">DATE</span><input id="gnResearchDate" type="date"></label></div><div class="gn-form-grid"><label><span data-i18n="research.status">STATUS</span><select id="gnResearchState"><option value="TRACKING" data-i18n="research.tracking">TRACKING</option><option value="COMPLETED" data-i18n="research.completed">COMPLETED</option><option value="ARCHIVED" data-i18n="research.archived">ARCHIVED</option><option value="RESEARCH NOTE ONLY" data-i18n="research.noteOnly">RESEARCH NOTE ONLY</option></select></label><label><span data-i18n="research.source">SOURCE</span><input id="gnResearchSource" placeholder="User-entered source or note" data-i18n-placeholder="research.sourcePlaceholder"></label></div><label><span data-i18n="research.observations">OBSERVATIONS / NOTES</span><textarea id="gnResearchNotes" rows="3" placeholder="User-entered observations only" data-i18n-placeholder="research.observationsPlaceholder"></textarea></label><button class="btn-full btn-primary" type="submit" id="gnResearchSave" data-i18n="research.save">SAVE RESEARCH RECORD</button></form>
       <div class="gn-record-list" id="gnResearchList"></div>
     </details>
@@ -2912,7 +3039,7 @@ function saveResearchRecord() {
   const index = records.findIndex(item => item.id === id);
   if (index >= 0) records[index] = record; else records.push(record);
   S.set('researchRecords', records); appendEventLedger({ type: 'RESEARCH', recordId: record.id, date: record.date, label: existing ? 'RESEARCH RECORD UPDATED' : 'RESEARCH RECORD CAPTURED' });
-  queueCloudSync('workspace'); moduleState.researchEditId = null; $('gnResearchForm')?.reset(); if ($('gnResearchName')) { $('gnResearchName').readOnly = false; $('gnResearchName').removeAttribute('data-research-locked'); $('gnResearchName')?.setAttribute('placeholder', tx('research.recordNamePlaceholder', 'Select a library entry or type a custom name')); } const sb = $('gnResearchForm')?.querySelector('[data-research-badge]'); if (sb) sb.textContent = ''; setText('gnResearchSave', tx('research.save', 'SAVE RESEARCH RECORD')); renderLabFoundations(); actionFeedback(existing ? tx('research.updated', 'RESEARCH RECORD UPDATED') : tx('research.captured', 'RESEARCH RECORD CAPTURED'), tx('research.timelineSignal', 'TIMELINE UPDATED // USER-ENTERED ONLY'));
+  queueCloudSync('workspace'); moduleState.researchEditId = null; $('gnResearchForm')?.reset(); if ($('gnResearchName')) { $('gnResearchName').readOnly = false; $('gnResearchName').removeAttribute('data-research-locked'); $('gnResearchName')?.setAttribute('placeholder', tx('research.recordNamePlaceholder', 'Select a library entry or type a custom name')); } const sb = $('gnResearchForm')?.querySelector('[data-research-badge]'); if (sb) sb.textContent = ''; setText('gnResearchSave', tx('research.save', 'SAVE RESEARCH RECORD')); const sr = $('gnResearchSave'); if (sr) sr.textContent = tx('research.save', 'SAVE RESEARCH RECORD'); const rm = $('gnResearchMode'); if (rm) { rm.style.display = 'none'; rm.dataset.mode = 'pick'; } const rcat = $('gnResearchCategory'); if (rcat) { rcat.readOnly = false; rcat.removeAttribute('data-category-locked'); } renderLabFoundations(); actionFeedback(existing ? tx('research.updated', 'RESEARCH RECORD UPDATED') : tx('research.captured', 'RESEARCH RECORD CAPTURED'), tx('research.timelineSignal', 'TIMELINE UPDATED // USER-ENTERED ONLY'));
 }
 
 function handleResearchAction(event) {
@@ -2922,7 +3049,7 @@ function handleResearchAction(event) {
   const records = S.get('researchRecords', []), record = records.find(item => item.id === id);
   if (!record) return;
   if (button.dataset.researchEdit) {
-    moduleState.researchEditId = id; $('gnResearchName').value = record.name || ''; const isLibraryName = Boolean(record.name) && RESEARCH_LIBRARY.some(g => g.names.includes(record.name)); $('gnResearchName').readOnly = isLibraryName; if (isLibraryName) $('gnResearchName').setAttribute('data-research-locked', '1'); else $('gnResearchName').removeAttribute('data-research-locked'); const editBadgeHost = $('gnResearchForm')?.querySelector('[data-research-badge]'); if (editBadgeHost) editBadgeHost.textContent = isLibraryName ? tx('research.presetBadge', 'PRESET') : ''; $('gnResearchName')?.setAttribute('placeholder', isLibraryName ? tx('research.presetLockedPlaceholder', 'Library entry — name is locked') : tx('research.recordNamePlaceholder', 'Select a library entry or type a custom name')); $('gnResearchCategory').dataset.categoryId = normalizeResearchCategory(record.category); $('gnResearchCategory').value = researchCategoryLabel(record.category); $('gnResearchDate').value = record.date || ''; $('gnResearchState').value = record.state || 'TRACKING'; $('gnResearchSource').value = (record.source && record.source !== 'manual') ? record.source : ''; $('gnResearchNotes').value = record.notes || ''; setText('gnResearchSave', tx('research.update', 'UPDATE RESEARCH RECORD')); syncCustomPicker($('gnResearchState')); syncCustomDate($('gnResearchDate')); $('gnResearchForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
+    moduleState.researchEditId = id; $('gnResearchName').value = record.name || ''; const isLibraryName = Boolean(record.name) && RESEARCH_LIBRARY.some(g => g.names.includes(record.name)); if (isLibraryName) { const em = $('gnResearchMode'); if (em) { em.style.display = ''; em.dataset.mode = 'library'; } const emc = $('gnModeLibraryChip'); if (emc) { emc.style.display = ''; emc.textContent = tx('research.modeLibrarySelected', 'BIBLIOTECA · SELECCIONADA') + ' ' + tx('research.lockGlyph', '🔒'); } const ecc = $('gnModeCategoryChip'); if (ecc) { ecc.style.display = ''; ecc.textContent = tx('research.modeCategoryAssigned', 'CATEGORÍA · ASIGNADA') + ' ' + tx('research.lockGlyph', '🔒'); } const ecb = $('gnModeBack'); if (ecb) ecb.style.display = 'none'; const ect = document.querySelector('.gn-research-mode-custom .gn-research-mode-title'); if (ect) ect.style.display = 'none'; const ecw = $('gnCustomWarning'); if (ecw) ecw.style.display = 'none'; } else { researchEnterCustomMode(); const ec2 = $('gnResearchMode'); if (ec2) ec2.style.display = ''; } $('gnResearchName').readOnly = isLibraryName; if (isLibraryName) $('gnResearchName').setAttribute('data-research-locked', '1'); else $('gnResearchName').removeAttribute('data-research-locked'); const editBadgeHost = $('gnResearchForm')?.querySelector('[data-research-badge]'); if (editBadgeHost) editBadgeHost.textContent = isLibraryName ? tx('research.presetBadge', 'PRESET') : ''; $('gnResearchName')?.setAttribute('placeholder', isLibraryName ? tx('research.presetLockedPlaceholder', 'Library entry — name is locked') : tx('research.recordNamePlaceholder', 'Select a library entry or type a custom name')); $('gnResearchCategory').dataset.categoryId = normalizeResearchCategory(record.category); $('gnResearchCategory').value = researchCategoryLabel(record.category); $('gnResearchDate').value = record.date || ''; $('gnResearchState').value = record.state || 'TRACKING'; $('gnResearchSource').value = (record.source && record.source !== 'manual') ? record.source : ''; $('gnResearchNotes').value = record.notes || ''; setText('gnResearchSave', tx('research.update', 'UPDATE RESEARCH RECORD')); syncCustomPicker($('gnResearchState')); syncCustomDate($('gnResearchDate')); $('gnResearchForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
   }
   record.archived = Boolean(button.dataset.researchArchive); record.state = record.archived ? 'ARCHIVED' : (record.state === 'ARCHIVED' ? 'TRACKING' : record.state); record.modifiedAt = new Date().toISOString(); S.set('researchRecords', records); appendEventLedger({ type: 'RESEARCH', recordId: record.id, label: record.archived ? 'RESEARCH RECORD ARCHIVED' : 'RESEARCH RECORD RESTORED' }); queueCloudSync('workspace'); renderLabFoundations(); actionFeedback(record.archived ? tx('research.archived', 'RESEARCH RECORD ARCHIVED') : tx('research.restored', 'RESEARCH RECORD RESTORED'), tx('inventory.historyPreserved', 'HISTORY PRESERVED // TIMELINE UPDATED'));
 }
@@ -3557,23 +3684,32 @@ function initModules() {
     const researchPick = event.target.closest('[data-research-name]');
     if (researchPick) {
       const pickName = researchPick.dataset.researchName || '';
-      if ($('gnResearchName')) {
-        $('gnResearchName').value = pickName;
-        if (pickName) {
+      const mode = $('gnResearchMode');
+      if (pickName) {
+        if (mode) { mode.style.display = ''; mode.dataset.mode = 'library'; }
+        const mlc = $('gnModeLibraryChip'), mcc = $('gnModeCategoryChip'), mcb = $('gnModeBack');
+        if (mlc) { mlc.style.display = ''; mlc.textContent = tx('research.modeLibrarySelected', 'BIBLIOTECA · SELECCIONADA') + ' ' + tx('research.lockGlyph', '🔒'); }
+        if (mcc) { mcc.style.display = ''; mcc.textContent = tx('research.modeCategoryAssigned', 'CATEGORÍA · ASIGNADA') + ' ' + tx('research.lockGlyph', '🔒'); }
+        if (mcb) mcb.style.display = 'none';
+        const customTitle = document.querySelector('.gn-research-mode-custom .gn-research-mode-title');
+        if (customTitle) customTitle.style.display = 'none';
+        if ($('gnResearchName')) {
+          $('gnResearchName').value = pickName;
           $('gnResearchName').readOnly = true;
           $('gnResearchName').setAttribute('data-research-locked', '1');
-        } else {
-          $('gnResearchName').readOnly = false;
-          $('gnResearchName').removeAttribute('data-research-locked');
         }
+        const category = $('gnResearchCategory');
+        if (category) { category.dataset.categoryId = researchPick.dataset.researchCategory || 'lab.customResearch'; category.value = researchCategoryLabel(category.dataset.categoryId); category.readOnly = true; category.setAttribute('data-category-locked', '1'); }
+        $('gnResearchName')?.setAttribute('placeholder', tx('research.presetLockedPlaceholder', 'Library entry — name is locked'));
+        const badgeHost = $('gnResearchForm')?.querySelector('[data-research-badge]');
+        if (badgeHost) badgeHost.textContent = tx('research.presetBadge', 'PRESET');
+        const customSave = $('gnResearchSave');
+        if (customSave) customSave.textContent = tx('research.save', 'SAVE RESEARCH RECORD');
+        const cw = $('gnCustomWarning');
+        if (cw) cw.style.display = 'none';
+      } else {
+        researchEnterCustomMode();
       }
-      const category = $('gnResearchCategory');
-      if (category) { category.dataset.categoryId = researchPick.dataset.researchCategory || 'lab.customResearch'; category.value = researchCategoryLabel(category.dataset.categoryId); }
-      const locked = pickName ? tx('research.presetLockedPlaceholder', 'Library entry — name is locked') : tx('research.recordNamePlaceholder', 'Select a library entry or type a custom name');
-      $('gnResearchName')?.setAttribute('placeholder', locked);
-      const badgeHost = $('gnResearchForm')?.querySelector('[data-research-badge]');
-      if (badgeHost) badgeHost.textContent = pickName ? tx('research.presetBadge', 'PRESET') : '';
-      if (!pickName) $('gnResearchName')?.focus();
     }
     const researchDelete = event.target.closest('[data-research-delete]'); if (researchDelete) deleteResearchRecord(researchDelete.dataset.researchDelete);
   });

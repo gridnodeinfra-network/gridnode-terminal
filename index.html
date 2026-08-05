@@ -21,7 +21,7 @@
 <meta name="apple-mobile-web-app-title" content="GRID//NODE">
 <link rel="apple-touch-startup-image" href="/assets/splash-1290x2796.png" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)">
 <meta name="theme-color" content="#050508">
-<link rel="icon" type="image/svg+xml" href="/assets/gridnode-icon.svg">
+<link rel="icon" type="image/svg+xml" href="/assets/gridnode-favicon-v6.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/gridnode-icon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
   <meta name="color-scheme" content="dark light">
@@ -3732,11 +3732,14 @@ function continueLocallyFromWelcome() {
   </text>
 </svg></div>
     <div class="topbar-actions">
-      <button class="topbar-btn" type="button" onclick="toggleProfileHub()" id="topAva" style="overflow:hidden;padding:0" aria-label="Open NODE PROFILE HUB">
-        <img src="/assets/gridnode-icon.svg" alt="GRID//NODE NODE mark" width="34" height="34" id="topAvaIcon">
+      <button class="topbar-btn topbar-hub-btn" type="button" onclick="toggleProfileHub()" id="topAva" aria-label="Open NODE PROFILE HUB">
+        <img src="/assets/gridnode-insignia-v6.png" alt="GRID//NODE mark" width="40" height="40" id="topAvaIcon">
+        <span class="topbar-hub-label">HUB</span>
       </button>
     </div>
   </div>
+
+  <div class="gn-brand-strip" aria-hidden="true"></div>
 
   <div class="node-header-wrap" id="nodeHeaderWrap">
     <div class="node-pill" id="nodeHeaderPill" role="status" aria-label="Live node status" data-i18n-aria-label="nav.liveStatus">
@@ -8686,7 +8689,7 @@ body.gn-vault-picker-open #pageProfile .gn-vault-hud-select.open .gn-vault-hud-o
 }
 #logOv .modal{
   box-sizing:border-box;
-  max-height:calc(100dvh - max(10px,var(--safe-top))) !important;
+  max-height:75dvh !important;
   height:auto;
   overflow-y:auto !important;
   overscroll-behavior:contain;

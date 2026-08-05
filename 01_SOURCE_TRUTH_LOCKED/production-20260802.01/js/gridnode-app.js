@@ -426,17 +426,20 @@ function isKnownRoute() {
 }
 
 function showNotFound() {
-  var root = document.getElementById('app') || document.body;
   document.querySelectorAll('.screen').forEach(function (s) { s.style.display = 'none'; });
+  if (document.querySelector('.gn-404-screen')) return;
   var el = document.createElement('div');
   el.className = 'gn-404-screen';
   el.setAttribute('role', 'alert');
-  el.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;background:#0e0e16;color:#e8e6df;font-family:inherit;';
-  el.innerHTML = '<div style="font-size:13px;letter-spacing:.35em;color:#41e0c7;text-transform:uppercase">// 404 — NODE NOT FOUND</div>'
-    + '<div style="font-size:22px;font-weight:700">' + (document.documentElement.lang === 'es' ? 'Página no encontrada' : 'Page not found') + '</div>'
-    + '<div style="opacity:.72;font-size:14px;max-width:320px">' + (document.documentElement.lang === 'es' ? 'La ruta que buscas no existe en la grilla. Vuelve al inicio.' : 'The route you are looking for does not exist on the grid. Return to the start.') + '</div>'
-    + '<button type="button" onclick="location.href=\'/\'" style="margin-top:8px;padding:12px 22px;border-radius:10px;border:1px solid #41e0c7;background:transparent;color:#41e0c7;font-weight:600;cursor:pointer;letter-spacing:.08em">' + (document.documentElement.lang === 'es' ? 'VOLVER AL INICIO' : 'BACK TO START') + '</button>';
-  root.appendChild(el);
+  try { var t = localStorage.getItem('gn_theme_v1'); if (t === 'light' && document.documentElement && !document.documentElement.getAttribute('data-theme')) document.documentElement.setAttribute('data-theme', 'light'); } catch (_) {}
+  var wantEs = false;
+  try { wantEs = (localStorage.getItem('gn.lang') === 'es'); } catch (_) {}
+  if (!wantEs && document.documentElement) wantEs = document.documentElement.lang === 'es';
+  el.innerHTML = '<div class="gn-404-kicker">// 404 — NODE NOT FOUND</div>'
+    + '<div class="gn-404-title">' + (wantEs ? 'Página no encontrada' : 'Page not found') + '</div>'
+    + '<div class="gn-404-body">' + (wantEs ? 'La ruta que buscas no existe en la grilla. Vuelve al inicio.' : 'The route you are looking for does not exist on the grid. Return to the start.') + '</div>'
+    + '<button type="button" class="gn-404-btn" onclick="location.href=\'/\'">' + (wantEs ? 'VOLVER AL INICIO' : 'BACK TO START') + '</button>';
+  document.body.appendChild(el);
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
