@@ -7,8 +7,8 @@
   'use strict';
   window.GN_VERSION = Object.freeze({
     semver: '0.12.0',
-    release: '20260804.1',
-    title: 'PRODUCTION READINESS + MEDICATION INTEGRITY',
-    date: '2026-08-04'
+    release: '20260805.1',
+    title: 'V0.14 POLISH — CORAL CTA · CORNER TOGGLES · HUB CORNER',
+    date: '2026-08-05'
   });
 })();

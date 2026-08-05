@@ -2586,12 +2586,12 @@ html[data-theme="light"] #logOv #cpShotMedDrop .cp-group-minimized-label {
   .future-confirm-save,.archive-confirm-delete,.gn-delete-confirm,
   .gn-dashboard-mission button,.gn-whatsnew-close,.landing-btn.primary
 ) {
-  border-color: var(--lava-edge) !important;
-  background: linear-gradient(180deg, var(--lava-hot) 0%, var(--lava-core) 52%, var(--lava-edge) 100%) !important;
+  border-color: rgba(255, 130, 110, 0.4) !important;
+  background: linear-gradient(135deg, #ff7a66 0%, #ff5a47 100%) !important;
   color: #fff !important;
   -webkit-text-fill-color: #fff !important;
-  box-shadow: inset 0 1px rgba(255,190,128,.62), inset 0 -1px rgba(82,0,0,.42), 0 8px 20px var(--lava-glow) !important;
-  text-shadow: 0 1px 1px rgba(70,0,0,.38) !important;
+  box-shadow: 0 4px 16px rgba(255, 90, 71, 0.35), 0 0 4px rgba(255, 122, 102, 0.4) inset !important;
+  text-shadow: none !important;
 }
 :is(
   #logOv .btn-primary,#logOv .modal-btn.save,
@@ -2736,3 +2736,100 @@ body.gn-empty-state .fab { display: none !important; }
 .gn-research-custom-link:hover, .gn-research-custom-link:focus-visible { color: #e8fcff; outline: none; }
 
 @media (max-width: 359px) { .topbar-hub-label { display: none !important; } }
+
+/* ── v0.14: coral CTA glow (P1) — double-class specificity beats all lava rules in both themes ── */
+.btn-primary.btn-primary, .btn-full.btn-primary.btn-full.btn-primary, .gn-auth-primary.gn-auth-primary,
+.future-confirm-save.future-confirm-save, .gn-whatsnew-close.gn-whatsnew-close,
+.gn-passkey-upsell .btn-primary.btn-primary, .landing-btn.primary.landing-btn,
+:is(.btn-primary.btn-primary, .landing-btn.primary.landing-btn, .fab.fab, .gn-auth-primary.gn-auth-primary) {
+  background: linear-gradient(135deg, #ff7a66 0%, #ff5a47 100%) !important;
+  border: 1px solid rgba(255, 130, 110, 0.4) !important;
+  box-shadow: 0 4px 16px rgba(255, 90, 71, 0.35), 0 0 4px rgba(255, 122, 102, 0.4) inset !important;
+  text-shadow: none !important;
+  color: #fff !important;
+}
+.btn-primary.btn-primary:hover, .landing-btn.primary.landing-btn:hover,
+.fab.fab:hover, .gn-auth-primary.gn-auth-primary:hover {
+  background: linear-gradient(135deg, #ff8a76 0%, #ff6a55 100%) !important;
+  box-shadow: 0 6px 24px rgba(255, 90, 71, 0.5), 0 0 6px rgba(255, 130, 110, 0.5) inset !important;
+}
+html[data-theme="light"] .landing-btn.primary.landing-btn,
+html[data-theme="light"] .btn-primary.btn-primary {
+  background: linear-gradient(135deg, #ff7a66 0%, #ff5a47 100%) !important;
+  box-shadow: 0 4px 14px rgba(255, 90, 71, 0.28), 0 0 3px rgba(255, 122, 102, 0.35) inset !important;
+  text-shadow: none !important;
+}
+
+/* ── v0.14: landing corner toggles (P2) ── */
+.landing-language-control, .landing-theme-toggle-host {
+  position: fixed !important;
+  top: max(10px, env(safe-area-inset-top, 0px)) !important;
+  z-index: 80 !important;
+  width: 32px !important;
+  max-width: 32px !important;
+  height: 32px !important;
+  max-height: 32px !important;
+  min-height: 32px !important;
+  box-sizing: border-box !important;
+  border-radius: 50% !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: rgba(5, 10, 16, 0.55) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  backdrop-filter: blur(4px);
+}
+.landing-language-control { left: 10px !important; right: auto !important; }
+.landing-theme-toggle-host { right: 10px !important; left: auto !important; }
+.landing-language-control span { display: none !important; }
+.landing-language-control button {
+  width: 14px !important; min-width: 14px !important; height: 14px !important;
+  padding: 0 !important; margin: 0 !important; font-size: .48rem !important;
+  line-height: 1 !important; border-radius: 50% !important;
+}
+.landing-language-control { display: flex !important; align-items: center !important; justify-content: center !important; gap: 2px !important; }
+.landing-theme-toggle-host .gn-theme-toggle {
+  min-height: 32px !important; height: 32px !important; max-height: 32px !important;
+  padding: 0 !important; border: 0 !important; background: transparent !important;
+  display: flex !important; align-items: center !important; justify-content: center !important;
+  gap: 0 !important;
+}
+.landing-theme-toggle-host .gn-theme-opt {
+  width: 16px !important; min-width: 16px !important; max-width: 16px !important;
+  height: 30px !important; min-height: 30px !important; padding: 0 !important;
+  font-size: .6rem !important;
+}
+/* dark default: show only the active opt icon centered */
+.landing-theme-toggle-host .gn-theme-opt:not(.active) { display: none !important; }
+html[data-theme="light"] .landing-language-control, html[data-theme="light"] .landing-theme-toggle-host {
+  background: rgba(248, 245, 237, 0.85) !important;
+  border-color: rgba(0, 111, 130, 0.25) !important;
+}
+
+/* ── v0.14: HUB corner (P3) ── */
+.hub-corner {
+  position: fixed;
+  bottom: calc(78px + var(--safe-bottom));
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(14, 14, 22, 0.92);
+  border: 1px solid var(--cyan);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: transform .18s ease, box-shadow .18s ease;
+  box-shadow: 0 4px 14px rgba(0, 212, 255, 0.25);
+}
+.hub-corner:hover, .hub-corner:focus-visible {
+  transform: scale(1.06);
+  box-shadow: 0 6px 20px rgba(0, 212, 255, 0.4);
+  outline: none;
+}
+.hub-corner img { border-radius: 50%; }
+body.gn-empty-state .hub-corner { display: flex !important; }
+html[data-theme="light"] .hub-corner { background: rgba(248, 245, 237, 0.95); }
+@media (max-width: 359px) { .hub-corner { width: 40px; height: 40px; right: 10px; } }

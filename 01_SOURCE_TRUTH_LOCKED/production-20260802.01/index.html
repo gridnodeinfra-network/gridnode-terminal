@@ -27,8 +27,8 @@
   <meta name="color-scheme" content="dark light">
   <meta name="supported-color-schemes" content="dark light">
 
-<script src="./js/gridnode-theme.js?v=20260804.1"></script>
-<link rel="stylesheet" href="./css/daylight-nexus-pilot.css?v=20260804.1">
+<script src="./js/gridnode-theme.js?v=20260805.1"></script>
+<link rel="stylesheet" href="./css/daylight-nexus-pilot.css?v=20260805.1">
 
 <link rel="manifest" href="/manifest.json">
 <title>GRID//NODE — Your body. Your data. Your grid.</title>
@@ -79,6 +79,8 @@
   --cyan-dim:  rgba(0,212,255,0.12);
   --cyan-glow: rgba(0,212,255,0.4);
   --red:       #ff3355;
+  --coral:     #ff5a47;
+  --coral-hi:  #ff7a66;
   --red-dim:   rgba(255,51,85,0.12);
   --red-glow:  rgba(255,51,85,0.4);
   --green:     #00ff88;
@@ -249,7 +251,7 @@ body:not(.gn-private-active) .fab{display:none!important;visibility:hidden;point
 .nav-lbl{font-family:var(--font-m);font-size:0.55rem;color:#8a8aa0;letter-spacing:2px}
 
 /* FAB */
-.fab{position:fixed;bottom:calc(78px + var(--safe-bottom));right:18px;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--red),#cc0033);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:#fff;z-index:60;box-shadow:0 4px 20px rgba(255,51,85,0.5);animation:pulse 4s ease infinite;transition:all 0.2s}
+.fab{position:fixed;bottom:calc(144px + var(--safe-bottom));right:18px;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--coral-hi),var(--coral));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:#fff;z-index:60;box-shadow:0 4px 20px rgba(255,90,71,0.5);animation:pulse 4s ease infinite;transition:all 0.2s}
 .fab:hover,.fab:active{transform:scale(1.08);box-shadow:0 6px 28px rgba(255,51,85,0.7)}
 
 /* PAGES */
@@ -640,7 +642,7 @@ body:not(.gn-private-active) .fab{display:none!important;visibility:hidden;point
 
 /* BUTTONS */
 .btn-full{width:100%;padding:14px;font-family:var(--font-d);font-size:0.82rem;letter-spacing:3px;border:none;border-radius:var(--r);cursor:pointer;transition:all 0.2s;margin-top:4px}
-.btn-primary{background:linear-gradient(135deg,var(--red),#cc0033);color:#fff;box-shadow:0 4px 16px rgba(255,51,85,0.3)}
+.btn-primary{background:linear-gradient(135deg,var(--coral-hi),var(--coral));color:#fff;box-shadow:0 4px 16px rgba(255,90,71,0.35),0 0 4px rgba(255,122,102,0.4) inset}
 .btn-primary:hover{box-shadow:0 6px 24px rgba(255,51,85,0.5);transform:translateY(-1px)}
 .btn-secondary{background:transparent;color:var(--cyan);border:1px solid var(--cyan);margin-top:9px}
 .btn-secondary:hover{background:var(--cyan-dim)}
@@ -899,7 +901,7 @@ body:not(.gn-private-active) .fab{display:none!important;visibility:hidden;point
 .gn-pwa-ios-hint-card .gn-pwa-ios-steps{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
 .gn-pwa-ios-hint-card .gn-pwa-ios-step{display:flex;align-items:center;gap:10px;font-size:.82rem;color:#c0c5d0}
 .gn-pwa-ios-hint-card .gn-pwa-ios-step .step-icon{width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:rgba(0,212,255,.1);border-radius:6px;color:#00e5ff;font-size:1.1rem;flex-shrink:0}
-.gn-pwa-ios-hint-card button{background:linear-gradient(135deg,var(--red,#ff2a6d),#cc0033);color:#fff;border:none;padding:12px 18px;border-radius:8px;font:inherit;font-weight:600;letter-spacing:.5px;cursor:pointer;width:100%;min-height:44px;-webkit-tap-highlight-color:transparent}
+.gn-pwa-ios-hint-card button{background:linear-gradient(135deg,var(--coral-hi),var(--coral));color:#fff;border:none;padding:12px 18px;border-radius:8px;font:inherit;font-weight:600;letter-spacing:.5px;cursor:pointer;width:100%;min-height:44px;-webkit-tap-highlight-color:transparent}
 .gn-pwa-ios-hint-card button.gn-pwa-ios-later{background:transparent;color:#7a8c97;margin-top:6px;font-weight:400}
 .gn-pwa-update-toast{position:fixed;top:calc(20px + env(safe-area-inset-top,0px));left:14px;right:14px;z-index:140;background:linear-gradient(135deg,#05ffa1,#00cc88);color:#001a10;padding:14px;border-radius:12px;font-family:var(--font-b,system-ui);font-weight:600;text-align:center;box-shadow:0 8px 24px rgba(5,255,161,.4);display:flex;align-items:center;justify-content:space-between;gap:12px;animation:gnPwaBannerIn .4s ease}
 .gn-pwa-update-toast button{background:#001a10;color:#05ffa1;border:none;padding:8px 14px;border-radius:6px;font:inherit;font-weight:600;cursor:pointer;min-height:36px}
@@ -1104,7 +1106,7 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 .landing-beat{border:1px solid rgba(0,212,255,.16);background:linear-gradient(135deg,rgba(0,212,255,.075),rgba(0,0,0,.25));border-radius:var(--r);padding:10px 11px;font-family:var(--font-m);font-size:.62rem;letter-spacing:1.4px;color:#c9f5ff;text-transform:uppercase}
 .landing-cta-row{display:grid;grid-template-columns:repeat(2,minmax(170px,210px));gap:12px;margin-top:6px}
 .landing-btn{border-radius:var(--r);padding:14px 16px;font-family:var(--font-d);font-size:.78rem;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:transform .2s,box-shadow .2s,border-color .2s;background:transparent}
-.landing-btn.primary{border:0;background:linear-gradient(135deg,var(--red),#cc0033);color:#fff;box-shadow:0 10px 28px rgba(255,51,85,.28)}
+.landing-btn.primary{border:0;background:linear-gradient(135deg,var(--coral-hi),var(--coral));color:#fff;box-shadow:0 10px 28px rgba(255,90,71,.3),0 0 4px rgba(255,122,102,.4) inset}
 .landing-btn.secondary{border:1px solid rgba(0,212,255,.38);color:var(--cyan);background:rgba(0,212,255,.06)}
 .landing-btn:hover,.landing-btn:active{transform:translateY(-1px)}
 .landing-note{font-family:var(--font-m);font-size:.62rem;letter-spacing:1px;color:#9fc7d4;line-height:1.48}
@@ -3732,10 +3734,7 @@ function continueLocallyFromWelcome() {
   </text>
 </svg></div>
     <div class="topbar-actions">
-      <button class="topbar-btn topbar-hub-btn" type="button" onclick="toggleProfileHub()" id="topAva" aria-label="Open NODE PROFILE HUB">
-        <img src="/assets/gridnode-insignia-v6.png" alt="GRID//NODE mark" width="40" height="40" id="topAvaIcon">
-        <span class="topbar-hub-label">HUB</span>
-      </button>
+
     </div>
   </div>
 
@@ -4506,6 +4505,9 @@ function continueLocallyFromWelcome() {
     <div class="nav-item gn-nav-hidden" id="navPro" role="button" tabindex="0" onclick="showPage('Profile',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Profile',this)}"></div>
   </div>
 
+  <button class="hub-corner" type="button" onclick="toggleProfileHub()" id="topAva" aria-label="Open NODE PROFILE HUB">
+    <img src="/assets/gridnode-insignia-v6.png" alt="GRID//NODE mark" width="40" height="40" id="topAvaIcon">
+  </button>
   <button class="fab" onclick="handleShotFab()" aria-label="Log a dose" data-i18n-aria-label="fab.logShot"><span class="gn-icon"><svg><use href="#gn-protocol-event"></use></svg></span></button>
 </div>
 
@@ -9146,7 +9148,7 @@ body.gn-log-shot-picker-open .fab{
 @media(prefers-reduced-motion:reduce){.boot-command-deck::before,#boot .boot-b2b-symbol,#boot .boot-b2b-symbol-wrap::after{animation:none !important}}
 </style>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="./js/gridnode-version.js?v=20260804.1" defer></script><script src="./js/gridnode-i18n.js?v=20260804.1" defer></script><script src="./js/gridnode-bundle.js?v=20260804.1" defer></script><script src="./js/gridnode-phase-sphere.js?v=20260804.1" defer></script><script src="./js/gridnode-product-completion.js?v=20260804.1" defer></script><script src="./js/gridnode-motivation.js?v=20260804.1" defer></script><script src="./js/gridnode-telemetry.js?v=20260804.1" defer></script><script src="./js/gridnode-native.js?v=20260804.1" defer></script><script src="./js/gridnode-i18n-overlay.js?v=20260804.1" defer></script><script src="./js/gridnode-whatsnew.js?v=20260804.1" defer></script><script src="./js/gridnode-onboarding.js?v=20260804.1" defer></script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="./js/gridnode-version.js?v=20260805.1" defer></script><script src="./js/gridnode-i18n.js?v=20260805.1" defer></script><script src="./js/gridnode-bundle.js?v=20260805.1" defer></script><script src="./js/gridnode-phase-sphere.js?v=20260805.1" defer></script><script src="./js/gridnode-product-completion.js?v=20260805.1" defer></script><script src="./js/gridnode-motivation.js?v=20260805.1" defer></script><script src="./js/gridnode-telemetry.js?v=20260805.1" defer></script><script src="./js/gridnode-native.js?v=20260805.1" defer></script><script src="./js/gridnode-i18n-overlay.js?v=20260805.1" defer></script><script src="./js/gridnode-whatsnew.js?v=20260805.1" defer></script><script src="./js/gridnode-onboarding.js?v=20260805.1" defer></script>
 <script>
 (function() {
   try {
