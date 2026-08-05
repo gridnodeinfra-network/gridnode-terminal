@@ -1445,5 +1445,6 @@
   "landing.privatePrototype": "GRID//NODE está actualmente en prototipo privado.",
   "nav.liveStatus": "Estado del nodo en vivo",
   "pwa.installRegion": "Instalar la app GRID//NODE",
-  "research.addDate": "SELECCIONA UNA FECHA ANTES DE GUARDAR"
+  "research.addDate": "SELECCIONA UNA FECHA ANTES DE GUARDAR",
+  "vault.closeHub": "Cerrar perfil"
 }

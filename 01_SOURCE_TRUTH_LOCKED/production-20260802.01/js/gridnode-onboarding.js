@@ -528,6 +528,7 @@
   function maybeAutoStart() {
     if (state() === 'complete') return;
     try { if (localStorage.getItem('gn_onboarding_dismissed_v1') === '1') return; } catch (_) {}
+    if (document.querySelector('.gn-404-screen')) return;
     var landing = document.getElementById('landing');
     var app = document.getElementById('app');
     var inApp = app && getComputedStyle(app).display !== 'none' && (!landing || getComputedStyle(landing).display === 'none');

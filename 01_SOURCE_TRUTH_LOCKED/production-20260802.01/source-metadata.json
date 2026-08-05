@@ -56,12 +56,12 @@
       "sha256": "c5565278a2ab2a98dab33a2b7f941e7d5748fd027dbb5c4e86d5a8eddc415d4b"
     },
     "i18n/en.json": {
-      "bytes": 80161,
-      "sha256": "533a5f68254a1666efc2d907f2a48bb93c8d129e900f222570986d76e740e079"
+      "bytes": 80198,
+      "sha256": "21f7ea3826ef5a7a82af0b8e864a8eb0731829cecd8e167f28ec0cbcd5db80d2"
     },
     "i18n/es-419.json": {
-      "bytes": 89059,
-      "sha256": "6da6c54667a1787f96ad1d7547c81cace622b7878e5f7ff8d5aa6dda859ca365"
+      "bytes": 89096,
+      "sha256": "d0e0ddc928dfdf3a1035246077ae67ad21cb44ee76a5e600ec30a59f2dea6300"
     },
     "index.html": {
       "bytes": 614615,
@@ -100,8 +100,8 @@
       "sha256": "392a16ff806af170cbd2a9a0cc9e1063246c3488462edf5f6579c1995f90fad2"
     },
     "js/gridnode-onboarding.js": {
-      "bytes": 27724,
-      "sha256": "6f2104c60663a669e938b3a10cce30c71b96f98fc72a06e904ea7bd785f1daa5"
+      "bytes": 27782,
+      "sha256": "ef0512ffe79a40cc377a18ca35950fa451e1604d1ad41ef73a441a38a8173643"
     },
     "js/gridnode-phase-sphere.js": {
       "bytes": 5583,
