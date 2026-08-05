@@ -11,7 +11,7 @@
 |------|-------|
 | Release version | `0.12.0` / `20260804.1` |
 | Candidate commit | `6ad0486` (final) — chain: `42dc1f3` release → `8ca3071` cleanup → `d41e910` SW hardening → `471ef1e` assetResponse cache bypass → `046f66d` install-time cache bypass → `5e06d3e` handoff pin → `6ad0486` final pin |
-| Preview URL | https://57d02fdc.gridnode.pages.dev (alias `preview.gridnode.pages.dev`) |
+| Preview URL | https://7723f8e0.gridnode.pages.dev (alias `preview.gridnode.pages.dev`) |
 | Rollback commit | `9764766d` (pre-WIP production-safe source) |
 | Production | gridnode.network — **untouched** (still v0.10.0 / 20260802.14) |
 | Branch | `feature/gridnode-product-completion` (pushed) |
@@ -42,7 +42,7 @@
   history accessible.
 - **Cleanup**: one dead CSS block removed; no behavior change.
 
-## 3. Production Gates (all against served preview 57d02fdc)
+## 3. Production Gates (all against served preview 7723f8e0)
 
 | Gate | Result | Evidence |
 |------|--------|----------|
@@ -111,7 +111,7 @@ results — captured during visual pass 13/14.
 
 **VERDICT: READY FOR FOUNDER PRODUCTION APPROVAL** — one exact commit
 (`6ad0486`), one exact release (`0.12.0 / 20260804.1`), one exact preview
-(`57d02fdc.gridnode.pages.dev`), rollback point `9764766d`, all 12 gates green
+(`7723f8e0.gridnode.pages.dev`), rollback point `9764766d`, all 12 gates green
 after an independent review pass (dead-CSS verification + SW `/index.html`
 hardening, both re-gated). No code changes between approval and production:
 the tested artifact IS the production candidate.
