@@ -285,3 +285,50 @@ Per handoff-to-nix-2026-08-05.md priority order P1→P2→P3; P4 (UNIDAD empty c
 - Commits: `7184b3b` (P1 coral CTA + P2 corner toggles + P3 HUB corner + marker bump) +
   `2a9717c` (What's New 20260805.1 + mobile-shell test marker). Tree clean.
 - Rollback: redeploy `abef361` (pre-v0.14) or CF dashboard → previous production deployment.
+
+
+---
+
+## V0.15 — CLOUD-FIRST PIVOT + MARS RED + JACK IN REBUILD (20260805.2) — DEPLOYED
+
+**Status: LIVE on gridnode.network** (production deployment a8bb69a3, branch=main, source 35d0f91, 2026-08-05).
+Pipe/Mavis: v0.15 spec (NIX-PROMPT-v0.15.md) fully shipped. Verified live via curl + Playwright.
+
+### What shipped
+1. **Product pivot to cloud-first** (Pipe-locked 14:05 ET): Google + Passkey are now the headline CTAs on the
+   JACK IN screen; "CONTINUE ON THIS DEVICE ONLY" is a demoted footer link; "Local-first. No account required."
+   retired from the marketing landing (hero, phase-core CLOUD-FIRST, build copy, trust copy — EN + ES).
+2. **v0.14 visual layer reverted** (commit 7184b3b reverted cleanly): coral CTA, extreme corner toggles, and
+   HUB-corner all removed; v0.13 baseline restored (topbar HUB with V6 insignia, inline toggles, FAB position).
+3. **Mars Red #FF3B3B** applied everywhere red appears (Pipe-locked 13:43 ET): `--red/--red-hi/--red-lo/
+   --red-glow` vars; all CTA gradients (btn-primary, fab, landing-btn.primary, passkey, whatsnew-close);
+   `--lava-*` vars; light-theme (DUSK) reds; wine (#ff3355/#cc0033/#ff2d4d/#ff5a6e/#8f0f28/...) and coral
+   (#ff5a47/#ff7a66) fully purged — verified zero residuals in index.html, native.css, daylight CSS, bundle.
+4. **B5 — JACK IN rebuilt**: wordmark title (GRID//NODE, no jargon), 1-line value prop
+   ("Sign in to sync your grid across devices."), Continue with Google (full-width, Mars Red shell),
+   Continue with Passkey (full-width Mars Red), "or" divider, "CONTINUE ON THIS DEVICE ONLY" footer link,
+   VAULT POLICY replaced by "YOUR DATA, YOUR RULES" footer link → small modal. Full viewport use
+   (100% up to 480px, centered vertically), mobile-first (>=48px tap targets, no cutoff at 360px).
+5. **B6 — Passkey fixed**: email-first UX (focused error "ENTER YOUR EMAIL ADDRESS FIRST"), all error paths
+   mapped to clear user states (no passkey / cancelled / unsupported device / email required);
+   backend verified live (webauthn-authenticate-options returns proper JSON).
+6. **B1/B2/B4 — WHAT'S NEW**: capped at 480px/80vh (desktop + mobile bottom sheet); dismissal key
+   `gridnode.lastWhatsNewDismissedBuild` (+ legacy-key migration); already-open guard stops the 3x popup;
+   version header binds to build (shows GRID//NODE v0.15.0 / 20260805.2).
+7. **B3 — Theme toggle**: restored via revert (v0.13 handler + inline topbar position); verified working.
+8. Cache-bust: `?v=20260805.2` on all CSS/JS assets; whatsnew 20260805.2 entry (EN+ES).
+
+### Gates (all green)
+- verify.sh VERIFICATION PASSED (bundle 343,196 B deterministic vs locked baseline).
+- Official candidate test: **PASS 76/76** (node scripts/test-production-candidate.cjs).
+- 15-item smoke test (NIX-PROMPT spec): **29/29 PASS** on preview 54f5775c.
+- Regressions: BatchC 11/11, BatchD 11/11, Project2 18/18, Gaps 9/9, B1 6/6, B2 7/7, B6 4/4,
+  modal-i18n 12/12, peplock 11/11, close-guard 7/7.
+- Known/expected console noise on PREVIEW only: `[GSI_LOGGER] origin not allowed` — Google OAuth client
+  is whitelisted for gridnode.network, not preview domains. No errors on production.
+
+### Commits
+- `35d0f91` feat(v0.15): cloud-first pivot + Mars Red + JACK IN rebuild + passkey fix (23 files, +5944/-6010).
+  Pushed to feature/gridnode-product-completion. Tree clean.
+- Production deployment: `a8bb69a3` (main). Rollback: CF dashboard → previous production deployment
+  (9a3d99ca = v0.14/20260805.1) or redeploy a prior commit.
