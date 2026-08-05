@@ -82,7 +82,12 @@ async function assetResponse(request) {
   const cached = await cache.match(request, { ignoreVary: true });
   if (cached) return cached;
   try {
-    const response = await fetch(request);
+    // Unversioned resources (i18n catalogs, manifest) are served with
+    // Cache-Control: immutable; bypass the HTTP cache so a returning user
+    // never bakes stale translations into the new release's cache.
+    const url = new URL(request.url);
+    const bypassHttpCache = url.pathname.startsWith('/i18n/') || url.pathname === '/manifest.json';
+    const response = await fetch(request, bypassHttpCache ? { cache: 'reload' } : undefined);
     if (response.ok) await cache.put(request, response.clone());
     return response;
   } catch (_) {

@@ -128,8 +128,8 @@
       "sha256": "bc3b6ad8fa6992bd8c5555477756cd2bc3ac6179b6a258aca9dcfd7f5a68f413"
     },
     "sw.js": {
-      "bytes": 4294,
-      "sha256": "a6ff279601d9a5dd82a99178ae9dbce79a62d53766156d71f40615e0473fbad0"
+      "bytes": 4697,
+      "sha256": "9c2a017f9edf6c8a5ce77b1d95dbe6c9c406be5b7d746353dc6deb55fd2e3407"
     }
   },
   "metadata_note": "Candidate 2026-08-04: production-readiness and medication-integrity release with semantic DAY OPS readability, four-stage onboarding, first-SHOT activation, stable mobile/PWA shell, bilingual release history, and safe update activation; production untouched.",
