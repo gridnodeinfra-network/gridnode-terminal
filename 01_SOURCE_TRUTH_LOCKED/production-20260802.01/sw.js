@@ -34,8 +34,17 @@ const SHELL = [
   '/assets/preview-dashboard.png'
 ];
 
+// Unversioned i18n catalogs + manifest are served Cache-Control: immutable;
+// fetch them with cache:'reload' at install so stale translations can never be
+// baked into a new release's cache (assetResponse does the same on misses).
+function shellRequest(path) {
+  if (path === '/i18n/en.json' || path === '/i18n/es-419.json' || path === '/manifest.json') {
+    return new Request(path, { cache: 'reload' });
+  }
+  return path;
+}
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(SHELL)));
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(SHELL.map(shellRequest))));
 });
 
 self.addEventListener('message', event => {

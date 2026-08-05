@@ -108,8 +108,8 @@ results — captured during visual pass 13/14.
 ---
 
 **VERDICT: READY FOR FOUNDER PRODUCTION APPROVAL** — one exact commit
-(`d41e910`), one exact release (`0.12.0 / 20260804.1`), one exact preview
-(`b9ded1a5.gridnode.pages.dev`), rollback point `9764766d`, all 12 gates green
+(`471ef1e`), one exact release (`0.12.0 / 20260804.1`), one exact preview
+(`6c344a39.gridnode.pages.dev`), rollback point `9764766d`, all 12 gates green
 after an independent review pass (dead-CSS verification + SW `/index.html`
 hardening, both re-gated). No code changes between approval and production:
 the tested artifact IS the production candidate.
