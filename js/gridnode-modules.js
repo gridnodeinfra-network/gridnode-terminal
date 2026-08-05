@@ -679,7 +679,31 @@ export function closeFutureTimestampConfirm() { $('futureTimestampConfirm')?.cla
 export function cancelFutureTimestampSave() { closeFutureTimestampConfirm(); }
 export function confirmFutureTimestampSave() { $('futureTimestampConfirm')?.classList.remove('active'); saveShot(true); }
 
-export function handleShotFab() { openLogModal(); }
+export function handleShotFab() {
+  // B7 (v0.15.1): quick action opens the pre-filled bottom-sheet drawer for
+  // review — no auto-log. Uses the app's draft machinery so pre-fill survives.
+  const shots = getAllShots();
+  const lastShot = shots.filter(s => !s.archived).sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
+  const profile = getProfile();
+  const medId = lastShot?.med ? normalizeMedicationId(lastShot.med) : normalizeMedicationId(profile.med);
+  const dose = lastShot?.dose ?? profile.dose ?? '';
+  const site = lastShot?.site || moduleState.selectedLocation;
+  if (!medId || !Object.prototype.hasOwnProperty.call(MEDICATIONS, medId) || !(Number.isFinite(Number(dose)) && Number(dose) > 0) || !site) { openLogModal(); return; }
+  const now = new Date();
+  moduleState.editingShotId = null;
+  moduleState.selectedLocation = site;
+  try { sessionStorage.removeItem('gn_shot_draft_session_v1'); } catch (_) {}
+  moduleState.shotDraft = {
+    med: medId,
+    dose: String(dose),
+    date: todayISO(),
+    time: formatTime12(now),
+    meridiem: now.getHours() >= 12 ? 'PM' : 'AM',
+    wt: '', notes: '', se: [], deviceId: ''
+  };
+  openLogModal({ preserve: true });
+}
+}
 export function goToScannerForLocationFromLog() {
   moduleState.pendingLocationDraft = true;
   // Snapshot the ENTIRE unsaved draft so reopening restores every field.

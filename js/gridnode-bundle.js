@@ -1595,9 +1595,9 @@ function renderDashboard() {
       const heroMarkup = '<section id="gnEmptyHero" class="gn-empty-hero" aria-label="' + safeText(tx('dashboard.emptyTitle', 'Get started')) + '">'
         + '<h2 data-i18n="dashboard.emptyTitle">' + tx('dashboard.emptyTitle', 'Empieza con tu primera dosis') + '</h2>'
         + '<p data-i18n="dashboard.emptyBody">' + tx('dashboard.emptyBody', 'Una dosis desbloquea el Motor de Fases, RESULTADOS y tu tablero completo.') + '</p>'
-        + '<button class="btn-full btn-primary gn-empty-cta" type="button" onclick="openLogModal()" data-i18n="dashboard.emptyCta">' + tx('dashboard.emptyCta', 'REGISTRAR MI PRIMERA DOSIS') + '</button>'
+        + '<button class="btn-full btn-primary gn-empty-cta" type="button" data-onboard="empty-cta" onclick="openLogModal()" data-i18n="dashboard.emptyCta">' + tx('dashboard.emptyCta', 'REGISTRAR MI PRIMERA DOSIS') + '</button>'
         + '<div class="gn-empty-ghosts">'
-        + '<button class="gn-empty-ghost" type="button" onclick="openWeightModal()" data-i18n="dashboard.emptyWeight">' + tx('dashboard.emptyWeight', 'Registrar peso') + '</button>'
+        + '<button class="gn-empty-ghost" type="button" data-onboard="log-weight" onclick="openWeightModal()" data-i18n="dashboard.emptyWeight">' + tx('dashboard.emptyWeight', 'Registrar peso') + '</button>'
         + '<button class="gn-empty-ghost" type="button" onclick="showPage(\'Log\',document.getElementById(\'navLog\'))" data-i18n="dashboard.emptyScan">' + tx('dashboard.emptyScan', 'Escanear zona') + '</button>'
         + '<button class="gn-empty-ghost" type="button" onclick="showPage(\'Lab\',document.getElementById(\'navLab\'))" data-i18n="dashboard.emptyLab">' + tx('dashboard.emptyLab', 'Ver LAB') + '</button>'
         + '</div>'
@@ -2246,6 +2246,11 @@ function confirmFutureTimestampSave() { $('futureTimestampConfirm')?.classList.r
 function handleShotFab() { quickLogShot(); }
 
 function quickLogShot() {
+  // B7 (v0.15.1): NEVER auto-log. Pre-fill the bottom-sheet drawer via the app's
+  // own draft machinery (moduleState.shotDraft + openLogModal({preserve:true}))
+  // and let the user review + confirm. saveShot() fires only on the explicit
+  // SAVE tap, which already shows the undoable bottom toast and closes without
+  // any view jump.
   const shots = getAllShots();
   const lastShot = shots.filter(s => !s.archived).sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
   const profile = getProfile();
@@ -2254,33 +2259,22 @@ function quickLogShot() {
   const dose = lastShot?.dose ?? profile.dose ?? '';
   const site = lastShot?.site || moduleState.selectedLocation;
   if (!(Number.isFinite(Number(dose)) && Number(dose) > 0) || !site) { openLogModal(); return; }
-  // Pre-fill the modal form so the existing atomic saveShot path handles persistence.
-  moduleState.shotDraft = null;
+  const now = new Date();
   moduleState.editingShotId = null;
   moduleState.selectedLocation = site;
-  setHumanDateInput($('sDate'), todayISO());
-  const now = new Date();
-  if ($('sTime')) $('sTime').value = formatTime12(now);
-  moduleState.meridiem = now.getHours() >= 12 ? 'PM' : 'AM';
-  updateMeridiemButtons();
-  setSelect('cpShotMed', medId, medicationLabel(medId));
-  if ($('sDose')) $('sDose').value = dose;
-  if ($('sWt')) $('sWt').value = '';
-  if ($('sNotes')) $('sNotes').value = '';
-  qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = false; });
-  const saved = saveShot(true);
-  if (!saved || !saved.id) return;
-  const savedId = saved.id;
-  const label = medicationLabel(normalizeMedicationId(saved.med));
-  const timeLabel = `${formatTime12(new Date(saved.date))} ${saved.date.includes('T') && new Date(saved.date).getHours() >= 12 ? 'PM' : 'AM'}`;
-  const detail = `${timeLabel} · ${saved.dose}mg ${label}`;
-  const toast = $('toastEl');
-  if (toast) {
-    toast.innerHTML = `<span class="gn-toast-message">${safeText(tx('quickLog.saved', 'DOSE LOGGED'))} · ${safeText(detail)}</span> <button type="button" class="gn-toast-action" onclick="editShot('${safeText(savedId)}')">${safeText(tx('quickLog.undo', 'UNDO'))}</button>`;
-    toast.className = 'toast active';
-    clearTimeout(toast._timer);
-    toast._timer = setTimeout(() => toast.classList.remove('active'), 4000);
-  }
+  // Clear the native sessionStorage draft so its restoreShotDraft() (wired to the
+  // drawer-open event) does not wipe our pre-fill with stale/empty values.
+  try { sessionStorage.removeItem('gn_shot_draft_session_v1'); } catch (_) {}
+  // Draft is consumed once by openLogModal's preserveDraft branch (restores every field).
+  moduleState.shotDraft = {
+    med: medId,
+    dose: String(dose),
+    date: todayISO(),
+    time: formatTime12(now),
+    meridiem: now.getHours() >= 12 ? 'PM' : 'AM',
+    wt: '', notes: '', se: [], deviceId: ''
+  };
+  openLogModal({ preserve: true });
 }
 function researchEnterCustomMode() {
   const mode = $('gnResearchMode');
@@ -3088,7 +3082,7 @@ function ensureProfileHub() {
   hero.insertAdjacentHTML('afterend', `<section class="gn-profile-hub" data-gn-profile-hub aria-labelledby="gnProfileHubTitle">
     <div class="gn-foundation-head"><div><div class="gn-foundation-kicker" data-i18n="vault.kicker">// NODE PROFILE HUB</div><h2 id="gnProfileHubTitle" data-i18n="vault.hubTitle">YOUR NODE</h2></div><span class="gn-foundation-actions"><span class="gn-foundation-signal" id="gnProfileSync">LOCAL MODE</span><button type="button" class="gn-hub-close" id="gnHubClose" onclick="closeProfileHub()" aria-label="CERRAR" data-i18n-aria-label="vault.closeHub">✕</button></span></div>
     <div class="gn-profile-sections">
-      <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.node">// YOUR NODE</div><div class="gn-profile-row"><span><b data-i18n="vault.medicationLabel">Medication</b><small id="gnProfileMedication">Not entered</small></span><span class="gn-profile-chevron">›</span></div><div class="gn-profile-row"><span><b data-i18n="vault.bodyMetrics">Body Metrics</b><small id="gnProfileBody">Not entered</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row" onclick="openSystemUpdate()"><span><b data-i18n="vault.whatsNew">What's New</b><small>v0.12.0</small></span><span class="gn-profile-chevron">›</span></button></section>
+      <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.node">// YOUR NODE</div><div class="gn-profile-row"><span><b data-i18n="vault.medicationLabel">Medication</b><small id="gnProfileMedication">Not entered</small></span><span class="gn-profile-chevron">›</span></div><div class="gn-profile-row"><span><b data-i18n="vault.bodyMetrics">Body Metrics</b><small id="gnProfileBody">Not entered</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row" onclick="openSystemUpdate()"><span><b data-i18n="vault.whatsNew">What's New</b><small data-gn-whatsnew-version></small></span><span class="gn-profile-chevron">›</span></button></section>
       <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.yourData">// YOUR DATA</div><button type="button" class="gn-profile-row" onclick="exportCSV()"><span><b data-i18n="vault.exportCsv">Export CSV</b><small data-i18n="vault.exportCsvHelp">Download readable records</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="exportBackup()"><span><b data-i18n="vault.exportBackup">Export Backup</b><small data-i18n="vault.exportBackupHelp">Save a complete local copy</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.dataOwnership">Data Ownership</b><small data-i18n="vault.dataOwnershipHelp">Export or delete anytime</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row gn-profile-danger-row" onclick="openDeleteLocalData()"><span><b data-i18n="vault.deleteAllData">Delete All Local Data</b><small data-i18n="vault.deleteAllDataHelp">Remove this device record</small></span><span class="gn-profile-chevron">›</span></button></section>
       <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.tools">// TOOLS</div><button type="button" class="gn-profile-row" onclick="document.querySelector('.gn-device-vault')?.scrollIntoView({behavior:'smooth',block:'start'})"><span><b data-i18n="vault.deviceVaultLink">Device Vault</b><small data-i18n="vault.deviceVaultLinkHelp">Private identity registry</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.connectedAccount">Connected Account</b><small id="gnProfileAccount">Local device session</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row gn-profile-danger-row" onclick="openDeleteCloudAccount()"><span><b data-i18n="vault.deleteCloudAccount">Delete Cloud Account</b><small data-i18n="vault.deleteCloudAccountHelp">Requires server deletion control</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.appVersion">App Version</b><small id="gnProfileVersion">0.12.0</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row" onclick="window.location.reload()"><span><b data-i18n="vault.reloadApp">Reload App</b><small data-i18n="vault.reloadAppHelp">Refresh the current build</small></span><span class="gn-profile-chevron">›</span></button></section>
     </div>
@@ -3101,7 +3095,7 @@ function ensureProfileHub() {
   if (updateVersion) updateVersion.textContent = APP_VERSION;
   const updateCopy = hero.parentElement?.querySelector('#gnSystemUpdateCard p');
   if (updateCopy) updateCopy.textContent = tx('vault.systemUpdateNotes', `${APP_VERSION} — LAB tools now open in focused views, the Phase Engine adds neutral cycle context, and the LIVE NODE status is compact on mobile and desktop.`).replace(/^v[^ ]+/, APP_VERSION);
-  const whatsNewVersion = hero.parentElement?.querySelector('.gn-profile-section:first-of-type button small');
+  const whatsNewVersion = document.querySelector('[data-gn-whatsnew-version]') || hero.parentElement?.querySelector('.gn-profile-section:first-of-type button small');
   if (whatsNewVersion) whatsNewVersion.textContent = `v${APP_VERSION}`;
   const deviceVault = hero.parentElement?.querySelector('.gn-device-vault');
   const deviceKicker = deviceVault?.querySelector('.gn-foundation-kicker');
@@ -4318,14 +4312,30 @@ function showApp() {
       <button type="button" class="btn-full btn-primary" id="gnRegisterPasskeyBtn" data-i18n="auth.registerNewPasskey">+ REGISTER A NEW PASSKEY</button>
     </section>`);
     $('gnRegisterPasskeyBtn')?.addEventListener('click', async () => {
-      if (!(await isWebAuthnSupported())) { showToast(tx('auth.passkeyNotSupported', 'YOUR BROWSER DOES NOT SUPPORT PASSKEYS'), true); return; }
+      const inline = document.querySelector('#gnPasskeysCard .gn-inline-error');
+      const clearInline = () => { const e = document.querySelector('#gnPasskeysCard .gn-inline-error'); if (e) e.remove(); };
+      if (!(await isWebAuthnSupported())) {
+        clearInline();
+        const err = document.createElement('div');
+        err.className = 'gn-inline-error';
+        err.setAttribute('role', 'alert');
+        err.textContent = tx('auth.passkeyNotSupported', 'YOUR BROWSER DOES NOT SUPPORT PASSKEYS');
+        $('gnRegisterPasskeyBtn')?.insertAdjacentElement('afterend', err);
+        return;
+      }
       try {
+        clearInline();
         await registerPasskey(guessDeviceName());
         showToast(tx('auth.passkeyRegistered', 'PASSKEY REGISTERED'));
         await renderPasskeyList();
       } catch (error) {
-        if (error.message === 'USER_CANCELLED') return;
-        showToast(error.message, true);
+        if (error.message === 'USER_CANCELLED') { clearInline(); return; }
+        clearInline();
+        const err = document.createElement('div');
+        err.className = 'gn-inline-error';
+        err.setAttribute('role', 'alert');
+        err.textContent = tx('auth.passkeyRegisterFailed', 'COULDN\'T REGISTER PASSKEY: {message}', { message: error.message });
+        $('gnRegisterPasskeyBtn')?.insertAdjacentElement('afterend', err);
       }
     });
     await renderPasskeyList();
@@ -4491,7 +4501,7 @@ function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   if (window.GN_SW?.register) { window.GN_SW.register(); return; }
   navigator.serviceWorker
-    .register('/sw.js?v=20260805.2', { updateViaCache: 'none' })
+    .register('/sw.js?v=20260805.3', { updateViaCache: 'none' })
     .then(registration => registration.update())
     .catch(() => {});
 }

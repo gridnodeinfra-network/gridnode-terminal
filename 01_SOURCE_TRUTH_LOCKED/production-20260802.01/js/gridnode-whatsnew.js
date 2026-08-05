@@ -195,6 +195,19 @@
         FIXED: ['El inicio de sesión con Passkey ahora te guía a ingresar primero tu correo y muestra estados de error claros.', 'La ventana de novedades ya no se repite — se muestra una vez por build.', 'El interruptor de tema vuelve a funcionar y el panel de novedades se ajusta a la pantalla.']
       }
     },
+    '20260805.3': {
+      version: '0.15.1', title: 'QUICK SHOT · TUTORIAL · COMPACT TOPBAR', date: '2026-08-05',
+      en: {
+        NEW: ['Quick shot is now safe: tap the red button, review the dose, confirm — nothing logs by itself.', 'The tutorial now teaches the basics: first shot, weight, theme, language.'],
+        IMPROVED: ['Compact topbar: icon-only toggles with custom city icons, smaller HUB, more room for the brand.', 'One version number everywhere — no more confusing duplicates.'],
+        FIXED: ['Errors now appear next to the action that caused them, not in the topbar.', 'Passkey errors show a clear inline message instead of a truncated banner.']
+      },
+      es: {
+        NEW: ['El registro rápido ahora es seguro: toca el botón rojo, revisa la dosis, confirma — nada se guarda solo.', 'El tutorial ahora enseña lo básico: primera dosis, peso, tema, idioma.'],
+        IMPROVED: ['Barra superior compacta: interruptores solo con íconos de ciudad, HUB más pequeño, más espacio para la marca.', 'Un solo número de versión en todas partes — sin duplicados confusos.'],
+        FIXED: ['Los errores ahora aparecen junto a la acción que los causó, no en la barra superior.', 'Los errores de Passkey muestran un mensaje claro en línea en lugar de un banner truncado.']
+      }
+    },
   });
 
   function lang() { return document.documentElement.lang === 'es' ? 'es' : 'en'; }
@@ -230,13 +243,16 @@
     return ORDER.map(category => {
       const items = data[category];
       if (!items?.length) return '';
-      return '<section class="gn-wn-cat" data-cat="' + category.toLowerCase() + '"><span class="gn-wn-cat-tag">' + (names[category] || category) + '</span><ul>' + items.map(item => '<li>' + item + '</li>').join('') + '</ul></section>';
+      return '<section class="gn-wn-cat" data-cat="' + category.toLowerCase() + '"><ul>' + items.map(item => '<li>' + item + '</li>').join('') + '</ul></section>';
     }).join('');
   }
 
   function releasePanel(release, entry, current) {
+    // B4 (v0.15.1): ONE version reference — "GRID//NODE v0.15  2026-08-05" +
+    // "// release 20260805.3" below. The release-title subtitle is removed.
     return '<article class="gn-wn-release' + (current ? ' current' : '') + '">' +
-      '<div class="gn-wn-release-head"><div><div class="gn-whatsnew-version">GRID//NODE v' + entry.version + '</div><div class="gn-whatsnew-title">' + entry.title + '</div></div><div class="gn-whatsnew-date">' + entry.date + '<br>' + release + '</div></div>' +
+      '<div class="gn-wn-release-head"><div class="gn-whatsnew-version">GRID//NODE v' + entry.version + '&nbsp;&nbsp;' + entry.date + '</div></div>' +
+      '<div class="gn-whatsnew-release">// release ' + release + '</div>' +
       '<div class="gn-whatsnew-body">' + categories(entry) + '</div></article>';
   }
 
