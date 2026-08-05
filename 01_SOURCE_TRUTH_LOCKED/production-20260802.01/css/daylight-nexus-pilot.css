@@ -1578,3 +1578,14 @@ html[data-theme="light"] .gn-research-back { color: #00677f; }
 html[data-theme="light"] .gn-research-back:hover, html[data-theme="light"] .gn-research-back:focus-visible { color: #004d5e; }
 html[data-theme="light"] .gn-research-custom-link { color: #00677f !important; }
 html[data-theme="light"] .gn-research-custom-link:hover, html[data-theme="light"] .gn-research-custom-link:focus-visible { color: #004d5e; }
+
+/* ── Review-fix: light-theme parity for undoable toast + research links ── */
+html[data-theme="light"] .toast.undoable { background: rgba(255, 255, 255, .97) !important; border-color: #00758a !important; box-shadow: 0 6px 28px rgba(20, 40, 50, .18) !important; }
+html[data-theme="light"] .toast.undoable .gn-toast-title { color: #1c2a30 !important; }
+html[data-theme="light"] .toast.undoable .gn-toast-detail { color: #3f535a !important; }
+html[data-theme="light"] .toast.undoable .gn-toast-check { color: #00758a !important; }
+html[data-theme="light"] .toast.undoable .gn-toast-undo { border-color: rgba(0, 117, 138, .55); background: rgba(0, 117, 138, .08); color: #00677f !important; }
+html[data-theme="light"] .toast.undoable .gn-toast-bar { background: #00758a !important; }
+html[data-theme="light"] .gn-research-back { color: #00677f !important; }
+html[data-theme="light"] .gn-research-back:hover, html[data-theme="light"] .gn-research-back:focus-visible { color: #004d5e !important; }
+html[data-theme="light"] .gn-research-preset-badge { border-color: rgba(0, 117, 138, .5); color: #00677f !important; }

@@ -1467,7 +1467,7 @@
   "toast.undo": "DESHACER",
   "toast.shotLogged": "Dosis registrada",
   "toast.weightLogged": "Peso registrado",
-  "shots.undone": "DOSIS deshecha.",
+  "shots.undone": "Dosis deshecha.",
   "weight.undone": "ENTRADA DE PESO deshecha.",
   "shots.undoStorageError": "No se pudo deshacer — almacenamiento no disponible.",
   "weight.undoStorageError": "No se pudo deshacer — almacenamiento no disponible.",

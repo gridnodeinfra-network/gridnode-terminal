@@ -3457,7 +3457,7 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 <div class="scanlines"></div>
 <div class="scan-sweep"></div>
 <div class="flash" id="flashEl"></div>
-<div class="toast" id="toastEl"></div>
+<div class="toast" id="toastEl" role="status" aria-live="polite"></div>
 
 <script>
 function scrollLandingTo(id) {
@@ -4511,10 +4511,10 @@ function continueLocallyFromWelcome() {
 
 
 <div class="overlay" id="logOv">
-  <div class="modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="logOvTitle">
     <div class="modal-hdr">
       <div class="modal-actions"><button class="modal-btn close" aria-label="Close" data-i18n-aria-label="modal.close" onclick="closeLog()"><span class="gn-icon"><svg><use href="#gn-close"></use></svg></span></button></div>
-      <div class="modal-title" data-i18n="shot.logShot">LOG SHOT</div>
+      <div class="modal-title" id="logOvTitle" data-i18n="shot.logShot">LOG SHOT</div>
       <div class="modal-actions"><button class="modal-btn save" aria-label="Save shot" data-i18n-aria-label="modal.saveShot" onclick="saveShot()"><span class="gn-icon"><svg><use href="#gn-check"></use></svg></span></button></div>
     </div>
     <div class="form-group gn-shot-datetime-group">
@@ -4594,7 +4594,7 @@ function continueLocallyFromWelcome() {
 </div>
 
 
-<div class="overlay results-weight-overlay" id="wtOv" aria-hidden="true">
+<div class="overlay results-weight-overlay" id="wtOv">
   <div class="modal results-weight-modal" role="dialog" aria-modal="true" aria-labelledby="wtModalTitle">
     <div class="modal-hdr">
       <div class="modal-actions"><button class="modal-btn close" type="button" onclick="closeWt()" aria-label="Close ADD WEIGHT ENTRY"><span class="gn-icon"><svg><use href="#gn-close"></use></svg></span></button></div>

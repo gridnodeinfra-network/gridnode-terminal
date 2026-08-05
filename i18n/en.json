@@ -1474,11 +1474,11 @@
   "scanner.tapZoneHint": "TAP A ZONE",
   "research.customWarning": "⚠ CUSTOM ENTRIES ARE NOT VERIFIED AGAINST THE LIBRARY. Verify the name and category independently.",
   "research.customSave": "SAVE CUSTOM ENTRY",
-  "research.modeLibrarySelected": "BIBLIOTECA · SELECTED",
+  "research.modeLibrarySelected": "LIBRARY · SELECTED",
   "research.modeCategoryAssigned": "CATEGORY · ASSIGNED",
   "research.modeCustomTitle": "CREATE CUSTOM ENTRY",
   "research.backToLibrary": "← Back to library",
-  "research.customCategoryDefault": "Personalizada",
+  "research.customCategoryDefault": "Custom",
   "research.lockGlyph": "🔒",
   "research.customEntryLink": "Need a custom compound? → Create custom entry"
 }

@@ -1191,7 +1191,11 @@ function undoShot(id) {
   if (!record) return;
   record.archived = true;
   record.archivedAt = new Date().toISOString();
-  if (!S.set('shots', all)) { showToast(tx('shots.undoStorageError', 'Could not undo — storage unavailable.'), true); return; }
+  const linkedWeights = (getWeights() || []).filter(w => w.shotId === id);
+  const weightSet = linkedWeights.length ? { key: 'weights', value: (getWeights() || []).filter(w => w.shotId !== id) } : null;
+  if (!S.set('shots', all) || (weightSet && !S.set(weightSet.key, weightSet.value))) { showToast(tx('shots.undoStorageError', 'Could not undo — storage unavailable.'), true); return; }
+  linkedWeights.forEach(w => { if (w.cloudId) { const pending = S.get('cloudDeletes', []); if (!pending.some(item => item.table === 'weights' && item.id === w.cloudId)) pending.push({ table: 'weights', id: w.cloudId }); S.set('cloudDeletes', pending); } });
+  flushCloudDeletes();
   queueCloudSync('shot', record);
   refreshAll();
   showToast(tx('shots.undone', 'SHOT undone.'));
@@ -1203,7 +1207,12 @@ function undoWeight(id) {
   if (!record) return;
   const next = all.filter(item => item.id !== id);
   if (!S.set('weights', next)) { showToast(tx('weight.undoStorageError', 'Could not undo — storage unavailable.'), true); return; }
-  queueCloudSync('weight', record);
+  if (record.cloudId) {
+    const pending = S.get('cloudDeletes', []);
+    if (!pending.some(item => item.table === 'weights' && item.id === record.cloudId)) pending.push({ table: 'weights', id: record.cloudId });
+    S.set('cloudDeletes', pending);
+    flushCloudDeletes();
+  }
   refreshAll();
   showToast(tx('weight.undone', 'WEIGHT ENTRY undone.'));
 }
@@ -1398,7 +1407,8 @@ function showPage(name, navElement) {
 }
 
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.querySelector('.page.active')?.id === 'pageProfile') { closeProfileHub(); } });
-document.addEventListener('keydown', function (e) { if (e.key !== 'Escape') return; var disc = document.getElementById('shotDiscardConfirmOv'); if (disc && (disc.classList.contains('active') || getComputedStyle(disc).display !== 'none')) { cancelShotDiscard(); return; } if (document.querySelector('#futureTimestampConfirm.active')) return; if (document.querySelector('#logOv.active')) { closeLog(); } });
+document.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target && typeof e.target.matches === 'function' && e.target.matches('.cp-group-minimized')) { e.preventDefault(); e.target.click(); } });
+document.addEventListener('keydown', function (e) { if (e.key !== 'Escape') return; var disc = document.getElementById('shotDiscardConfirmOv'); if (disc && (disc.classList.contains('active') || getComputedStyle(disc).display !== 'none')) { cancelShotDiscard(); return; } if (document.querySelector('#futureTimestampConfirm.active')) return; if (document.querySelector('#logOv.active')) { closeLog(); } if (document.querySelector('#wtOv.active')) { closeWt(); } });
 
 function refreshAll() {
   renderProfile();
@@ -2266,7 +2276,7 @@ function quickLogShot() {
   const detail = `${timeLabel} · ${saved.dose}mg ${label}`;
   const toast = $('toastEl');
   if (toast) {
-    toast.innerHTML = `<span class="gn-toast-message">${safeText(tx('quickLog.saved', 'DOSE LOGGED'))} · ${safeText(detail)}</span> <button type="button" class="gn-toast-action" onclick="editShot('${savedId}')">${safeText(tx('quickLog.undo', 'UNDO'))}</button>`;
+    toast.innerHTML = `<span class="gn-toast-message">${safeText(tx('quickLog.saved', 'DOSE LOGGED'))} · ${safeText(detail)}</span> <button type="button" class="gn-toast-action" onclick="editShot('${safeText(savedId)}')">${safeText(tx('quickLog.undo', 'UNDO'))}</button>`;
     toast.className = 'toast active';
     clearTimeout(toast._timer);
     toast._timer = setTimeout(() => toast.classList.remove('active'), 4000);
@@ -2292,7 +2302,7 @@ function researchEnterCustomMode() {
   if (customSave) customSave.textContent = tx('research.customSave', 'GUARDAR ENTRADA PERSONALIZADA');
   const cw = $('gnCustomWarning');
   if (cw) cw.style.display = '';
-  $('gnResearchName')?.focus();
+  if (!window.matchMedia || window.matchMedia('(pointer: fine)').matches) $('gnResearchName')?.focus();
 }
 
 function researchBackToLibrary() {
@@ -2366,7 +2376,7 @@ function saveWt() {
     if ($('wtNotes')) $('wtNotes').value = '';
     refreshAll();
     if (milestone) celebrateMilestone(milestone.type, milestone.value);
-    else showToast(tx('toast.weightLogged', 'Peso registrado'), false, () => undoWeight(record.id), `${raw} ${moduleState.weightUnit === 'kg' ? 'kg' : 'lb'}`);
+    showToast(tx('toast.weightLogged', 'Peso registrado'), false, () => undoWeight(record.id), `${raw} ${moduleState.weightUnit === 'kg' ? 'kg' : 'lb'}`);
   } finally {
     moduleState.savingWt = false;
   }
