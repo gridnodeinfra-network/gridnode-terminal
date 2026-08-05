@@ -19,7 +19,7 @@
   --text-accent: #00d4ff;
   --text-success: #6fffb8;
   --text-warning: #ffd878;
-  --text-error: #ff7894;
+  --text-error: #FF5B5B;
   --text-on-dark: #f2fbfd;
   --text-on-light: #15282f;
   --text-inverse: #050508;
@@ -40,7 +40,7 @@
   --shadow-elevated: 0 18px 52px rgba(0, 0, 0, .42);
   --success: #00ff88;
   --warning: #ffd166;
-  --danger: #ff3355;
+  --danger: #FF3B3B;
   --info: #00d4ff;
   --dayline-start: #ffd166;
   --dayline-end: #00d4ff;
@@ -148,6 +148,8 @@ html[data-theme="light"] :is(#landing, #login, #pageDash, #pageResults, #app .to
   --orange: var(--accent-amber);
   --magenta: var(--accent-purple);
   --green: var(--success);
+  --red-hi: #FF5B5B;
+  --red-lo: #D12424;
   --red: var(--danger);
   --border: rgba(80, 91, 95, .24);
   --border2: rgba(80, 91, 95, .38);
@@ -202,7 +204,7 @@ html[data-theme="light"] .landing-phase-visual::after { border-color: rgba(0, 11
 html[data-theme="light"] .landing-phase-core { border-color: rgba(0, 111, 130, .42); background: rgba(248, 245, 237, .76); color: var(--accent-cyan); box-shadow: var(--shadow-soft); }
 html[data-theme="light"] .landing-phase-core span { color: var(--accent-cyan) !important; }
 html[data-theme="light"] .landing-phase-core b { color: var(--accent-amber) !important; }
-html[data-theme="light"] .landing-btn.primary { background: linear-gradient(135deg, #8f0f28, #633247); color: var(--text-inverse); box-shadow: 0 12px 30px rgba(87, 48, 66, .22); }
+html[data-theme="light"] .landing-btn.primary { background: linear-gradient(135deg, #D12424, #633247); color: var(--text-inverse); box-shadow: 0 12px 30px rgba(87, 48, 66, .22); }
 html[data-theme="light"] .landing-btn.secondary { border-color: var(--border-strong); color: var(--accent-cyan); background: rgba(248, 245, 237, .58); }
 html[data-theme="light"] .landing-btn:focus-visible,
 html[data-theme="light"] .landing-local-link:focus-visible,
@@ -255,7 +257,7 @@ html[data-theme="light"] .gn-auth-field {
 }
 html[data-theme="light"] .gn-auth-field::placeholder { color: var(--text-muted); opacity: 1; }
 html[data-theme="light"] .gn-auth-field:focus { border-color: var(--focus-ring); box-shadow: 0 0 0 3px rgba(0, 111, 130, .14), inset 0 2px 6px rgba(76, 61, 43, .06); }
-html[data-theme="light"] .gn-auth-primary { background: linear-gradient(135deg, #8f0f28, #633247); color: var(--text-inverse); box-shadow: 0 10px 24px rgba(87, 48, 66, .18); }
+html[data-theme="light"] .gn-auth-primary { background: linear-gradient(135deg, #D12424, #633247); color: var(--text-inverse); box-shadow: 0 10px 24px rgba(87, 48, 66, .18); }
 html[data-theme="light"] .gn-auth-secondary,
 html[data-theme="light"] .gn-auth-google { border-color: var(--border-strong); background: rgba(248, 245, 237, .5); color: var(--accent-cyan); }
 html[data-theme="light"] .gn-auth-link:hover { color: var(--accent-cyan); text-decoration: underline; text-underline-offset: 3px; }
@@ -388,7 +390,7 @@ html[data-theme="light"] #pageResults :is(.results-log-weight-btn, .btn-secondar
   --chart-target: #ffd166;
   --chart-success: #00c979;
   --chart-warning: #ffd166;
-  --chart-danger: #ff5577;
+  --chart-danger: #FF3B3B;
   --chart-area-primary: rgba(0, 212, 255, .1);
   --chart-area-secondary: rgba(255, 209, 102, .09);
   --chart-selection: rgba(0, 212, 255, .14);
@@ -794,7 +796,7 @@ html[data-theme="light"] .modal-actions .modal-btn.close,
 html[data-theme="light"] .gn-import-actions .gn-import-close { border-color: var(--border-strong) !important; background: var(--surface-elevated) !important; color: var(--text-secondary) !important; }
 html[data-theme="light"] .modal-actions .modal-btn.save,
 html[data-theme="light"] .csv-import-save,
-html[data-theme="light"] .gn-import-actions .csv-import-save { background: linear-gradient(135deg, #8f0f28, #633247) !important; color: var(--text-inverse) !important; }
+html[data-theme="light"] .gn-import-actions .csv-import-save { background: linear-gradient(135deg, #D12424, #633247) !important; color: var(--text-inverse) !important; }
 
 /* DAYLIGHT NODE MARK — soft chip, right-aligned, no hardcoded glow. */
 .landing-node-mark svg { filter: none !important; width: 24px !important; height: 24px !important; }
@@ -932,7 +934,7 @@ html[data-theme="light"] .gn-signout-panel button[onclick="closeSignOutModal()"]
   color: var(--text-secondary) !important;
 }
 html[data-theme="light"] .gn-signout-panel button[onclick="confirmSignOut()"] {
-  background: radial-gradient(130% 170% at 50% 0%, #ff5a6e 0%, #ff2d4d 42%, #8f0f28 100%) !important;
+  background: radial-gradient(130% 170% at 50% 0%, #FF5B5B 0%, #FF3B3B 42%, #D12424 100%) !important;
   border: 1px solid rgba(143, 15, 40, .55) !important;
   box-shadow: 0 4px 16px rgba(143, 15, 40, .35), inset 0 1px 0 rgba(255, 255, 255, .28) !important;
   color: #fff !important;
@@ -1363,7 +1365,7 @@ html[data-theme="light"] .gn-auth-primary,
 .landing-btn.primary,
 .gn-auth-primary,
 .btn-full.btn-primary {
-  background: linear-gradient(135deg, #ff4d5a, #b3122f) !important;
+  background: linear-gradient(135deg, #FF3B3B, #D12424) !important;
   box-shadow: 0 6px 22px rgba(230, 57, 70, .35), inset 0 1px rgba(255, 255, 255, .25) !important;
   color: #fff !important;
 }

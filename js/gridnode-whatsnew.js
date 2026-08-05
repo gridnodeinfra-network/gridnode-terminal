@@ -6,7 +6,8 @@
   'use strict';
 
   const VERSION = window.GN_VERSION || { semver: '0.12.0', release: '20260804.1', title: 'PRODUCTION READINESS + MEDICATION INTEGRITY', date: '2026-08-04' };
-  const ACK_KEY = 'gn_whatsnew_acknowledged_release_v2';
+  const ACK_KEY = 'gridnode.lastWhatsNewDismissedBuild';
+  const LEGACY_ACK_KEY = 'gn_whatsnew_acknowledged_release_v2';
   const ORDER = ['NEW', 'IMPROVED', 'FIXED', 'ACCESSIBILITY', 'MOBILE', 'COMPATIBILITY', 'SECURITY'];
   const NOTES = Object.freeze({
     '20260804.1': {
@@ -180,7 +181,20 @@
         FIXED: ['Las invitaciones de passkey ya no se repiten después del registro.', 'Los controles del encabezado móvil ya no cubren la marca GRID//NODE.'],
         ACCESSIBILITY: ['Roles de texto más grandes y enfoque más claro en ambos temas.']
       }
-    }
+    },
+    '20260805.2': {
+      version: '0.15.0', title: 'CLOUD-FIRST · MARS RED · JACK IN REBUILD', date: '2026-08-05',
+      en: {
+        NEW: ['Cloud-first sign-in: Continue with Google and Continue with Passkey are now the primary entry points.', 'The JACK IN screen was rebuilt — wordmark, one-line value, full-width buttons, no jargon.'],
+        IMPROVED: ['Mars Red (#FF3B3B) is the single brand red across every action surface.', 'The entry screen now uses the full viewport on mobile — nothing cut off, scrollable if needed.'],
+        FIXED: ['Passkey sign-in now guides you to enter your email first and shows clear error states.', 'The What\'s New popup no longer repeats — it shows once per build.', 'The theme toggle works again, and the What\'s New panel is sized to the screen.']
+      },
+      es: {
+        NEW: ['Inicio de sesión cloud-primero: Continuar con Google y Continuar con Passkey son ahora las entradas principales.', 'La pantalla JACK IN fue reconstruida — marca, propuesta de una línea, botones de ancho completo, sin jerga.'],
+        IMPROVED: ['Mars Red (#FF3B3B) es el único rojo de marca en todas las superficies de acción.', 'La pantalla de entrada usa el viewport completo en móvil — nada se corta, con scroll si es necesario.'],
+        FIXED: ['El inicio de sesión con Passkey ahora te guía a ingresar primero tu correo y muestra estados de error claros.', 'La ventana de novedades ya no se repite — se muestra una vez por build.', 'El interruptor de tema vuelve a funcionar y el panel de novedades se ajusta a la pantalla.']
+      }
+    },
   });
 
   function lang() { return document.documentElement.lang === 'es' ? 'es' : 'en'; }
@@ -193,10 +207,17 @@
       COMPATIBILITY: lang() === 'es' ? 'COMPATIBILIDAD' : 'COMPATIBILITY'
     };
   }
-  function acknowledged() { try { return localStorage.getItem(ACK_KEY); } catch (_) { return null; } }
+  function acknowledged() {
+    try {
+      const v = localStorage.getItem(ACK_KEY);
+      if (v) return v;
+      return localStorage.getItem(LEGACY_ACK_KEY); // migrate old dismissal
+    } catch (_) { return null; }
+  }
   function acknowledge(release) {
     try {
       localStorage.setItem(ACK_KEY, release);
+      localStorage.setItem(LEGACY_ACK_KEY, release);
       localStorage.setItem('gn_whatsnew_seen_premium_' + release, '1');
       localStorage.setItem('gn_whatsnew_seen', VERSION.semver);
     } catch (_) {}
@@ -223,6 +244,7 @@
     const opts = options || {};
     if (!opts.force && acknowledged() === VERSION.release) return false;
     if (!hasCurrentNotes()) return false;
+    if (!opts.force && document.getElementById('gnWhatsNewOverlay')) return false; // already open — no multi-fire
     document.getElementById('gnWhatsNewOverlay')?.remove();
     const historyMode = Boolean(opts.history);
     const releases = historyMode ? Object.keys(NOTES).sort().reverse() : [VERSION.release];
