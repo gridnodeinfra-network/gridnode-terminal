@@ -332,3 +332,56 @@ Pipe/Mavis: v0.15 spec (NIX-PROMPT-v0.15.md) fully shipped. Verified live via cu
   Pushed to feature/gridnode-product-completion. Tree clean.
 - Production deployment: `a8bb69a3` (main). Rollback: CF dashboard → previous production deployment
   (9a3d99ca = v0.14/20260805.1) or redeploy a prior commit.
+
+
+---
+
+## V0.15.1 — QUICK SHOT · TUTORIAL · COMPACT TOPBAR (20260805.3) — DEPLOYED
+
+**Status: LIVE on gridnode.network** (production deployment 3615c714, branch=main, source a36c5d8, 2026-08-05).
+Per NIX-PROMPT-v0.15.md (updated 32KB version, 20-item smoke). B9 deferred to v0.16+ per Pipe.
+
+### What shipped
+1. **B7 — Quick shot safety** (Pipe decision: sheet approach): the red FAB NEVER auto-logs.
+   Tap → pre-filled bottom-sheet drawer (last med/dose, today/now) via the app's own draft
+   machinery (`moduleState.shotDraft` + `openLogModal({preserve:true})`); native sessionStorage
+   shot draft cleared first so `restoreShotDraft()` can't wipe the pre-fill (runtime-verified:
+   sDose survives). `saveShot()` fires only on explicit SAVE → existing undoable bottom toast
+   with UNDO → closeLog + refreshAll → stays on current tab. No view jump, no top banner.
+2. **B8 — Onboarding teaches**: 5 plain-language steps (REGISTER MY FIRST DOSE → LOG WEIGHT →
+   theme → language → You're ready) with `data-onboard` spotlights on real controls; kicker
+   "QUICK START" (was "SYSTEM ORIENTATION"); jargon copy removed EN+ES (STEPS + COPY in
+   onboarding.js + i18n en/es-419). Existing `injectReplay()` keeps the HUB "GUIDED TOUR" replay.
+3. **R2/R2.1 — Compact topbar**: 32x32 icon-only toggles with custom brand SVGs (NIGHT = tall
+   LA tower with lit cyan+Mars windows; DUSK = flat city skyline; 16-20px, no emoji/glyphs per
+   Pipe 18:17 "no names just icons"); language = single globe button with dropdown (EN/ES text
+   pills removed from topbar AND landing); HUB 32x32 V6 mark; topbar 56-64px; wordmark 24px;
+   no horizontal scroll at 390px (verified).
+4. **B4 — One version number**: WHAT'S NEW header now shows a single line
+   ("GRID//NODE v0.15.1 2026-08-05" + "// release 20260805.3"); cyan release-title subtitle and
+   NEW/IMPROVED/FIXED badges dropped (bullets kept); `APP_VERSION`/`APP_BUILD` constants are the
+   single source of truth in gridnode-version.js; profile What's New row data-bound (no v0.12.0).
+5. **B10 — Inline errors**: passkey register failures render `.gn-inline-error` (Mars Red,
+   role=alert, word-break — no truncation) directly under the "+ REGISTER A NEW PASSKEY" button;
+   no more topbar "// SYSTEM CHECK —" banners. Success still uses the bottom toast.
+6. Cache-bust `?v=20260805.3` on all assets; whatsnew 20260805.3 entry (EN+ES).
+
+### Gates (all green)
+- verify.sh VERIFICATION PASSED (bundle 343,666 B deterministic vs locked baseline).
+- Official candidate test: **PASS 76/76** (JSON result, 0 fails).
+- v0.15.1 smoke (16-20 + R2/B4/B7/B8/B10): **22/22 PASS** on preview af6f7cd2.
+- Regressions: BatchC 11/11, BatchD 11/11, Project2 18/18, Gaps 9/9, B1 6/6, B2 7/7, B6 4/4,
+  modal-i18n 12/12, peplock 11/11, close-guard 7/7.
+- Live verification on gridnode.network: v=20260805.3 (13 refs), version.js release 20260805.3
+  / APP_VERSION 0.15.1, inline-error CSS, topbar compact rules, theme SVGs + globe lang,
+  onboarding QUICK START, bundle has draft-prefill + no auto-log.
+
+### Deferred
+- **B9 achievement badges → v0.16+ pending Pipe's explicit request** (section does not exist in
+  current code — verified 0 matches for ACHIEVEMENT/BADGES/STREAK anywhere).
+
+### Commits
+- `a36c5d8` feat(v0.15.1): quick-shot confirm sheet, teaching tutorial, compact topbar, inline
+  errors (25 files, +473/-213). Pushed. Tree clean.
+- Production deployment: `3615c714` (main). Rollback: CF dashboard → previous production
+  deployment (a8bb69a3 = v0.15/20260805.2) or redeploy a prior commit.
