@@ -10,8 +10,8 @@
 | Item | Value |
 |------|-------|
 | Release version | `0.12.0` / `20260804.1` |
-| Candidate commit | `d41e910` (hardened after independent review) — chain: `42dc1f3` release → `8ca3071` cleanup → `d41e910` SW hardening |
-| Preview URL | https://b9ded1a5.gridnode.pages.dev (alias `preview.gridnode.pages.dev`) |
+| Candidate commit | `471ef1e` (hardened after independent review) — chain: `42dc1f3` release → `8ca3071` cleanup → `471ef1e` SW hardening |
+| Preview URL | https://6c344a39.gridnode.pages.dev (alias `preview.gridnode.pages.dev`) |
 | Rollback commit | `9764766d` (pre-WIP production-safe source) |
 | Production | gridnode.network — **untouched** (still v0.10.0 / 20260802.14) |
 | Branch | `feature/gridnode-product-completion` (pushed) |
@@ -29,7 +29,7 @@
   redirected cache entry for navigation crashed Chromium with ERR_FAILED on
   every SW-controlled reload. Fix: drop `/index.html` from SHELL, match the
   request URL first (`ignoreSearch`), and map literal `/index.html` navigations
-  to the `/` shell entry (independent-review hardening, commit `d41e910`).
+  to the `/` shell entry (independent-review hardening, commit `471ef1e`).
   Deliberate update preserved (SKIP_WAITING + controllerchange), drafts
   survive, What's New once per release.
 - **B3 — LAB sticky-header**: `openLabTool` scrolls the overlay to top after
@@ -108,8 +108,8 @@ results — captured during visual pass 13/14.
 ---
 
 **VERDICT: READY FOR FOUNDER PRODUCTION APPROVAL** — one exact commit
-(`d41e910`), one exact release (`0.12.0 / 20260804.1`), one exact preview
-(`b9ded1a5.gridnode.pages.dev`), rollback point `9764766d`, all 12 gates green
+(`471ef1e`), one exact release (`0.12.0 / 20260804.1`), one exact preview
+(`6c344a39.gridnode.pages.dev`), rollback point `9764766d`, all 12 gates green
 after an independent review pass (dead-CSS verification + SW `/index.html`
 hardening, both re-gated). No code changes between approval and production:
 the tested artifact IS the production candidate.
