@@ -10,7 +10,7 @@
 | Item | Value |
 |------|-------|
 | Release version | `0.12.0` / `20260804.1` |
-| Candidate commit | `046f66d` (final) — chain: `42dc1f3` release → `8ca3071` cleanup → `d41e910` SW hardening → `471ef1e` assetResponse cache bypass → `046f66d` install-time cache bypass |
+| Candidate commit | `5e06d3e` (final, docs-only pin on code `046f66d`) — chain: `42dc1f3` release → `8ca3071` cleanup → `d41e910` SW hardening → `471ef1e` assetResponse cache bypass → `046f66d` install-time cache bypass → `5e06d3e` handoff pin |
 | Preview URL | https://6c344a39.gridnode.pages.dev (alias `preview.gridnode.pages.dev`) |
 | Rollback commit | `9764766d` (pre-WIP production-safe source) |
 | Production | gridnode.network — **untouched** (still v0.10.0 / 20260802.14) |
@@ -110,7 +110,7 @@ results — captured during visual pass 13/14.
 ---
 
 **VERDICT: READY FOR FOUNDER PRODUCTION APPROVAL** — one exact commit
-(`046f66d`), one exact release (`0.12.0 / 20260804.1`), one exact preview
+(`5e06d3e`), one exact release (`0.12.0 / 20260804.1`), one exact preview
 (`6c344a39.gridnode.pages.dev`), rollback point `9764766d`, all 12 gates green
 after an independent review pass (dead-CSS verification + SW `/index.html`
 hardening, both re-gated). No code changes between approval and production:
