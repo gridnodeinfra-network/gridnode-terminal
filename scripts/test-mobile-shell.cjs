@@ -3,7 +3,7 @@
 const { chromium } = require('/home/thinkpadwinbash/.npm/_npx/705bc6b22212b352/node_modules/playwright');
 
 const baseURL = process.argv[2] || 'http://127.0.0.1:4173';
-const expectedRelease = '20260804.1';
+const expectedRelease = '20260805.1';
 const expectedVersion = '0.12.0';
 const checks = [];
 function ok(condition, label, detail = '') { if (!condition) throw new Error(`FAIL ${label}${detail ? ': ' + detail : ''}`); checks.push(label); }

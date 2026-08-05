@@ -34,6 +34,7 @@
           'No records are deleted. Recognized legacy medication and side-effect labels normalize at app boundaries; unknown legacy medication text remains available for review, and new invalid selections are rejected.'
         ]
       },
+
       es: {
         IMPROVED: [
           'El texto funcional en teléfonos ahora usa roles semánticos legibles en pantallas, formularios, menús, herramientas enfocadas e historial de actualizaciones de DAY OPS.',
@@ -55,6 +56,41 @@
         ],
         COMPATIBILITY: [
           'No se elimina ningún registro. Las etiquetas heredadas reconocidas de medicamentos y efectos secundarios se normalizan en los límites de la app; el texto heredado desconocido del medicamento queda disponible para revisión y las selecciones nuevas no válidas se rechazan.'
+        ]
+      }
+    },
+    '20260805.1': {
+      version: '0.12.0', title: 'V0.14 POLISH — CORAL CTA · CORNER TOGGLES · HUB CORNER', date: '2026-08-05',
+      en: {
+        NEW: [
+          'HUB moved to a floating corner button (bottom-right) with the canonical insignia — no more settings-cog confusion.',
+          'Landing theme and language switches are now compact corner circles.'
+        ],
+        IMPROVED: [
+          'Primary actions glow warm coral — crisper contrast on phone screens.',
+          'Release marker bumped to 20260805.1 for seamless cache refresh.'
+        ],
+        FIXED: [
+          'Coral CTA now applies consistently across landing and dashboard in both themes.'
+        ],
+        MOBILE: [
+          'Bottom-right HUB never overlaps the quick-log dose button.'
+        ]
+      },
+      es: {
+        NEW: [
+          'HUB movido a un botón flotante en la esquina inferior derecha con la insignia canónica — adiós a la confusión con el engranaje.',
+          'Los interruptores de tema e idioma de la portada ahora son círculos compactos en las esquinas.'
+        ],
+        IMPROVED: [
+          'Las acciones principales brillan en coral cálido — mejor contraste en pantallas de teléfono.',
+          'Marcador de versión actualizado a 20260805.1 para refresco de caché sin fricción.'
+        ],
+        FIXED: [
+          'El CTA coral ahora se aplica de forma consistente en portada y tablero en ambos temas.'
+        ],
+        MOBILE: [
+          'El HUB de la esquina inferior derecha nunca se superpone al botón de dosis rápida.'
         ]
       }
     },
