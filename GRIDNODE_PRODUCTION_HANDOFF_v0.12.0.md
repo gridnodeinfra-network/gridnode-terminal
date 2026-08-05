@@ -271,3 +271,17 @@ Per handoff-to-nix-2026-08-05.md priority order P1→P2→P3; P4 (UNIDAD empty c
   regressions BatchC 11/11, BatchD 11/11, Project2 18/18, Gaps 9/9, B1 6/6, B2 7/7.
 - Next: Pipe reviews preview → production deploy via
   `GRIDNODE_FOUNDER_APPROVAL=YES GRIDNODE_STAGING_NAME=gridnode-production bash scripts/deploy-production.sh --confirm-production`.
+
+
+## V0.14 PRODUCTION DEPLOY — 2026-08-05 (LIVE)
+
+**Status: DEPLOYED TO PRODUCTION** by Pipe's explicit go ("deploy it").
+
+- Deployment: `9a3d99ca` (Environment=Production, branch=main) → **gridnode.network LIVE**.
+- Release marker: `20260805.1` (cache-busting bump via bump-version.sh).
+- Live verification: v0.14 suite **13/13 on gridnode.network** (coral CTA landing+dashboard,
+  32x32 corner toggles functional, HUB bottom-right 44px V6 circle opens profile, FAB no-overlap);
+  served HTML carries `v=20260805.1` (13 refs, 0 stale).
+- Commits: `7184b3b` (P1 coral CTA + P2 corner toggles + P3 HUB corner + marker bump) +
+  `2a9717c` (What's New 20260805.1 + mobile-shell test marker). Tree clean.
+- Rollback: redeploy `abef361` (pre-v0.14) or CF dashboard → previous production deployment.
