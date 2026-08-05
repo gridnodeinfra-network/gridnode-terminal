@@ -6146,6 +6146,17 @@ function continueLocallyFromWelcome() {
   </div>
 </div>
 
+<div class="archive-confirm-overlay" id="shotDiscardConfirmOv" role="dialog" aria-modal="true" aria-labelledby="shotDiscardTitle" style="display:none">
+  <div class="archive-confirm-panel">
+    <div class="archive-confirm-title" id="shotDiscardTitle" data-i18n="shot.discardTitle">DISCARD UNSAVED SHOT?</div>
+    <div class="archive-confirm-body" data-i18n="shot.discardBody">The entries you typed in this form have not been saved. Closing now will lose them.</div>
+    <div class="archive-confirm-actions">
+      <button class="archive-confirm-cancel" type="button" onclick="cancelShotDiscard()" data-i18n="shot.discardKeep">KEEP EDITING</button>
+      <button class="archive-confirm-archive" type="button" onclick="confirmShotDiscard()" data-i18n="shot.discardConfirm">DISCARD</button>
+    </div>
+  </div>
+</div>
+
 
 
 

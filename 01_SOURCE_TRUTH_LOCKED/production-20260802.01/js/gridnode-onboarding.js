@@ -34,6 +34,7 @@
 
   var COPY = {
     en: {
+      'onb.systemOrientation': 'SYSTEM ORIENTATION',
       'onb.welcome': 'WELCOME TO GRID//NODE',
       'onb.welcomeBody': 'Your personal biotech command system. Every record stays on this device first — your body, your data, your grid.',
       'onb.shots': 'OPEN SHOTS',
@@ -62,6 +63,7 @@
       'onb.finishBody': 'LAB holds focused tools. VAULT holds your settings, exports, and local-first data controls.'
     },
     es: {
+      'onb.systemOrientation': 'ORIENTACIÓN DEL SISTEMA',
       'onb.welcome': 'BIENVENIDO A GRID//NODE',
       'onb.welcomeBody': 'Tu sistema de comando biotecnológico personal. Cada registro vive primero en este dispositivo: tu cuerpo, tus datos, tu grilla.',
       'onb.shots': 'ABRE DOSIS (SHOTS)',
@@ -380,7 +382,7 @@
       positionCard(el);
       overlay.querySelector('[data-onb-title]').textContent = c;
       overlay.querySelector('[data-onb-body]').textContent = t(step.body, step.body);
-      overlay.querySelector('[data-onb-kicker]').textContent = '// SYSTEM ORIENTATION  ' + (i + 1) + ' / ' + stepCount();
+      overlay.querySelector('[data-onb-kicker]').textContent = '// ' + t('onb.systemOrientation', 'SYSTEM ORIENTATION') + '  ' + (i + 1) + ' / ' + stepCount();
       overlay.querySelector('[data-onb-dots]').innerHTML = Array.from({ length: stepCount() }, function (_, d) {
         return '<i class="' + (d === i ? 'active' : '') + (d < i ? ' done' : '') + '"></i>';
       }).join('');
@@ -533,6 +535,9 @@
     var app = document.getElementById('app');
     var inApp = app && getComputedStyle(app).display !== 'none' && (!landing || getComputedStyle(landing).display === 'none');
     if (!inApp) { window.setTimeout(maybeAutoStart, 1200); return; }
+    // Sequencing: let WHAT'S NEW play first; the tour waits until it is dismissed.
+    var wn = document.getElementById('gnWhatsNewOverlay');
+    if (wn && (wn.classList.contains('active') || getComputedStyle(wn).display !== 'none')) { window.setTimeout(maybeAutoStart, 900); return; }
     start(true);
   }
 

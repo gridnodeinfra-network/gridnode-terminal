@@ -1530,3 +1530,26 @@ html[data-theme="light"] #logOv #cpShotMedDrop .cp-group-minimized {
   border-color: rgba(0, 111, 130, .3) !important;
   background: rgba(0, 111, 130, .06) !important;
 }
+
+html[data-theme="light"] .gn-404-screen{background:#f0ece3;color:#22303a}
+html[data-theme="light"] .gn-404-screen .gn-404-kicker{color:#00677f}
+html[data-theme="light"] .gn-404-screen .gn-404-body{color:#3f535a}
+html[data-theme="light"] .gn-404-screen .gn-404-btn{border-color:#00677f;color:#00677f}
+html[data-theme="light"] .gn-404-screen .gn-404-btn:focus-visible{outline-color:#00677f}
+
+/* DUSK contrast pass (stress-test): inline dark literals get light-theme overrides */
+html[data-theme="light"] .phase-sphere-status,
+html[data-theme="light"] .phase-sphere-kicker,
+html[data-theme="light"] .phase-sphere-meta,
+html[data-theme="light"] .gn-progress-signal span,
+html[data-theme="light"] .gn-progress-timeline-label { color: #3f535a; }
+html[data-theme="light"] .gn-inventory-history { color: #3f535a; }
+html[data-theme="light"] .gn-inventory-history summary { color: #00677f; }
+html[data-theme="light"] .gn-inventory-history span { color: #476169; }
+html[data-theme="light"] .gn-preferences-grid label,
+html[data-theme="light"] .gn-mapping-grid label { color: #3f535a; }
+html[data-theme="light"] .gn-preferences-status,
+html[data-theme="light"] .gn-import-map-button { color: #00677f; }
+html[data-theme="light"] .gn-hub-close{border-color:rgba(0,111,130,.4);background:rgba(0,111,130,.08);color:#00677f}
+html[data-theme="light"] .gn-hub-close:hover{border-color:#00677f;background:rgba(0,111,130,.14);color:#004d5e}
+html[data-theme="light"] .gn-hub-close:focus-visible{outline-color:#00677f}

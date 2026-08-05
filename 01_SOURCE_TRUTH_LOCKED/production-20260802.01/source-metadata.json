@@ -48,32 +48,32 @@
       "sha256": "f8070c01688e279d667f85ab207ba13b4fa3e9d6119b64b58204ccdd39b5e886"
     },
     "css/daylight-nexus-pilot.css": {
-      "bytes": 77869,
-      "sha256": "3f08bffaa2eb32dd1bec2f8ead6316ea153b8fa4c305fa501c6918c38770db54"
+      "bytes": 79366,
+      "sha256": "e69cb7378218949b393c484a7c97a083ca38a0ceba4db420660842925b4696f9"
     },
     "css/gridnode-native.css": {
-      "bytes": 135389,
-      "sha256": "c5565278a2ab2a98dab33a2b7f941e7d5748fd027dbb5c4e86d5a8eddc415d4b"
+      "bytes": 136761,
+      "sha256": "183eb42aeb85fe8a44cdb78d5d4b75eac55adee9260c22087f07772fe374b604"
     },
     "i18n/en.json": {
-      "bytes": 80198,
-      "sha256": "21f7ea3826ef5a7a82af0b8e864a8eb0731829cecd8e167f28ec0cbcd5db80d2"
+      "bytes": 80650,
+      "sha256": "20cc3384d544e5521c458100ae6b9cca2436bb0e706ac8bb432ed1477d8463a9"
     },
     "i18n/es-419.json": {
-      "bytes": 89096,
-      "sha256": "d0e0ddc928dfdf3a1035246077ae67ad21cb44ee76a5e600ec30a59f2dea6300"
+      "bytes": 89606,
+      "sha256": "4a57da8d68de7b8cf472ee828c17781a5904f415d16eb29468182e4a01e976aa"
     },
     "index.html": {
-      "bytes": 614615,
-      "sha256": "4acd915366a20484481dd1b42e97683cf4bcbe6af63fc115b8a0a00341b4ffda"
+      "bytes": 615431,
+      "sha256": "4f26341b30578991e57856d9eccfd87b2cd8857bc08857d33d2f6f589bc19078"
     },
     "js/gridnode-app.js": {
       "bytes": 27673,
       "sha256": "cd2e37ee676028979c07c25384e79398a00e35aae82086641068bb02eb0d0312"
     },
     "js/gridnode-bundle.js": {
-      "bytes": 320669,
-      "sha256": "e917d505d34636127eea792caf2c98137ab29ae4e0faeedae6d680ff4e822f5b"
+      "bytes": 326820,
+      "sha256": "b03faa84e1a22c6b45be22283799a84fa84a0d41350b7f27aaf1450c905afc1e"
     },
     "js/gridnode-core.js": {
       "bytes": 29217,
@@ -100,8 +100,8 @@
       "sha256": "392a16ff806af170cbd2a9a0cc9e1063246c3488462edf5f6579c1995f90fad2"
     },
     "js/gridnode-onboarding.js": {
-      "bytes": 27782,
-      "sha256": "ef0512ffe79a40cc377a18ca35950fa451e1604d1ad41ef73a441a38a8173643"
+      "bytes": 28219,
+      "sha256": "518555eb580670260b067a22e3eb0b42ac0b847267f6a96c5f898cf973498280"
     },
     "js/gridnode-phase-sphere.js": {
       "bytes": 5583,

@@ -9,9 +9,11 @@ async function reloadPage(page, timeoutMs = 15000) {
   await page.waitForLoadState('domcontentloaded', { timeout: timeoutMs }).catch(() => {});
   await page.waitForTimeout(700);
   // After a reload the app boots to the landing screen; re-enter the app.
-  const onLanding = await page.locator('.landing-btn.primary').first().isVisible().catch(() => false);
+  const landingBtn = page.locator('.landing-btn.primary').first();
+  const onLanding = await landingBtn.isVisible().catch(() => false);
   if (onLanding) {
-    await page.locator('.landing-btn.primary').first().click();
+    await landingBtn.waitFor({ state: 'visible', timeout: 8000 }).catch(() => {});
+    await landingBtn.click({ timeout: 8000 }).catch(() => {});
     await page.locator('#app.active').waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
   }
 }
@@ -159,7 +161,7 @@ async function newUserFlow(browser) {
   assert(await page.locator('#logOv input[type="checkbox"][value="nausea"]').isChecked(), 'Edit restores side effects');
   assert(await page.locator('#logOv input[type="checkbox"][value="dizziness"]').isChecked(), 'Edit restores extended side effects');
   assert(!/^\d{4}-\d{2}-\d{2}$/.test(await page.locator('#sDate').inputValue()), 'Edit keeps human-facing date');
-  await page.evaluate(() => window.closeLog());
+  await page.evaluate(() => { window.closeLog(true); if (window.cancelShotDiscard) window.cancelShotDiscard(); });
   await page.locator('[data-shot-action="archive"]').first().click();
   await page.evaluate(() => window.confirmArchiveShot());
   const archived = await storedRecord(page, '_shots');
@@ -247,7 +249,7 @@ async function returningUserAndPlatformFlow(browser) {
   await page.locator('.gn-shot-advanced-trigger').click();
   const spanishSideEffects = await page.locator('#logOv .se-grid').innerText();
   assert(spanishSideEffects.includes('Vómitos') && spanishSideEffects.includes('Mareo') && !spanishSideEffects.includes('Vomiting') && !spanishSideEffects.includes('Dizziness'), 'all built-in side effects render in Spanish from canonical IDs', spanishSideEffects);
-  await page.evaluate(() => window.closeLog());
+  await page.evaluate(() => { window.closeLog(true); if (window.cancelShotDiscard) window.cancelShotDiscard(); });
   await page.waitForTimeout(180);
 
   await page.evaluate(() => window.openWeightModal());

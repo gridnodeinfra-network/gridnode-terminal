@@ -1446,5 +1446,14 @@
   "nav.liveStatus": "Estado del nodo en vivo",
   "pwa.installRegion": "Instalar la app GRID//NODE",
   "research.addDate": "SELECCIONA UNA FECHA ANTES DE GUARDAR",
-  "vault.closeHub": "Cerrar perfil"
+  "vault.closeHub": "Cerrar perfil",
+  "quickLog.saved": "DOSIS REGISTRADA",
+  "quickLog.undo": "DESHACER",
+  "research.presetBadge": "PRESET",
+  "research.presetLockedPlaceholder": "Entrada de biblioteca — el nombre está bloqueado",
+  "shot.discardTitle": "¿DESCARTAR DOSIS SIN GUARDAR?",
+  "shot.discardBody": "Las entradas que escribiste en este formulario no se han guardado. Cerrar ahora las perderá.",
+  "shot.discardKeep": "SEGUIR EDITANDO",
+  "shot.discardConfirm": "DESCARTAR",
+  "onb.systemOrientation": "ORIENTACIÓN DEL SISTEMA"
 }

@@ -137,3 +137,20 @@ Fixed against the Mavis stress-test report (tested on older previews; all fixes 
 | Doc | Continue-with-Google label is rendered by Google Identity Services (external) — not translatable in-repo; documented. Preset-name fragmentation (report #10) deferred to post-launch design pass (1-2 days). | noted |
 
 **Re-gate:** verify.sh VERIFICATION PASSED (lock re-synced, 32 files, bundle 320,669 B deterministic); official candidate test PASS (75 checks, exit 0); regression suites 45/45 on final preview 7723f8e0.
+
+
+---
+
+## v0.13 STRESS-TEST FIX PASS (2026-08-05, founder-approved: all blockers + visible i18n + priority UX)
+
+Second Mavis report round. All verified on preview 40586f5b (release 0.12.0/20260804.1):
+
+| # | Fix | Result |
+|---|-----|--------|
+| B2 | **404 regression fixed (my own bug)**: showNotFound appended the 404 screen INTO #app while hiding all .screen (incl. #app) → blank dark page. Now appends to document.body with dedupe guard; theme-aware classes (dark/light), focus-visible, reduced-motion | 8/8 visibility-aware (rect+computed, both themes/locales) |
+| B9 | **FAB = true quick-log**: one tap logs last med+dose+site at now via atomic saveShot; toast 'DOSIS REGISTRADA · 12:34 AM · 2.5mg Zepbound (Tirzepatide)' with DESHACER → opens pre-filled EDITAR DOSIS; fallback to full form when no history/med | 6/6 |
+| B10 | **Peptide name integrity**: library pill → name readonly + PRESET badge + category auto-fill + locked placeholder; ENTRADA PERSONALIZADA → free text; edit-load re-detects library names; save unchanged | 11/11 |
+| B4 | **Unsaved-changes guard**: dirty dose form close (X / CLOSE·RETURN / Escape) → '¿DESCARTAR DOSIS SIN GUARDAR?' confirm (KEEP EDITING / DISCARD); clean close instant; saveShot force-closes | 7/7 |
+| P5 | What's New + tour **no longer stack** (tour waits for dismissal); tour kicker i18n ('// ORIENTACIÓN DEL SISTEMA 1/4'); DUSK muted-text overrides (#8bb1bc/#9ab3bc/#849ba4/#9ceff4/#a6c5cc → light-safe colors); .gn-hub-close fully styled dark+light | 5/5 |
+
+**Re-gate:** verify.sh VERIFICATION PASSED (bundle 326,820 B, lock re-synced 32 files); official candidate test PASS (75 checks, 39.7s); full regression 84/84 across 13 suites on preview 40586f5b.

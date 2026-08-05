@@ -1365,6 +1365,7 @@ function showPage(name, navElement) {
 }
 
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.querySelector('.page.active')?.id === 'pageProfile') { closeProfileHub(); } });
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.querySelector('#logOv.active')) { closeLog(); } });
 
 function refreshAll() {
   renderProfile();
@@ -1915,7 +1916,44 @@ function renderShotDevicePicker(selectedId = '') {
   picker.value = selectedId || '';
 }
 
-function closeLog() {
+function isShotFormDirty() {
+  const profile = getProfile();
+  const profileMed = normalizeMedicationId(profile.med);
+  const hasMed = Boolean(selectState.cpShotMed?.val);
+  const hasDose = Number($('sDose')?.value) > 0;
+  const hasDate = Boolean(readHumanDateInput($('sDate')));
+  const hasTime = Boolean($('sTime')?.value);
+  const hasSite = Boolean(moduleState.selectedLocation);
+  const hasNotes = Boolean($('sNotes')?.value?.trim());
+  const hasWt = Number($('sWt')?.value) > 0;
+  const hasSe = qa('#logOv input[type="checkbox"]:checked').length > 0;
+  const isEdit = Boolean(moduleState.editingShotId);
+  if (hasNotes || hasWt || hasSe) return true;
+  if (isEdit) return true;
+  const prefilledFromProfile = Boolean(profileMed) && (Number($('sDose')?.value) === Number(profile.dose) || !profile.dose);
+  if (hasMed && !prefilledFromProfile) return true;
+  if (hasDose && !(prefilledFromProfile && Number($('sDose')?.value) === Number(profile.dose))) return true;
+  return false;
+}
+
+function cancelShotDiscard() { $('shotDiscardConfirmOv')?.classList.remove('active'); if ($('shotDiscardConfirmOv')) $('shotDiscardConfirmOv').style.display = 'none'; }
+
+function confirmShotDiscard() {
+  $('shotDiscardConfirmOv')?.classList.remove('active');
+  if ($('shotDiscardConfirmOv')) $('shotDiscardConfirmOv').style.display = 'none';
+  $('logOv')?.classList.remove('active');
+  moduleState.pendingLocationDraft = false;
+  moduleState.shotDraft = null;
+  moduleState.editingShotId = null;
+}
+
+function closeLog(force = false) {
+  const dirty = isShotFormDirty();
+  if (dirty && !force) {
+    const ov = $('shotDiscardConfirmOv');
+    if (ov) { ov.style.display = 'flex'; requestAnimationFrame(() => ov.classList.add('active')); }
+    return;
+  }
   $('logOv')?.classList.remove('active');
   moduleState.pendingLocationDraft = false;
   moduleState.shotDraft = null;
@@ -2059,9 +2097,10 @@ function saveShot(allowFuture = false) {
     appendEventLedger({ type: 'SHOT', recordId: record.id, date: record.date, label: existing ? 'SHOT UPDATED' : 'SHOT EVENT CONFIRMED' });
     moduleState.pendingFutureShot = false;
     $('futureTimestampConfirm')?.classList.remove('active');
-    closeLog();
+    closeLog(true);
     refreshAll();
     showToast(`${tx(existing ? 'runtime.shotUpdated' : 'runtime.shotRecorded', existing ? 'SHOT UPDATED' : 'SHOT RECORDED')} · ${zoneLabel(site)} ✓`);
+    return record;
   } finally {
     moduleState.savingShot = false;
   }
@@ -2096,7 +2135,45 @@ function closeFutureTimestampConfirm() { $('futureTimestampConfirm')?.classList.
 function cancelFutureTimestampSave() { closeFutureTimestampConfirm(); }
 function confirmFutureTimestampSave() { $('futureTimestampConfirm')?.classList.remove('active'); saveShot(true); }
 
-function handleShotFab() { openLogModal(); }
+function handleShotFab() { quickLogShot(); }
+
+function quickLogShot() {
+  const shots = getAllShots();
+  const lastShot = shots.filter(s => !s.archived).sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
+  const profile = getProfile();
+  const medId = lastShot?.med ? normalizeMedicationId(lastShot.med) : normalizeMedicationId(profile.med);
+  if (!medId || !Object.prototype.hasOwnProperty.call(MEDICATIONS, medId)) { openLogModal(); return; }
+  const dose = lastShot?.dose ?? profile.dose ?? '';
+  const site = lastShot?.site || moduleState.selectedLocation;
+  if (!(Number.isFinite(Number(dose)) && Number(dose) > 0) || !site) { openLogModal(); return; }
+  // Pre-fill the modal form so the existing atomic saveShot path handles persistence.
+  moduleState.shotDraft = null;
+  moduleState.editingShotId = null;
+  moduleState.selectedLocation = site;
+  setHumanDateInput($('sDate'), todayISO());
+  const now = new Date();
+  if ($('sTime')) $('sTime').value = formatTime12(now);
+  moduleState.meridiem = now.getHours() >= 12 ? 'PM' : 'AM';
+  updateMeridiemButtons();
+  setSelect('cpShotMed', medId, medicationLabel(medId));
+  if ($('sDose')) $('sDose').value = dose;
+  if ($('sWt')) $('sWt').value = '';
+  if ($('sNotes')) $('sNotes').value = '';
+  qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = false; });
+  const saved = saveShot(true);
+  if (!saved || !saved.id) return;
+  const savedId = saved.id;
+  const label = medicationLabel(normalizeMedicationId(saved.med));
+  const timeLabel = `${formatTime12(new Date(saved.date))} ${saved.date.includes('T') && new Date(saved.date).getHours() >= 12 ? 'PM' : 'AM'}`;
+  const detail = `${timeLabel} · ${saved.dose}mg ${label}`;
+  const toast = $('toastEl');
+  if (toast) {
+    toast.innerHTML = `<span class="gn-toast-message">${safeText(tx('quickLog.saved', 'DOSE LOGGED'))} · ${safeText(detail)}</span> <button type="button" class="gn-toast-action" onclick="editShot('${savedId}')">${safeText(tx('quickLog.undo', 'UNDO'))}</button>`;
+    toast.className = 'toast active';
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => toast.classList.remove('active'), 4000);
+  }
+}
 function goToScannerForLocationFromLog() {
   moduleState.pendingLocationDraft = true;
   // Snapshot the ENTIRE unsaved draft so reopening restores every field.
@@ -2618,7 +2695,7 @@ function ensureLabFoundations() {
       <div class="gn-research-notice"><strong data-i18n="research.noticeTitle">USER-ENTERED RESEARCH RECORDS</strong><span data-i18n="research.noticeBody">Some compounds above have FDA-approved indications in specific clinical contexts. This organizer does not distinguish regulated from research use. All records are user-entered. Verify independently.</span></div>
       <div class="gn-research-library">${RESEARCH_LIBRARY.map(({ category, names, context }) => { const catKey = RESEARCH_CATEGORY_KEYS[category]; const ctxKey = context === 'RESEARCH-FOCUSED RECORDS · REGULATORY STATUS IS NOT VERIFIED HERE.' ? 'lab.researchKicker' : 'lab.mixedResearchContext'; return `<div class="gn-research-group"><span>${safeText(catKey ? tx(catKey, category) : category)}</span><small class="gn-research-context">${safeText(tx(ctxKey, context))}</small><div>${names.map(name => `<button type="button" data-research-name="${safeText(name)}" data-research-category="${safeText(catKey)}">${safeText(name)}</button>`).join('')}</div></div>`; }).join('')}<div class="gn-research-group"><span data-i18n="lab.customEntry">CUSTOM ENTRY</span><small class="gn-research-context" data-i18n="lab.customEntryHelp">USER-ENTERED RECORD · REGULATORY STATUS IS NOT VERIFIED HERE.</small><div><button type="button" data-research-name="" data-research-category="lab.customResearch" data-i18n="lab.customEntry">CUSTOM ENTRY</button></div></div></div>
       <div class="gn-research-disclaimer" data-i18n="research.noticeBody">Some compounds above have FDA-approved indications in specific clinical contexts. This organizer does not distinguish regulated from research use. All records are user-entered. Verify independently.</div>
-      <form class="gn-record-form" id="gnResearchForm"><div class="gn-form-grid"><label><span data-i18n="research.recordName">RECORD NAME</span><input id="gnResearchName" required placeholder="Select a library entry or type a custom name" data-i18n-placeholder="research.recordNamePlaceholder"></label><label><span data-i18n="research.category">CATEGORY</span><input id="gnResearchCategory" placeholder="Research category" data-i18n-placeholder="research.categoryPlaceholder"></label><label><span data-i18n="research.date">DATE</span><input id="gnResearchDate" type="date"></label></div><div class="gn-form-grid"><label><span data-i18n="research.status">STATUS</span><select id="gnResearchState"><option value="TRACKING" data-i18n="research.tracking">TRACKING</option><option value="COMPLETED" data-i18n="research.completed">COMPLETED</option><option value="ARCHIVED" data-i18n="research.archived">ARCHIVED</option><option value="RESEARCH NOTE ONLY" data-i18n="research.noteOnly">RESEARCH NOTE ONLY</option></select></label><label><span data-i18n="research.source">SOURCE</span><input id="gnResearchSource" placeholder="User-entered source or note" data-i18n-placeholder="research.sourcePlaceholder"></label></div><label><span data-i18n="research.observations">OBSERVATIONS / NOTES</span><textarea id="gnResearchNotes" rows="3" placeholder="User-entered observations only" data-i18n-placeholder="research.observationsPlaceholder"></textarea></label><button class="btn-full btn-primary" type="submit" id="gnResearchSave" data-i18n="research.save">SAVE RESEARCH RECORD</button></form>
+      <form class="gn-record-form" id="gnResearchForm"><div class="gn-form-grid"><label><span data-i18n="research.recordName">RECORD NAME</span> <em data-research-badge class="gn-research-preset-badge"></em><input id="gnResearchName" required placeholder="Select a library entry or type a custom name" data-i18n-placeholder="research.recordNamePlaceholder"></label><label><span data-i18n="research.category">CATEGORY</span><input id="gnResearchCategory" placeholder="Research category" data-i18n-placeholder="research.categoryPlaceholder"></label><label><span data-i18n="research.date">DATE</span><input id="gnResearchDate" type="date"></label></div><div class="gn-form-grid"><label><span data-i18n="research.status">STATUS</span><select id="gnResearchState"><option value="TRACKING" data-i18n="research.tracking">TRACKING</option><option value="COMPLETED" data-i18n="research.completed">COMPLETED</option><option value="ARCHIVED" data-i18n="research.archived">ARCHIVED</option><option value="RESEARCH NOTE ONLY" data-i18n="research.noteOnly">RESEARCH NOTE ONLY</option></select></label><label><span data-i18n="research.source">SOURCE</span><input id="gnResearchSource" placeholder="User-entered source or note" data-i18n-placeholder="research.sourcePlaceholder"></label></div><label><span data-i18n="research.observations">OBSERVATIONS / NOTES</span><textarea id="gnResearchNotes" rows="3" placeholder="User-entered observations only" data-i18n-placeholder="research.observationsPlaceholder"></textarea></label><button class="btn-full btn-primary" type="submit" id="gnResearchSave" data-i18n="research.save">SAVE RESEARCH RECORD</button></form>
       <div class="gn-record-list" id="gnResearchList"></div>
     </details>
     <details class="gn-foundation-section" id="gnLedgerSection"><summary><span data-i18n="lab.ledgerTitle">SOURCE-AWARE EVENT LEDGER</span><em data-i18n="lab.noSilentRewrites">NO SILENT REWRITES</em></summary><div class="gn-ledger-copy" data-i18n="lab.ledgerCopy">Every important record keeps its origin and review state. Manual Entry, Import, Device Reported, and System Generated events remain distinguishable.</div><div class="gn-ledger-list" id="gnLedgerList"></div></details>
@@ -2819,7 +2896,7 @@ function saveResearchRecord() {
   const index = records.findIndex(item => item.id === id);
   if (index >= 0) records[index] = record; else records.push(record);
   S.set('researchRecords', records); appendEventLedger({ type: 'RESEARCH', recordId: record.id, date: record.date, label: existing ? 'RESEARCH RECORD UPDATED' : 'RESEARCH RECORD CAPTURED' });
-  queueCloudSync('workspace'); moduleState.researchEditId = null; $('gnResearchForm')?.reset(); setText('gnResearchSave', tx('research.save', 'SAVE RESEARCH RECORD')); renderLabFoundations(); actionFeedback(existing ? tx('research.updated', 'RESEARCH RECORD UPDATED') : tx('research.captured', 'RESEARCH RECORD CAPTURED'), tx('research.timelineSignal', 'TIMELINE UPDATED // USER-ENTERED ONLY'));
+  queueCloudSync('workspace'); moduleState.researchEditId = null; $('gnResearchForm')?.reset(); if ($('gnResearchName')) { $('gnResearchName').readOnly = false; $('gnResearchName').removeAttribute('data-research-locked'); $('gnResearchName')?.setAttribute('placeholder', tx('research.recordNamePlaceholder', 'Select a library entry or type a custom name')); } const sb = $('gnResearchForm')?.querySelector('[data-research-badge]'); if (sb) sb.textContent = ''; setText('gnResearchSave', tx('research.save', 'SAVE RESEARCH RECORD')); renderLabFoundations(); actionFeedback(existing ? tx('research.updated', 'RESEARCH RECORD UPDATED') : tx('research.captured', 'RESEARCH RECORD CAPTURED'), tx('research.timelineSignal', 'TIMELINE UPDATED // USER-ENTERED ONLY'));
 }
 
 function handleResearchAction(event) {
@@ -2829,7 +2906,7 @@ function handleResearchAction(event) {
   const records = S.get('researchRecords', []), record = records.find(item => item.id === id);
   if (!record) return;
   if (button.dataset.researchEdit) {
-    moduleState.researchEditId = id; $('gnResearchName').value = record.name || ''; $('gnResearchCategory').dataset.categoryId = normalizeResearchCategory(record.category); $('gnResearchCategory').value = researchCategoryLabel(record.category); $('gnResearchDate').value = record.date || ''; $('gnResearchState').value = record.state || 'TRACKING'; $('gnResearchSource').value = (record.source && record.source !== 'manual') ? record.source : ''; $('gnResearchNotes').value = record.notes || ''; setText('gnResearchSave', tx('research.update', 'UPDATE RESEARCH RECORD')); syncCustomPicker($('gnResearchState')); syncCustomDate($('gnResearchDate')); $('gnResearchForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
+    moduleState.researchEditId = id; $('gnResearchName').value = record.name || ''; const isLibraryName = Boolean(record.name) && RESEARCH_LIBRARY.some(g => g.names.includes(record.name)); $('gnResearchName').readOnly = isLibraryName; if (isLibraryName) $('gnResearchName').setAttribute('data-research-locked', '1'); else $('gnResearchName').removeAttribute('data-research-locked'); const editBadgeHost = $('gnResearchForm')?.querySelector('[data-research-badge]'); if (editBadgeHost) editBadgeHost.textContent = isLibraryName ? tx('research.presetBadge', 'PRESET') : ''; $('gnResearchName')?.setAttribute('placeholder', isLibraryName ? tx('research.presetLockedPlaceholder', 'Library entry — name is locked') : tx('research.recordNamePlaceholder', 'Select a library entry or type a custom name')); $('gnResearchCategory').dataset.categoryId = normalizeResearchCategory(record.category); $('gnResearchCategory').value = researchCategoryLabel(record.category); $('gnResearchDate').value = record.date || ''; $('gnResearchState').value = record.state || 'TRACKING'; $('gnResearchSource').value = (record.source && record.source !== 'manual') ? record.source : ''; $('gnResearchNotes').value = record.notes || ''; setText('gnResearchSave', tx('research.update', 'UPDATE RESEARCH RECORD')); syncCustomPicker($('gnResearchState')); syncCustomDate($('gnResearchDate')); $('gnResearchForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
   }
   record.archived = Boolean(button.dataset.researchArchive); record.state = record.archived ? 'ARCHIVED' : (record.state === 'ARCHIVED' ? 'TRACKING' : record.state); record.modifiedAt = new Date().toISOString(); S.set('researchRecords', records); appendEventLedger({ type: 'RESEARCH', recordId: record.id, label: record.archived ? 'RESEARCH RECORD ARCHIVED' : 'RESEARCH RECORD RESTORED' }); queueCloudSync('workspace'); renderLabFoundations(); actionFeedback(record.archived ? tx('research.archived', 'RESEARCH RECORD ARCHIVED') : tx('research.restored', 'RESEARCH RECORD RESTORED'), tx('inventory.historyPreserved', 'HISTORY PRESERVED // TIMELINE UPDATED'));
 }
@@ -3463,17 +3540,31 @@ function initModules() {
     const dosePill = event.target.closest('.dose-pill'); if (dosePill) selPill(dosePill, Number(dosePill.dataset.dose));
     const researchPick = event.target.closest('[data-research-name]');
     if (researchPick) {
-      if ($('gnResearchName')) $('gnResearchName').value = researchPick.dataset.researchName || '';
+      const pickName = researchPick.dataset.researchName || '';
+      if ($('gnResearchName')) {
+        $('gnResearchName').value = pickName;
+        if (pickName) {
+          $('gnResearchName').readOnly = true;
+          $('gnResearchName').setAttribute('data-research-locked', '1');
+        } else {
+          $('gnResearchName').readOnly = false;
+          $('gnResearchName').removeAttribute('data-research-locked');
+        }
+      }
       const category = $('gnResearchCategory');
       if (category) { category.dataset.categoryId = researchPick.dataset.researchCategory || 'lab.customResearch'; category.value = researchCategoryLabel(category.dataset.categoryId); }
-      $('gnResearchName')?.focus();
+      const locked = pickName ? tx('research.presetLockedPlaceholder', 'Library entry — name is locked') : tx('research.recordNamePlaceholder', 'Select a library entry or type a custom name');
+      $('gnResearchName')?.setAttribute('placeholder', locked);
+      const badgeHost = $('gnResearchForm')?.querySelector('[data-research-badge]');
+      if (badgeHost) badgeHost.textContent = pickName ? tx('research.presetBadge', 'PRESET') : '';
+      if (!pickName) $('gnResearchName')?.focus();
     }
     const researchDelete = event.target.closest('[data-research-delete]'); if (researchDelete) deleteResearchRecord(researchDelete.dataset.researchDelete);
   });
   document.addEventListener('click', event => { if (!event.target.closest('.cp-select')) { qa('.cp-dropdown.open').forEach(item => item.classList.remove('open')); qa('.cp-select-trigger.open').forEach(item => item.classList.remove('open')); } });
   wireSelectOptions();
   installCustomPickers(document);
-  $('gnResearchCategory')?.addEventListener('input', event => { delete event.currentTarget.dataset.categoryId; });
+  $('gnResearchCategory')?.addEventListener('input', event => { delete event.currentTarget.dataset.categoryId; if ($('gnResearchName')) { $('gnResearchName').readOnly = false; $('gnResearchName').removeAttribute('data-research-locked'); const bH = $('gnResearchForm')?.querySelector('[data-research-badge]'); if (bH) bH.textContent = ''; $('gnResearchName')?.setAttribute('placeholder', tx('research.recordNamePlaceholder', 'Select a library entry or type a custom name')); } });
   const scrollBody = $('scrollBody');
   if (scrollBody && !scrollBody.dataset.gnSwipeWired) {
     let touchStartX = 0;
@@ -4237,17 +4328,20 @@ function isKnownRoute() {
 }
 
 function showNotFound() {
-  var root = document.getElementById('app') || document.body;
   document.querySelectorAll('.screen').forEach(function (s) { s.style.display = 'none'; });
+  if (document.querySelector('.gn-404-screen')) return;
   var el = document.createElement('div');
   el.className = 'gn-404-screen';
   el.setAttribute('role', 'alert');
-  el.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;background:#0e0e16;color:#e8e6df;font-family:inherit;';
-  el.innerHTML = '<div style="font-size:13px;letter-spacing:.35em;color:#41e0c7;text-transform:uppercase">// 404 — NODE NOT FOUND</div>'
-    + '<div style="font-size:22px;font-weight:700">' + (document.documentElement.lang === 'es' ? 'Página no encontrada' : 'Page not found') + '</div>'
-    + '<div style="opacity:.72;font-size:14px;max-width:320px">' + (document.documentElement.lang === 'es' ? 'La ruta que buscas no existe en la grilla. Vuelve al inicio.' : 'The route you are looking for does not exist on the grid. Return to the start.') + '</div>'
-    + '<button type="button" onclick="location.href=\'/\'" style="margin-top:8px;padding:12px 22px;border-radius:10px;border:1px solid #41e0c7;background:transparent;color:#41e0c7;font-weight:600;cursor:pointer;letter-spacing:.08em">' + (document.documentElement.lang === 'es' ? 'VOLVER AL INICIO' : 'BACK TO START') + '</button>';
-  root.appendChild(el);
+  try { var t = localStorage.getItem('gn_theme_v1'); if (t === 'light' && document.documentElement && !document.documentElement.getAttribute('data-theme')) document.documentElement.setAttribute('data-theme', 'light'); } catch (_) {}
+  var wantEs = false;
+  try { wantEs = (localStorage.getItem('gn.lang') === 'es'); } catch (_) {}
+  if (!wantEs && document.documentElement) wantEs = document.documentElement.lang === 'es';
+  el.innerHTML = '<div class="gn-404-kicker">// 404 — NODE NOT FOUND</div>'
+    + '<div class="gn-404-title">' + (wantEs ? 'Página no encontrada' : 'Page not found') + '</div>'
+    + '<div class="gn-404-body">' + (wantEs ? 'La ruta que buscas no existe en la grilla. Vuelve al inicio.' : 'The route you are looking for does not exist on the grid. Return to the start.') + '</div>'
+    + '<button type="button" class="gn-404-btn" onclick="location.href=\'/\'">' + (wantEs ? 'VOLVER AL INICIO' : 'BACK TO START') + '</button>';
+  document.body.appendChild(el);
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
