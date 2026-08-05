@@ -10,7 +10,7 @@
 | Item | Value |
 |------|-------|
 | Release version | `0.12.0` / `20260804.1` |
-| Candidate commit | `471ef1e` (sw.js i18n-cache hardening) — chain: `42dc1f3` release → `8ca3071` cleanup → `d41e910` SW hardening → `471ef1e` i18n cache fix |
+| Candidate commit | `046f66d` (final) — chain: `42dc1f3` release → `8ca3071` cleanup → `d41e910` SW hardening → `471ef1e` assetResponse cache bypass → `046f66d` install-time cache bypass |
 | Preview URL | https://6c344a39.gridnode.pages.dev (alias `preview.gridnode.pages.dev`) |
 | Rollback commit | `9764766d` (pre-WIP production-safe source) |
 | Production | gridnode.network — **untouched** (still v0.10.0 / 20260802.14) |
@@ -29,7 +29,9 @@
   redirected cache entry for navigation crashed Chromium with ERR_FAILED on
   every SW-controlled reload. Fix: drop `/index.html` from SHELL, match the
   request URL first (`ignoreSearch`), and map literal `/index.html` navigations
-  to the `/` shell entry (independent-review hardening, commit `d41e910`).
+  to the `/` shell entry (independent-review hardening, commit `d41e910`);
+  i18n/manifest fetches bypass the immutable HTTP cache both at install
+  (`shellRequest` cache:'reload') and on asset misses (commit `471ef1e`/`046f66d`).
   Deliberate update preserved (SKIP_WAITING + controllerchange), drafts
   survive, What's New once per release.
 - **B3 — LAB sticky-header**: `openLabTool` scrolls the overlay to top after
@@ -108,7 +110,7 @@ results — captured during visual pass 13/14.
 ---
 
 **VERDICT: READY FOR FOUNDER PRODUCTION APPROVAL** — one exact commit
-(`471ef1e`), one exact release (`0.12.0 / 20260804.1`), one exact preview
+(`046f66d`), one exact release (`0.12.0 / 20260804.1`), one exact preview
 (`6c344a39.gridnode.pages.dev`), rollback point `9764766d`, all 12 gates green
 after an independent review pass (dead-CSS verification + SW `/index.html`
 hardening, both re-gated). No code changes between approval and production:
