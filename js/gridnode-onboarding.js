@@ -458,6 +458,7 @@
   function dismiss(complete) {
     if (!complete) { try { localStorage.setItem('gn_onboarding_dismissed_v1', '1'); } catch (_) {} }
     if (overlay) { overlay.remove(); overlay = null; }
+    if (whatsnewSafety) document.removeEventListener('gn:whatsnew-shown', whatsnewSafety);
     removeSpotlight();
     document.removeEventListener('gn:langchange', onLangChange);
     document.removeEventListener('keydown', esc);
@@ -495,6 +496,8 @@
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
     overlay.setAttribute('aria-label', 'GRID//NODE orientation');
+    whatsnewSafety = function () { if (overlay && document.getElementById('gnWhatsNewOverlay')) dismiss(false); };
+    document.addEventListener('gn:whatsnew-shown', whatsnewSafety);
     // Four dim panes leave a hole over the spotlighted control so the real
     // control stays visible AND clickable (classic coach-mark pattern; the
     // container itself is pointer-events:none).
@@ -558,6 +561,9 @@
     else hub.appendChild(row);
   }
 
+  var whatsnewResolved = false;
+  var whatsnewSafety = null;
+  function markWhatsNewResolved() { whatsnewResolved = true; maybeAutoStart(); }
   function maybeAutoStart() {
     if (state() === 'complete') return;
     try { if (localStorage.getItem('gn_onboarding_dismissed_v1') === '1') return; } catch (_) {}
@@ -566,11 +572,20 @@
     var app = document.getElementById('app');
     var inApp = app && getComputedStyle(app).display !== 'none' && (!landing || getComputedStyle(landing).display === 'none');
     if (!inApp) { window.setTimeout(maybeAutoStart, 1200); return; }
-    // Sequencing: let WHAT'S NEW play first; the tour waits until it is dismissed.
+    // Sequencing: WHAT'S NEW decides first (shown→dismissed, or resolved=no-show).
+    // The tour never starts while the WHAT'S NEW overlay is on screen, and never
+    // overlaps it — either side waits for the other.
     var wn = document.getElementById('gnWhatsNewOverlay');
-    if (wn && (wn.classList.contains('active') || getComputedStyle(wn).display !== 'none')) { window.setTimeout(maybeAutoStart, 900); return; }
+    if (wn && (wn.classList.contains('active') || getComputedStyle(wn).display !== 'none')) { window.setTimeout(maybeAutoStart, 700); return; }
+    if (!whatsnewResolved) {
+      // Give whatsnew.js's boot() its poll window to decide; re-check.
+      window.setTimeout(function () { if (overlay) return; maybeAutoStart(); }, 900);
+      return;
+    }
     start(true);
   }
+  document.addEventListener('gn:whatsnew-resolved', markWhatsNewResolved);
+  document.addEventListener('gn:whatsnew-dismissed', markWhatsNewResolved);
 
   function boot() {
     if (document.readyState === 'loading') {

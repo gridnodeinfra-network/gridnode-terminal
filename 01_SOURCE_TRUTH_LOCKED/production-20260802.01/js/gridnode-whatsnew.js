@@ -247,6 +247,15 @@
         FIXED: ['El tour ya no muestra una ventana vacía cuando el panel se renderiza en modo tarjeta de misión.']
       }
     },
+    '20260805.6': {
+      version: '0.15.4', title: 'SEQUENCING FIX · BALANCED CRT', date: '2026-08-05',
+      en: {
+        FIXED: ['The quick-start tour no longer stacks on top of the What\'s New update card — they play one after the other.', 'The CRT scanline effect is subtler so colors stay vivid while keeping the terminal look.']
+      },
+      es: {
+        FIXED: ['El tour de inicio rápido ya no se apila sobre la tarjeta de novedades — se reproducen uno después del otro.', 'El efecto CRT de líneas de escaneo es más sutil para que los colores sigan vivos manteniendo la estética de terminal.']
+      }
+    },
   });
 
   function lang() { return document.documentElement.lang === 'es' ? 'es' : 'en'; }
@@ -297,8 +306,8 @@
 
   function show(options) {
     const opts = options || {};
-    if (!opts.force && acknowledged() === VERSION.release) return false;
-    if (!hasCurrentNotes()) return false;
+    if (!opts.force && acknowledged() === VERSION.release) { document.dispatchEvent(new CustomEvent('gn:whatsnew-resolved', { detail: { shown: false } })); return false; }
+    if (!hasCurrentNotes()) { document.dispatchEvent(new CustomEvent('gn:whatsnew-resolved', { detail: { shown: false } })); return false; }
     if (!opts.force && document.getElementById('gnWhatsNewOverlay')) return false; // already open — no multi-fire
     document.getElementById('gnWhatsNewOverlay')?.remove();
     const historyMode = Boolean(opts.history);
@@ -316,11 +325,12 @@
       '<div class="gn-whatsnew-actions">' + (!historyMode ? '<button type="button" class="gn-whatsnew-history">' + (lang() === 'es' ? 'VER HISTORIAL' : 'VIEW UPDATE HISTORY') + '</button>' : '') +
       '<button type="button" class="gn-whatsnew-close">' + tx('whatsnew.gotIt', 'GOT IT') + '</button></div></div>';
     document.body.appendChild(overlay);
-    const close = () => { acknowledge(VERSION.release); overlay.classList.remove('active'); overlay.remove(); };
+    const close = () => { acknowledge(VERSION.release); overlay.classList.remove('active'); overlay.remove(); document.dispatchEvent(new CustomEvent('gn:whatsnew-dismissed', { detail: { release: VERSION.release } })); };
     overlay.querySelector('.gn-whatsnew-close').addEventListener('click', close);
     overlay.querySelector('.gn-whatsnew-history')?.addEventListener('click', () => show({ force: true, history: true }));
     overlay.addEventListener('keydown', event => { if (event.key === 'Escape') close(); });
     overlay.querySelector('.gn-whatsnew-close').focus({ preventScroll: true });
+    document.dispatchEvent(new CustomEvent('gn:whatsnew-shown', { detail: { release: VERSION.release } }));
     return true;
   }
 

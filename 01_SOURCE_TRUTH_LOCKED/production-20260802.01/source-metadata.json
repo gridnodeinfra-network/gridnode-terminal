@@ -81,16 +81,16 @@
       "sha256": "32ed90481f7b8f7e3b05df54f75be9d92b5f69a4668b0f7be89e41e97e9021e2"
     },
     "index.html": {
-      "bytes": 430679,
-      "sha256": "d13aa8a73085a28e5bf86f621e723377422d931fdb19698a6f3a2d18eea2f415"
+      "bytes": 430681,
+      "sha256": "c4966390bac8e6cd2aa6d4bfda1ec2387c93ad77577f3d1b55912fcfa52b9b37"
     },
     "js/gridnode-app.js": {
       "bytes": 27789,
-      "sha256": "d4ef5ad87e1b1da134b5b81302cf37c867d165a6094dec2140be695356d03b1e"
+      "sha256": "65b840bf57a2f76d087ced9225d7112af7ea4ff4d1b72f9ff33ec6e48e703153"
     },
     "js/gridnode-bundle.js": {
       "bytes": 343704,
-      "sha256": "66bf2e1045bb03f39227501318b10c6cb9763111a78f68723244962073e53584"
+      "sha256": "d7c1af206b63aaf828502c85ef4f8266e5dee794fa1e070c338da834ec5b906e"
     },
     "js/gridnode-core.js": {
       "bytes": 29217,
@@ -114,7 +114,7 @@
     },
     "js/gridnode-native.js": {
       "bytes": 21856,
-      "sha256": "441bd6501cc7a05c68e7293c6e134867c41d669f93cec06e7f7b756edb6debf3"
+      "sha256": "2af3a511deadb7bb2efbdc9da840e836d9b6afc2b8f0afcd15a11e325a15af4a"
     },
     "js/gridnode-onboarding.js": {
       "bytes": 28219,
@@ -137,12 +137,12 @@
       "sha256": "2cda7b26e072152c4ec2611f6bf29d02a0fbc4f5f18d72de9dcd76f3b539d22f"
     },
     "js/gridnode-version.js": {
-      "bytes": 525,
-      "sha256": "85103068413f1c54c3123d12a6d34c17f68b10915b47565e0e3b2d26b7e9e16d"
+      "bytes": 518,
+      "sha256": "e252f60bda738b4e16a76ac7bdc77a0dd0c791dbcf5b36f8b8b1a66b1f3cced4"
     },
     "js/gridnode-whatsnew.js": {
-      "bytes": 23657,
-      "sha256": "329f30e2bb4c08845fe7d5c08327b5027b7edacc11f32b96dfc3934dc934be6a"
+      "bytes": 24702,
+      "sha256": "4b0269314d1841273f8c6cd0033b071cc9291cc90bcbcf05b513fad18ab6814d"
     },
     "manifest.json": {
       "bytes": 1547,
@@ -150,7 +150,7 @@
     },
     "sw.js": {
       "bytes": 5146,
-      "sha256": "5f45023c14eb5c307f146afc25923c707f180cc9e8a9e0270ebccdd3544e0298"
+      "sha256": "bbee490828bc3e9d3266703a6ad921f5edc4a6418929b113bac3f103fa0e0a05"
     }
   },
   "generatedAt": "2026-08-05T03:10:00Z"
