@@ -25,8 +25,19 @@
    *   advanceOn  : optional event the step listens for to auto-advance
    *   nav        : optional page name to switch to when the step activates (to survive navigation)
    */
+  /* Flow polish (v0.15.2): step 1 spotlights the right control for the user's
+   * state — REGISTER MY FIRST DOSE on a clean grid, otherwise the LOG SHOT
+   * affordance (FAB) so returning users still get a meaningful pointer.
+   */
+  function firstShotTarget() {
+    var shots = 0;
+    try { shots = (JSON.parse(localStorage.getItem('gn_local_shots') || '[]') || []).length; } catch (_) {}
+    if (shots > 0) return '.fab';
+    return '[data-onboard="empty-cta"]';
+  }
+
   var STEPS = [
-    { title: 'onb.welcome', body: 'onb.welcomeBody', sel: '[data-onboard="empty-cta"]', action: 'tap', nav: 'Dash' },
+    { title: 'onb.welcome', body: 'onb.welcomeBody', selFn: firstShotTarget, action: 'tap', nav: 'Dash' },
     { title: 'onb.weight', body: 'onb.weightBody', sel: '[data-onboard="log-weight"]', action: 'tap', nav: 'Dash' },
     { title: 'onb.theme', body: 'onb.themeBody', sel: '[data-theme-opt]', action: null },
     { title: 'onb.language', body: 'onb.languageBody', sel: '.gn-lang-globe', action: null },
@@ -87,9 +98,10 @@
   function btn(txt) { return isEs() ? txt : txt; }
 
   function targetEl(step) {
-    if (!step.sel) return null;
+    var selector = typeof step.selFn === 'function' ? step.selFn() : step.sel;
+    if (!selector) return null;
     var el = null;
-    try { el = document.querySelector(step.sel.split(',')[0]); } catch (_) { el = null; }
+    try { el = document.querySelector(selector.split(',')[0]); } catch (_) { el = null; }
     return el;
   }
 
@@ -182,7 +194,7 @@
   }
 
   function bindStep(step) {
-    if (!step.sel) return;
+    if (!step.sel && !step.selFn) return;
     var el = targetEl(step);
     if (!el) return;
     if (step.action === 'tap') {
@@ -191,7 +203,8 @@
       // the zone picker), so binding to the element itself would be lost.
       var onTap = function (e) {
         if (!e.target || !e.target.closest) return;
-        if (!e.target.closest(step.sel)) return;
+        var tapSelector = typeof step.selFn === 'function' ? step.selFn() : step.sel;
+        if (!tapSelector || !e.target.closest(tapSelector)) return;
         if (e.defaultPrevented) return;
         // Do NOT preventDefault/stopPropagation: the app's own handler must
         // run (e.g. selectScannerLocation / selectOpt) for the step to be real.
@@ -311,8 +324,9 @@
           }
         }(0), 180);
       }
-      var el = step.sel ? targetEl(step) : null;
-      if (step.sel && !el) {
+      var hasTarget = Boolean(step.sel || step.selFn);
+      var el = hasTarget ? targetEl(step) : null;
+      if (hasTarget && !el) {
         // Target temporarily missing: wait up to 3s (6 x 500ms), else degrade to explain step.
         if (retries < 6) { retries++; setTimeout(function () { renderStep(i); }, 500); return; }
         retries = 0;
@@ -426,7 +440,7 @@
       // Only re-position the hole/card — NEVER re-render the step (re-render
       // re-runs prep scrolls, which re-fires scroll events: infinite loop).
       var step = STEPS[cur];
-      if (!step || !step.sel) return;
+      if (!step || (!step.sel && !step.selFn)) return;
       var el = targetEl(step);
       if (el) { positionHole(el); positionCard(el); }
     }, 120);

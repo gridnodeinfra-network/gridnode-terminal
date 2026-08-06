@@ -1493,5 +1493,6 @@
   "onb.theme": "Cambia el tema",
   "onb.themeBody": "NIGHT es oscuro. DUSK es claro. Elige el que te resulte más cómodo — toda la app lo sigue.",
   "onb.language": "Cambia el idioma",
-  "onb.languageBody": "Inglés y español. Toca el globo y toda la app se traduce al instante."
+  "onb.languageBody": "Inglés y español. Toca el globo y toda la app se traduce al instante.",
+  "mapping.needHeaderRow": "ESTE CSV NECESITA UN ENCABEZADO Y AL MENOS UNA FILA."
 }

@@ -208,6 +208,19 @@
         FIXED: ['Los errores ahora aparecen junto a la acción que los causó, no en la barra superior.', 'Los errores de Passkey muestran un mensaje claro en línea en lugar de un banner truncado.']
       }
     },
+    '20260805.4': {
+      version: '0.15.2', title: 'POLISH SWEEP · BOTTOM TOASTS · LEANER SHELL', date: '2026-08-05',
+      en: {
+        NEW: ['Faster start: the scanner reference image now loads lazily, trimming the first paint.'],
+        IMPROVED: ['Confirmation toasts now appear at the bottom of the screen — out of the way, with UNDO on every save.', 'The quick-start tour points returning users straight at LOG SHOT instead of the first-run button.'],
+        FIXED: ['CSV mapping errors show inline in the import panel instead of a browser pop-up.']
+      },
+      es: {
+        NEW: ['Inicio más rápido: la imagen de referencia del escáner ahora carga de forma diferida, reduciendo la primera pintura.'],
+        IMPROVED: ['Los avisos de confirmación ahora aparecen en la parte inferior de la pantalla — fuera del camino, con DESHACER en cada guardado.', 'El tour de inicio rápido apunta a los usuarios recurrentes directo a REGISTRAR DOSIS en lugar del botón de primer uso.'],
+        FIXED: ['Los errores del mapeo CSV se muestran en línea en el panel de importación en lugar de una ventana emergente.']
+      }
+    },
   });
 
   function lang() { return document.documentElement.lang === 'es' ? 'es' : 'en'; }
