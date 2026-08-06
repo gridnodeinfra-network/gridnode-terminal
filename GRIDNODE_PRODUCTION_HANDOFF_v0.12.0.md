@@ -433,3 +433,45 @@ deployable for live users"). Verified live via curl + Playwright.
   Pushed. Tree clean.
 - Production deployment: `a2256311` (main). Rollback: CF dashboard → previous production deployment
   (3615c714 = v0.15.1/20260805.3) or redeploy a prior commit.
+
+
+---
+
+## V0.15.3 — ONBOARDING REDESIGN · SPOTLIGHT TOUR (20260805.5) — DEPLOYED
+
+**Status: LIVE on gridnode.network** (production deployment 856044d1, branch=main, source 4696c44, 2026-08-05).
+Founder report: "what am I looking at? how is this an onboarding tutorial? terrible" — the tour rendered as a
+floating popup with NO highlighted control. Root-caused and redesigned.
+
+### Root cause
+The dashboard renders TWO empty states: the empty-hero (with `REGISTER MY FIRST DOSE`) OR the first-shot
+mission card (with `LOG YOUR FIRST SHOT`). The tour only targeted the hero CTA; when the mission-card state
+was active, the target was off-DOM/above the fold → the spotlight hole + ring never rendered → plain popup.
+
+### Fixes
+1. **Always-visible targets**: mission-card CTA (`LOG YOUR FIRST SHOT`) now tagged `data-onboard="empty-cta"`
+   so BOTH empty-state variants expose the tour target; `renderStep` scrolls the target into view
+   (block:center) BEFORE hole placement — the spotlight is always on-screen at any viewport.
+2. **Card redesign**: anchored beside the target with a rotated pointer arrow aimed at the hole; QUICK START
+   kicker + `STEP 01/05` badge; gradient progress bar (replaces dots); Mars Red CONTINUE; pulsing cyan
+   spotlight ring (`gnOnbPulse`, 1.6s); 200ms hole transitions; light-theme variant (cream card, dark dim).
+3. **Ring specificity fix**: the red-lava `:is()` block's inset box-shadow was beating `.gn-onb-target`
+   (rendering an orange glow) — upgraded to `#app .gn-onb-target` (1,1,0) + `!important` → cyan ring
+   verified at runtime (`rgb(0,212,255) 3px + 30px glow`).
+4. **Teaching copy** (EN+ES): concrete per-step language — e.g. "This red button starts your record. Tap it
+   when you take a dose — then just fill in the date, time, and where you injected. That's everything you need."
+
+### Gates (all green)
+- Onboarding verify 13/13 across 4 states (fresh hero, mission-card, returning user→FAB, light theme):
+  CTA on-screen + cyan ring + arrow + STEP badge + 20% progress + 4 non-zero hole dims in every state.
+- Geometry probe: cyan ring + arrow-points-at-CTA confirmed.
+- Official candidate test PASS 76/76; regressions BatchC 11/11, BatchD 11/11, Project2 18/18, Gaps 9/9,
+  B1 6/6, B2 7/7, B6 4/4, modal-i18n 12/12, peplock 11/11, close-guard 7/7.
+- verify.sh VERIFICATION PASSED (bundle 343,704 B deterministic).
+- Live: gridnode.network v=20260805.5 (13 refs), onboarding.js has scrollIntoView + arrow, native.css has
+  gnOnbPulse + `#app .gn-onb-target` + gn-onb-arrow.
+
+### Commits
+- `4696c44` feat(onboarding): spotlight tour redesign (22 files, +253/-136). Pushed. Tree clean.
+- Production deployment: `856044d1` (main). Rollback: CF dashboard → previous production deployment
+  (a2256311 = v0.15.2/20260805.4) or redeploy a prior commit.
