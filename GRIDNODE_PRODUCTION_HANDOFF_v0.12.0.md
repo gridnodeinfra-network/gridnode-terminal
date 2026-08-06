@@ -475,3 +475,40 @@ was active, the target was off-DOM/above the fold → the spotlight hole + ring 
 - `4696c44` feat(onboarding): spotlight tour redesign (22 files, +253/-136). Pushed. Tree clean.
 - Production deployment: `856044d1` (main). Rollback: CF dashboard → previous production deployment
   (a2256311 = v0.15.2/20260805.4) or redeploy a prior commit.
+
+
+---
+
+## V0.15.4 — SEQUENCING FIX · BALANCED CRT (20260805.6) — DEPLOYED
+
+**Status: LIVE on gridnode.network** (production deployment aa3aafc8, branch=main, source f8cca8c, 2026-08-05).
+Founder reports: (1) tour stacks on top of the WHAT'S NEW update card; (2) colors washed out
+"like an old CRT TV" after local sign-in — wants CRT everywhere but without the wash.
+
+### Fixes
+1. **Tour/WHAT'S-NEW sequencing** (both files):
+   - `gridnode-whatsnew.js` dispatches `gn:whatsnew-shown` / `gn:whatsnew-dismissed` /
+     `gn:whatsnew-resolved` events (shown, dismissed, or resolved=no-show).
+   - `gridnode-onboarding.js` `maybeAutoStart` waits for the resolution before starting;
+     a safety listener dismisses the tour if WHAT'S NEW appears while it's active.
+   - Verified live: WHAT'S NEW shows first (tour waits) → dismiss → tour follows with
+     STEP 01/05 + spotlight; never both on screen simultaneously.
+2. **Balanced CRT**: scanlines 2px/6% black → 3px/3.5% (crisper, ~42% less luminance
+   impact); scan-sweep alpha .07→.05. Terminal texture stays on every screen, both
+   themes, above modals — without muting colors.
+3. Version 20260805.6 / v0.15.4; whatsnew 20260805.6 entry (EN+ES); cache-bust.
+
+### Gates (all green)
+- Sequencing harness: no overlap (whatsnew z950, tour waits) → tour follows after dismiss.
+- Onboarding verify 13/13 (fresh hero, mission-card, returning FAB, light theme).
+- Regressions: BatchC 11/11, BatchD 11/11, Project2 18/18, Gaps 9/9, B1 6/6, B2 7/7,
+  B6 4/4, modal-i18n 12/12, peplock 11/11, close-guard 7/7.
+- Official candidate test PASS 76/76; verify.sh VERIFICATION PASSED (bundle 343,704 B).
+- Live: gridnode.network v=20260805.6 (13 refs), onboarding has whatsnewResolved,
+  whatsnew dispatches events, scanlines at rgba(0,0,0,0.035).
+
+### Commits
+- `f8cca8c` feat(ux): tour/WHAT'S-NEW sequencing + balanced CRT (16 files, +81/-46).
+  Pushed. Tree clean.
+- Production deployment: `aa3aafc8` (main). Rollback: CF dashboard → previous deployment
+  (856044d1 = v0.15.3/20260805.5) or redeploy a prior commit.
