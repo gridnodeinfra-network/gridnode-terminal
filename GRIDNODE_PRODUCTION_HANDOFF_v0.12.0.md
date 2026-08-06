@@ -385,3 +385,51 @@ Per NIX-PROMPT-v0.15.md (updated 32KB version, 20-item smoke). B9 deferred to v0
   errors (25 files, +473/-213). Pushed. Tree clean.
 - Production deployment: `3615c714` (main). Rollback: CF dashboard → previous production
   deployment (a8bb69a3 = v0.15/20260805.2) or redeploy a prior commit.
+
+
+---
+
+## V0.15.2 — POLISH SWEEP · BOTTOM TOASTS · LEANER SHELL (20260805.4) — DEPLOYED
+
+**Status: LIVE on gridnode.network** (production deployment a2256311, branch=main, source 17a6491, 2026-08-05).
+Full bug hunt + flow polish per founder request ("use all skills/tools, full pass, fix bugs/errors, improve flow,
+deployable for live users"). Verified live via curl + Playwright.
+
+### Bug fixes
+1. **CSV mapping alert()**: replaced `window.alert('This CSV does not contain...')` with an inline
+   `.gn-inline-error` (Mars Red, role=alert) inside the import panel — errors near the action (B10 rule).
+   i18n `mapping.needHeaderRow` added EN+ES. Runtime-verified: bad CSV shows inline error, ZERO alert dialogs.
+2. **Junk files removed**: tracked 0-byte files `[^` and `]*` deleted from repo root.
+3. **Empty-catch audit**: all 24 `catch (_) {}` blocks reviewed — every one is an intentional storage guard
+   (JSON.parse fallbacks, localStorage/sessionStorage prefs/drafts). None swallow user-visible failures;
+   critical save/sync paths use explicit error branches. No changes needed.
+4. **Bundle re-scan**: no duplicate function defs, no leftover v0.14 strings, no alerts remaining.
+
+### Flow polish (the "not flowing correctly" wins)
+5. **Toasts now at the BOTTOM** (spec B7/B10: "Bottom toast, not top banner"): the real bug was two
+   bundle-injected `.toast` rules with `!important` pinning toasts to the TOP (runtime-measured top:6px!).
+   Fixed the base CSS (index.html: bottom:calc(84px+safe-bottom), slideUp) AND both bundle-injected rules.
+   Runtime-verified: undoable toast now renders at bottom above the nav.
+6. **Onboarding adaptivity**: step 1 uses `selFn: firstShotTarget()` — spotlights
+   `[data-onboard="empty-cta"]` for new users, `.fab` (LOG SHOT) for users with shot history.
+   Fixed renderStep/bindStep/onViewportMove/click-capture to honor selFn (spotlight now works for
+   returning users — was silently degraded). Runtime-verified: returning user → FAB spotlight + QUICK START.
+7. **Scanner image lean shell**: 73KB JPEG extracted from inline base64 → `/assets/scanner-body.jpg`
+   with `loading="lazy"`; removed the dead `data-back` attribute (~87KB more). index.html trimmed
+   ~185KB total. Runtime-verified: served HTML 433KB, scanner base64 gone, image loads from asset.
+
+### Gates (all green)
+- verify.sh VERIFICATION PASSED (bundle 343,679 B deterministic vs locked baseline, 38 files).
+- Official candidate test: **PASS 76/76**.
+- polish-verify 10/10 (bottom toasts, CSV inline error, scanner lazy, version 20260805.4/0.15.2, tour adaptivity).
+- Viewport matrix 28/28 (360/390/720/1440 × themes × EN/ES × all tabs — no overflow, no errors).
+- Runtime walk 17/17. Regressions: BatchC 11/11, BatchD 11/11, Project2 18/18, Gaps 9/9, B1 6/6, B2 7/7,
+  B6 4/4, modal-i18n 12/12, peplock 11/11, close-guard 7/7.
+- Live verification: gridnode.network v=20260805.4 (13 refs), version.js 20260805.4/0.15.2, bundle has
+  bottom-toast rules, onboarding selFn/hasTarget, CSV inline error, no alert, inline-error CSS.
+
+### Commits
+- `17a6491` feat(polish): bug sweep + flow polish (24 files: fixes + asset + junk deletions).
+  Pushed. Tree clean.
+- Production deployment: `a2256311` (main). Rollback: CF dashboard → previous production deployment
+  (3615c714 = v0.15.1/20260805.3) or redeploy a prior commit.
