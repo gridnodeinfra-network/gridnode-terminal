@@ -1661,7 +1661,7 @@ function ensureWandaDashboard() {
   const header = document.getElementById('pageDash')?.querySelector('.page-hdr');
   if (!header || document.getElementById('gnWandaDashboard')) return;
   const markup = '<section id="gnWandaDashboard" aria-label="' + safeText(tx('dashboard.currentProtocolSignals', 'Current protocol signals')) + '">'
-    + '<section class="gn-dashboard-mission" id="gnFirstShotMission" aria-labelledby="gnFirstShotMissionTitle"><span class="gn-dashboard-mission-kicker" data-i18n="dashboard.firstShotKicker">START HERE</span><h2 id="gnFirstShotMissionTitle" data-i18n="shots.activateYourGrid">LOG YOUR FIRST SHOT TO ACTIVATE YOUR GRID</h2><p data-i18n="shots.firstShotSub">One shot unlocks the Phase Engine, RESULTS, and your full dashboard.</p><button type="button" onclick="openLogModal()" data-i18n="shots.logYourFirst">LOG YOUR FIRST SHOT</button></section>'
+    + '<section class="gn-dashboard-mission" id="gnFirstShotMission" aria-labelledby="gnFirstShotMissionTitle"><span class="gn-dashboard-mission-kicker" data-i18n="dashboard.firstShotKicker">START HERE</span><h2 id="gnFirstShotMissionTitle" data-i18n="shots.activateYourGrid">LOG YOUR FIRST SHOT TO ACTIVATE YOUR GRID</h2><p data-i18n="shots.firstShotSub">One shot unlocks the Phase Engine, RESULTS, and your full dashboard.</p><button type="button" data-onboard="empty-cta" onclick="openLogModal()" data-i18n="shots.logYourFirst">LOG YOUR FIRST SHOT</button></section>'
     + '<div class="gn-wanda-grid">'
     + '<button class="gn-wanda-card" id="gnWandaNext" type="button" onclick="openLogModal()"><span class="gn-wanda-label" data-i18n="dashboard.nextShotLabel">NEXT SHOT</span><b class="gn-wanda-value" id="gnWandaNextValue">' + tx('runtime.logShot', 'LOG SHOT') + '</b><small class="gn-wanda-note" id="gnWandaNextNote" data-i18n="dashboard.logShotStartTimeline">Log a shot to start your timeline</small></button>'
     + '<button class="gn-wanda-card" id="gnWandaPhase" type="button" onclick="showPhasesModal()"><span class="gn-wanda-label" data-i18n="dashboard.currentPhase">CURRENT PHASE</span><b class="gn-wanda-value" id="gnWandaPhaseValue">' + tx('dashboard.startWithShot', 'START WITH A SHOT') + '</b><small class="gn-wanda-note" data-i18n="phase.educationalEstimate">EDUCATIONAL ESTIMATE</small></button>'
@@ -4501,7 +4501,7 @@ function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   if (window.GN_SW?.register) { window.GN_SW.register(); return; }
   navigator.serviceWorker
-    .register('/sw.js?v=20260805.4', { updateViaCache: 'none' })
+    .register('/sw.js?v=20260805.5', { updateViaCache: 'none' })
     .then(registration => registration.update())
     .catch(() => {});
 }

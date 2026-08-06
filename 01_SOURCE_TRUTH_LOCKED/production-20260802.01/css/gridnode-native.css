@@ -1288,65 +1288,84 @@ html[data-theme="light"] #pageDash[data-activation="pending"] #gnWandaDashboard 
 }
 
 /* ============================================================
-   INTERACTIVE ONBOARDING — corrective pass 2026-08-03
-   Spotlight tour over the real UI: darken+block, highlight one
-   real control, hint line for action steps, both themes.
+   INTERACTIVE ONBOARDING — v0.15.3 redesign
+   Coach-mark tour: spotlight hole + cyan ring + anchored card
+   with a pointer arrow aimed at the highlighted control.
    ============================================================ */
 .gn-onb-overlay {
   position: fixed; inset: 0; z-index: 9000;
-  display: flex; align-items: center; justify-content: center;
-  padding: 18px;
-  pointer-events: none;                 /* container never blocks; dims do */
+  pointer-events: none;
 }
 .gn-onb-dim {
   position: fixed; z-index: 9000;
-  background: rgba(3, 6, 10, .78);
-  pointer-events: auto;                 /* blocks clicks outside the hole */
-  transition: top .12s ease, left .12s ease, width .12s ease, height .12s ease;
+  background: rgba(2, 5, 9, .82);
+  pointer-events: auto;
+  transition: top .18s ease, left .18s ease, width .18s ease, height .18s ease;
+}
+.gn-onb-arrow {
+  position: fixed; z-index: 9002;
+  width: 14px; height: 14px;
+  transform: rotate(45deg);
+  background: #0b1018;
+  border-left: 1px solid rgba(0, 212, 255, .5);
+  border-bottom: 1px solid rgba(0, 212, 255, .5);
+  pointer-events: none;
+  transition: top .18s ease, left .18s ease;
 }
 .gn-onb-card {
-  position: fixed; z-index: 9001;       /* fixed so top/bottom placement works
-                                            (flex centering would ignore them) */
+  position: fixed; z-index: 9001;
   left: 50%; transform: translateX(-50%);
-  width: min(92vw, 400px);
+  width: min(92vw, 380px);
   background: #0b1018 !important;
-  border: 1px solid rgba(0, 212, 255, .45);
+  border: 1px solid rgba(0, 212, 255, .5);
+  border-top: 2px solid #00d4ff;
   border-radius: 14px;
-  padding: 20px 18px;
+  padding: 18px 18px 16px;
   color: #eef6f8;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, .6);
-  pointer-events: auto;                 /* card interactive */
+  box-shadow: 0 26px 70px rgba(0, 0, 0, .68), 0 0 24px rgba(0, 212, 255, .08);
+  pointer-events: auto;
+  animation: gnOnbCardIn .28s cubic-bezier(.16, 1, .3, 1);
 }
-.gn-onb-kicker { font-size: .68rem !important; font-weight: 700; letter-spacing: .08em; color: #7fd4e2 !important; margin-bottom: 8px; }
-.gn-onb-title { font-size: 1.06rem !important; font-weight: 800; margin: 0 0 8px; color: #eef6f8 !important; letter-spacing: .02em; }
-.gn-onb-body { font-size: .84rem !important; line-height: 1.55; font-weight: 500; color: #c9d8dd !important; margin: 0 0 10px; letter-spacing: .01em !important; }
-.gn-onb-hint { font-size: .76rem !important; font-weight: 700; color: #ffd9a0 !important; margin: 0 0 10px; letter-spacing: .02em; }
-.gn-onb-dots { display: flex; gap: 6px; margin: 0 0 14px; }
-.gn-onb-dots i { width: 8px; height: 8px; border-radius: 50%; background: #2a3a44; }
-.gn-onb-dots i.active { background: #00d4ff; box-shadow: 0 0 8px rgba(0, 212, 255, .8); }
-.gn-onb-dots i.done { background: #FF3B3B; }
+@keyframes gnOnbCardIn { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+.gn-onb-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.gn-onb-kicker { font: 800 .6rem var(--font-d, monospace); letter-spacing: 2.4px; color: #00d4ff !important; text-transform: uppercase; }
+.gn-onb-step { font: 700 .6rem var(--font-d, monospace); letter-spacing: 1.6px; color: #5d7a86 !important; white-space: nowrap; }
+.gn-onb-title { font: 800 1.02rem var(--font-d, monospace); letter-spacing: .02em; color: #eef6f8 !important; margin: 0 0 8px; }
+.gn-onb-body { font: 500 .82rem/1.55 var(--font-b, system-ui); color: #c9d8dd !important; margin: 0 0 10px; }
+.gn-onb-hint { font: 700 .72rem var(--font-m, monospace); letter-spacing: .06em; color: #ffd9a0 !important; margin: 0 0 12px; }
+.gn-onb-progress { height: 3px; border-radius: 2px; background: rgba(255, 255, 255, .12); overflow: hidden; margin: 0 0 14px; }
+.gn-onb-progress span { display: block; height: 100%; background: linear-gradient(90deg, #00d4ff, #FF3B3B); transition: width .3s ease; }
 .gn-onb-actions { display: flex; gap: 8px; }
 .gn-onb-actions button {
-  flex: 1; min-height: 46px; border-radius: 8px; font-size: .78rem !important;
-  font-weight: 700 !important; letter-spacing: .03em;
+  flex: 1; min-height: 46px; border-radius: 8px; font-size: .74rem !important;
+  font-weight: 800 !important; letter-spacing: .1em;
   border: 1px solid rgba(0, 212, 255, .35); background: rgba(0, 212, 255, .08);
-  color: #9fe8f2 !important;
+  color: #9fe8f2 !important; cursor: pointer;
 }
-.gn-onb-actions .gn-onb-next { background: linear-gradient(135deg, #00d4ff, #0087a8); color: #04131a !important; }
+.gn-onb-actions .gn-onb-next {
+  background: linear-gradient(135deg, #FF3B3B, #D12424) !important;
+  border-color: rgba(255, 59, 59, .5) !important; color: #fff !important;
+}
 .gn-onb-actions button:disabled { opacity: .35; }
-.gn-onb-target {
-  box-shadow: 0 0 0 3px #00d4ff, 0 0 26px rgba(0, 212, 255, .65) !important;
-  border-radius: 8px;
+#app .gn-onb-target, .gn-onb-overlay .gn-onb-target {
+  box-shadow: 0 0 0 3px #00d4ff, 0 0 30px rgba(0, 212, 255, .85) !important;
+  border-radius: 10px;
+  animation: gnOnbPulse 1.6s ease-in-out infinite;
   transition: box-shadow .18s ease;
+  filter: none;
 }
-html[data-theme="light"] .gn-onb-dim { background: rgba(30, 36, 40, .72) !important; }
-html[data-theme="light"] .gn-onb-card { background: #f8f5ed !important; color: #1a2328 !important; border-color: rgba(0, 111, 130, .5); }
+@keyframes gnOnbPulse {
+  0%, 100% { box-shadow: 0 0 0 3px #00d4ff, 0 0 22px rgba(0, 212, 255, .6); }
+  50% { box-shadow: 0 0 0 5px #00d4ff, 0 0 38px rgba(0, 212, 255, .95); }
+}
+html[data-theme="light"] .gn-onb-dim { background: rgba(22, 28, 32, .78) !important; }
+html[data-theme="light"] .gn-onb-card { background: #f8f5ed !important; color: #1a2328 !important; border-color: rgba(0, 111, 130, .55); border-top-color: #00718a; }
+html[data-theme="light"] .gn-onb-arrow { background: #f8f5ed; border-color: rgba(0, 111, 130, .55); }
 html[data-theme="light"] .gn-onb-title { color: #1a2328 !important; }
 html[data-theme="light"] .gn-onb-body { color: #2c3f47 !important; }
 html[data-theme="light"] .gn-onb-hint { color: #8b5b08 !important; }
-html[data-theme="light"] .gn-onb-kicker { color: #006f82 !important; }
-html[data-theme="light"] .gn-onb-actions button { color: #0d4a58 !important; border-color: rgba(0, 111, 130, .4); background: rgba(0, 111, 130, .07); }
-html[data-theme="light"] .gn-onb-actions .gn-onb-next { background: linear-gradient(135deg, #006f82, #003d4a); color: #f4fbfc !important; }
+html[data-theme="light"] .gn-onb-step { color: #5d7a86 !important; }
+html[data-theme="light"] .gn-onb-progress { background: rgba(26, 35, 40, .15); }
 @media (prefers-reduced-motion: reduce) {
   .gn-onb-overlay, .gn-onb-card, .gn-onb-target { transition: none !important; }
 }

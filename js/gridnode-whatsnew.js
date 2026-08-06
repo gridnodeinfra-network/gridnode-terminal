@@ -234,6 +234,19 @@
         FIXED: ['Los errores del mapeo CSV se muestran en línea en el panel de importación en lugar de una ventana emergente.']
       }
     },
+    '20260805.5': {
+      version: '0.15.3', title: 'ONBOARDING REDESIGN · SPOTLIGHT TOUR', date: '2026-08-05',
+      en: {
+        NEW: ['The quick-start tour now highlights the real buttons as you go — a spotlight ring points at what to tap, with a card that follows it.'],
+        IMPROVED: ['Tour steps now scroll the control into view first, so the highlight is always visible on any screen size.', 'Clearer step copy that teaches the flow instead of jargon.'],
+        FIXED: ['The tour no longer shows an empty popup when the dashboard renders in mission-card mode.']
+      },
+      es: {
+        NEW: ['El tour de inicio rápido ahora resalta los botones reales mientras avanzas — un anillo de foco apunta a lo que debes tocar, con una tarjeta que lo sigue.'],
+        IMPROVED: ['Los pasos del tour desplazan el control a la vista primero, para que el resaltado siempre sea visible en cualquier tamaño de pantalla.', 'Copias de pasos más claras que enseñan el flujo en lugar de jerga.'],
+        FIXED: ['El tour ya no muestra una ventana vacía cuando el panel se renderiza en modo tarjeta de misión.']
+      }
+    },
   });
 
   function lang() { return document.documentElement.lang === 'es' ? 'es' : 'en'; }

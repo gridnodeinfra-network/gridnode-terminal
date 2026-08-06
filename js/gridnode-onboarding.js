@@ -48,7 +48,7 @@
     en: {
       'onb.systemOrientation': 'QUICK START',
       'onb.welcome': 'Log your first shot',
-      'onb.welcomeBody': 'Tap REGISTER MY FIRST DOSE when you take a dose. Date, time, and zone — that\'s all you need. Add medication after.',
+      'onb.welcomeBody': 'This red button starts your record. Tap it when you take a dose — then just fill in the date, time, and where you injected. That\'s everything you need.',
       'onb.shots': 'OPEN SHOTS',
       'onb.shotsBody': 'Tap the SHOTS tab in the bottom navigation. This is where every dose gets logged.',
       'onb.weight': 'Track your weight',
@@ -58,14 +58,14 @@
       'onb.language': 'Cambia de idioma',
       'onb.languageBody': 'English and Spanish. Tap the globe and the whole app translates instantly.',
       'onb.done': 'You\'re ready',
-      'onb.doneBody': 'Tap anywhere to close this. Your record stays on this device unless you sign in with Google to sync across devices.',
+      'onb.doneBody': 'You just learned the core loop: log a shot, watch the trend, adjust. Your record stays on this device unless you sign in with Google to sync across devices.',
       'onb.finish': 'LAB, VAULT, AND YOU\'RE READY',
       'onb.finishBody': 'LAB holds focused tools. VAULT holds your settings, exports, and data controls.'
     },
     es: {
       'onb.systemOrientation': 'INICIO RÁPIDO',
       'onb.welcome': 'Registra tu primera dosis',
-      'onb.welcomeBody': 'Toca REGISTRAR MI PRIMERA DOSIS cuando te apliques una dosis. Fecha, hora y zona: eso es todo. El medicamento lo agregas después.',
+      'onb.welcomeBody': 'Este botón rojo inicia tu registro. Tócalo cuando te apliques una dosis — luego solo completa la fecha, la hora y la zona de inyección. Eso es todo lo que necesitas.',
       'onb.shots': 'ABRE DOSIS (SHOTS)',
       'onb.shotsBody': 'Toca la pestaña DOSIS en la navegación inferior. Aquí se registra cada dosis.',
       'onb.weight': 'Registra tu peso',
@@ -75,7 +75,7 @@
       'onb.language': 'Cambia el idioma',
       'onb.languageBody': 'Inglés y español. Toca el globo y toda la app se traduce al instante.',
       'onb.done': 'Ya estás listo',
-      'onb.doneBody': 'Toca en cualquier parte para cerrar. Tu registro vive en este dispositivo a menos que inicies sesión con Google para sincronizar entre dispositivos.',
+      'onb.doneBody': 'Acabas de aprender el ciclo principal: registra una dosis, observa la tendencia, ajusta. Tu registro vive en este dispositivo a menos que inicies sesión con Google para sincronizar entre dispositivos.',
       'onb.finish': 'LAB, BÓVEDA Y LISTO',
       'onb.finishBody': 'LAB contiene herramientas enfocadas. BÓVEDA contiene tus ajustes, exportaciones y controles de datos.'
     }
@@ -168,6 +168,7 @@
     var spaceBelow = vh - r.bottom - margin;
     var placeAbove = spaceAbove >= measured + 20;
     var placeBelow = spaceBelow >= measured + 20;
+    var cardRect = null;
     if (placeAbove) {
       card.style.top = 'auto';
       card.style.bottom = (vh - r.top + margin) + 'px';
@@ -181,6 +182,29 @@
     } else {
       card.style.top = 'auto';
       card.style.bottom = 'max(10px, calc(env(safe-area-inset-bottom) + 10px))';
+    }
+    // Pointer arrow: sits on the card edge nearest the target and points at it.
+    var arrow = overlay.querySelector('.gn-onb-arrow');
+    if (arrow) {
+      var cr = card.getBoundingClientRect();
+      var cardCenterX = cr.left + cr.width / 2;
+      var holeCenterX = r.left + r.width / 2;
+      var placeBelowNow = card.style.top !== 'auto' && card.style.top !== '' && !String(card.style.top).startsWith('max');
+      var placeAboveNow = card.style.bottom !== 'auto' && card.style.bottom !== '' && !String(card.style.bottom).startsWith('max');
+      if (placeBelowNow) {
+        // card below target → arrow on top edge, rotated up (points at hole)
+        arrow.style.top = (cr.top - 7) + 'px';
+        arrow.style.left = (cardCenterX + (holeCenterX - cardCenterX) * 0.4 - 7) + 'px';
+        arrow.style.transform = 'rotate(45deg)';
+      } else if (placeAboveNow) {
+        // card above target → arrow on bottom edge, rotated down
+        arrow.style.top = (cr.bottom - 7) + 'px';
+        arrow.style.left = (cardCenterX + (holeCenterX - cardCenterX) * 0.4 - 7) + 'px';
+        arrow.style.transform = 'rotate(225deg)';
+      } else {
+        arrow.style.top = '-99px';
+        arrow.style.left = '-99px';
+      }
     }
   }
 
@@ -335,8 +359,20 @@
       }
       if (el) {
         el.classList.add('gn-onb-target');
-        // Bring the target fully into the viewport (some controls are fixed or
-        // inside transformed containers; scroll window + element).
+        // Bring the target fully into the viewport FIRST so the spotlight hole and
+        // ring are always visible (v0.15.3: the CTA can sit above the fold in the
+        // mission-card empty state — without this the hole lands off-screen and the
+        // tour looks like a plain popup).
+        try {
+          var tRect = el.getBoundingClientRect();
+          var tVh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+          var tVw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+          if (tRect.top < 96 || tRect.bottom > tVh - 96) {
+            try { el.scrollIntoView({ block: 'center', behavior: 'auto' }); } catch (_) {
+              try { window.scrollBy({ top: (tRect.top + tRect.height / 2) - tVh / 2, behavior: 'auto' }); } catch (_) {}
+            }
+          }
+        } catch (_) {}
         try {
           var rect = el.getBoundingClientRect();
           var vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
@@ -373,10 +409,10 @@
       positionCard(el);
       overlay.querySelector('[data-onb-title]').textContent = c;
       overlay.querySelector('[data-onb-body]').textContent = t(step.body, step.body);
-      overlay.querySelector('[data-onb-kicker]').textContent = '// ' + t('onb.systemOrientation', 'SYSTEM ORIENTATION') + '  ' + (i + 1) + ' / ' + stepCount();
-      overlay.querySelector('[data-onb-dots]').innerHTML = Array.from({ length: stepCount() }, function (_, d) {
-        return '<i class="' + (d === i ? 'active' : '') + (d < i ? ' done' : '') + '"></i>';
-      }).join('');
+      overlay.querySelector('[data-onb-kicker]').textContent = t('onb.systemOrientation', 'QUICK START');
+      overlay.querySelector('[data-onb-step]').textContent = (isEs() ? 'PASO ' : 'STEP ') + String(i + 1).padStart(2, '0') + ' / ' + String(stepCount()).padStart(2, '0');
+      var pct = Math.round(((i + 1) / stepCount()) * 100);
+      overlay.querySelector('[data-onb-progress]').innerHTML = '<span style="width:' + pct + '%"></span>';
       overlay.querySelector('[data-onb-back]').disabled = i === 0;
       var next = overlay.querySelector('[data-onb-next]');
       var action = step.action;
@@ -467,12 +503,16 @@
       '<div class="gn-onb-dim" data-onb-dim="b"></div>' +
       '<div class="gn-onb-dim" data-onb-dim="l"></div>' +
       '<div class="gn-onb-dim" data-onb-dim="r"></div>' +
+      '<div class="gn-onb-arrow" data-onb-arrow aria-hidden="true"></div>' +
       '<div class="gn-onb-card">' +
-        '<div class="gn-onb-kicker" data-onb-kicker></div>' +
+        '<div class="gn-onb-head">' +
+          '<div class="gn-onb-kicker" data-onb-kicker></div>' +
+          '<div class="gn-onb-step" data-onb-step></div>' +
+        '</div>' +
         '<h2 class="gn-onb-title" data-onb-title></h2>' +
         '<p class="gn-onb-body" data-onb-body></p>' +
         '<p class="gn-onb-hint" style="display:none"></p>' +
-        '<div class="gn-onb-dots" data-onb-dots aria-hidden="true"></div>' +
+        '<div class="gn-onb-progress" data-onb-progress aria-hidden="true"></div>' +
         '<div class="gn-onb-actions">' +
           '<button type="button" class="gn-onb-skip" data-onb-skip>' + (isEs() ? 'OMITIR' : 'SKIP') + '</button>' +
           '<button type="button" class="gn-onb-back" data-onb-back>' + (isEs() ? 'ATRÁS' : 'BACK') + '</button>' +
