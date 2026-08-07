@@ -447,7 +447,7 @@ html[data-theme="light"] .btn-full.btn-primary,
 html[data-theme="light"] .gn-auth-primary,
 html[data-theme="light"] .future-confirm-save,
 html[data-theme="light"] .gn-whatsnew-close {
-  background: radial-gradient(130% 170% at 50% 0%, #FF5B5B 0%, #f01f3f 48%, #8f0f28 100%) !important;
+  background: radial-gradient(130% 170% at 50% 0%, #CC2944 0%, #C61F3A 48%, #8f0f28 100%) !important;
   box-shadow: 0 4px 16px rgba(255, 45, 77, .32), inset 0 1px 0 rgba(255, 255, 255, .25) !important;
 }
 
@@ -930,7 +930,7 @@ html[data-theme="light"] .btn-primary,
 html[data-theme="light"] .landing-btn.primary,
 html[data-theme="light"] .future-confirm-save {
   background: radial-gradient(130% 170% at 50% 0%,
-    #FF5B5B 0%, #FF3B3B 42%, #8f0f28 100%) !important;
+    #CC2944 0%, #C61F3A 42%, #8f0f28 100%) !important;
   box-shadow: 0 4px 16px rgba(143, 15, 40, .35),
     inset 0 1px 0 rgba(255, 255, 255, .28) !important;
 }
@@ -2832,3 +2832,78 @@ html[data-theme="light"] #app .gn-lang-dropdown button:hover, html[data-theme="l
   letter-spacing: .4px; word-break: break-word; overflow-wrap: anywhere;
 }
 html[data-theme="light"] .gn-inline-error { background: rgba(255, 59, 59, .06); color: #c22b2b; border-color: rgba(209, 36, 36, .5); }
+
+/* ─────────────────────────────────────────────────────────────────────
+   Exquisite Eyes WCAG / audit fixes — 2026-08-07
+   Verified by scripts/audit-served-day-ops.cjs (light + dark passes).
+   ───────────────────────────────────────────────────────────────────── */
+:root {
+  /* White text on the red-lava CTAs measured 3.04–3.54:1 (audit).
+     Deepened within the lava family: every gradient stop now ≥4.5:1
+     with white (the audit takes the minimum across all stops). */
+  --lava-hot: #CC2944;    /* was #D12424/#FF3B3B family */
+  --lava-core: #C61F3A;   /* was #FF3B3B (3.54:1) */
+  --lava-core-hi: #CC2944; /* was #FF5B5B */
+  --lava-edge: #8F0F28;   /* deep anchor, 9.3:1 */
+}
+/* Light theme re-binds the lava vars in html[data-theme="light"] (line ~2151);
+   re-deepen them there too so the audit's minimum-stop contrast passes. */
+html[data-theme="light"] {
+  --lava-hot: #CC2944;
+  --lava-core: #C61F3A;
+  --lava-edge: #8F0F28;
+}
+/* Calendar day numbers in night-grid: 3.03:1 → ~9:1.
+   Night-grid is the default theme (no data-theme attribute); the
+   light rule below (line ~650) keeps light-day styling. */
+.gn-date-grid .cal-day,
+.gn-custom-date [data-gn-date-day] { color: #DCEBF2 !important; }
+html:not([data-theme="light"]) .cal-day-num,
+html:not([data-theme="light"]) .cal-day,
+html:not([data-theme="light"]) .cal-day span { color: #DCEBF2 !important; }
+/* "YOUR DATA, YOUR RULES" link: 3.53:1 (night) → ~10:1 */
+#gnVaultPolicyLink { color: #9FC3CF; }
+/* Telemetry + empty-state copy floors (audit role floors: .P ≥ 15px, H3 ≥ 12px) */
+.gn-telemetry-heading p { font-size: 15px !important; }
+.gn-telemetry-instrument header h3 { font-size: 15px !important; }
+.gn-telemetry-instrument header p { font-size: 15px !important; }
+.gn-chart-state { font-size: .75rem !important; }
+.gn-empty-hero p { font-size: 15px !important; }
+em[data-i18n="research.organize"], em[data-i18n="lab.separateCalculators"] { font-size: .75rem !important; }
+.gn-dose-disclaimer, .gn-research-disclaimer { font-size: 15px !important; }
+/* LAB mixing reference note (audited at 12.8px vs 15px sentence floor) */
+#app [data-i18n="lab.mixingWarn"], .mixing-warn, .mixing-warn span { font-size: 15px !important; }
+html[data-theme="light"] #gnLabToolHost .mixing-warn,
+html[data-theme="light"] .mixing-warn span { font-size: 15px !important; }
+/* Narrow-width pill row: allow graceful two-row wrap, never clipped labels */
+.gn-empty-ghosts { grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); }
+.gn-empty-ghost { white-space: nowrap; }
+/* Passkey CTA (night): measured white-on-#FF3B3B 3.53:1 (audit). Deepen to
+   the lava family so every stop is >= 4.5:1 with white text. Light theme
+   keeps its neutral surface treatment (audit-clean). */
+html:not([data-theme="light"]) #gnPasskeyBtn {
+  background: linear-gradient(135deg, #C61F3A 0%, #8F0F28 100%) !important;
+  border-color: rgba(255, 59, 59, .4) !important;
+}
+/* es-419: Spanish sentence-length copy exceeds the audit's 34-char sentence
+   threshold → 15px floor (EN equivalents pass at their HUD sizes). The
+   :is(#landing,#login,...) :is(button,...) HUD rule forces 14px at
+   (1,1,2) specificity — these overrides out-rank it. */
+html[lang="es"] body #login #gnLocalBtn,
+html[lang="es"] body #app .gn-chart-state,
+html[lang="es"] body #gnLabToolOverlay #gnResearchSection strong[data-i18n="research.noticeTitle"] { font-size: 15px !important; }
+/* es-419: long Spanish titles clip in the lab overlay/foundation headers —
+   allow wrapping and tighten tracking so nothing is cut at the edge. */
+html[lang="es"] .gn-lab-tool-head h2,
+html[lang="es"] .gn-foundation-head h2 {
+  font-size: .78rem !important;
+  letter-spacing: .5px !important;
+  white-space: normal !important;
+  line-height: 1.3 !important;
+}
+/* Light theme caps body copy at 12px (density rule); the audited
+   sentence-level copy is exempted so it meets the 15px floor. */
+html[data-theme="light"] #app :is(.gn-empty-hero p, .gn-telemetry-heading p,
+  .gn-telemetry-instrument header p, [data-i18n="lab.mixingWarn"]) {
+  font-size: 15px !important;
+}

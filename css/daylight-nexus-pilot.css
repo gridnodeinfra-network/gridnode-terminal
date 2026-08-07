@@ -1591,3 +1591,19 @@ html[data-theme="light"] .toast.undoable .gn-toast-bar { background: #00758a !im
 html[data-theme="light"] .gn-research-back { color: #00677f !important; }
 html[data-theme="light"] .gn-research-back:hover, html[data-theme="light"] .gn-research-back:focus-visible { color: #004d5e !important; }
 html[data-theme="light"] .gn-research-preset-badge { border-color: rgba(0, 117, 138, .5); color: #00677f !important; }
+
+/* ── Exquisite Eyes light-theme WCAG fixes — 2026-08-07 ──
+   Measured by scripts/audit-served-day-ops.cjs (light pass). */
+/* ADD WEIGHT ENTRY title sat dark-on-dark (1.21:1) — give the weight
+   modal header the same light treatment as the SHOT modal header. */
+html[data-theme="light"] #wtOv .modal-hdr {
+  background: #f8f5ed !important;
+  color: #17272e !important;
+  border-color: rgba(30, 64, 73, .2) !important;
+}
+/* YOUR DATA, YOUR RULES: 4.40:1 → ~7:1 */
+html[data-theme="light"] #gnVaultPolicyLink { color: #33505C; }
+/* CONTINUE ON THIS DEVICE ONLY: 2.52:1 → ~7:1 */
+html[data-theme="light"] #gnLocalBtn { color: #2E424B !important; }
+/* NO BODY MASS READINGS DETECTED: 4.41:1 → ~5.4:1 */
+html[data-theme="light"] .gn-chart-state { color: #33505c !important; }
