@@ -2892,6 +2892,15 @@ html:not([data-theme="light"]) #gnPasskeyBtn {
 html[lang="es"] body #login #gnLocalBtn,
 html[lang="es"] body #app .gn-chart-state,
 html[lang="es"] body #gnLabToolOverlay #gnResearchSection strong[data-i18n="research.noticeTitle"] { font-size: 15px !important; }
+/* Polish (Exquisite Eyes sweep): in night-grid the active nav item colors
+   only its icon — color the label too so the state reads at a glance.
+   Checkboxes get the system-cyan accent (UA accent is near-invisible). */
+html:not([data-theme="light"]) .nav-item.active .nav-lbl { color: #00d4ff !important; }
+input[type="checkbox"] { accent-color: #00d4ff; }
+/* es-419: left-align the research notice body — justified/centered Spanish
+   text produces uneven word gaps at narrow widths. */
+html[lang="es"] .gn-research-notice { text-align: start !important; }
+
 /* es-419: long Spanish titles clip in the lab overlay/foundation headers —
    allow wrapping and tighten tracking so nothing is cut at the edge. */
 html[lang="es"] .gn-lab-tool-head h2,
