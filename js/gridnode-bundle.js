@@ -2653,7 +2653,7 @@ function populateCustomPickerMenu(select, menu, wrapper, trigger) {
     button.dataset.gnPickerValue = option.value;
     button.setAttribute('role', 'option');
     button.disabled = option.disabled;
-    button.textContent = option.textContent;
+    button.textContent = option.dataset.i18n ? tx(option.dataset.i18n, option.textContent) : option.textContent;
     button.addEventListener('click', () => {
       select.value = option.value;
       select.dispatchEvent(new Event('input', { bubbles: true }));

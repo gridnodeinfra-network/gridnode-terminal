@@ -4670,8 +4670,8 @@ function continueLocallyFromWelcome() {
     <div class="archive-confirm-body">This removes the medication record only. SHOTS history is unchanged.</div>
     <div class="archive-confirm-system">VAULT_SAFE // SHOTS UNAFFECTED</div>
     <div class="archive-confirm-actions">
-      <button class="archive-confirm-cancel" onclick="cancelLoadoutRemove()">CANCEL</button>
-      <button class="archive-confirm-delete" onclick="confirmLoadoutRemove()">REMOVE RECORD</button>
+      <button class="archive-confirm-cancel" onclick="cancelLoadoutRemove()" data-i18n="shot.removeCancel">CANCEL</button>
+      <button class="archive-confirm-delete" onclick="confirmLoadoutRemove()" data-i18n="shot.removeRecord">REMOVE RECORD</button>
     </div>
   </div>
 </div>
@@ -6592,8 +6592,8 @@ function continueLocallyFromWelcome() {
     </div>
     <div class="gn-date-grid" id="gnDatePickerGrid"></div>
     <div class="gn-date-actions">
-      <button class="gn-date-cancel" type="button" onclick="gnCloseShotDatePicker()">CANCEL</button>
-      <button class="gn-date-set" type="button" onclick="gnSetShotDateFromPicker()">SET</button>
+      <button class="gn-date-cancel" type="button" onclick="gnCloseShotDatePicker()" data-i18n="date.cancel">CANCEL</button>
+      <button class="gn-date-set" type="button" onclick="gnSetShotDateFromPicker()" data-i18n="date.set">SET</button>
     </div>
   </div>
 </div>
