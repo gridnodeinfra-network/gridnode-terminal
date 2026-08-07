@@ -3971,7 +3971,7 @@ function continueLocallyFromWelcome() {
           </div>
           <span class="scanner-source-tag" data-i18n="shots.scannerSource">SCANNER SOURCE</span>
         </div>
-        <div class="scanner-mode-tabs" role="tablist" aria-label="Tracking zone mode">
+        <div class="scanner-mode-tabs" role="tablist" aria-label="Tracking zone mode" data-i18n-aria-label="shot.zoneModeAria">
           <button class="scanner-mode-btn active" type="button" data-mode="core" onclick="setScannerMode('core',this)" data-i18n="shots.modeCore">CORE</button>
           <button class="scanner-mode-btn" type="button" data-mode="lower" onclick="setScannerMode('lower',this)" data-i18n="shots.modeLower">LOWER</button>
           <button class="scanner-mode-btn" type="button" data-mode="upper" onclick="setScannerMode('upper',this)" data-i18n="shots.modeUpper">UPPER</button>
@@ -4012,7 +4012,7 @@ function continueLocallyFromWelcome() {
       
       <div id="nextShotCard"></div>
 
-      <div class="shot-history-controls" id="shotHistoryControls" aria-label="SHOT HISTORY view controls">
+      <div class="shot-history-controls" id="shotHistoryControls" aria-label="SHOT HISTORY view controls" data-i18n-aria-label="shot.historyControlsAria">
         <button class="shot-history-toggle active" type="button" data-shot-history-view="active" data-i18n="shots.activeTab">ACTIVE</button>
         <button class="shot-history-toggle" type="button" data-shot-history-view="archived" data-i18n="shots.archivedTab">ARCHIVED</button>
       </div>
@@ -4207,7 +4207,7 @@ function continueLocallyFromWelcome() {
           <div class="gn-syr-body">
             <div class="gn-syr-needle" aria-hidden="true"></div>
             <div class="gn-syr-hub" aria-hidden="true"><span>31G</span></div>
-            <div class="gn-syr-barrel" id="syrBarrel" aria-label="U-100 syringe barrel, 0 to 100 units">
+            <div class="gn-syr-barrel" id="syrBarrel" aria-label="U-100 syringe barrel, 0 to 100 units" data-i18n-aria-label="shot.syringeAria">
               <div class="gn-syr-markings" id="syrMarks"></div>
               <div class="gn-syr-inscale" id="syrScale"></div>
               <div class="gn-syr-fluid" id="syrFluid">
@@ -4521,7 +4521,7 @@ function continueLocallyFromWelcome() {
       <input class="form-input gn-shot-date-input" type="text" id="sDate" placeholder="Jun 11, 2026" data-i18n-placeholder="shot.datePlaceholder" inputmode="none" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" readonly onclick="gnOpenShotDatePicker()" aria-label="Select SHOT date" data-i18n-aria-label="shot.dateAria">
       <div class="gn-shot-date-helper" data-i18n="shot.dateHelp">Tap to choose date. Displayed for humans, saved in compatible SHOTS format.</div>
       <label class="form-label gn-shot-time-label" data-i18n="shot.time">TIME</label>
-      <div class="gn-shot-time-control" aria-label="SHOT time control">
+      <div class="gn-shot-time-control" aria-label="SHOT time control" data-i18n-aria-label="shot.timeControlAria">
         <input class="form-input gn-shot-time-input" type="text" id="sTime" placeholder="8:30" data-i18n-placeholder="shot.timePlaceholder" inputmode="numeric" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" aria-label="Enter SHOT time as hours and minutes" data-i18n-aria-label="shot.timeAria" oninput="gnShotClockLiveFormat(this)" onblur="gnNormalizeShotClockField(this)">
         <div class="gn-ampm-toggle" role="group" aria-label="Select AM or PM" data-i18n-aria-label="shot.ampmAria">
           <button class="gn-ampm-btn" id="sTimeAM" type="button" onclick="gnSetShotMeridiem('AM')" data-i18n="shot.am">AM</button>
@@ -4596,9 +4596,9 @@ function continueLocallyFromWelcome() {
 <div class="overlay results-weight-overlay" id="wtOv">
   <div class="modal results-weight-modal" role="dialog" aria-modal="true" aria-labelledby="wtModalTitle">
     <div class="modal-hdr">
-      <div class="modal-actions"><button class="modal-btn close" type="button" onclick="closeWt()" aria-label="Close ADD WEIGHT ENTRY"><span class="gn-icon"><svg><use href="#gn-close"></use></svg></span></button></div>
+      <div class="modal-actions"><button class="modal-btn close" type="button" onclick="closeWt()" aria-label="Close ADD WEIGHT ENTRY" data-i18n-aria-label="weight.closeAria"><span class="gn-icon"><svg><use href="#gn-close"></use></svg></span></button></div>
       <div class="modal-title" id="wtModalTitle" data-i18n="weight.addEntry">ADD WEIGHT ENTRY</div>
-      <div class="modal-actions"><button class="modal-btn save" type="button" onclick="saveWt()" aria-label="Save weight record"><span class="gn-icon"><svg><use href="#gn-check"></use></svg></span></button></div>
+      <div class="modal-actions"><button class="modal-btn save" type="button" onclick="saveWt()" aria-label="Save weight record" data-i18n-aria-label="weight.saveAria"><span class="gn-icon"><svg><use href="#gn-check"></use></svg></span></button></div>
     </div>
 
     <div class="results-weight-helper" data-i18n="weight.copy">
@@ -4623,7 +4623,7 @@ function continueLocallyFromWelcome() {
 
     <div class="form-group">
       <label class="form-label" data-i18n="weight.unit">UNIT</label>
-      <div class="results-weight-unit-toggle" id="wtUnitToggle" role="group" aria-label="Weight unit">
+      <div class="results-weight-unit-toggle" id="wtUnitToggle" role="group" aria-label="Weight unit" data-i18n-aria-label="weight.unitAria">
         <button class="results-weight-unit active" type="button" data-wt-unit="lb" onclick="setWeightUnit('lb')" data-i18n="weight.lb">LB</button>
         <button class="results-weight-unit" type="button" data-wt-unit="kg" onclick="setWeightUnit('kg')" data-i18n="weight.kg">KG</button>
       </div>
