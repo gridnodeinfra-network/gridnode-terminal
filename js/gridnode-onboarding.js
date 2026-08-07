@@ -286,6 +286,14 @@
 
     // Navigation steps: switch to the target page so the control is actually visible.
     if (step.nav && typeof showPage === 'function' && step.action === 'tap') {
+      // The previous action step may have opened a sheet via the app's own
+      // handler (empty-CTA opens the SHOT modal; the FAB opens the drawer).
+      // Close those sheets so the next spotlighted control is reachable —
+      // otherwise the hole sits over a control buried under the modal.
+      ['logOv', 'wtOv'].forEach(function (sheetId) {
+        var sheet = document.getElementById(sheetId);
+        if (sheet && sheet.classList.contains('active')) sheet.classList.remove('active');
+      });
       try { showPage(step.nav, null); } catch (_) {}
     }
 

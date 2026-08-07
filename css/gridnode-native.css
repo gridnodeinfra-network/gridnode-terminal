@@ -2388,7 +2388,8 @@ html[data-theme="light"] :is(
   #logOv .btn-primary,#logOv .modal-btn.save,
   #wtOv .btn-primary,#wtOv .modal-btn.save,
   #gnResearchSave,#gnPreferencesSave,.fab,
-  .future-confirm-save,.archive-confirm-delete,.gn-delete-confirm
+  .future-confirm-save,.archive-confirm-delete,.gn-delete-confirm,
+  .empty-cta,.gn-empty-cta
 ) {
   border-color: var(--lava-edge) !important;
   background: linear-gradient(180deg, var(--lava-hot) 0%, var(--lava-core) 52%, var(--lava-edge) 100%) !important;
@@ -2401,7 +2402,8 @@ html[data-theme="light"] :is(
   #logOv .btn-primary,#logOv .modal-btn.save,
   #wtOv .btn-primary,#wtOv .modal-btn.save,
   #gnResearchSave,#gnPreferencesSave,.fab,
-  .future-confirm-save,.archive-confirm-delete,.gn-delete-confirm
+  .future-confirm-save,.archive-confirm-delete,.gn-delete-confirm,
+  .empty-cta,.gn-empty-cta
 ):active {
   background: linear-gradient(180deg, #ed2d1c 0%, #c71112 55%, #87060d 100%) !important;
   transform: translateY(1px);
@@ -2779,7 +2781,7 @@ html[data-theme="light"] #app .gn-theme-opt.active { color: #00718a; border-colo
 /* Globe language control + dropdown */
 #app .gn-lang-wrap { position: relative; display: flex; align-items: center; }
 #app .gn-lang-globe {
-  width: 32px; height: 32px; min-width: 32px; min-height: 32px;
+  width: 44px; height: 44px; min-width: 44px; min-height: 44px;
   padding: 0; display: inline-flex; align-items: center; justify-content: center;
   border: 1px solid transparent; border-radius: 50%;
   background: transparent; color: #4d6b75; opacity: .8; cursor: pointer;
@@ -2811,16 +2813,29 @@ html[data-theme="light"] #app .gn-lang-dropdown button:hover, html[data-theme="l
 /* Wordmark: never smaller than toggles */
 #app .app-wordmark-b2b svg { height: 24px; width: auto; }
 
-/* Mobile 360: keep everything fitting */
+/* Mobile 360: keep everything fitting (hit areas stay 44px; visuals shrink) */
 @media (max-width: 380px) {
-  #app .topbar-actions { gap: 6px; }
-  #app .gn-theme-opt, #app .gn-lang-globe { width: 30px; height: 30px; min-width: 30px; min-height: 30px; }
+  #app .topbar-actions { gap: 4px; }
+  #app .gn-theme-opt, #app .gn-lang-globe { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
 }
 
-/* Landing globe mount: keep it in the hero top-right area like the old pill */
+/* Landing globe mount: keep it in the hero top-right area like the old pill.
+   Hit area is 44px; the visible circle stays 32px (drawn on ::before). */
 .landing-lang-wrap { position: relative; display: inline-flex; }
-.landing-lang-wrap .gn-lang-globe { width: 32px; height: 32px; min-width: 32px; min-height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(0,212,255,.25); border-radius: 50%; background: rgba(5,10,16,.7); color: #8ea6b0; cursor: pointer; }
-.landing-lang-wrap .gn-lang-globe:hover, .landing-lang-wrap .gn-lang-globe:focus-visible { color: #00d4ff; border-color: rgba(0,212,255,.55); outline: none; }
+.landing-lang-wrap .gn-lang-globe {
+  width: 44px; height: 44px; min-width: 44px; min-height: 44px;
+  padding: 0; display: inline-flex; align-items: center; justify-content: center;
+  position: relative; border: 0; background: transparent;
+  color: #8ea6b0; cursor: pointer;
+}
+.landing-lang-wrap .gn-lang-globe::before {
+  content: ''; position: absolute; inset: 6px;
+  border: 1px solid rgba(0,212,255,.25); border-radius: 50%;
+  background: rgba(5,10,16,.7);
+}
+.landing-lang-wrap .gn-lang-globe svg { position: relative; z-index: 1; }
+.landing-lang-wrap .gn-lang-globe:hover, .landing-lang-wrap .gn-lang-globe:focus-visible { color: #00d4ff; outline: none; }
+.landing-lang-wrap .gn-lang-globe:hover::before, .landing-lang-wrap .gn-lang-globe:focus-visible::before { border-color: rgba(0,212,255,.55); }
 .landing-lang-wrap .gn-lang-dropdown { left: 0; right: auto; }
 
 /* ── v0.15.1 B10: inline action errors (Mars Red, near the action) ──── */

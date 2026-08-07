@@ -211,21 +211,26 @@ async function onboardingFlow(browser) {
     else if (typeof window.startGridNode === 'function') window.startGridNode();
   });
   await page.locator('.gn-onb-overlay').waitFor({ state: 'visible', timeout: 10000 });
-  await page.waitForFunction(() => document.querySelector('[data-onb-kicker]')?.textContent.includes('1 / 4'));
-  assert((await page.locator('[data-onb-kicker]').innerText()).includes('1 / 4') && await page.locator('.gn-onb-dots i').count() === 4, 'onboarding exposes exactly four stages');
+  // Spotlight tour (v0.15.2+): five stages — first-dose CTA, weight, theme,
+  // language, finish. Action stages hide NEXT and require the real control.
+  await page.waitForFunction(() => document.querySelector('[data-onb-step]')?.textContent.includes('01 / 05'));
+  assert((await page.locator('[data-onb-step]').innerText()).includes('01 / 05') && (await page.locator('[data-onb-kicker]').innerText()).includes('QUICK START'), 'onboarding exposes exactly five stages');
+  assert(await page.locator('[data-onb-next]').isHidden(), 'first action stage has no Next button');
+  assert(await page.locator('[data-onboard="empty-cta"].gn-onb-target').isVisible(), 'first-dose CTA is the spotlighted target');
+  await page.locator('[data-onboard="empty-cta"].gn-onb-target').click();
+  await page.waitForFunction(() => document.querySelector('[data-onb-step]')?.textContent.includes('02 / 05'));
+  assert(await page.locator('[data-onb-next]').isHidden(), 'weight action stage has no Next button');
+  assert(await page.locator('[data-onboard="log-weight"].gn-onb-target').isVisible(), 'weight control is the spotlighted target');
+  await page.locator('[data-onboard="log-weight"]').click();
+  await page.waitForFunction(() => document.querySelector('[data-onb-step]')?.textContent.includes('03 / 05'));
   assert(await page.locator('[data-onb-next]').isVisible(), 'explanation stage has one Continue control');
   await page.locator('[data-onb-next]').click();
-  await page.waitForTimeout(700);
-  assert((await page.locator('[data-onb-kicker]').innerText()).includes('2 / 4') && await page.locator('[data-onb-next]').isHidden(), 'SHOT action stage has no Next button');
-  assert(await page.locator('#navLog.gn-onb-target').isVisible(), 'SHOT action target remains bright and tappable');
-  await page.locator('#navLog').click();
-  await page.waitForFunction(() => document.querySelector('[data-onb-kicker]')?.textContent.includes('3 / 4'));
-  assert((await page.locator('[data-onb-kicker]').innerText()).includes('3 / 4') && await page.locator('[data-onb-next]').isHidden(), 'RESULTS action stage advances only through the real target');
-  await page.locator('#navRes').click();
-  await page.waitForFunction(() => document.querySelector('[data-onb-kicker]')?.textContent.includes('4 / 4'));
-  assert((await page.locator('[data-onb-kicker]').innerText()).includes('4 / 4') && await page.locator('[data-onb-next]').isVisible(), 'LAB and VAULT finish stage is the fourth stage');
+  await page.waitForFunction(() => document.querySelector('[data-onb-step]')?.textContent.includes('04 / 05'));
   await page.locator('[data-onb-next]').click();
-  await page.waitForTimeout(500);
+  await page.waitForFunction(() => document.querySelector('[data-onb-step]')?.textContent.includes('05 / 05'));
+  assert((await page.locator('[data-onb-next]').innerText()).includes('FINISH'), 'final stage offers FINISH');
+  await page.locator('[data-onb-next]').click();
+  await page.waitForTimeout(700);
   assert(await page.locator('.gn-onb-overlay').count() === 0 && await page.evaluate(() => localStorage.getItem('gn_onboarding_v1') === 'complete'), 'onboarding completion persists');
   await context.close();
 }

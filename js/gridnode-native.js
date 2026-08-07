@@ -270,7 +270,10 @@
   function wireLayerHistory() {
     const observer = new MutationObserver(records => records.forEach(record => {
       const layer = record.target;
-      const active = layer.classList.contains('active') || (layer.id === 'signOutOverlay' && layer.style.display === 'flex');
+      // The onboarding tour overlay is only present in the DOM while open
+      // (dismiss() removes it), so presence === active. Without this it gets
+      // aria-hidden="true" forever — a visible dialog invisible to AT.
+      const active = layer.classList.contains('active') || (layer.id === 'signOutOverlay' && layer.style.display === 'flex') || layer.classList.contains('gn-onb-overlay');
       layer.setAttribute('aria-hidden', String(!active));
       const id = layer.id || 'layer';
       if (active && !layer.dataset.gnHistoryOpen) {
@@ -289,7 +292,7 @@
       if (!layer || layer.dataset.gnHistoryBound) return;
       layer.dataset.gnHistoryBound = 'true';
       observer.observe(layer, { attributes: true, attributeFilter: ['class', 'style'] });
-      const active = layer.classList.contains('active') || (layer.id === 'signOutOverlay' && layer.style.display === 'flex');
+      const active = layer.classList.contains('active') || (layer.id === 'signOutOverlay' && layer.style.display === 'flex') || layer.classList.contains('gn-onb-overlay');
       layer.setAttribute('aria-hidden', String(!active));
       if (active) {
         layer.dataset.gnHistoryOpen = 'true';

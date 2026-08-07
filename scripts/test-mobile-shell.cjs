@@ -3,8 +3,8 @@
 const { chromium } = require('/home/thinkpadwinbash/.npm/_npx/705bc6b22212b352/node_modules/playwright');
 
 const baseURL = process.argv[2] || 'http://127.0.0.1:4173';
-const expectedRelease = '20260805.1';
-const expectedVersion = '0.12.0';
+const expectedRelease = process.argv[3] || '20260805.6';
+const expectedVersion = process.argv[4] || '0.15.4';
 const checks = [];
 function ok(condition, label, detail = '') { if (!condition) throw new Error(`FAIL ${label}${detail ? ': ' + detail : ''}`); checks.push(label); }
 
@@ -99,7 +99,7 @@ async function main() {
   ok(await page.evaluate(release => localStorage.getItem('gn_whatsnew_acknowledged_release_v2') === release, expectedRelease), 'update acknowledgment persists');
   await page.evaluate(() => window.GN_WHATS_NEW.history());
   ok(await page.locator('.gn-wn-release').count() >= 3, 'full update history remains accessible');
-  ok(await page.locator('.gn-wn-release.current .gn-whatsnew-version').textContent() === 'GRID//NODE v0.12.0', 'history latest version matches app');
+  ok((await page.locator('.gn-wn-release.current .gn-whatsnew-version').textContent()).includes('GRID//NODE v' + expectedVersion), 'history latest version matches app');
 
   ok(errors.length === 0, 'no page runtime errors', errors.join(' | '));
   console.log(JSON.stringify({ result: 'PASS', checks, release: expectedRelease, version: expectedVersion }, null, 2));
