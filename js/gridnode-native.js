@@ -5,7 +5,7 @@
 (function () {
   'use strict';
 
-  const V = '20260808.14';
+  const V = '20260808.15';
   const SHOT_DRAFT_KEY = 'gn_shot_draft_session_v1';
   const PAGE_KEY = 'gn_active_page_session_v1';
   const OVERLAY_SELECTOR = '#logOv, #wtOv, #signOutOverlay, #archiveConfirmOv, #permanentDeleteConfirmOv, #futureTimestampConfirm, #csvImportOverlay, #gnWhatsNewOverlay, .gn-onb-overlay, .gn-lab-tool-overlay';
@@ -413,6 +413,7 @@
         navigator.serviceWorker.addEventListener('controllerchange', () => {
           if (!this.applying) return;
           this.applying = false;
+          if (this._applyWatchdog) { clearTimeout(this._applyWatchdog); this._applyWatchdog = 0; }
           location.reload();
         });
         registration.update().catch(() => null);
@@ -427,6 +428,20 @@
       this.applying = true;
       showStatus('reconnecting', copy('APPLYING UPDATE…', 'APLICANDO ACTUALIZACIÓN…'));
       worker.postMessage({ type: 'SKIP_WAITING' });
+      // Watchdog (2026-08-08): the SKIP_WAITING -> controllerchange handshake
+      // can stall (old shell + new worker mid-install, throttled page, lost
+      // message). Never hang the banner forever: after 4s, re-check for a
+      // fresh update, then force a reload so the next load completes the
+      // handshake cleanly. Recovery beats a permanent "APPLYING UPDATE…".
+      this._applyWatchdog = window.setTimeout(() => {
+        if (!this.applying) return;
+        this.registration?.update().catch(() => null);
+        window.setTimeout(() => {
+          if (!this.applying) return;
+          this.applying = false;
+          location.reload();
+        }, 1500);
+      }, 4000);
     }
   };
   window.GN_SW = swManager;
