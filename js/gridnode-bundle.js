@@ -1437,6 +1437,47 @@ function loadApp() {
 function setText(id, value) { const element = $(id); if (element) element.textContent = value; }
 function setDisplay(id, visible) { const element = $(id); if (element) element.style.display = visible ? '' : 'none'; }
 
+// B15 (2026-08-08): number tickers. Stats count up/down over ~600ms with
+// ease-out; changed numbers flash Mars Red (200ms fade). Only animates on
+// actual value change; reduced-motion renders instantly. Tracks previous
+// value per element id so repeated renders with the same value stay still.
+const _tickerPrev = new Map();
+function animateNumber(element, from, to, duration) {
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotion || !Number.isFinite(from) || !Number.isFinite(to) || from === to) {
+    element.textContent = String(to);
+    return;
+  }
+  const start = performance.now();
+  function frame(now) {
+    const t = Math.min(1, (now - start) / duration);
+    const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
+    const value = Math.round(from + (to - from) * eased);
+    element.textContent = String(value);
+    if (t < 1) requestAnimationFrame(frame);
+    else element.textContent = String(to);
+  }
+  requestAnimationFrame(frame);
+}
+function setNumericText(id, rawValue) {
+  const element = $(id);
+  if (!element) return;
+  const value = Number(rawValue);
+  if (!Number.isFinite(value)) { element.textContent = String(rawValue ?? ''); return; }
+  const prev = _tickerPrev.has(id) ? _tickerPrev.get(id) : value;
+  _tickerPrev.set(id, value);
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotion || prev === value) {
+    element.textContent = String(value);
+    return;
+  }
+  element.classList.remove('gn-ticker-flash');
+  void element.offsetWidth;
+  element.classList.add('gn-ticker-flash');
+  animateNumber(element, prev, value, 600);
+  setTimeout(() => element.classList.remove('gn-ticker-flash'), 260);
+}
+
 function syncIdentityAvatars() {
   const avatarUrl = window.CU?.avatarUrl || '/assets/gridnode-insignia-v6.png';
   ['topAvaIcon', 'profAvaIcon'].forEach(id => {
@@ -1618,7 +1659,7 @@ function renderDashboard() {
     document.body.classList.remove('gn-empty-state');
   }
   const weightMetrics = computeTotalChange(weights, profile, 'profile');
-  setText('stShots', shots.length);
+  setNumericText('stShots', shots.length);
   setText('stDose', lastShot?.dose ? `${lastShot.dose}mg` : '—');
   setText('stDoseDate', lastShot ? formatDate(lastShot.date, { month: 'short', day: 'numeric' }) : tx('runtime.noData', 'NO DATA'));
   const next = nextShotDate(lastShot, profile);
@@ -2834,7 +2875,7 @@ function ensureLabFoundations() {
       <button type="button" class="gn-foundation-tile" data-lab-focus="ledger"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-r"><svg><use href="#gn-timeline-node"></use></svg></span></span><b data-i18n="lab.eventLedger">EVENT LEDGER</b><small data-i18n="lab.eventLedgerHelp">Source-aware history</small></button>
     </div>
     <details class="gn-foundation-section" open id="gnResearchSection"><summary><span data-i18n="lab.researchPeptides">RESEARCH PEPTIDES</span><em data-i18n="research.organize">ORGANIZE · OBSERVE · REVIEW</em></summary>
-      <div class="gn-research-notice"><strong data-i18n="research.noticeTitle">USER-ENTERED RESEARCH RECORDS</strong><span data-i18n="research.noticeBody">Some compounds above have FDA-approved indications in specific clinical contexts. This organizer does not distinguish regulated from research use. All records are user-entered. Verify independently.</span></div>
+      <div class="gn-research-notice gn-research-notice-compact"><button type="button" class="gn-research-info-toggle" aria-expanded="false" aria-controls="gnResearchNoticeBody" data-i18n-aria-label="research.noticeToggleAria"><span aria-hidden="true">?</span></button><strong data-i18n="research.noticeTitle">USER-ENTERED RESEARCH RECORDS</strong><span class="gn-research-notice-body" id="gnResearchNoticeBody" hidden data-i18n="research.noticeBody">Some compounds above have FDA-approved indications in specific clinical contexts. This organizer does not distinguish regulated from research use. All records are user-entered. Verify independently.</span></div>
       <div class="gn-research-library">${RESEARCH_LIBRARY.map(({ category, names, context }) => { const catKey = RESEARCH_CATEGORY_KEYS[category]; const ctxKey = context === 'RESEARCH-FOCUSED RECORDS · REGULATORY STATUS IS NOT VERIFIED HERE.' ? 'lab.researchKicker' : 'lab.mixedResearchContext'; return `<div class="gn-research-group"><span>${safeText(catKey ? tx(catKey, category) : category)}</span><small class="gn-research-context">${safeText(tx(ctxKey, context))}</small><div>${names.map(name => `<button type="button" data-research-name="${safeText(name)}" data-research-category="${safeText(catKey)}">${safeText(name)}</button>`).join('')}</div></div>`; }).join('')}<div class="gn-research-group gn-research-custom-group"><span data-i18n="lab.customEntry">CUSTOM ENTRY</span><small class="gn-research-context" data-i18n="lab.customEntryHelp">USER-ENTERED RECORD · REGULATORY STATUS IS NOT VERIFIED HERE.</small><div><button type="button" class="gn-research-custom-link" data-research-name="" data-research-category="lab.customResearch" data-i18n="research.customEntryLink">¿Necesitas un compuesto personalizado? → Crear entrada personalizada</button></div></div>
       <div class="gn-custom-warning" id="gnCustomWarning" data-i18n="research.customWarning">⚠ CUSTOM ENTRIES ARE NOT VERIFIED AGAINST THE LIBRARY. Verify the name and category independently.</div></div>
       <div class="gn-research-disclaimer" data-i18n="research.noticeBody">Some compounds above have FDA-approved indications in specific clinical contexts. This organizer does not distinguish regulated from research use. All records are user-entered. Verify independently.</div>
@@ -2849,6 +2890,15 @@ function ensureLabFoundations() {
     <details class="gn-foundation-section" id="gnSupplySection"><summary><span data-i18n="lab.savedInventory">SAVED INVENTORY</span><em data-i18n="lab.separateCalculators">SEPARATE FROM CALCULATORS</em></summary><div class="gn-ledger-copy"><strong data-i18n="lab.calculatorEstimate">CALCULATOR / REFERENCE ESTIMATE</strong> <span data-i18n="lab.inventoryBoundary">remains educational math. Saved Inventory is user-entered supply records and does not verify product, storage, potency, or safety.</span></div><form class="gn-record-form" id="gnInventoryForm"><div class="gn-form-grid"><label><span data-i18n="lab.itemName">ITEM NAME</span><input id="gnInventoryName" required placeholder="e.g. cartridge A" data-i18n-placeholder="lab.itemNamePlaceholder"></label><label><span data-i18n="lab.itemType">ITEM TYPE</span><select id="gnInventoryType"><option value="VIAL" data-i18n="lab.typeVial">Vial</option><option value="CARTRIDGE" data-i18n="lab.typeCartridge">Cartridge</option><option value="DISPOSABLE_PEN" data-i18n="lab.typeDisposable">Disposable pen</option><option value="BOX_PACKAGE" data-i18n="lab.typeBox">Box or package</option><option value="SUPPLY" data-i18n="lab.typeSupply">General supply item</option><option value="CUSTOM" data-i18n="lab.typeCustom">Custom item</option></select></label><label><span data-i18n="lab.quantity">QUANTITY</span><input id="gnInventoryQuantity" type="number" min="0" step="any" placeholder="0"></label></div><div class="gn-form-grid"><label><span data-i18n="lab.units">UNITS</span><input id="gnInventoryUnits" placeholder="items, mL, boxes" data-i18n-placeholder="lab.unitsPlaceholder"></label><label><span data-i18n="lab.expiration">EXPIRATION / BUD</span><input id="gnInventoryExpiry" type="date"></label><label><span data-i18n="lab.storageLocation">STORAGE LOCATION</span><input id="gnInventoryLocation" placeholder="User-entered location" data-i18n-placeholder="lab.storagePlaceholder"></label></div><label><span data-i18n="lab.notes">NOTES</span><textarea id="gnInventoryNotes" rows="2" placeholder="User-entered supply notes" data-i18n-placeholder="lab.supplyNotesPlaceholder"></textarea></label><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-full btn-secondary" type="submit" style="flex:1 1 180px" id="gnInventorySave" data-i18n="lab.saveInventory">SAVE INVENTORY ITEM</button><button class="btn-full btn-secondary" type="button" id="gnInventoryExport" style="flex:0 1 170px" data-i18n="lab.exportInventory">EXPORT INVENTORY</button></div></form><div class="gn-record-list" id="gnInventoryList"></div></details>
   </section>`);
   $('gnResearchForm')?.addEventListener('submit', event => { event.preventDefault(); saveResearchRecord(); });
+  // B12 (2026-08-08): compact research notice — "?" toggles the body.
+  document.querySelectorAll('.gn-research-info-toggle').forEach(toggle => {
+    toggle.addEventListener('click', () => {
+      const body = document.getElementById(toggle.getAttribute('aria-controls'));
+      const open = !body.hidden;
+      body.hidden = open;
+      toggle.setAttribute('aria-expanded', String(!open));
+    });
+  });
   $('gnResearchList')?.addEventListener('click', handleResearchAction);
   const inventoryNotesLabel = $('gnInventoryNotes')?.closest('label');
   inventoryNotesLabel?.insertAdjacentHTML('beforebegin', `<div class="gn-form-grid"><label><span data-i18n="lab.concentration">CONCENTRATION</span><input id="gnInventoryConcentration" placeholder="User-entered label" data-i18n-placeholder="lab.userLabelPlaceholder"></label><label><span data-i18n="lab.volume">VOLUME</span><input id="gnInventoryVolume" placeholder="User-entered volume" data-i18n-placeholder="lab.userVolumePlaceholder"></label><label><span data-i18n="lab.acquiredDate">ACQUIRED DATE</span><input id="gnInventoryAcquired" type="date"></label></div><div class="gn-form-grid"><label><span data-i18n="research.source">SOURCE</span><input id="gnInventorySource" placeholder="User-entered source" data-i18n-placeholder="lab.userSourcePlaceholder"></label><label><span data-i18n="lab.linkedMedication">LINKED MEDICATION</span><input id="gnInventoryMedication" placeholder="e.g. Zepbound" data-i18n-placeholder="lab.medicationPlaceholder"></label><label style="display:flex;align-items:center;gap:8px;grid-template-columns:auto 1fr"><input id="gnInventoryAutoDeduct" type="checkbox" style="width:auto"><span data-i18n="lab.autoDeduct">AUTO-DEDUCT SHOTS</span> <small data-i18n="lab.autoDeductHelp">Requires quantity unit mg and a matching medication.</small></label></div>`);
@@ -4501,7 +4551,7 @@ function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   if (window.GN_SW?.register) { window.GN_SW.register(); return; }
   navigator.serviceWorker
-    .register('/sw.js?v=20260808.3', { updateViaCache: 'none' })
+    .register('/sw.js?v=20260808.4', { updateViaCache: 'none' })
     .then(registration => registration.update())
     .catch(() => {});
 }

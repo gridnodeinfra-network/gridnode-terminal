@@ -5,7 +5,7 @@
 (function () {
   'use strict';
 
-  const V = '20260808.3';
+  const V = '20260808.4';
   const SHOT_DRAFT_KEY = 'gn_shot_draft_session_v1';
   const PAGE_KEY = 'gn_active_page_session_v1';
   const OVERLAY_SELECTOR = '#logOv, #wtOv, #signOutOverlay, #archiveConfirmOv, #permanentDeleteConfirmOv, #futureTimestampConfirm, #csvImportOverlay, #gnWhatsNewOverlay, .gn-onb-overlay, .gn-lab-tool-overlay';
@@ -358,10 +358,22 @@
   }
 
   function wireTouchFeedback() {
-    document.addEventListener('click', event => {
+    // B14 (2026-08-08): 15ms haptic on pointerdown + 100ms punch animation
+    // on the four bottom-nav tabs. Reduced-motion kills both; iOS falls back
+    // to the visual punch only.
+    const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.addEventListener('pointerdown', event => {
       const control = event.target?.closest?.('.nav-item,.fab,[onclick*="saveShot"],[onclick*="saveWt"]');
-      if (!control || !navigator.vibrate || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      try { navigator.vibrate(control.classList.contains('fab') ? 8 : 4); } catch (_) {}
+      if (!control) return;
+      if (!reduced() && navigator.vibrate) {
+        try { navigator.vibrate(control.classList.contains('nav-item') ? 15 : 8); } catch (_) {}
+      }
+      if (!reduced()) {
+        control.classList.remove('gn-punch');
+        // Force reflow so a rapid repeat re-triggers the animation.
+        void control.offsetWidth;
+        control.classList.add('gn-punch');
+      }
     });
   }
 

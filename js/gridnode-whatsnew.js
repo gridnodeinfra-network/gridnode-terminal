@@ -256,6 +256,19 @@
         FIXED: ['El tour de inicio rápido ya no se apila sobre la tarjeta de novedades — se reproducen uno después del otro.', 'El efecto CRT de líneas de escaneo es más sutil para que los colores sigan vivos manteniendo la estética de terminal.']
       }
     },
+    '20260808.4': {
+      version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
+      en: {
+        NEW: ['The language toggle is now a 2077 kanji (電) that glows cyan for English and Mars Red for Español.', 'A rolling CRT scanline sweeps the screen every few seconds — subtle, terminal-authentic, disabled with reduced motion.', 'Dashboard stats now tick up and down when they change, with a Mars Red flash.'],
+        IMPROVED: ['The research peptide notice is collapsed to a "?" — tap for the full disclaimer.', 'Bottom-nav tabs punch and vibrate (15ms) on press.', 'Dose form opens centered, not as a half-height sheet.', 'LAB tiles wrap cleanly on narrow screens.'],
+        FIXED: ['Local-mode home screen no longer washes out — the pending-dashboard dim is removed.']
+      },
+      es: {
+        NEW: ['El selector de idioma ahora es un kanji 2077 (電) que brilla en cian para inglés y rojo Marte para español.', 'Una línea CRT recorre la pantalla cada pocos segundos — sutil, auténtica, desactivada con movimiento reducido.', 'Las estadísticas del tablero ahora cuentan hacia arriba o abajo al cambiar, con un destello rojo Marte.'],
+        IMPROVED: ['El aviso de péptidos de investigación se colapsa en un "?" — toca para ver el aviso completo.', 'Las pestañas inferiores vibran (15 ms) y tienen un efecto de pulsación al presionar.', 'El formulario de dosis se abre centrado, no como una hoja a media altura.', 'Las tarjetas de LAB se ajustan correctamente en pantallas estrechas.'],
+        FIXED: ['La pantalla de inicio en modo local ya no se ve deslavada — se eliminó la atenuación del tablero pendiente.']
+      }
+    },
     '20260808.3': {
       version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
       en: {
