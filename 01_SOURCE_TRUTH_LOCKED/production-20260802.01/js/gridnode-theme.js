@@ -31,45 +31,41 @@
       button.classList.toggle('active', button.dataset.langChoice === lang);
     });
     document.querySelectorAll('.gn-lang-wrap').forEach(wrap => { wrap.dataset.lang = lang; });
-    document.querySelectorAll('.gn-lang-globe').forEach(globe => {
-      globe.classList.toggle('active', false);
-      globe.setAttribute('aria-expanded', 'false');
-      const open = document.querySelector('.gn-lang-dropdown.open');
-      if (open && !open.closest('.gn-lang-wrap')) open.classList.remove('open');
+    // R2.2 rev 2: the kanji IS the toggle — re-target it to the OTHER
+    // language + update its label, so clicking always flips.
+    document.querySelectorAll('.gn-lang-globe[data-lang-choice]').forEach(globe => {
+      const next = lang === 'es' ? 'en' : 'es';
+      globe.dataset.langChoice = next;
+      globe.setAttribute('aria-label', next === 'es' ? 'Español' : 'English');
+      globe.setAttribute('title', next === 'es' ? 'Cambiar a Español' : 'Switch to English');
     });
   }
   function makeLangControl(context) {
     const wrap = document.createElement('div');
     wrap.className = 'gn-lang-wrap gn-lang-wrap-' + (context === 'topbar' ? 'topbar' : 'landing');
     wrap.dataset.lang = currentLang();
-    // R2.2 (2026-08-08): 2077 kanji language icon — 電 (den/diàn, electricity).
-    // One character, colored by the ACTIVE language (EN=cyan, ES=Mars Red),
-    // glow blends into the topbar. Replaces the generic globe entirely.
+    // R2.2 rev (2026-08-08): 2077 kanji language toggle — 電 (den/diàn,
+    // electricity). ONE control: click flips EN<->ES directly, color follows
+    // the active language (EN=cyan, ES=Mars Red). No dropdown, no grey tabs.
+    const active = currentLang();
     wrap.innerHTML =
-      '<button type="button" class="gn-lang-globe" aria-label="Language" title="Language" aria-haspopup="true" aria-expanded="false"><svg class="gn-lang-kanji" viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true"><text x="12" y="17.5" text-anchor="middle" font-family="Noto Sans JP, Hiragino Sans, Yu Gothic, PingFang SC, Microsoft YaHei, sans-serif" font-size="16" stroke="currentColor" stroke-width="2" fill="none">電</text></svg></button>' +
-      '<div class="gn-lang-dropdown" role="menu"><button type="button" data-lang-choice="en" role="menuitem">English</button><button type="button" data-lang-choice="es" role="menuitem">Español</button></div>';
+      '<button type="button" class="gn-lang-globe" data-lang-choice="' + (active === 'es' ? 'en' : 'es') + '" aria-label="' + (active === 'es' ? 'English' : 'Español') + '" title="' + (active === 'es' ? 'Switch to English' : 'Cambiar a Español') + '"><svg class="gn-lang-kanji" viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><text x="12" y="17.5" text-anchor="middle" font-family="Noto Sans JP, Hiragino Sans, Yu Gothic, PingFang SC, Microsoft YaHei, sans-serif" font-size="17" stroke="currentColor" stroke-width="2" fill="none">電</text></svg></button>';
     const globe = wrap.querySelector('.gn-lang-globe');
     globe.addEventListener('click', event => {
       event.stopPropagation();
-      const open = wrap.querySelector('.gn-lang-dropdown');
-      const wasOpen = open.classList.contains('open');
-      document.querySelectorAll('.gn-lang-dropdown.open').forEach(d => d.classList.remove('open'));
-      if (!wasOpen) open.classList.add('open');
-      globe.setAttribute('aria-expanded', String(!wasOpen));
-    });
-    wrap.querySelectorAll('[data-lang-choice]').forEach(button => {
-      button.addEventListener('click', () => {
-        const lang = button.dataset.langChoice;
-        try { localStorage.setItem('gn.lang', lang); } catch (_) {}
-        document.documentElement.lang = lang;
-        document.dispatchEvent(new CustomEvent('gn:langchange', { detail: { lang } }));
-        document.querySelectorAll('.gn-lang-dropdown.open').forEach(d => d.classList.remove('open'));
-        globe.setAttribute('aria-expanded', 'false');
-        syncLangControls();
-      });
-    });
-    document.addEventListener('click', event => {
-      if (!wrap.contains(event.target)) wrap.querySelector('.gn-lang-dropdown')?.classList.remove('open');
+      event.preventDefault();
+      const next = globe.dataset.langChoice;
+      // Route through GN_I18N.setLang: it loads the catalog, sets
+      // documentElement.lang + body data-lang, applies translations and
+      // dispatches gn:langchange — the same path the old dropdown used.
+      if (window.GN_I18N?.setLang) {
+        window.GN_I18N.setLang(next).catch(() => {});
+      } else {
+        try { localStorage.setItem('gn.lang', next); } catch (_) {}
+        document.documentElement.lang = next;
+        document.dispatchEvent(new CustomEvent('gn:langchange', { detail: { lang: next } }));
+      }
+      syncLangControls();
     });
     return wrap;
   }

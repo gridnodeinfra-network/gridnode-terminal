@@ -256,6 +256,15 @@
         FIXED: ['El tour de inicio rápido ya no se apila sobre la tarjeta de novedades — se reproducen uno después del otro.', 'El efecto CRT de líneas de escaneo es más sutil para que los colores sigan vivos manteniendo la estética de terminal.']
       }
     },
+    '20260808.6': {
+      version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
+      en: {
+        IMPROVED: ['Language switch is now a single glowing kanji (電) — bigger, no dropdown, no grey tabs. Tap it to flip between English and Español; it glows cyan in English and Mars Red in Spanish.']
+      },
+      es: {
+        IMPROVED: ['El cambio de idioma ahora es un solo kanji brillante (電) — más grande, sin menú, sin pestañas grises. Tócalo para alternar entre inglés y español; brilla en cian en inglés y rojo Marte en español.']
+      }
+    },
     '20260808.5': {
       version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
       en: {

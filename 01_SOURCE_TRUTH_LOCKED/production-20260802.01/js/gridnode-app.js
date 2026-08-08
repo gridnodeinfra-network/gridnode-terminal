@@ -71,11 +71,7 @@ function authShell() {
   if (!login) return;
   const recovering = authMode === 'recovery';
   login.innerHTML = `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:0"><div class="gn-auth-card">
-    <div class="gn-language-control gn-auth-language-control" role="group" data-i18n-aria-label="lang.switcherAria">
-      <span data-i18n="lang.switcherLabel">LANGUAGE</span>
-      <button type="button" data-lang-choice="en" aria-label="English" data-i18n-aria-label="lang.englishName">EN</button>
-      <button type="button" data-lang-choice="es" aria-label="Español" data-i18n-aria-label="lang.spanishName">ES</button>
-    </div>
+    <div class="gn-auth-lang-kanji" role="group" data-i18n-aria-label="lang.switcherAria"><button type="button" class="gn-lang-globe" data-lang-choice="${document.documentElement.lang === 'es' ? 'en' : 'es'}" aria-label="${document.documentElement.lang === 'es' ? 'English' : 'Español'}" title="${document.documentElement.lang === 'es' ? 'Switch to English' : 'Cambiar a Español'}"><svg class="gn-lang-kanji" viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><text x="12" y="17.5" text-anchor="middle" font-family="Noto Sans JP, Hiragino Sans, Yu Gothic, PingFang SC, Microsoft YaHei, sans-serif" font-size="17" stroke="currentColor" stroke-width="2" fill="none">電</text></svg></button></div>
     <div class="gn-auth-kicker">// PERSONAL BIOTECH OPERATING SYSTEM //</div>
     <div class="gn-auth-title">${recovering ? 'RESET ACCESS' : 'GRID//NODE'}</div>
     <p class="gn-auth-copy">${recovering ? 'Enter a new password for this GRID//NODE cloud account.' : 'Sign in to sync your grid across devices.'}</p>
@@ -406,7 +402,7 @@ function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   if (window.GN_SW?.register) { window.GN_SW.register(); return; }
   navigator.serviceWorker
-    .register('/sw.js?v=20260808.5', { updateViaCache: 'none' })
+    .register('/sw.js?v=20260808.6', { updateViaCache: 'none' })
     .then(registration => registration.update())
     .catch(() => {});
 }

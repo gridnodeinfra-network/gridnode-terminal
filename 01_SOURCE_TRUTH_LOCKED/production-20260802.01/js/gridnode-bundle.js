@@ -3941,7 +3941,7 @@ function authShell() {
     <div class="gn-auth-message" id="loginMsg" role="status" aria-live="polite"></div>
     ${recovering ? '' : '<div class="gn-auth-policy-link"><button type="button" id="gnVaultPolicyLink" data-i18n="landing.yourDataYourRules">YOUR DATA, YOUR RULES</button></div>'}
   </div></div>`;
-  login.querySelector('.gn-auth-card')?.insertAdjacentHTML('afterbegin', '<div class="gn-language-control gn-auth-language-control" role="group" data-i18n-aria-label="lang.switcherAria"><span data-i18n="lang.switcherLabel">LANGUAGE</span><button type="button" data-lang-choice="en" aria-label="English" data-i18n-aria-label="lang.englishName">EN</button><button type="button" data-lang-choice="es" aria-label="Spanish" data-i18n-aria-label="lang.spanishName">ES</button></div>');
+  login.querySelector('.gn-auth-card')?.insertAdjacentHTML('afterbegin', '<div class="gn-auth-lang-kanji" role="group" data-i18n-aria-label="lang.switcherAria"><button type="button" class="gn-lang-globe" data-lang-choice="es" aria-label="Español" title="Cambiar a Español"><svg class="gn-lang-kanji" viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><text x="12" y="17.5" text-anchor="middle" font-family="Noto Sans JP, Hiragino Sans, Yu Gothic, PingFang SC, Microsoft YaHei, sans-serif" font-size="17" stroke="currentColor" stroke-width="2" fill="none">電</text></svg></button></div>');
   $('gnVaultPolicyLink')?.addEventListener('click', showVaultPolicy);
   applyAuthTranslations(recovering);
   $('gnAuthForm')?.addEventListener('submit', event => { event.preventDefault(); submitAuth(); });
@@ -4568,7 +4568,7 @@ function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   if (window.GN_SW?.register) { window.GN_SW.register(); return; }
   navigator.serviceWorker
-    .register('/sw.js?v=20260808.5', { updateViaCache: 'none' })
+    .register('/sw.js?v=20260808.6', { updateViaCache: 'none' })
     .then(registration => registration.update())
     .catch(() => {});
 }
