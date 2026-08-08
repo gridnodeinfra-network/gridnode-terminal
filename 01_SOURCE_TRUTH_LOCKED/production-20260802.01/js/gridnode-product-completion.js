@@ -229,7 +229,17 @@
   }
   function openMapping(fileName, csvText) {
     const lines = String(csvText).split(/\r?\n/).filter(Boolean);
-    if (lines.length < 2) { window.alert('This CSV does not contain a header and at least one row.'); return; }
+    if (lines.length < 2) {
+      const panel = document.querySelector('#gnImportOverlay .gn-import-panel');
+      const existing = panel?.querySelector('.gn-inline-error');
+      if (existing) existing.remove();
+      const err = document.createElement('div');
+      err.className = 'gn-inline-error';
+      err.setAttribute('role', 'alert');
+      err.textContent = tx('mapping.needHeaderRow', 'THIS CSV NEEDS A HEADER AND AT LEAST ONE ROW.');
+      if (panel) panel.appendChild(err);
+      return;
+    }
     const parse = line => {
       const cells = []; let value = ''; let quoted = false;
       for (let index = 0; index < line.length; index += 1) {

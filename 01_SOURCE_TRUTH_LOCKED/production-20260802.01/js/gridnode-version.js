@@ -6,11 +6,11 @@
 (function () {
   'use strict';
   window.GN_VERSION = Object.freeze({
-    APP_VERSION: '0.15.4',
-    APP_BUILD: '20260805.6',
-    semver: '0.15.4',
-    release: '20260805.6',
-    title: 'V0.15.4 — SEQUENCING FIX · BALANCED CRT',
-    date: '2026-08-04'
+    APP_VERSION: '0.15.5',
+    APP_BUILD: '20260808.1',
+    semver: '0.15.5',
+    release: '20260808.1',
+    title: 'V0.15.5 — A11Y · I18N · WCAG SWEEP',
+    date: '2026-08-08'
   });
 })();

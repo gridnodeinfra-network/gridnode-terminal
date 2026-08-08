@@ -27,8 +27,8 @@
   <meta name="color-scheme" content="dark light">
   <meta name="supported-color-schemes" content="dark light">
 
-<script src="./js/gridnode-theme.js?v=20260805.6"></script>
-<link rel="stylesheet" href="./css/daylight-nexus-pilot.css?v=20260805.6">
+<script src="./js/gridnode-theme.js?v=20260808.1"></script>
+<link rel="stylesheet" href="./css/daylight-nexus-pilot.css?v=20260808.1">
 
 <link rel="manifest" href="/manifest.json">
 <title>GRID//NODE — Your body. Your data. Your grid.</title>
@@ -52,7 +52,7 @@
 
 <style>
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   GRID//NODE v0.12.0
+   GRID//NODE v0.15.5
    "Your body. Your data. Your grid."
    
    CHANGELOG v1.1:
@@ -824,7 +824,7 @@ body:not(.gn-private-active) .fab{display:none!important;visibility:hidden;point
 .cal-nav:hover{border-color:var(--cyan);color:var(--cyan)}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr)}
 .cal-day-name{font-family:var(--font-m);font-size:0.52rem;color:var(--text-dim);letter-spacing:2px;text-align:center;padding:8px 0;border-bottom:1px solid var(--border)}
-.cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:background 0.15s;border-bottom:1px solid var(--border);border-right:1px solid var(--border)}
+.cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;background:var(--panel);transition:background 0.15s;border-bottom:1px solid var(--border);border-right:1px solid var(--border)}
 .cal-day:nth-child(7n){border-right:none}
 .cal-day-num{font-family:var(--font-b);font-size:0.95rem;color:var(--text-mid);line-height:1}
 .cal-day.today .cal-day-num{color:var(--cyan);font-weight:700}
@@ -3971,7 +3971,7 @@ function continueLocallyFromWelcome() {
           </div>
           <span class="scanner-source-tag" data-i18n="shots.scannerSource">SCANNER SOURCE</span>
         </div>
-        <div class="scanner-mode-tabs" role="tablist" aria-label="Tracking zone mode">
+        <div class="scanner-mode-tabs" role="tablist" aria-label="Tracking zone mode" data-i18n-aria-label="shot.zoneModeAria">
           <button class="scanner-mode-btn active" type="button" data-mode="core" onclick="setScannerMode('core',this)" data-i18n="shots.modeCore">CORE</button>
           <button class="scanner-mode-btn" type="button" data-mode="lower" onclick="setScannerMode('lower',this)" data-i18n="shots.modeLower">LOWER</button>
           <button class="scanner-mode-btn" type="button" data-mode="upper" onclick="setScannerMode('upper',this)" data-i18n="shots.modeUpper">UPPER</button>
@@ -4012,7 +4012,7 @@ function continueLocallyFromWelcome() {
       
       <div id="nextShotCard"></div>
 
-      <div class="shot-history-controls" id="shotHistoryControls" aria-label="SHOT HISTORY view controls">
+      <div class="shot-history-controls" id="shotHistoryControls" aria-label="SHOT HISTORY view controls" data-i18n-aria-label="shot.historyControlsAria">
         <button class="shot-history-toggle active" type="button" data-shot-history-view="active" data-i18n="shots.activeTab">ACTIVE</button>
         <button class="shot-history-toggle" type="button" data-shot-history-view="archived" data-i18n="shots.archivedTab">ARCHIVED</button>
       </div>
@@ -4207,7 +4207,7 @@ function continueLocallyFromWelcome() {
           <div class="gn-syr-body">
             <div class="gn-syr-needle" aria-hidden="true"></div>
             <div class="gn-syr-hub" aria-hidden="true"><span>31G</span></div>
-            <div class="gn-syr-barrel" id="syrBarrel" aria-label="U-100 syringe barrel, 0 to 100 units">
+            <div class="gn-syr-barrel" id="syrBarrel" aria-label="U-100 syringe barrel, 0 to 100 units" data-i18n-aria-label="shot.syringeAria">
               <div class="gn-syr-markings" id="syrMarks"></div>
               <div class="gn-syr-inscale" id="syrScale"></div>
               <div class="gn-syr-fluid" id="syrFluid">
@@ -4341,7 +4341,7 @@ function continueLocallyFromWelcome() {
         white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
       "></div>
       <div style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);letter-spacing:2px">
-        GRID//NODE v0.12.0
+        GRID//NODE v0.15.5
       </div>
     </div>
   </div>
@@ -4521,7 +4521,7 @@ function continueLocallyFromWelcome() {
       <input class="form-input gn-shot-date-input" type="text" id="sDate" placeholder="Jun 11, 2026" data-i18n-placeholder="shot.datePlaceholder" inputmode="none" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" readonly onclick="gnOpenShotDatePicker()" aria-label="Select SHOT date" data-i18n-aria-label="shot.dateAria">
       <div class="gn-shot-date-helper" data-i18n="shot.dateHelp">Tap to choose date. Displayed for humans, saved in compatible SHOTS format.</div>
       <label class="form-label gn-shot-time-label" data-i18n="shot.time">TIME</label>
-      <div class="gn-shot-time-control" aria-label="SHOT time control">
+      <div class="gn-shot-time-control" aria-label="SHOT time control" data-i18n-aria-label="shot.timeControlAria">
         <input class="form-input gn-shot-time-input" type="text" id="sTime" placeholder="8:30" data-i18n-placeholder="shot.timePlaceholder" inputmode="numeric" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" aria-label="Enter SHOT time as hours and minutes" data-i18n-aria-label="shot.timeAria" oninput="gnShotClockLiveFormat(this)" onblur="gnNormalizeShotClockField(this)">
         <div class="gn-ampm-toggle" role="group" aria-label="Select AM or PM" data-i18n-aria-label="shot.ampmAria">
           <button class="gn-ampm-btn" id="sTimeAM" type="button" onclick="gnSetShotMeridiem('AM')" data-i18n="shot.am">AM</button>
@@ -4596,9 +4596,9 @@ function continueLocallyFromWelcome() {
 <div class="overlay results-weight-overlay" id="wtOv">
   <div class="modal results-weight-modal" role="dialog" aria-modal="true" aria-labelledby="wtModalTitle">
     <div class="modal-hdr">
-      <div class="modal-actions"><button class="modal-btn close" type="button" onclick="closeWt()" aria-label="Close ADD WEIGHT ENTRY"><span class="gn-icon"><svg><use href="#gn-close"></use></svg></span></button></div>
+      <div class="modal-actions"><button class="modal-btn close" type="button" onclick="closeWt()" aria-label="Close ADD WEIGHT ENTRY" data-i18n-aria-label="weight.closeAria"><span class="gn-icon"><svg><use href="#gn-close"></use></svg></span></button></div>
       <div class="modal-title" id="wtModalTitle" data-i18n="weight.addEntry">ADD WEIGHT ENTRY</div>
-      <div class="modal-actions"><button class="modal-btn save" type="button" onclick="saveWt()" aria-label="Save weight record"><span class="gn-icon"><svg><use href="#gn-check"></use></svg></span></button></div>
+      <div class="modal-actions"><button class="modal-btn save" type="button" onclick="saveWt()" aria-label="Save weight record" data-i18n-aria-label="weight.saveAria"><span class="gn-icon"><svg><use href="#gn-check"></use></svg></span></button></div>
     </div>
 
     <div class="results-weight-helper" data-i18n="weight.copy">
@@ -4623,7 +4623,7 @@ function continueLocallyFromWelcome() {
 
     <div class="form-group">
       <label class="form-label" data-i18n="weight.unit">UNIT</label>
-      <div class="results-weight-unit-toggle" id="wtUnitToggle" role="group" aria-label="Weight unit">
+      <div class="results-weight-unit-toggle" id="wtUnitToggle" role="group" aria-label="Weight unit" data-i18n-aria-label="weight.unitAria">
         <button class="results-weight-unit active" type="button" data-wt-unit="lb" onclick="setWeightUnit('lb')" data-i18n="weight.lb">LB</button>
         <button class="results-weight-unit" type="button" data-wt-unit="kg" onclick="setWeightUnit('kg')" data-i18n="weight.kg">KG</button>
       </div>
@@ -4649,7 +4649,7 @@ function continueLocallyFromWelcome() {
       <div class="modal-title" id="arsTitle">ADD CONTEXT</div>
       <div class="modal-actions"><button class="modal-btn save" onclick="saveArs()"><span class="gn-icon"><svg><use href="#gn-check"></use></svg></span></button></div>
     </div>
-    <div class="form-group"><label class="form-label" for="aName" data-i18n="lab.arsenalName">CONTEXT NAME</label><input class="form-input" id="aName" placeholder="e.g. GLP-1 reference item"></div>
+    <div class="form-group"><label class="form-label" for="aName" data-i18n="lab.arsenalName">CONTEXT NAME</label><input class="form-input" id="aName" placeholder="e.g. GLP-1 reference item" data-i18n-placeholder="lab.referenceNamePlaceholder"></div>
     <div class="form-row">
       <div class="form-group"><label class="form-label" for="aConc" data-i18n="lab.concentration">CONCENTRATION (mg/mL)</label><input class="form-input" type="number" id="aConc" placeholder="e.g. 10"></div>
       <div class="form-group"><label class="form-label" for="aVol" data-i18n="lab.volume">VOLUME (mL)</label><input class="form-input" type="number" id="aVol" placeholder="e.g. 3"></div>
@@ -4666,12 +4666,12 @@ function continueLocallyFromWelcome() {
 
 <div class="archive-confirm-overlay" id="loadoutRemoveOverlay">
   <div class="archive-confirm-panel danger">
-    <div class="archive-confirm-title">REMOVE THIS MED?</div>
-    <div class="archive-confirm-body">This removes the medication record only. SHOTS history is unchanged.</div>
-    <div class="archive-confirm-system">VAULT_SAFE // SHOTS UNAFFECTED</div>
+    <div class="archive-confirm-title" data-i18n="shot.removeTitle">REMOVE THIS MED?</div>
+    <div class="archive-confirm-body" data-i18n="shot.removeBody">This removes the medication record only. SHOTS history is unchanged.</div>
+    <div class="archive-confirm-system" data-i18n="shot.removeSystem">VAULT_SAFE // SHOTS UNAFFECTED</div>
     <div class="archive-confirm-actions">
-      <button class="archive-confirm-cancel" onclick="cancelLoadoutRemove()">CANCEL</button>
-      <button class="archive-confirm-delete" onclick="confirmLoadoutRemove()">REMOVE RECORD</button>
+      <button class="archive-confirm-cancel" onclick="cancelLoadoutRemove()" data-i18n="shot.removeCancel">CANCEL</button>
+      <button class="archive-confirm-delete" onclick="confirmLoadoutRemove()" data-i18n="shot.removeRecord">REMOVE RECORD</button>
     </div>
   </div>
 </div>
@@ -6592,8 +6592,8 @@ function continueLocallyFromWelcome() {
     </div>
     <div class="gn-date-grid" id="gnDatePickerGrid"></div>
     <div class="gn-date-actions">
-      <button class="gn-date-cancel" type="button" onclick="gnCloseShotDatePicker()">CANCEL</button>
-      <button class="gn-date-set" type="button" onclick="gnSetShotDateFromPicker()">SET</button>
+      <button class="gn-date-cancel" type="button" onclick="gnCloseShotDatePicker()" data-i18n="date.cancel">CANCEL</button>
+      <button class="gn-date-set" type="button" onclick="gnSetShotDateFromPicker()" data-i18n="date.set">SET</button>
     </div>
   </div>
 </div>
@@ -8911,7 +8911,7 @@ body.gn-log-shot-picker-open .fab{
     <span data-i18n="pwa.bannerSub">Add to your home screen for app-like access</span>
   </div>
   <button id="gnPwaInstallBtn" type="button" data-i18n="pwa.install">INSTALL</button>
-  <button id="gnPwaInstallClose" type="button" class="gn-pwa-close" aria-label="Dismiss install banner">x</button>
+  <button id="gnPwaInstallClose" type="button" class="gn-pwa-close" aria-label="Dismiss install banner" data-i18n-aria-label="pwa.dismissAria">x</button>
 </div>
 
 
@@ -9145,7 +9145,7 @@ body.gn-log-shot-picker-open .fab{
 @media(prefers-reduced-motion:reduce){.boot-command-deck::before,#boot .boot-b2b-symbol,#boot .boot-b2b-symbol-wrap::after{animation:none !important}}
 </style>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="./js/gridnode-version.js?v=20260805.6" defer></script><script src="./js/gridnode-i18n.js?v=20260805.6" defer></script><script src="./js/gridnode-bundle.js?v=20260805.6" defer></script><script src="./js/gridnode-phase-sphere.js?v=20260805.6" defer></script><script src="./js/gridnode-product-completion.js?v=20260805.6" defer></script><script src="./js/gridnode-motivation.js?v=20260805.6" defer></script><script src="./js/gridnode-telemetry.js?v=20260805.6" defer></script><script src="./js/gridnode-native.js?v=20260805.6" defer></script><script src="./js/gridnode-i18n-overlay.js?v=20260805.6" defer></script><script src="./js/gridnode-whatsnew.js?v=20260805.6" defer></script><script src="./js/gridnode-onboarding.js?v=20260805.6" defer></script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="./js/gridnode-version.js?v=20260808.1" defer></script><script src="./js/gridnode-i18n.js?v=20260808.1" defer></script><script src="./js/gridnode-bundle.js?v=20260808.1" defer></script><script src="./js/gridnode-phase-sphere.js?v=20260808.1" defer></script><script src="./js/gridnode-product-completion.js?v=20260808.1" defer></script><script src="./js/gridnode-motivation.js?v=20260808.1" defer></script><script src="./js/gridnode-telemetry.js?v=20260808.1" defer></script><script src="./js/gridnode-native.js?v=20260808.1" defer></script><script src="./js/gridnode-i18n-overlay.js?v=20260808.1" defer></script><script src="./js/gridnode-whatsnew.js?v=20260808.1" defer></script><script src="./js/gridnode-onboarding.js?v=20260808.1" defer></script>
 <script>
 (function() {
   try {

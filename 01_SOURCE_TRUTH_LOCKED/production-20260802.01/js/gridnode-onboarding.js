@@ -25,71 +25,59 @@
    *   advanceOn  : optional event the step listens for to auto-advance
    *   nav        : optional page name to switch to when the step activates (to survive navigation)
    */
+  /* Flow polish (v0.15.2): step 1 spotlights the right control for the user's
+   * state — REGISTER MY FIRST DOSE on a clean grid, otherwise the LOG SHOT
+   * affordance (FAB) so returning users still get a meaningful pointer.
+   */
+  function firstShotTarget() {
+    var shots = 0;
+    try { shots = (JSON.parse(localStorage.getItem('gn_local_shots') || '[]') || []).length; } catch (_) {}
+    if (shots > 0) return '.fab';
+    return '[data-onboard="empty-cta"]';
+  }
+
   var STEPS = [
-    { title: 'onb.welcome', body: 'onb.welcomeBody', action: null },
-    { title: 'onb.shots', body: 'onb.shotsBody', sel: '#navLog', action: 'tap', nav: 'Log' },
-    { title: 'onb.results', body: 'onb.resultsBody', sel: '#navRes', action: 'tap', nav: 'Results' },
-    { title: 'onb.finish', body: 'onb.finishBody', action: null }
+    { title: 'onb.welcome', body: 'onb.welcomeBody', selFn: firstShotTarget, action: 'tap', nav: 'Dash' },
+    { title: 'onb.weight', body: 'onb.weightBody', sel: '[data-onboard="log-weight"]', action: 'tap', nav: 'Dash' },
+    { title: 'onb.theme', body: 'onb.themeBody', sel: '[data-theme-opt]', action: null },
+    { title: 'onb.language', body: 'onb.languageBody', sel: '.gn-lang-globe', action: null },
+    { title: 'onb.done', body: 'onb.doneBody', action: null }
   ];
 
   var COPY = {
     en: {
-      'onb.systemOrientation': 'SYSTEM ORIENTATION',
-      'onb.welcome': 'WELCOME TO GRID//NODE',
-      'onb.welcomeBody': 'Your personal biotech command system. Every record stays on this device first — your body, your data, your grid.',
+      'onb.systemOrientation': 'QUICK START',
+      'onb.welcome': 'Log your first shot',
+      'onb.welcomeBody': 'This red button starts your record. Tap it when you take a dose — then just fill in the date, time, and where you injected. That\'s everything you need.',
       'onb.shots': 'OPEN SHOTS',
       'onb.shotsBody': 'Tap the SHOTS tab in the bottom navigation. This is where every dose gets logged.',
-      'onb.register': 'START REGISTERING A DOSE',
-      'onb.registerBody': 'Tap the + button to open the dose log.',
-      'onb.medication': 'SELECT THE MEDICATION',
-      'onb.medicationBody': 'Choose the medication for this dose from the selector.',
-      'onb.dose': 'ENTER OR CONFIRM THE DOSE',
-      'onb.doseBody': 'Enter or confirm the dose amount in mg.',
-      'onb.location': 'SELECT THE INJECTION LOCATION',
-      'onb.locationBody': 'Pick the body location for this shot from the scanner zones.',
-      'onb.save': 'SAVE THE SHOT',
-      'onb.saveBody': 'Press SAVE SHOT to store the record. Nothing is saved until you do.',
-      'onb.results': 'OPEN RESULTS',
-      'onb.resultsBody': 'Tap RESULTS to see the signal and Phase Engine built from your records.',
-      'onb.weight': 'WEIGHT & PROGRESS',
-      'onb.weightBody': 'Weight trends, progress signals, and timeline records are recorded on this screen.',
-      'onb.lab': 'OPEN THE CALCULATOR / LAB',
-      'onb.labBody': 'The LAB holds syringe draw, reconstitution, dose projection, and research tools.',
-      'onb.vault': 'VAULT & YOUR DATA',
-      'onb.vaultBody': 'Your profile holds the VAULT: local-first storage, export, backup, and sync status.',
-      'onb.done': 'YOU\'RE READY',
-      'onb.doneBody': 'That\'s the core loop. You can replay this tour any time from your profile, and everything stays on this device first.',
+      'onb.weight': 'Track your weight',
+      'onb.weightBody': 'Optional but useful. The Phase Engine uses weight trend to estimate your cycle position. Tap LOG WEIGHT to add one.',
+      'onb.theme': 'Switch theme',
+      'onb.themeBody': 'NIGHT is dark. DUSK is light. Pick what\'s easier on your eyes — the whole app follows.',
+      'onb.language': 'Cambia de idioma',
+      'onb.languageBody': 'English and Spanish. Tap the globe and the whole app translates instantly.',
+      'onb.done': 'You\'re ready',
+      'onb.doneBody': 'You just learned the core loop: log a shot, watch the trend, adjust. Your record stays on this device unless you sign in with Google to sync across devices.',
       'onb.finish': 'LAB, VAULT, AND YOU\'RE READY',
-      'onb.finishBody': 'LAB holds focused tools. VAULT holds your settings, exports, and local-first data controls.'
+      'onb.finishBody': 'LAB holds focused tools. VAULT holds your settings, exports, and data controls.'
     },
     es: {
-      'onb.systemOrientation': 'ORIENTACIÓN DEL SISTEMA',
-      'onb.welcome': 'BIENVENIDO A GRID//NODE',
-      'onb.welcomeBody': 'Tu sistema de comando biotecnológico personal. Cada registro vive primero en este dispositivo: tu cuerpo, tus datos, tu grilla.',
+      'onb.systemOrientation': 'INICIO RÁPIDO',
+      'onb.welcome': 'Registra tu primera dosis',
+      'onb.welcomeBody': 'Este botón rojo inicia tu registro. Tócalo cuando te apliques una dosis — luego solo completa la fecha, la hora y la zona de inyección. Eso es todo lo que necesitas.',
       'onb.shots': 'ABRE DOSIS (SHOTS)',
       'onb.shotsBody': 'Toca la pestaña DOSIS en la navegación inferior. Aquí se registra cada dosis.',
-      'onb.register': 'EMPIEZA A REGISTRAR UNA DOSIS',
-      'onb.registerBody': 'Toca el botón + para abrir el registro de dosis.',
-      'onb.medication': 'SELECCIONA EL MEDICAMENTO',
-      'onb.medicationBody': 'Elige el medicamento para esta dosis en el selector.',
-      'onb.dose': 'INGRESA O CONFIRMA LA DOSIS',
-      'onb.doseBody': 'Ingresa o confirma la cantidad de dosis en mg.',
-      'onb.location': 'SELECCIONA LA UBICACIÓN DE INYECCIÓN',
-      'onb.locationBody': 'Elige la ubicación corporal para esta dosis en las zonas del escáner.',
-      'onb.save': 'GUARDA LA DOSIS',
-      'onb.saveBody': 'Pulsa GUARDAR DOSIS para almacenar el registro. Nada se guarda hasta que lo hagas.',
-      'onb.results': 'ABRE RESULTADOS',
-      'onb.resultsBody': 'Toca RESULTADOS para ver la señal y el Motor de Fases creado con tus registros.',
-      'onb.weight': 'PESO Y PROGRESO',
-      'onb.weightBody': 'Las tendencias de peso, señales de progreso y registros de línea de tiempo se guardan en esta pantalla.',
-      'onb.lab': 'ABRE LA CALCULADORA / LAB',
-      'onb.labBody': 'El LAB contiene jeringa, reconstitución, proyección de dosis y herramientas de investigación.',
-      'onb.vault': 'BÓVEDA Y TUS DATOS',
-      'onb.vaultBody': 'Tu perfil contiene la BÓVEDA: almacenamiento local primero, exportación, respaldo y estado de sincronización.',
-      'onb.done': 'YA ESTÁS LISTO',
-      'onb.doneBody': 'Ese es el ciclo principal. Puedes repetir este tour cuando quieras desde tu perfil, y todo vive primero en este dispositivo.',
+      'onb.weight': 'Registra tu peso',
+      'onb.weightBody': 'Opcional pero útil. El Motor de Fases usa la tendencia de peso para estimar tu posición en el ciclo. Toca REGISTRAR PESO para agregarlo.',
+      'onb.theme': 'Cambia el tema',
+      'onb.themeBody': 'NIGHT es oscuro. DUSK es claro. Elige el que te resulte más cómodo — toda la app lo sigue.',
+      'onb.language': 'Cambia el idioma',
+      'onb.languageBody': 'Inglés y español. Toca el globo y toda la app se traduce al instante.',
+      'onb.done': 'Ya estás listo',
+      'onb.doneBody': 'Acabas de aprender el ciclo principal: registra una dosis, observa la tendencia, ajusta. Tu registro vive en este dispositivo a menos que inicies sesión con Google para sincronizar entre dispositivos.',
       'onb.finish': 'LAB, BÓVEDA Y LISTO',
-      'onb.finishBody': 'LAB contiene herramientas enfocadas. BÓVEDA contiene tus ajustes, exportaciones y controles de datos locales.'
+      'onb.finishBody': 'LAB contiene herramientas enfocadas. BÓVEDA contiene tus ajustes, exportaciones y controles de datos.'
     }
   };
 
@@ -110,9 +98,10 @@
   function btn(txt) { return isEs() ? txt : txt; }
 
   function targetEl(step) {
-    if (!step.sel) return null;
+    var selector = typeof step.selFn === 'function' ? step.selFn() : step.sel;
+    if (!selector) return null;
     var el = null;
-    try { el = document.querySelector(step.sel.split(',')[0]); } catch (_) { el = null; }
+    try { el = document.querySelector(selector.split(',')[0]); } catch (_) { el = null; }
     return el;
   }
 
@@ -179,6 +168,7 @@
     var spaceBelow = vh - r.bottom - margin;
     var placeAbove = spaceAbove >= measured + 20;
     var placeBelow = spaceBelow >= measured + 20;
+    var cardRect = null;
     if (placeAbove) {
       card.style.top = 'auto';
       card.style.bottom = (vh - r.top + margin) + 'px';
@@ -193,6 +183,29 @@
       card.style.top = 'auto';
       card.style.bottom = 'max(10px, calc(env(safe-area-inset-bottom) + 10px))';
     }
+    // Pointer arrow: sits on the card edge nearest the target and points at it.
+    var arrow = overlay.querySelector('.gn-onb-arrow');
+    if (arrow) {
+      var cr = card.getBoundingClientRect();
+      var cardCenterX = cr.left + cr.width / 2;
+      var holeCenterX = r.left + r.width / 2;
+      var placeBelowNow = card.style.top !== 'auto' && card.style.top !== '' && !String(card.style.top).startsWith('max');
+      var placeAboveNow = card.style.bottom !== 'auto' && card.style.bottom !== '' && !String(card.style.bottom).startsWith('max');
+      if (placeBelowNow) {
+        // card below target → arrow on top edge, rotated up (points at hole)
+        arrow.style.top = (cr.top - 7) + 'px';
+        arrow.style.left = (cardCenterX + (holeCenterX - cardCenterX) * 0.4 - 7) + 'px';
+        arrow.style.transform = 'rotate(45deg)';
+      } else if (placeAboveNow) {
+        // card above target → arrow on bottom edge, rotated down
+        arrow.style.top = (cr.bottom - 7) + 'px';
+        arrow.style.left = (cardCenterX + (holeCenterX - cardCenterX) * 0.4 - 7) + 'px';
+        arrow.style.transform = 'rotate(225deg)';
+      } else {
+        arrow.style.top = '-99px';
+        arrow.style.left = '-99px';
+      }
+    }
   }
 
   function safeAdvance() {
@@ -205,7 +218,7 @@
   }
 
   function bindStep(step) {
-    if (!step.sel) return;
+    if (!step.sel && !step.selFn) return;
     var el = targetEl(step);
     if (!el) return;
     if (step.action === 'tap') {
@@ -214,7 +227,8 @@
       // the zone picker), so binding to the element itself would be lost.
       var onTap = function (e) {
         if (!e.target || !e.target.closest) return;
-        if (!e.target.closest(step.sel)) return;
+        var tapSelector = typeof step.selFn === 'function' ? step.selFn() : step.sel;
+        if (!tapSelector || !e.target.closest(tapSelector)) return;
         if (e.defaultPrevented) return;
         // Do NOT preventDefault/stopPropagation: the app's own handler must
         // run (e.g. selectScannerLocation / selectOpt) for the step to be real.
@@ -272,6 +286,14 @@
 
     // Navigation steps: switch to the target page so the control is actually visible.
     if (step.nav && typeof showPage === 'function' && step.action === 'tap') {
+      // The previous action step may have opened a sheet via the app's own
+      // handler (empty-CTA opens the SHOT modal; the FAB opens the drawer).
+      // Close those sheets so the next spotlighted control is reachable —
+      // otherwise the hole sits over a control buried under the modal.
+      ['logOv', 'wtOv'].forEach(function (sheetId) {
+        var sheet = document.getElementById(sheetId);
+        if (sheet && sheet.classList.contains('active')) sheet.classList.remove('active');
+      });
       try { showPage(step.nav, null); } catch (_) {}
     }
 
@@ -334,8 +356,9 @@
           }
         }(0), 180);
       }
-      var el = step.sel ? targetEl(step) : null;
-      if (step.sel && !el) {
+      var hasTarget = Boolean(step.sel || step.selFn);
+      var el = hasTarget ? targetEl(step) : null;
+      if (hasTarget && !el) {
         // Target temporarily missing: wait up to 3s (6 x 500ms), else degrade to explain step.
         if (retries < 6) { retries++; setTimeout(function () { renderStep(i); }, 500); return; }
         retries = 0;
@@ -344,8 +367,20 @@
       }
       if (el) {
         el.classList.add('gn-onb-target');
-        // Bring the target fully into the viewport (some controls are fixed or
-        // inside transformed containers; scroll window + element).
+        // Bring the target fully into the viewport FIRST so the spotlight hole and
+        // ring are always visible (v0.15.3: the CTA can sit above the fold in the
+        // mission-card empty state — without this the hole lands off-screen and the
+        // tour looks like a plain popup).
+        try {
+          var tRect = el.getBoundingClientRect();
+          var tVh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+          var tVw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+          if (tRect.top < 96 || tRect.bottom > tVh - 96) {
+            try { el.scrollIntoView({ block: 'center', behavior: 'auto' }); } catch (_) {
+              try { window.scrollBy({ top: (tRect.top + tRect.height / 2) - tVh / 2, behavior: 'auto' }); } catch (_) {}
+            }
+          }
+        } catch (_) {}
         try {
           var rect = el.getBoundingClientRect();
           var vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
@@ -382,10 +417,10 @@
       positionCard(el);
       overlay.querySelector('[data-onb-title]').textContent = c;
       overlay.querySelector('[data-onb-body]').textContent = t(step.body, step.body);
-      overlay.querySelector('[data-onb-kicker]').textContent = '// ' + t('onb.systemOrientation', 'SYSTEM ORIENTATION') + '  ' + (i + 1) + ' / ' + stepCount();
-      overlay.querySelector('[data-onb-dots]').innerHTML = Array.from({ length: stepCount() }, function (_, d) {
-        return '<i class="' + (d === i ? 'active' : '') + (d < i ? ' done' : '') + '"></i>';
-      }).join('');
+      overlay.querySelector('[data-onb-kicker]').textContent = t('onb.systemOrientation', 'QUICK START');
+      overlay.querySelector('[data-onb-step]').textContent = (isEs() ? 'PASO ' : 'STEP ') + String(i + 1).padStart(2, '0') + ' / ' + String(stepCount()).padStart(2, '0');
+      var pct = Math.round(((i + 1) / stepCount()) * 100);
+      overlay.querySelector('[data-onb-progress]').innerHTML = '<span style="width:' + pct + '%"></span>';
       overlay.querySelector('[data-onb-back]').disabled = i === 0;
       var next = overlay.querySelector('[data-onb-next]');
       var action = step.action;
@@ -431,6 +466,7 @@
   function dismiss(complete) {
     if (!complete) { try { localStorage.setItem('gn_onboarding_dismissed_v1', '1'); } catch (_) {} }
     if (overlay) { overlay.remove(); overlay = null; }
+    if (whatsnewSafety) document.removeEventListener('gn:whatsnew-shown', whatsnewSafety);
     removeSpotlight();
     document.removeEventListener('gn:langchange', onLangChange);
     document.removeEventListener('keydown', esc);
@@ -449,7 +485,7 @@
       // Only re-position the hole/card — NEVER re-render the step (re-render
       // re-runs prep scrolls, which re-fires scroll events: infinite loop).
       var step = STEPS[cur];
-      if (!step || !step.sel) return;
+      if (!step || (!step.sel && !step.selFn)) return;
       var el = targetEl(step);
       if (el) { positionHole(el); positionCard(el); }
     }, 120);
@@ -468,6 +504,8 @@
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
     overlay.setAttribute('aria-label', 'GRID//NODE orientation');
+    whatsnewSafety = function () { if (overlay && document.getElementById('gnWhatsNewOverlay')) dismiss(false); };
+    document.addEventListener('gn:whatsnew-shown', whatsnewSafety);
     // Four dim panes leave a hole over the spotlighted control so the real
     // control stays visible AND clickable (classic coach-mark pattern; the
     // container itself is pointer-events:none).
@@ -476,12 +514,16 @@
       '<div class="gn-onb-dim" data-onb-dim="b"></div>' +
       '<div class="gn-onb-dim" data-onb-dim="l"></div>' +
       '<div class="gn-onb-dim" data-onb-dim="r"></div>' +
+      '<div class="gn-onb-arrow" data-onb-arrow aria-hidden="true"></div>' +
       '<div class="gn-onb-card">' +
-        '<div class="gn-onb-kicker" data-onb-kicker></div>' +
+        '<div class="gn-onb-head">' +
+          '<div class="gn-onb-kicker" data-onb-kicker></div>' +
+          '<div class="gn-onb-step" data-onb-step></div>' +
+        '</div>' +
         '<h2 class="gn-onb-title" data-onb-title></h2>' +
         '<p class="gn-onb-body" data-onb-body></p>' +
         '<p class="gn-onb-hint" style="display:none"></p>' +
-        '<div class="gn-onb-dots" data-onb-dots aria-hidden="true"></div>' +
+        '<div class="gn-onb-progress" data-onb-progress aria-hidden="true"></div>' +
         '<div class="gn-onb-actions">' +
           '<button type="button" class="gn-onb-skip" data-onb-skip>' + (isEs() ? 'OMITIR' : 'SKIP') + '</button>' +
           '<button type="button" class="gn-onb-back" data-onb-back>' + (isEs() ? 'ATRÁS' : 'BACK') + '</button>' +
@@ -527,6 +569,9 @@
     else hub.appendChild(row);
   }
 
+  var whatsnewResolved = false;
+  var whatsnewSafety = null;
+  function markWhatsNewResolved() { whatsnewResolved = true; maybeAutoStart(); }
   function maybeAutoStart() {
     if (state() === 'complete') return;
     try { if (localStorage.getItem('gn_onboarding_dismissed_v1') === '1') return; } catch (_) {}
@@ -535,11 +580,20 @@
     var app = document.getElementById('app');
     var inApp = app && getComputedStyle(app).display !== 'none' && (!landing || getComputedStyle(landing).display === 'none');
     if (!inApp) { window.setTimeout(maybeAutoStart, 1200); return; }
-    // Sequencing: let WHAT'S NEW play first; the tour waits until it is dismissed.
+    // Sequencing: WHAT'S NEW decides first (shown→dismissed, or resolved=no-show).
+    // The tour never starts while the WHAT'S NEW overlay is on screen, and never
+    // overlaps it — either side waits for the other.
     var wn = document.getElementById('gnWhatsNewOverlay');
-    if (wn && (wn.classList.contains('active') || getComputedStyle(wn).display !== 'none')) { window.setTimeout(maybeAutoStart, 900); return; }
+    if (wn && (wn.classList.contains('active') || getComputedStyle(wn).display !== 'none')) { window.setTimeout(maybeAutoStart, 700); return; }
+    if (!whatsnewResolved) {
+      // Give whatsnew.js's boot() its poll window to decide; re-check.
+      window.setTimeout(function () { if (overlay) return; maybeAutoStart(); }, 900);
+      return;
+    }
     start(true);
   }
+  document.addEventListener('gn:whatsnew-resolved', markWhatsNewResolved);
+  document.addEventListener('gn:whatsnew-dismissed', markWhatsNewResolved);
 
   function boot() {
     if (document.readyState === 'loading') {

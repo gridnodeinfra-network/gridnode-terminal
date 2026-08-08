@@ -22,16 +22,58 @@
     root.style.colorScheme = light ? 'light' : 'dark';
   }
 
+  function currentLang() {
+    try { return localStorage.getItem('gn.lang') || 'en'; } catch (_) { return 'en'; }
+  }
   function syncLangControls() {
-    let lang = 'en';
-    try { lang = localStorage.getItem('gn.lang') || 'en'; } catch (_) { /* storage unavailable */ }
+    const lang = currentLang();
     document.querySelectorAll('.gn-language-control [data-lang-choice]').forEach(button => {
       button.classList.toggle('active', button.dataset.langChoice === lang);
     });
+    document.querySelectorAll('.gn-lang-globe').forEach(globe => {
+      globe.classList.toggle('active', false);
+      globe.setAttribute('aria-expanded', 'false');
+      const open = document.querySelector('.gn-lang-dropdown.open');
+      if (open && !open.closest('.gn-lang-wrap')) open.classList.remove('open');
+    });
+  }
+  function makeLangControl(context) {
+    const wrap = document.createElement('div');
+    wrap.className = 'gn-lang-wrap gn-lang-wrap-' + (context === 'topbar' ? 'topbar' : 'landing');
+    wrap.innerHTML =
+      '<button type="button" class="gn-lang-globe" aria-label="Language" title="Language" aria-haspopup="true" aria-expanded="false"><svg class="gn-theme-svg" viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 12h17M12 3.5c2.6 2.3 4 5.1 4 8.5s-1.4 6.2-4 8.5c-2.6-2.3-4-5.1-4-8.5s1.4-6.2 4-8.5z" stroke="currentColor" stroke-width="1.5"/></svg></button>' +
+      '<div class="gn-lang-dropdown" role="menu"><button type="button" data-lang-choice="en" role="menuitem">English</button><button type="button" data-lang-choice="es" role="menuitem">Español</button></div>';
+    const globe = wrap.querySelector('.gn-lang-globe');
+    globe.addEventListener('click', event => {
+      event.stopPropagation();
+      const open = wrap.querySelector('.gn-lang-dropdown');
+      const wasOpen = open.classList.contains('open');
+      document.querySelectorAll('.gn-lang-dropdown.open').forEach(d => d.classList.remove('open'));
+      if (!wasOpen) open.classList.add('open');
+      globe.setAttribute('aria-expanded', String(!wasOpen));
+    });
+    wrap.querySelectorAll('[data-lang-choice]').forEach(button => {
+      button.addEventListener('click', () => {
+        const lang = button.dataset.langChoice;
+        try { localStorage.setItem('gn.lang', lang); } catch (_) {}
+        document.documentElement.lang = lang;
+        document.dispatchEvent(new CustomEvent('gn:langchange', { detail: { lang } }));
+        document.querySelectorAll('.gn-lang-dropdown.open').forEach(d => d.classList.remove('open'));
+        globe.setAttribute('aria-expanded', 'false');
+        syncLangControls();
+      });
+    });
+    document.addEventListener('click', event => {
+      if (!wrap.contains(event.target)) wrap.querySelector('.gn-lang-dropdown')?.classList.remove('open');
+    });
+    return wrap;
   }
 
-  // Icon-only insignias: ☾ (night) and ☀ (dusk). The theme identities live in
-  // the aria labels so the control stays compact and never overlaps chrome.
+  // Custom brand SVG icons (R2.1): NIGHT = tall LA-style tower with lit
+  // windows (cyan + Mars accents); DUSK = flat city skyline (cyan). The
+  // identities live in the aria labels; icons stay 16-20px, no glyphs/emoji.
+  var THEME_NIGHT_SVG = '<svg class="gn-theme-svg gn-theme-svg-night" viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true"><rect x="9" y="3" width="6" height="18" rx="1" fill="currentColor" opacity=".55"/><rect x="7" y="14" width="2" height="7" fill="currentColor" opacity=".3"/><rect x="15" y="11" width="2" height="10" fill="currentColor" opacity=".3"/><rect x="11" y="5" width="2" height="2" fill="#FF3B3B"/><rect x="9" y="9" width="2" height="2" fill="#FF3B3B" opacity=".7"/><rect x="13" y="14" width="2" height="2" fill="currentColor" opacity=".85"/><path d="M2 21h20" stroke="currentColor" stroke-width="1.4" opacity=".5"/></svg>';
+  var THEME_DUSK_SVG = '<svg class="gn-theme-svg gn-theme-svg-dusk" viewBox="0 0 24 24" width="18" height="17" fill="none" aria-hidden="true"><path d="M2 20h20M4 17V11h3v6M9 17V8h3v9M14 17V6h3v11M19 17V10h2v7" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="12" cy="5" r="2" fill="currentColor" opacity=".8"/></svg>';
   function createToggle(context) {
     const group = document.createElement('div');
     group.className = 'gn-theme-toggle' + (context === 'topbar' ? ' gn-theme-toggle-topbar' : '');
@@ -39,8 +81,8 @@
     group.setAttribute('role', 'group');
     group.setAttribute('aria-label', text('theme.aria', 'THEME'));
     group.innerHTML =
-      '<button type="button" class="gn-theme-opt" data-theme-opt="dark" aria-label="' + text('theme.nightFull', 'BLADE RUNNER 2099 — NIGHT') + '" title="' + text('theme.switchToDark', 'BLADE RUNNER 2099 — NIGHT') + '"><span class="gn-theme-opt-icon" aria-hidden="true">☾</span></button>' +
-      '<button type="button" class="gn-theme-opt" data-theme-opt="light" aria-label="' + text('theme.daylightFull', 'BLADE RUNNER 2049 — DUSK') + '" title="' + text('theme.switchToLight', 'BLADE RUNNER 2049 — DUSK') + '"><span class="gn-theme-opt-icon" aria-hidden="true">☀</span></button>';
+      '<button type="button" class="gn-theme-opt" data-theme-opt="dark" aria-label="' + text('theme.nightFull', 'BLADE RUNNER 2099 — NIGHT') + '" title="' + text('theme.switchToDark', 'BLADE RUNNER 2099 — NIGHT') + '">' + THEME_NIGHT_SVG + '</button>' +
+      '<button type="button" class="gn-theme-opt" data-theme-opt="light" aria-label="' + text('theme.daylightFull', 'BLADE RUNNER 2049 — DUSK') + '" title="' + text('theme.switchToLight', 'BLADE RUNNER 2049 — DUSK') + '">' + THEME_DUSK_SVG + '</button>';
     return group;
   }
 
@@ -74,18 +116,17 @@
     document.querySelectorAll('.gn-theme-toggle-host').forEach(host => {
       if (!host.querySelector('[data-theme-toggle]')) host.appendChild(createToggle(host.classList.contains('gn-theme-toggle-host-topbar') ? 'topbar' : 'landing'));
     });
+    // Landing language: globe mount (R2 — icon only, no EN/ES text).
+    document.querySelectorAll('[data-landing-lang]').forEach(mount => {
+      if (!mount.querySelector('.gn-lang-globe')) mount.appendChild(makeLangControl('landing'));
+    });
     // Topbar: compact icon-only theme toggle + compact language control, both
     // BEFORE the avatar but sized so the avatar always stays visible/tappable.
     const topbar = document.querySelector('#app .topbar-actions');
     if (topbar) {
       if (!topbar.querySelector('[data-theme-toggle]')) topbar.prepend(createToggle('topbar'));
-      if (!topbar.querySelector('.gn-topbar-language-control')) {
-        const langControl = document.createElement('div');
-        langControl.className = 'gn-language-control gn-topbar-language-control';
-        langControl.setAttribute('role', 'group');
-        langControl.setAttribute('aria-label', 'EN | ES');
-        langControl.innerHTML = '<button type="button" data-lang-choice="en" aria-label="English">EN</button><button type="button" data-lang-choice="es" aria-label="Español">ES</button>';
-        topbar.prepend(langControl);
+      if (!topbar.querySelector('.gn-lang-wrap')) {
+        topbar.prepend(makeLangControl('topbar'));
       }
     }
     updateControls();

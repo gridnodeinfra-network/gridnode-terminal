@@ -187,6 +187,7 @@
     card.className = 'gn-badges-card';
     card.innerHTML = `<div class="gn-foundation-head"><div><div class="gn-foundation-kicker" data-i18n="badges.kicker">// COLLECTION</div><h3 data-i18n="badges.title">ACHIEVEMENT BADGES</h3></div></div><div class="gn-badges-grid" data-gn-badges></div>`;
     anchor.insertAdjacentElement('afterend', card);
+    window.GN_I18N?.applyTo?.(card);
   }
   function ensureStreakFlame() {
     const card = $('gnStreakCard');

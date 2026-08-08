@@ -447,7 +447,7 @@ html[data-theme="light"] .btn-full.btn-primary,
 html[data-theme="light"] .gn-auth-primary,
 html[data-theme="light"] .future-confirm-save,
 html[data-theme="light"] .gn-whatsnew-close {
-  background: radial-gradient(130% 170% at 50% 0%, #FF5B5B 0%, #f01f3f 48%, #8f0f28 100%) !important;
+  background: radial-gradient(130% 170% at 50% 0%, #CC2944 0%, #C61F3A 48%, #8f0f28 100%) !important;
   box-shadow: 0 4px 16px rgba(255, 45, 77, .32), inset 0 1px 0 rgba(255, 255, 255, .25) !important;
 }
 
@@ -930,7 +930,7 @@ html[data-theme="light"] .btn-primary,
 html[data-theme="light"] .landing-btn.primary,
 html[data-theme="light"] .future-confirm-save {
   background: radial-gradient(130% 170% at 50% 0%,
-    #FF5B5B 0%, #FF3B3B 42%, #8f0f28 100%) !important;
+    #CC2944 0%, #C61F3A 42%, #8f0f28 100%) !important;
   box-shadow: 0 4px 16px rgba(143, 15, 40, .35),
     inset 0 1px 0 rgba(255, 255, 255, .28) !important;
 }
@@ -1772,6 +1772,7 @@ html[data-theme="light"] #landing::before {
 html[data-theme="light"] #landing .landing-hero { background: transparent !important; }
 html[data-theme="light"] #landing .landing-logo { filter: none !important; }
 html[data-theme="light"] #landing .landing-kicker { color: #006f82 !important; }
+html[data-theme="dark"] #landing .landing-kicker { text-shadow: 0 0 14px rgba(0, 212, 255, 0.35); }
 html[data-theme="light"] #landing .landing-headline { color: #17272e !important; text-shadow: none !important; }
 html[data-theme="light"] #landing .landing-copy,
 html[data-theme="light"] #landing .landing-copy span { color: #38515a !important; }
@@ -2388,7 +2389,8 @@ html[data-theme="light"] :is(
   #logOv .btn-primary,#logOv .modal-btn.save,
   #wtOv .btn-primary,#wtOv .modal-btn.save,
   #gnResearchSave,#gnPreferencesSave,.fab,
-  .future-confirm-save,.archive-confirm-delete,.gn-delete-confirm
+  .future-confirm-save,.archive-confirm-delete,.gn-delete-confirm,
+  .empty-cta,.gn-empty-cta
 ) {
   border-color: var(--lava-edge) !important;
   background: linear-gradient(180deg, var(--lava-hot) 0%, var(--lava-core) 52%, var(--lava-edge) 100%) !important;
@@ -2401,7 +2403,8 @@ html[data-theme="light"] :is(
   #logOv .btn-primary,#logOv .modal-btn.save,
   #wtOv .btn-primary,#wtOv .modal-btn.save,
   #gnResearchSave,#gnPreferencesSave,.fab,
-  .future-confirm-save,.archive-confirm-delete,.gn-delete-confirm
+  .future-confirm-save,.archive-confirm-delete,.gn-delete-confirm,
+  .empty-cta,.gn-empty-cta
 ):active {
   background: linear-gradient(180deg, #ed2d1c 0%, #c71112 55%, #87060d 100%) !important;
   transform: translateY(1px);
@@ -2779,7 +2782,7 @@ html[data-theme="light"] #app .gn-theme-opt.active { color: #00718a; border-colo
 /* Globe language control + dropdown */
 #app .gn-lang-wrap { position: relative; display: flex; align-items: center; }
 #app .gn-lang-globe {
-  width: 32px; height: 32px; min-width: 32px; min-height: 32px;
+  width: 44px; height: 44px; min-width: 44px; min-height: 44px;
   padding: 0; display: inline-flex; align-items: center; justify-content: center;
   border: 1px solid transparent; border-radius: 50%;
   background: transparent; color: #4d6b75; opacity: .8; cursor: pointer;
@@ -2811,16 +2814,29 @@ html[data-theme="light"] #app .gn-lang-dropdown button:hover, html[data-theme="l
 /* Wordmark: never smaller than toggles */
 #app .app-wordmark-b2b svg { height: 24px; width: auto; }
 
-/* Mobile 360: keep everything fitting */
+/* Mobile 360: keep everything fitting (hit areas stay 44px; visuals shrink) */
 @media (max-width: 380px) {
-  #app .topbar-actions { gap: 6px; }
-  #app .gn-theme-opt, #app .gn-lang-globe { width: 30px; height: 30px; min-width: 30px; min-height: 30px; }
+  #app .topbar-actions { gap: 4px; }
+  #app .gn-theme-opt, #app .gn-lang-globe { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
 }
 
-/* Landing globe mount: keep it in the hero top-right area like the old pill */
+/* Landing globe mount: keep it in the hero top-right area like the old pill.
+   Hit area is 44px; the visible circle stays 32px (drawn on ::before). */
 .landing-lang-wrap { position: relative; display: inline-flex; }
-.landing-lang-wrap .gn-lang-globe { width: 32px; height: 32px; min-width: 32px; min-height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(0,212,255,.25); border-radius: 50%; background: rgba(5,10,16,.7); color: #8ea6b0; cursor: pointer; }
-.landing-lang-wrap .gn-lang-globe:hover, .landing-lang-wrap .gn-lang-globe:focus-visible { color: #00d4ff; border-color: rgba(0,212,255,.55); outline: none; }
+.landing-lang-wrap .gn-lang-globe {
+  width: 44px; height: 44px; min-width: 44px; min-height: 44px;
+  padding: 0; display: inline-flex; align-items: center; justify-content: center;
+  position: relative; border: 0; background: transparent;
+  color: #8ea6b0; cursor: pointer;
+}
+.landing-lang-wrap .gn-lang-globe::before {
+  content: ''; position: absolute; inset: 6px;
+  border: 1px solid rgba(0,212,255,.25); border-radius: 50%;
+  background: rgba(5,10,16,.7);
+}
+.landing-lang-wrap .gn-lang-globe svg { position: relative; z-index: 1; }
+.landing-lang-wrap .gn-lang-globe:hover, .landing-lang-wrap .gn-lang-globe:focus-visible { color: #00d4ff; outline: none; }
+.landing-lang-wrap .gn-lang-globe:hover::before, .landing-lang-wrap .gn-lang-globe:focus-visible::before { border-color: rgba(0,212,255,.55); }
 .landing-lang-wrap .gn-lang-dropdown { left: 0; right: auto; }
 
 /* ── v0.15.1 B10: inline action errors (Mars Red, near the action) ──── */
@@ -2832,3 +2848,87 @@ html[data-theme="light"] #app .gn-lang-dropdown button:hover, html[data-theme="l
   letter-spacing: .4px; word-break: break-word; overflow-wrap: anywhere;
 }
 html[data-theme="light"] .gn-inline-error { background: rgba(255, 59, 59, .06); color: #c22b2b; border-color: rgba(209, 36, 36, .5); }
+
+/* ─────────────────────────────────────────────────────────────────────
+   Exquisite Eyes WCAG / audit fixes — 2026-08-07
+   Verified by scripts/audit-served-day-ops.cjs (light + dark passes).
+   ───────────────────────────────────────────────────────────────────── */
+:root {
+  /* White text on the red-lava CTAs measured 3.04–3.54:1 (audit).
+     Deepened within the lava family: every gradient stop now ≥4.5:1
+     with white (the audit takes the minimum across all stops). */
+  --lava-hot: #CC2944;    /* was #D12424/#FF3B3B family */
+  --lava-core: #C61F3A;   /* was #FF3B3B (3.54:1) */
+  --lava-core-hi: #CC2944; /* was #FF5B5B */
+  --lava-edge: #8F0F28;   /* deep anchor, 9.3:1 */
+}
+/* Light theme re-binds the lava vars in html[data-theme="light"] (line ~2151);
+   re-deepen them there too so the audit's minimum-stop contrast passes. */
+html[data-theme="light"] {
+  --lava-hot: #CC2944;
+  --lava-core: #C61F3A;
+  --lava-edge: #8F0F28;
+}
+/* Calendar day numbers in night-grid: 3.03:1 → ~9:1.
+   Night-grid is the default theme (no data-theme attribute); the
+   light rule below (line ~650) keeps light-day styling. */
+.gn-date-grid .cal-day,
+.gn-custom-date [data-gn-date-day] { color: #DCEBF2 !important; }
+html:not([data-theme="light"]) .cal-day-num,
+html:not([data-theme="light"]) .cal-day,
+html:not([data-theme="light"]) .cal-day span { color: #DCEBF2 !important; }
+/* "YOUR DATA, YOUR RULES" link: 3.53:1 (night) → ~10:1 */
+#gnVaultPolicyLink { color: #9FC3CF; }
+/* Telemetry + empty-state copy floors (audit role floors: .P ≥ 15px, H3 ≥ 12px) */
+.gn-telemetry-heading p { font-size: 15px !important; }
+.gn-telemetry-instrument header h3 { font-size: 15px !important; }
+.gn-telemetry-instrument header p { font-size: 15px !important; }
+.gn-chart-state { font-size: .75rem !important; }
+.gn-empty-hero p { font-size: 15px !important; }
+em[data-i18n="research.organize"], em[data-i18n="lab.separateCalculators"] { font-size: .75rem !important; }
+.gn-dose-disclaimer, .gn-research-disclaimer { font-size: 15px !important; }
+/* LAB mixing reference note (audited at 12.8px vs 15px sentence floor) */
+#app [data-i18n="lab.mixingWarn"], .mixing-warn, .mixing-warn span { font-size: 15px !important; }
+html[data-theme="light"] #gnLabToolHost .mixing-warn,
+html[data-theme="light"] .mixing-warn span { font-size: 15px !important; }
+/* Narrow-width pill row: allow graceful two-row wrap, never clipped labels */
+.gn-empty-ghosts { grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); }
+.gn-empty-ghost { white-space: nowrap; }
+/* Passkey CTA (night): measured white-on-#FF3B3B 3.53:1 (audit). Deepen to
+   the lava family so every stop is >= 4.5:1 with white text. Light theme
+   keeps its neutral surface treatment (audit-clean). */
+html:not([data-theme="light"]) #gnPasskeyBtn {
+  background: linear-gradient(135deg, #C61F3A 0%, #8F0F28 100%) !important;
+  border-color: rgba(255, 59, 59, .4) !important;
+}
+/* es-419: Spanish sentence-length copy exceeds the audit's 34-char sentence
+   threshold → 15px floor (EN equivalents pass at their HUD sizes). The
+   :is(#landing,#login,...) :is(button,...) HUD rule forces 14px at
+   (1,1,2) specificity — these overrides out-rank it. */
+html[lang="es"] body #login #gnLocalBtn,
+html[lang="es"] body #app .gn-chart-state,
+html[lang="es"] body #gnLabToolOverlay #gnResearchSection strong[data-i18n="research.noticeTitle"] { font-size: 15px !important; }
+/* Polish (Exquisite Eyes sweep): in night-grid the active nav item colors
+   only its icon — color the label too so the state reads at a glance.
+   Checkboxes get the system-cyan accent (UA accent is near-invisible). */
+html:not([data-theme="light"]) .nav-item.active .nav-lbl { color: #00d4ff !important; }
+input[type="checkbox"] { accent-color: #00d4ff; }
+/* es-419: left-align the research notice body — justified/centered Spanish
+   text produces uneven word gaps at narrow widths. */
+html[lang="es"] .gn-research-notice { text-align: start !important; }
+
+/* es-419: long Spanish titles clip in the lab overlay/foundation headers —
+   allow wrapping and tighten tracking so nothing is cut at the edge. */
+html[lang="es"] .gn-lab-tool-head h2,
+html[lang="es"] .gn-foundation-head h2 {
+  font-size: .78rem !important;
+  letter-spacing: .5px !important;
+  white-space: normal !important;
+  line-height: 1.3 !important;
+}
+/* Light theme caps body copy at 12px (density rule); the audited
+   sentence-level copy is exempted so it meets the 15px floor. */
+html[data-theme="light"] #app :is(.gn-empty-hero p, .gn-telemetry-heading p,
+  .gn-telemetry-instrument header p, [data-i18n="lab.mixingWarn"]) {
+  font-size: 15px !important;
+}
