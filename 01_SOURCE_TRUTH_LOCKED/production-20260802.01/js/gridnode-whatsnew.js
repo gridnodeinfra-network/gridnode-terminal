@@ -256,6 +256,15 @@
         FIXED: ['El tour de inicio rápido ya no se apila sobre la tarjeta de novedades — se reproducen uno después del otro.', 'El efecto CRT de líneas de escaneo es más sutil para que los colores sigan vivos manteniendo la estética de terminal.']
       }
     },
+    '20260808.14': {
+      version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
+      en: {
+        FIXED: ['The language kanji now glows Mars Red in both English and Spanish (was cyan in English). On the sign-in card it sits cleanly above the header — no more overlap.']
+      },
+      es: {
+        FIXED: ['El kanji de idioma ahora brilla en rojo Marte tanto en inglés como en español (antes cian en inglés). En la tarjeta de inicio se ubica limpiamente sobre el encabezado — sin superposición.']
+      }
+    },
     '20260808.13': {
       version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
       en: {
