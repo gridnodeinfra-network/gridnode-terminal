@@ -73,8 +73,8 @@
       "sha256": "41beaeaa5c38002ead8ae7a8c164024e33afa5311d71b040ef186214dd0a464c"
     },
     "css/gridnode-native.css": {
-      "bytes": 177284,
-      "sha256": "3c1fef95f450f59b074f201f2f1e0b6b242b7280db46fc1848757358ecd2eeae"
+      "bytes": 180563,
+      "sha256": "a9698c1399af741910f7e125e9970d823b730745c409c6f6b011ca265b192487"
     },
     "i18n/en.json": {
       "bytes": 84047,
@@ -85,16 +85,16 @@
       "sha256": "82608a9dde3e36ed91821fe144548d8e84b35227112d2c3643840565e64a9b8e"
     },
     "index.html": {
-      "bytes": 431348,
-      "sha256": "793c7b7f3dfbefc6ee74ae2c9dfc4484f71a493f035c224f9929d3f4addf1746"
+      "bytes": 431509,
+      "sha256": "dffe30150acb6d8cd7c028267ca7d1a9d2e447d21e57e27e751db544900ac6e3"
     },
     "js/gridnode-app.js": {
       "bytes": 28077,
-      "sha256": "48eef4a8521c82abbb2065ba2b5962e07d0fde58e68ac5524c6fd57a95433006"
+      "sha256": "21f6204d0de3e6b392d003b8bfc9d630721bb21ebede80ec4b0585f6b7173110"
     },
     "js/gridnode-bundle.js": {
       "bytes": 347699,
-      "sha256": "f4d60c0836e1193b4615fa3bece64cb5b959961e6ed8aa5890a7f983214abcbe"
+      "sha256": "1dabc9f703408583ddfd531490579adb3b206514eaee40030c47f083fe94d54e"
     },
     "js/gridnode-core.js": {
       "bytes": 29217,
@@ -118,7 +118,7 @@
     },
     "js/gridnode-native.js": {
       "bytes": 23480,
-      "sha256": "e12310449f179c2703fd69a3b6a74645e56459c19ae89dce0db5bba1a33933f3"
+      "sha256": "5763423480f46b55acdb8ca35f548afe0984011c90f9002e7d0f8d441fb628fd"
     },
     "js/gridnode-onboarding.js": {
       "bytes": 31325,
@@ -142,11 +142,11 @@
     },
     "js/gridnode-version.js": {
       "bytes": 516,
-      "sha256": "4bec0ae2c37daceeae117af4dbeb284f016bdce9412a08f20298b7322a4f17fd"
+      "sha256": "cd8c6fff4e0c4e181a05d7813c1cfbaaec1f31de0267a5cae4d8c67d85844755"
     },
     "js/gridnode-whatsnew.js": {
-      "bytes": 32155,
-      "sha256": "b8639400915b6799b574af16c4d3622fe883161a6d6eab4f0ba89ac28b4be0e2"
+      "bytes": 32698,
+      "sha256": "73bef33d13a2498a1e05d93260113c1d73e56db691cb567d9817345f291ce365"
     },
     "manifest.json": {
       "bytes": 1547,
@@ -154,7 +154,7 @@
     },
     "sw.js": {
       "bytes": 5158,
-      "sha256": "18a8412a445c6d6c7f805cd687e2bbdd880f8f53e070e3a13daed5452fef70a8"
+      "sha256": "a67da9be18055caebdddf69f7771077e90bee0e201b876cad4de455d9871e3a0"
     }
   }
 }
