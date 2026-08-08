@@ -256,6 +256,15 @@
         FIXED: ['El tour de inicio rápido ya no se apila sobre la tarjeta de novedades — se reproducen uno después del otro.', 'El efecto CRT de líneas de escaneo es más sutil para que los colores sigan vivos manteniendo la estética de terminal.']
       }
     },
+    '20260808.10': {
+      version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
+      en: {
+        IMPROVED: ['The active tab now glows Mars Red instead of cyan — indicator, icon, and label. Touch feedback is premium: a two-stage mechanical click haptic on the tabs, a heavier thump on the FAB, and a springy punch with a red flash on press.']
+      },
+      es: {
+        IMPROVED: ['La pestaña activa ahora brilla en rojo Marte en lugar de cian — indicador, icono y etiqueta. La respuesta táctil es premium: un clic mecánico de dos fases en las pestañas, un golpe más fuerte en el FAB y un rebote con destello rojo al presionar.']
+      }
+    },
     '20260808.9': {
       version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
       en: {
