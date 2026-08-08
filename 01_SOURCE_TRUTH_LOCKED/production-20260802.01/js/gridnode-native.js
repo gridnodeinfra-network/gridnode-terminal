@@ -5,7 +5,7 @@
 (function () {
   'use strict';
 
-  const V = '20260808.9';
+  const V = '20260808.10';
   const SHOT_DRAFT_KEY = 'gn_shot_draft_session_v1';
   const PAGE_KEY = 'gn_active_page_session_v1';
   const OVERLAY_SELECTOR = '#logOv, #wtOv, #signOutOverlay, #archiveConfirmOv, #permanentDeleteConfirmOv, #futureTimestampConfirm, #csvImportOverlay, #gnWhatsNewOverlay, .gn-onb-overlay, .gn-lab-tool-overlay';
@@ -358,21 +358,30 @@
   }
 
   function wireTouchFeedback() {
-    // B14 (2026-08-08): 15ms haptic on pointerdown + 100ms punch animation
-    // on the four bottom-nav tabs. Reduced-motion kills both; iOS falls back
-    // to the visual punch only.
+    // B14 rev (2026-08-08): premium haptic on pointerdown. Flat 15ms reads
+    // cheap; a two-stage pattern [0,12,25,12] = click + rebound, like a
+    // mechanical key. FAB gets a heavier single thump. Visual: spring punch
+    // + brief Mars Red flash. Reduced-motion kills haptic + animation.
     const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
     document.addEventListener('pointerdown', event => {
       const control = event.target?.closest?.('.nav-item,.fab,[onclick*="saveShot"],[onclick*="saveWt"]');
       if (!control) return;
       if (!reduced() && navigator.vibrate) {
-        try { navigator.vibrate(control.classList.contains('nav-item') ? 15 : 8); } catch (_) {}
+        try {
+          if (control.classList.contains('nav-item')) {
+            // click-clack: tap, settle, rebound — premium mechanical feel
+            navigator.vibrate([0, 12, 25, 12]);
+          } else {
+            navigator.vibrate(18); // FAB: heavier single thump
+          }
+        } catch (_) {}
       }
       if (!reduced()) {
-        control.classList.remove('gn-punch');
+        control.classList.remove('gn-punch', 'gn-press-flash');
         // Force reflow so a rapid repeat re-triggers the animation.
         void control.offsetWidth;
         control.classList.add('gn-punch');
+        if (control.classList.contains('nav-item')) control.classList.add('gn-press-flash');
       }
     });
   }

@@ -7,9 +7,9 @@
   'use strict';
   window.GN_VERSION = Object.freeze({
     APP_VERSION: '0.15.5',
-    APP_BUILD: '20260808.9',
+    APP_BUILD: '20260808.10',
     semver: '0.15.5',
-    release: '20260808.9',
+    release: '20260808.10',
     title: 'V0.15.5 — A11Y · I18N · WCAG SWEEP',
     date: '2026-08-08'
   });
