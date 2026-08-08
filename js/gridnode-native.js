@@ -5,7 +5,7 @@
 (function () {
   'use strict';
 
-  const V = '20260808.6';
+  const V = '20260808.7';
   const SHOT_DRAFT_KEY = 'gn_shot_draft_session_v1';
   const PAGE_KEY = 'gn_active_page_session_v1';
   const OVERLAY_SELECTOR = '#logOv, #wtOv, #signOutOverlay, #archiveConfirmOv, #permanentDeleteConfirmOv, #futureTimestampConfirm, #csvImportOverlay, #gnWhatsNewOverlay, .gn-onb-overlay, .gn-lab-tool-overlay';
