@@ -3659,3 +3659,46 @@ html[data-theme="light"] .gn-whatsnew-card h2#gnWhatsNewHeading {
     animation: none !important;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+   Kanji — Mars Red in BOTH languages (2026-08-08 rev)
+   User: EN was left cyan; the kanji must be Mars Red in en and es.
+   Overrides the R2.2 rev block below (later in source = wins).
+   ───────────────────────────────────────────────────────────────────── */
+.gn-lang-wrap[data-lang="en"] .gn-lang-globe,
+.gn-lang-wrap[data-lang="es"] .gn-lang-globe,
+.gn-lang-wrap .gn-lang-globe {
+  color: #FF3B3B !important;
+}
+.gn-lang-wrap[data-lang="en"] .gn-lang-globe:hover,
+.gn-lang-wrap[data-lang="en"] .gn-lang-globe:focus-visible,
+.gn-lang-wrap[data-lang="es"] .gn-lang-globe:hover,
+.gn-lang-wrap[data-lang="es"] .gn-lang-globe:focus-visible,
+.gn-lang-wrap .gn-lang-globe:hover,
+.gn-lang-wrap .gn-lang-globe:focus-visible {
+  color: #FF3B3B !important;
+}
+html[data-theme="light"] .gn-lang-wrap[data-lang="en"] .gn-lang-globe,
+html[data-theme="light"] .gn-lang-wrap[data-lang="es"] .gn-lang-globe,
+html[data-theme="light"] .gn-lang-wrap .gn-lang-globe {
+  color: #D12424 !important;
+}
+html[data-theme="light"] .gn-lang-wrap .gn-lang-globe:hover,
+html[data-theme="light"] .gn-lang-wrap .gn-lang-globe:focus-visible {
+  color: #D12424 !important;
+}
+/* Auth kanji: no more absolute overlap — in-flow row above the kicker. */
+.gn-auth-lang-kanji {
+  position: static !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  margin: -10px -10px 6px 0 !important;
+}
+.gn-auth-lang-kanji .gn-lang-globe {
+  width: 40px !important; height: 40px !important;
+  min-width: 40px !important; min-height: 40px !important;
+}
+.gn-auth-lang-kanji .gn-lang-globe,
+html[data-theme="light"] .gn-auth-lang-kanji .gn-lang-globe {
+  color: #FF3B3B !important;
+}
