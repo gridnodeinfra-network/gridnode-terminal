@@ -256,6 +256,15 @@
         FIXED: ['El tour de inicio rápido ya no se apila sobre la tarjeta de novedades — se reproducen uno después del otro.', 'El efecto CRT de líneas de escaneo es más sutil para que los colores sigan vivos manteniendo la estética de terminal.']
       }
     },
+    '20260808.7': {
+      version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
+      en: {
+        IMPROVED: ['The landing kicker now glitches like a real CRT terminal — a faint RGB split at rest, then a brief channel-displacement burst every few seconds. Both themes, disabled with reduced motion.']
+      },
+      es: {
+        IMPROVED: ['El eslogan de la portada ahora tiene glitch como un terminal CRT real — una leve separación RGB en reposo y una breve ráfaga de desplazamiento cada pocos segundos. Ambos temas, desactivado con movimiento reducido.']
+      }
+    },
     '20260808.6': {
       version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
       en: {
