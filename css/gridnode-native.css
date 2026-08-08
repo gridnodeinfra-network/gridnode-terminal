@@ -3201,3 +3201,30 @@ html[data-theme="light"] :is(#app,#login,#landing) .gn-theme-toggle button.gn-th
 #app .gn-onb-target, .gn-onb-overlay .gn-onb-target {
   box-shadow: 0 0 0 4px #00d4ff, 0 0 34px rgba(0, 212, 255, .9) !important;
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+   R2.2 rev 2 (2026-08-08): kanji = THE language control.
+   Bigger (22px), direct toggle (no dropdown, no grey tabs). Click flips
+   EN<->ES; color follows: EN cyan, ES Mars Red. Auth shell uses the same
+   kanji. Dropdown styles above are dead but harmless; these win.
+   ───────────────────────────────────────────────────────────────────── */
+.gn-lang-kanji {
+  width: 22px !important; height: 22px !important;
+  filter: drop-shadow(0 0 4px currentColor);
+  transition: color .18s ease, filter .18s ease;
+}
+.gn-lang-wrap[data-lang="en"] .gn-lang-globe, .gn-auth-lang-kanji .gn-lang-globe:not([data-lang-choice="en"]) { color: #00d4ff; }
+.gn-lang-wrap[data-lang="en"] .gn-lang-globe { color: #00d4ff; }
+.gn-lang-wrap[data-lang="es"] .gn-lang-globe { color: #FF3B3B; }
+.gn-auth-lang-kanji .gn-lang-globe[data-lang-choice="en"] { color: #FF3B3B; } /* ES active -> shows Mars Red, click goes to EN */
+.gn-auth-lang-kanji .gn-lang-globe[data-lang-choice="es"] { color: #00d4ff; } /* EN active -> shows cyan, click goes to ES */
+.gn-auth-card { position: relative; }
+.gn-auth-lang-kanji { position: absolute; top: 14px; right: 14px; }
+.gn-auth-lang-kanji .gn-lang-globe {
+  width: 44px; height: 44px; min-width: 44px; min-height: 44px;
+  padding: 0; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid transparent; border-radius: 50%;
+  background: transparent; cursor: pointer;
+}
+html[data-theme="light"] .gn-lang-wrap[data-lang="en"] .gn-lang-globe { color: #00d4ff; }
+html[data-theme="light"] .gn-lang-wrap[data-lang="es"] .gn-lang-globe { color: #FF3B3B; }
