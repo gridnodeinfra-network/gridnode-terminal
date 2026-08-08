@@ -73,8 +73,8 @@
       "sha256": "41beaeaa5c38002ead8ae7a8c164024e33afa5311d71b040ef186214dd0a464c"
     },
     "css/gridnode-native.css": {
-      "bytes": 152028,
-      "sha256": "2d0b26352bc9a5347abb7176d343366ee89adb89b941d98828334378ed133d38"
+      "bytes": 153828,
+      "sha256": "6eb2f08d03e80351d64641d37d9b0e80ab530a4fa87970c4ffddba5650281779"
     },
     "i18n/en.json": {
       "bytes": 83956,
@@ -86,15 +86,15 @@
     },
     "index.html": {
       "bytes": 431280,
-      "sha256": "165901f13013952388239855a4c1fda9f56150efbb34082a80c2165528908d77"
+      "sha256": "95b18715f9d6c47c6118c4036b76c106dffb478e345115b74e2943170a338823"
     },
     "js/gridnode-app.js": {
       "bytes": 27789,
-      "sha256": "ad72df763316a1bfa129da932f9c9ac0931a721a36a3fa6462f18e8643cad96d"
+      "sha256": "85c4146f73f5b4a6e9cede4fc7e4f142a61f6e2ac889640baf5e8eaa71e33869"
     },
     "js/gridnode-bundle.js": {
       "bytes": 343879,
-      "sha256": "0734ba5019f787cb806fe31b2c828d4b87b241069f4a3eb931036c6b6904e6ba"
+      "sha256": "fe4ccee5952dec6540bba993a31f178f39bd1b26024ae92df01d71cd9002cd2e"
     },
     "js/gridnode-core.js": {
       "bytes": 29217,
@@ -118,7 +118,7 @@
     },
     "js/gridnode-native.js": {
       "bytes": 22561,
-      "sha256": "fa7f7eaffd97794777d8dd5950bd0cc9089549851bf9b662db5d32b02e721f6b"
+      "sha256": "7c12796860106bb22ff7ba3ca9ff0598f7b00d100e85a39ad2230e77ad0edc89"
     },
     "js/gridnode-onboarding.js": {
       "bytes": 31325,
@@ -142,11 +142,11 @@
     },
     "js/gridnode-version.js": {
       "bytes": 514,
-      "sha256": "777997dd100e3b70a14fa3494c3464aebb206567c5f73189c04d1dcd9c2d4cd3"
+      "sha256": "a7379d9703de5590794257c45b7bb5439c7bc57c72390c0f801b8aae15f8b81c"
     },
     "js/gridnode-whatsnew.js": {
-      "bytes": 25761,
-      "sha256": "81cc14e92ab69b575e8c7ff4228744b7e0876eb4348860b002527845d9e1c283"
+      "bytes": 26258,
+      "sha256": "abbf65d439e28601da8a5efe9bb6783500f4a0bb405b68e8d57367fff7d91748"
     },
     "manifest.json": {
       "bytes": 1547,
@@ -154,7 +154,7 @@
     },
     "sw.js": {
       "bytes": 5156,
-      "sha256": "4f71e59f4f701c386eb8f63fe7e2f99400b0b338ea138c88ec60ce2059029617"
+      "sha256": "ee503bb2b2bf2ce05b29ce26b710188c80d1b0984a8488feed823780891051bb"
     }
   }
 }

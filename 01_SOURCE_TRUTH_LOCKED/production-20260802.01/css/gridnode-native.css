@@ -1554,7 +1554,7 @@ html[data-theme="light"] .gn-onb-dim { background: rgba(24, 31, 35, .36) !import
   letter-spacing: .08em;
   cursor: pointer;
 }
-#pageDash[data-activation="pending"] > :not(.page-hdr):not(#gnWandaDashboard) {
+#pageDash[data-activation="pending"] > :not(.page-hdr):not(#gnWandaDashboard):not(.gn-empty-hero) {
   opacity: .5;
   filter: saturate(.45);
   transition: opacity var(--gn-motion-base) ease, filter var(--gn-motion-base) ease;
@@ -2627,7 +2627,7 @@ html[data-theme="light"] #logOv #cpShotMedDrop .cp-group-minimized-label {
   background: linear-gradient(180deg, #c91f12 0%, #b8180f 55%, #79050a 100%) !important;
 }
 
-html:not([data-theme="light"]) #pageDash[data-activation="pending"] > :not(.page-hdr):not(#gnWandaDashboard),
+html:not([data-theme="light"]) #pageDash[data-activation="pending"] > :not(.page-hdr):not(#gnWandaDashboard):not(.gn-empty-hero),
 html:not([data-theme="light"]) #pageDash[data-activation="pending"] #gnWandaDashboard > :not(#gnFirstShotMission) {
   opacity: .74 !important;
   filter: saturate(.42) contrast(.96) !important;
@@ -2931,4 +2931,34 @@ html[lang="es"] .gn-foundation-head h2 {
 html[data-theme="light"] #app :is(.gn-empty-hero p, .gn-telemetry-heading p,
   .gn-telemetry-instrument header p, [data-i18n="lab.mixingWarn"]) {
   font-size: 15px !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   Mars Red CTA restoration — founder direction 2026-08-08
+   The 2026-08-07 audit pass deepened the lava tokens (white-on-red
+   4.5:1), which made the primary CTAs read as dark washed-out maroon.
+   Founder locked Mars Red as THE CTA color: #FF3B3B -> #D12424 gradient
+   with the AA text-shadow on the label (below). Contrast for the label
+   is carried by the existing 0 1px 2px rgba(60,0,12,.45) text-shadow;
+   the audit's other fixes (calendar days, text floors, passkey, links)
+   remain untouched. Only CTA surfaces are restored.
+   ───────────────────────────────────────────────────────────────────── */
+:root {
+  --lava-core-hi: #FF5B5B;   /* Mars Red hover/light */
+  --lava-core: #FF3B3B;      /* Mars Red primary */
+  --lava-edge: #D12424;      /* Mars Red deep / pressed */
+}
+html[data-theme="light"] {
+  --lava-hot: #FF4B4B;
+  --lava-core-hi: #FF5B5B;
+  --lava-core: #FF3B3B;
+  --lava-edge: #D12424;
+}
+/* .btn-primary radial + hover + light variants consume the tokens above. */
+/* Mission-card CTA already used the locked Mars Red gradient; the gn-empty-cta
+   hero button now resolves through the restored tokens. Passkey CTA: restore
+   Mars Red to match the JACK IN rebuild spec (full-width Mars Red button). */
+html:not([data-theme="light"]) #gnPasskeyBtn {
+  background: linear-gradient(135deg, #FF3B3B 0%, #D12424 100%) !important;
+  border-color: rgba(255, 59, 59, .4) !important;
 }

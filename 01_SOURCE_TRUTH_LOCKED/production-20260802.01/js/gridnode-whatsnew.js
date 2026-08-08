@@ -256,6 +256,15 @@
         FIXED: ['El tour de inicio rápido ya no se apila sobre la tarjeta de novedades — se reproducen uno después del otro.', 'El efecto CRT de líneas de escaneo es más sutil para que los colores sigan vivos manteniendo la estética de terminal.']
       }
     },
+    '20260808.3': {
+      version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
+      en: {
+        FIXED: ['Home screen washed-out look fixed — the "REGISTER MY FIRST DOSE" CTA and empty-state hero are back at full Mars Red strength in local mode.']
+      },
+      es: {
+        FIXED: ['Se corrigió la apariencia deslavada de la pantalla de inicio — el CTA "REGISTRAR MI PRIMERA DOSIS" y el estado vacío vuelven al rojo Marte completo en modo local.']
+      }
+    },
     '20260808.2': {
       version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
       en: {
