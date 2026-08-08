@@ -256,6 +256,15 @@
         FIXED: ['El tour de inicio rápido ya no se apila sobre la tarjeta de novedades — se reproducen uno después del otro.', 'El efecto CRT de líneas de escaneo es más sutil para que los colores sigan vivos manteniendo la estética de terminal.']
       }
     },
+    '20260808.9': {
+      version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
+      en: {
+        IMPROVED: ['The CRT scan line now sweeps over every surface — WHAT\'S NEW, LAB tools, calculators, and all overlays — not just the main screens.']
+      },
+      es: {
+        IMPROVED: ['La línea de escaneo CRT ahora recorre todas las superficies — NOVEDADES, herramientas de LAB, calculadoras y todas las superposiciones — no solo las pantallas principales.']
+      }
+    },
     '20260808.8': {
       version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
       en: {
