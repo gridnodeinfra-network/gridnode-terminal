@@ -1512,5 +1512,7 @@
   "onb.themeBody": "NIGHT is dark. DUSK is light. Pick what's easier on your eyes — the whole app follows.",
   "onb.language": "Cambia de idioma",
   "onb.languageBody": "English and Spanish. Tap the globe and the whole app translates instantly.",
-  "mapping.needHeaderRow": "THIS CSV NEEDS A HEADER AND AT LEAST ONE ROW."
+  "mapping.needHeaderRow": "THIS CSV NEEDS A HEADER AND AT LEAST ONE ROW.",
+  "research.advanced": "ADVANCED",
+  "research.noticeToggleAria": "Toggle research notice"
 }

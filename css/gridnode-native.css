@@ -1276,8 +1276,9 @@ html[data-theme="light"] :is(.gn-topbar-language-control button,.landing-languag
 html[data-theme="light"] :is(.gn-topbar-language-control button.active,.landing-language-control button.active) { color: var(--text-accent) !important; }
 
 /* Inactive dashboard instruments stay secondary through surface/filter cues,
-   while their words remain readable. */
-html[data-theme="light"] #pageDash[data-activation="pending"] > :not(.page-hdr):not(#gnWandaDashboard),
+   while their words remain readable. B16 (2026-08-08): empty hero is NEVER
+   dimmed — the pending wash-out applied to both themes. */
+html[data-theme="light"] #pageDash[data-activation="pending"] > :not(.page-hdr):not(#gnWandaDashboard):not(.gn-empty-hero),
 html[data-theme="light"] #pageDash[data-activation="pending"] #gnWandaDashboard > :not(#gnFirstShotMission) {
   opacity: .76 !important;
   filter: saturate(.35) contrast(.96) !important;
@@ -2104,7 +2105,7 @@ html[data-theme="light"] :is(.gn-measurements-copy,.scanner-status-helper,.shots
 html[data-theme="light"] :is(.gn-foundation-signal,.gn-lab-breadcrumb,.scanner-source-tag,#scannerModeLabel,.gn-log-step,.results-metric-label,.cal-day-head,#calTitle) { color: var(--text-label) !important; }
 html[data-theme="light"] :is(.gn-topbar-language-control button,.landing-language-control button) { color: var(--text-muted) !important; }
 html[data-theme="light"] :is(.gn-topbar-language-control button.active,.landing-language-control button.active) { color: var(--text-accent) !important; }
-html[data-theme="light"] #pageDash[data-activation="pending"] > :not(.page-hdr):not(#gnWandaDashboard),
+html[data-theme="light"] #pageDash[data-activation="pending"] > :not(.page-hdr):not(#gnWandaDashboard):not(.gn-empty-hero),
 html[data-theme="light"] #pageDash[data-activation="pending"] #gnWandaDashboard > :not(#gnFirstShotMission) { opacity: .76 !important; filter: saturate(.35) contrast(.96) !important; }
 html[data-theme="light"] :is(.cp-select-trigger,.gn-select-trigger,.gn-custom-picker-trigger,.gn-custom-date-trigger) {
   background: #fffdf8 !important; color: var(--text-primary) !important; border-color: rgba(32,61,71,.34) !important; -webkit-text-fill-color: var(--text-primary) !important;
@@ -2970,30 +2971,32 @@ html:not([data-theme="light"]) #gnPasskeyBtn {
 }
 
 /* ─────────────────────────────────────────────────────────────────────
-   R2.2 — 2077 kanji language icon (2026-08-08)
-   One kanji (電), colored by ACTIVE language: EN = electric cyan,
-   ES = Mars Red. Glow blends into the topbar via drop-shadow on
-   currentColor; strokes stay sharp. Icon-only — no text labels.
+   R2.2 — 2077 kanji language icon (2026-08-08, rev)
+   One kanji (電), single SVG, stroke currentColor stroke-width 2.
+   Color = ACTIVE language via data-lang on parent wrap:
+     EN = electric cyan #00d4ff, ES = Mars Red #FF3B3B.
+   Blend: drop-shadow(0 0 3px currentColor). 8px padding, no box,
+   no visible border. Hit area stays 44px (WCAG 2.5.8) but invisible.
+   Theme toggle (R2.1 city/tower SVGs) is untouched.
    ───────────────────────────────────────────────────────────────────── */
-#app .gn-lang-globe .gn-lang-kanji {
+.gn-lang-wrap { padding: 8px; }
+.gn-lang-wrap[data-lang="en"] .gn-lang-globe { color: #00d4ff; }
+.gn-lang-wrap[data-lang="es"] .gn-lang-globe { color: #FF3B3B; }
+.gn-lang-kanji {
   width: 18px; height: 18px;
-  color: var(--accent-cyan, #00d4ff);
   filter: drop-shadow(0 0 3px currentColor);
-  transition: color .18s ease, filter .18s ease, opacity .18s ease;
+  transition: color .18s ease, filter .18s ease;
 }
-html[lang="es"] #app .gn-lang-globe .gn-lang-kanji {
-  color: #FF3B3B; /* Mars Red when Español is active */
+#app .gn-lang-globe {
+  width: 44px; height: 44px; min-width: 44px; min-height: 44px;
+  padding: 0; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid transparent; border-radius: 50%;
+  background: transparent; opacity: 1; cursor: pointer;
+  transition: opacity .15s;
 }
-#app .gn-lang-globe { color: var(--accent-cyan, #00d4ff); opacity: 1; }
-#app .gn-lang-globe .gn-lang-kanji { opacity: 1; }
-html[lang="es"] #app .gn-lang-globe { color: #FF3B3B; }
-.landing-lang-wrap .gn-lang-globe .gn-lang-kanji {
-  width: 18px; height: 18px;
-  color: var(--accent-cyan, #00d4ff);
-  filter: drop-shadow(0 0 3px currentColor);
-}
-html[lang="es"] .landing-lang-wrap .gn-lang-globe .gn-lang-kanji { color: #FF3B3B; }
-
+#app .gn-lang-globe:hover, #app .gn-lang-globe:focus-visible { opacity: 1; outline: none; }
+.gn-lang-wrap[data-lang="en"] .gn-lang-globe:hover, .gn-lang-wrap[data-lang="en"] .gn-lang-globe:focus-visible { color: #00d4ff; }
+.gn-lang-wrap[data-lang="es"] .gn-lang-globe:hover, .gn-lang-wrap[data-lang="es"] .gn-lang-globe:focus-visible { color: #FF3B3B; }
 /* ─────────────────────────────────────────────────────────────────────
    B13 — CRT rolling scanline (2026-08-08)
    A thin cyan line rolls top-to-bottom every 5s with a phosphor
@@ -3007,13 +3010,23 @@ html[lang="es"] .landing-lang-wrap .gn-lang-globe .gn-lang-kanji { color: #FF3B3
 .gn-crt-scanline::before {
   content: ""; position: absolute; left: 0; width: 100%; height: 2px;
   background: rgba(0, 212, 255, .5);
-  box-shadow: 0 0 10px rgba(0, 212, 255, .45), 0 6px 14px rgba(0, 212, 255, .22), 0 -6px 14px rgba(0, 212, 255, .18);
-  animation: gnCrtRoll 5.2s cubic-bezier(.55, .12, .6, .9) infinite;
+  /* B13 rev: 6-10px phosphor halo above + below the line */
+  box-shadow: 0 0 10px rgba(0, 212, 255, .5), 0 8px 10px rgba(0, 212, 255, .28), 0 -8px 10px rgba(0, 212, 255, .24);
+  animation: gnCrtRoll 5.2s cubic-bezier(.55, .12, .6, .9) infinite, gnCrtJitter 30s steps(1) infinite;
 }
 @keyframes gnCrtRoll {
   0% { top: -3%; }
   55% { top: 97%; }
   100% { top: 97%; }
+}
+/* B13 rev: random 1-2px horizontal jitter every ~30s (30s cycle,
+   steps() = hard snap, never smooth drift) */
+@keyframes gnCrtJitter {
+  0%, 96% { transform: translateX(0); }
+  96.5% { transform: translateX(1px); }
+  97% { transform: translateX(-2px); }
+  97.5% { transform: translateX(1px); }
+  98%, 100% { transform: translateX(0); }
 }
 @media (prefers-reduced-motion: reduce) {
   .gn-crt-scanline { display: none !important; }
@@ -3078,10 +3091,10 @@ html[data-theme="light"] .gn-crt-scanline::before {
   margin-right: 12px !important;
 }
 #logOv .modal, #wtOv .modal {
-  border-radius: 18px !important;
+  border-radius: 16px !important;
   align-self: center !important;
   margin: auto !important;
-  max-height: 82vh !important;
+  max-height: 90vh !important;
 }
 #logOv, #wtOv {
   align-items: center !important;
@@ -3124,3 +3137,67 @@ html[data-theme="light"] .gn-research-notice-compact {
 }
 html[data-theme="light"] .gn-research-notice-compact strong { color: #1c2b31; }
 html[data-theme="light"] .gn-research-notice-body { color: #4d6b75; }
+
+/* ─────────────────────────────────────────────────────────────────────
+   B12 — Advanced expand (2026-08-08, rev)
+   FUENTE + OBSERVACIONES collapse behind an "ADVANCED" disclosure so
+   the peptide form fits 360px without scroll: NOMBRE + CATEGORÍA +
+   FECHA + ESTADO visible, the rest one tap away.
+   ───────────────────────────────────────────────────────────────────── */
+.gn-advanced-fields {
+  margin: 2px 0 0;
+  border: 1px solid rgba(0, 212, 255, .16);
+  border-radius: 8px;
+  background: rgba(0, 212, 255, .03);
+  overflow: hidden;
+}
+.gn-advanced-toggle {
+  display: block; width: 100%; padding: 8px 10px;
+  border: 0; background: transparent;
+  color: #7fd8e6;
+  font: 700 .56rem var(--font-d, monospace);
+  letter-spacing: 1.6px;
+  cursor: pointer;
+  text-align: left;
+  user-select: none;
+}
+.gn-advanced-toggle:hover, .gn-advanced-toggle:focus-visible {
+  color: #00d4ff; outline: none; background: rgba(0, 212, 255, .06);
+}
+.gn-advanced-toggle::after {
+  content: "+"; float: right; color: #5d94a1; font-weight: 800;
+}
+.gn-advanced-toggle.open::after { content: "−"; }
+.gn-advanced-body { padding: 10px 10px 0; }
+.gn-advanced-body > label:last-child { padding-bottom: 10px; }
+.gn-advanced-body[hidden] { display: none; }
+html[data-theme="light"] .gn-advanced-fields {
+  background: #f1eee5; border-color: rgba(0, 111, 130, .25);
+}
+html[data-theme="light"] .gn-advanced-toggle { color: #2d5d6b; }
+html[data-theme="light"] .gn-advanced-toggle:hover { background: rgba(0, 111, 130, .06); }
+
+/* ─────────────────────────────────────────────────────────────────────
+   B16 rev — contrast pass (2026-08-08)
+   Ghost buttons ~50% presence (were ~30%): brighter border + fill.
+   Theme icons: full cyan active, 40% opacity inactive (explicit).
+   Tutorial spotlight: thicker ring + darker backdrop dim.
+   ───────────────────────────────────────────────────────────────────── */
+.gn-empty-ghost {
+  border-color: rgba(0, 230, 240, .5) !important;
+  background: rgba(0, 230, 240, .1) !important;
+  color: #c6f4f8 !important;
+}
+.gn-empty-ghost:hover, .gn-empty-ghost:focus-visible {
+  border-color: rgba(0, 230, 240, .8) !important;
+  background: rgba(0, 230, 240, .18) !important;
+  color: #e8fcff !important;
+}
+:is(#app,#login,#landing) .gn-theme-toggle button.gn-theme-opt { color: #7fa3ad; opacity: .4 !important; }
+:is(#app,#login,#landing) .gn-theme-toggle button.gn-theme-opt.active { color: #00d4ff; opacity: 1 !important; }
+html[data-theme="light"] :is(#app,#login,#landing) .gn-theme-toggle button.gn-theme-opt { color: #4d6b75; opacity: .4 !important; }
+html[data-theme="light"] :is(#app,#login,#landing) .gn-theme-toggle button.gn-theme-opt.active { color: #006f82; opacity: 1 !important; }
+.gn-onb-dim { background: rgba(1, 3, 6, .9); }
+#app .gn-onb-target, .gn-onb-overlay .gn-onb-target {
+  box-shadow: 0 0 0 4px #00d4ff, 0 0 34px rgba(0, 212, 255, .9) !important;
+}
