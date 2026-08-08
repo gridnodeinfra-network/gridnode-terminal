@@ -1772,6 +1772,7 @@ html[data-theme="light"] #landing::before {
 html[data-theme="light"] #landing .landing-hero { background: transparent !important; }
 html[data-theme="light"] #landing .landing-logo { filter: none !important; }
 html[data-theme="light"] #landing .landing-kicker { color: #006f82 !important; }
+html[data-theme="dark"] #landing .landing-kicker { text-shadow: 0 0 14px rgba(0, 212, 255, 0.35); }
 html[data-theme="light"] #landing .landing-headline { color: #17272e !important; text-shadow: none !important; }
 html[data-theme="light"] #landing .landing-copy,
 html[data-theme="light"] #landing .landing-copy span { color: #38515a !important; }
