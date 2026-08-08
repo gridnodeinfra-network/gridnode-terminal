@@ -256,6 +256,15 @@
         FIXED: ['El tour de inicio rápido ya no se apila sobre la tarjeta de novedades — se reproducen uno después del otro.', 'El efecto CRT de líneas de escaneo es más sutil para que los colores sigan vivos manteniendo la estética de terminal.']
       }
     },
+    '20260808.12': {
+      version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
+      en: {
+        IMPROVED: ['The dedication heart glows violet. For Oskar.', 'The sign-in card is now Mars Black with Mars Red type — the whole auth surface runs on the red family.']
+      },
+      es: {
+        IMPROVED: ['El corazón de la dedicatoria brilla en violeta. Para Oskar.', 'La tarjeta de inicio ahora es Negro Marte con texto Rojo Marte — toda la superficie de autenticación corre en la familia roja.']
+      }
+    },
     '20260808.11': {
       version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
       en: {

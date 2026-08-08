@@ -3493,3 +3493,78 @@ html[data-theme="light"] .nav-item.active .nav-lbl {
   .nav-item.gn-punch, .fab.gn-punch,
   .nav-item.gn-press-flash { animation: none !important; }
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+   Auth card — Mars Black + Mars Red type (2026-08-08)
+   NIGHT: warm near-black card (mars black), red-tinted border + top
+   line, all auth type in the Mars Red family. DUSK: light surface
+   kept readable, cyan swapped for Mars Red accents + type.
+   ───────────────────────────────────────────────────────────────────── */
+html:not([data-theme="light"]) .gn-auth-card {
+  background: linear-gradient(180deg, rgba(22, 6, 8, .97), rgba(5, 2, 3, .99)) !important;
+  border: 1px solid rgba(255, 59, 59, .34) !important;
+  border-top: 2px solid #FF3B3B !important;
+  box-shadow: 0 16px 46px rgba(0, 0, 0, .55), 0 0 24px rgba(255, 59, 59, .12) !important;
+}
+html:not([data-theme="light"]) .gn-auth-card .gn-auth-kicker {
+  color: #FF5B5B !important;
+}
+html:not([data-theme="light"]) .gn-auth-card .gn-auth-title {
+  color: #FF5B5B !important;
+}
+html:not([data-theme="light"]) .gn-auth-card .gn-auth-copy {
+  color: #E88A8A !important;
+}
+html:not([data-theme="light"]) .gn-auth-card .gn-auth-primary-label {
+  color: #FF3B3B !important;
+}
+html:not([data-theme="light"]) .gn-auth-card .gn-auth-divider {
+  color: #FF5B5B !important;
+}
+html:not([data-theme="light"]) .gn-auth-card .gn-auth-divider::before,
+html:not([data-theme="light"]) .gn-auth-card .gn-auth-divider::after {
+  background: rgba(255, 59, 59, .28) !important;
+}
+html:not([data-theme="light"]) .gn-auth-card .gn-auth-local {
+  color: #FF5B5B !important;
+}
+html:not([data-theme="light"]) .gn-auth-card .gn-auth-link,
+html:not([data-theme="light"]) .gn-auth-card .gn-auth-note,
+html:not([data-theme="light"]) .gn-auth-card .gn-auth-message {
+  color: #E88A8A !important;
+}
+html:not([data-theme="light"]) .gn-auth-card .gn-auth-field {
+  border-color: rgba(255, 59, 59, .34) !important;
+  background: #0B0304 !important;
+  color: #FFB3B3 !important;
+}
+html:not([data-theme="light"]) .gn-auth-card .gn-auth-google {
+  border-color: rgba(255, 59, 59, .4) !important;
+  color: #FF5B5B !important;
+}
+/* DUSK: light surface stays readable; cyan -> Mars Red accents + type. */
+html[data-theme="light"] .gn-auth-card {
+  border: 1px solid rgba(209, 36, 36, .35) !important;
+  border-top: 2px solid #D12424 !important;
+}
+html[data-theme="light"] .gn-auth-card .gn-auth-kicker,
+html[data-theme="light"] .gn-auth-card .gn-auth-primary-label {
+  color: #D12424 !important;
+}
+html[data-theme="light"] .gn-auth-card .gn-auth-divider {
+  color: #B32727 !important;
+}
+html[data-theme="light"] .gn-auth-card .gn-auth-divider::before,
+html[data-theme="light"] .gn-auth-card .gn-auth-divider::after {
+  background: rgba(209, 36, 36, .3) !important;
+}
+html[data-theme="light"] .gn-auth-card .gn-auth-local {
+  color: #B32727 !important;
+}
+html[data-theme="light"] .gn-auth-card .gn-auth-link,
+html[data-theme="light"] .gn-auth-card .gn-auth-note {
+  color: #8A4A4A !important;
+}
+html[data-theme="light"] .gn-auth-card .gn-auth-field {
+  border-color: rgba(209, 36, 36, .35) !important;
+}

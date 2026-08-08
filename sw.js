@@ -4,8 +4,8 @@
  */
 'use strict';
 
-const RELEASE = '20260808.11';
-const CACHE_NAME = 'gridnode-shell-20260808-11' + RELEASE.replace(/\./g, '-');
+const RELEASE = '20260808.12';
+const CACHE_NAME = 'gridnode-shell-20260808-12' + RELEASE.replace(/\./g, '-');
 const V = '?v=' + RELEASE;
 const SHELL = [
   '/',
