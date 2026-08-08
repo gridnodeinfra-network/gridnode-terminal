@@ -256,6 +256,17 @@
         FIXED: ['El tour de inicio rápido ya no se apila sobre la tarjeta de novedades — se reproducen uno después del otro.', 'El efecto CRT de líneas de escaneo es más sutil para que los colores sigan vivos manteniendo la estética de terminal.']
       }
     },
+    '20260808.5': {
+      version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
+      en: {
+        IMPROVED: ['Revision pass: kanji stroke sharpened (2px), theme icons dim to 40% when inactive, ghost buttons more visible, peptide form auto-scrolls into view after picking a compound, and FUENTE + OBSERVACIONES collapse behind an ADVANCED toggle.'],
+        FIXED: ['DUSK theme home screen no longer washes out — the light-theme dim rule now spares the empty-state hero.']
+      },
+      es: {
+        IMPROVED: ['Pase de revisión: trazo del kanji afinado (2px), iconos de tema al 40% cuando están inactivos, botones fantasma más visibles, el formulario de péptidos se desplaza automáticamente al elegir un compuesto, y FUENTE + OBSERVACIONES se pliegan tras un conmutador AVANZADO.'],
+        FIXED: ['La pantalla de inicio del tema DUSK ya no se ve deslavada — la regla de atenuación del tema claro ahora respeta el estado vacío.']
+      }
+    },
     '20260808.4': {
       version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
       en: {

@@ -2883,7 +2883,7 @@ function ensureLabFoundations() {
         <div class="gn-research-mode-chips"><span class="gn-research-chip" id="gnModeLibraryChip" data-i18n="research.modeLibrarySelected">BIBLIOTECA · SELECCIONADA</span><span class="gn-research-chip" id="gnModeCategoryChip" data-i18n="research.modeCategoryAssigned">CATEGORÍA · ASIGNADA</span></div>
         <div class="gn-research-mode-custom"><span class="gn-research-mode-title" data-i18n="research.modeCustomTitle">CREAR ENTRADA PERSONALIZADA</span><button type="button" class="gn-research-back" id="gnModeBack" onclick="researchBackToLibrary()" data-i18n="research.backToLibrary">← Volver a la biblioteca</button></div>
       </div>
-      <form class="gn-record-form" id="gnResearchForm"><div class="gn-form-grid"><label><span data-i18n="research.recordName">RECORD NAME</span> <em data-research-badge class="gn-research-preset-badge"></em><input id="gnResearchName" required placeholder="Select a library entry or type a custom name" data-i18n-placeholder="research.recordNamePlaceholder"></label><label><span data-i18n="research.category">CATEGORY</span><input id="gnResearchCategory" placeholder="Research category" data-i18n-placeholder="research.categoryPlaceholder"></label><label><span data-i18n="research.date">DATE</span><input id="gnResearchDate" type="date"></label></div><div class="gn-form-grid"><label><span data-i18n="research.status">STATUS</span><select id="gnResearchState"><option value="TRACKING" data-i18n="research.tracking">TRACKING</option><option value="COMPLETED" data-i18n="research.completed">COMPLETED</option><option value="ARCHIVED" data-i18n="research.archived">ARCHIVED</option><option value="RESEARCH NOTE ONLY" data-i18n="research.noteOnly">RESEARCH NOTE ONLY</option></select></label><label><span data-i18n="research.source">SOURCE</span><input id="gnResearchSource" placeholder="User-entered source or note" data-i18n-placeholder="research.sourcePlaceholder"></label></div><label><span data-i18n="research.observations">OBSERVATIONS / NOTES</span><textarea id="gnResearchNotes" rows="3" placeholder="User-entered observations only" data-i18n-placeholder="research.observationsPlaceholder"></textarea></label><button class="btn-full btn-primary" type="submit" id="gnResearchSave" data-i18n="research.save">SAVE RESEARCH RECORD</button></form>
+      <form class="gn-record-form" id="gnResearchForm"><div class="gn-form-grid"><label><span data-i18n="research.recordName">RECORD NAME</span> <em data-research-badge class="gn-research-preset-badge"></em><input id="gnResearchName" required placeholder="Select a library entry or type a custom name" data-i18n-placeholder="research.recordNamePlaceholder"></label><label><span data-i18n="research.category">CATEGORY</span><input id="gnResearchCategory" placeholder="Research category" data-i18n-placeholder="research.categoryPlaceholder"></label><label><span data-i18n="research.date">DATE</span><input id="gnResearchDate" type="date"></label></div><div class="gn-form-grid"><label><span data-i18n="research.status">STATUS</span><select id="gnResearchState"><option value="TRACKING" data-i18n="research.tracking">TRACKING</option><option value="COMPLETED" data-i18n="research.completed">COMPLETED</option><option value="ARCHIVED" data-i18n="research.archived">ARCHIVED</option><option value="RESEARCH NOTE ONLY" data-i18n="research.noteOnly">RESEARCH NOTE ONLY</option></select></label></div><div class="gn-advanced-fields"><button type="button" class="gn-advanced-toggle" aria-expanded="false" aria-controls="gnAdvancedFields" data-i18n="research.advanced">ADVANCED</button><div class="gn-advanced-body" id="gnAdvancedFields" hidden><div class="gn-form-grid"><label><span data-i18n="research.source">SOURCE</span><input id="gnResearchSource" placeholder="User-entered source or note" data-i18n-placeholder="research.sourcePlaceholder"></label></div><label><span data-i18n="research.observations">OBSERVATIONS / NOTES</span><textarea id="gnResearchNotes" rows="3" placeholder="User-entered observations only" data-i18n-placeholder="research.observationsPlaceholder"></textarea></label></div></div><button class="btn-full btn-primary" type="submit" id="gnResearchSave" data-i18n="research.save">SAVE RESEARCH RECORD</button></form>
       <div class="gn-record-list" id="gnResearchList"></div>
     </details>
     <details class="gn-foundation-section" id="gnLedgerSection"><summary><span data-i18n="lab.ledgerTitle">SOURCE-AWARE EVENT LEDGER</span><em data-i18n="lab.noSilentRewrites">NO SILENT REWRITES</em></summary><div class="gn-ledger-copy" data-i18n="lab.ledgerCopy">Every important record keeps its origin and review state. Manual Entry, Import, Device Reported, and System Generated events remain distinguishable.</div><div class="gn-ledger-list" id="gnLedgerList"></div></details>
@@ -2897,6 +2897,18 @@ function ensureLabFoundations() {
       const open = !body.hidden;
       body.hidden = open;
       toggle.setAttribute('aria-expanded', String(!open));
+    });
+  });
+  // B12 rev (2026-08-08): Advanced fields (FUENTE + OBSERVACIONES) collapse.
+  // Button + hidden div, not <details> — Chromium breaks details content
+  // layout when styled, so we drive it explicitly.
+  document.querySelectorAll('.gn-advanced-toggle').forEach(toggle => {
+    toggle.addEventListener('click', () => {
+      const body = document.getElementById(toggle.getAttribute('aria-controls'));
+      const open = !body.hidden;
+      body.hidden = open;
+      toggle.setAttribute('aria-expanded', String(!open));
+      toggle.classList.toggle('open', !open);
     });
   });
   $('gnResearchList')?.addEventListener('click', handleResearchAction);
@@ -3761,8 +3773,13 @@ function initModules() {
         if (customSave) customSave.textContent = tx('research.save', 'SAVE RESEARCH RECORD');
         const cw = $('gnCustomWarning');
         if (cw) cw.style.display = 'none';
+        // B12 rev (2026-08-08): after picking a peptide, bring the form
+        // into view so NOMBRE + CATEGORÍA are visibly auto-filled —
+        // the user can log in ≤3 taps + fill on a 360px screen.
+        $('gnResearchForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       } else {
         researchEnterCustomMode();
+        $('gnResearchForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }
     const researchDelete = event.target.closest('[data-research-delete]'); if (researchDelete) deleteResearchRecord(researchDelete.dataset.researchDelete);
@@ -4551,7 +4568,7 @@ function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   if (window.GN_SW?.register) { window.GN_SW.register(); return; }
   navigator.serviceWorker
-    .register('/sw.js?v=20260808.4', { updateViaCache: 'none' })
+    .register('/sw.js?v=20260808.5', { updateViaCache: 'none' })
     .then(registration => registration.update())
     .catch(() => {});
 }
