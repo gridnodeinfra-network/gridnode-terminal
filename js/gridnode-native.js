@@ -5,7 +5,7 @@
 (function () {
   'use strict';
 
-  const V = '20260808.1';
+  const V = '20260808.2';
   const SHOT_DRAFT_KEY = 'gn_shot_draft_session_v1';
   const PAGE_KEY = 'gn_active_page_session_v1';
   const OVERLAY_SELECTOR = '#logOv, #wtOv, #signOutOverlay, #archiveConfirmOv, #permanentDeleteConfirmOv, #futureTimestampConfirm, #csvImportOverlay, #gnWhatsNewOverlay, .gn-onb-overlay, .gn-lab-tool-overlay';
@@ -368,6 +368,7 @@
   const swManager = {
     registration: null,
     applying: false,
+    announced: null,
     async register() {
       if (!('serviceWorker' in navigator)) return null;
       try {
@@ -375,6 +376,12 @@
         this.registration = registration;
         const ready = worker => {
           if (!worker || !navigator.serviceWorker.controller) return;
+          // The same waiting worker can be announced twice on one load: once
+          // via registration.waiting (already-waiting from a prior visit) and
+          // once via updatefound->installed during the register-time update
+          // check. Announce each worker once.
+          if (this.announced === worker) return;
+          this.announced = worker;
           showStatus('update', copy('UPDATE AVAILABLE · APPLY WHEN READY', 'ACTUALIZACIÓN DISPONIBLE · APLICA CUANDO ESTÉS LISTO'), { label: copy('UPDATE', 'ACTUALIZAR'), run: () => this.apply() });
         };
         if (registration.waiting) ready(registration.waiting);
