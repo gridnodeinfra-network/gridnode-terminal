@@ -256,6 +256,15 @@
         FIXED: ['El tour de inicio rápido ya no se apila sobre la tarjeta de novedades — se reproducen uno después del otro.', 'El efecto CRT de líneas de escaneo es más sutil para que los colores sigan vivos manteniendo la estética de terminal.']
       }
     },
+    '20260808.13': {
+      version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
+      en: {
+        IMPROVED: ['The WHAT\'S NEW header now carries the same subtle CRT glitch as the sign-in title — a faint RGB drift with a brief blip every few seconds.']
+      },
+      es: {
+        IMPROVED: ['El encabezado de NOVEDADES ahora lleva el mismo glitch CRT sutil que el título de inicio — una leve deriva RGB con un breve parpadeo cada pocos segundos.']
+      }
+    },
     '20260808.12': {
       version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
       en: {

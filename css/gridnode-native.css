@@ -3568,3 +3568,94 @@ html[data-theme="light"] .gn-auth-card .gn-auth-note {
 html[data-theme="light"] .gn-auth-card .gn-auth-field {
   border-color: rgba(209, 36, 36, .35) !important;
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+   WHAT'S NEW header — subtle CRT glitch (2026-08-08)
+   "// SYSTEM UPDATE" + "WHAT'S NEW": faint RGB drift at rest, a brief
+   low-key displacement burst every 9s. Same restraint as the auth
+   title — header stays legible. Both themes. Reduced-motion off.
+   ───────────────────────────────────────────────────────────────────── */
+.gn-whatsnew-card .gn-whatsnew-kicker,
+.gn-whatsnew-card h2#gnWhatsNewHeading {
+  animation: gnWnGlitch 9s steps(1) infinite;
+  will-change: transform, clip-path;
+}
+html:not([data-theme="light"]) .gn-whatsnew-card .gn-whatsnew-kicker,
+html:not([data-theme="light"]) .gn-whatsnew-card h2#gnWhatsNewHeading {
+  text-shadow:
+    1px 0 rgba(255, 59, 59, 0.2),
+    -1px 0 rgba(0, 212, 255, 0.2);
+}
+html[data-theme="light"] .gn-whatsnew-card .gn-whatsnew-kicker,
+html[data-theme="light"] .gn-whatsnew-card h2#gnWhatsNewHeading {
+  animation-name: gnWnGlitchLight;
+  text-shadow:
+    1px 0 rgba(255, 59, 59, 0.22),
+    -1px 0 rgba(0, 111, 130, 0.22);
+}
+@keyframes gnWnGlitch {
+  0%, 93% {
+    transform: translate(0, 0);
+    clip-path: none;
+    text-shadow:
+      1px 0 rgba(255, 59, 59, 0.2),
+      -1px 0 rgba(0, 212, 255, 0.2);
+  }
+  94% {
+    transform: translate(1px, 0);
+    clip-path: inset(0 0 64% 0);
+    text-shadow:
+      2px 0 rgba(255, 59, 59, 0.45),
+      -2px 0 rgba(0, 212, 255, 0.45);
+  }
+  95% {
+    transform: translate(-1px, 1px);
+    clip-path: inset(36% 0 0 0);
+    text-shadow:
+      -2px 0 rgba(255, 59, 59, 0.45),
+      2px 0 rgba(0, 212, 255, 0.45);
+  }
+  96%, 100% {
+    transform: translate(0, 0);
+    clip-path: none;
+    text-shadow:
+      1px 0 rgba(255, 59, 59, 0.2),
+      -1px 0 rgba(0, 212, 255, 0.2);
+  }
+}
+@keyframes gnWnGlitchLight {
+  0%, 93% {
+    transform: translate(0, 0);
+    clip-path: none;
+    text-shadow:
+      1px 0 rgba(255, 59, 59, 0.22),
+      -1px 0 rgba(0, 111, 130, 0.22);
+  }
+  94% {
+    transform: translate(1px, 0);
+    clip-path: inset(0 0 64% 0);
+    text-shadow:
+      2px 0 rgba(255, 59, 59, 0.5),
+      -2px 0 rgba(0, 111, 130, 0.5);
+  }
+  95% {
+    transform: translate(-1px, 1px);
+    clip-path: inset(36% 0 0 0);
+    text-shadow:
+      -2px 0 rgba(255, 59, 59, 0.5),
+      2px 0 rgba(0, 111, 130, 0.5);
+  }
+  96%, 100% {
+    transform: translate(0, 0);
+    clip-path: none;
+    text-shadow:
+      1px 0 rgba(255, 59, 59, 0.22),
+      -1px 0 rgba(0, 111, 130, 0.22);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gn-whatsnew-card .gn-whatsnew-kicker,
+  .gn-whatsnew-card h2#gnWhatsNewHeading {
+    animation: none !important;
+  }
+}
