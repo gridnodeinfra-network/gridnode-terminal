@@ -40,8 +40,11 @@
   function makeLangControl(context) {
     const wrap = document.createElement('div');
     wrap.className = 'gn-lang-wrap gn-lang-wrap-' + (context === 'topbar' ? 'topbar' : 'landing');
+    // R2.2 (2026-08-08): 2077 kanji language icon — 電 (den/diàn, electricity).
+    // One character, colored by the ACTIVE language (EN=cyan, ES=Mars Red),
+    // glow blends into the topbar. Replaces the generic globe entirely.
     wrap.innerHTML =
-      '<button type="button" class="gn-lang-globe" aria-label="Language" title="Language" aria-haspopup="true" aria-expanded="false"><svg class="gn-theme-svg" viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 12h17M12 3.5c2.6 2.3 4 5.1 4 8.5s-1.4 6.2-4 8.5c-2.6-2.3-4-5.1-4-8.5s1.4-6.2 4-8.5z" stroke="currentColor" stroke-width="1.5"/></svg></button>' +
+      '<button type="button" class="gn-lang-globe" aria-label="Language" title="Language" aria-haspopup="true" aria-expanded="false"><svg class="gn-lang-kanji" viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true"><text x="12" y="17.5" text-anchor="middle" font-family="Noto Sans JP, Hiragino Sans, Yu Gothic, PingFang SC, Microsoft YaHei, sans-serif" font-size="17" stroke="currentColor" stroke-width="1.6" fill="none">電</text></svg></button>' +
       '<div class="gn-lang-dropdown" role="menu"><button type="button" data-lang-choice="en" role="menuitem">English</button><button type="button" data-lang-choice="es" role="menuitem">Español</button></div>';
     const globe = wrap.querySelector('.gn-lang-globe');
     globe.addEventListener('click', event => {
