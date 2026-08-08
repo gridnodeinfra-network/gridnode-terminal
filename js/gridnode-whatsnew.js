@@ -256,6 +256,15 @@
         FIXED: ['El tour de inicio rápido ya no se apila sobre la tarjeta de novedades — se reproducen uno después del otro.', 'El efecto CRT de líneas de escaneo es más sutil para que los colores sigan vivos manteniendo la estética de terminal.']
       }
     },
+    '20260808.1': {
+      version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
+      en: {
+        ACCESSIBILITY: ['Screen-reader exposure fixed for the tour dialog and its controls.', 'Keyboard focus stays clearly visible on every interactive control.', 'WCAG AA contrast verified across both themes — NIGHT and DAY OPS.']
+      },
+      es: {
+        ACCESSIBILITY: ['Se corrigió la exposición del diálogo del tour para lectores de pantalla y sus controles.', 'El foco de teclado permanece claramente visible en todos los controles interactivos.', 'Contraste WCAG AA verificado en ambos temas — NIGHT y DAY OPS.']
+      }
+    },
   });
 
   function lang() { return document.documentElement.lang === 'es' ? 'es' : 'en'; }
