@@ -256,6 +256,15 @@
         FIXED: ['El tour de inicio rápido ya no se apila sobre la tarjeta de novedades — se reproducen uno después del otro.', 'El efecto CRT de líneas de escaneo es más sutil para que los colores sigan vivos manteniendo la estética de terminal.']
       }
     },
+    '20260808.8': {
+      version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
+      en: {
+        IMPROVED: ['The GRID//NODE title on the sign-in card now carries a subtle terminal glitch — a faint RGB drift at rest with a brief low-key displacement burst every few seconds.']
+      },
+      es: {
+        IMPROVED: ['El título GRID//NODE en la tarjeta de inicio ahora tiene un glitch de terminal sutil — una leve deriva RGB en reposo y una breve ráfaga de desplazamiento cada pocos segundos.']
+      }
+    },
     '20260808.7': {
       version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
       en: {
