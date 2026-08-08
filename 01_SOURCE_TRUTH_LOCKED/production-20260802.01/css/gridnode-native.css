@@ -3346,3 +3346,91 @@ html[data-theme="light"] #landing .landing-kicker {
   }
 }
 
+
+/* ─────────────────────────────────────────────────────────────────────
+   Auth title — subtle CRT terminal glitch (2026-08-08)
+   "GRID//NODE" on the sign-in card: faint RGB convergence drift at
+   rest, a brief low-key displacement burst every 9s. Much softer than
+   the landing kicker — the title stays legible, just alive.
+   Both themes. Reduced-motion: disabled.
+   ───────────────────────────────────────────────────────────────────── */
+#login .gn-auth-title {
+  animation: gnTitleGlitch 9s steps(1) infinite;
+  will-change: transform, clip-path;
+}
+html:not([data-theme="light"]) #login .gn-auth-title {
+  text-shadow:
+    1px 0 rgba(255, 59, 59, 0.22),
+    -1px 0 rgba(0, 212, 255, 0.22);
+}
+html[data-theme="light"] #login .gn-auth-title {
+  animation-name: gnTitleGlitchLight;
+  text-shadow:
+    1px 0 rgba(255, 59, 59, 0.25),
+    -1px 0 rgba(0, 111, 130, 0.25);
+}
+@keyframes gnTitleGlitch {
+  0%, 93% {
+    transform: translate(0, 0);
+    clip-path: none;
+    text-shadow:
+      1px 0 rgba(255, 59, 59, 0.22),
+      -1px 0 rgba(0, 212, 255, 0.22);
+  }
+  94% {
+    transform: translate(1px, 0);
+    clip-path: inset(0 0 64% 0);
+    text-shadow:
+      2px 0 rgba(255, 59, 59, 0.5),
+      -2px 0 rgba(0, 212, 255, 0.5);
+  }
+  95% {
+    transform: translate(-1px, 1px);
+    clip-path: inset(36% 0 0 0);
+    text-shadow:
+      -2px 0 rgba(255, 59, 59, 0.5),
+      2px 0 rgba(0, 212, 255, 0.5);
+  }
+  96%, 100% {
+    transform: translate(0, 0);
+    clip-path: none;
+    text-shadow:
+      1px 0 rgba(255, 59, 59, 0.22),
+      -1px 0 rgba(0, 212, 255, 0.22);
+  }
+}
+@keyframes gnTitleGlitchLight {
+  0%, 93% {
+    transform: translate(0, 0);
+    clip-path: none;
+    text-shadow:
+      1px 0 rgba(255, 59, 59, 0.25),
+      -1px 0 rgba(0, 111, 130, 0.25);
+  }
+  94% {
+    transform: translate(1px, 0);
+    clip-path: inset(0 0 64% 0);
+    text-shadow:
+      2px 0 rgba(255, 59, 59, 0.55),
+      -2px 0 rgba(0, 111, 130, 0.55);
+  }
+  95% {
+    transform: translate(-1px, 1px);
+    clip-path: inset(36% 0 0 0);
+    text-shadow:
+      -2px 0 rgba(255, 59, 59, 0.55),
+      2px 0 rgba(0, 111, 130, 0.55);
+  }
+  96%, 100% {
+    transform: translate(0, 0);
+    clip-path: none;
+    text-shadow:
+      1px 0 rgba(255, 59, 59, 0.25),
+      -1px 0 rgba(0, 111, 130, 0.25);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #login .gn-auth-title {
+    animation: none !important;
+  }
+}
