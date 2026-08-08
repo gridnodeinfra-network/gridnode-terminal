@@ -256,6 +256,15 @@
         FIXED: ['El tour de inicio rápido ya no se apila sobre la tarjeta de novedades — se reproducen uno después del otro.', 'El efecto CRT de líneas de escaneo es más sutil para que los colores sigan vivos manteniendo la estética de terminal.']
       }
     },
+    '20260808.15': {
+      version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
+      en: {
+        FIXED: ['Applying an update can no longer hang on "APPLYING UPDATE…" — if the handshake stalls, the app recovers and reloads on its own within seconds.']
+      },
+      es: {
+        FIXED: ['Aplicar una actualización ya no puede quedarse colgado en "APLICANDO ACTUALIZACIÓN…" — si el proceso se detiene, la app se recupera y recarga sola en segundos.']
+      }
+    },
     '20260808.14': {
       version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
       en: {
