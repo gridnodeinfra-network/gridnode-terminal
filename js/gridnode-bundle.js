@@ -4568,7 +4568,7 @@ function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   if (window.GN_SW?.register) { window.GN_SW.register(); return; }
   navigator.serviceWorker
-    .register('/sw.js?v=20260808.8', { updateViaCache: 'none' })
+    .register('/sw.js?v=20260808.9', { updateViaCache: 'none' })
     .then(registration => registration.update())
     .catch(() => {});
 }
