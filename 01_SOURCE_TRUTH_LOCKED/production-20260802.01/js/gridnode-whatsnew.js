@@ -256,6 +256,15 @@
         FIXED: ['El tour de inicio rápido ya no se apila sobre la tarjeta de novedades — se reproducen uno después del otro.', 'El efecto CRT de líneas de escaneo es más sutil para que los colores sigan vivos manteniendo la estética de terminal.']
       }
     },
+    '20260808.11': {
+      version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
+      en: {
+        FIXED: ['The CRT scan line returns to its original reach — main screens plus the WHAT\'S NEW modal. LAB tool surfaces are unchanged from before.']
+      },
+      es: {
+        FIXED: ['La línea de escaneo CRT vuelve a su alcance original — pantallas principales y la ventana de NOVEDADES. Las superficies de LAB no cambian respecto a antes.']
+      }
+    },
     '20260808.10': {
       version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
       en: {
@@ -268,10 +277,10 @@
     '20260808.9': {
       version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
       en: {
-        IMPROVED: ['The CRT scan line now sweeps over every surface — WHAT\'S NEW, LAB tools, calculators, and all overlays — not just the main screens.']
+        IMPROVED: ['The CRT scan line now also sweeps over the WHAT\'S NEW modal.']
       },
       es: {
-        IMPROVED: ['La línea de escaneo CRT ahora recorre todas las superficies — NOVEDADES, herramientas de LAB, calculadoras y todas las superposiciones — no solo las pantallas principales.']
+        IMPROVED: ['La línea de escaneo CRT ahora también recorre la ventana de NOVEDADES.']
       }
     },
     '20260808.8': {
