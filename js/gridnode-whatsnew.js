@@ -256,6 +256,15 @@
         FIXED: ['El tour de inicio rápido ya no se apila sobre la tarjeta de novedades — se reproducen uno después del otro.', 'El efecto CRT de líneas de escaneo es más sutil para que los colores sigan vivos manteniendo la estética de terminal.']
       }
     },
+    '20260808.19': {
+      version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-09',
+      en: {
+        IMPROVED: ['The boot sequence is now a live terminal — lines type out with a blinking cursor, status tags flip from ▶ ACTIVE to [ OK ], the header cycles INITIALIZING → CALIBRATING → SYNCING → ONLINE, and the emblem flashes Mars Red at completion.']
+      },
+      es: {
+        IMPROVED: ['La secuencia de arranque ahora es una terminal viva — las líneas se escriben con cursor parpadeante, las etiquetas pasan de ▶ ACTIVO a [ OK ], el encabezado cicla INICIALIZANDO → CALIBRANDO → SINCRONIZANDO → EN LÍNEA, y el emblema destella en rojo Marte al completarse.']
+      }
+    },
     '20260808.18': {
       version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
       en: {
