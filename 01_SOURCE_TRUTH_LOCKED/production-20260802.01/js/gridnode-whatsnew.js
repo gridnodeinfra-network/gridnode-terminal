@@ -256,6 +256,15 @@
         FIXED: ['El tour de inicio rápido ya no se apila sobre la tarjeta de novedades — se reproducen uno después del otro.', 'El efecto CRT de líneas de escaneo es más sutil para que los colores sigan vivos manteniendo la estética de terminal.']
       }
     },
+    '20260808.16': {
+      version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
+      en: {
+        FIXED: ['The sign-in screen and nav accents are back to the pre-change cyan treatment (Pipe direction). Mars Red stays on the CTAs only.']
+      },
+      es: {
+        FIXED: ['La pantalla de inicio y los acentos de navegación vuelven al tratamiento cian previo (dirección de Pipe). El rojo Marte queda solo en los CTA.']
+      }
+    },
     '20260808.15': {
       version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
       en: {
