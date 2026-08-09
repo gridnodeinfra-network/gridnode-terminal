@@ -23,7 +23,6 @@ const cells = [];
 async function runCell(browser, cell, release, version) {
   const { width, height, theme } = cell;
   const checks = [];
-  const errors = [];
   function ok(condition, label, detail = '') {
     if (!condition) throw new Error(`FAIL ${label}${detail ? ': ' + detail : ''}`);
     checks.push(label);
