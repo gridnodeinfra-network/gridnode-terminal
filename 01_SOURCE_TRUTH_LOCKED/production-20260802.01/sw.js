@@ -4,8 +4,8 @@
  */
 'use strict';
 
-const RELEASE = '20260808.17';
-const CACHE_NAME = 'gridnode-shell-20260808-17' + RELEASE.replace(/\./g, '-');
+const RELEASE = '20260808.18';
+const CACHE_NAME = 'gridnode-shell-20260808-18' + RELEASE.replace(/\./g, '-');
 const V = '?v=' + RELEASE;
 const SHELL = [
   '/',
@@ -54,11 +54,16 @@ self.addEventListener('message', event => {
 
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
-    const names = await caches.keys();
-    await Promise.all(names.filter(name => name.startsWith('gridnode-shell-') && name !== CACHE_NAME).map(name => caches.delete(name)));
+    // CLAIM FIRST (2026-08-08): control transfers instantly so the apply()
+    // reload is served by the new shell. Old-cache purge runs in the
+    // background — a slow purge (many stale shells on mobile storage) must
+    // never delay controllerchange, or the page reloads into the old shell
+    // and the UPDATE banner reappears for a second tap.
     await self.clients.claim();
     const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     clients.forEach(client => client.postMessage({ type: 'VERSION', release: RELEASE }));
+    const names = await caches.keys();
+    await Promise.all(names.filter(name => name.startsWith('gridnode-shell-') && name !== CACHE_NAME).map(name => caches.delete(name)));
   })());
 });
 
