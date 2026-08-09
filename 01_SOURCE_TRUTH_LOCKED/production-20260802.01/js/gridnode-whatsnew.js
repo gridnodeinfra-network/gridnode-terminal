@@ -256,7 +256,7 @@
         FIXED: ['El tour de inicio rápido ya no se apila sobre la tarjeta de novedades — se reproducen uno después del otro.', 'El efecto CRT de líneas de escaneo es más sutil para que los colores sigan vivos manteniendo la estética de terminal.']
       }
     },
-    '20260808.21': {
+    '20260808.22': {
       version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-09',
       en: {
         FIXED: [
