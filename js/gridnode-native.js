@@ -393,8 +393,25 @@
           // once via updatefound->installed during the register-time update
           // check. Announce each worker once.
           if (this.announced === worker) return;
+          // Post-apply cooldown (2026-08-09): right after an UPDATE tap the
+          // new shell's register-time check can immediately find ANOTHER
+          // freshly-deployed release and re-announce — three rapid deploys in
+          // one day read as "the same banner looping." Suppress re-announce
+          // for 2 minutes after an apply; the newer worker keeps waiting and
+          // is announced on the next visit.
+          try {
+            const lastApply = Number(localStorage.getItem('gn_last_apply_v1') || 0);
+            if (Date.now() - lastApply < 120000) {
+              this.announced = worker;
+              return;
+            }
+          } catch (_) {}
           this.announced = worker;
-          showStatus('update', copy('UPDATE AVAILABLE · APPLY WHEN READY', 'ACTUALIZACIÓN DISPONIBLE · APLICA CUANDO ESTÉS LISTO'), { label: copy('UPDATE', 'ACTUALIZAR'), run: () => this.apply() });
+          // Release number comes from the SW script URL (?v=20260808.22) —
+          // free, and it turns the banner into a truthful statement.
+          const rel = (worker.scriptURL || '').match(/v=([0-9.]+)/);
+          const releaseTag = rel ? ' · ' + rel[1] : '';
+          showStatus('update', copy('UPDATE AVAILABLE · APPLY WHEN READY', 'ACTUALIZACIÓN DISPONIBLE · APLICA CUANDO ESTÉS LISTO') + releaseTag, { label: copy('UPDATE', 'ACTUALIZAR'), run: () => this.apply() });
         };
         if (registration.waiting) ready(registration.waiting);
         registration.addEventListener('updatefound', () => {
@@ -417,6 +434,9 @@
       captureShotDraft();
       try { sessionStorage.setItem(PAGE_KEY, currentPageName()); } catch (_) {}
       this.applying = true;
+      // Cooldown marker (2026-08-09): suppresses re-announcing another
+      // freshly-arrived release for 2 minutes after this apply.
+      try { localStorage.setItem('gn_last_apply_v1', String(Date.now())); } catch (_) {}
       showStatus('reconnecting', copy('APPLYING UPDATE…', 'APLICANDO ACTUALIZACIÓN…'));
       worker.postMessage({ type: 'SKIP_WAITING' });
       // Watchdog (2026-08-08): the SKIP_WAITING -> controllerchange handshake
