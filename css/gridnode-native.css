@@ -2904,9 +2904,12 @@ em[data-i18n="research.organize"], em[data-i18n="lab.separateCalculators"] { fon
 #app [data-i18n="lab.mixingWarn"], .mixing-warn, .mixing-warn span { font-size: 15px !important; }
 html[data-theme="light"] #gnLabToolHost .mixing-warn,
 html[data-theme="light"] .mixing-warn span { font-size: 15px !important; }
-/* Narrow-width pill row: allow graceful two-row wrap, never clipped labels */
+/* Narrow-width pill row: allow graceful two-row wrap, never clipped labels.
+   Overnight polish (2026-08-09): ES labels ('Registrar peso', 'Escanear
+   zona') need ~123px; minmax(104px,1fr) + nowrap clipped/overlapped them
+   at 360/390/412px. Wrap is the graceful fallback. */
 .gn-empty-ghosts { grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); }
-.gn-empty-ghost { white-space: nowrap; }
+.gn-empty-ghost { white-space: normal; padding: 10px 6px; line-height: 1.25; text-align: center; }
 /* Passkey CTA (night): measured white-on-#FF3B3B 3.53:1 (audit). Deepen to
    the lava family so every stop is >= 4.5:1 with white text. Light theme
    keeps its neutral surface treatment (audit-clean). */
