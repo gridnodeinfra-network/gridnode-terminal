@@ -21,7 +21,7 @@ sed -i "s/$CUR/$NEXT/g" index.html
 # sw.js: cache name + SHELL entries
 sed -i "s/const CACHE_NAME = 'gridnode-shell-[^']*'/const CACHE_NAME = '$NEW_CACHE'/" sw.js
 # js/gridnode-version.js: canonical release field
-if [[ -f js/gridnode-version.js ]]; then sed -i "s/release: '[^']*'/release: '$NEXT'/" js/gridnode-version.js; fi
+if [[ -f js/gridnode-version.js ]]; then sed -i "s/release: '[^']*'/release: '$NEXT'/; s/APP_BUILD: '[^']*'/APP_BUILD: '$NEXT'/" js/gridnode-version.js; fi
 sed -i "s/$CUR/$NEXT/g" sw.js
 # bundle + source mirror: SW registration URL
 sed -i "0,/v=$CUR/s//v=$NEXT/" js/gridnode-bundle.js
