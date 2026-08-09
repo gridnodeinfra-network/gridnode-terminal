@@ -317,9 +317,10 @@ function showApp() {
   modules.loadApp();
 }
 
-export function startGridNode() {
+export async function startGridNode() {
   if (bootRunning) return;
   bootRunning = true;
+  if (window.GN_I18N?.ready) await window.GN_I18N.ready;
   modules.showScreen('boot');
   const term = $('bootTerm'), bar = $('bootBar'), pct = $('bootPct');
   if (term) term.innerHTML = '';
@@ -328,17 +329,62 @@ export function startGridNode() {
     bar.querySelectorAll('.boot-prog-seg').forEach(segment => segment.classList.remove('on', 'lead'));
   }
   const messages = [
-    ['> Initializing Personal Biotech OS', 'info', 'CORE HANDSHAKE'],
-    ['> Preparing SHOTS', 'info', 'SHOTS ONLINE'],
-    ['> Preparing Phase Engine', 'info', 'PHASE ENGINE ONLINE'],
-    ['> Preparing RESULTS', 'info', 'RESULTS ONLINE'],
-    ['> Preparing LAB + VAULT', 'info', 'LAB + VAULT ONLINE'],
-    ['> Loading local records', 'warn', tx('lab.localRecords', 'LOCAL RECORDS')],
-    ['> Protocol workspace ready', 'ok', 'SYSTEM ONLINE']
+    [tx('boot.line1', '> Initializing Personal Biotech OS'), 'info', tx('boot.status1', 'CORE HANDSHAKE')],
+    [tx('boot.line2', '> Preparing SHOTS'), 'info', tx('boot.status2', 'SHOTS ONLINE')],
+    [tx('boot.line3', '> Preparing Phase Engine'), 'info', tx('boot.status3', 'PHASE ENGINE ONLINE')],
+    [tx('boot.line4', '> Preparing RESULTS'), 'info', tx('boot.status4', 'RESULTS ONLINE')],
+    [tx('boot.line5', '> Preparing LAB + VAULT'), 'info', tx('boot.status5', 'LAB + VAULT ONLINE')],
+    [tx('boot.line6', '> Loading local records'), 'warn', tx('boot.status6', 'LOCAL RECORDS')],
+    [tx('boot.line7', '> Protocol workspace ready'), 'ok', tx('boot.status7', 'SYSTEM ONLINE')]
   ];
-  messages.forEach(([message, className, status], index) => setTimeout(() => {
-    if (term) { const line = document.createElement('div'); line.className = `boot-line ${className}`; line.textContent = message; term.appendChild(line); term.scrollTop = term.scrollHeight; }
-    const progress = Math.round((index + 1) / messages.length * 100);
+  const kickerStates = [
+    tx('boot.statusInitializing', 'INITIALIZING'),
+    tx('boot.statusCalibrating', 'CALIBRATING'),
+    tx('boot.statusSyncing', 'SYNCING'),
+    tx('boot.statusOnline', 'ONLINE')
+  ];
+  // kicker phase per line index (7 lines -> 4 phases)
+  const kickerAt = [0, 0, 1, 1, 2, 2, 3];
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const typeCharMs = reduced ? 0 : 14;
+
+  const setKicker = phase => {
+    const k = document.querySelector('.boot-deck-kicker b');
+    if (k) k.textContent = kickerStates[phase] || kickerStates[0];
+  };
+  const typeLine = (line, text) => new Promise(resolve => {
+    if (reduced || !term) { line.textContent = text; resolve(); return; }
+    let i = 0;
+    const cursor = document.createElement('span');
+    cursor.className = 'boot-cursor';
+    line.appendChild(cursor);
+    const tick = () => {
+      if (i < text.length) {
+        cursor.insertAdjacentText('beforebegin', text[i]);
+        i++;
+        term.scrollTop = term.scrollHeight;
+        window.setTimeout(tick, typeCharMs);
+      } else {
+        resolve();
+      }
+    };
+    tick();
+  });
+
+  for (let i = 0; i < messages.length; i++) {
+    const [message, className, status] = messages[i];
+    const line = document.createElement('div');
+    line.className = `boot-line ${className} boot-typing`;
+    const text = document.createElement('span');
+    text.className = 'boot-line-text';
+    const tag = document.createElement('span');
+    tag.className = 'boot-line-tag';
+    tag.textContent = '▶ ' + status;
+    line.appendChild(text);
+    line.appendChild(tag);
+    if (term) { term.appendChild(line); term.scrollTop = term.scrollHeight; }
+    setKicker(kickerAt[i]);
+    const progress = Math.round((i + 1) / messages.length * 100);
     if (bar) {
       const activeSegments = Math.ceil(progress / 10);
       bar.querySelectorAll('.boot-prog-seg').forEach((segment, segmentIndex) => {
@@ -347,8 +393,24 @@ export function startGridNode() {
       });
     }
     if (pct) pct.textContent = `${String(progress).padStart(3, '0')}% // ${status}`;
-  }, index * 180));
-  setTimeout(() => { bootRunning = false; authShell(); modules.showScreen('login'); }, 1450);
+    await typeLine(text, message);
+    if (i < messages.length - 1) {
+      line.classList.remove('boot-typing');
+      tag.textContent = '[ OK ] ' + status;
+      if (!reduced) await new Promise(r => window.setTimeout(r, 240));
+    }
+  }
+  // completion: kicker ONLINE + cyan->Mars Red pulse on the emblem
+  setKicker(3);
+  const emblem = document.querySelector('.gn-b2b-symbol');
+  if (emblem && !reduced) {
+    emblem.classList.add('boot-complete-pulse');
+    await new Promise(r => window.setTimeout(r, 750));
+    emblem.classList.remove('boot-complete-pulse');
+  }
+  bootRunning = false;
+  authShell();
+  modules.showScreen('login');
 }
 
 export function openSignOutModal() { $('signOutOverlay')?.style.setProperty('display', 'flex'); }
@@ -402,7 +464,7 @@ function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   if (window.GN_SW?.register) { window.GN_SW.register(); return; }
   navigator.serviceWorker
-    .register('/sw.js?v=20260808.18', { updateViaCache: 'none' })
+    .register('/sw.js?v=20260808.19', { updateViaCache: 'none' })
     .then(registration => registration.update())
     .catch(() => {});
 }

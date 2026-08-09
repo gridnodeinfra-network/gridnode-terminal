@@ -73,28 +73,28 @@
       "sha256": "41beaeaa5c38002ead8ae7a8c164024e33afa5311d71b040ef186214dd0a464c"
     },
     "css/gridnode-native.css": {
-      "bytes": 177631,
-      "sha256": "55aed6c257281c34a652d2cb1ece6f28ca885397ae542fbf5987f47931c2e406"
+      "bytes": 179726,
+      "sha256": "2fcf57a080421a6b217ffbe0ceed2a9aca849c50893bff4d54293312f116cb30"
     },
     "i18n/en.json": {
-      "bytes": 84047,
-      "sha256": "dec1f8f8138d7209f5736e6d607ac7c46beaf7366749060b3139551d9aa2d249"
+      "bytes": 84158,
+      "sha256": "5305354ba7a706596a2a04fe60de2240af6a376f497084c16c48f71ef53ad455"
     },
     "i18n/es-419.json": {
-      "bytes": 93486,
-      "sha256": "82608a9dde3e36ed91821fe144548d8e84b35227112d2c3643840565e64a9b8e"
+      "bytes": 93605,
+      "sha256": "1e8d67626eae6c1d7122223c9a2c0ef4a73245c58d91c57e9a9fa1e4377d5ab8"
     },
     "index.html": {
       "bytes": 431348,
-      "sha256": "5c487bdaaa73b41be38e6defbc8e2b92f43851d094185de9735be7877eb33645"
+      "sha256": "aef5d1a626e0246a53a48250f7f711df08c613766042291469af7dc2b514cfbe"
     },
     "js/gridnode-app.js": {
-      "bytes": 28077,
-      "sha256": "9e94136b177108761a174f724be6a845a2627390cffa0a3555ecee45fcdb841f"
+      "bytes": 30346,
+      "sha256": "60443fde85799b6a70e7c6758bd3cd81fd83f8e33668aa6f65494a73ed6dacd6"
     },
     "js/gridnode-bundle.js": {
-      "bytes": 347699,
-      "sha256": "3b5ed3ee500a14c66e05fdb6214be57517bfbd5cd80e5d16ebcbc7517fcc2f8d"
+      "bytes": 349663,
+      "sha256": "923f1b04d0ca00a7ebe06eb2555b6f4b2bc87173f6979d2294712b6dbf9867ef"
     },
     "js/gridnode-core.js": {
       "bytes": 29217,
@@ -118,7 +118,7 @@
     },
     "js/gridnode-native.js": {
       "bytes": 23836,
-      "sha256": "c583364c4987e76d334031455ae43ed67f445921f9e280606c049f620c7f68ef"
+      "sha256": "2bc67f4b6ed57335a642df68ba65e09d1404aee97e38620cd920d929a3c83c24"
     },
     "js/gridnode-onboarding.js": {
       "bytes": 31325,
@@ -138,15 +138,15 @@
     },
     "js/gridnode-theme.js": {
       "bytes": 8642,
-      "sha256": "98c59ff27355218987050b129c937d24a3219def4805c43f0724703ad2afce68"
+      "sha256": "c56ad7abcb18991d1b591e4c40b012797c0fc37c8fc7a8ee9cc7420bf06977f8"
     },
     "js/gridnode-version.js": {
       "bytes": 516,
-      "sha256": "5434293314b998f811b295c98bf0198e07473e0c8aae2dd7d6fb00446ffe05a5"
+      "sha256": "87cc9d7776a3538ad8f049d9bcf549d4a3d8e39de6850cd015ab45161c01a22a"
     },
     "js/gridnode-whatsnew.js": {
-      "bytes": 35536,
-      "sha256": "c562d1a9663a2e8bd11316c1da6e81c63bd10ce3b1a9ac6b351152eba2fbdd41"
+      "bytes": 36259,
+      "sha256": "f54bd666a669d7b6fc5e176966a39ca7cab9da9c5f825151e20e50125f912f9e"
     },
     "manifest.json": {
       "bytes": 1547,
@@ -154,7 +154,7 @@
     },
     "sw.js": {
       "bytes": 5515,
-      "sha256": "1072956af8f8c3cb082ac1cc69d72a393b8ebd45285a97f1aca8233701eed01a"
+      "sha256": "743b31a18b9ffbb25834ad4a74d3c5d74f7add8774a0a53651af8271762263f8"
     }
   }
 }
