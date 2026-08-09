@@ -256,6 +256,15 @@
         FIXED: ['El tour de inicio rápido ya no se apila sobre la tarjeta de novedades — se reproducen uno después del otro.', 'El efecto CRT de líneas de escaneo es más sutil para que los colores sigan vivos manteniendo la estética de terminal.']
       }
     },
+    '20260808.17': {
+      version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
+      en: {
+        IMPROVED: ['The CRT scan line is quieter — fainter glow and a slower, calmer sweep.']
+      },
+      es: {
+        IMPROVED: ['La línea de escaneo CRT es más sutil — brillo más tenue y un barrido más lento y tranquilo.']
+      }
+    },
     '20260808.16': {
       version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
       en: {

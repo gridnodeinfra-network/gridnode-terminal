@@ -1,32 +1,69 @@
 #!/usr/bin/env node
 'use strict';
-const { chromium } = require('/home/thinkpadwinbash/.npm/_npx/705bc6b22212b352/node_modules/playwright');
+const { chromium } = require('playwright');
 
 const baseURL = process.argv[2] || 'http://127.0.0.1:4173';
 const expectedRelease = process.argv[3] || '20260805.6';
 const expectedVersion = process.argv[4] || '0.15.4';
-const checks = [];
-function ok(condition, label, detail = '') { if (!condition) throw new Error(`FAIL ${label}${detail ? ': ' + detail : ''}`); checks.push(label); }
 
-async function main() {
-  const browser = await chromium.launch({ headless: true, executablePath: '/home/thinkpadwinbash/.cache/ms-playwright/chromium-1234/chrome-linux64/chrome', args: ['--no-sandbox'] });
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 1, serviceWorkers: 'allow' });
+// Mobile QA matrix per AGENTS.md: 360x800, 390x844, 412x915, 430x932,
+// swept across both themes (dark = NIGHT GRID, light = DAY OPS).
+const MATRIX = [];
+for (const vp of [
+  { width: 360, height: 800 },
+  { width: 390, height: 844 },
+  { width: 412, height: 915 },
+  { width: 430, height: 932 },
+]) {
+  MATRIX.push({ ...vp, theme: 'dark' }, { ...vp, theme: 'light' });
+}
+
+const cells = [];
+
+async function runCell(browser, cell, release, version) {
+  const { width, height, theme } = cell;
+  const checks = [];
+  const errors = [];
+  function ok(condition, label, detail = '') {
+    if (!condition) throw new Error(`FAIL ${label}${detail ? ': ' + detail : ''}`);
+    checks.push(label);
+  }
+
+  const context = await browser.newContext({ viewport: { width, height }, isMobile: true, hasTouch: true, deviceScaleFactor: 1, serviceWorkers: 'allow' });
   const page = await context.newPage();
   const errors = [];
-  page.on('pageerror', error => errors.push(error.message));
+  let offlineWindow = false;
+  const benignUrl = u => u.includes('email-decode.min.js'); // Cloudflare edge-injected; 404/504 on local servers
+  page.on('pageerror', error => errors.push(`pageerror: ${error.message}`));
+  page.on('console', msg => {
+    if (msg.type() !== 'error') return;
+    // "Failed to load resource" is a network-error duplicate; real
+    // resource failures are tracked via page.on('response') below.
+    if (msg.text().includes('Failed to load resource')) return;
+    errors.push(`console.error: ${msg.text()}`);
+  });
+  page.on('response', r => {
+    if (offlineWindow) return; // intentional offline reload
+    if (r.status() >= 400 && !benignUrl(r.url())) errors.push(`http ${r.status()}: ${r.url().replace(baseURL, '')}`);
+  });
 
   await page.goto(baseURL + '/?mobile-shell=' + Date.now(), { waitUntil: 'domcontentloaded' });
-  await page.evaluate(release => {
-    localStorage.setItem('gn_theme_v1', 'light');
+  await page.evaluate(([theme, release]) => {
+    localStorage.setItem('gn_theme_v1', theme);
     localStorage.setItem('gn.lang', 'en');
     localStorage.setItem('gn_onboarding_v1', 'complete');
     localStorage.setItem('gn_whatsnew_acknowledged_release_v2', release);
-  }, expectedRelease);
+  }, [theme, release]);
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.locator('.landing-local-link').click();
   await page.locator('#app.active').waitFor({ state: 'visible' });
-  ok(await page.evaluate(v => window.GN_VERSION.release === v.release && window.GN_VERSION.semver === v.version, { release: expectedRelease, version: expectedVersion }), 'canonical served version');
-  ok(await page.evaluate(() => document.documentElement.dataset.theme === 'light' && document.documentElement.lang === 'en'), 'theme and language persist');
+  ok(await page.evaluate(v => window.GN_VERSION.release === v.release && window.GN_VERSION.semver === v.version, { release, version }), 'canonical served version');
+  // dark = NIGHT GRID = the default (no data-theme attribute); light = DAY OPS.
+  const themeOk = await page.evaluate(t => {
+    const attr = document.documentElement.getAttribute('data-theme');
+    return t === 'dark' ? (attr === null || attr === 'dark') : attr === t;
+  }, theme);
+  ok(themeOk && await page.evaluate(() => document.documentElement.lang === 'en'), 'theme and language persist');
   ok(await page.evaluate(() => Math.abs(document.getElementById('app').getBoundingClientRect().height - parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gn-viewport-height'))) < 2), 'dynamic viewport shell');
 
   await page.evaluate(() => { window.showPage('Log'); window.openLogModal(); });
@@ -63,7 +100,10 @@ async function main() {
   await page.waitForTimeout(450);
   const restoredDestination = await page.evaluate(() => ({ active: document.querySelector('.page.active')?.id, stored: sessionStorage.getItem('gn_active_page_session_v1'), state: history.state }));
   ok(restoredDestination.active === 'pageLog', 'active destination survives reload', JSON.stringify(restoredDestination));
-  ok(await page.evaluate(() => document.documentElement.dataset.theme === 'light'), 'theme survives reload');
+  ok(await page.evaluate(t => {
+    const attr = document.documentElement.getAttribute('data-theme');
+    return t === 'dark' ? (attr === null || attr === 'dark') : attr === t;
+  }, theme), 'theme survives reload');
   await page.evaluate(() => window.openLogModal());
   await page.waitForTimeout(80);
   ok(await page.locator('#sDose').inputValue() === '5' && await page.locator('#sNotes').inputValue() === 'draft survives mobile lifecycle', 'SHOT draft survives reload');
@@ -83,10 +123,12 @@ async function main() {
   });
   ok(swReady, 'offline shell service worker ready');
   await page.reload({ waitUntil: 'domcontentloaded' });
+  offlineWindow = true;
   await context.setOffline(true);
   await page.reload({ waitUntil: 'domcontentloaded' });
   ok(await page.locator('body').count() === 1 && await page.evaluate(() => Boolean(window.GN_VERSION)), 'offline shell reload');
   await context.setOffline(false);
+  offlineWindow = false;
 
   await page.evaluate(() => localStorage.removeItem('gn_whatsnew_acknowledged_release_v2'));
   await page.reload({ waitUntil: 'domcontentloaded' });
@@ -96,13 +138,33 @@ async function main() {
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(1200);
   ok(await page.locator('#gnWhatsNewOverlay').count() === 0, 'acknowledged release does not reopen');
-  ok(await page.evaluate(release => localStorage.getItem('gn_whatsnew_acknowledged_release_v2') === release, expectedRelease), 'update acknowledgment persists');
+  ok(await page.evaluate(release => localStorage.getItem('gn_whatsnew_acknowledged_release_v2') === release, release), 'update acknowledgment persists');
   await page.evaluate(() => window.GN_WHATS_NEW.history());
   ok(await page.locator('.gn-wn-release').count() >= 3, 'full update history remains accessible');
-  ok((await page.locator('.gn-wn-release.current .gn-whatsnew-version').textContent()).includes('GRID//NODE v' + expectedVersion), 'history latest version matches app');
+  ok((await page.locator('.gn-wn-release.current .gn-whatsnew-version').textContent()).includes('GRID//NODE v' + version), 'history latest version matches app');
 
   ok(errors.length === 0, 'no page runtime errors', errors.join(' | '));
-  console.log(JSON.stringify({ result: 'PASS', checks, release: expectedRelease, version: expectedVersion }, null, 2));
+  await context.close();
+  return { checks, errors };
+}
+
+async function main() {
+  const browser = await chromium.launch({ headless: true, executablePath: '/home/thinkpadwinbash/.cache/ms-playwright/chromium-1234/chrome-linux64/chrome', args: ['--no-sandbox'] });
+  let failed = 0;
+  for (const cell of MATRIX) {
+    const label = `${cell.width}x${cell.height} ${cell.theme}`;
+    try {
+      const { checks } = await runCell(browser, cell, expectedRelease, expectedVersion);
+      cells.push({ viewport: `${cell.width}x${cell.height}`, theme: cell.theme, result: 'PASS', checks: checks.length });
+      console.log(`PASS ${label} (${checks.length} checks)`);
+    } catch (error) {
+      failed++;
+      cells.push({ viewport: `${cell.width}x${cell.height}`, theme: cell.theme, result: 'FAIL', error: String(error.message || error).slice(0, 300) });
+      console.error(`FAIL ${label}: ${error.message || error}`);
+    }
+  }
   await browser.close();
+  console.log(JSON.stringify({ result: failed === 0 ? 'PASS' : 'FAIL', cells, release: expectedRelease, version: expectedVersion }, null, 2));
+  process.exit(failed === 0 ? 0 : 1);
 }
 main().catch(error => { console.error(error.stack || error); process.exit(1); });

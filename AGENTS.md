@@ -106,14 +106,16 @@ Reject and revise any area that feels: overly symmetrical, mechanically repetiti
 - No single agent role is permanently locked. Joi is not the only auditor. Kodex is not the only implementer.
 - All agents coordinate through AGENTS.md, the shared repository, and Pipe's directives.
 - Every directive must ship complete and deployed. No partial implementations.
-- QA runs on mavis VPS via SSH to ThinkPad WSL, Browserbase, and Brave CDP (port 9444).
+- QA runs through the Hermes embedded Browser + Luna vision (RackNerd) for visual review, and the Playwright harnesses in scripts/ (ThinkPad WSL, canonical tree) for behavioral/matrix QA. WSL serves previews to RackNerd via temporary reverse SSH tunnel; RackNerd is never a second working tree.
+- Mobile QA at: 360x800, 390x844, 412x915, 430x932 (scripts/test-mobile-shell.cjs viewport matrix; both NIGHT GRID and DAY OPS themes).
+- Contrast/theme audit: scripts/audit-served-day-ops.cjs (both themes; WCAG contrast checks; 8 states).
+- Performance/a11y on demand (no project deps): npx lighthouse, npx @axe-core/cli.
 
 ## Deployment Rules
 
 - Build with Bash scripts. Deploy with npx wrangler.
 - Always test on a Cloudflare preview URL before production.
 - Production deployment requires explicit Pipe approval.
-- Mobile QA at: 360x800, 390x844, 412x915, 430x932.
 - Capture screenshots of every page before approving.
 - Verify: no 0x0 visuals, no blank charts with valid data, no horizontal overflow, no console errors.
 

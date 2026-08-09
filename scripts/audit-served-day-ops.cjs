@@ -3,7 +3,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { chromium } = require('/home/thinkpadwinbash/.npm/_npx/705bc6b22212b352/node_modules/playwright');
+const { chromium } = require('playwright');
 
 const baseURL = process.argv[2] || 'http://127.0.0.1:4173';
 const outDir = process.argv[3] || '/tmp/gridnode-dayops-proof';

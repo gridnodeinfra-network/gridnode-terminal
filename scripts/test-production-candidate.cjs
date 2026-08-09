@@ -20,7 +20,7 @@ async function reloadPage(page, timeoutMs = 15000) {
 
 'use strict';
 
-const { chromium } = require('/home/thinkpadwinbash/.npm/_npx/5c6d8c4f680fcd0a/node_modules/playwright');
+const { chromium } = require('playwright');
 
 const baseURL = process.argv[2] || 'http://127.0.0.1:4173';
 const expectedRelease = process.argv[3] || '20260804.1';
