@@ -256,6 +256,33 @@
         FIXED: ['El tour de inicio rápido ya no se apila sobre la tarjeta de novedades — se reproducen uno después del otro.', 'El efecto CRT de líneas de escaneo es más sutil para que los colores sigan vivos manteniendo la estética de terminal.']
       }
     },
+    '20260808.20': {
+      version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-09',
+      en: {
+        FIXED: [
+          'Spanish quick-action buttons no longer clip or overlap on narrow phones',
+          'Empty charts now show a clear "no records yet" state instead of a blank box',
+          'Light theme: secondary buttons are readable again instead of nearly invisible'
+        ],
+        IMPROVED: [
+          'Content no longer hides behind the bottom navigation on mobile',
+          'The landing page rhythm is tighter — the language control floats top-right and no longer leaves a dead gap',
+          'Release headers in WHAT\'S NEW no longer break mid-date'
+        ]
+      },
+      es: {
+        FIXED: [
+          'Los botones de acción rápida en español ya no se cortan ni se superponen en teléfonos angostos',
+          'Los gráficos vacíos ahora muestran un estado claro de "sin registros" en lugar de una caja en blanco',
+          'Tema claro: los botones secundarios vuelven a ser legibles'
+        ],
+        IMPROVED: [
+          'El contenido ya no queda oculto detrás de la navegación inferior en móvil',
+          'El ritmo de la página de inicio está más ajustado — el control de idioma flota arriba a la derecha y ya no deja un espacio muerto',
+          'Los encabezados de versión en NOVEDADES ya no se cortan a mitad de fecha'
+        ]
+      }
+    },
     '20260808.19': {
       version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-09',
       en: {
