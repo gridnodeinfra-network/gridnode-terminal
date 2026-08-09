@@ -3193,6 +3193,20 @@ html[data-theme="light"] .gn-advanced-toggle:hover { background: rgba(0, 111, 13
   background: rgba(0, 230, 240, .18) !important;
   color: #e8fcff !important;
 }
+/* Overnight polish (2026-08-09): light-theme ghosts must stay readable —
+   the dark !important values above leaked into DAY OPS and made the
+   secondary actions nearly invisible on the pearl surface. */
+html[data-theme="light"] .gn-empty-ghost {
+  border-color: rgba(0, 111, 130, .45) !important;
+  background: rgba(0, 111, 130, .08) !important;
+  color: #005a70 !important;
+}
+html[data-theme="light"] .gn-empty-ghost:hover,
+html[data-theme="light"] .gn-empty-ghost:focus-visible {
+  border-color: #00677f !important;
+  background: rgba(0, 111, 130, .14) !important;
+  color: #003c4a !important;
+}
 :is(#app,#login,#landing) .gn-theme-toggle button.gn-theme-opt { color: #7fa3ad; opacity: .4 !important; }
 :is(#app,#login,#landing) .gn-theme-toggle button.gn-theme-opt.active { color: #00d4ff; opacity: 1 !important; }
 html[data-theme="light"] :is(#app,#login,#landing) .gn-theme-toggle button.gn-theme-opt { color: #4d6b75; opacity: .4 !important; }
