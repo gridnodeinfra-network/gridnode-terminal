@@ -256,6 +256,15 @@
         FIXED: ['El tour de inicio rápido ya no se apila sobre la tarjeta de novedades — se reproducen uno después del otro.', 'El efecto CRT de líneas de escaneo es más sutil para que los colores sigan vivos manteniendo la estética de terminal.']
       }
     },
+    '20260808.18': {
+      version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
+      en: {
+        FIXED: ['Updates now apply on the first tap — the new version takes control instantly instead of asking you to tap UPDATE twice.']
+      },
+      es: {
+        FIXED: ['Las actualizaciones ahora se aplican al primer toque — la nueva versión toma el control al instante en lugar de pedirte que toques ACTUALIZAR dos veces.']
+      }
+    },
     '20260808.17': {
       version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-08',
       en: {

@@ -2783,6 +2783,7 @@ body.gn-empty-state .fab { display: none !important; }
 #app .gn-theme-opt.active { opacity: 1; color: #00d4ff; border-color: rgba(0, 212, 255, .45); }
 #app .gn-theme-opt:hover, #app .gn-theme-opt:focus-visible { opacity: 1; outline: none; border-color: rgba(0, 212, 255, .55); color: #00d4ff; }
 #app .gn-theme-opt .gn-theme-svg-night rect[fill="#FF3B3B"] { fill: #FF3B3B; }
+#app .gn-theme-opt.active .gn-theme-svg-night, .landing-shell .gn-theme-opt.active .gn-theme-svg-night { color: #FF3B3B; }
 html[data-theme="light"] #app .gn-theme-opt { color: #4d6b75; }
 html[data-theme="light"] #app .gn-theme-opt.active { color: #00718a; border-color: rgba(0, 111, 130, .5); }
 
