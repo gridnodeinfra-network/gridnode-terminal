@@ -1819,7 +1819,7 @@ html[data-theme="light"] #landing .landing-btn.secondary {
   font-size: clamp(3.35rem, 5vw, 4.65rem) !important;
   line-height: .98 !important;
 }
-#landing .landing-copy { grid-row: 4; max-width: 43ch !important; }
+#landing .landing-copy { grid-row: 4; max-width: 43ch !important; text-wrap: balance; }
 #landing .landing-cta-row { grid-row: 5; width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
 #landing .landing-trust { grid-row: 6; }
 
@@ -2828,8 +2828,14 @@ html[data-theme="light"] #app .gn-lang-dropdown button:hover, html[data-theme="l
 }
 
 /* Landing globe mount: keep it in the hero top-right area like the old pill.
-   Hit area is 44px; the visible circle stays 32px (drawn on ::before). */
-.landing-lang-wrap { position: relative; display: inline-flex; }
+   Hit area is 44px; the visible circle stays 32px (drawn on ::before).
+   Overnight polish (2026-08-09): absolute so it floats top-right instead of
+   auto-placing into an implicit grid row below the product preview — that
+   implicit row created ~134px of dead space before the WHY section.
+   Specificity must beat .landing-hero > *:not(.landing-phase-visual)
+   (0,2,0) in index.html AND its re-injection in the bundle's runtime
+   styles, hence the ID-qualified selector. */
+#landing .landing-lang-wrap { position: absolute; top: 0; right: 0; z-index: 5; display: inline-flex; }
 .landing-lang-wrap .gn-lang-globe {
   width: 44px; height: 44px; min-width: 44px; min-height: 44px;
   padding: 0; display: inline-flex; align-items: center; justify-content: center;
