@@ -256,10 +256,12 @@
         FIXED: ['El tour de inicio rápido ya no se apila sobre la tarjeta de novedades — se reproducen uno después del otro.', 'El efecto CRT de líneas de escaneo es más sutil para que los colores sigan vivos manteniendo la estética de terminal.']
       }
     },
-    '20260808.22': {
+    '20260808.23': {
       version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-09',
       en: {
         FIXED: [
+          'The UPDATE banner now shows which release is waiting (e.g. "· 20260808.23") so a fresh update never looks like the same one looping',
+          'After you apply an update, newly-arrived releases wait quietly for 2 minutes instead of immediately re-bannering — one tap, one update, then done',
           'Spanish quick-action buttons no longer clip or overlap on narrow phones',
           'Empty charts now show a clear "no records yet" state instead of a blank box',
           'Light theme: secondary buttons are readable again instead of nearly invisible'
@@ -272,6 +274,8 @@
       },
       es: {
         FIXED: [
+          'El banner de ACTUALIZACIÓN ahora muestra qué versión está esperando (ej. "· 20260808.23") para que una actualización nueva nunca parezca la misma repitiéndose',
+          'Después de aplicar una actualización, las versiones recién llegadas esperan en silencio 2 minutos en lugar de volver a mostrar el banner de inmediato — un toque, una actualización, y listo',
           'Los botones de acción rápida en español ya no se cortan ni se superponen en teléfonos angostos',
           'Los gráficos vacíos ahora muestran un estado claro de "sin registros" en lugar de una caja en blanco',
           'Tema claro: los botones secundarios vuelven a ser legibles'
