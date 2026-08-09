@@ -473,10 +473,12 @@
   }
 
   function releasePanel(release, entry, current) {
-    // B4 (v0.15.1): ONE version reference — "GRID//NODE v0.15  2026-08-05" +
+    // B4 (v0.15.1): ONE version reference — "GRID//NODE v0.15" +
     // "// release 20260805.3" below. The release-title subtitle is removed.
+    // Overnight polish (2026-08-09): date moves to its own dim line so the
+    // version never wraps mid-token ("2026-\n08-09") on narrow cards.
     return '<article class="gn-wn-release' + (current ? ' current' : '') + '">' +
-      '<div class="gn-wn-release-head"><div class="gn-whatsnew-version">GRID//NODE v' + entry.version + '&nbsp;&nbsp;' + entry.date + '</div></div>' +
+      '<div class="gn-wn-release-head"><div class="gn-whatsnew-version">GRID//NODE v' + entry.version + '</div><div class="gn-whatsnew-date">' + entry.date + '</div></div>' +
       '<div class="gn-whatsnew-release">// release ' + release + '</div>' +
       '<div class="gn-whatsnew-body">' + categories(entry) + '</div></article>';
   }
