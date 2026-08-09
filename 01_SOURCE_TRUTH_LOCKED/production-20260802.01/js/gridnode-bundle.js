@@ -2531,7 +2531,20 @@ function drawWeightTrendChart(canvas, weights, shots, goal) {
   canvas.width = width * scale; canvas.height = height * scale;
   const context = canvas.getContext('2d'); if (!context) return;
   context.setTransform(scale, 0, 0, scale, 0, 0); context.clearRect(0, 0, width, height);
-  if (!weights.length) { if (summary) summary.textContent = tx('dashboard.logWeight', 'LOG WEIGHT'); return; }
+  if (!weights.length) {
+    if (summary) summary.textContent = tx('dashboard.logWeight', 'LOG WEIGHT');
+    // Overnight polish (2026-08-09): RESULTS chart empty state — quiet
+    // grid + message instead of a dead blank canvas.
+    const light = document.documentElement.getAttribute('data-theme') === 'light';
+    context.strokeStyle = light ? 'rgba(20,60,70,.1)' : 'rgba(255,255,255,.08)';
+    context.lineWidth = 1;
+    for (let i = 1; i < 4; i++) { const y = (height / 4) * i; context.beginPath(); context.moveTo(0, y); context.lineTo(width, y); context.stroke(); }
+    context.fillStyle = light ? 'rgba(46,66,75,.75)' : 'rgba(158,178,190,.78)';
+    context.font = `700 ${Math.max(12, Math.round(width * .034))}px "Share Tech Mono", monospace`;
+    context.textAlign = 'center'; context.textBaseline = 'middle';
+    context.fillText(tx('dashboard.noRecordsYet', 'NO RECORDS YET · LOG YOUR FIRST WEIGHT'), width / 2, height / 2);
+    return;
+  }
 
   const left = 42, right = 12, top = 16, bottom = 30, plotWidth = width - left - right, plotHeight = height - top - bottom;
   const values = weights.map(item => Number(item.weight));
@@ -2609,13 +2622,26 @@ function renderTrendLists(shots) {
 }
 
 function drawCanvasChart(canvas, values, color) {
-  if (!canvas || !values.length) return;
+  if (!canvas) return;
   const width = Math.max(280, canvas.clientWidth || 320);
   const height = Math.max(110, canvas.clientHeight || 150);
   const scale = window.devicePixelRatio || 1;
   canvas.width = width * scale; canvas.height = height * scale;
   const context = canvas.getContext('2d'); if (!context) return;
   context.scale(scale, scale); context.clearRect(0, 0, width, height);
+  if (!values.length) {
+    // Overnight polish (2026-08-09): empty charts were a dead blank zone —
+    // draw a faint grid + a quiet "no records yet" line, theme-aware.
+    const light = document.documentElement.getAttribute('data-theme') === 'light';
+    context.strokeStyle = light ? 'rgba(20,60,70,.1)' : 'rgba(255,255,255,.08)';
+    context.lineWidth = 1;
+    for (let i = 1; i < 4; i++) { const y = (height / 4) * i; context.beginPath(); context.moveTo(0, y); context.lineTo(width, y); context.stroke(); }
+    context.fillStyle = light ? 'rgba(46,66,75,.75)' : 'rgba(158,178,190,.78)';
+    context.font = `700 ${Math.max(12, Math.round(width * .034))}px "Share Tech Mono", monospace`;
+    context.textAlign = 'center'; context.textBaseline = 'middle';
+    context.fillText(tx('dashboard.noRecordsYet', 'NO RECORDS YET · LOG YOUR FIRST WEIGHT'), width / 2, height / 2);
+    return;
+  }
   const min = Math.min(...values), max = Math.max(...values), span = max - min || 1;
   context.strokeStyle = 'rgba(255,255,255,.09)'; context.lineWidth = 1;
   for (let i = 1; i < 4; i++) { const y = (height / 4) * i; context.beginPath(); context.moveTo(0, y); context.lineTo(width, y); context.stroke(); }
@@ -3899,7 +3925,7 @@ function injectStableStyles() {
     .gn-foundation-panel > .gn-foundation-section{display:none!important}.gn-lab-tool-overlay{position:fixed;inset:0;z-index:220;display:none;overflow:auto;padding:calc(8px + var(--safe-top)) 10px calc(12px + var(--safe-bottom));background:rgba(0,0,0,.88)}.gn-lab-tool-overlay.active{display:block}.gn-lab-tool-shell{width:min(100%,720px);min-height:100%;box-sizing:border-box;margin:0 auto;padding:14px;border:1px solid rgba(0,212,255,.28);border-top:2px solid #00d4ff;background:#080b10;box-shadow:0 18px 60px rgba(0,0,0,.72)}.gn-lab-tool-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(0,212,255,.14)}.gn-lab-tool-head>div{flex:1}.gn-lab-tool-head h2{margin:0;color:#eef6f8;font:700 1rem var(--font-d,monospace);letter-spacing:2px}.gn-lab-back{min-height:36px;padding:8px 10px;border:1px solid rgba(0,212,255,.35);background:rgba(0,212,255,.04);color:#00d4ff;font:700 .58rem var(--font-d,monospace);letter-spacing:1px;cursor:pointer}.gn-lab-tool-host>.time-tabs,.gn-lab-tool-host>.gn-foundation-section,.gn-lab-tool-host>.gn-dose-projection,.gn-lab-tool-host>.gn-device-vault{margin-top:0}.gn-lab-tool-host>.gn-foundation-section{display:block!important}.gn-lab-tool-host>.gn-device-vault{border-top:0;padding-top:0}.phase-context-text{margin:12px 0;padding:11px 12px;border-left:2px solid #00d4ff;background:rgba(0,212,255,.045);color:#a9dce8;font:.68rem/1.5 var(--font-m,monospace)}
     .toast{position:fixed!important;bottom:calc(84px + var(--safe-bottom))!important;left:10px!important;right:10px!important;width:auto!important;box-sizing:border-box!important;z-index:1000!important;padding:8px 10px!important;border:0!important;border-bottom:1px solid #00d4ff!important;border-radius:0!important;background:#0a1016!important;box-shadow:0 8px 18px rgba(0,0,0,.4)!important;white-space:nowrap!important;overflow:hidden!important;animation:none!important}.toast.err{border-bottom-color:#FF3B3B!important}.toast .gn-toast-kicker{display:none!important}.toast .gn-toast-message{display:block!important;font-size:.68rem!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
     .nav-lbl{font-size:.55rem!important;color:#8a8aa0!important}.nav-item:not(.active) .nav-lbl{color:#8a8aa0!important}.nav-item.active .nav-lbl{color:#00d4ff!important}.nav-item.active::before{height:1px!important;box-shadow:0 0 7px #00d4ff!important}.landing-node-mark{opacity:.65!important}
-    @media(max-width:620px){.scroll-body{padding-bottom:calc(50px + var(--safe-bottom))!important}.nav-lbl{font-size:.55rem!important;color:#8a8aa0!important}.gn-foundation-grid{grid-template-columns:1fr 1fr!important}}
+    @media(max-width:620px){.scroll-body{padding-bottom:calc(84px + var(--safe-bottom))!important}.nav-lbl{font-size:.55rem!important;color:#8a8aa0!important}.gn-foundation-grid{grid-template-columns:1fr 1fr!important}}
     @media(max-width:340px){.gn-foundation-grid{grid-template-columns:1fr!important}}
     #pageLab.gn-lab-launchpad-mode > #labSegTabs,#pageLab.gn-lab-launchpad-mode > [data-labseg-block],#pageLab.gn-lab-launchpad-mode > #gnDoseProjection{display:none!important}
     @media(prefers-reduced-motion:reduce){.gn-lab-tool-overlay *{scroll-behavior:auto!important}.toast{animation:none!important}}
@@ -4629,7 +4655,7 @@ function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   if (window.GN_SW?.register) { window.GN_SW.register(); return; }
   navigator.serviceWorker
-    .register('/sw.js?v=20260808.19', { updateViaCache: 'none' })
+    .register('/sw.js?v=20260808.20', { updateViaCache: 'none' })
     .then(registration => registration.update())
     .catch(() => {});
 }
