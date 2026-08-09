@@ -2531,7 +2531,20 @@ function drawWeightTrendChart(canvas, weights, shots, goal) {
   canvas.width = width * scale; canvas.height = height * scale;
   const context = canvas.getContext('2d'); if (!context) return;
   context.setTransform(scale, 0, 0, scale, 0, 0); context.clearRect(0, 0, width, height);
-  if (!weights.length) { if (summary) summary.textContent = tx('dashboard.logWeight', 'LOG WEIGHT'); return; }
+  if (!weights.length) {
+    if (summary) summary.textContent = tx('dashboard.logWeight', 'LOG WEIGHT');
+    // Overnight polish (2026-08-09): RESULTS chart empty state — quiet
+    // grid + message instead of a dead blank canvas.
+    const light = document.documentElement.getAttribute('data-theme') === 'light';
+    context.strokeStyle = light ? 'rgba(20,60,70,.1)' : 'rgba(255,255,255,.08)';
+    context.lineWidth = 1;
+    for (let i = 1; i < 4; i++) { const y = (height / 4) * i; context.beginPath(); context.moveTo(0, y); context.lineTo(width, y); context.stroke(); }
+    context.fillStyle = light ? 'rgba(46,66,75,.75)' : 'rgba(158,178,190,.78)';
+    context.font = `700 ${Math.max(12, Math.round(width * .034))}px "Share Tech Mono", monospace`;
+    context.textAlign = 'center'; context.textBaseline = 'middle';
+    context.fillText(tx('dashboard.noRecordsYet', 'NO RECORDS YET · LOG YOUR FIRST WEIGHT'), width / 2, height / 2);
+    return;
+  }
 
   const left = 42, right = 12, top = 16, bottom = 30, plotWidth = width - left - right, plotHeight = height - top - bottom;
   const values = weights.map(item => Number(item.weight));
@@ -2609,13 +2622,26 @@ function renderTrendLists(shots) {
 }
 
 function drawCanvasChart(canvas, values, color) {
-  if (!canvas || !values.length) return;
+  if (!canvas) return;
   const width = Math.max(280, canvas.clientWidth || 320);
   const height = Math.max(110, canvas.clientHeight || 150);
   const scale = window.devicePixelRatio || 1;
   canvas.width = width * scale; canvas.height = height * scale;
   const context = canvas.getContext('2d'); if (!context) return;
   context.scale(scale, scale); context.clearRect(0, 0, width, height);
+  if (!values.length) {
+    // Overnight polish (2026-08-09): empty charts were a dead blank zone —
+    // draw a faint grid + a quiet "no records yet" line, theme-aware.
+    const light = document.documentElement.getAttribute('data-theme') === 'light';
+    context.strokeStyle = light ? 'rgba(20,60,70,.1)' : 'rgba(255,255,255,.08)';
+    context.lineWidth = 1;
+    for (let i = 1; i < 4; i++) { const y = (height / 4) * i; context.beginPath(); context.moveTo(0, y); context.lineTo(width, y); context.stroke(); }
+    context.fillStyle = light ? 'rgba(46,66,75,.75)' : 'rgba(158,178,190,.78)';
+    context.font = `700 ${Math.max(12, Math.round(width * .034))}px "Share Tech Mono", monospace`;
+    context.textAlign = 'center'; context.textBaseline = 'middle';
+    context.fillText(tx('dashboard.noRecordsYet', 'NO RECORDS YET · LOG YOUR FIRST WEIGHT'), width / 2, height / 2);
+    return;
+  }
   const min = Math.min(...values), max = Math.max(...values), span = max - min || 1;
   context.strokeStyle = 'rgba(255,255,255,.09)'; context.lineWidth = 1;
   for (let i = 1; i < 4; i++) { const y = (height / 4) * i; context.beginPath(); context.moveTo(0, y); context.lineTo(width, y); context.stroke(); }

@@ -1517,5 +1517,6 @@
   "onb.languageBody": "Inglés y español. Toca el globo y toda la app se traduce al instante.",
   "mapping.needHeaderRow": "ESTE CSV NECESITA UN ENCABEZADO Y AL MENOS UNA FILA.",
   "research.advanced": "AVANZADO",
-  "research.noticeToggleAria": "Alternar aviso de investigación"
+  "research.noticeToggleAria": "Alternar aviso de investigación",
+  "dashboard.noRecordsYet": "SIN REGISTROS · REGISTRA TU PRIMER PESO"
 }
