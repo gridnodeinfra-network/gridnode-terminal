@@ -16,5 +16,6 @@ npx --yes @axe-core/cli "${URL}" \
   --dir "${OUT}" \
   --exit
 RC=$?
-echo "exit=${RC} — report: $(ls ${OUT}/axe-results-*.json 2>/dev/null | tail -1)"
+report=$(find "${OUT}" -maxdepth 1 -name "axe-results-*.json" 2>/dev/null | tail -1)
+echo "exit=${RC} — report: ${report}"
 exit ${RC}
