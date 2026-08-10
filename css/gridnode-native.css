@@ -1842,6 +1842,21 @@ html[data-theme="light"] #landing .landing-btn.secondary {
   filter: blur(14px);
   pointer-events: none;
 }
+html[data-theme="light"] #landing .landing-preview-frame {
+  background: linear-gradient(180deg, #fbf9f2, #f4f1e9);
+  border-color: rgba(20, 60, 70, .28);
+  border-top-color: #006f82;
+  box-shadow: 0 34px 84px rgba(20, 60, 70, .15), 0 0 0 1px rgba(20, 60, 70, .04);
+}
+html[data-theme="light"] #landing .landing-preview-bar {
+  border-bottom-color: rgba(20, 60, 70, .18);
+  background: linear-gradient(180deg, #fbf9f2, #f4f1e9);
+}
+html[data-theme="light"] #landing .landing-preview-dot { background: rgba(20, 60, 70, .25); }
+html[data-theme="light"] #landing .landing-preview-dot:first-child { background: #006f82; box-shadow: 0 0 10px rgba(0, 111, 130, .55); }
+html[data-theme="light"] #landing .landing-preview-tag { color: #33525c; }
+html[data-theme="light"] #landing .landing-preview-shot { background: #f4f1e9; }
+html[data-theme="light"] #landing .landing-preview-caption { color: #49616a; }
 #landing .landing-preview-frame {
   overflow: hidden;
   border: 1px solid rgba(0, 212, 255, .34);
@@ -1917,7 +1932,7 @@ html[data-theme="light"] #landing .landing-btn.secondary {
     row-gap: 16px !important;
   }
   #landing .landing-logo { width: min(270px, 78%) !important; margin-bottom: 12px; }
-  #landing .landing-headline { font-size: clamp(2.3rem, 11.4vw, 3.05rem) !important; }
+  #landing .landing-headline { font-size: clamp(2.3rem, 11.4vw, 3.05rem) !important; max-width: 14ch !important; }
   #landing .landing-cta-row { grid-template-columns: 1fr !important; }
   #landing .landing-product-preview { margin-top: 12px; }
   #landing .landing-preview-bar { min-height: 38px; padding: 0 11px; }
