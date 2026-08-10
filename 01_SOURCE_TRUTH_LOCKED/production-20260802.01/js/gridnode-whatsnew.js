@@ -256,6 +256,21 @@
         FIXED: ['El tour de inicio rápido ya no se apila sobre la tarjeta de novedades — se reproducen uno después del otro.', 'El efecto CRT de líneas de escaneo es más sutil para que los colores sigan vivos manteniendo la estética de terminal.']
       }
     },
+    '20260810.1': {
+      version: '0.15.5', title: '2026 PREMIUM REFINEMENT PASS', date: '2026-08-10',
+      en: {
+        IMPROVED: [
+          'Day Ops topbar buttons (theme toggle and language globe) now have visible borders so the controls are discoverable on light surfaces',
+          'The SHOTS page now reads as SHOT LOG with a SCANNER + ENTRIES subtitle, so the page header matches the scanner body and the entries below'
+        ]
+      },
+      es: {
+        IMPROVED: [
+          'Los botones de la barra superior en Day Ops (selector de tema e idioma) ahora tienen bordes visibles para que se descubran en superficies claras',
+          'La página de DOSIS ahora se muestra como REGISTRO DE DOSIS con subtítulo ESCÁNER + ENTRADAS, para que el encabezado coincida con el cuerpo del escáner y las entradas debajo'
+        ]
+      }
+    },
     '20260808.23': {
       version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-09',
       en: {

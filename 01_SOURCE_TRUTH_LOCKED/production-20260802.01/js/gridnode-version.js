@@ -7,10 +7,10 @@
   'use strict';
   window.GN_VERSION = Object.freeze({
     APP_VERSION: '0.15.5',
-    APP_BUILD: '20260808.23',
+    APP_BUILD: '20260810.1',
     semver: '0.15.5',
-    release: '20260808.23',
-    title: 'V0.15.5 — A11Y · I18N · WCAG SWEEP',
-    date: '2026-08-08'
+    release: '20260810.1',
+    title: 'V0.15.5 — 2026 PREMIUM REFINEMENT PASS',
+    date: '2026-08-10'
   });
 })();
