@@ -114,7 +114,24 @@ const MEDICATIONS = Object.freeze({
   ozempic_semaglutide: 'Ozempic (Semaglutide)',
   semaglutide_compound: 'Semaglutide (Compound)',
   retatrutide: 'Retatrutide',
-  custom_compound: 'Custom Compound'
+  custom_compound: 'Custom Compound',
+  bpc157: 'BPC-157',
+  tb500: 'TB-500',
+  thymosin_beta4: 'Thymosin β-4 (Full)',
+  thymosin_alpha1: 'Thymosin α-1',
+  cjc1295_dac: 'CJC-1295 (DAC)',
+  cjc1295_nodac: 'Mod GRF 1-29 (CJC no-DAC)',
+  ipamorelin: 'Ipamorelin',
+  sermorelin: 'Sermorelin',
+  tesamorelin: 'Tesamorelin',
+  semax: 'Semax',
+  selank: 'Selank',
+  ghk_cu_topical: 'GHK-Cu (Topical)',
+  ghk_cu_injectable: 'GHK-Cu (Injectable)',
+  epitalon: 'Epitalon',
+  mots_c: 'MOTS-c',
+  kpv: 'KPV',
+  elamipretide_ss31: 'Elamipretide / SS-31'
 });
 function medicationLabel(value) { const id = normalizeMedicationId(value); return id ? MEDICATIONS[id] : tx('shots.invalidMedication', 'Unknown medication'); }
 const SIDE_EFFECT_KEYS = Object.freeze({ nausea: 'shot.nausea', fatigue: 'shot.fatigue', headache: 'shot.headache', diarrhea: 'shot.diarrhea', constipation: 'shot.constipation', vomiting: 'shot.vomiting', insomnia: 'shot.insomnia', bloating: 'shot.bloating', reflux: 'shot.reflux', dizziness: 'shot.dizziness' });
@@ -835,6 +852,17 @@ function renderProtocolCurve(shots, phase) {
     }
     const context = canvas?.getContext('2d');
     if (context) context.clearRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
+
+  /* Peptide evidence layer (2026-08-10): vivid, evidence-aware renderer.
+     Delegates to gridnode-peptide-viz.js when present; synthetic fallback below
+     stays intact for environments without the layer. */
+  if (window.GN_PEPTIDE_VIZ && typeof window.GN_PEPTIDE_VIZ.render === 'function') {
+    const medId = normalizeMedicationId(shots.at(-1)?.med);
+    const labelMap = {};
+    shots.forEach(shot => { const id = normalizeMedicationId(shot.med); if (id && !labelMap[id]) labelMap[id] = medicationLabel(id); });
+    window.GN_PEPTIDE_VIZ.render({ canvas, readout, shots, medId, medLabel: medicationLabel(medId), labelMap, range: moduleState.medRange, now: Date.now(), phaseName: phase?.name || 'ACTIVE' });
     return;
   }
 

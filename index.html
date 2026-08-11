@@ -27,8 +27,8 @@
   <meta name="color-scheme" content="dark light">
   <meta name="supported-color-schemes" content="dark light">
 
-<script src="./js/gridnode-theme.js?v=20260810.1"></script>
-<link rel="stylesheet" href="./css/daylight-nexus-pilot.css?v=20260810.1">
+<script src="./js/gridnode-theme.js?v=20260810.2"></script>
+<link rel="stylesheet" href="./css/daylight-nexus-pilot.css?v=20260810.2">
 
 <link rel="manifest" href="/manifest.json">
 <title>GRID//NODE — Your body. Your data. Your grid.</title>
@@ -3942,16 +3942,17 @@ function continueLocallyFromWelcome() {
       
       <div class="sec-hdr"><div class="sec-title" data-i18n-html="phase.phaseCurveTitle">// <span class="a">PHASE_CURVE</span></div></div>
       <div class="card">
-        <div class="card-title" data-i18n="phase.estimatedProtocolCurve">ESTIMATED PROTOCOL CURVE</div>
+        <div class="card-title-row"><div class="card-title" data-i18n="phase.estimatedProtocolCurve">ESTIMATED PROTOCOL CURVE</div><button type="button" class="gn-peptide-expand" id="medExpandBtn" onclick="window.GN_PEPTIDE_VIZ && GN_PEPTIDE_VIZ.openOverlay()" hidden data-i18n="peptide.expand">EXPAND ▸</button></div>
         <div class="card-val" id="medLvlVal">—<span data-i18n="results.logToBegin">log a shot to begin</span></div>
         <div class="protocol-curve-copy" data-i18n="phase.curveCopy">Educational estimate based on logged shot timing. Not a lab measurement.<span class="curve-subline" data-i18n="phase.curveSubline">Curve shows a relative activity model: logged SHOT event → estimated rise → peak → decay.</span></div>
-        <div class="chart-wrap" style="height:130px"><canvas id="medChart"></canvas></div>
+        <div class="chart-wrap gn-chart-stack" style="height:130px"><canvas id="medChart"></canvas><svg id="medChartOverlay" class="gn-chart-overlay" aria-hidden="true"></svg><div id="medChartTip" class="gn-peptide-tip" hidden></div></div>
         <div class="time-tabs">
           <button class="time-tab" data-i18n="results.range2w" onclick="setRange(this,'2w')">2W</button>
           <button class="time-tab active" data-i18n="results.range1m" onclick="setRange(this,'1m')">1M</button>
           <button class="time-tab" data-i18n="results.range3m" onclick="setRange(this,'3m')">3M</button>
           <button class="time-tab" data-i18n="results.rangeAll" onclick="setRange(this,'all')">ALL</button>
         </div>
+        <div class="gn-peptide-evidence-row"><span id="medEvidenceChip" class="gn-evidence-chip" data-state="none">—</span><span id="medCurveSummary" class="gn-peptide-summary" aria-live="polite">—</span></div>
         <div class="phase-edu-note"><strong data-i18n="phase.educationalInsightOnly">EDUCATIONAL INSIGHT ONLY</strong><br><span data-i18n="phase.notLabMeasurement">Phase Engine is not a laboratory measurement, diagnosis, treatment recommendation, or dosing guide.</span></div>
       </div>
     </div>
@@ -4074,7 +4075,8 @@ function continueLocallyFromWelcome() {
             <div class="card-val" id="wtChartVal">—<span data-i18n="results.lbsCurrent">lbs current</span></div>
             <div class="results-direction insufficient" id="resWeightDirection" data-i18n="results.trendInsufficient">Trend direction: Insufficient Data</div>
             <div class="results-copy" style="margin-bottom:10px" data-i18n="runtime.observedChange">Observed change from logged measurements.</div>
-            <div class="chart-wrap" style="height:160px"><canvas id="wtChart"></canvas></div>
+            <div class="chart-wrap gn-chart-stack" style="height:160px"><canvas id="wtChart"></canvas><svg id="wtChartOverlay" class="gn-chart-overlay" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg></div>
+            <div class="gn-chart-legend" id="wtChartLegend" aria-hidden="true"></div>
             <div class="time-tabs">
               <button class="time-tab" data-i18n="results.range1m" onclick="setWtRange(this,'1m')">1M</button>
               <button class="time-tab" data-i18n="results.range3m" onclick="setWtRange(this,'3m')">3M</button>
@@ -4369,6 +4371,28 @@ function continueLocallyFromWelcome() {
           <div class="cp-group-label" data-i18n="shot.other">OTHER</div>
           <div class="cp-option" onclick="selectOpt('cpMedProf','retatrutide','Retatrutide',saveProfileMed)">Retatrutide</div>
           <div class="cp-option" onclick="selectOpt('cpMedProf','custom_compound','Custom Compound',saveProfileMed)">Custom Compound</div>
+          <div class="cp-group-label" data-i18n="shot.groupRecovery">RECOVERY</div>
+          <div class="cp-option" onclick="selectOpt('cpMedProf','bpc157','BPC-157',saveProfileMed)">BPC-157</div>
+          <div class="cp-option" onclick="selectOpt('cpMedProf','tb500','TB-500',saveProfileMed)">TB-500</div>
+          <div class="cp-option" onclick="selectOpt('cpMedProf','thymosin_beta4','Thymosin β-4 (Full)',saveProfileMed)">Thymosin β-4 (Full)</div>
+          <div class="cp-option" onclick="selectOpt('cpMedProf','thymosin_alpha1','Thymosin α-1',saveProfileMed)">Thymosin α-1</div>
+          <div class="cp-group-label" data-i18n="shot.groupGhAxis">GH AXIS</div>
+          <div class="cp-option" onclick="selectOpt('cpMedProf','cjc1295_dac','CJC-1295 (DAC)',saveProfileMed)">CJC-1295 (DAC)</div>
+          <div class="cp-option" onclick="selectOpt('cpMedProf','cjc1295_nodac','Mod GRF 1-29 (CJC no-DAC)',saveProfileMed)">Mod GRF 1-29 (CJC no-DAC)</div>
+          <div class="cp-option" onclick="selectOpt('cpMedProf','ipamorelin','Ipamorelin',saveProfileMed)">Ipamorelin</div>
+          <div class="cp-option" onclick="selectOpt('cpMedProf','sermorelin','Sermorelin',saveProfileMed)">Sermorelin</div>
+          <div class="cp-option" onclick="selectOpt('cpMedProf','tesamorelin','Tesamorelin',saveProfileMed)">Tesamorelin</div>
+          <div class="cp-group-label" data-i18n="shot.groupNeuro">NEURO</div>
+          <div class="cp-option" onclick="selectOpt('cpMedProf','semax','Semax',saveProfileMed)">Semax</div>
+          <div class="cp-option" onclick="selectOpt('cpMedProf','selank','Selank',saveProfileMed)">Selank</div>
+          <div class="cp-group-label" data-i18n="shot.groupSkin">SKIN</div>
+          <div class="cp-option" onclick="selectOpt('cpMedProf','ghk_cu_topical','GHK-Cu (Topical)',saveProfileMed)">GHK-Cu (Topical)</div>
+          <div class="cp-option" onclick="selectOpt('cpMedProf','ghk_cu_injectable','GHK-Cu (Injectable)',saveProfileMed)">GHK-Cu (Injectable)</div>
+          <div class="cp-group-label" data-i18n="shot.groupMetabolic">METABOLIC</div>
+          <div class="cp-option" onclick="selectOpt('cpMedProf','elamipretide_ss31','Elamipretide / SS-31',saveProfileMed)">Elamipretide / SS-31</div>
+          <div class="cp-option" onclick="selectOpt('cpMedProf','epitalon','Epitalon',saveProfileMed)">Epitalon</div>
+          <div class="cp-option" onclick="selectOpt('cpMedProf','mots_c','MOTS-c',saveProfileMed)">MOTS-c</div>
+          <div class="cp-option" onclick="selectOpt('cpMedProf','kpv','KPV',saveProfileMed)">KPV</div>
         </div>
       </div>
     </div>
@@ -4552,6 +4576,38 @@ function continueLocallyFromWelcome() {
           <div class="cp-group-options" data-gn-med-options="OTHER">
             <div class="cp-option" onclick="selectOpt('cpShotMed','retatrutide','Retatrutide',typeof updatePills === 'function' ? updatePills : null)">Retatrutide</div>
             <div class="cp-option" onclick="selectOpt('cpShotMed','custom_compound','Custom Compound',typeof updatePills === 'function' ? updatePills : null)">Custom Compound</div>
+          </div>
+          <div class="cp-group-minimized" data-gn-med-group="RECOVERY" onclick="gnMedRevealGroup('cpShotMedDrop','RECOVERY')" role="button" tabindex="0"><span class="cp-group-minimized-label" data-i18n="shot.groupRecovery">RECOVERY</span><span class="cp-group-minimized-count">4</span></div>
+          <div class="cp-group-options" data-gn-med-options="RECOVERY">
+            <div class="cp-option" onclick="selectOpt('cpShotMed','bpc157','BPC-157',typeof updatePills === 'function' ? updatePills : null)">BPC-157</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','tb500','TB-500',typeof updatePills === 'function' ? updatePills : null)">TB-500</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','thymosin_beta4','Thymosin β-4 (Full)',typeof updatePills === 'function' ? updatePills : null)">Thymosin β-4 (Full)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','thymosin_alpha1','Thymosin α-1',typeof updatePills === 'function' ? updatePills : null)">Thymosin α-1</div>
+          </div>
+          <div class="cp-group-minimized" data-gn-med-group="GH AXIS" onclick="gnMedRevealGroup('cpShotMedDrop','GH AXIS')" role="button" tabindex="0"><span class="cp-group-minimized-label" data-i18n="shot.groupGhAxis">GH AXIS</span><span class="cp-group-minimized-count">5</span></div>
+          <div class="cp-group-options" data-gn-med-options="GH AXIS">
+            <div class="cp-option" onclick="selectOpt('cpShotMed','cjc1295_dac','CJC-1295 (DAC)',typeof updatePills === 'function' ? updatePills : null)">CJC-1295 (DAC)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','cjc1295_nodac','Mod GRF 1-29 (CJC no-DAC)',typeof updatePills === 'function' ? updatePills : null)">Mod GRF 1-29 (CJC no-DAC)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','ipamorelin','Ipamorelin',typeof updatePills === 'function' ? updatePills : null)">Ipamorelin</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','sermorelin','Sermorelin',typeof updatePills === 'function' ? updatePills : null)">Sermorelin</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','tesamorelin','Tesamorelin',typeof updatePills === 'function' ? updatePills : null)">Tesamorelin</div>
+          </div>
+          <div class="cp-group-minimized" data-gn-med-group="NEURO" onclick="gnMedRevealGroup('cpShotMedDrop','NEURO')" role="button" tabindex="0"><span class="cp-group-minimized-label" data-i18n="shot.groupNeuro">NEURO</span><span class="cp-group-minimized-count">2</span></div>
+          <div class="cp-group-options" data-gn-med-options="NEURO">
+            <div class="cp-option" onclick="selectOpt('cpShotMed','semax','Semax',typeof updatePills === 'function' ? updatePills : null)">Semax</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','selank','Selank',typeof updatePills === 'function' ? updatePills : null)">Selank</div>
+          </div>
+          <div class="cp-group-minimized" data-gn-med-group="SKIN" onclick="gnMedRevealGroup('cpShotMedDrop','SKIN')" role="button" tabindex="0"><span class="cp-group-minimized-label" data-i18n="shot.groupSkin">SKIN</span><span class="cp-group-minimized-count">2</span></div>
+          <div class="cp-group-options" data-gn-med-options="SKIN">
+            <div class="cp-option" onclick="selectOpt('cpShotMed','ghk_cu_topical','GHK-Cu (Topical)',typeof updatePills === 'function' ? updatePills : null)">GHK-Cu (Topical)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','ghk_cu_injectable','GHK-Cu (Injectable)',typeof updatePills === 'function' ? updatePills : null)">GHK-Cu (Injectable)</div>
+          </div>
+          <div class="cp-group-minimized" data-gn-med-group="METABOLIC" onclick="gnMedRevealGroup('cpShotMedDrop','METABOLIC')" role="button" tabindex="0"><span class="cp-group-minimized-label" data-i18n="shot.groupMetabolic">METABOLIC</span><span class="cp-group-minimized-count">4</span></div>
+          <div class="cp-group-options" data-gn-med-options="METABOLIC">
+            <div class="cp-option" onclick="selectOpt('cpShotMed','elamipretide_ss31','Elamipretide / SS-31',typeof updatePills === 'function' ? updatePills : null)">Elamipretide / SS-31</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','epitalon','Epitalon',typeof updatePills === 'function' ? updatePills : null)">Epitalon</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','mots_c','MOTS-c',typeof updatePills === 'function' ? updatePills : null)">MOTS-c</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','kpv','KPV',typeof updatePills === 'function' ? updatePills : null)">KPV</div>
           </div>
         </div>
       </div>
@@ -9146,7 +9202,44 @@ body.gn-log-shot-picker-open .fab{
 @media(prefers-reduced-motion:reduce){.boot-command-deck::before,#boot .boot-b2b-symbol,#boot .boot-b2b-symbol-wrap::after{animation:none !important}}
 </style>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="./js/gridnode-version.js?v=20260810.1" defer></script><script src="./js/gridnode-i18n.js?v=20260810.1" defer></script><script src="./js/gridnode-bundle.js?v=20260810.1" defer></script><script src="./js/gridnode-phase-sphere.js?v=20260810.1" defer></script><script src="./js/gridnode-product-completion.js?v=20260810.1" defer></script><script src="./js/gridnode-motivation.js?v=20260810.1" defer></script><script src="./js/gridnode-telemetry.js?v=20260810.1" defer></script><script src="./js/gridnode-native.js?v=20260810.1" defer></script><script src="./js/gridnode-i18n-overlay.js?v=20260810.1" defer></script><script src="./js/gridnode-whatsnew.js?v=20260810.1" defer></script><script src="./js/gridnode-onboarding.js?v=20260810.1" defer></script>
+<!-- GRID//NODE Peptide Evidence Overlay (2026-08-10) -->
+<div class="gn-peptide-overlay" id="gnPeptideOverlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="gnPeptideTitle">
+  <div class="gn-peptide-overlay-card">
+    <div class="gn-peptide-overlay-head">
+      <div>
+        <div class="gn-peptide-overlay-kicker" data-i18n="peptide.overlayKicker">PHASE ENGINE · EVIDENCE VIEW</div>
+        <div class="gn-peptide-overlay-title" id="gnPeptideTitle">—</div>
+        <span id="gnPeptideChip" class="gn-evidence-chip" data-state="none">—</span>
+      </div>
+      <button type="button" class="gn-peptide-overlay-close" id="gnPeptideClose" onclick="window.GN_PEPTIDE_VIZ && GN_PEPTIDE_VIZ.closeOverlay()" data-i18n="peptide.close">✕ CLOSE</button>
+    </div>
+    <div class="gn-peptide-overlay-scroll">
+      <div class="gn-peptide-overlay-grid">
+        <div class="gn-peptide-big-block">
+          <div class="gn-peptide-block-label" data-i18n="peptide.curveLabel">RELATIVE MODEL CURVE</div>
+          <div class="gn-chart-stack gn-peptide-big-wrap">
+            <canvas id="gnPeptideBigChart"></canvas>
+            <svg id="gnPeptideBigOverlay" class="gn-chart-overlay" aria-hidden="true"></svg>
+            <div id="gnPeptideTip" class="gn-peptide-tip" hidden></div>
+          </div>
+          <div class="gn-peptide-overlay-copy" data-i18n="peptide.modelNote">Literature-derived relative model — not a measured level.</div>
+        </div>
+        <div class="gn-peptide-ring-block">
+          <div class="gn-peptide-block-label" data-i18n="peptide.ringLabel">CYCLE RING</div>
+          <svg id="gnPeptideRing" class="gn-peptide-ring" aria-hidden="true"></svg>
+          <div class="gn-peptide-overlay-copy" data-i18n="peptide.ringNote">Arc length = elapsed time since the last logged SHOT · not potency or effect.</div>
+        </div>
+      </div>
+      <div id="gnPeptideDossier" class="gn-peptide-dossier"></div>
+      <div id="gnPeptideAnimal" class="gn-peptide-animal"></div>
+      <div id="gnPeptideLanes" class="gn-peptide-lanes"></div>
+      <div id="gnPeptideNext" class="gn-peptide-next-block"></div>
+      <div class="gn-peptide-overlay-foot" data-i18n="phase.notLabMeasurement">Phase Engine is not a laboratory measurement, diagnosis, treatment recommendation, or dosing guide.</div>
+    </div>
+  </div>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="./js/gridnode-version.js?v=20260810.2" defer></script><script src="./js/gridnode-i18n.js?v=20260810.2" defer></script><script src="./js/gridnode-bundle.js?v=20260810.2" defer></script><script src="./js/gridnode-phase-sphere.js?v=20260810.2" defer></script><script src="./js/gridnode-product-completion.js?v=20260810.2" defer></script><script src="./js/gridnode-peptide-pk.js?v=20260810.2" defer></script><script src="./js/gridnode-peptide-viz.js?v=20260810.2" defer></script><script src="./js/gridnode-motivation.js?v=20260810.2" defer></script><script src="./js/gridnode-telemetry.js?v=20260810.2" defer></script><script src="./js/gridnode-native.js?v=20260810.2" defer></script><script src="./js/gridnode-i18n-overlay.js?v=20260810.2" defer></script><script src="./js/gridnode-whatsnew.js?v=20260810.2" defer></script><script src="./js/gridnode-onboarding.js?v=20260810.2" defer></script>
 <script>
 (function() {
   try {

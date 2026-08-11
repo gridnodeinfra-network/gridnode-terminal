@@ -8,7 +8,7 @@ LOCKED_ROOT="$REPO_ROOT/01_SOURCE_TRUTH_LOCKED/production-20260802.01"
 require_command() { command -v "$1" >/dev/null 2>&1 || { printf 'ERROR: missing command: %s\n' "$1" >&2; exit 1; }; }
 for command_name in cmp find grep node shellcheck sha256sum stat; do require_command "$command_name"; done
 
-required_files=(index.html js/gridnode-bundle.js js/gridnode-phase-sphere.js js/gridnode-product-completion.js sw.js manifest.json _headers)
+required_files=(index.html js/gridnode-bundle.js js/gridnode-phase-sphere.js js/gridnode-product-completion.js js/gridnode-peptide-pk.js js/gridnode-peptide-viz.js sw.js manifest.json _headers)
 for relative_path in "${required_files[@]}"; do
     [[ -f "$REPO_ROOT/$relative_path" ]] || { printf 'ERROR: missing required file: %s\n' "$relative_path" >&2; exit 1; }
 done

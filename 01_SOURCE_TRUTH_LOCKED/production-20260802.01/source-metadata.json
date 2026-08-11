@@ -4,45 +4,37 @@
       "bytes": 1263,
       "sha256": "d865b61d8917de968bd3d903fed04a95a9d408ab13f1576429fa1caa802919cf"
     },
-    "manifest.json": {
-      "bytes": 1547,
-      "sha256": "bc3b6ad8fa6992bd8c5555477756cd2bc3ac6179b6a258aca9dcfd7f5a68f413"
-    },
-    "sw.js": {
-      "bytes": 5513,
-      "sha256": "792eaf4074290e7d9faa6016e4ec2af81a5477ff4afc118c39f638016f17addb"
-    },
-    "index.html": {
-      "bytes": 431337,
-      "sha256": "17123403145eed7e8a6412152a414d62b5437cfab3578bdf2e29f6148cd0e7cc"
-    },
-    "css/gridnode-native.css": {
-      "bytes": 182336,
-      "sha256": "80c59420ab1d602bfe1cf2261ebb7a4e630585a937a4cd3e843623603d77b340"
-    },
     "css/daylight-nexus-pilot.css": {
       "bytes": 83542,
       "sha256": "41beaeaa5c38002ead8ae7a8c164024e33afa5311d71b040ef186214dd0a464c"
     },
+    "css/gridnode-native.css": {
+      "bytes": 194664,
+      "sha256": "48627af666f493cee16f20ff69a767d29df03662edc5e775f4ec152612afe9a5"
+    },
     "i18n/en.json": {
-      "bytes": 84232,
-      "sha256": "87328f89896965cb935fabeb9e6cc5f1ae80846bbeda8f77ecf6dffb19d69082"
+      "bytes": 86972,
+      "sha256": "336a59304f45876e05e77f0a3c87458603ae0408c8329c71f90453299a27edf7"
     },
     "i18n/es-419.json": {
-      "bytes": 93678,
-      "sha256": "f2b78618557e4863cb0c704982d9645c99357a37289c66464c28a0c5cb254f96"
+      "bytes": 96634,
+      "sha256": "5afddb1092e758819fc76fb362c8210949c0ff09cfe0df8fd65e7c2ffb2f53a5"
+    },
+    "index.html": {
+      "bytes": 441950,
+      "sha256": "8ade9d1fe347dc401bdcc787c0c03a57594899a51db779e355e5d450c0262cf2"
     },
     "js/gridnode-app.js": {
       "bytes": 30345,
-      "sha256": "b1d2ca2eceaf02cf1bb558e8cc16e4c699d574928ac36949c8a4e9e836dc56d0"
+      "sha256": "1b39594d4b7a242bdca36e8b72b8491f62d20c616187c87430e218ad2f70d136"
     },
     "js/gridnode-bundle.js": {
-      "bytes": 351383,
-      "sha256": "c67e73fd21a05b8ccd0137b3a46653a1ccbdd367321e8a650df8023db0c8d280"
+      "bytes": 361545,
+      "sha256": "67bf24a4d975db1f6b56e900b36f712f098b9ab185541af3a8da175cc88c57fe"
     },
     "js/gridnode-core.js": {
-      "bytes": 29217,
-      "sha256": "749394000e2500f1e749c1541da1256e356150eed25379697d0eed8431e20262"
+      "bytes": 30957,
+      "sha256": "a26526d53a91c17a0301bb46e695da50b95edc6bbce0fa13a39242e813eb421d"
     },
     "js/gridnode-i18n-overlay.js": {
       "bytes": 3913,
@@ -53,8 +45,8 @@
       "sha256": "dc6eb685b6faed9966f98771945350ecdb9428b048b85d5819d33888fb960308"
     },
     "js/gridnode-modules.js": {
-      "bytes": 64802,
-      "sha256": "522cb6ece88ab785b88bbd5c0da1d4ba8f02926a1a07210927e5d267140dab0b"
+      "bytes": 66039,
+      "sha256": "051b8824959a2b74d9bc742f5435a4258cf1e0b52af693b6e07d381ab46c7501"
     },
     "js/gridnode-motivation.js": {
       "bytes": 14126,
@@ -62,11 +54,19 @@
     },
     "js/gridnode-native.js": {
       "bytes": 25032,
-      "sha256": "9d0096650b7b9c43baeb55d57bc46c6fad10b39999b29c5495cbcec6aa679594"
+      "sha256": "25de16705a9dcf52eaf51b23064a094462f8d175c31366f90e3f0ab6c7cdeb5f"
     },
     "js/gridnode-onboarding.js": {
       "bytes": 31325,
       "sha256": "18269774e547bda5ef2c31d2be623445a677f56602b7779f564687deec9830ef"
+    },
+    "js/gridnode-peptide-pk.js": {
+      "bytes": 16211,
+      "sha256": "b866fa6b3b8a70dc5226b38545146edc098721c10b2c73bc1f14a52521c26c10"
+    },
+    "js/gridnode-peptide-viz.js": {
+      "bytes": 31056,
+      "sha256": "fa0a834c046d798322eb46d5f1c84a574bfe937839c8337d7d3818af51897598"
     },
     "js/gridnode-phase-sphere.js": {
       "bytes": 5583,
@@ -86,11 +86,19 @@
     },
     "js/gridnode-version.js": {
       "bytes": 516,
-      "sha256": "b93093d67c9ee714e31ae691b2d626faa2f417ebe7cdc26d2903ebf3075cf380"
+      "sha256": "3b2f30230d7fdf70b89f652de83236e155d5beaf4752ce8b565a25f2101eaadd"
     },
     "js/gridnode-whatsnew.js": {
-      "bytes": 39387,
-      "sha256": "1850fb93e0d4677873d1940405b513ca5c31ebc4b03ce49930b33b31c43dcafd"
+      "bytes": 42674,
+      "sha256": "c0292b7e191457ccbc39b57210dd63ca33f1e332aad9e90a83873d1de797c3c4"
+    },
+    "manifest.json": {
+      "bytes": 1547,
+      "sha256": "bc3b6ad8fa6992bd8c5555477756cd2bc3ac6179b6a258aca9dcfd7f5a68f413"
+    },
+    "sw.js": {
+      "bytes": 5513,
+      "sha256": "438a868b3bb6bffbcc75047924fc331a04922d463844cbac33d22ad2274d8193"
     }
   }
 }

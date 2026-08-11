@@ -470,6 +470,180 @@ html[data-theme="light"] .gn-whatsnew-close {
 .card .chart-wrap { height: auto !important; padding-bottom: 18px !important; }
 .card .chart-wrap canvas { height: 112px !important; }
 
+/* Weight Trend Chart — SVG overlay + live trace + phase band (2026 PREMIUM REFINEMENT PASS) */
+.gn-chart-stack { position: relative; }
+.gn-chart-stack canvas { display: block; width: 100%; height: 100%; }
+.gn-chart-overlay {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  pointer-events: none; overflow: visible;
+}
+.gn-chart-overlay .gn-phase-band { opacity: .14; mix-blend-mode: screen; }
+.gn-chart-overlay .gn-live-trace { stroke-dasharray: 14 22; stroke-dashoffset: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .gn-chart-overlay .gn-live-trace { animation: gn-trace-flow 1.8s linear infinite; }
+  .gn-chart-overlay .gn-pulse-ring { animation: gn-pulse 2.8s ease-out infinite; transform-origin: center; transform-box: fill-box; }
+  .gn-chart-overlay .gn-pulse-core { animation: gn-pulse-core 2.8s ease-out infinite; transform-origin: center; transform-box: fill-box; }
+}
+@keyframes gn-trace-flow {
+  from { stroke-dashoffset: 300; }
+  to   { stroke-dashoffset: 0; }
+}
+@keyframes gn-pulse {
+  0%   { transform: scale(.4); opacity: .85; }
+  70%  { transform: scale(2.6); opacity: 0; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+@keyframes gn-pulse-core {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.18); }
+}
+.gn-chart-legend {
+  display: flex; flex-wrap: wrap; gap: 10px 14px; margin-top: 8px;
+  font: 600 .52rem/1 var(--font-m, "Share Tech Mono", monospace);
+  letter-spacing: 1.4px; color: var(--text-dim, #8295a0); text-transform: uppercase;
+}
+.gn-chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.gn-chart-legend i {
+  width: 10px; height: 10px; border-radius: 50%;
+  display: inline-block; box-shadow: 0 0 6px currentColor;
+}
+.gn-chart-legend .sw-cyan   { background: #00E6F0; color: #00E6F0; }
+.gn-chart-legend .sw-red    { background: #FF3B3B; color: #FF3B3B; }
+.gn-chart-legend .sw-yellow { background: #ffd700; color: #ffd700; }
+.gn-chart-legend .sw-green  { background: #00ff88; color: #00ff88; }
+.gn-chart-legend .sw-goal   { background: transparent; color: rgba(255,215,0,.85); border: 1px dashed rgba(255,215,0,.85); box-shadow: none; border-radius: 0; height: 0; width: 14px; }
+
+/* ── Peptide Evidence Phase Curve (2026-08-10) ── */
+.card-title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.gn-peptide-expand {
+  font: 700 .56rem var(--font-m, "Share Tech Mono", monospace); letter-spacing: 1.6px; color: #00d4ff;
+  background: rgba(0, 212, 255, .08); border: 1px solid rgba(0, 212, 255, .35); border-radius: 8px;
+  padding: 6px 10px; cursor: pointer; text-transform: uppercase;
+}
+.gn-peptide-expand:hover, .gn-peptide-expand:focus-visible { background: rgba(0, 212, 255, .16); outline: none; }
+.gn-peptide-tip {
+  position: absolute; z-index: 40; pointer-events: none; display: none; min-width: 130px; max-width: 200px;
+  padding: 7px 9px; border-radius: 8px; background: rgba(6, 10, 16, .92); border: 1px solid rgba(0, 212, 255, .45);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .5); color: #eef6f8;
+  font: 600 .54rem/1.5 var(--font-m, "Share Tech Mono", monospace); letter-spacing: .8px;
+}
+html[data-theme="light"] .gn-peptide-tip { background: rgba(255, 255, 255, .96); border-color: rgba(0, 150, 190, .5); color: #0e1a22; }
+.gn-peptide-evidence-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 10px; }
+.gn-evidence-chip {
+  display: inline-flex; align-items: center; padding: 4px 8px; border-radius: 6px;
+  font: 700 .52rem var(--font-m, "Share Tech Mono", monospace); letter-spacing: 1.2px; text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, .14); color: #8295a0; background: rgba(255, 255, 255, .05);
+}
+.gn-evidence-chip[data-state="pk"] { color: #00ff88; border-color: rgba(0, 255, 136, .45); background: rgba(0, 255, 136, .08); }
+.gn-evidence-chip[data-state="pd"] { color: #ffd700; border-color: rgba(255, 215, 0, .45); background: rgba(255, 215, 0, .08); }
+.gn-evidence-chip[data-state="iv"] { color: #5bd6c5; border-color: rgba(91, 214, 197, .45); background: rgba(91, 214, 197, .08); }
+.gn-evidence-chip[data-state="generic"] { color: #00d4ff; border-color: rgba(0, 212, 255, .4); background: rgba(0, 212, 255, .08); }
+.gn-peptide-summary {
+  font: 600 .54rem/1.4 var(--font-m, "Share Tech Mono", monospace); letter-spacing: .8px; color: #8295a0;
+}
+.gn-peptide-overlay {
+  position: fixed; inset: 0; z-index: 2147482999; display: none; place-items: center; padding: 14px;
+  background: rgba(2, 4, 10, .82); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+}
+.gn-peptide-overlay.active { display: grid; }
+html[data-theme="light"] .gn-peptide-overlay { background: rgba(240, 236, 226, .82); }
+body.gn-peptide-overlay-open { overflow: hidden; }
+.gn-peptide-overlay-card {
+  width: min(100%, 920px); max-height: min(88vh, 820px); display: flex; flex-direction: column;
+  background: var(--panel, #0d0f17); color: var(--text, #eef6f8);
+  border: 1px solid rgba(0, 212, 255, .35); border-top: 2px solid #00d4ff; border-radius: 14px;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, .7), 0 0 40px rgba(0, 212, 255, .08);
+}
+html[data-theme="light"] .gn-peptide-overlay-card { background: #f7f5ee; color: #0e1a22; }
+.gn-peptide-overlay-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  padding: 16px 18px 12px; border-bottom: 1px solid rgba(0, 212, 255, .18);
+}
+.gn-peptide-overlay-kicker { color: #00d4ff; font: 800 .58rem var(--font-d, monospace); letter-spacing: 2.4px; }
+.gn-peptide-overlay-title { margin: 4px 0 6px; font: 800 1.05rem var(--font-d, monospace); letter-spacing: 1.2px; color: var(--text, #eef6f8); }
+html[data-theme="light"] .gn-peptide-overlay-title { color: #0e1a22; }
+.gn-peptide-overlay-close {
+  font: 700 .56rem var(--font-m, "Share Tech Mono", monospace); letter-spacing: 1.4px; color: #ff5577;
+  background: rgba(255, 85, 119, .08); border: 1px solid rgba(255, 85, 119, .4); border-radius: 8px;
+  padding: 7px 10px; cursor: pointer; text-transform: uppercase; white-space: nowrap;
+}
+.gn-peptide-overlay-close:hover, .gn-peptide-overlay-close:focus-visible { background: rgba(255, 85, 119, .16); outline: none; }
+.gn-peptide-overlay-scroll { overflow-y: auto; padding: 14px 18px 18px; }
+.gn-peptide-overlay-grid { display: grid; grid-template-columns: minmax(0, 1fr) 160px; gap: 14px; }
+.gn-peptide-big-block, .gn-peptide-ring-block { min-width: 0; }
+.gn-peptide-block-label {
+  color: #00d4ff; font: 700 .54rem var(--font-m, "Share Tech Mono", monospace); letter-spacing: 1.8px;
+  margin-bottom: 6px; text-transform: uppercase;
+}
+.gn-peptide-big-wrap { position: relative; border: 1px solid rgba(255, 255, 255, .08); border-radius: 10px; overflow: hidden; }
+.gn-peptide-big-wrap canvas { display: block; width: 100%; height: 240px; }
+.gn-peptide-ring { width: 140px; height: 140px; display: block; margin: 0 auto; }
+.gn-peptide-overlay-copy { margin-top: 6px; font: 600 .5rem/1.4 var(--font-m, "Share Tech Mono", monospace); letter-spacing: .6px; color: #8295a0; }
+.gn-peptide-dossier {
+  margin-top: 14px; padding: 12px 14px; border: 1px solid rgba(255, 255, 255, .08); border-radius: 10px;
+  background: rgba(255, 255, 255, .03);
+}
+html[data-theme="light"] .gn-peptide-dossier { background: rgba(0, 0, 0, .03); border-color: rgba(0, 0, 0, .12); }
+.gn-peptide-dossier-head { font: 800 .6rem var(--font-d, monospace); letter-spacing: 1.8px; color: #00ff88; margin-bottom: 8px; }
+.gn-peptide-dossier-line { font: 600 .56rem/1.5 var(--font-m, "Share Tech Mono", monospace); letter-spacing: .5px; color: #c7d6db; margin: 3px 0; }
+html[data-theme="light"] .gn-peptide-dossier-line { color: #33464f; }
+.gn-peptide-dossier-line b { color: #8295a0; font-weight: 700; }
+.gn-peptide-dossier-sub { font: 700 .54rem var(--font-m, "Share Tech Mono", monospace); letter-spacing: 1.6px; color: #ffd700; margin: 9px 0 4px; }
+.gn-peptide-dossier-note { font: 600 .54rem/1.55 var(--font-m, "Share Tech Mono", monospace); letter-spacing: .3px; color: #aebfc6; margin: 2px 0; }
+html[data-theme="light"] .gn-peptide-dossier-note { color: #44565e; }
+.gn-peptide-dossier-src { display: block; font: 600 .54rem/1.5 var(--font-m, "Share Tech Mono", monospace); letter-spacing: .3px; color: #5bd6c5; text-decoration: none; margin: 2px 0; word-break: break-word; }
+.gn-peptide-dossier-src:hover { text-decoration: underline; }
+.gn-peptide-animal { margin-top: 12px; padding: 10px 14px; border: 1px dashed rgba(255, 140, 0, .4); border-radius: 10px; }
+.gn-peptide-animal-head { font: 700 .54rem var(--font-m, "Share Tech Mono", monospace); letter-spacing: 1.4px; color: #ff8c00; margin-bottom: 6px; }
+.gn-peptide-animal canvas { display: block; width: 100%; height: 64px; }
+.gn-peptide-lanes { margin-top: 14px; }
+.gn-peptide-lanes-head { font: 800 .6rem var(--font-d, monospace); letter-spacing: 1.8px; color: #00d4ff; margin-bottom: 8px; }
+.gn-peptide-lane { margin-bottom: 10px; }
+.gn-peptide-lane-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 4px; }
+.gn-peptide-lane-head b { font: 700 .62rem var(--font-d, monospace); letter-spacing: 1px; color: var(--text, #eef6f8); }
+html[data-theme="light"] .gn-peptide-lane-head b { color: #0e1a22; }
+.gn-peptide-lane-summary { font: 600 .5rem/1.4 var(--font-m, "Share Tech Mono", monospace); letter-spacing: .5px; color: #8295a0; }
+.gn-peptide-lane-chart { height: 72px; border: 1px solid rgba(255, 255, 255, .07); border-radius: 8px; overflow: hidden; }
+.gn-peptide-lane-canvas { display: block; width: 100%; height: 72px; }
+.gn-peptide-overlap {
+  margin: 4px 0 10px; padding: 8px 12px; border: 1px solid rgba(0, 255, 136, .35); border-radius: 8px;
+  font: 700 .56rem var(--font-m, "Share Tech Mono", monospace); letter-spacing: 1.2px; color: #00ff88;
+  background: rgba(0, 255, 136, .06);
+}
+.gn-peptide-overlap b { color: #eef6f8; }
+.gn-peptide-overlap.dim { border-color: rgba(255, 255, 255, .12); color: #8295a0; background: transparent; }
+.gn-peptide-next-block { margin-top: 12px; }
+.gn-peptide-next {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 10px 14px;
+  border: 1px solid rgba(0, 212, 255, .35); border-radius: 10px; background: rgba(0, 212, 255, .06);
+}
+.gn-peptide-next span { font: 700 .54rem var(--font-m, "Share Tech Mono", monospace); letter-spacing: 1.6px; color: #00d4ff; }
+.gn-peptide-next b { font: 800 .78rem var(--font-d, monospace); letter-spacing: 1px; color: var(--text, #eef6f8); }
+.gn-peptide-next small { font: 600 .5rem var(--font-m, "Share Tech Mono", monospace); letter-spacing: .5px; color: #8295a0; }
+.gn-peptide-next.dim { border-color: rgba(255, 255, 255, .12); background: transparent; }
+.gn-peptide-next.dim span { color: #8295a0; }
+html[data-theme="light"] .gn-peptide-next { background: rgba(0, 150, 190, .08); border-color: rgba(0, 150, 190, .4); }
+.gn-peptide-overlay-foot { margin-top: 14px; font: 600 .5rem/1.5 var(--font-m, "Share Tech Mono", monospace); letter-spacing: .5px; color: #8295a0; text-align: center; }
+@media (max-width: 480px) {
+  .gn-peptide-overlay { padding: 8px; }
+  .gn-peptide-overlay-card { max-height: 94vh; }
+  .gn-peptide-overlay-grid { grid-template-columns: 1fr; }
+  .gn-peptide-ring { width: 120px; height: 120px; }
+  .gn-peptide-overlay-head { flex-direction: column; }
+  .gn-peptide-overlay-title { font-size: .92rem; }
+  .gn-peptide-big-wrap canvas { height: 190px; }
+}
+html[data-theme="light"] .gn-peptide-expand { color: #007a9c; border-color: rgba(0, 122, 156, .4); background: rgba(0, 122, 156, .08); }
+html[data-theme="light"] .gn-peptide-overlay-close { color: #c81e45; border-color: rgba(200, 30, 69, .45); background: rgba(200, 30, 69, .08); }
+html[data-theme="light"] .gn-peptide-dossier-head { color: #00875a; }
+html[data-theme="light"] .gn-peptide-block-label, html[data-theme="light"] .gn-peptide-lanes-head { color: #007a9c; }
+html[data-theme="light"] .gn-peptide-dossier-sub { color: #a88400; }
+html[data-theme="light"] .gn-peptide-animal-head { color: #c05a00; }
+html[data-theme="light"] .gn-peptide-overlap { color: #00875a; border-color: rgba(0, 135, 90, .4); }
+html[data-theme="light"] .gn-peptide-overlap b { color: #0e1a22; }
+html[data-theme="light"] .gn-peptide-next span { color: #007a9c; }
+html[data-theme="light"] .gn-peptide-next b { color: #0e1a22; }
+
 /* ── 5. Premium SYSTEM UPDATE sheet ── */
 .gn-whatsnew-overlay { position: fixed; inset: 0; z-index: 950; display: grid; place-items: center; padding: 20px; background: rgba(2, 2, 8, .8); backdrop-filter: blur(10px); }
 .gn-whatsnew-card { width: min(100%, 480px); margin: auto; box-sizing: border-box; padding: 22px; border: 1px solid rgba(0, 212, 255, .4); border-top: 2px solid #00d4ff; border-radius: 12px; background: var(--panel, #0e0e16); color: var(--text, #eef6f8); box-shadow: 0 28px 80px rgba(0, 0, 0, .65); max-width: 480px; max-height: 80vh; overflow-y: auto; }

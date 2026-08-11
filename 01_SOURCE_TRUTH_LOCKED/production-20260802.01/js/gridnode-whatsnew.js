@@ -271,6 +271,33 @@
         ]
       }
     },
+    '20260810.2': {
+      version: '0.15.5', title: 'PEPTIDE EVIDENCE ENGINE', date: '2026-08-10',
+      en: {
+        NEW: [
+          '17 research peptides join the catalog in grouped pickers — RECOVERY (BPC-157, TB-500, Thymosin β-4, Thymosin α-1), GH AXIS (CJC-1295 DAC, Mod GRF 1-29, Ipamorelin, Sermorelin, Tesamorelin), NEURO (Semax, Selank), SKIN (GHK-Cu topical/injectable), METABOLIC (Elamipretide/SS-31, Epitalon, MOTS-c, KPV)',
+          'The Phase Engine curve is now compound-specific and evidence-aware: compounds with regulator-reviewed human PK draw a labeled exposure model; compounds with human response data draw a clearly-labeled response window; everything else shows an honest timeline-only state — no invented curves',
+          'EXPAND the protocol curve into a full-screen EVIDENCE VIEW: cycle ring, relative model curve with phase bands and animated trace, an evidence dossier with cited sources, an ANIMAL MODEL research panel (clearly marked NOT HUMAN EXPOSURE) where relevant, and STACK LANES with a modeled-overlap readout across compounds — interactions are never modeled as combined scores',
+          'Every compound carries an evidence chip: LABELED HUMAN PK · HUMAN RESPONSE WINDOW · TIMELINE ONLY',
+          'Fabricated 2026 trial registrations (Hudson Biotech cluster) are excluded from evidence and flagged inside compound notes'
+        ],
+        IMPROVED: [
+          'Each compound lane includes a plain-text summary (medication · time since · phase · evidence) so the chart stays readable without color or patterns'
+        ]
+      },
+      es: {
+        NEW: [
+          '17 péptidos de investigación se suman al catálogo en selectores agrupados — RECUPERACIÓN (BPC-157, TB-500, Timosina β-4, Timosina α-1), EJE GH (CJC-1295 DAC, Mod GRF 1-29, Ipamorelina, Sermorelina, Tesamorelina), NEURO (Semax, Selank), PIEL (GHK-Cu tópico/inyectable), METABÓLICO (Elamipretida/SS-31, Epitalón, MOTS-c, KPV)',
+          'La curva del Motor de Fase ahora es específica por compuesto y basada en evidencia: los compuestos con PK humana revisada dibujan un modelo de exposición etiquetado; los que tienen datos de respuesta humana dibujan una ventana de respuesta claramente etiquetada; todo lo demás muestra un estado honesto de solo línea de tiempo — sin curvas inventadas',
+          'EXPANDE la curva de protocolo a una VISTA DE EVIDENCIA a pantalla completa: anillo de ciclo, curva de modelo relativo con bandas de fase y trazo animado, dossier de evidencia con fuentes citadas, panel de MODELO ANIMAL (marcado claramente como NO ES EXPOSICIÓN HUMANA) cuando aplica, y CARRILES DE STACK con lectura de solape modelado — las interacciones nunca se modelan como puntuaciones combinadas',
+          'Cada compuesto lleva una etiqueta de evidencia: PK HUMANA DOCUMENTADA · VENTANA DE RESPUESTA HUMANA · SOLO LÍNEA DE TIEMPO',
+          'Los registros de ensayos fabricados de 2026 (grupo Hudson Biotech) quedan excluidos de la evidencia y se señalan dentro de las notas del compuesto'
+        ],
+        IMPROVED: [
+          'Cada carril de compuesto incluye un resumen de texto plano (medicamento · tiempo desde · fase · evidencia) para que el gráfico sea legible sin color ni patrones'
+        ]
+      }
+    },
     '20260808.23': {
       version: '0.15.5', title: 'A11Y · I18N · WCAG SWEEP', date: '2026-08-09',
       en: {

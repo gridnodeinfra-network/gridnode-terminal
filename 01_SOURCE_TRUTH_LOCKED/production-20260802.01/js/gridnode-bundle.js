@@ -1083,7 +1083,24 @@ const MEDICATIONS = Object.freeze({
   ozempic_semaglutide: 'Ozempic (Semaglutide)',
   semaglutide_compound: 'Semaglutide (Compound)',
   retatrutide: 'Retatrutide',
-  custom_compound: 'Custom Compound'
+  custom_compound: 'Custom Compound',
+  bpc157: 'BPC-157',
+  tb500: 'TB-500',
+  thymosin_beta4: 'Thymosin β-4 (Full)',
+  thymosin_alpha1: 'Thymosin α-1',
+  cjc1295_dac: 'CJC-1295 (DAC)',
+  cjc1295_nodac: 'Mod GRF 1-29 (CJC no-DAC)',
+  ipamorelin: 'Ipamorelin',
+  sermorelin: 'Sermorelin',
+  tesamorelin: 'Tesamorelin',
+  semax: 'Semax',
+  selank: 'Selank',
+  ghk_cu_topical: 'GHK-Cu (Topical)',
+  ghk_cu_injectable: 'GHK-Cu (Injectable)',
+  epitalon: 'Epitalon',
+  mots_c: 'MOTS-c',
+  kpv: 'KPV',
+  elamipretide_ss31: 'Elamipretide / SS-31'
 });
 
 const MEDICATION_ALIASES = Object.freeze({
@@ -1103,7 +1120,59 @@ const MEDICATION_ALIASES = Object.freeze({
   'semaglutide (compound)': 'semaglutide_compound',
   retatrutide: 'retatrutide',
   custom: 'custom_compound',
-  'custom compound': 'custom_compound'
+  'custom compound': 'custom_compound',
+  'bpc-157': 'bpc157',
+  bpc157: 'bpc157',
+  bpc: 'bpc157',
+  bepecin: 'bpc157',
+  'tb-500': 'tb500',
+  tb500: 'tb500',
+  tb: 'tb500',
+  'thymosin beta-4': 'thymosin_beta4',
+  'thymosin beta 4': 'thymosin_beta4',
+  'thymosin b4': 'thymosin_beta4',
+  tbeta4: 'thymosin_beta4',
+  tb4: 'thymosin_beta4',
+  'thymosin alpha-1': 'thymosin_alpha1',
+  'thymosin alpha 1': 'thymosin_alpha1',
+  thymalfasin: 'thymosin_alpha1',
+  zadaxin: 'thymosin_alpha1',
+  'cjc-1295': 'cjc1295_dac',
+  'cjc1295': 'cjc1295_dac',
+  'cjc-1295 dac': 'cjc1295_dac',
+  'cjc1295 dac': 'cjc1295_dac',
+  'cjc-1295 no dac': 'cjc1295_nodac',
+  'cjc1295 no dac': 'cjc1295_nodac',
+  'cjc-1295 without dac': 'cjc1295_nodac',
+  'mod grf': 'cjc1295_nodac',
+  'mod grf 1-29': 'cjc1295_nodac',
+  'mod-grf': 'cjc1295_nodac',
+  'modified grf 1-29': 'cjc1295_nodac',
+  'grf 1-29': 'cjc1295_nodac',
+  ipamorelin: 'ipamorelin',
+  sermorelin: 'sermorelin',
+  'grf(1-29)': 'sermorelin',
+  tesamorelin: 'tesamorelin',
+  egrifta: 'tesamorelin',
+  semax: 'semax',
+  selank: 'selank',
+  'ghk-cu': 'ghk_cu_topical',
+  'ghk cu': 'ghk_cu_topical',
+  'copper tripeptide': 'ghk_cu_topical',
+  'ghk-cu topical': 'ghk_cu_topical',
+  'ghk-cu injectable': 'ghk_cu_injectable',
+  'ghk-cu injection': 'ghk_cu_injectable',
+  epitalon: 'epitalon',
+  epithalon: 'epitalon',
+  'mots-c': 'mots_c',
+  'mots c': 'mots_c',
+  mots: 'mots_c',
+  kpv: 'kpv',
+  elamipretide: 'elamipretide_ss31',
+  'ss-31': 'elamipretide_ss31',
+  ss31: 'elamipretide_ss31',
+  bendavia: 'elamipretide_ss31',
+  forzinity: 'elamipretide_ss31'
 });
 
 function normalizeMedicationId(value) {
@@ -2526,10 +2595,10 @@ function renderMeasurementTrend() {
 
 function drawWeightTrendChart(canvas, weights, shots, goal) {
   const summary = $('weightTrendChartSummary');
-  if (!canvas) return;
+  if (!canvas) return null;
   const width = Math.max(280, canvas.clientWidth || 320), height = Math.max(200, canvas.clientHeight || 220), scale = window.devicePixelRatio || 1;
   canvas.width = width * scale; canvas.height = height * scale;
-  const context = canvas.getContext('2d'); if (!context) return;
+  const context = canvas.getContext('2d'); if (!context) return null;
   context.setTransform(scale, 0, 0, scale, 0, 0); context.clearRect(0, 0, width, height);
   if (!weights.length) {
     if (summary) summary.textContent = tx('dashboard.logWeight', 'LOG WEIGHT');
@@ -2543,7 +2612,10 @@ function drawWeightTrendChart(canvas, weights, shots, goal) {
     context.font = `700 ${Math.max(12, Math.round(width * .034))}px "Share Tech Mono", monospace`;
     context.textAlign = 'center'; context.textBaseline = 'middle';
     context.fillText(tx('dashboard.noRecordsYet', 'NO RECORDS YET · LOG YOUR FIRST WEIGHT'), width / 2, height / 2);
-    return;
+    const overlay = document.getElementById(canvas.id + 'Overlay');
+    if (overlay) overlay.innerHTML = '';
+    renderWeightChartLegend(canvas, null);
+    return null;
   }
 
   const left = 42, right = 12, top = 16, bottom = 30, plotWidth = width - left - right, plotHeight = height - top - bottom;
@@ -2555,31 +2627,183 @@ function drawWeightTrendChart(canvas, weights, shots, goal) {
   context.font = '10px Share Tech Mono, monospace'; context.fillStyle = '#8295a0'; context.strokeStyle = 'rgba(255,255,255,.10)'; context.lineWidth = 1;
   for (let index = 0; index <= 3; index++) { const y = top + plotHeight * index / 3; context.beginPath(); context.moveTo(left, y); context.lineTo(width - right, y); context.stroke(); context.fillText(`${(max - (span * index / 3)).toFixed(1)}`, 4, y + 3); }
   if (Number(goal) > 0) { const goalY = yFor(goal); context.save(); context.setLineDash([5, 4]); context.strokeStyle = 'rgba(255,215,0,.55)'; context.beginPath(); context.moveTo(left, goalY); context.lineTo(width - right, goalY); context.stroke(); context.restore(); }
-  context.strokeStyle = '#00E6F0'; context.shadowColor = '#00E6F0'; context.shadowBlur = 7; context.lineWidth = 2; context.beginPath();
-  values.forEach((value, index) => { const x = xFor(index), y = yFor(value); if (!index) context.moveTo(x, y); else context.lineTo(x, y); }); context.stroke(); context.shadowBlur = 0;
-  context.fillStyle = '#00E6F0'; values.forEach((value, index) => { context.beginPath(); context.arc(xFor(index), yFor(value), 3, 0, Math.PI * 2); context.fill(); });
+
+  // Premium REFINEMENT (2026-08-10): cyan area gradient under the curve, then a
+  // boosted glow halo on the line itself. Halo is drawn twice — once wider, once
+  // tight — so the cyan reads as luminous at hi-DPI without bleeding into the grid.
+  const points = values.map((value, index) => ({ x: xFor(index), y: yFor(value), index, value }));
+  const areaGrad = context.createLinearGradient(0, top, 0, top + plotHeight);
+  areaGrad.addColorStop(0, 'rgba(0, 230, 240, 0.42)');
+  areaGrad.addColorStop(0.55, 'rgba(0, 230, 240, 0.16)');
+  areaGrad.addColorStop(1, 'rgba(0, 230, 240, 0)');
+  context.fillStyle = areaGrad;
+  context.beginPath();
+  context.moveTo(points[0].x, top + plotHeight);
+  points.forEach(p => context.lineTo(p.x, p.y));
+  context.lineTo(points.at(-1).x, top + plotHeight);
+  context.closePath();
+  context.fill();
+
+  context.shadowColor = 'rgba(0, 230, 240, 0.65)'; context.shadowBlur = 14; context.strokeStyle = 'rgba(0, 230, 240, 0.55)'; context.lineWidth = 4; context.beginPath();
+  points.forEach((p, i) => { if (!i) context.moveTo(p.x, p.y); else context.lineTo(p.x, p.y); });
+  context.stroke();
+  context.shadowBlur = 7; context.strokeStyle = '#00E6F0'; context.lineWidth = 2; context.beginPath();
+  points.forEach((p, i) => { if (!i) context.moveTo(p.x, p.y); else context.lineTo(p.x, p.y); });
+  context.stroke(); context.shadowBlur = 0;
+
+  context.fillStyle = '#00E6F0';
+  points.forEach(p => { context.beginPath(); context.arc(p.x, p.y, 3, 0, Math.PI * 2); context.fill(); });
   const start = parseLocalDate(weights[0].date), end = parseLocalDate(weights.at(-1).date); context.fillStyle = '#8295a0'; context.fillText(formatDate(start, { month: 'short', day: 'numeric' }), left, height - 8); context.textAlign = 'right'; context.fillText(formatDate(end, { month: 'short', day: 'numeric' }), width - right, height - 8); context.textAlign = 'left';
   let priorDose = null;
+  const shotMarkers = [];
   shots.forEach(shot => {
     const time = parseLocalDate(shot.date).getTime();
     const dose = Number(shot.dose) || priorDose;
     if (!Number.isFinite(time) || time < start.getTime() || time > end.getTime()) { priorDose = dose; return; }
-    const nearest = weights.reduce((best, item, index) => Math.abs(parseLocalDate(item.date).getTime() - time) < Math.abs(parseLocalDate(weights[best].date).getTime() - time) ? index : best, 0);
+    const nearest = points.reduce((best, item, index) => Math.abs(parseLocalDate(weights[index].date).getTime() - time) < Math.abs(parseLocalDate(weights[best.index].date).getTime() - time) ? item : best, points[0]).index;
     const changed = priorDose !== null && dose !== priorDose;
+    const px = xFor(nearest), py = yFor(values[nearest]);
     context.fillStyle = changed ? '#ffd700' : '#FF3B3B';
-    context.beginPath(); context.arc(xFor(nearest), yFor(values[nearest]), changed ? 6 : 4, 0, Math.PI * 2); context.fill();
-    if (changed) { context.fillStyle = '#ffd700'; context.font = '9px Share Tech Mono, monospace'; context.fillText(tx('results.chartDose', 'DOSE'), Math.min(width - 38, xFor(nearest) + 5), Math.max(10, yFor(values[nearest]) - 7)); }
+    context.beginPath(); context.arc(px, py, changed ? 6 : 4, 0, Math.PI * 2); context.fill();
+    if (changed) { context.fillStyle = '#ffd700'; context.font = '9px Share Tech Mono, monospace'; context.fillText(tx('results.chartDose', 'DOSE'), Math.min(width - 38, px + 5), Math.max(10, py - 7)); }
+    shotMarkers.push({ x: px, y: py, kind: changed ? 'dose' : 'shot', t: time });
     priorDose = dose;
   });
   const profileStart = Number(getProfile().startWt) || values[0];
+  const milestoneMarkers = [];
   [5, 10, 15, 20].forEach(percent => {
     const target = profileStart * (1 - percent / 100);
     const firstIndex = values.findIndex(value => value <= target);
     if (firstIndex < 0) return;
-    context.fillStyle = '#00ff88'; context.beginPath(); context.arc(xFor(firstIndex), yFor(values[firstIndex]), 5, 0, Math.PI * 2); context.fill();
+    const mx = xFor(firstIndex), my = yFor(values[firstIndex]);
+    context.fillStyle = '#00ff88'; context.beginPath(); context.arc(mx, my, 5, 0, Math.PI * 2); context.fill();
+    milestoneMarkers.push({ x: mx, y: my, percent });
   });
-  if (summary) { const summaryText = weights.length === 1 ? tx('results.oneWeightPoint', 'One data point logged. Keep tracking to see your trend.') : Number(goal) > 0 ? tx('results.showingWeightRecordsWithGoal', 'Showing {count} weight records · goal {goal} lb', { count: weights.length, goal: Number(goal).toFixed(1) }) : tx('results.showingWeightRecords', 'Showing {count} weight records', { count: weights.length }); summary.textContent = summaryText + '. ' + tx('results.chartLegend', 'Red = SHOT, yellow = dose change, green = personal milestone.'); }
+  if (summary) { const summaryText = weights.length === 1 ? tx('results.oneWeightPoint', 'One data point logged. Keep tracking to see your trend.') : Number(goal) > 0 ? tx('results.showingWeightRecordsWithGoal', 'Showing {count} weight records · goal {goal} lb', { count: weights.length, goal: Number(goal).toFixed(1) }) : tx('results.showingWeightRecords', 'Showing {count} weight records', { count: weights.length }); summary.textContent = summaryText; }
 
+  const geometry = { width, height, left, right, top, bottom, plotWidth, plotHeight, min, max, span, points, goalY: Number(goal) > 0 ? yFor(goal) : null, startTime: start.getTime(), endTime: end.getTime(), shotMarkers, milestoneMarkers };
+  renderWeightChartOverlay(canvas, geometry, { compact: false });
+  renderWeightChartLegend(canvas, geometry);
+  return geometry;
+}
+
+/* Premium REFINEMENT (2026-08-10): SVG overlay painted on top of the canvas.
+   Provides the phase band behind the curve, an animated cyan trace flowing along
+   the line as a 'live signal', and a pulsing dot at the latest datapoint. All
+   animations honour prefers-reduced-motion via CSS. */
+function renderWeightChartOverlay(canvas, geometry, options = {}) {
+  if (!canvas) return;
+  const overlay = document.getElementById(canvas.id + 'Overlay');
+  if (!overlay) return;
+  if (!geometry) { overlay.innerHTML = ''; overlay.removeAttribute('viewBox'); return; }
+  const compact = options.compact === true;
+  const { width, height, left, right, top, bottom, plotWidth, plotHeight, points, goalY, startTime, endTime, shotMarkers } = geometry;
+  const ns = 'http://www.w3.org/2000/svg';
+  overlay.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  overlay.setAttribute('preserveAspectRatio', 'none');
+  overlay.innerHTML = '';
+
+  // Phase band: emit the 7-day reference cycle coloured by phase, anchored to
+  // the most-recent shot and clipped strictly to the visible curve area. Each
+  // phase becomes a coloured rect that sits behind the cyan line, giving the
+  // user a visual sense of which medication phase their current weight sits in.
+  if (!compact && startTime && endTime) {
+    const lastShot = latestShot();
+    if (lastShot) {
+      const lastShotTime = parseLocalDate(lastShot.date).getTime();
+      const cycleMs = 7 * 86400000;
+      const cycleStart = lastShotTime - Math.floor((lastShotTime - startTime) / cycleMs) * cycleMs;
+      const totalSpan = endTime - startTime;
+      if (totalSpan > 0) {
+        const xFromTime = t => left + ((t - startTime) / totalSpan) * plotWidth;
+        PHASES.forEach(phase => {
+          // Phase rects are clipped to [startTime, endTime] — the data window —
+          // so the band never extends into the empty area past the curve.
+          const visStart = Math.max(cycleStart + phase.start * cycleMs, startTime);
+          const visEnd = Math.min(cycleStart + phase.end * cycleMs, endTime);
+          if (visEnd <= visStart) return;
+          const x1 = xFromTime(visStart);
+          const x2 = xFromTime(visEnd);
+          const rect = document.createElementNS(ns, 'rect');
+          rect.setAttribute('class', 'gn-phase-band');
+          rect.setAttribute('x', x1);
+          rect.setAttribute('y', top);
+          rect.setAttribute('width', Math.max(1, x2 - x1));
+          rect.setAttribute('height', plotHeight);
+          rect.setAttribute('fill', phase.color);
+          overlay.appendChild(rect);
+        });
+      }
+    }
+  }
+
+  // Animated live trace — a soft cyan path that mirrors the curve line.
+  // Drawn as a continuous (non-dashed) stroke with reduced opacity so the static
+  // canvas line stays crisp while the overlay adds motion. The trace is offset
+  // by a moving dashed highlight to give the sense of flow.
+  if (points.length >= 2) {
+    const d = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' ');
+    // Soft halo path
+    const halo = document.createElementNS(ns, 'path');
+    halo.setAttribute('d', d);
+    halo.setAttribute('fill', 'none');
+    halo.setAttribute('stroke', '#00E6F0');
+    halo.setAttribute('stroke-width', '6');
+    halo.setAttribute('stroke-linecap', 'round');
+    halo.setAttribute('stroke-linejoin', 'round');
+    halo.setAttribute('opacity', '0.35');
+    overlay.appendChild(halo);
+    // Animated dash on top
+    const trace = document.createElementNS(ns, 'path');
+    trace.setAttribute('d', d);
+    trace.setAttribute('fill', 'none');
+    trace.setAttribute('stroke', '#7FF7FF');
+    trace.setAttribute('stroke-width', '2.5');
+    trace.setAttribute('stroke-linecap', 'round');
+    trace.setAttribute('stroke-linejoin', 'round');
+    trace.setAttribute('class', 'gn-live-trace');
+    overlay.appendChild(trace);
+  }
+
+  // Pulse at the latest datapoint — the 'live signal' indicator.
+  const last = points.at(-1);
+  if (last && !compact) {
+    const ring = document.createElementNS(ns, 'circle');
+    ring.setAttribute('class', 'gn-pulse-ring');
+    ring.setAttribute('cx', last.x);
+    ring.setAttribute('cy', last.y);
+    ring.setAttribute('r', 5);
+    ring.setAttribute('fill', 'none');
+    ring.setAttribute('stroke', '#00E6F0');
+    ring.setAttribute('stroke-width', '1.5');
+    ring.setAttribute('opacity', '0.85');
+    overlay.appendChild(ring);
+
+    const core = document.createElementNS(ns, 'circle');
+    core.setAttribute('class', 'gn-pulse-core');
+    core.setAttribute('cx', last.x);
+    core.setAttribute('cy', last.y);
+    core.setAttribute('r', 4);
+    core.setAttribute('fill', '#00E6F0');
+    overlay.appendChild(core);
+  }
+}
+
+/* Premium REFINEMENT (2026-08-10): clean inline legend below the chart. Replaces
+   the dense sentence-form summary copy that mixed metric counts and a key in one
+   line. The full summary still lives in #weightTrendChartSummary for screen readers. */
+function renderWeightChartLegend(canvas, geometry) {
+  const legend = document.getElementById(canvas.id + 'Legend');
+  if (!legend) return;
+  if (!geometry) { legend.innerHTML = ''; return; }
+  const items = [
+    { key: 'cyan',   label: tx('results.legendWeight', 'WEIGHT') },
+    { key: 'red',    label: tx('results.legendShot', 'SHOT') },
+    { key: 'yellow', label: tx('results.legendDose', 'DOSE') },
+    { key: 'green',  label: tx('results.legendMilestone', 'MILESTONE') },
+    { key: 'goal',   label: tx('results.legendGoal', 'GOAL') }
+  ];
+  legend.innerHTML = items.map(item => `<span><i class="sw-${item.key}"></i>${safeText(item.label)}</span>`).join('');
 }
 
 function drawTrendArrow(canvas, weights, goal) {
@@ -2661,6 +2885,17 @@ function renderProtocolCurve(shots, phase) {
     }
     const context = canvas?.getContext('2d');
     if (context) context.clearRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
+
+  /* Peptide evidence layer (2026-08-10): vivid, evidence-aware renderer.
+     Delegates to gridnode-peptide-viz.js when present; synthetic fallback below
+     stays intact for environments without the layer. */
+  if (window.GN_PEPTIDE_VIZ && typeof window.GN_PEPTIDE_VIZ.render === 'function') {
+    const medId = normalizeMedicationId(shots.at(-1)?.med);
+    const labelMap = {};
+    shots.forEach(shot => { const id = normalizeMedicationId(shot.med); if (id && !labelMap[id]) labelMap[id] = medicationLabel(id); });
+    window.GN_PEPTIDE_VIZ.render({ canvas, readout, shots, medId, medLabel: medicationLabel(medId), labelMap, range: moduleState.medRange, now: Date.now(), phaseName: localizedPhaseName(phase) || phase?.name || 'ACTIVE' });
     return;
   }
 
@@ -4655,7 +4890,7 @@ function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   if (window.GN_SW?.register) { window.GN_SW.register(); return; }
   navigator.serviceWorker
-    .register('/sw.js?v=20260810.1', { updateViaCache: 'none' })
+    .register('/sw.js?v=20260810.2', { updateViaCache: 'none' })
     .then(registration => registration.update())
     .catch(() => {});
 }

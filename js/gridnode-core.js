@@ -159,7 +159,25 @@ const MEDICATION_ALIASES = Object.freeze({
   wegovy_semaglutide: 'wegovy_semaglutide', wegovy: 'wegovy_semaglutide', 'wegovy (semaglutide)': 'wegovy_semaglutide',
   ozempic_semaglutide: 'ozempic_semaglutide', ozempic: 'ozempic_semaglutide', 'ozempic (semaglutide)': 'ozempic_semaglutide',
   semaglutide_compound: 'semaglutide_compound', semaglutide: 'semaglutide_compound', 'semaglutide compound': 'semaglutide_compound', 'semaglutide (compound)': 'semaglutide_compound',
-  retatrutide: 'retatrutide', custom_compound: 'custom_compound', custom: 'custom_compound', 'custom compound': 'custom_compound'
+  retatrutide: 'retatrutide', custom_compound: 'custom_compound', custom: 'custom_compound', 'custom compound': 'custom_compound',
+  bpc157: 'bpc157', 'bpc-157': 'bpc157', bpc: 'bpc157', bepecin: 'bpc157',
+  tb500: 'tb500', 'tb-500': 'tb500', tb: 'tb500',
+  thymosin_beta4: 'thymosin_beta4', 'thymosin beta-4': 'thymosin_beta4', 'thymosin beta 4': 'thymosin_beta4', 'thymosin b4': 'thymosin_beta4', tbeta4: 'thymosin_beta4', tb4: 'thymosin_beta4',
+  thymosin_alpha1: 'thymosin_alpha1', 'thymosin alpha-1': 'thymosin_alpha1', 'thymosin alpha 1': 'thymosin_alpha1', thymalfasin: 'thymosin_alpha1', zadaxin: 'thymosin_alpha1',
+  cjc1295_dac: 'cjc1295_dac', cjc1295: 'cjc1295_dac', 'cjc-1295': 'cjc1295_dac', 'cjc-1295 dac': 'cjc1295_dac', 'cjc1295 dac': 'cjc1295_dac',
+  cjc1295_nodac: 'cjc1295_nodac', 'cjc-1295 no dac': 'cjc1295_nodac', 'cjc1295 no dac': 'cjc1295_nodac', 'cjc-1295 without dac': 'cjc1295_nodac',
+  'mod grf': 'cjc1295_nodac', 'mod grf 1-29': 'cjc1295_nodac', 'mod-grf': 'cjc1295_nodac', 'modified grf 1-29': 'cjc1295_nodac', 'grf 1-29': 'cjc1295_nodac',
+  ipamorelin: 'ipamorelin',
+  sermorelin: 'sermorelin', 'grf(1-29)': 'sermorelin',
+  tesamorelin: 'tesamorelin', egrifta: 'tesamorelin',
+  semax: 'semax',
+  selank: 'selank',
+  ghk_cu_topical: 'ghk_cu_topical', 'ghk-cu': 'ghk_cu_topical', 'ghk cu': 'ghk_cu_topical', 'copper tripeptide': 'ghk_cu_topical', 'ghk-cu topical': 'ghk_cu_topical',
+  ghk_cu_injectable: 'ghk_cu_injectable', 'ghk-cu injectable': 'ghk_cu_injectable', 'ghk-cu injection': 'ghk_cu_injectable',
+  epitalon: 'epitalon', epithalon: 'epitalon',
+  mots_c: 'mots_c', 'mots-c': 'mots_c', 'mots c': 'mots_c', mots: 'mots_c',
+  kpv: 'kpv',
+  elamipretide_ss31: 'elamipretide_ss31', elamipretide: 'elamipretide_ss31', 'ss-31': 'elamipretide_ss31', ss31: 'elamipretide_ss31', bendavia: 'elamipretide_ss31', forzinity: 'elamipretide_ss31'
 });
 
 export function normalizeMedicationId(value) {
