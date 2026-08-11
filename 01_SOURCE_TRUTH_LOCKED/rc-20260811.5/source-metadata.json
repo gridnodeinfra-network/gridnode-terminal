@@ -25,8 +25,8 @@
       "sha256": "7d5a4af4ed614b6bcda7ec7ae332225d85faa930c492318c24b0d82eda9c2f75"
     },
     "index.html": {
-      "bytes": 456667,
-      "sha256": "b59de7d38dafa90b89390acd08a27209114fac9ba89d3a837e87d47ef0ae7e8d"
+      "bytes": 456705,
+      "sha256": "67e050cf28e0d9f3f1d123d050b0589d7cd94ef88360f6eaf29194fbf3d05bb7"
     },
     "js/gridnode-app.js": {
       "bytes": 30630,
@@ -105,16 +105,16 @@
       "sha256": "a69ba676a6a65c99baf0f67d7c09d68677295efab4b10f63c05236e2a95e95ba"
     },
     "assets/scanner-core.webp": {
-      "bytes": 95130,
-      "sha256": "2e6ee9c7b345b06e6dba637817de375b9b4e1d22a9dd2cead7aecd1c81c2fc43"
+      "bytes": 27874,
+      "sha256": "3044a231f2f388f1f1873f7743acf996bace8d2737d65e60977e9ef422a4c314"
     },
     "assets/scanner-lower.webp": {
-      "bytes": 94340,
-      "sha256": "42d9c3b3c2bc68a21a49ab0fd6295807d4fd54355598331e76bf952e53ae1cc8"
+      "bytes": 31426,
+      "sha256": "040abc8cdcce8c33f21d7696e3c8ba1875cbace6663a5ad886ba77249214add2"
     },
     "assets/scanner-upper.webp": {
-      "bytes": 109982,
-      "sha256": "9948ac5691c6c2fffdd59987e76918e1ea3f8f4691af414302e8710b6b4c4066"
+      "bytes": 40148,
+      "sha256": "a2091bc8e234ad45d49ffe02f949800f9d2a603dbd83e48ed4e09389b3a797f6"
     }
   }
 }
