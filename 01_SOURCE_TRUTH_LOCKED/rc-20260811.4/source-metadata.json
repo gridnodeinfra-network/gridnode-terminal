@@ -1,0 +1,108 @@
+{
+  "release": "20260811.4",
+  "semver": "0.15.9",
+  "title": "SCANNER REDESIGN",
+  "date": "2026-08-11",
+  "files": {
+    "_headers": {
+      "bytes": 1263,
+      "sha256": "d865b61d8917de968bd3d903fed04a95a9d408ab13f1576429fa1caa802919cf"
+    },
+    "css/daylight-nexus-pilot.css": {
+      "bytes": 83968,
+      "sha256": "d70e86ab1b121329790e533f38dcf5cadfce255c674869490ceb58526d8d8a0f"
+    },
+    "css/gridnode-native.css": {
+      "bytes": 225167,
+      "sha256": "654c20577931feb8b45ee24a7ef0ff0090aab116ddd3f949f5b3a0691725c864"
+    },
+    "i18n/en.json": {
+      "bytes": 88457,
+      "sha256": "96773c8f013b29ff6ad666e0f4b1ec6e48a83c892b0bc617e87eb631d42142bf"
+    },
+    "i18n/es-419.json": {
+      "bytes": 98302,
+      "sha256": "7d5a4af4ed614b6bcda7ec7ae332225d85faa930c492318c24b0d82eda9c2f75"
+    },
+    "index.html": {
+      "bytes": 454566,
+      "sha256": "8b8312442f20f13091f7519637105adab04327d5d708e1de1d495144193347ed"
+    },
+    "js/gridnode-app.js": {
+      "bytes": 30630,
+      "sha256": "89f1b05a75ae439e4030333d0e1ee3ff2256e489bd64224344ae1c6f93f2a24d"
+    },
+    "js/gridnode-bundle.js": {
+      "bytes": 379787,
+      "sha256": "2f628bfc8208f5e454b6e76a2af2a5fbb3d7ef27868567ec212968ee91ea716f"
+    },
+    "js/gridnode-core.js": {
+      "bytes": 33103,
+      "sha256": "e06fe32f8692645bc013aab237b4e658b7953131761639a7b3c94012e9d7b6dc"
+    },
+    "js/gridnode-i18n-overlay.js": {
+      "bytes": 3913,
+      "sha256": "fbaa59331bcaaa5a7967c5dbb92d8afa449cff0e68549f827215108a7a2b9b58"
+    },
+    "js/gridnode-i18n.js": {
+      "bytes": 6298,
+      "sha256": "dc6eb685b6faed9966f98771945350ecdb9428b048b85d5819d33888fb960308"
+    },
+    "js/gridnode-modules.js": {
+      "bytes": 73284,
+      "sha256": "99c924226fb008245b09b3ca92c241b9fa1dcea2152b4407bf4d1e6de87502e1"
+    },
+    "js/gridnode-motivation.js": {
+      "bytes": 14265,
+      "sha256": "308b9ead1027017b160ec688872736864103dc666a62b3a0da113e5f7e7cdf07"
+    },
+    "js/gridnode-native.js": {
+      "bytes": 29439,
+      "sha256": "3e4336f6c6aecded714ca2ae332d2564aaa18989c964f80aa368d031ddfd1513"
+    },
+    "js/gridnode-onboarding.js": {
+      "bytes": 31325,
+      "sha256": "18269774e547bda5ef2c31d2be623445a677f56602b7779f564687deec9830ef"
+    },
+    "js/gridnode-peptide-pk.js": {
+      "bytes": 16211,
+      "sha256": "b866fa6b3b8a70dc5226b38545146edc098721c10b2c73bc1f14a52521c26c10"
+    },
+    "js/gridnode-peptide-viz.js": {
+      "bytes": 45292,
+      "sha256": "9c72448bd11899209ddc1a00c614502bd58f48ccb3a7839709d042bb36691ba1"
+    },
+    "js/gridnode-phase-sphere.js": {
+      "bytes": 5688,
+      "sha256": "bb943f7d35938c18f019cee938ba3f364c617bbde95f062a79cb5f85fc8aa65a"
+    },
+    "js/gridnode-product-completion.js": {
+      "bytes": 35915,
+      "sha256": "777f733f8536d644d5ab79cc48c0d723b53e3ee4b20be52c7164d06de5eea07e"
+    },
+    "js/gridnode-telemetry.js": {
+      "bytes": 31448,
+      "sha256": "0b0d2c0229a202e63f7514332ba422919307f5a147c370d6806e86833f16cd08"
+    },
+    "js/gridnode-theme.js": {
+      "bytes": 8692,
+      "sha256": "0e3461f6c13ed29bd5f34d11e6a8cb248103c3a4de77d4edc987097a6d776fe2"
+    },
+    "js/gridnode-version.js": {
+      "bytes": 322,
+      "sha256": "c99625a880f95d3d9bd9e087e26e5b845c81e66454eda035b5c04426934073ea"
+    },
+    "js/gridnode-whatsnew.js": {
+      "bytes": 49394,
+      "sha256": "b5076656f56cee6851f3c13717310d36180e5c57330e2da368796bd35e45c37e"
+    },
+    "manifest.json": {
+      "bytes": 1547,
+      "sha256": "bc3b6ad8fa6992bd8c5555477756cd2bc3ac6179b6a258aca9dcfd7f5a68f413"
+    },
+    "sw.js": {
+      "bytes": 5648,
+      "sha256": "c3ed62991da625122282724fb1a8c62cfc49ad35c1657e9c91aff102e76ab709"
+    }
+  }
+}
