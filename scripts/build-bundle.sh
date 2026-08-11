@@ -97,7 +97,7 @@ TEMP_BUNDLE="$REPO_ROOT/js/gridnode-bundle.candidate.js"
 trap 'rm -f "$TEMP_BUNDLE"' EXIT
 node --check "$TEMP_BUNDLE"
 
-LIVE_BUNDLE="$REPO_ROOT/01_SOURCE_TRUTH_LOCKED/production-20260802.01/js/gridnode-bundle.js"
+LIVE_BUNDLE="$REPO_ROOT/01_SOURCE_TRUTH_LOCKED/rc-20260811.1/js/gridnode-bundle.js"
 if [[ -f "$LIVE_BUNDLE" ]]; then
     live_bytes=$(stat -c '%s' "$LIVE_BUNDLE")
     built_bytes=$(stat -c '%s' "$TEMP_BUNDLE")

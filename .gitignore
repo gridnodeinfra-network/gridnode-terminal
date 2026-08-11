@@ -6,3 +6,7 @@ node_modules/
 
 # Playwright user-data-dir misresolves to ./undefined: — never commit
 undefined:*
+
+# Accidental Lighthouse profile paths (never track)
+**/lighthouse.*/
+**/undefined*/

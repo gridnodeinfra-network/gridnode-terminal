@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-LOCKED_ROOT="$REPO_ROOT/01_SOURCE_TRUTH_LOCKED/production-20260802.01"
+LOCKED_ROOT="$REPO_ROOT/01_SOURCE_TRUTH_LOCKED/rc-20260811.1"
 
 require_command() { command -v "$1" >/dev/null 2>&1 || { printf 'ERROR: missing command: %s\n' "$1" >&2; exit 1; }; }
 for command_name in cmp find grep node shellcheck sha256sum stat; do require_command "$command_name"; done
@@ -39,19 +39,24 @@ while IFS= read -r asset; do
 done < <(grep -oE '/assets/[A-Za-z0-9._/?=-]+' "$REPO_ROOT/sw.js" | sed 's/?[^ ]*//' | sort -u)
 
 printf '%s\n' '== Locked artifact hashes =='
-node - "$LOCKED_ROOT/source-metadata.json" "$LOCKED_ROOT" <<'NODE'
+node - "$LOCKED_ROOT/source-metadata.json" "$LOCKED_ROOT" "$REPO_ROOT" <<'NODE'
 const fs = require('fs');
 const crypto = require('crypto');
 const path = require('path');
 const metadataPath = process.argv[2];
 const root = process.argv[3];
+const candidateRoot = process.argv[4];
 const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
 for (const [relative, expected] of Object.entries(metadata.files)) {
-  const file = path.join(root, relative);
-  const data = fs.readFileSync(file);
-  const hash = crypto.createHash('sha256').update(data).digest('hex');
-  if (data.length !== expected.bytes || hash !== expected.sha256) throw new Error(`hash mismatch: ${relative}`);
-  console.log(`PASS ${relative} ${data.length} bytes ${hash}`);
+  const lockedData = fs.readFileSync(path.join(root, relative));
+  const lockedHash = crypto.createHash('sha256').update(lockedData).digest('hex');
+  if (lockedData.length !== expected.bytes || lockedHash !== expected.sha256) throw new Error(`locked hash mismatch: ${relative}`);
+  const candidatePath = path.join(candidateRoot, relative);
+  if (!fs.existsSync(candidatePath)) throw new Error(`candidate missing locked file: ${relative}`);
+  const candidateData = fs.readFileSync(candidatePath);
+  const candidateHash = crypto.createHash('sha256').update(candidateData).digest('hex');
+  if (candidateData.length !== expected.bytes || candidateHash !== expected.sha256) throw new Error(`candidate differs from source lock: ${relative}`);
+  console.log(`PASS ${relative} ${candidateData.length} bytes ${candidateHash}`);
 }
 NODE
 
