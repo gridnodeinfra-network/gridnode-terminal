@@ -1,0 +1,200 @@
+{
+  "release": "20260812.1",
+  "semver": "0.15.11",
+  "title": "SCANNER ASSET WIRE-UP",
+  "date": "2026-08-12",
+  "files": {
+    "_headers": {
+      "bytes": 1263,
+      "sha256": "d865b61d8917de968bd3d903fed04a95a9d408ab13f1576429fa1caa802919cf"
+    },
+    "manifest.json": {
+      "bytes": 1547,
+      "sha256": "bc3b6ad8fa6992bd8c5555477756cd2bc3ac6179b6a258aca9dcfd7f5a68f413"
+    },
+    "sw.js": {
+      "bytes": 5925,
+      "sha256": "cb6b138c5da94aabf4918612276af0ccb17a8922d8ae547825e0dacf5d16ac93"
+    },
+    "index.html": {
+      "bytes": 456601,
+      "sha256": "f280d6cf32b54778d311ff00a680a070b5dcd8f7d23ecddb7bc07c2c4f01939d"
+    },
+    "css/gridnode-native.css": {
+      "bytes": 225167,
+      "sha256": "654c20577931feb8b45ee24a7ef0ff0090aab116ddd3f949f5b3a0691725c864"
+    },
+    "css/daylight-nexus-pilot.css": {
+      "bytes": 83968,
+      "sha256": "d70e86ab1b121329790e533f38dcf5cadfce255c674869490ceb58526d8d8a0f"
+    },
+    "i18n/en.json": {
+      "bytes": 88457,
+      "sha256": "96773c8f013b29ff6ad666e0f4b1ec6e48a83c892b0bc617e87eb631d42142bf"
+    },
+    "i18n/es-419.json": {
+      "bytes": 98302,
+      "sha256": "7d5a4af4ed614b6bcda7ec7ae332225d85faa930c492318c24b0d82eda9c2f75"
+    },
+    "js/gridnode-app.js": {
+      "bytes": 30630,
+      "sha256": "58a6511ed690361d3498119a11763ec63e3948932cb210ecf9b9ef1486059fbd"
+    },
+    "js/gridnode-bundle.js": {
+      "bytes": 381002,
+      "sha256": "ba1cb615c91f96aba54822dde76dd776293302e142677ca8f1d58d58ef990d19"
+    },
+    "js/gridnode-core.js": {
+      "bytes": 33103,
+      "sha256": "e06fe32f8692645bc013aab237b4e658b7953131761639a7b3c94012e9d7b6dc"
+    },
+    "js/gridnode-i18n.js": {
+      "bytes": 6298,
+      "sha256": "dc6eb685b6faed9966f98771945350ecdb9428b048b85d5819d33888fb960308"
+    },
+    "js/gridnode-i18n-overlay.js": {
+      "bytes": 3913,
+      "sha256": "fbaa59331bcaaa5a7967c5dbb92d8afa449cff0e68549f827215108a7a2b9b58"
+    },
+    "js/gridnode-modules.js": {
+      "bytes": 75203,
+      "sha256": "1e85bc46c0f6dd0dc96515ca8d8de05c2e24040bda6f1417957ad15a2c4b4d73"
+    },
+    "js/gridnode-motivation.js": {
+      "bytes": 14265,
+      "sha256": "308b9ead1027017b160ec688872736864103dc666a62b3a0da113e5f7e7cdf07"
+    },
+    "js/gridnode-native.js": {
+      "bytes": 29439,
+      "sha256": "3960957fcf03dfc23c2ccf1a0cc19ac96111735bd8227b824ec409bc5f437f1c"
+    },
+    "js/gridnode-onboarding.js": {
+      "bytes": 31325,
+      "sha256": "18269774e547bda5ef2c31d2be623445a677f56602b7779f564687deec9830ef"
+    },
+    "js/gridnode-peptide-pk.js": {
+      "bytes": 16211,
+      "sha256": "b866fa6b3b8a70dc5226b38545146edc098721c10b2c73bc1f14a52521c26c10"
+    },
+    "js/gridnode-peptide-viz.js": {
+      "bytes": 45292,
+      "sha256": "9c72448bd11899209ddc1a00c614502bd58f48ccb3a7839709d042bb36691ba1"
+    },
+    "js/gridnode-phase-sphere.js": {
+      "bytes": 5688,
+      "sha256": "bb943f7d35938c18f019cee938ba3f364c617bbde95f062a79cb5f85fc8aa65a"
+    },
+    "js/gridnode-product-completion.js": {
+      "bytes": 35915,
+      "sha256": "777f733f8536d644d5ab79cc48c0d723b53e3ee4b20be52c7164d06de5eea07e"
+    },
+    "js/gridnode-telemetry.js": {
+      "bytes": 31448,
+      "sha256": "0b0d2c0229a202e63f7514332ba422919307f5a147c370d6806e86833f16cd08"
+    },
+    "js/gridnode-theme.js": {
+      "bytes": 8692,
+      "sha256": "0e3461f6c13ed29bd5f34d11e6a8cb248103c3a4de77d4edc987097a6d776fe2"
+    },
+    "js/gridnode-version.js": {
+      "bytes": 330,
+      "sha256": "5406bad89f969e6fb684d974e1df9f322994b7b9c57b4ff430d9e65e8cc3ee9f"
+    },
+    "js/gridnode-whatsnew.js": {
+      "bytes": 51183,
+      "sha256": "dcc185ce8426e74304c8f07ea151b79688ac4efa7da4f4858515f101dc45e4c3"
+    },
+    "assets/apple-touch-icon.png": {
+      "bytes": 52178,
+      "sha256": "0cc0ce6df4be85cfd3636499d893b76b023aa349a927c18e0c187ac85ef9b4fe"
+    },
+    "assets/gridnode-favicon-v6.svg": {
+      "bytes": 141,
+      "sha256": "8bd66ab70c7f07530f76e95e8d85779d8155cb81a49dca5ff70526e59439c4aa"
+    },
+    "assets/gridnode-icon-32.png": {
+      "bytes": 2390,
+      "sha256": "ec0e50e8006d1d3ba810c4daa40c3eb8fbf442543e54fb0b4100ff46d67b4d4e"
+    },
+    "assets/gridnode-icon-192.png": {
+      "bytes": 59421,
+      "sha256": "126a728a34ca48875a5dc77274321af9bc434852217d505bf8f516266ac69125"
+    },
+    "assets/gridnode-icon-512.png": {
+      "bytes": 280334,
+      "sha256": "f72968b32012fbadd3c39d65029a703f582790fca910b9dc39533837803a3f28"
+    },
+    "assets/gridnode-icon-maskable-192.png": {
+      "bytes": 38907,
+      "sha256": "0a1f5424d19c270cc4ff20454a0b537c3cea228d0a565b2c0f5acaf0af330c13"
+    },
+    "assets/gridnode-icon-maskable-512.png": {
+      "bytes": 210629,
+      "sha256": "04c2a673e80d49c5e0ca44df8d8698883e6109741fa3527a176958932e5c4aa4"
+    },
+    "assets/gridnode-icon.svg": {
+      "bytes": 904,
+      "sha256": "a79dd5a4f6e621d8afa0b847a34b103c97d0186bc20d2141271dd89432723225"
+    },
+    "assets/gridnode-insignia-v6.png": {
+      "bytes": 79834,
+      "sha256": "66dbfed3de760599228cd2b58ec137f449eeda777b93d932d08769d4fbeb9860"
+    },
+    "assets/nexus-city-daylight-v1.webp": {
+      "bytes": 66424,
+      "sha256": "e56c836d296532835b875b80a49063d2636677afa5801215ae3920e53b6f0de6"
+    },
+    "assets/nexus-city-night-v1.webp": {
+      "bytes": 65372,
+      "sha256": "8e7885c690eaa267ce9b3527f20ed547cb650698d314c922b6708d0800b464f2"
+    },
+    "assets/preview-dashboard.png": {
+      "bytes": 233643,
+      "sha256": "1c9188fee62802b5b6888e9da7062066e9cb994ca1350417cedb93b3aae02ba2"
+    },
+    "assets/preview-dashboard-es.png": {
+      "bytes": 620319,
+      "sha256": "85bbcc9b3ab05fb1bc33af7d378c18aade9d56172b20de45d6e4a95beef4b7a2"
+    },
+    "assets/splash-1290x2796.png": {
+      "bytes": 30426,
+      "sha256": "46bc0bed1bdced727ca2967644b6fa771520b801bf323b9c1e054327360fb7c2"
+    },
+    "assets/scanner/core/core-light.png": {
+      "bytes": 5201054,
+      "sha256": "de2779b315839996b590a9d37085a9cd383cd37d068703a3aa1411b317615df1"
+    },
+    "assets/scanner/core/core-medium.png": {
+      "bytes": 5261472,
+      "sha256": "b049946821d2e20deb86b82414949d7488fd2a498eaec63b9f78ba332c69e983"
+    },
+    "assets/scanner/core/core-deep.png": {
+      "bytes": 4798426,
+      "sha256": "d524855a695e51010e6cc75d806441132acfc20d6e3029877f32fe41d5933dbb"
+    },
+    "assets/scanner/legs/legs-light.png": {
+      "bytes": 1342324,
+      "sha256": "6d4fec6488779dbe3d6df51aee7aa52a528e32f1c4ee1d090849bd6c4673afa0"
+    },
+    "assets/scanner/legs/legs-medium.png": {
+      "bytes": 1362203,
+      "sha256": "42a985037c016caf6e91e47a2d30e054be442e7b8577884ebd3e72210844cead"
+    },
+    "assets/scanner/legs/legs-deep.png": {
+      "bytes": 1401720,
+      "sha256": "6c88beded4b21503ea96e000cfdf8a98c689e9e884634e2953e3ddb1dfc813b3"
+    },
+    "assets/scanner/arms/arms-light.png": {
+      "bytes": 1343207,
+      "sha256": "2f51c0af9c8e30f7aa61f19c8304c510bc75cb95589a2e5873715dfc18b13e84"
+    },
+    "assets/scanner/arms/arms-medium.png": {
+      "bytes": 1353583,
+      "sha256": "7681afc7c89a0a9294dd980036e14b1bdad8a0f9e085957396f26629bfec450d"
+    },
+    "assets/scanner/arms/arms-deep.png": {
+      "bytes": 1375752,
+      "sha256": "2276a756fa4fb2d8e276bff0687403b12875b704d61a1e224622131764230acf"
+    }
+  }
+}
