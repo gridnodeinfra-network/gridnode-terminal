@@ -1,0 +1,198 @@
+{
+  "release": "20260812.3",
+  "version": "0.15.13",
+  "files": {
+    "_headers": {
+      "sha256": "d865b61d8917de968bd3d903fed04a95a9d408ab13f1576429fa1caa802919cf",
+      "bytes": 1263
+    },
+    "assets/apple-touch-icon.png": {
+      "sha256": "0cc0ce6df4be85cfd3636499d893b76b023aa349a927c18e0c187ac85ef9b4fe",
+      "bytes": 52178
+    },
+    "assets/gridnode-favicon-v6.svg": {
+      "sha256": "8bd66ab70c7f07530f76e95e8d85779d8155cb81a49dca5ff70526e59439c4aa",
+      "bytes": 141
+    },
+    "assets/gridnode-icon-192.png": {
+      "sha256": "126a728a34ca48875a5dc77274321af9bc434852217d505bf8f516266ac69125",
+      "bytes": 59421
+    },
+    "assets/gridnode-icon-32.png": {
+      "sha256": "ec0e50e8006d1d3ba810c4daa40c3eb8fbf442543e54fb0b4100ff46d67b4d4e",
+      "bytes": 2390
+    },
+    "assets/gridnode-icon-512.png": {
+      "sha256": "f72968b32012fbadd3c39d65029a703f582790fca910b9dc39533837803a3f28",
+      "bytes": 280334
+    },
+    "assets/gridnode-icon-maskable-192.png": {
+      "sha256": "0a1f5424d19c270cc4ff20454a0b537c3cea228d0a565b2c0f5acaf0af330c13",
+      "bytes": 38907
+    },
+    "assets/gridnode-icon-maskable-512.png": {
+      "sha256": "04c2a673e80d49c5e0ca44df8d8698883e6109741fa3527a176958932e5c4aa4",
+      "bytes": 210629
+    },
+    "assets/gridnode-icon.svg": {
+      "sha256": "a79dd5a4f6e621d8afa0b847a34b103c97d0186bc20d2141271dd89432723225",
+      "bytes": 904
+    },
+    "assets/gridnode-insignia-v6.png": {
+      "sha256": "66dbfed3de760599228cd2b58ec137f449eeda777b93d932d08769d4fbeb9860",
+      "bytes": 79834
+    },
+    "assets/nexus-city-daylight-v1.webp": {
+      "sha256": "e56c836d296532835b875b80a49063d2636677afa5801215ae3920e53b6f0de6",
+      "bytes": 66424
+    },
+    "assets/nexus-city-night-v1.webp": {
+      "sha256": "8e7885c690eaa267ce9b3527f20ed547cb650698d314c922b6708d0800b464f2",
+      "bytes": 65372
+    },
+    "assets/preview-dashboard-es.png": {
+      "sha256": "85bbcc9b3ab05fb1bc33af7d378c18aade9d56172b20de45d6e4a95beef4b7a2",
+      "bytes": 620319
+    },
+    "assets/preview-dashboard.png": {
+      "sha256": "1c9188fee62802b5b6888e9da7062066e9cb994ca1350417cedb93b3aae02ba2",
+      "bytes": 233643
+    },
+    "assets/scanner/arms/arms-deep.png": {
+      "sha256": "5747cd9e502f36220ab220ca70920e1fd7fe6ac279fd2937ad6533412eafc6ba",
+      "bytes": 2175799
+    },
+    "assets/scanner/arms/arms-light.png": {
+      "sha256": "3d6c881da7eedffcffed4894c3a564a2cdb35719907851a574f9b9915cbf303c",
+      "bytes": 6316436
+    },
+    "assets/scanner/arms/arms-medium.png": {
+      "sha256": "761ac79c6fdc933c7ae1e718ba01d5cc104df3968c7ab200ec3734045f0e50af",
+      "bytes": 2071821
+    },
+    "assets/scanner/core/core-deep.png": {
+      "sha256": "d524855a695e51010e6cc75d806441132acfc20d6e3029877f32fe41d5933dbb",
+      "bytes": 4798426
+    },
+    "assets/scanner/core/core-light.png": {
+      "sha256": "de2779b315839996b590a9d37085a9cd383cd37d068703a3aa1411b317615df1",
+      "bytes": 5201054
+    },
+    "assets/scanner/core/core-medium.png": {
+      "sha256": "b049946821d2e20deb86b82414949d7488fd2a498eaec63b9f78ba332c69e983",
+      "bytes": 5261472
+    },
+    "assets/scanner/legs/legs-deep.png": {
+      "sha256": "646b81807e6a6e011a41a1f0512b7c2747c519cf5a0d1fde44ef8fe457f9fe1d",
+      "bytes": 4131924
+    },
+    "assets/scanner/legs/legs-light.png": {
+      "sha256": "9cdb881ca251d29328a9c54213570316d3783b30f03ebc72d0e2838083424c5b",
+      "bytes": 1794459
+    },
+    "assets/scanner/legs/legs-medium.png": {
+      "sha256": "87cdc9a7b3198a489a119e9991fe6d1a82311600edd28b5b931a554cfbdbfc40",
+      "bytes": 5331782
+    },
+    "assets/splash-1290x2796.png": {
+      "sha256": "46bc0bed1bdced727ca2967644b6fa771520b801bf323b9c1e054327360fb7c2",
+      "bytes": 30426
+    },
+    "css/daylight-nexus-pilot.css": {
+      "sha256": "d70e86ab1b121329790e533f38dcf5cadfce255c674869490ceb58526d8d8a0f",
+      "bytes": 83968
+    },
+    "css/gridnode-native.css": {
+      "sha256": "654c20577931feb8b45ee24a7ef0ff0090aab116ddd3f949f5b3a0691725c864",
+      "bytes": 225167
+    },
+    "i18n/en.json": {
+      "sha256": "bb20fe5ad50984ca881d20a897f46ce6cbc7652677a7e6751caabc655fcd692f",
+      "bytes": 88652
+    },
+    "i18n/es-419.json": {
+      "sha256": "df1f6db4029e13c92e353ad70d1aeb628dd34ad53eb9d2e22a21e1c98c5fb72b",
+      "bytes": 98504
+    },
+    "index.html": {
+      "sha256": "ae0586d789c0e8bc5121c311371353e22560a9d519d6d56db8dcfe1b0fbfe07c",
+      "bytes": 453408
+    },
+    "js/gridnode-app.js": {
+      "sha256": "e0fd8f62bfb964f40f1740478f1d1cda1325373bad06c1e542bd81120d619a0f",
+      "bytes": 30630
+    },
+    "js/gridnode-bundle.js": {
+      "sha256": "de9cc99a3bbf205723ff3efd7e75148def4c95d456dbb0072e8d18080c56c971",
+      "bytes": 381866
+    },
+    "js/gridnode-core.js": {
+      "sha256": "e06fe32f8692645bc013aab237b4e658b7953131761639a7b3c94012e9d7b6dc",
+      "bytes": 33103
+    },
+    "js/gridnode-i18n-overlay.js": {
+      "sha256": "fbaa59331bcaaa5a7967c5dbb92d8afa449cff0e68549f827215108a7a2b9b58",
+      "bytes": 3913
+    },
+    "js/gridnode-i18n.js": {
+      "sha256": "dc6eb685b6faed9966f98771945350ecdb9428b048b85d5819d33888fb960308",
+      "bytes": 6298
+    },
+    "js/gridnode-modules.js": {
+      "sha256": "b21973612117657baf74f9b0966aeae730aa013f352390199e936aceaa695cdb",
+      "bytes": 75997
+    },
+    "js/gridnode-motivation.js": {
+      "sha256": "308b9ead1027017b160ec688872736864103dc666a62b3a0da113e5f7e7cdf07",
+      "bytes": 14265
+    },
+    "js/gridnode-native.js": {
+      "sha256": "3960957fcf03dfc23c2ccf1a0cc19ac96111735bd8227b824ec409bc5f437f1c",
+      "bytes": 29439
+    },
+    "js/gridnode-onboarding.js": {
+      "sha256": "18269774e547bda5ef2c31d2be623445a677f56602b7779f564687deec9830ef",
+      "bytes": 31325
+    },
+    "js/gridnode-peptide-pk.js": {
+      "sha256": "b866fa6b3b8a70dc5226b38545146edc098721c10b2c73bc1f14a52521c26c10",
+      "bytes": 16211
+    },
+    "js/gridnode-peptide-viz.js": {
+      "sha256": "9c72448bd11899209ddc1a00c614502bd58f48ccb3a7839709d042bb36691ba1",
+      "bytes": 45292
+    },
+    "js/gridnode-phase-sphere.js": {
+      "sha256": "bb943f7d35938c18f019cee938ba3f364c617bbde95f062a79cb5f85fc8aa65a",
+      "bytes": 5688
+    },
+    "js/gridnode-product-completion.js": {
+      "sha256": "777f733f8536d644d5ab79cc48c0d723b53e3ee4b20be52c7164d06de5eea07e",
+      "bytes": 35915
+    },
+    "js/gridnode-telemetry.js": {
+      "sha256": "0b0d2c0229a202e63f7514332ba422919307f5a147c370d6806e86833f16cd08",
+      "bytes": 31448
+    },
+    "js/gridnode-theme.js": {
+      "sha256": "0e3461f6c13ed29bd5f34d11e6a8cb248103c3a4de77d4edc987097a6d776fe2",
+      "bytes": 8692
+    },
+    "js/gridnode-version.js": {
+      "sha256": "b9fb39545d29d82b5895281d9c9428c8f896c0ceaada3c91abfd8312eb17c87c",
+      "bytes": 333
+    },
+    "js/gridnode-whatsnew.js": {
+      "sha256": "15ab96fdd7c8fbacbcd139abf244b346cea94de7ad22bfb2197c57ec8eea1c84",
+      "bytes": 53373
+    },
+    "manifest.json": {
+      "sha256": "bc3b6ad8fa6992bd8c5555477756cd2bc3ac6179b6a258aca9dcfd7f5a68f413",
+      "bytes": 1547
+    },
+    "sw.js": {
+      "sha256": "a49516a21dfcd4c57e8054fe6400f2267a698771aa08a5cdd24c666922a0d03a",
+      "bytes": 5925
+    }
+  }
+}
