@@ -104,6 +104,9 @@ EXPECTED_PRECISION_STYLE = """
 #shotsRegionScanner .zone-hit { pointer-events:all; }
 #shotsRegionScanner .zone-visible { vector-effect:non-scaling-stroke; transform-box:fill-box; transform-origin:center; transition:fill 120ms ease,stroke 120ms ease,stroke-width 120ms ease,opacity 120ms ease,filter 120ms ease; }
 #shotsRegionScanner .scanner-selected-panel { position:relative; overflow:hidden; scroll-margin-bottom:calc(92px + var(--safe-bottom)); }
+#shotsRegionScanner .scanner-audio-switch { min-width:184px; min-height:44px; padding:9px 12px; border:1px solid rgba(6,187,227,.42); border-radius:9px; background:rgba(5,7,8,.78); color:#9ab4ba; font:700 .62rem/1 var(--font-m,monospace); letter-spacing:1px; text-align:center; }
+#shotsRegionScanner .scanner-audio-switch[aria-checked="true"] { border-color:#06BBE3; background:rgba(6,187,227,.12); color:#EAFDFF; box-shadow:0 0 10px rgba(6,187,227,.16); }
+#shotsRegionScanner .scanner-audio-switch:focus-visible { outline:2px solid #FCEE0A; outline-offset:2px; }
 #shotsRegionScanner .zone-hit.pressed + .zone-visible { stroke:#FCEE0A; stroke-width:4; fill:rgba(234,9,23,.24); filter:drop-shadow(0 0 6px rgba(252,238,10,.42)); opacity:1; transition:none; }
 #shotsRegionScanner .zone-hit.zone-acquiring + .zone-visible { stroke:#06BBE3; stroke-width:4; fill:rgba(234,9,23,.20); stroke-dasharray:18 11; animation:gn-scanner-acquire 420ms cubic-bezier(.2,.75,.25,1) both; }
 #shotsRegionScanner .zone-hit.selected.selected-active + .zone-visible { stroke:#06BBE3; stroke-width:3.5; stroke-dasharray:none; fill:rgba(234,9,23,.22); filter:drop-shadow(0 0 7px rgba(6,187,227,.42)); opacity:1; }
@@ -120,6 +123,8 @@ EXPECTED_PRECISION_STYLE = """
 html[data-theme="light"] #shotsRegionScanner .zone-visible { filter:none; }
 html[data-theme="light"] #shotsRegionScanner .zone-hit.selected.selected-active + .zone-visible { stroke:#06BBE3; fill:rgba(234,9,23,.16); filter:none; }
 html[data-theme="light"] #shotsRegionScanner .scanner-selected-panel .gn-location-lock.is-on { color:#050708; border-color:rgba(6,187,227,.52); border-left-color:#06BBE3; background:rgba(255,255,255,.94); box-shadow:none; }
+html[data-theme="light"] #shotsRegionScanner .scanner-audio-switch { background:rgba(255,255,255,.94); color:#31545b; }
+html[data-theme="light"] #shotsRegionScanner .scanner-audio-switch[aria-checked="true"] { color:#003C4C; }
 @media (max-width:430px) {
   #shotsRegionScanner { padding:12px; }
   #shotsRegionScanner .site-scanner { padding:9px; border-radius:16px; }
@@ -151,6 +156,46 @@ for keyframe_name in ("gn-scanner-acquire", "gn-scanner-confirm", "gn-scanner-ra
     keyframe = keyframe[:keyframe.find("\n@", 1) if keyframe.find("\n@", 1) >= 0 else len(keyframe)]
     assert "filter:" not in keyframe, f"{keyframe_name} must not animate filters"
 
+audio_switch = re.search(r'<button\b[^>]*\bid="gnScannerAudioSwitch"[^>]*>(.*?)</button>', html, flags=re.DOTALL)
+assert audio_switch, "scanner must expose the local audio switch"
+audio_switch_tag = audio_switch.group(0)
+assert 'role="switch"' in audio_switch_tag, "scanner audio control must expose switch semantics"
+assert 'aria-checked="false"' in audio_switch_tag, "scanner audio switch must default to OFF"
+assert 'aria-label="Scanner audio"' in audio_switch_tag, "scanner audio switch must have a clear accessible name"
+assert re.sub(r"<[^>]+>", "", audio_switch.group(1)).strip() == "SCANNER AUDIO // OFF", "scanner audio switch must use exact default copy"
+assert html.index(audio_switch_tag) < html.index('class="scanner-mode-tabs"'), "scanner audio switch must remain in the scanner control area before mode tabs"
+scanner_control_area = html[html.index('<section class="shots-scanner-card" id="shotsRegionScanner">'):html.index('class="scanner-mode-tabs"')]
+assert re.search(r'<div class="shots-scanner-head">[\s\S]*?id="gnScannerAudioSwitch"', scanner_control_area), "scanner audio switch must occupy the scanner header right-hand slot"
+assert 'scanner-audio-control' not in html, "scanner audio must not introduce a vertical control row"
+assert 'class="scanner-source-tag"' not in scanner_control_area, "scanner audio switch must replace the decorative scanner-source tag"
+
+def audio_controller_fixture(content, label):
+    matches = re.findall(r"/\* GN_SCANNER_AUDIO_CONTROLLER_V1_START \*/(.*?)/\* GN_SCANNER_AUDIO_CONTROLLER_V1_END \*/", content, flags=re.DOTALL)
+    assert len(matches) == 1, f"{label} must have one narrow audio-controller fixture"
+    fixture = matches[0]
+    for required in (
+        "gn_scanner_audio_v1",
+        "GN_SCANNER_AUDIO_MASTER_GAIN = 0.035",
+        "GN_SCANNER_AUDIO_CONTACT_THROTTLE_MS = 45",
+        "const token = Symbol('GNScannerAudioGesture')",
+        "event?.isTrusted === true ? token : null",
+        "accepts(candidate) { return candidate === token; }",
+        "createOscillator()",
+        "createGain()",
+        "createBiquadFilter()",
+        "playContact: gnScannerAudioPlayContact",
+        "playLock: gnScannerAudioPlayLock",
+    ):
+        assert required in fixture, f"{label} audio controller missing {required}"
+    assert "userGesture" not in fixture, f"{label} audio controller must not trust a caller-controlled gesture boolean"
+    assert "GN_SOUND_ON" not in fixture and "audio removed" not in fixture, f"{label} audio fixture must not retain obsolete audio state"
+    return re.sub(r"\s+", "", fixture)
+
+assert audio_controller_fixture(source, "readable source") == audio_controller_fixture(bundle, "delivery bundle"), "audio controller fixture must be exact source/bundle parity"
+for label, content in (("readable source", source), ("delivery bundle", bundle)):
+    assert "GN_SOUND_ON" not in content, f"{label} must remove obsolete GN_SOUND_ON toggle"
+    assert "audio removed" not in content, f"{label} must remove inaccurate audio-removed comments"
+
 core_center = re.search(r"<circle\b[^>]*\bclass=\"[^\"]*\bzone-excluded\b[^\"]*\"[^>]*>", html, flags=re.DOTALL)
 assert core_center, "CORE excluded center must remain explicit"
 assert attribute(core_center.group(0), "pointer-events") == "none", "CORE excluded center must not be selectable"
@@ -167,21 +212,23 @@ for label, content in (("readable source", source), ("delivery bundle", bundle))
     assert "item.setAttribute('aria-selected'" in content, f"{label} missing aria-selected mode semantics"
     assert content.count("const scannerPointerStates = new WeakMap();") == 1, f"{label} must keep one WeakMap pointer registry"
     assert "selectScannerLocation(label, options = {})" in content, f"{label} selection owner must accept options"
-    assert "const { source = 'programmatic', feedback = source !== 'programmatic' } = options;" in content, f"{label} selection owner must preserve approved feedback defaults"
+    assert "const { source = 'programmatic', feedback = source !== 'programmatic', gestureToken = null } = options;" in content, f"{label} selection owner must preserve feedback defaults and accept private provenance"
     assert "const endpoint = hitTestScannerZone" in content, f"{label} must re-hit-test pointer-up endpoint"
     assert "lostpointercapture" in content, f"{label} must clear state on lost pointer capture"
-    assert "selectScannerLocation(site, { source: 'pointer' })" in content, f"{label} pointer path must declare its source"
-    assert "selectScannerLocation(site, { source: 'keyboard' })" in content, f"{label} keyboard path must declare its source"
-    assert "selectScannerLocation(zone.dataset.stableZone, { source: 'fallback' })" in content, f"{label} fallback path must declare its source"
+    assert "selectScannerLocation(site, { source: 'pointer', gestureToken: gnScannerAudioGesture.fromEvent(e) })" in content, f"{label} pointer path must carry trusted event provenance"
+    assert "selectScannerLocation(site, { source: 'keyboard', gestureToken: gnScannerAudioGesture.fromEvent(e) })" in content, f"{label} keyboard path must carry trusted event provenance"
+    assert "selectScannerLocation(zone.dataset.stableZone, { source: 'fallback', gestureToken: gnScannerAudioGesture.fromEvent(event) })" in content, f"{label} fallback path must carry trusted event provenance"
     selection_block = content[content.index("selectScannerLocation(label, options = {})"):content.index("function renderScanner()", content.index("selectScannerLocation(label, options = {})"))]
     assert "showToast(" not in selection_block, f"{label} scanner selection must not block rapid reselection with a toast"
     assert selection_block.count("playLock") == 1, f"{label} selection owner must play lock audio once"
+    assert "playLock?.(gestureToken)" in selection_block, f"{label} selection owner must pass only private gesture provenance"
     assert "playContact" not in selection_block, f"{label} selection owner must not play contact audio"
     assert selection_block.count("navigator.vibrate(") == 1, f"{label} selection owner must own the only scanner haptic"
     assert "navigator.vibrate([4, 12, 6])" in selection_block, f"{label} selection owner must use the approved haptic pattern"
     pointer_block = content[content.index("function installScannerPointerHandlers()"):content.index("function clearScannerTransientState()", content.index("function installScannerPointerHandlers()"))]
     assert pointer_block.count("navigator.vibrate") == 0, f"{label} pointer/keyboard paths must not duplicate haptics"
     assert pointer_block.count("playContact") == 1, f"{label} pointerdown must play contact audio once"
+    assert "playContact?.(gnScannerAudioGesture.fromEvent(e))" in pointer_block, f"{label} pointerdown contact must derive provenance from the trusted event"
     assert "playLock" not in pointer_block, f"{label} pointer path must not play lock audio"
     assert pointer_block.count("addEventListener(\"pointerdown\"") == 1, f"{label} must have one pointer owner per SVG"
 print("SCANNER STATIC REGRESSION PASSED")

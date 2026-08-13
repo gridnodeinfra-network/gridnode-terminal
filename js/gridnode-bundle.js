@@ -2104,7 +2104,138 @@ function setShotHistoryView(view) {
 }
 
 
-/* === v0.15.16 SCANNER UX POLISH: haptic only (audio removed — cartoonish) === */
+/* GN_SCANNER_AUDIO_CONTROLLER_V1_START */
+const GN_SCANNER_AUDIO_STORAGE_KEY = 'gn_scanner_audio_v1';
+const GN_SCANNER_AUDIO_MASTER_GAIN = 0.035;
+const GN_SCANNER_AUDIO_CONTACT_THROTTLE_MS = 45;
+const gnScannerAudioGesture = (() => {
+  const token = Symbol('GNScannerAudioGesture');
+  return Object.freeze({
+    fromEvent(event) { return event?.isTrusted === true ? token : null; },
+    accepts(candidate) { return candidate === token; }
+  });
+})();
+let gnScannerAudioEnabled = false;
+let gnScannerAudioContext = null;
+let gnScannerAudioMaster = null;
+let gnScannerAudioLastContactAt = -Infinity;
+const gnScannerAudioVoices = new Set();
+
+function gnScannerAudioStoredPreference() {
+  try { return localStorage.getItem(GN_SCANNER_AUDIO_STORAGE_KEY) === '1'; } catch (_) { return false; }
+}
+
+function gnScannerAudioRenderSwitch() {
+  const control = $('gnScannerAudioSwitch');
+  if (!control) return;
+  control.setAttribute('aria-checked', gnScannerAudioEnabled ? 'true' : 'false');
+  control.innerHTML = `SCANNER AUDIO // <span>${gnScannerAudioEnabled ? 'ON' : 'OFF'}</span>`;
+}
+
+function gnScannerAudioContextForGesture(gestureToken = null) {
+  if (!gnScannerAudioEnabled || !gnScannerAudioGesture.accepts(gestureToken)) return null;
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return null;
+    if (!gnScannerAudioContext) {
+      gnScannerAudioContext = new AudioContextClass();
+      gnScannerAudioMaster = gnScannerAudioContext.createGain();
+      gnScannerAudioMaster.gain.setValueAtTime(GN_SCANNER_AUDIO_MASTER_GAIN, gnScannerAudioContext.currentTime);
+      gnScannerAudioMaster.connect(gnScannerAudioContext.destination);
+    }
+    if (gnScannerAudioContext.state === 'suspended') {
+      Promise.resolve(gnScannerAudioContext.resume()).catch(() => {});
+    }
+    return gnScannerAudioContext;
+  } catch (_) { return null; }
+}
+
+function gnScannerAudioDisconnectVoice(voice) {
+  try { voice.oscillator.disconnect(); } catch (_) {}
+  try { voice.filter.disconnect(); } catch (_) {}
+  try { voice.gain.disconnect(); } catch (_) {}
+  gnScannerAudioVoices.delete(voice);
+}
+
+function gnScannerAudioStopVoices() {
+  const stopTime = gnScannerAudioContext?.currentTime || 0;
+  for (const voice of Array.from(gnScannerAudioVoices)) {
+    try {
+      voice.gain.gain.cancelScheduledValues(stopTime);
+      voice.gain.gain.setValueAtTime(0, stopTime);
+    } catch (_) {}
+    try { voice.oscillator.stop(stopTime); } catch (_) {}
+    gnScannerAudioDisconnectVoice(voice);
+  }
+  gnScannerAudioVoices.clear();
+}
+
+function gnScannerAudioTone(durationSeconds, frequency, peak, offsetSeconds = 0) {
+  const context = gnScannerAudioContext;
+  if (!context || !gnScannerAudioMaster) return;
+  let voice = null;
+  try {
+    const start = context.currentTime + offsetSeconds;
+    const oscillator = context.createOscillator();
+    const filter = context.createBiquadFilter();
+    const gain = context.createGain();
+    voice = { oscillator, filter, gain };
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(frequency, start);
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(Math.min(frequency * 2, 2200), start);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.linearRampToValueAtTime(Math.min(peak, GN_SCANNER_AUDIO_MASTER_GAIN), start + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + durationSeconds);
+    oscillator.connect(filter);
+    filter.connect(gain);
+    gain.connect(gnScannerAudioMaster);
+    oscillator.onended = () => gnScannerAudioDisconnectVoice(voice);
+    gnScannerAudioVoices.add(voice);
+    oscillator.start(start);
+    oscillator.stop(start + durationSeconds);
+  } catch (_) { if (voice) gnScannerAudioDisconnectVoice(voice); }
+}
+
+function gnScannerAudioSetEnabled(next, gestureToken = null) {
+  const enabled = Boolean(next);
+  if (!enabled) gnScannerAudioStopVoices();
+  gnScannerAudioEnabled = enabled;
+  try { localStorage.setItem(GN_SCANNER_AUDIO_STORAGE_KEY, gnScannerAudioEnabled ? '1' : '0'); } catch (_) {}
+  gnScannerAudioRenderSwitch();
+  if (gnScannerAudioEnabled) gnScannerAudioContextForGesture(gestureToken);
+}
+
+function gnScannerAudioPlayContact(gestureToken = null) {
+  if (!gnScannerAudioEnabled) return;
+  if (!gnScannerAudioContextForGesture(gestureToken)) return;
+  const now = performance.now();
+  if (now - gnScannerAudioLastContactAt < GN_SCANNER_AUDIO_CONTACT_THROTTLE_MS) return;
+  gnScannerAudioLastContactAt = now;
+  gnScannerAudioTone(0.042, 880, 0.022);
+}
+
+function gnScannerAudioPlayLock(gestureToken = null) {
+  if (!gnScannerAudioEnabled || !gnScannerAudioContextForGesture(gestureToken)) return;
+  gnScannerAudioTone(0.11, 520, 0.02, 0);
+  gnScannerAudioTone(0.11, 780, 0.018, 0.035);
+}
+
+function initScannerAudioControl() {
+  gnScannerAudioEnabled = gnScannerAudioStoredPreference();
+  gnScannerAudioRenderSwitch();
+  const control = $('gnScannerAudioSwitch');
+  if (control && !control.__gnScannerAudioBound) {
+    control.__gnScannerAudioBound = true;
+    control.addEventListener('click', event => gnScannerAudioSetEnabled(!gnScannerAudioEnabled, gnScannerAudioGesture.fromEvent(event)));
+  }
+}
+
+window.GNScannerAudio = {
+  playContact: gnScannerAudioPlayContact,
+  playLock: gnScannerAudioPlayLock
+};
+/* GN_SCANNER_AUDIO_CONTROLLER_V1_END */
 
 /* v0.15.19 SKIN TONE REMOVED - synthetic biotech scanner, single body per mode */
 function scannerSkinTone() { return null; }
@@ -2160,7 +2291,7 @@ function setScannerMode(mode, button) {
 }
 
 function selectScannerLocation(label, options = {}) {
-  const { source = 'programmatic', feedback = source !== 'programmatic' } = options;
+  const { source = 'programmatic', feedback = source !== 'programmatic', gestureToken = null } = options;
   try {
     localStorage.setItem('gn_scanner_hint_shown', '1');
     const cap = document.querySelector('.gn-zone-hint-caption');
@@ -2200,7 +2331,7 @@ function selectScannerLocation(label, options = {}) {
     }
   });
   if (feedback) {
-    try { window.GNScannerAudio?.playLock?.(); } catch (_) {}
+    try { window.GNScannerAudio?.playLock?.(gestureToken); } catch (_) {}
     if (navigator.vibrate) try { navigator.vibrate([4, 12, 6]); } catch (_) {}
   }
   if ($('logOv')?.classList.contains('active')) {
@@ -2313,7 +2444,7 @@ function installScannerPointerHandlers() {
       };
       scannerPointerStates.set(svg, state);
       if (candidate) {
-        try { window.GNScannerAudio?.playContact?.(); } catch (_) {}
+        try { window.GNScannerAudio?.playContact?.(gnScannerAudioGesture.fromEvent(e)); } catch (_) {}
         try { svg.setPointerCapture(e.pointerId); } catch (_) {}
         candidate.classList.add("pressed");
       }
@@ -2335,7 +2466,7 @@ function installScannerPointerHandlers() {
       const validTap = !state.cancelled && candidate && endpoint === candidate;
       const site = validTap ? candidate.getAttribute("data-site") : '';
       clearPointerState();
-      if (site) selectScannerLocation(site, { source: 'pointer' });
+      if (site) selectScannerLocation(site, { source: 'pointer', gestureToken: gnScannerAudioGesture.fromEvent(e) });
     }
     svg.addEventListener("pointerup", endPointer, { passive: true });
     svg.addEventListener("pointercancel", () => clearPointerState(), { passive: true });
@@ -2349,7 +2480,7 @@ function installScannerPointerHandlers() {
           e.preventDefault();
           const site = zp.getAttribute("data-site");
           if (site) {
-            selectScannerLocation(site, { source: 'keyboard' });
+            selectScannerLocation(site, { source: 'keyboard', gestureToken: gnScannerAudioGesture.fromEvent(e) });
           }
         }
       });
@@ -4486,9 +4617,10 @@ function wireSelectOptions() {
 }
 
 function initModules() {
+  initScannerAudioControl();
   document.addEventListener('click', event => {
     const zone = event.target.closest('[data-stable-zone]');
-    if (zone) selectScannerLocation(zone.dataset.stableZone, { source: 'fallback' });
+    if (zone) selectScannerLocation(zone.dataset.stableZone, { source: 'fallback', gestureToken: gnScannerAudioGesture.fromEvent(event) });
     const historyButton = event.target.closest('[data-shot-history-view]');
     if (historyButton) setShotHistoryView(historyButton.dataset.shotHistoryView);
     const shotAction = event.target.closest('[data-shot-action]');
@@ -4497,7 +4629,6 @@ function initModules() {
     const pickerDay = event.target.closest('[data-gn-picker-date]'); if (pickerDay) gnSelectPickerDate(pickerDay.dataset.gnPickerDate);
     const calendarDay = event.target.closest('[data-calendar-day]'); if (calendarDay) calDayClick(calendarDay.dataset.calendarDay);
     const dosePill = event.target.closest('.dose-pill'); if (dosePill) selPill(dosePill, Number(dosePill.dataset.dose));
-    if (event.target.closest('[role="switch"], [role="checkbox"], .switch, .toggle, [data-toggle], [data-switch]')) { /* v0.15.16: audio removed */ }
     const researchPick = event.target.closest('[data-research-name]');
     if (researchPick) {
       const pickName = researchPick.dataset.researchName || '';

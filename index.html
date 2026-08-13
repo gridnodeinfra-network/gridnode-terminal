@@ -3847,6 +3847,9 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 #shotsRegionScanner .zone-hit { pointer-events:all; }
 #shotsRegionScanner .zone-visible { vector-effect:non-scaling-stroke; transform-box:fill-box; transform-origin:center; transition:fill 120ms ease,stroke 120ms ease,stroke-width 120ms ease,opacity 120ms ease,filter 120ms ease; }
 #shotsRegionScanner .scanner-selected-panel { position:relative; overflow:hidden; scroll-margin-bottom:calc(92px + var(--safe-bottom)); }
+#shotsRegionScanner .scanner-audio-switch { min-width:184px; min-height:44px; padding:9px 12px; border:1px solid rgba(6,187,227,.42); border-radius:9px; background:rgba(5,7,8,.78); color:#9ab4ba; font:700 .62rem/1 var(--font-m,monospace); letter-spacing:1px; text-align:center; }
+#shotsRegionScanner .scanner-audio-switch[aria-checked="true"] { border-color:#06BBE3; background:rgba(6,187,227,.12); color:#EAFDFF; box-shadow:0 0 10px rgba(6,187,227,.16); }
+#shotsRegionScanner .scanner-audio-switch:focus-visible { outline:2px solid #FCEE0A; outline-offset:2px; }
 #shotsRegionScanner .zone-hit.pressed + .zone-visible { stroke:#FCEE0A; stroke-width:4; fill:rgba(234,9,23,.24); filter:drop-shadow(0 0 6px rgba(252,238,10,.42)); opacity:1; transition:none; }
 #shotsRegionScanner .zone-hit.zone-acquiring + .zone-visible { stroke:#06BBE3; stroke-width:4; fill:rgba(234,9,23,.20); stroke-dasharray:18 11; animation:gn-scanner-acquire 420ms cubic-bezier(.2,.75,.25,1) both; }
 #shotsRegionScanner .zone-hit.selected.selected-active + .zone-visible { stroke:#06BBE3; stroke-width:3.5; stroke-dasharray:none; fill:rgba(234,9,23,.22); filter:drop-shadow(0 0 7px rgba(6,187,227,.42)); opacity:1; }
@@ -3863,6 +3866,8 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 html[data-theme="light"] #shotsRegionScanner .zone-visible { filter:none; }
 html[data-theme="light"] #shotsRegionScanner .zone-hit.selected.selected-active + .zone-visible { stroke:#06BBE3; fill:rgba(234,9,23,.16); filter:none; }
 html[data-theme="light"] #shotsRegionScanner .scanner-selected-panel .gn-location-lock.is-on { color:#050708; border-color:rgba(6,187,227,.52); border-left-color:#06BBE3; background:rgba(255,255,255,.94); box-shadow:none; }
+html[data-theme="light"] #shotsRegionScanner .scanner-audio-switch { background:rgba(255,255,255,.94); color:#31545b; }
+html[data-theme="light"] #shotsRegionScanner .scanner-audio-switch[aria-checked="true"] { color:#003C4C; }
 @media (max-width:430px) {
   #shotsRegionScanner { padding:12px; }
   #shotsRegionScanner .site-scanner { padding:9px; border-radius:16px; }
@@ -4448,7 +4453,7 @@ function continueLocallyFromWelcome() {
             <h2 data-i18n="shots.scannerTitle">// BODY SCANNER</h2>
             <p data-i18n="shots.userEnteredLocation">USER-ENTERED LOCATION TRACKING</p>
           </div>
-          <span class="scanner-source-tag" data-i18n="shots.scannerSource">SCANNER SOURCE</span>
+          <button id="gnScannerAudioSwitch" class="scanner-audio-switch" type="button" role="switch" aria-checked="false" aria-label="Scanner audio">SCANNER AUDIO // <span>OFF</span></button>
         </div>
         <div class="scanner-mode-tabs" role="tablist" aria-label="Body scanner mode" data-i18n-aria-label="shot.zoneModeAria">
           <button class="scanner-mode-btn active" type="button" role="tab" data-mode="core" onclick="setScannerMode('core',this)" data-i18n="shots.modeCore" aria-selected="true">CORE</button>
