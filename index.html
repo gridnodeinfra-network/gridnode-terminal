@@ -4420,9 +4420,9 @@ function continueLocallyFromWelcome() {
           <span class="scanner-source-tag" data-i18n="shots.scannerSource">SCANNER SOURCE</span>
         </div>
         <div class="scanner-mode-tabs" role="tablist" aria-label="Body scanner mode" data-i18n-aria-label="shot.zoneModeAria">
-          <button class="scanner-mode-btn active" type="button" role="tab" data-mode="core" data-i18n="shots.modeCore" aria-selected="true">CORE</button>
-          <button class="scanner-mode-btn" type="button" role="tab" data-mode="lower" data-i18n="shots.modeLegs" aria-selected="false">LEGS</button>
-          <button class="scanner-mode-btn" type="button" role="tab" data-mode="upper" data-i18n="shots.modeArms" aria-selected="false">ARMS</button>
+          <button class="scanner-mode-btn active" type="button" role="tab" data-mode="core" onclick="setScannerMode('core',this)" data-i18n="shots.modeCore" aria-selected="true">CORE</button>
+          <button class="scanner-mode-btn" type="button" role="tab" data-mode="lower" onclick="setScannerMode('lower',this)" data-i18n="shots.modeLegs" aria-selected="false">LEGS</button>
+          <button class="scanner-mode-btn" type="button" role="tab" data-mode="upper" onclick="setScannerMode('upper',this)" data-i18n="shots.modeArms" aria-selected="false">ARMS</button>
         </div>
         <div class="site-scanner" role="group" aria-label="GRID//NODE user-entered location scanner">
           <div class="asset-matrix-title"><b data-i18n="shots.selectLoggedLocation">SELECT LOGGED LOCATION</b><span id="scannerModeLabel" data-i18n="shots.coreTrackableZones">CORE TRACKABLE ZONES</span></div>

@@ -4,8 +4,8 @@
   "build": "20260812.9",
   "files": {
     "index.html": {
-      "bytes": 481079,
-      "sha256": "bd31024a8dc77d7c54cd3c3f2f007f4454256b84c94134a7a4a0b95ae3694918"
+      "bytes": 481195,
+      "sha256": "c3f66af3b698a13d125b92e71da5929061932ddd28231fa60042a221a6d18622"
     },
     "manifest.json": {
       "bytes": 1547,
@@ -106,6 +106,10 @@
     "assets/scanner/arms/arms.webp": {
       "bytes": 104550,
       "sha256": "1c20e667d637e878481ad151a5c5105363610d60d2b7fa438dbffa47112b5e8d"
+    },
+    "scripts/test-mode-switching.py": {
+      "bytes": 4407,
+      "sha256": "1911562506dfffba08ede6814025e205877781421e1c4d599313bc59fba91836"
     }
   }
 }
