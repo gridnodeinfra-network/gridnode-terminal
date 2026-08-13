@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 import sys
 
-REPO = Path("/home/thinkpadwinbash/workspaces/gridnode-terminal")
+REPO = Path(__file__).resolve().parents[1]
 HTML = REPO / "index.html"
 BUNDLE = REPO / "js" / "gridnode-bundle.js"
 

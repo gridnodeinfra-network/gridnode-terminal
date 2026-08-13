@@ -504,7 +504,10 @@ export function setScannerMode(mode, button) {
     const active = item === button || item.dataset.mode === moduleState.scannerMode;
     item.classList.toggle('active', active);
     item.setAttribute('aria-pressed', active ? 'true' : 'false');
+    item.setAttribute('aria-selected', active ? 'true' : 'false');
+    item.setAttribute('tabindex', active ? '0' : '-1');
   });
+  clearScannerTransientState();
   qa('.biotech-stage').forEach(stage => {
     const isActive = stage.dataset.view === moduleState.scannerMode;
     stage.hidden = !isActive;
@@ -621,6 +624,99 @@ export function renderScanner() {
     path.classList.toggle('is-dim', Boolean(moduleState.selectedLocation && !isSel));
     path.setAttribute('aria-pressed', isSel ? 'true' : 'false');
   });
+}
+
+function pointerToSvgPoint(svg, clientX, clientY) {
+  const point = typeof DOMPoint === 'function'
+    ? new DOMPoint(clientX, clientY)
+    : { x: clientX, y: clientY, matrixTransform(matrix) { return { x: clientX * matrix.a + matrix.e, y: clientY * matrix.d + matrix.f }; } };
+  const ctm = svg.getScreenCTM();
+  return ctm ? point.matrixTransform(ctm.inverse()) : null;
+}
+
+function hitTestScannerZone(svg, clientX, clientY) {
+  const svgPoint = pointerToSvgPoint(svg, clientX, clientY);
+  if (!svgPoint) return null;
+  for (const path of svg.querySelectorAll('.zone-hit')) {
+    try {
+      if (typeof path.isPointInFill === 'function' && path.isPointInFill(svgPoint)) return path;
+    } catch (_) {}
+  }
+  return null;
+}
+
+function installScannerPointerHandlers() {
+  if (window.__gnScannerPointerInstalled) return;
+  window.__gnScannerPointerInstalled = true;
+  const TAP_THRESHOLD = 10; /* px */
+  const SCROLL_TIMEOUT = 250; /* ms */
+  qa("#shotsRegionScanner .biotech-stage").forEach(stage => {
+    const svg = stage.querySelector(".biotech-zones");
+    if (!svg || svg.__gnPointerBound) return;
+    svg.__gnPointerBound = true;
+    let startX = 0, startY = 0, startTarget = null, pointerId = null, isScrolling = false;
+    svg.addEventListener("pointerdown", (e) => {
+      if (stage.hidden) return;
+      pointerId = e.pointerId;
+      startX = e.clientX; startY = e.clientY;
+      const zone = hitTestScannerZone(svg, e.clientX, e.clientY);
+      startTarget = zone;
+      isScrolling = false;
+      if (zone) {
+        try { svg.setPointerCapture(e.pointerId); } catch (err) {}
+        /* immediate pressed feedback */
+        zone.classList.add("pressed");
+      }
+    }, { passive: true });
+    svg.addEventListener("pointermove", (e) => {
+      if (pointerId === null) return;
+      const dx = e.clientX - startX, dy = e.clientY - startY;
+      if (Math.hypot(dx, dy) > TAP_THRESHOLD) {
+        isScrolling = true;
+        if (startTarget) startTarget.classList.remove("pressed");
+      }
+    }, { passive: true });
+    function endPointer(e) {
+      if (pointerId === null) return;
+      const wasScrolling = isScrolling;
+      if (startTarget) startTarget.classList.remove("pressed");
+      try { svg.releasePointerCapture(pointerId); } catch (err) {}
+      pointerId = null;
+      if (wasScrolling) return;
+      if (!startTarget) return;
+      const site = startTarget.getAttribute("data-site");
+      if (!site) return;
+      /* fire selectScannerLocation - immediate same-frame */
+      if (navigator.vibrate) try { navigator.vibrate(12); } catch (err) {}
+      selectScannerLocation(site);
+    }
+    svg.addEventListener("pointerup", endPointer, { passive: true });
+    svg.addEventListener("pointercancel", (e) => {
+      if (startTarget) startTarget.classList.remove("pressed");
+      try { svg.releasePointerCapture(pointerId); } catch (err) {}
+      pointerId = null;
+    }, { passive: true });
+    /* Keyboard a11y */
+    qa("#shotsRegionScanner .zone-path").forEach(zp => {
+      if (zp.__gnKeyBound) return;
+      zp.__gnKeyBound = true;
+      zp.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          const site = zp.getAttribute("data-site");
+          if (site) {
+            if (navigator.vibrate) try { navigator.vibrate(12); } catch (err) {}
+            selectScannerLocation(site);
+          }
+        }
+      });
+    });
+  });
+}
+
+function clearScannerTransientState() {
+  qa('#shotsRegionScanner .zone-path.pressed, #shotsRegionScanner .zone-path.zone-acquiring')
+    .forEach(path => path.classList.remove('pressed', 'zone-acquiring'));
 }
 
 export function openLogModal(options = {}) {
@@ -930,7 +1026,6 @@ export function handleShotFab() {
     wt: '', notes: '', se: [], deviceId: ''
   };
   openLogModal({ preserve: true });
-}
 }
 export function goToScannerForLocationFromLog() {
   moduleState.pendingLocationDraft = true;
@@ -1248,8 +1343,6 @@ export function initModules() {
   document.addEventListener('click', event => {
     const zone = event.target.closest('[data-stable-zone]');
     if (zone) selectScannerLocation(zone.dataset.stableZone);
-    const overlay = event.target.closest('.zone-overlay');
-    if (overlay?.dataset.site) selectScannerLocation(overlay.dataset.site);
     const historyButton = event.target.closest('[data-shot-history-view]');
     if (historyButton) setShotHistoryView(historyButton.dataset.shotHistoryView);
     const shotAction = event.target.closest('[data-shot-action]');

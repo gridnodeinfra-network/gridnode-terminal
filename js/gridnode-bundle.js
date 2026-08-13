@@ -2125,7 +2125,10 @@ function setScannerMode(mode, button) {
     const active = item === button || item.dataset.mode === moduleState.scannerMode;
     item.classList.toggle('active', active);
     item.setAttribute('aria-pressed', active ? 'true' : 'false');
+    item.setAttribute('aria-selected', active ? 'true' : 'false');
+    item.setAttribute('tabindex', active ? '0' : '-1');
   });
+  clearScannerTransientState();
   /* toggle .biotech-stage visibility - one stage per mode */
   qa('.biotech-stage').forEach(stage => {
     const isActive = stage.dataset.view === moduleState.scannerMode;
@@ -2342,6 +2345,11 @@ function installScannerPointerHandlers() {
       });
     });
   });
+}
+
+function clearScannerTransientState() {
+  qa('#shotsRegionScanner .zone-path.pressed, #shotsRegionScanner .zone-path.zone-acquiring')
+    .forEach(path => path.classList.remove('pressed', 'zone-acquiring'));
 }
 
 /* v0.15.19 SCANNER DEBUG MODE - ?scannerDebug=1 */
@@ -4471,9 +4479,6 @@ function initModules() {
   document.addEventListener('click', event => {
     const zone = event.target.closest('[data-stable-zone]');
     if (zone) { if (navigator.vibrate) navigator.vibrate(15); selectScannerLocation(zone.dataset.stableZone); }
-    /* v0.15.19 - SVG .zone-path rects in .biotech-zones layer */
-    const zonePath = event.target.closest('.zone-path');
-    if (zonePath?.getAttribute('data-site')) { if (navigator.vibrate) navigator.vibrate(15); selectScannerLocation(zonePath.getAttribute('data-site')); }
     const historyButton = event.target.closest('[data-shot-history-view]');
     if (historyButton) setShotHistoryView(historyButton.dataset.shotHistoryView);
     const shotAction = event.target.closest('[data-shot-action]');
