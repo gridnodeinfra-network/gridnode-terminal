@@ -10,3 +10,4 @@ undefined:*
 # Accidental Lighthouse profile paths (never track)
 **/lighthouse.*/
 **/undefined*/
+.worktrees/
