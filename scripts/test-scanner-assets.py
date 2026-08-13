@@ -4,6 +4,8 @@ import struct
 import unittest
 from pathlib import Path
 
+from PIL import Image, UnidentifiedImageError
+
 
 ROOT = Path(__file__).resolve().parents[1]
 MODES = ("core", "legs", "arms")
@@ -56,6 +58,24 @@ def read_webp_dimensions(path: Path) -> tuple[int, int]:
     raise ValueError("missing WebP image payload")
 
 
+def verify_full_webp_decode(path: Path) -> None:
+    try:
+        with Image.open(path) as image:
+            if image.format != "WEBP":
+                raise ValueError(f"expected WEBP format, got {image.format!r}")
+            if image.size != EXPECTED_DIMENSIONS:
+                raise ValueError(
+                    f"expected {EXPECTED_DIMENSIONS[0]}x{EXPECTED_DIMENSIONS[1]}, "
+                    f"got {image.size[0]}x{image.size[1]}"
+                )
+            image.verify()
+
+        with Image.open(path) as image:
+            image.load()
+    except (OSError, UnidentifiedImageError, ValueError) as error:
+        raise ValueError(f"full WebP decode failed: {error}") from error
+
+
 class ScannerAssetContractTest(unittest.TestCase):
     def test_required_originals_exist(self) -> None:
         for mode in MODES:
@@ -82,6 +102,10 @@ class ScannerAssetContractTest(unittest.TestCase):
                     EXPECTED_DIMENSIONS,
                     f"cinematic asset must be 1024x1024: {cinematic}",
                 )
+                try:
+                    verify_full_webp_decode(cinematic)
+                except ValueError as error:
+                    self.fail(f"invalid WebP payload {cinematic}: {error}")
 
 
 if __name__ == "__main__":
