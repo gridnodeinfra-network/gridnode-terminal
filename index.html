@@ -3840,6 +3840,20 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 
 </style>
 
+<style id="scanner-precision-cinematic-v1">
+#shotsRegionScanner .biotech-stage { aspect-ratio:1; touch-action:pan-y pinch-zoom; contain:layout paint; }
+#shotsRegionScanner .biotech-asset,
+#shotsRegionScanner .biotech-zones { position:absolute; inset:0; width:100%; height:100%; }
+#shotsRegionScanner .zone-hit { pointer-events:all; }
+#shotsRegionScanner .scanner-selected-panel { scroll-margin-bottom:calc(92px + var(--safe-bottom)); }
+@media (max-width:430px) {
+  #shotsRegionScanner { padding:12px; }
+  #shotsRegionScanner .site-scanner { padding:9px; border-radius:16px; }
+  #shotsRegionScanner .biotech-scanner { margin-top:10px; }
+  #pageLog { padding-bottom:calc(104px + var(--safe-bottom)); }
+}
+</style>
+
 </head>
 <body>
 
@@ -4432,22 +4446,22 @@ function continueLocallyFromWelcome() {
             <div class="biotech-stage active" data-view="core" role="tabpanel" aria-label="CORE abdomen scanner">
               <div class="biotech-stage-frame">
                 <div class="biotech-stage-glow" aria-hidden="true"></div>
-                <img class="biotech-asset" src="/assets/scanner/core/core.webp" width="1024" height="1024" alt="GRID//NODE CORE abdomen diagnostic shell" loading="lazy">
+                <img class="biotech-asset" src="assets/scanner/core/core-cinematic.webp" width="1024" height="1024" alt="GRID//NODE CORE abdomen diagnostic shell" loading="lazy">
                 <svg class="biotech-zones" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="CORE tracking zones" role="group">
                   <!-- Excluded center / navel (NON-SELECTABLE) -->
-                  <circle class="zone-excluded" cx="500" cy="580" r="80" aria-hidden="true"/>
+                  <circle class="zone-excluded" cx="500" cy="580" r="80" aria-hidden="true" pointer-events="none"/>
                   <!-- RIGHT UPPER ABDOMEN -->
-                  <path class="zone-path zone-hit" data-mode="core" data-site="Right Abdomen — Upper" data-zone-key="zone.rightAbdomenUpper" d="M 510,440 L 790,440 L 790,580 L 510,580 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Abdomen — Upper"/>
-                  <path class="zone-visible" d="M 520,460 L 760,460 Q 770,460 770,470 L 770,560 L 520,560 Z"/>
+                  <path class="zone-path zone-hit" data-mode="core" data-site="Right Abdomen — Upper" data-zone-bounds="520,450,780,570" data-zone-key="zone.rightAbdomenUpper" d="M 520,450 L 780,450 L 780,570 L 520,570 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Abdomen — Upper"/>
+                  <path class="zone-visible" data-mode="core" data-site="Right Abdomen — Upper" d="M 530,460 L 770,460 L 770,560 L 530,560 Z"/>
                   <!-- RIGHT LOWER ABDOMEN -->
-                  <path class="zone-path zone-hit" data-mode="core" data-site="Right Abdomen — Lower" data-zone-key="zone.rightAbdomenLower" d="M 510,580 L 790,580 L 790,820 L 510,820 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Abdomen — Lower"/>
-                  <path class="zone-visible" d="M 520,600 L 770,600 L 770,790 L 520,790 Z"/>
+                  <path class="zone-path zone-hit" data-mode="core" data-site="Right Abdomen — Lower" data-zone-bounds="520,590,780,810" data-zone-key="zone.rightAbdomenLower" d="M 520,590 L 780,590 L 780,810 L 520,810 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Abdomen — Lower"/>
+                  <path class="zone-visible" data-mode="core" data-site="Right Abdomen — Lower" d="M 530,600 L 770,600 L 770,800 L 530,800 Z"/>
                   <!-- LEFT UPPER ABDOMEN -->
-                  <path class="zone-path zone-hit" data-mode="core" data-site="Left Abdomen — Upper" data-zone-key="zone.leftAbdomenUpper" d="M 210,440 L 490,440 L 490,580 L 210,580 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Abdomen — Upper"/>
-                  <path class="zone-visible" d="M 230,460 L 480,460 L 480,560 L 230,560 Z"/>
+                  <path class="zone-path zone-hit" data-mode="core" data-site="Left Abdomen — Upper" data-zone-bounds="220,450,480,570" data-zone-key="zone.leftAbdomenUpper" d="M 220,450 L 480,450 L 480,570 L 220,570 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Abdomen — Upper"/>
+                  <path class="zone-visible" data-mode="core" data-site="Left Abdomen — Upper" d="M 230,460 L 470,460 L 470,560 L 230,560 Z"/>
                   <!-- LEFT LOWER ABDOMEN -->
-                  <path class="zone-path zone-hit" data-mode="core" data-site="Left Abdomen — Lower" data-zone-key="zone.leftAbdomenLower" d="M 210,580 L 490,580 L 490,820 L 210,820 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Abdomen — Lower"/>
-                  <path class="zone-visible" d="M 230,600 L 480,600 L 480,790 L 230,790 Z"/>
+                  <path class="zone-path zone-hit" data-mode="core" data-site="Left Abdomen — Lower" data-zone-bounds="220,590,480,810" data-zone-key="zone.leftAbdomenLower" d="M 220,590 L 480,590 L 480,810 L 220,810 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Abdomen — Lower"/>
+                  <path class="zone-visible" data-mode="core" data-site="Left Abdomen — Lower" d="M 230,600 L 470,600 L 470,800 L 230,800 Z"/>
                 </svg>
                 <div class="biotech-corner tl" aria-hidden="true"></div>
                 <div class="biotech-corner tr" aria-hidden="true"></div>
@@ -4460,20 +4474,20 @@ function continueLocallyFromWelcome() {
             <div class="biotech-stage" data-view="lower" role="tabpanel" aria-label="LEGS front-thigh scanner" hidden>
               <div class="biotech-stage-frame">
                 <div class="biotech-stage-glow" aria-hidden="true"></div>
-                <img class="biotech-asset" src="/assets/scanner/legs/legs.webp" width="1024" height="1024" alt="GRID//NODE LEGS front-thigh diagnostic shell" loading="lazy">
+                <img class="biotech-asset" src="assets/scanner/legs/legs-cinematic.webp" width="1024" height="1024" alt="GRID//NODE LEGS front-thigh diagnostic shell" loading="lazy">
                 <svg class="biotech-zones" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="LEGS tracking zones" role="group">
                   <!-- LEFT UPPER THIGH -->
-                  <path class="zone-path zone-hit" data-mode="lower" data-site="Left Thigh — Upper" data-zone-key="zone.leftThighUpper" d="M 100,170 L 500,170 L 500,560 L 100,560 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Thigh — Upper"/>
-                  <path class="zone-visible" d="M 130,200 Q 250,190 380,200 Q 440,205 480,220 L 480,540 L 130,540 Q 115,540 110,510 L 110,230 Q 115,200 130,200 Z"/>
+                  <path class="zone-path zone-hit" data-mode="lower" data-site="Left Thigh — Upper" data-zone-bounds="165,365,485,650" data-zone-key="zone.leftThighUpper" d="M 165,365 L 485,365 L 485,650 L 165,650 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Thigh — Upper"/>
+                  <path class="zone-visible" data-mode="lower" data-site="Left Thigh — Upper" d="M 175,375 L 475,375 L 475,640 L 175,640 Z"/>
                   <!-- LEFT LOWER THIGH -->
-                  <path class="zone-path zone-hit" data-mode="lower" data-site="Left Thigh — Lower" data-zone-key="zone.leftThighLower" d="M 110,520 L 500,520 L 500,850 L 110,850 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Thigh — Lower"/>
-                  <path class="zone-visible" d="M 130,560 L 480,560 L 480,820 Q 470,830 450,830 L 145,830 Q 130,830 125,810 L 125,580 Q 125,560 130,560 Z"/>
+                  <path class="zone-path zone-hit" data-mode="lower" data-site="Left Thigh — Lower" data-zone-bounds="175,670,470,900" data-zone-key="zone.leftThighLower" d="M 175,670 L 470,670 L 470,900 L 175,900 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Thigh — Lower"/>
+                  <path class="zone-visible" data-mode="lower" data-site="Left Thigh — Lower" d="M 185,680 L 460,680 L 460,890 L 185,890 Z"/>
                   <!-- RIGHT UPPER THIGH -->
-                  <path class="zone-path zone-hit" data-mode="lower" data-site="Right Thigh — Upper" data-zone-key="zone.rightThighUpper" d="M 500,170 L 900,170 L 900,560 L 500,560 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Thigh — Upper"/>
-                  <path class="zone-visible" d="M 520,200 Q 560,190 620,200 Q 750,205 870,200 Q 885,200 890,220 L 890,510 Q 885,540 870,540 L 520,540 Z"/>
+                  <path class="zone-path zone-hit" data-mode="lower" data-site="Right Thigh — Upper" data-zone-bounds="515,365,835,650" data-zone-key="zone.rightThighUpper" d="M 515,365 L 835,365 L 835,650 L 515,650 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Thigh — Upper"/>
+                  <path class="zone-visible" data-mode="lower" data-site="Right Thigh — Upper" d="M 525,375 L 825,375 L 825,640 L 525,640 Z"/>
                   <!-- RIGHT LOWER THIGH -->
-                  <path class="zone-path zone-hit" data-mode="lower" data-site="Right Thigh — Lower" data-zone-key="zone.rightThighLower" d="M 500,520 L 890,520 L 890,850 L 500,850 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Thigh — Lower"/>
-                  <path class="zone-visible" d="M 520,560 L 870,560 Q 875,560 875,580 L 875,810 Q 870,830 855,830 L 550,830 Q 530,830 520,820 Z"/>
+                  <path class="zone-path zone-hit" data-mode="lower" data-site="Right Thigh — Lower" data-zone-bounds="530,670,825,900" data-zone-key="zone.rightThighLower" d="M 530,670 L 825,670 L 825,900 L 530,900 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Thigh — Lower"/>
+                  <path class="zone-visible" data-mode="lower" data-site="Right Thigh — Lower" d="M 540,680 L 815,680 L 815,890 L 540,890 Z"/>
                 </svg>
                 <div class="biotech-corner tl" aria-hidden="true"></div>
                 <div class="biotech-corner tr" aria-hidden="true"></div>
@@ -4486,20 +4500,20 @@ function continueLocallyFromWelcome() {
             <div class="biotech-stage" data-view="upper" role="tabpanel" aria-label="ARMS rear-upper-arm scanner" hidden>
               <div class="biotech-stage-frame">
                 <div class="biotech-stage-glow" aria-hidden="true"></div>
-                <img class="biotech-asset" src="/assets/scanner/arms/arms.webp" width="1024" height="1024" alt="GRID//NODE ARMS rear-upper-arm diagnostic shell" loading="lazy">
+                <img class="biotech-asset" src="assets/scanner/arms/arms-cinematic.webp" width="1024" height="1024" alt="GRID//NODE ARMS rear-upper-arm diagnostic shell" loading="lazy">
                 <svg class="biotech-zones" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="ARMS tracking zones" role="group">
                   <!-- LEFT UPPER ARM (posterior) -->
-                  <path class="zone-path zone-hit" data-mode="upper" data-site="Left Back Upper Arm — Upper" data-zone-key="zone.leftBackUpperArmUpper" d="M 100,290 L 360,290 L 360,560 L 100,560 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Back Upper Arm — Upper"/>
-                  <path class="zone-visible" d="M 130,320 Q 200,310 280,320 Q 320,325 340,340 L 340,540 L 130,540 Q 115,540 112,520 L 112,340 Q 115,320 130,320 Z"/>
+                  <path class="zone-path zone-hit" data-mode="upper" data-site="Left Back Upper Arm — Upper" data-zone-bounds="70,325,245,485" data-zone-key="zone.leftBackUpperArmUpper" d="M 70,325 L 245,325 L 245,485 L 70,485 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Back Upper Arm — Upper"/>
+                  <path class="zone-visible" data-mode="upper" data-site="Left Back Upper Arm — Upper" d="M 80,335 L 235,335 L 235,475 L 80,475 Z"/>
                   <!-- LEFT LOWER ARM (posterior) -->
-                  <path class="zone-path zone-hit" data-mode="upper" data-site="Left Back Upper Arm — Lower" data-zone-key="zone.leftBackUpperArmLower" d="M 110,520 L 360,520 L 360,750 L 110,750 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Back Upper Arm — Lower"/>
-                  <path class="zone-visible" d="M 130,560 L 340,560 L 340,720 Q 335,730 320,730 L 145,730 Q 130,730 125,710 L 125,580 Q 125,560 130,560 Z"/>
+                  <path class="zone-path zone-hit" data-mode="upper" data-site="Left Back Upper Arm — Lower" data-zone-bounds="55,500,225,675" data-zone-key="zone.leftBackUpperArmLower" d="M 55,500 L 225,500 L 225,675 L 55,675 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Back Upper Arm — Lower"/>
+                  <path class="zone-visible" data-mode="upper" data-site="Left Back Upper Arm — Lower" d="M 65,510 L 215,510 L 215,665 L 65,665 Z"/>
                   <!-- RIGHT UPPER ARM (posterior) -->
-                  <path class="zone-path zone-hit" data-mode="upper" data-site="Right Back Upper Arm — Upper" data-zone-key="zone.rightBackUpperArmUpper" d="M 640,290 L 900,290 L 900,560 L 640,560 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Back Upper Arm — Upper"/>
-                  <path class="zone-visible" d="M 660,320 Q 720,310 800,320 Q 870,310 885,320 Q 888,330 888,340 L 888,520 Q 885,540 870,540 L 660,540 Z"/>
+                  <path class="zone-path zone-hit" data-mode="upper" data-site="Right Back Upper Arm — Upper" data-zone-bounds="755,325,930,485" data-zone-key="zone.rightBackUpperArmUpper" d="M 755,325 L 930,325 L 930,485 L 755,485 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Back Upper Arm — Upper"/>
+                  <path class="zone-visible" data-mode="upper" data-site="Right Back Upper Arm — Upper" d="M 765,335 L 920,335 L 920,475 L 765,475 Z"/>
                   <!-- RIGHT LOWER ARM (posterior) -->
-                  <path class="zone-path zone-hit" data-mode="upper" data-site="Right Back Upper Arm — Lower" data-zone-key="zone.rightBackUpperArmLower" d="M 640,520 L 890,520 L 890,750 L 640,750 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Back Upper Arm — Lower"/>
-                  <path class="zone-visible" d="M 660,560 L 870,560 Q 875,560 875,580 L 875,710 Q 870,730 855,730 L 680,730 Q 665,730 660,720 Z"/>
+                  <path class="zone-path zone-hit" data-mode="upper" data-site="Right Back Upper Arm — Lower" data-zone-bounds="775,500,945,675" data-zone-key="zone.rightBackUpperArmLower" d="M 775,500 L 945,500 L 945,675 L 775,675 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Back Upper Arm — Lower"/>
+                  <path class="zone-visible" data-mode="upper" data-site="Right Back Upper Arm — Lower" d="M 785,510 L 935,510 L 935,665 L 785,665 Z"/>
                 </svg>
                 <div class="biotech-corner tl" aria-hidden="true"></div>
                 <div class="biotech-corner tr" aria-hidden="true"></div>
