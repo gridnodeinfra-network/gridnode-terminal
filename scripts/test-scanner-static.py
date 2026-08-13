@@ -127,4 +127,23 @@ for label, content in (("readable source", source), ("delivery bundle", bundle))
         assert symbol in content, f"{label} missing {symbol}"
     assert "event.target.closest('.zone-path')" not in content, f"{label} delegated click duplicates pointer activation"
     assert "item.setAttribute('aria-selected'" in content, f"{label} missing aria-selected mode semantics"
+    assert content.count("const scannerPointerStates = new WeakMap();") == 1, f"{label} must keep one WeakMap pointer registry"
+    assert "selectScannerLocation(label, options = {})" in content, f"{label} selection owner must accept options"
+    assert "const { source = 'programmatic', feedback = source !== 'programmatic' } = options;" in content, f"{label} selection owner must preserve approved feedback defaults"
+    assert "const endpoint = hitTestScannerZone" in content, f"{label} must re-hit-test pointer-up endpoint"
+    assert "lostpointercapture" in content, f"{label} must clear state on lost pointer capture"
+    assert "selectScannerLocation(site, { source: 'pointer' })" in content, f"{label} pointer path must declare its source"
+    assert "selectScannerLocation(site, { source: 'keyboard' })" in content, f"{label} keyboard path must declare its source"
+    assert "selectScannerLocation(zone.dataset.stableZone, { source: 'fallback' })" in content, f"{label} fallback path must declare its source"
+    selection_block = content[content.index("selectScannerLocation(label, options = {})"):content.index("function renderScanner()", content.index("selectScannerLocation(label, options = {})"))]
+    assert "showToast(" not in selection_block, f"{label} scanner selection must not block rapid reselection with a toast"
+    assert selection_block.count("playLock") == 1, f"{label} selection owner must play lock audio once"
+    assert "playContact" not in selection_block, f"{label} selection owner must not play contact audio"
+    assert selection_block.count("navigator.vibrate(") == 1, f"{label} selection owner must own the only scanner haptic"
+    assert "navigator.vibrate([4, 12, 6])" in selection_block, f"{label} selection owner must use the approved haptic pattern"
+    pointer_block = content[content.index("function installScannerPointerHandlers()"):content.index("function clearScannerTransientState()", content.index("function installScannerPointerHandlers()"))]
+    assert pointer_block.count("navigator.vibrate") == 0, f"{label} pointer/keyboard paths must not duplicate haptics"
+    assert pointer_block.count("playContact") == 1, f"{label} pointerdown must play contact audio once"
+    assert "playLock" not in pointer_block, f"{label} pointer path must not play lock audio"
+    assert pointer_block.count("addEventListener(\"pointerdown\"") == 1, f"{label} must have one pointer owner per SVG"
 print("SCANNER STATIC REGRESSION PASSED")

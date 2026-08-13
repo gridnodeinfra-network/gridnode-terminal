@@ -535,7 +535,8 @@ export function setScannerMode(mode, button) {
   renderScanner();
 }
 
-export function selectScannerLocation(label) {
+export function selectScannerLocation(label, options = {}) {
+  const { source = 'programmatic', feedback = source !== 'programmatic' } = options;
   try {
     localStorage.setItem('gn_scanner_hint_shown', '1');
     const cap = document.querySelector('.gn-zone-hint-caption');
@@ -573,8 +574,10 @@ export function selectScannerLocation(label) {
       setTimeout(() => path.classList.remove('zone-acquiring'), 480);
     }
   });
-  if (navigator.vibrate) navigator.vibrate([4, 10, 4]);
-  showToast(tx('shots.locationLocked', 'LOCATION//LOCKED') + ' · ' + zoneLabel(label));
+  if (feedback) {
+    try { window.GNScannerAudio?.playLock?.(); } catch (_) {}
+    if (navigator.vibrate) try { navigator.vibrate([4, 12, 6]); } catch (_) {}
+  }
   if ($('logOv')?.classList.contains('active')) {
     setText('modalSelectedLocation', zoneLabel(label));
   }
@@ -626,6 +629,8 @@ export function renderScanner() {
   });
 }
 
+const scannerPointerStates = new WeakMap();
+
 function pointerToSvgPoint(svg, clientX, clientY) {
   const point = typeof DOMPoint === 'function'
     ? new DOMPoint(clientX, clientY)
@@ -649,64 +654,69 @@ function installScannerPointerHandlers() {
   if (window.__gnScannerPointerInstalled) return;
   window.__gnScannerPointerInstalled = true;
   const TAP_THRESHOLD = 10; /* px */
-  const SCROLL_TIMEOUT = 250; /* ms */
   qa("#shotsRegionScanner .biotech-stage").forEach(stage => {
     const svg = stage.querySelector(".biotech-zones");
     if (!svg || svg.__gnPointerBound) return;
     svg.__gnPointerBound = true;
-    let startX = 0, startY = 0, startTarget = null, pointerId = null, isScrolling = false;
+    const clearPointerState = (releaseCapture = true) => {
+      const state = scannerPointerStates.get(svg);
+      if (!state) return;
+      state.candidate?.classList.remove('pressed');
+      if (releaseCapture && state.pointerId !== null) {
+        try { svg.releasePointerCapture(state.pointerId); } catch (_) {}
+      }
+      scannerPointerStates.delete(svg);
+    };
     svg.addEventListener("pointerdown", (e) => {
       if (stage.hidden) return;
-      pointerId = e.pointerId;
-      startX = e.clientX; startY = e.clientY;
-      const zone = hitTestScannerZone(svg, e.clientX, e.clientY);
-      startTarget = zone;
-      isScrolling = false;
-      if (zone) {
-        try { svg.setPointerCapture(e.pointerId); } catch (err) {}
-        /* immediate pressed feedback */
-        zone.classList.add("pressed");
+      clearPointerState();
+      const candidate = hitTestScannerZone(svg, e.clientX, e.clientY);
+      const state = {
+        pointerId: e.pointerId,
+        startX: e.clientX,
+        startY: e.clientY,
+        candidate,
+        cancelled: !candidate
+      };
+      scannerPointerStates.set(svg, state);
+      if (candidate) {
+        try { window.GNScannerAudio?.playContact?.(); } catch (_) {}
+        try { svg.setPointerCapture(e.pointerId); } catch (_) {}
+        candidate.classList.add("pressed");
       }
     }, { passive: true });
     svg.addEventListener("pointermove", (e) => {
-      if (pointerId === null) return;
-      const dx = e.clientX - startX, dy = e.clientY - startY;
+      const state = scannerPointerStates.get(svg);
+      if (!state || state.pointerId !== e.pointerId) return;
+      const dx = e.clientX - state.startX, dy = e.clientY - state.startY;
       if (Math.hypot(dx, dy) > TAP_THRESHOLD) {
-        isScrolling = true;
-        if (startTarget) startTarget.classList.remove("pressed");
+        state.cancelled = true;
+        state.candidate?.classList.remove("pressed");
       }
     }, { passive: true });
     function endPointer(e) {
-      if (pointerId === null) return;
-      const wasScrolling = isScrolling;
-      if (startTarget) startTarget.classList.remove("pressed");
-      try { svg.releasePointerCapture(pointerId); } catch (err) {}
-      pointerId = null;
-      if (wasScrolling) return;
-      if (!startTarget) return;
-      const site = startTarget.getAttribute("data-site");
-      if (!site) return;
-      /* fire selectScannerLocation - immediate same-frame */
-      if (navigator.vibrate) try { navigator.vibrate(12); } catch (err) {}
-      selectScannerLocation(site);
+      const state = scannerPointerStates.get(svg);
+      if (!state || state.pointerId !== e.pointerId) return;
+      const endpoint = hitTestScannerZone(svg, e.clientX, e.clientY);
+      const candidate = state.candidate;
+      const validTap = !state.cancelled && candidate && endpoint === candidate;
+      const site = validTap ? candidate.getAttribute("data-site") : '';
+      clearPointerState();
+      if (site) selectScannerLocation(site, { source: 'pointer' });
     }
     svg.addEventListener("pointerup", endPointer, { passive: true });
-    svg.addEventListener("pointercancel", (e) => {
-      if (startTarget) startTarget.classList.remove("pressed");
-      try { svg.releasePointerCapture(pointerId); } catch (err) {}
-      pointerId = null;
-    }, { passive: true });
+    svg.addEventListener("pointercancel", () => clearPointerState(), { passive: true });
+    svg.addEventListener("lostpointercapture", () => clearPointerState(false), { passive: true });
     /* Keyboard a11y */
     qa("#shotsRegionScanner .zone-path").forEach(zp => {
       if (zp.__gnKeyBound) return;
       zp.__gnKeyBound = true;
       zp.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") {
+        if ((e.key === "Enter" || e.key === " ") && !e.repeat) {
           e.preventDefault();
           const site = zp.getAttribute("data-site");
           if (site) {
-            if (navigator.vibrate) try { navigator.vibrate(12); } catch (err) {}
-            selectScannerLocation(site);
+            selectScannerLocation(site, { source: 'keyboard' });
           }
         }
       });
@@ -1342,7 +1352,7 @@ export function selPill(button, dose) { if ($('sDose')) $('sDose').value = dose;
 export function initModules() {
   document.addEventListener('click', event => {
     const zone = event.target.closest('[data-stable-zone]');
-    if (zone) selectScannerLocation(zone.dataset.stableZone);
+    if (zone) selectScannerLocation(zone.dataset.stableZone, { source: 'fallback' });
     const historyButton = event.target.closest('[data-shot-history-view]');
     if (historyButton) setShotHistoryView(historyButton.dataset.shotHistoryView);
     const shotAction = event.target.closest('[data-shot-action]');
