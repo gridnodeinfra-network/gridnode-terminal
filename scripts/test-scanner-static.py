@@ -102,7 +102,24 @@ EXPECTED_PRECISION_STYLE = """
 #shotsRegionScanner .biotech-asset,
 #shotsRegionScanner .biotech-zones { position:absolute; inset:0; width:100%; height:100%; }
 #shotsRegionScanner .zone-hit { pointer-events:all; }
-#shotsRegionScanner .scanner-selected-panel { scroll-margin-bottom:calc(92px + var(--safe-bottom)); }
+#shotsRegionScanner .zone-visible { vector-effect:non-scaling-stroke; transform-box:fill-box; transform-origin:center; transition:fill 120ms ease,stroke 120ms ease,stroke-width 120ms ease,opacity 120ms ease,filter 120ms ease; }
+#shotsRegionScanner .scanner-selected-panel { position:relative; overflow:hidden; scroll-margin-bottom:calc(92px + var(--safe-bottom)); }
+#shotsRegionScanner .zone-hit.pressed + .zone-visible { stroke:#FCEE0A; stroke-width:4; fill:rgba(234,9,23,.24); filter:drop-shadow(0 0 6px rgba(252,238,10,.42)); opacity:1; transition:none; }
+#shotsRegionScanner .zone-hit.zone-acquiring + .zone-visible { stroke:#06BBE3; stroke-width:4; fill:rgba(234,9,23,.20); stroke-dasharray:18 11; animation:gn-scanner-acquire 420ms cubic-bezier(.2,.75,.25,1) both; }
+#shotsRegionScanner .zone-hit.selected.selected-active + .zone-visible { stroke:#06BBE3; stroke-width:3.5; stroke-dasharray:none; fill:rgba(234,9,23,.22); filter:drop-shadow(0 0 7px rgba(6,187,227,.42)); opacity:1; }
+#shotsRegionScanner .zone-hit.is-dim:not(.selected) + .zone-visible { opacity:.38; filter:none; }
+#shotsRegionScanner .scanner-selected-panel.gn-zone-confirmed { border-color:#06BBE3; animation:gn-scanner-confirm 720ms cubic-bezier(.2,.75,.25,1) both; }
+#shotsRegionScanner .scanner-selected-panel .gn-location-lock { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 0 8px; padding:9px 10px; min-height:44px; border:1px solid rgba(6,187,227,.34); border-left:3px solid #EA0917; border-radius:10px; background:rgba(5,7,8,.82); color:#06BBE3; opacity:0; transform:translateY(3px); transition:opacity 160ms ease,transform 160ms ease,border-color 160ms ease; }
+#shotsRegionScanner .scanner-selected-panel .gn-location-lock.is-on { display:flex; opacity:1; transform:translateY(0); border-left-color:#06BBE3; }
+#shotsRegionScanner .scanner-selected-panel.gn-zone-confirmed .gn-location-lock.is-on { animation:gn-scanner-rail-confirm 640ms cubic-bezier(.2,.75,.25,1) both; }
+@media (hover:hover) and (pointer:fine) { #shotsRegionScanner .zone-hit:hover + .zone-visible { stroke:#FCEE0A; fill:rgba(234,9,23,.12); filter:drop-shadow(0 0 6px rgba(252,238,10,.38)); } }
+@keyframes gn-scanner-acquire { 0% { stroke:#FCEE0A; stroke-dashoffset:58; fill:rgba(234,9,23,.30); opacity:.9; } 52% { stroke:#FCEE0A; stroke-dashoffset:21; fill:rgba(234,9,23,.24); opacity:1; } 100% { stroke:#06BBE3; stroke-dashoffset:0; fill:rgba(234,9,23,.20); opacity:1; } }
+@keyframes gn-scanner-confirm { 0% { box-shadow:0 0 0 1px #EA0917,0 0 0 rgba(234,9,23,0); } 48% { box-shadow:0 0 0 1px #FCEE0A,0 0 14px rgba(234,9,23,.16); } 100% { box-shadow:0 0 0 1px rgba(6,187,227,.42),0 0 18px rgba(6,187,227,.16); } }
+@keyframes gn-scanner-rail-confirm { 0% { border-left-color:#EA0917; box-shadow:inset 18px 0 24px rgba(234,9,23,.18); } 48% { border-left-color:#FCEE0A; box-shadow:inset 8px 0 18px rgba(252,238,10,.10); } 100% { border-left-color:#06BBE3; box-shadow:inset 0 0 0 rgba(6,187,227,0); } }
+@media (prefers-reduced-motion:reduce) { #shotsRegionScanner .zone-hit.zone-acquiring + .zone-visible, #shotsRegionScanner .zone-hit.selected-active + .zone-visible, #shotsRegionScanner .scanner-selected-panel.gn-zone-confirmed, #shotsRegionScanner .scanner-selected-panel.gn-zone-confirmed .gn-location-lock.is-on { animation:none!important; } #shotsRegionScanner .zone-visible, #shotsRegionScanner .scanner-selected-panel .gn-location-lock { transition:none!important; } }
+html[data-theme="light"] #shotsRegionScanner .zone-visible { filter:none; }
+html[data-theme="light"] #shotsRegionScanner .zone-hit.selected.selected-active + .zone-visible { stroke:#06BBE3; fill:rgba(234,9,23,.16); filter:none; }
+html[data-theme="light"] #shotsRegionScanner .scanner-selected-panel .gn-location-lock.is-on { color:#050708; border-color:rgba(6,187,227,.52); border-left-color:#06BBE3; background:rgba(255,255,255,.94); box-shadow:none; }
 @media (max-width:430px) {
   #shotsRegionScanner { padding:12px; }
   #shotsRegionScanner .site-scanner { padding:9px; border-radius:16px; }
@@ -112,6 +129,27 @@ EXPECTED_PRECISION_STYLE = """
 """
 assert "#shotsRegionScanner .biotech-zones" in precision_style, "scanner SVG selector must target .biotech-zones explicitly"
 assert re.sub(r"\s+", "", precision_style) == re.sub(r"\s+", "", EXPECTED_PRECISION_STYLE), "scanner precision CSS must match the approved authority exactly"
+for required in (
+    "#shotsRegionScanner .zone-hit.pressed + .zone-visible",
+    "#shotsRegionScanner .zone-hit.zone-acquiring + .zone-visible",
+    "#shotsRegionScanner .zone-hit.selected.selected-active + .zone-visible",
+    ".scanner-selected-panel.gn-zone-confirmed",
+    ".gn-location-lock.is-on",
+    "@media (hover:hover) and (pointer:fine)",
+    "@media (prefers-reduced-motion:reduce)",
+    "html[data-theme=\"light\"] #shotsRegionScanner .scanner-selected-panel .gn-location-lock.is-on",
+    "@keyframes gn-scanner-acquire",
+    "@keyframes gn-scanner-confirm",
+    "@keyframes gn-scanner-rail-confirm",
+):
+    assert required in precision_style, f"scanner precision CSS missing {required}"
+assert "animation-iteration-count:infinite" not in precision_style.replace(" ", ""), "scanner feedback must not loop"
+assert "will-change" not in precision_style, "scanner feedback must not permanently reserve will-change"
+assert not re.search(r"\.biotech-asset[^\{]*\{[^\}]*(?:animation|filter)\s*:", precision_style, flags=re.DOTALL), "scanner must not animate or filter body images"
+for keyframe_name in ("gn-scanner-acquire", "gn-scanner-confirm", "gn-scanner-rail-confirm"):
+    keyframe = precision_style[precision_style.index(f"@keyframes {keyframe_name}"):]
+    keyframe = keyframe[:keyframe.find("\n@", 1) if keyframe.find("\n@", 1) >= 0 else len(keyframe)]
+    assert "filter:" not in keyframe, f"{keyframe_name} must not animate filters"
 
 core_center = re.search(r"<circle\b[^>]*\bclass=\"[^\"]*\bzone-excluded\b[^\"]*\"[^>]*>", html, flags=re.DOTALL)
 assert core_center, "CORE excluded center must remain explicit"
