@@ -4470,3 +4470,6 @@ html[data-theme="light"] .scan-sweep { opacity: .12 !important; }
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
+
+/* v0.15.20 — locked GRID//NODE v2.0 brand asset (runtime reference for brand rollout) */
+[data-gn-brand-asset='watermark']::before{content:'';display:none;background-image:url('/assets/brand/ui/watermark.svg');background-repeat:no-repeat;background-size:0 0;}

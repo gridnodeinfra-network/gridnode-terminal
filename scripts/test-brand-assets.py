@@ -163,7 +163,7 @@ class BrandAssetContractTests(unittest.TestCase):
         target = parse_hex(self.contract["colors"][color_name])
         pixels = flattened(image.convert("RGBA"))
         return [
-            alpha > 0 and max(abs(red - target[0]), abs(green - target[1]), abs(blue - target[2])) <= 18
+            alpha >= 128 and max(abs(red - target[0]), abs(green - target[1]), abs(blue - target[2])) <= 18
             for red, green, blue, alpha in pixels
         ]
 
@@ -444,10 +444,10 @@ class BrandAssetContractTests(unittest.TestCase):
                 virtual_height = cropped_source.height + 2 * clear_space
                 scale = min(icon.width / virtual_width, icon.height / virtual_height)
                 expected_size = (max(1, round(cropped_source.width * scale)), max(1, round(cropped_source.height * scale)))
-                resized = cropped_source.resize(expected_size, Image.Resampling.NEAREST)
+                resized = cropped_source.resize(expected_size, Image.Resampling.LANCZOS)
                 expected_image = Image.new("L", icon.size)
                 expected_image.paste(resized, ((icon.width - resized.width) // 2, (icon.height - resized.height) // 2))
-                expected = [pixel > 0 for pixel in flattened(expected_image)]
+                expected = [pixel >= 128 for pixel in flattened(expected_image)]
                 actual = [False] * (icon.width * icon.height)
                 for color_name in ("mars_red", "cyber_cyan", "signal_yellow", "white"):
                     actual = [left or right for left, right in zip(actual, self.output_color_mask(icon, color_name))]

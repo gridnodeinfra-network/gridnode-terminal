@@ -13,6 +13,7 @@ BASE_URL="http://127.0.0.1:${PORT}"
 SERVER_PID=""
 
 cleanup() {
+  # shellcheck disable=SC2317 # invoked via trap, not direct call
   if [[ -n "$SERVER_PID" ]] && kill -0 "$SERVER_PID" 2>/dev/null; then
     kill "$SERVER_PID" 2>/dev/null || true
     wait "$SERVER_PID" 2>/dev/null || true
