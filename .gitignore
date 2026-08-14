@@ -11,3 +11,4 @@ undefined:*
 **/lighthouse.*/
 **/undefined*/
 .worktrees/
+__pycache__/
