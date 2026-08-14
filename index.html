@@ -19,11 +19,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="GRID//NODE">
-<link rel="apple-touch-startup-image" href="/assets/splash-1290x2796.png" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)">
-<meta name="theme-color" content="#050508">
-<link rel="icon" type="image/svg+xml" href="/assets/gridnode-favicon-v6.svg">
-<link rel="icon" type="image/png" sizes="32x32" href="/assets/gridnode-icon-192.png">
-<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+<meta name="theme-color" content="#050708">
+<link rel="icon" type="image/svg+xml" href="/assets/brand/icons/favicon.svg">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/brand/icons/favicon-16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/icons/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/brand/icons/apple-touch-icon.png">
+<link rel="mask-icon" href="/assets/brand/icons/pwa-maskable-512.png" color="#050708">
   <meta name="color-scheme" content="dark light">
   <meta name="supported-color-schemes" content="dark light">
 
@@ -33,7 +34,26 @@
 
 <link rel="manifest" href="/manifest.json">
 <meta name="description" content="GRID//NODE is a local-first personal biotech system for tracking GLP-1 protocols, peptides, weight, phases, and user-entered outcomes.">
-<title>GRID//NODE — Your body. Your data. Your grid.</title>
+<title>GRID//NODE</title>
+
+<style id="gn-brand-tokens">
+  /* GRID//NODE v2.0 — locked brand token authority (single source). */
+  :root {
+    --gn-brand-mars-red: #EA0917;
+    --gn-brand-cyber-cyan: #06BBE3;
+    --gn-brand-signal-yellow: #FCEE0A;
+    --gn-brand-black-mars: #050708;
+    --gn-brand-deep-navy: #0A0F14;
+    --gn-brand-steel-gray: #8A949E;
+  }
+  /* DAY OPS flat rule: light theme flattens brand-asset polish so the mark
+   * reads as printed matter, not UI chrome. */
+  html[data-theme="light"] .gn-brand-asset {
+    filter: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+</style>
 
 
 
@@ -3980,15 +4000,7 @@ function continueLocallyFromWelcome() {
       <div class="gn-lang-wrap landing-lang-wrap" data-landing-lang></div>
       <div class="gn-theme-toggle-host landing-theme-toggle-host" role="group" aria-label="THEME"></div>
       <div class="landing-node-mark" aria-label="GRID//NODE NODE mark"><svg aria-hidden="true"><use href="#gn-phase-ring"></use></svg><span>// NODE MARK</span></div>
-      <div class="landing-logo b2b-logo-surface"><svg class="gn-b2b-lockup" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1900 420" role="img" aria-label="GRID//NODE horizontal color lockup" focusable="false" aria-hidden="false">
-  <title>GRID//NODE horizontal color lockup</title>
-  <g transform="translate(70 82) scale(0.24)">
-    <circle cx="610.0" cy="585.0" r="58.0" fill="#FF2D55"/>
-      <path d="M 260.0 814.0 L 400.0 814.0 L 610.0 210.0 L 470.0 210.0 Z" fill="#00E6F0"/>
-      <path d="M 480.0 814.0 L 620.0 814.0 L 830.0 210.0 L 690.0 210.0 Z M 552.0 585.0 A 58.0 58.0 0 1 0 668.0 585.0 A 58.0 58.0 0 1 0 552.0 585.0 Z" fill="#00E6F0" fill-rule="evenodd"/>
-  </g>
-  <text x="950" y="260" text-anchor="middle" font-family="DejaVu Sans Mono, Arial, sans-serif" font-size="150" font-weight="700" letter-spacing="6"><tspan fill="#00E6F0">GRID</tspan><tspan fill="#FF2D55">//</tspan><tspan fill="#00E6F0">NODE</tspan></text>
-</svg></div>
+      <div class="landing-logo b2b-logo-surface"><img class="gn-b2b-lockup" src="/assets/brand/ui/header-lockup.svg" alt="GRID//NODE horizontal color lockup" width="1900" height="420" decoding="async"></div>
       <div class="landing-kicker" data-i18n="landing.kicker">// PERSONAL BIOTECH SYSTEM //</div>
       <h1 class="landing-headline"><span data-i18n="landing.headlineLine1">Your biology.</span><br><span data-i18n="landing.headlineLine2">Your timeline.</span><br><span data-i18n="landing.headlineLine3">Your grid.</span></h1>
       <p class="landing-copy"><span data-i18n="landing.heroCopy">Track GLP-1 protocols, compound and research grade peptides, weight, and the personal biotech patterns that connect them.</span><br><span data-i18n="landing.localCopy">Sign in with Google to sync your grid across every device.</span></p>
@@ -4126,18 +4138,8 @@ function continueLocallyFromWelcome() {
   <div class="boot-command-deck" role="status" aria-live="polite" aria-label="GRID//NODE Personal Biotech Operating System initialization">
     <div class="boot-deck-kicker"><span data-i18n="boot.kicker">PERSONAL BIOTECH OPERATING SYSTEM</span><b data-i18n="boot.statusInitializing">INITIALIZING</b></div>
     <div class="boot-b2b-stack" aria-label="GRID//NODE startup">
-    <div class="boot-b2b-symbol-wrap"><svg class="gn-b2b-symbol" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="GRID//NODE B2-B primary color symbol" focusable="false" aria-hidden="false">
-  <title>GRID//NODE B2-B primary color symbol</title>
-  <circle cx="610.0" cy="585.0" r="58.0" fill="#FF2D55"/>
-  <path d="M 260.0 814.0 L 400.0 814.0 L 610.0 210.0 L 470.0 210.0 Z" fill="#00E6F0"/>
-  <path d="M 480.0 814.0 L 620.0 814.0 L 830.0 210.0 L 690.0 210.0 Z M 552.0 585.0 A 58.0 58.0 0 1 0 668.0 585.0 A 58.0 58.0 0 1 0 552.0 585.0 Z" fill="#00E6F0" fill-rule="evenodd"/>
-</svg></div>
-    <div class="boot-b2b-wordmark-wrap"><svg class="gn-b2b-wordmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 320" role="img" aria-label="GRID//NODE color wordmark" focusable="false" aria-hidden="false">
-  <title>GRID//NODE color wordmark</title>
-  <text x="800" y="205" text-anchor="middle" font-family="DejaVu Sans Mono, Arial, sans-serif" font-size="150" font-weight="700" letter-spacing="6">
-    <tspan fill="#00E6F0">GRID</tspan><tspan fill="#FF2D55">//</tspan><tspan fill="#00E6F0">NODE</tspan>
-  </text>
-</svg></div>
+    <div class="boot-b2b-symbol-wrap"><img class="gn-b2b-symbol" src="/assets/brand/ui/boot-mark.svg" alt="GRID//NODE B2-B primary color symbol" width="1024" height="1024" decoding="async"></div>
+    <div class="boot-b2b-wordmark-wrap"><img class="gn-b2b-wordmark" src="/assets/brand/ui/header-lockup.svg" alt="GRID//NODE color wordmark" width="1600" height="320" decoding="async"></div>
     <div class="boot-slogan" data-i18n="boot.tagline">Your body. Your data. Your grid.</div>
   </div>
   <div class="boot-terminal boot-hud-startup" id="bootTerm"></div>
@@ -4207,15 +4209,10 @@ function continueLocallyFromWelcome() {
 <div class="screen" id="app" role="main">
   <div class="topbar">
     
-    <div class="app-wordmark app-wordmark-b2b" role="button" tabindex="0" onclick="showPage('Dash',document.getElementById('navDash'))" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Dash',document.getElementById('navDash'));}" title="Return to DASH" aria-label="Return to DASH" data-i18n-title="nav.returnDash" data-i18n-aria-label="nav.returnDash"><svg class="gn-b2b-wordmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 320" role="img" aria-label="GRID//NODE color wordmark" focusable="false" aria-hidden="false">
-  <title>GRID//NODE color wordmark</title>
-  <text x="800" y="205" text-anchor="middle" font-family="DejaVu Sans Mono, Arial, sans-serif" font-size="150" font-weight="700" letter-spacing="6">
-    <tspan fill="#00E6F0">GRID</tspan><tspan fill="#FF2D55">//</tspan><tspan fill="#00E6F0">NODE</tspan>
-  </text>
-</svg></div>
+    <div class="app-wordmark app-wordmark-b2b" role="button" tabindex="0" onclick="showPage('Dash',document.getElementById('navDash'))" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Dash',document.getElementById('navDash'));}" title="Return to DASH" aria-label="Return to DASH" data-i18n-title="nav.returnDash" data-i18n-aria-label="nav.returnDash"><img class="gn-b2b-wordmark" src="/assets/brand/ui/header-lockup.svg" alt="GRID//NODE color wordmark" width="1600" height="320" decoding="async"></div>
     <div class="topbar-actions">
       <button class="topbar-btn topbar-hub-btn" type="button" onclick="toggleProfileHub()" id="topAva" aria-label="Open NODE PROFILE HUB">
-        <img src="/assets/gridnode-insignia-v6.png" alt="GRID//NODE mark" width="40" height="40" id="topAvaIcon">
+        <img src="/assets/brand/icons/pwa-192.png" alt="GRID//NODE mark" width="40" height="40" id="topAvaIcon" decoding="async">
         <span class="topbar-hub-label">HUB</span>
       </button>
     </div>
@@ -4454,6 +4451,7 @@ function continueLocallyFromWelcome() {
             <p data-i18n="shots.userEnteredLocation">USER-ENTERED LOCATION TRACKING</p>
           </div>
           <button id="gnScannerAudioSwitch" class="scanner-audio-switch" type="button" role="switch" aria-checked="false" aria-label="Scanner audio">SCANNER AUDIO // <span>OFF</span></button>
+          <img class="gn-scanner-badge" src="/assets/brand/ui/scanner-badge.svg" alt="GRID//NODE scanner badge" width="48" height="48" decoding="async">
         </div>
         <div class="scanner-mode-tabs" role="tablist" aria-label="Body scanner mode" data-i18n-aria-label="shot.zoneModeAria">
           <button class="scanner-mode-btn active" type="button" role="tab" data-mode="core" onclick="setScannerMode('core',this)" data-i18n="shots.modeCore" aria-selected="true">CORE</button>
@@ -4875,7 +4873,7 @@ function continueLocallyFromWelcome() {
       box-shadow:0 0 14px rgba(0,212,255,0.3);
       background:#0a0a14;background:var(--surface, #0a0a14);display:flex;align-items:center;justify-content:center;
     ">
-      <img id="profAvaIcon" src="/assets/gridnode-icon.svg" alt="GRID//NODE NODE mark" width="64" height="64">
+      <img id="profAvaIcon" src="/assets/brand/icons/pwa-512.png" alt="GRID//NODE NODE mark" width="64" height="64" decoding="async">
     </div>
     
     <div style="flex:1;min-width:0">

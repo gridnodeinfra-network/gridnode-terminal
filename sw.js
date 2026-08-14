@@ -4,7 +4,7 @@
  */
 'use strict';
 
-const RELEASE = '20260812.8';
+const RELEASE = '20260812.9';
 const CACHE_NAME = 'gridnode-shell-20260812.9';
 const V = '?v=' + RELEASE;
 const SHELL = [
@@ -32,8 +32,27 @@ const SHELL = [
   '/js/gridnode-onboarding.js' + V,
   '/i18n/en.json',
   '/i18n/es-419.json',
-  '/assets/gridnode-icon.svg',
+  // Locked GRID//NODE v2 brand shell assets (icons + UI derivatives + masters).
+  '/assets/brand/icons/favicon.svg' + V,
+  '/assets/brand/icons/favicon-16.png' + V,
+  '/assets/brand/icons/favicon-32.png' + V,
+  '/assets/brand/icons/apple-touch-icon.png' + V,
+  '/assets/brand/icons/pwa-192.png' + V,
+  '/assets/brand/icons/pwa-512.png' + V,
+  '/assets/brand/icons/pwa-maskable-512.png' + V,
+  '/assets/brand/ui/header-lockup.svg' + V,
+  '/assets/brand/ui/boot-mark.svg' + V,
+  '/assets/brand/ui/scanner-badge.svg' + V,
+  '/assets/brand/ui/update-badge.svg' + V,
+  '/assets/brand/ui/watermark.svg' + V,
+  '/assets/brand/master/gridnode-core-mark.svg' + V,
+  '/assets/brand/master/gridnode-wordmark.svg' + V,
+  '/assets/brand/master/gridnode-lockup-horizontal.svg' + V,
+  '/assets/brand/master/gridnode-lockup-stacked.svg' + V,
   '/assets/preview-dashboard.png',
+  '/assets/scanner/core/core-cinematic.webp' + V,
+  '/assets/scanner/legs/legs-cinematic.webp' + V,
+  '/assets/scanner/arms/arms-cinematic.webp' + V,
   '/assets/scanner/core/core-light.webp',
   '/assets/scanner/core/core-medium.webp',
   '/assets/scanner/core/core-deep.webp',
