@@ -167,7 +167,7 @@ def audio_controller_fixture(content, label):
     fixture = matches[0]
     for required in (
         "gn_scanner_audio_v1",
-        "GN_SCANNER_AUDIO_MASTER_GAIN = 0.035",
+        "GN_SCANNER_AUDIO_MASTER_GAIN = 0.6",
         "GN_SCANNER_AUDIO_CONTACT_THROTTLE_MS = 45",
         "const token = Symbol('GNScannerAudioGesture')",
         "event?.isTrusted === true ? token : null",

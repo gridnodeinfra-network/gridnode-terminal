@@ -2112,7 +2112,7 @@ function setShotHistoryView(view) {
 
 /* GN_SCANNER_AUDIO_CONTROLLER_V1_START */
 const GN_SCANNER_AUDIO_STORAGE_KEY = 'gn_scanner_audio_v1';
-const GN_SCANNER_AUDIO_MASTER_GAIN = 0.035;
+const GN_SCANNER_AUDIO_MASTER_GAIN = 0.6;
 const GN_SCANNER_AUDIO_CONTACT_THROTTLE_MS = 45;
 const gnScannerAudioGesture = (() => {
   const token = Symbol('GNScannerAudioGesture');
@@ -2215,7 +2215,7 @@ function gnScannerAudioPlayContact(gestureToken) {
   const context = gnScannerAudioContextForGesture(gestureToken);
   if (!context) return;
   // 24ms high-frequency tap (sine, 920Hz, fast decay)
-  gnScannerAudioTone(0.024, 920, 0.024);
+  gnScannerAudioTone(0.024, 920, 0.5);
 }
 
 function gnScannerAudioPlayLock(gestureToken) {
@@ -2223,8 +2223,8 @@ function gnScannerAudioPlayLock(gestureToken) {
   const context = gnScannerAudioContextForGesture(gestureToken);
   if (!context) return;
   // 110ms descending confirmation tone (sine, 320->96Hz, slow decay)
-  gnScannerAudioTone(0.11, 320, 0.022, 0);
-  gnScannerAudioTone(0.11, 96, 0.022, 0.11);
+  gnScannerAudioTone(0.11, 320, 0.45, 0);
+  gnScannerAudioTone(0.11, 96, 0.45, 0.11);
 }
 
 function gnScannerAudioToggle() {
