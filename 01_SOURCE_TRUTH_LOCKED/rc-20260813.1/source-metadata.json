@@ -1,0 +1,227 @@
+{
+  "created": "2026-08-13T21:30:00Z",
+  "source_version": "0.15.20",
+  "build": "20260813.1",
+  "files": {
+    "index.html": {
+      "bytes": 487171,
+      "sha256": "a488fcebfed1f7161ca4b1b613d47227f7e35bd548b59034136abf03aab28ce1"
+    },
+    "manifest.json": {
+      "bytes": 1547,
+      "sha256": "bc3b6ad8fa6992bd8c5555477756cd2bc3ac6179b6a258aca9dcfd7f5a68f413"
+    },
+    "sw.js": {
+      "bytes": 5934,
+      "sha256": "a2c7719c30b9d87a55605de6ba3877c643a008d2b8cf410bc1511882488878e9"
+    },
+    "js/gridnode-bundle.js": {
+      "bytes": 396055,
+      "sha256": "bfe241f596deefcd423798464c03aa49f62e23a4baf7551ad68556c437b05e14"
+    },
+    "js/gridnode-i18n.js": {
+      "bytes": 6298,
+      "sha256": "dc6eb685b6faed9966f98771945350ecdb9428b048b85d5819d33888fb960308"
+    },
+    "js/gridnode-i18n-overlay.js": {
+      "bytes": 3913,
+      "sha256": "fbaa59331bcaaa5a7967c5dbb92d8afa449cff0e68549f827215108a7a2b9b58"
+    },
+    "js/gridnode-modules.js": {
+      "bytes": 86843,
+      "sha256": "852139f58c3fda3aabd7890ab17f77e766e3338462fc015f6a7d2fa410ea41bc"
+    },
+    "js/gridnode-motivation.js": {
+      "bytes": 14265,
+      "sha256": "308b9ead1027017b160ec688872736864103dc666a62b3a0da113e5f7e7cdf07"
+    },
+    "js/gridnode-native.js": {
+      "bytes": 29439,
+      "sha256": "3960957fcf03dfc23c2ccf1a0cc19ac96111735bd8227b824ec409bc5f437f1c"
+    },
+    "js/gridnode-onboarding.js": {
+      "bytes": 31325,
+      "sha256": "18269774e547bda5ef2c31d2be623445a677f56602b7779f564687deec9830ef"
+    },
+    "js/gridnode-peptide-pk.js": {
+      "bytes": 16211,
+      "sha256": "b866fa6b3b8a70dc5226b38545146edc098721c10b2c73bc1f14a52521c26c10"
+    },
+    "js/gridnode-peptide-viz.js": {
+      "bytes": 45292,
+      "sha256": "9c72448bd11899209ddc1a00c614502bd58f48ccb3a7839709d042bb36691ba1"
+    },
+    "js/gridnode-phase-sphere.js": {
+      "bytes": 5688,
+      "sha256": "bb943f7d35938c18f019cee938ba3f364c617bbde95f062a79cb5f85fc8aa65a"
+    },
+    "js/gridnode-product-completion.js": {
+      "bytes": 35915,
+      "sha256": "777f733f8536d644d5ab79cc48c0d723b53e3ee4b20be52c7164d06de5eea07e"
+    },
+    "js/gridnode-telemetry.js": {
+      "bytes": 31448,
+      "sha256": "0b0d2c0229a202e63f7514332ba422919307f5a147c370d6806e86833f16cd08"
+    },
+    "js/gridnode-theme.js": {
+      "bytes": 8692,
+      "sha256": "0e3461f6c13ed29bd5f34d11e6a8cb248103c3a4de77d4edc987097a6d776fe2"
+    },
+    "js/gridnode-version.js": {
+      "bytes": 345,
+      "sha256": "44c26df6321afae25a2853ca5362113ced0f63ff778d8650a32e33fa99f3383a"
+    },
+    "js/gridnode-whatsnew.js": {
+      "bytes": 79497,
+      "sha256": "39981e83c87b3264bd101d8db9c6666b34e5e9f8b967afa4ca2bb6670730ce1a"
+    },
+    "js/gridnode-app.js": {
+      "bytes": 30630,
+      "sha256": "e0fd8f62bfb964f40f1740478f1d1cda1325373bad06c1e542bd81120d619a0f"
+    },
+    "css/daylight-nexus-pilot.css": {
+      "bytes": 83968,
+      "sha256": "d70e86ab1b121329790e533f38dcf5cadfce255c674869490ceb58526d8d8a0f"
+    },
+    "css/gridnode-native.css": {
+      "bytes": 225167,
+      "sha256": "654c20577931feb8b45ee24a7ef0ff0090aab116ddd3f949f5b3a0691725c864"
+    },
+    "i18n/en.json": {
+      "bytes": 90528,
+      "sha256": "48c4765113b6033ac15d7704bdebcf51d8f087df1e6681487ffcbccc6ef26fe0"
+    },
+    "i18n/es-419.json": {
+      "bytes": 100477,
+      "sha256": "421bf460b83e83100ee5aca16335a52de1b3b1671952d4c9f8a0a3e70c7a586e"
+    },
+    "assets/scanner/core/core.webp": {
+      "bytes": 85032,
+      "sha256": "00bfa1c453dab8b19e348c1b6a020d35f0f2148dd2ec8eac4717cea04f50d335"
+    },
+    "assets/scanner/legs/legs.webp": {
+      "bytes": 66348,
+      "sha256": "47090669a31011bd0ed3adaf9877a9a31df43c0f868a7f72efff1cf9d98e272c"
+    },
+    "assets/scanner/arms/arms.webp": {
+      "bytes": 104550,
+      "sha256": "1c20e667d637e878481ad151a5c5105363610d60d2b7fa438dbffa47112b5e8d"
+    },
+    "scripts/test-mode-switching.py": {
+      "bytes": 4384,
+      "sha256": "c8c8b9554c3ee3b03ebd6198e31b1a9f759b567bc85a88411181ffae1a9c2671"
+    },
+    "assets/brand/brand-manifest.json": {
+      "bytes": 6644,
+      "sha256": "ad44f23f67206b7d1b107cbce30bebd9ae2306d58b0e15d4742c041506e898c1"
+    },
+    "assets/brand/source/GRIDNODE-BRAND-SYSTEM-v2-APPROVED.png": {
+      "bytes": 1405361,
+      "sha256": "c28b3e8c37867be291a281be94cfe5abfa50504526ef6fcef63e1495d03aab0f"
+    },
+    "assets/brand/master/gridnode-core-mark.svg": {
+      "bytes": 2219,
+      "sha256": "edc589412dcbef27a1f42fa4cc670b8235625275d6c7b8d94bedbc363dda75f8"
+    },
+    "assets/brand/master/gridnode-core-mark-mono-black.svg": {
+      "bytes": 2253,
+      "sha256": "e302d2abf3cfc4d54a51d8ae22bfc5216d2071e0a32a131e426a6526e788eb97"
+    },
+    "assets/brand/master/gridnode-core-mark-mono-white.svg": {
+      "bytes": 2253,
+      "sha256": "29fcbec0215896f189dd5216670507a805f5544aa55400f2dcd3d7cf1f3d74ae"
+    },
+    "assets/brand/master/gridnode-lockup-horizontal.svg": {
+      "bytes": 8507,
+      "sha256": "5142212682ffa438b34892a5c2be8b2f1903e74a5a8fe6556d25cbcda459950c"
+    },
+    "assets/brand/master/gridnode-lockup-stacked.svg": {
+      "bytes": 8505,
+      "sha256": "817863902cd38981143ef08bc47acddd281b59a1b4bc50f3807cb6dd32ef0c2e"
+    },
+    "assets/brand/master/gridnode-wordmark.svg": {
+      "bytes": 6499,
+      "sha256": "78369a29ba7da29f25a0827039dc276dfcc825d1e5c122585c46956352f7915a"
+    },
+    "assets/brand/icons/favicon.svg": {
+      "bytes": 2239,
+      "sha256": "9c56e85c029839e7e5e6c12d6e08f70e7f0ec231da061616f1746aa109017661"
+    },
+    "assets/brand/icons/favicon-16.png": {
+      "bytes": 355,
+      "sha256": "495b9ba4303fd6141eb46928e54a583dda19040b57699291ec981f5e4241a11c"
+    },
+    "assets/brand/icons/favicon-32.png": {
+      "bytes": 786,
+      "sha256": "e3689c889d1190a8ecce9ece325821ba5a1b8726e30e039d8a82f2ee1c5d6d46"
+    },
+    "assets/brand/icons/apple-touch-icon.png": {
+      "bytes": 3358,
+      "sha256": "8b1d8bbc0b8050160f3270d407e4c401955f975337b11d689e7d939428e725e5"
+    },
+    "assets/brand/icons/pwa-192.png": {
+      "bytes": 3713,
+      "sha256": "47801f4e1c1a2a8b41bf2925ea99788ac6aea00cd7f8e89a7fa8262467d19a17"
+    },
+    "assets/brand/icons/pwa-512.png": {
+      "bytes": 9615,
+      "sha256": "31f02d97a4b95fbed09baf6b3e9859ca880348f80e651cae7027e1890202a76f"
+    },
+    "assets/brand/icons/pwa-maskable-512.png": {
+      "bytes": 7260,
+      "sha256": "932ccd713197dabb6ef4cdebfd3d0a46631f82e5a63a584e206b9f15af9ad510"
+    },
+    "assets/brand/ui/boot-mark.svg": {
+      "bytes": 2225,
+      "sha256": "2298160948de2cd902cdcfed68fa93181a2f90b5d2fcacbf4aefc1b2ee60fc84"
+    },
+    "assets/brand/ui/header-lockup.svg": {
+      "bytes": 8499,
+      "sha256": "9fc67548fc539ee296caebc07d75d26d2c18ec8c64269d13451b494f11fc0c40"
+    },
+    "assets/brand/ui/scanner-badge.svg": {
+      "bytes": 2340,
+      "sha256": "bc8c39ae9f8a69b71678faa544584a5dd525bf3ca041e3a69fc32206c07f6a1c"
+    },
+    "assets/brand/ui/update-badge.svg": {
+      "bytes": 2341,
+      "sha256": "9446e4254a4609c9389e938fad1c3f0d9021793d15bbb8577479abc44bbe7f73"
+    },
+    "assets/brand/ui/watermark.svg": {
+      "bytes": 8521,
+      "sha256": "3307bd9e30a16c310b519a4ce8124216a3465e9a1986b4adcfa3d68d8fadd5b2"
+    },
+    "assets/brand/proof/core-render.png": {
+      "bytes": 10538,
+      "sha256": "33e0a7fc2620543c1107e2f9ef3bbe802d9a52da4fd7335447ffb4e54030fb73"
+    },
+    "assets/brand/proof/wordmark-render.png": {
+      "bytes": 2866,
+      "sha256": "55980646705e2fa2ffd5b7e123eb05860c5ea225be92b2a1e6f215e5ae88d946"
+    },
+    "assets/brand/proof/small-size-contact-sheet.png": {
+      "bytes": 29349,
+      "sha256": "9caa20c44d7d8bf279b4e43c0f35c1d261f7a468ed9ea5943bc1bb195d775d16"
+    },
+    "scripts/build-brand-assets.py": {
+      "bytes": 25984,
+      "sha256": "6754e7a268accef6bc0f864f904c624624420a3e0091ade26c3445242bd10fc2"
+    },
+    "scripts/render-brand-proofs.cjs": {
+      "bytes": 2318,
+      "sha256": "db2d80f1872762474bff99ddbd7ad934cf6d2d8dbe6efa065059c64a1929d93b"
+    },
+    "scripts/test-brand-rollout.py": {
+      "bytes": 10162,
+      "sha256": "fd56761c957ef89956ddef47e6225c84b1fe85c13ff75f8ed0e7e89489e37e84"
+    },
+    "scripts/run-brand-asset-tests.sh": {
+      "bytes": 153,
+      "sha256": "8424f1b2beda112ee4f804fd84d508d04bf91807c2ef7e43e6811a39e12098e3"
+    },
+    "scripts/test-brand-assets.py": {
+      "bytes": 25091,
+      "sha256": "e67b66356001a22d5150b746da62d92564b8cbddedddd098a8561cf9238ccda8"
+    }
+  }
+}

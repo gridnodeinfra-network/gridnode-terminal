@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-LOCKED_ROOT="$REPO_ROOT/01_SOURCE_TRUTH_LOCKED/rc-20260812.9"
+LOCKED_ROOT="$REPO_ROOT/01_SOURCE_TRUTH_LOCKED/rc-20260813.1"
 
 require_command() { command -v "$1" >/dev/null 2>&1 || { printf 'ERROR: missing command: %s\n' "$1" >&2; exit 1; }; }
 for command_name in cmp find grep node shellcheck sha256sum stat; do require_command "$command_name"; done
