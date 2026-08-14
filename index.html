@@ -1497,6 +1497,20 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 .biotech-stage .zone-visible{
   filter:drop-shadow(0 0 4px rgba(6,187,227,0.25));
 }
+/* ARMS scanner: unselected zones get a more prominent cyan contour so all 4
+   panels are unmistakably visible against the dark body silhouette.
+   Scoped to the upper stage so CORE/LEGS keep their current weight. */
+.biotech-stage[data-view="upper"] .zone-visible{
+  stroke:rgba(6,187,227,0.95);
+  stroke-width:3.25;
+  fill:rgba(6,187,227,0.06);
+}
+.biotech-stage[data-view="upper"] .zone-hit:hover + .zone-visible,
+.biotech-stage[data-view="upper"] .zone-hit:focus-visible + .zone-visible{
+  stroke:rgba(6,187,227,1);
+  stroke-width:3.75;
+  fill:rgba(6,187,227,0.16);
+}
 .biotech-stage .zone-hit:hover{
   filter:drop-shadow(0 0 6px rgba(6,187,227,0.4));
 }
@@ -4488,18 +4502,22 @@ function continueLocallyFromWelcome() {
                 <div class="biotech-stage-glow" aria-hidden="true"></div>
                 <img class="biotech-asset" src="/assets/scanner/arms/arms.webp" width="1024" height="1024" alt="GRID//NODE ARMS rear-upper-arm diagnostic shell" loading="lazy">
                 <svg class="biotech-zones" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="ARMS tracking zones" role="group">
-                  <!-- LEFT UPPER ARM (posterior) -->
-                  <path class="zone-path zone-hit" data-mode="upper" data-site="Left Back Upper Arm — Upper" data-zone-key="zone.leftBackUpperArmUpper" d="M 100,290 L 360,290 L 360,560 L 100,560 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Back Upper Arm — Upper"/>
-                  <path class="zone-visible" d="M 130,320 Q 200,310 280,320 Q 320,325 340,340 L 340,540 L 130,540 Q 115,540 112,520 L 112,340 Q 115,320 130,320 Z"/>
-                  <!-- LEFT LOWER ARM (posterior) -->
-                  <path class="zone-path zone-hit" data-mode="upper" data-site="Left Back Upper Arm — Lower" data-zone-key="zone.leftBackUpperArmLower" d="M 110,520 L 360,520 L 360,750 L 110,750 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Back Upper Arm — Lower"/>
-                  <path class="zone-visible" d="M 130,560 L 340,560 L 340,720 Q 335,730 320,730 L 145,730 Q 130,730 125,710 L 125,580 Q 125,560 130,560 Z"/>
-                  <!-- RIGHT UPPER ARM (posterior) -->
-                  <path class="zone-path zone-hit" data-mode="upper" data-site="Right Back Upper Arm — Upper" data-zone-key="zone.rightBackUpperArmUpper" d="M 640,290 L 900,290 L 900,560 L 640,560 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Back Upper Arm — Upper"/>
-                  <path class="zone-visible" d="M 660,320 Q 720,310 800,320 Q 870,310 885,320 Q 888,330 888,340 L 888,520 Q 885,540 870,540 L 660,540 Z"/>
-                  <!-- RIGHT LOWER ARM (posterior) -->
-                  <path class="zone-path zone-hit" data-mode="upper" data-site="Right Back Upper Arm — Lower" data-zone-key="zone.rightBackUpperArmLower" d="M 640,520 L 890,520 L 890,750 L 640,750 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Back Upper Arm — Lower"/>
-                  <path class="zone-visible" d="M 660,560 L 870,560 Q 875,560 875,580 L 875,710 Q 870,730 855,730 L 680,730 Q 665,730 660,720 Z"/>
+                  <!-- LEFT ARM: rotated -5°. Zones sit on the triceps surface (x=166-222), with the dark gap (x=122-165) and outer edge (x=102-121) clearly separate. -->
+                  <g class="arm-left" transform="rotate(-5 194 415)">
+                    <!-- LEFT UPPER TRICEPS: 56w x 170h on triceps ridge. Slight Q-bow on top (LEGS upper). Tapered: slightly wider at muscle belly. -->
+                    <path class="zone-path zone-hit" data-mode="upper" data-site="Left Back Upper Arm — Upper" data-zone-key="zone.leftBackUpperArmUpper" d="M 156,240 L 232,240 L 232,430 L 156,430 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Back Upper Arm — Upper"/>
+                    <path class="zone-visible" d="M 176,252 Q 194,247 212,252 Q 222,254 222,264 L 222,400 Q 222,410 212,412 L 176,412 Q 166,410 166,400 L 166,264 Q 166,254 176,252 Z"/>
+                    <!-- LEFT LOWER TRICEPS: 56w x 150h on triceps ridge, below upper. Clean rounded panel (no taper, no bow). -->
+                    <path class="zone-path zone-hit" data-mode="upper" data-site="Left Back Upper Arm — Lower" data-zone-key="zone.leftBackUpperArmLower" d="M 156,422 L 232,422 L 232,588 L 156,588 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Back Upper Arm — Lower"/>
+                    <path class="zone-visible" d="M 176,434 L 212,434 Q 222,434 222,444 L 222,568 Q 222,578 212,578 L 176,578 Q 166,578 166,568 L 166,444 Q 166,434 176,434 Z"/>
+                  </g>
+                  <!-- RIGHT ARM: rotated +5° (mirror). Zones on triceps ridge (x=778-834). -->
+                  <g class="arm-right" transform="rotate(5 806 415)">
+                    <path class="zone-path zone-hit" data-mode="upper" data-site="Right Back Upper Arm — Upper" data-zone-key="zone.rightBackUpperArmUpper" d="M 768,240 L 844,240 L 844,430 L 768,430 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Back Upper Arm — Upper"/>
+                    <path class="zone-visible" d="M 828,252 Q 806,247 788,252 Q 778,254 778,264 L 778,400 Q 778,410 788,412 L 824,412 Q 834,410 834,400 L 834,264 Q 834,254 828,252 Z"/>
+                    <path class="zone-path zone-hit" data-mode="upper" data-site="Right Back Upper Arm — Lower" data-zone-key="zone.rightBackUpperArmLower" d="M 768,422 L 844,422 L 844,588 L 768,588 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Back Upper Arm — Lower"/>
+                    <path class="zone-visible" d="M 828,434 L 792,434 Q 778,434 778,444 L 778,568 Q 778,578 788,578 L 824,578 Q 834,578 834,568 L 834,444 Q 834,434 828,434 Z"/>
+                  </g>
                 </svg>
                 <div class="biotech-corner tl" aria-hidden="true"></div>
                 <div class="biotech-corner tr" aria-hidden="true"></div>
