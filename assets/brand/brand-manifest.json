@@ -1,0 +1,145 @@
+{
+  "canonical_name": "GRID//NODE",
+  "source_sha256": "c28b3e8c37867be291a281be94cfe5abfa50504526ef6fcef63e1495d03aab0f",
+  "source_size": [
+    1536,
+    1024
+  ],
+  "opencv_version": "4.12.0",
+  "pillow_version": "12.3.0",
+  "numpy_version": "2.2.6",
+  "core_geometry_sha256": "66cecf8128c9cefa3b8ef2c047655e630a513fad16b75016ee81309d85402d31",
+  "wordmark_geometry_sha256": "f63c1fad5ab9f083160e331b5d10560ab6eda67dea1d0fc6d740d3d7dfb89784",
+  "outputs": [
+    {
+      "path": "assets/brand/master/gridnode-core-mark.svg",
+      "uses_core": true,
+      "uses_wordmark": false,
+      "core_geometry_sha256": "66cecf8128c9cefa3b8ef2c047655e630a513fad16b75016ee81309d85402d31",
+      "master_geometry_sha256": "17a744251e89249bbb3dd18e7c0054cce2e3fc6bfe03c83387b7efe320a869cb"
+    },
+    {
+      "path": "assets/brand/master/gridnode-wordmark.svg",
+      "uses_core": false,
+      "uses_wordmark": true,
+      "wordmark_geometry_sha256": "f63c1fad5ab9f083160e331b5d10560ab6eda67dea1d0fc6d740d3d7dfb89784",
+      "master_geometry_sha256": "55195df9838d4797d2738496a9349f908da692416b54df1cc967d0cfe2c6d5e0"
+    },
+    {
+      "path": "assets/brand/master/gridnode-lockup-horizontal.svg",
+      "uses_core": true,
+      "uses_wordmark": true,
+      "core_geometry_sha256": "66cecf8128c9cefa3b8ef2c047655e630a513fad16b75016ee81309d85402d31",
+      "wordmark_geometry_sha256": "f63c1fad5ab9f083160e331b5d10560ab6eda67dea1d0fc6d740d3d7dfb89784",
+      "master_geometry_sha256": "2b46f1af682c157d963c67756e9127006babfa569067f7bd74f67853381a4889"
+    },
+    {
+      "path": "assets/brand/master/gridnode-lockup-stacked.svg",
+      "uses_core": true,
+      "uses_wordmark": true,
+      "core_geometry_sha256": "66cecf8128c9cefa3b8ef2c047655e630a513fad16b75016ee81309d85402d31",
+      "wordmark_geometry_sha256": "f63c1fad5ab9f083160e331b5d10560ab6eda67dea1d0fc6d740d3d7dfb89784",
+      "master_geometry_sha256": "2b46f1af682c157d963c67756e9127006babfa569067f7bd74f67853381a4889"
+    },
+    {
+      "path": "assets/brand/master/gridnode-core-mark-mono-white.svg",
+      "uses_core": true,
+      "uses_wordmark": false,
+      "core_geometry_sha256": "66cecf8128c9cefa3b8ef2c047655e630a513fad16b75016ee81309d85402d31",
+      "master_geometry_sha256": "17a744251e89249bbb3dd18e7c0054cce2e3fc6bfe03c83387b7efe320a869cb"
+    },
+    {
+      "path": "assets/brand/master/gridnode-core-mark-mono-black.svg",
+      "uses_core": true,
+      "uses_wordmark": false,
+      "core_geometry_sha256": "66cecf8128c9cefa3b8ef2c047655e630a513fad16b75016ee81309d85402d31",
+      "master_geometry_sha256": "17a744251e89249bbb3dd18e7c0054cce2e3fc6bfe03c83387b7efe320a869cb"
+    },
+    {
+      "path": "assets/brand/icons/favicon.svg",
+      "uses_core": true,
+      "uses_wordmark": false,
+      "core_geometry_sha256": "66cecf8128c9cefa3b8ef2c047655e630a513fad16b75016ee81309d85402d31",
+      "master_geometry_sha256": "17a744251e89249bbb3dd18e7c0054cce2e3fc6bfe03c83387b7efe320a869cb"
+    },
+    {
+      "path": "assets/brand/icons/favicon-16.png",
+      "uses_core": true,
+      "uses_wordmark": false,
+      "core_geometry_sha256": "66cecf8128c9cefa3b8ef2c047655e630a513fad16b75016ee81309d85402d31",
+      "master_geometry_sha256": "17a744251e89249bbb3dd18e7c0054cce2e3fc6bfe03c83387b7efe320a869cb"
+    },
+    {
+      "path": "assets/brand/icons/favicon-32.png",
+      "uses_core": true,
+      "uses_wordmark": false,
+      "core_geometry_sha256": "66cecf8128c9cefa3b8ef2c047655e630a513fad16b75016ee81309d85402d31",
+      "master_geometry_sha256": "17a744251e89249bbb3dd18e7c0054cce2e3fc6bfe03c83387b7efe320a869cb"
+    },
+    {
+      "path": "assets/brand/icons/apple-touch-icon.png",
+      "uses_core": true,
+      "uses_wordmark": false,
+      "core_geometry_sha256": "66cecf8128c9cefa3b8ef2c047655e630a513fad16b75016ee81309d85402d31",
+      "master_geometry_sha256": "17a744251e89249bbb3dd18e7c0054cce2e3fc6bfe03c83387b7efe320a869cb"
+    },
+    {
+      "path": "assets/brand/icons/pwa-192.png",
+      "uses_core": true,
+      "uses_wordmark": false,
+      "core_geometry_sha256": "66cecf8128c9cefa3b8ef2c047655e630a513fad16b75016ee81309d85402d31",
+      "master_geometry_sha256": "17a744251e89249bbb3dd18e7c0054cce2e3fc6bfe03c83387b7efe320a869cb"
+    },
+    {
+      "path": "assets/brand/icons/pwa-512.png",
+      "uses_core": true,
+      "uses_wordmark": false,
+      "core_geometry_sha256": "66cecf8128c9cefa3b8ef2c047655e630a513fad16b75016ee81309d85402d31",
+      "master_geometry_sha256": "17a744251e89249bbb3dd18e7c0054cce2e3fc6bfe03c83387b7efe320a869cb"
+    },
+    {
+      "path": "assets/brand/icons/pwa-maskable-512.png",
+      "uses_core": true,
+      "uses_wordmark": false,
+      "core_geometry_sha256": "66cecf8128c9cefa3b8ef2c047655e630a513fad16b75016ee81309d85402d31",
+      "master_geometry_sha256": "17a744251e89249bbb3dd18e7c0054cce2e3fc6bfe03c83387b7efe320a869cb"
+    },
+    {
+      "path": "assets/brand/ui/header-lockup.svg",
+      "uses_core": true,
+      "uses_wordmark": true,
+      "core_geometry_sha256": "66cecf8128c9cefa3b8ef2c047655e630a513fad16b75016ee81309d85402d31",
+      "wordmark_geometry_sha256": "f63c1fad5ab9f083160e331b5d10560ab6eda67dea1d0fc6d740d3d7dfb89784",
+      "master_geometry_sha256": "2b46f1af682c157d963c67756e9127006babfa569067f7bd74f67853381a4889"
+    },
+    {
+      "path": "assets/brand/ui/boot-mark.svg",
+      "uses_core": true,
+      "uses_wordmark": false,
+      "core_geometry_sha256": "66cecf8128c9cefa3b8ef2c047655e630a513fad16b75016ee81309d85402d31",
+      "master_geometry_sha256": "17a744251e89249bbb3dd18e7c0054cce2e3fc6bfe03c83387b7efe320a869cb"
+    },
+    {
+      "path": "assets/brand/ui/scanner-badge.svg",
+      "uses_core": true,
+      "uses_wordmark": false,
+      "core_geometry_sha256": "66cecf8128c9cefa3b8ef2c047655e630a513fad16b75016ee81309d85402d31",
+      "master_geometry_sha256": "17a744251e89249bbb3dd18e7c0054cce2e3fc6bfe03c83387b7efe320a869cb"
+    },
+    {
+      "path": "assets/brand/ui/update-badge.svg",
+      "uses_core": true,
+      "uses_wordmark": false,
+      "core_geometry_sha256": "66cecf8128c9cefa3b8ef2c047655e630a513fad16b75016ee81309d85402d31",
+      "master_geometry_sha256": "17a744251e89249bbb3dd18e7c0054cce2e3fc6bfe03c83387b7efe320a869cb"
+    },
+    {
+      "path": "assets/brand/ui/watermark.svg",
+      "uses_core": true,
+      "uses_wordmark": true,
+      "core_geometry_sha256": "66cecf8128c9cefa3b8ef2c047655e630a513fad16b75016ee81309d85402d31",
+      "wordmark_geometry_sha256": "f63c1fad5ab9f083160e331b5d10560ab6eda67dea1d0fc6d740d3d7dfb89784",
+      "master_geometry_sha256": "2b46f1af682c157d963c67756e9127006babfa569067f7bd74f67853381a4889"
+    }
+  ]
+}
