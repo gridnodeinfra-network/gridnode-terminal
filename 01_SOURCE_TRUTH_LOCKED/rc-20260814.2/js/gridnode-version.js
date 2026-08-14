@@ -3,9 +3,9 @@
   'use strict';
   window.GN_VERSION = Object.freeze({
     APP_VERSION: '0.15.21',
-    APP_BUILD: '20260814.1',
+    APP_BUILD: '20260814.2',
     semver: '0.15.21',
-    release: '20260814.1',
+    release: '20260814.2',
     title: 'V0.15.21 — GRID//NODE PRECISION SCANNER EXPANSION',
     date: '2026-08-13'
   });
