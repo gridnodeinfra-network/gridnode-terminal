@@ -4502,21 +4502,21 @@ function continueLocallyFromWelcome() {
                 <div class="biotech-stage-glow" aria-hidden="true"></div>
                 <img class="biotech-asset" src="/assets/scanner/arms/arms.webp" width="1024" height="1024" alt="GRID//NODE ARMS rear-upper-arm diagnostic shell" loading="lazy">
                 <svg class="biotech-zones" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="ARMS tracking zones" role="group">
-                  <!-- LEFT ARM: rotated -5°. Zones sit on the triceps surface (x=166-222), with the dark gap (x=122-165) and outer edge (x=102-121) clearly separate. -->
-                  <g class="arm-left" transform="rotate(-5 194 415)">
-                    <!-- LEFT UPPER TRICEPS: 56w x 170h on triceps ridge. Slight Q-bow on top (LEGS upper). Tapered: slightly wider at muscle belly. -->
-                    <path class="zone-path zone-hit" data-mode="upper" data-site="Left Back Upper Arm — Upper" data-zone-key="zone.leftBackUpperArmUpper" d="M 156,240 L 232,240 L 232,430 L 156,430 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Back Upper Arm — Upper"/>
-                    <path class="zone-visible" d="M 176,252 Q 194,247 212,252 Q 222,254 222,264 L 222,400 Q 222,410 212,412 L 176,412 Q 166,410 166,400 L 166,264 Q 166,254 176,252 Z"/>
-                    <!-- LEFT LOWER TRICEPS: 56w x 150h on triceps ridge, below upper. Clean rounded panel (no taper, no bow). -->
-                    <path class="zone-path zone-hit" data-mode="upper" data-site="Left Back Upper Arm — Lower" data-zone-key="zone.leftBackUpperArmLower" d="M 156,422 L 232,422 L 232,588 L 156,588 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Back Upper Arm — Lower"/>
-                    <path class="zone-visible" d="M 176,434 L 212,434 Q 222,434 222,444 L 222,568 Q 222,578 212,578 L 176,578 Q 166,578 166,568 L 166,444 Q 166,434 176,434 Z"/>
+                  <!-- LEFT ARM: rotated -5°. Tall curvy upper + compact curvy lower. -->
+                  <g class="arm-left" transform="rotate(-5 194 420)">
+                    <!-- LEFT UPPER TRICEPS: tall panel, C-curve on sides (muscle belly), wider at top (deltoid), narrower at bottom (mid-arm). Q-bow on top. -->
+                    <path class="zone-path zone-hit" data-mode="upper" data-site="Left Back Upper Arm — Upper" data-zone-key="zone.leftBackUpperArmUpper" d="M 148,240 L 240,240 L 240,440 L 148,440 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Back Upper Arm — Upper"/>
+                    <path class="zone-visible" d="M 166,254 Q 194,248 222,254 Q 240,258 244,274 C 252,310 252,370 240,410 Q 234,424 220,424 Q 200,428 180,424 Q 152,422 146,408 C 140,370 140,310 148,274 Q 152,258 166,254 Z"/>
+                    <!-- LEFT LOWER TRICEPS: compact panel, C-curve on sides, slight inward taper toward elbow. -->
+                    <path class="zone-path zone-hit" data-mode="upper" data-site="Left Back Upper Arm — Lower" data-zone-key="zone.leftBackUpperArmLower" d="M 148,452 L 240,452 L 240,600 L 148,600 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Back Upper Arm — Lower"/>
+                    <path class="zone-visible" d="M 166,466 Q 194,462 222,466 Q 238,470 240,484 C 244,520 238,552 226,580 Q 220,592 208,592 Q 200,594 192,592 Q 180,592 174,580 C 162,552 156,520 160,484 Q 162,470 166,466 Z"/>
                   </g>
-                  <!-- RIGHT ARM: rotated +5° (mirror). Zones on triceps ridge (x=778-834). -->
-                  <g class="arm-right" transform="rotate(5 806 415)">
-                    <path class="zone-path zone-hit" data-mode="upper" data-site="Right Back Upper Arm — Upper" data-zone-key="zone.rightBackUpperArmUpper" d="M 768,240 L 844,240 L 844,430 L 768,430 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Back Upper Arm — Upper"/>
-                    <path class="zone-visible" d="M 828,252 Q 806,247 788,252 Q 778,254 778,264 L 778,400 Q 778,410 788,412 L 824,412 Q 834,410 834,400 L 834,264 Q 834,254 828,252 Z"/>
-                    <path class="zone-path zone-hit" data-mode="upper" data-site="Right Back Upper Arm — Lower" data-zone-key="zone.rightBackUpperArmLower" d="M 768,422 L 844,422 L 844,588 L 768,588 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Back Upper Arm — Lower"/>
-                    <path class="zone-visible" d="M 828,434 L 792,434 Q 778,434 778,444 L 778,568 Q 778,578 788,578 L 824,578 Q 834,578 834,568 L 834,444 Q 834,434 828,434 Z"/>
+                  <!-- RIGHT ARM: rotated +5° (mirror) -->
+                  <g class="arm-right" transform="rotate(5 806 420)">
+                    <path class="zone-path zone-hit" data-mode="upper" data-site="Right Back Upper Arm — Upper" data-zone-key="zone.rightBackUpperArmUpper" d="M 760,240 L 852,240 L 852,440 L 760,440 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Back Upper Arm — Upper"/>
+                    <path class="zone-visible" d="M 834,254 Q 806,248 778,254 Q 760,258 756,274 C 748,310 748,370 760,410 Q 766,424 780,424 Q 800,428 820,424 Q 848,422 854,408 C 860,370 860,310 852,274 Q 848,258 834,254 Z"/>
+                    <path class="zone-path zone-hit" data-mode="upper" data-site="Right Back Upper Arm — Lower" data-zone-key="zone.rightBackUpperArmLower" d="M 760,452 L 852,452 L 852,600 L 760,600 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Back Upper Arm — Lower"/>
+                    <path class="zone-visible" d="M 834,466 Q 806,462 778,466 Q 762,470 760,484 C 756,520 762,552 774,580 Q 780,592 792,592 Q 800,594 808,592 Q 820,592 826,580 C 838,552 844,520 840,484 Q 838,470 834,466 Z"/>
                   </g>
                 </svg>
                 <div class="biotech-corner tl" aria-hidden="true"></div>
