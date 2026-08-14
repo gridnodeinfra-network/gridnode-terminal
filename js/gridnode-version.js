@@ -6,7 +6,7 @@
     APP_BUILD: "20260814.2",
     semver: "0.15.21",
     release: "20260814.2",
-    title: "V0.15.21 — GRID//NODE BIOTECH SCANNER (ARMS triceps zones from Pipe sketch)",
+    title: "V0.15.21 — GRID//NODE BIOTECH SCANNER (ARMS triceps zones anatomical shape)",
     date: "2026-08-14"
   });
 })();
