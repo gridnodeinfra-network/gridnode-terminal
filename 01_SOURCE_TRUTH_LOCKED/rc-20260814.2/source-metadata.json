@@ -1,5 +1,5 @@
 {
-  "created": "2026-08-14T05:18:47Z",
+  "created": "2026-08-14T04:56:14Z",
   "source_version": "0.15.21",
   "build": "20260814.1",
   "lock_root": "01_SOURCE_TRUTH_LOCKED/rc-20260814.2",
@@ -258,7 +258,7 @@
     },
     "index.html": {
       "bytes": 479646,
-      "sha256": "5a5023ebcc5a917118f050a7bf3a24c30ce78eb05394a494b6886698e15691c4"
+      "sha256": "1cbc98af27366d1cd023c06b47fc0147d22613a89f2c0c65db61fc45bc9065c9"
     },
     "js/gridnode-app.js": {
       "bytes": 30630,
