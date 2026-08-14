@@ -30,9 +30,9 @@
   <meta name="color-scheme" content="dark light">
   <meta name="supported-color-schemes" content="dark light">
 
-<script src="./js/gridnode-theme.js?v=20260813.2"></script>
-<link rel="stylesheet" href="./css/daylight-nexus-pilot.css?v=20260813.2">
-<link id="gnNativeCss" rel="stylesheet" href="./css/gridnode-native.css?v=20260813.2">
+<script src="./js/gridnode-theme.js?v=20260814.1"></script>
+<link rel="stylesheet" href="./css/daylight-nexus-pilot.css?v=20260814.1">
+<link id="gnNativeCss" rel="stylesheet" href="./css/gridnode-native.css?v=20260814.1">
 
 <link rel="manifest" href="/manifest.json">
 <meta name="description" content="GRID//NODE is a local-first personal biotech system for tracking GLP-1 protocols, peptides, weight, phases, and user-entered outcomes.">
@@ -4452,7 +4452,7 @@ function continueLocallyFromWelcome() {
             <h2 data-i18n="shots.scannerTitle">// BODY SCANNER</h2>
             <p data-i18n="shots.userEnteredLocation">USER-ENTERED LOCATION TRACKING</p>
           </div>
-          <button id="gnScannerAudioSwitch" class="scanner-audio-switch" type="button" role="switch" aria-checked="false" aria-label="Scanner audio">SCANNER AUDIO // <span>OFF</span></button>
+          <button id="gnScannerAudioSwitch" class="scanner-audio-switch" type="button" role="switch" aria-checked="false" aria-label="Scanner audio" onclick="window.GNScannerAudio && window.GNScannerAudio.toggle()"><span data-i18n="shots.scannerAudio">SCANNER AUDIO</span> // <span data-scanner-sound-state>OFF</span></button>
           <img class="gn-scanner-badge" src="/assets/brand/ui/scanner-badge.svg" alt="GRID//NODE scanner badge" width="48" height="48" decoding="async">
         </div>
         <div class="scanner-mode-tabs" role="tablist" aria-label="Body scanner mode" data-i18n-aria-label="shot.zoneModeAria">
@@ -4471,19 +4471,20 @@ function continueLocallyFromWelcome() {
                 <img class="biotech-asset" src="assets/scanner/core/core-cinematic.webp" width="1024" height="1024" alt="GRID//NODE CORE abdomen diagnostic shell" loading="lazy">
                 <svg class="biotech-zones" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="CORE tracking zones" role="group">
                   <!-- Excluded center / navel (NON-SELECTABLE) -->
-                  <circle class="zone-excluded" cx="500" cy="580" r="80" aria-hidden="true" pointer-events="none"/>
-                  <!-- RIGHT UPPER ABDOMEN -->
-                  <path class="zone-path zone-hit" data-mode="core" data-site="Right Abdomen — Upper" data-zone-bounds="520,450,780,570" data-zone-key="zone.rightAbdomenUpper" d="M 520,450 L 780,450 L 780,570 L 520,570 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Abdomen — Upper"/>
-                  <path class="zone-visible" data-mode="core" data-site="Right Abdomen — Upper" d="M 530,460 L 770,460 L 770,560 L 530,560 Z"/>
-                  <!-- RIGHT LOWER ABDOMEN -->
-                  <path class="zone-path zone-hit" data-mode="core" data-site="Right Abdomen — Lower" data-zone-bounds="520,590,780,810" data-zone-key="zone.rightAbdomenLower" d="M 520,590 L 780,590 L 780,810 L 520,810 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Abdomen — Lower"/>
-                  <path class="zone-visible" data-mode="core" data-site="Right Abdomen — Lower" d="M 530,600 L 770,600 L 770,800 L 530,800 Z"/>
-                  <!-- LEFT UPPER ABDOMEN -->
-                  <path class="zone-path zone-hit" data-mode="core" data-site="Left Abdomen — Upper" data-zone-bounds="220,450,480,570" data-zone-key="zone.leftAbdomenUpper" d="M 220,450 L 480,450 L 480,570 L 220,570 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Abdomen — Upper"/>
-                  <path class="zone-visible" data-mode="core" data-site="Left Abdomen — Upper" d="M 230,460 L 470,460 L 470,560 L 230,560 Z"/>
-                  <!-- LEFT LOWER ABDOMEN -->
-                  <path class="zone-path zone-hit" data-mode="core" data-site="Left Abdomen — Lower" data-zone-bounds="220,590,480,810" data-zone-key="zone.leftAbdomenLower" d="M 220,590 L 480,590 L 480,810 L 220,810 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Abdomen — Lower"/>
-                  <path class="zone-visible" data-mode="core" data-site="Left Abdomen — Lower" d="M 230,600 L 470,600 L 470,800 L 230,800 Z"/>
+                  <circle class="zone-excluded" cx="500" cy="680" r="60" aria-hidden="true" pointer-events="none"/>
+                  <!-- CORE — 6 zones (Upper, Middle, Lower × Left, Right) with body-shaped curves -->
+                  <path class="zone-path zone-hit" data-mode="core" data-site="Upper Left" data-zone-key="zone.core-upper-left" d="M250 524C310 504 405 506 480 526L480 662C402 658 323 665 257 680C244 649 240 575 250 524Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Upper Left"/>
+                  <path class="zone-visible" data-mode="core" data-site="Upper Left" d="M270 550C325 526 393 528 456 540C466 550 468 573 464 596C460 620 452 642 439 652C380 650 319 658 264 673C252 645 253 592 270 550Z"/>
+                  <path class="zone-path zone-hit" data-mode="core" data-site="Upper Right" data-zone-key="zone.core-upper-right" d="M750 524C690 504 595 506 520 526L520 662C598 658 677 665 743 680C756 649 760 575 750 524Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Upper Right"/>
+                  <path class="zone-visible" data-mode="core" data-site="Upper Right" d="M730 550C675 526 607 528 544 540C534 550 532 573 536 596C540 620 548 642 561 652C620 650 681 658 736 673C748 645 747 592 730 550Z"/>
+                  <path class="zone-path zone-hit" data-mode="core" data-site="Middle Left" data-zone-key="zone.core-middle-left" d="M241 684C304 666 404 664 480 674L480 852C402 870 318 873 266 861C237 822 222 739 241 684Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Middle Left"/>
+                  <path class="zone-visible" data-mode="core" data-site="Middle Left" d="M250 692C300 674 365 672 426 682C445 692 455 713 458 735C452 786 440 831 420 858C367 872 320 870 282 855C252 816 237 750 250 692Z"/>
+                  <path class="zone-path zone-hit" data-mode="core" data-site="Middle Right" data-zone-key="zone.core-middle-right" d="M759 684C696 666 596 664 520 674L520 852C598 870 682 873 734 861C763 822 778 739 759 684Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Middle Right"/>
+                  <path class="zone-visible" data-mode="core" data-site="Middle Right" d="M750 692C700 674 635 672 574 682C555 692 545 713 542 735C548 786 560 831 580 858C633 872 680 870 718 855C748 816 763 750 750 692Z"/>
+                  <path class="zone-path zone-hit" data-mode="core" data-site="Lower Left" data-zone-key="zone.core-lower-left" d="M338 889C378 870 428 868 490 872L490 949C438 958 388 946 347 928C336 920 332 899 338 889Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Lower Left"/>
+                  <path class="zone-visible" data-mode="core" data-site="Lower Left" d="M354 899C386 879 429 873 480 876C490 891 490 914 482 934C443 943 401 938 361 921C352 916 349 906 354 899Z"/>
+                  <path class="zone-path zone-hit" data-mode="core" data-site="Lower Right" data-zone-key="zone.core-lower-right" d="M662 889C622 870 572 868 510 872L510 949C562 958 612 946 653 928C664 920 668 899 662 889Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Lower Right"/>
+                  <path class="zone-visible" data-mode="core" data-site="Lower Right" d="M646 899C614 879 571 873 520 876C510 891 510 914 518 934C557 943 599 938 639 921C648 916 651 906 646 899Z"/>
                 </svg>
                 <div class="biotech-corner tl" aria-hidden="true"></div>
                 <div class="biotech-corner tr" aria-hidden="true"></div>
@@ -4498,18 +4499,19 @@ function continueLocallyFromWelcome() {
                 <div class="biotech-stage-glow" aria-hidden="true"></div>
                 <img class="biotech-asset" src="assets/scanner/legs/legs-cinematic.webp" width="1024" height="1024" alt="GRID//NODE LEGS front-thigh diagnostic shell" loading="lazy">
                 <svg class="biotech-zones" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="LEGS tracking zones" role="group">
-                  <!-- LEFT UPPER THIGH -->
-                  <path class="zone-path zone-hit" data-mode="lower" data-site="Left Thigh — Upper" data-zone-bounds="165,365,485,650" data-zone-key="zone.leftThighUpper" d="M 165,365 L 485,365 L 485,650 L 165,650 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Thigh — Upper"/>
-                  <path class="zone-visible" data-mode="lower" data-site="Left Thigh — Upper" d="M 175,375 L 475,375 L 475,640 L 175,640 Z"/>
-                  <!-- LEFT LOWER THIGH -->
-                  <path class="zone-path zone-hit" data-mode="lower" data-site="Left Thigh — Lower" data-zone-bounds="175,670,470,900" data-zone-key="zone.leftThighLower" d="M 175,670 L 470,670 L 470,900 L 175,900 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Thigh — Lower"/>
-                  <path class="zone-visible" data-mode="lower" data-site="Left Thigh — Lower" d="M 185,680 L 460,680 L 460,890 L 185,890 Z"/>
-                  <!-- RIGHT UPPER THIGH -->
-                  <path class="zone-path zone-hit" data-mode="lower" data-site="Right Thigh — Upper" data-zone-bounds="515,365,835,650" data-zone-key="zone.rightThighUpper" d="M 515,365 L 835,365 L 835,650 L 515,650 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Thigh — Upper"/>
-                  <path class="zone-visible" data-mode="lower" data-site="Right Thigh — Upper" d="M 525,375 L 825,375 L 825,640 L 525,640 Z"/>
-                  <!-- RIGHT LOWER THIGH -->
-                  <path class="zone-path zone-hit" data-mode="lower" data-site="Right Thigh — Lower" data-zone-bounds="530,670,825,900" data-zone-key="zone.rightThighLower" d="M 530,670 L 825,670 L 825,900 L 530,900 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Thigh — Lower"/>
-                  <path class="zone-visible" data-mode="lower" data-site="Right Thigh — Lower" d="M 540,680 L 815,680 L 815,890 L 540,890 Z"/>
+                  <!-- LEGS — 6 zones (Upper, Lower, Outer × Left, Right) with body-shaped curves -->
+                  <path class="zone-path zone-hit" data-mode="lower" data-site="Left Thigh Upper" data-zone-key="zone.leg-upper-left" d="M270 380C327 350 414 352 488 382C496 433 494 500 478 574C414 584 339 581 278 562C264 507 260 430 270 380Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Thigh Upper"/>
+                  <path class="zone-visible" data-mode="lower" data-site="Left Thigh Upper" d="M282 392C330 365 408 365 478 392C486 430 485 500 470 572C412 580 344 574 290 558C275 507 272 438 282 392Z"/>
+                  <path class="zone-path zone-hit" data-mode="lower" data-site="Right Thigh Upper" data-zone-key="zone.leg-upper-right" d="M730 380C673 350 586 352 512 382C504 433 506 500 522 574C586 584 661 581 722 562C736 507 740 430 730 380Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Thigh Upper"/>
+                  <path class="zone-visible" data-mode="lower" data-site="Right Thigh Upper" d="M718 392C670 365 592 365 522 392C514 430 515 500 530 572C588 580 656 574 710 558C725 507 728 438 718 392Z"/>
+                  <path class="zone-path zone-hit" data-mode="lower" data-site="Left Thigh Lower" data-zone-key="zone.leg-lower-left" d="M278 586C339 604 415 609 478 584C470 683 456 772 434 842C376 864 312 852 264 816C272 740 274 650 278 586Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Thigh Lower"/>
+                  <path class="zone-visible" data-mode="lower" data-site="Left Thigh Lower" d="M290 594C343 612 412 616 468 598C458 684 446 760 426 830C376 850 320 840 275 808C283 738 286 653 290 594Z"/>
+                  <path class="zone-path zone-hit" data-mode="lower" data-site="Right Thigh Lower" data-zone-key="zone.leg-lower-right" d="M722 586C661 604 585 609 522 584C530 683 544 772 566 842C624 864 688 852 736 816C728 740 726 650 722 586Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Thigh Lower"/>
+                  <path class="zone-visible" data-mode="lower" data-site="Right Thigh Lower" d="M710 594C657 612 588 616 532 598C542 684 554 760 574 830C624 850 680 840 725 808C717 738 714 653 710 594Z"/>
+                  <path class="zone-path zone-hit" data-mode="lower" data-site="Left Thigh Outer" data-zone-key="zone.leg-outer-left" d="M166 338C198 320 234 330 265 372C254 450 256 518 270 574C263 656 267 760 257 856C214 852 181 799 170 716C151 579 151 431 166 338Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Thigh Outer"/>
+                  <path class="zone-visible" data-mode="lower" data-site="Left Thigh Outer" d="M178 350C202 336 229 345 252 379C242 456 245 520 260 574C252 657 256 753 246 842C216 834 193 786 183 709C166 577 165 445 178 350Z"/>
+                  <path class="zone-path zone-hit" data-mode="lower" data-site="Right Thigh Outer" data-zone-key="zone.leg-outer-right" d="M834 338C802 320 766 330 735 372C746 450 744 518 730 574C737 656 733 760 743 856C786 852 819 799 830 716C849 579 849 431 834 338Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Thigh Outer"/>
+                  <path class="zone-visible" data-mode="lower" data-site="Right Thigh Outer" d="M822 350C798 336 771 345 748 379C758 456 755 520 740 574C748 657 744 753 754 842C784 834 807 786 817 709C834 577 835 445 822 350Z"/>
                 </svg>
                 <div class="biotech-corner tl" aria-hidden="true"></div>
                 <div class="biotech-corner tr" aria-hidden="true"></div>
@@ -4524,18 +4526,15 @@ function continueLocallyFromWelcome() {
                 <div class="biotech-stage-glow" aria-hidden="true"></div>
                 <img class="biotech-asset" src="assets/scanner/arms/arms-cinematic.webp" width="1024" height="1024" alt="GRID//NODE ARMS rear-upper-arm diagnostic shell" loading="lazy">
                 <svg class="biotech-zones" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="ARMS tracking zones" role="group">
-                  <!-- LEFT UPPER ARM (posterior) -->
-                  <path class="zone-path zone-hit" data-mode="upper" data-site="Left Back Upper Arm — Upper" data-zone-bounds="70,325,245,485" data-zone-key="zone.leftBackUpperArmUpper" d="M 70,325 L 245,325 L 245,485 L 70,485 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Back Upper Arm — Upper"/>
-                  <path class="zone-visible" data-mode="upper" data-site="Left Back Upper Arm — Upper" d="M 80,335 L 235,335 L 235,475 L 80,475 Z"/>
-                  <!-- LEFT LOWER ARM (posterior) -->
-                  <path class="zone-path zone-hit" data-mode="upper" data-site="Left Back Upper Arm — Lower" data-zone-bounds="55,500,225,675" data-zone-key="zone.leftBackUpperArmLower" d="M 55,500 L 225,500 L 225,675 L 55,675 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Back Upper Arm — Lower"/>
-                  <path class="zone-visible" data-mode="upper" data-site="Left Back Upper Arm — Lower" d="M 65,510 L 215,510 L 215,665 L 65,665 Z"/>
-                  <!-- RIGHT UPPER ARM (posterior) -->
-                  <path class="zone-path zone-hit" data-mode="upper" data-site="Right Back Upper Arm — Upper" data-zone-bounds="755,325,930,485" data-zone-key="zone.rightBackUpperArmUpper" d="M 755,325 L 930,325 L 930,485 L 755,485 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Back Upper Arm — Upper"/>
-                  <path class="zone-visible" data-mode="upper" data-site="Right Back Upper Arm — Upper" d="M 765,335 L 920,335 L 920,475 L 765,475 Z"/>
-                  <!-- RIGHT LOWER ARM (posterior) -->
-                  <path class="zone-path zone-hit" data-mode="upper" data-site="Right Back Upper Arm — Lower" data-zone-bounds="775,500,945,675" data-zone-key="zone.rightBackUpperArmLower" d="M 775,500 L 945,500 L 945,675 L 775,675 Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Back Upper Arm — Lower"/>
-                  <path class="zone-visible" data-mode="upper" data-site="Right Back Upper Arm — Lower" d="M 785,510 L 935,510 L 935,665 L 785,665 Z"/>
+                  <!-- ARMS — 4 zones (Upper, Lower × Left, Right) with body-shaped curves -->
+                  <path class="zone-path zone-hit" data-mode="upper" data-site="Left Back Upper Arm Upper" data-zone-key="zone.arm-upper-left" d="M98 344C130 311 190 304 252 330C290 366 307 428 300 497C286 536 257 560 219 578C165 563 122 532 96 486C89 434 91 385 98 344Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Back Upper Arm Upper"/>
+                  <path class="zone-visible" data-mode="upper" data-site="Left Back Upper Arm Upper" d="M112 360C137 329 188 320 240 342C273 372 291 428 286 486C274 524 249 549 217 568C173 552 136 522 110 479C104 432 105 391 112 360Z"/>
+                  <path class="zone-path zone-hit" data-mode="upper" data-site="Right Back Upper Arm Upper" data-zone-key="zone.arm-upper-right" d="M902 344C870 311 810 304 748 330C710 366 693 428 700 497C714 536 743 560 781 578C835 563 878 532 904 486C911 434 909 385 902 344Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Back Upper Arm Upper"/>
+                  <path class="zone-visible" data-mode="upper" data-site="Right Back Upper Arm Upper" d="M888 360C863 329 812 320 760 342C727 372 709 428 714 486C726 524 751 549 783 568C827 552 864 522 890 479C896 432 895 391 888 360Z"/>
+                  <path class="zone-path zone-hit" data-mode="upper" data-site="Left Back Upper Arm Lower" data-zone-key="zone.arm-lower-left" d="M100 596C140 582 184 580 229 590C271 610 292 646 295 691C282 764 252 822 207 851C155 841 116 810 92 766C86 696 89 636 100 596Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Left Back Upper Arm Lower"/>
+                  <path class="zone-visible" data-mode="upper" data-site="Left Back Upper Arm Lower" d="M114 600C145 585 181 582 219 592C255 612 276 644 280 687C269 752 243 804 204 834C165 825 132 800 106 760C99 696 102 640 114 600Z"/>
+                  <path class="zone-path zone-hit" data-mode="upper" data-site="Right Back Upper Arm Lower" data-zone-key="zone.arm-lower-right" d="M900 596C860 582 816 580 771 590C729 610 708 646 705 691C718 764 748 822 793 851C845 841 884 810 908 766C914 696 911 636 900 596Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Right Back Upper Arm Lower"/>
+                  <path class="zone-visible" data-mode="upper" data-site="Right Back Upper Arm Lower" d="M886 600C855 585 819 582 781 592C745 612 724 644 720 687C731 752 757 804 796 834C835 825 868 800 894 760C901 696 898 640 886 600Z"/>
                 </svg>
                 <div class="biotech-corner tl" aria-hidden="true"></div>
                 <div class="biotech-corner tr" aria-hidden="true"></div>
@@ -9957,7 +9956,7 @@ html[data-theme="light"] #shotsRegionScanner .gn-zone-path.selected {
   </div>
 </div>
 
-<script src="./js/gridnode-version.js?v=20260813.2" defer></script><script src="./js/gridnode-i18n.js?v=20260813.2" defer></script><script src="./js/gridnode-bundle.js?v=20260813.2" defer></script><script src="./js/gridnode-phase-sphere.js?v=20260813.2" defer></script><script src="./js/gridnode-product-completion.js?v=20260813.2" defer></script><script src="./js/gridnode-peptide-pk.js?v=20260813.2" defer></script><script src="./js/gridnode-peptide-viz.js?v=20260813.2" defer></script><script src="./js/gridnode-motivation.js?v=20260813.2" defer></script><script src="./js/gridnode-telemetry.js?v=20260813.2" defer></script><script src="./js/gridnode-native.js?v=20260813.2" defer></script><script src="./js/gridnode-i18n-overlay.js?v=20260813.2" defer></script><script src="./js/gridnode-whatsnew.js?v=20260813.2" defer></script><script src="./js/gridnode-onboarding.js?v=20260813.2" defer></script>
+<script src="./js/gridnode-version.js?v=20260814.1" defer></script><script src="./js/gridnode-i18n.js?v=20260814.1" defer></script><script src="./js/gridnode-bundle.js?v=20260814.1" defer></script><script src="./js/gridnode-phase-sphere.js?v=20260814.1" defer></script><script src="./js/gridnode-product-completion.js?v=20260814.1" defer></script><script src="./js/gridnode-peptide-pk.js?v=20260814.1" defer></script><script src="./js/gridnode-peptide-viz.js?v=20260814.1" defer></script><script src="./js/gridnode-motivation.js?v=20260814.1" defer></script><script src="./js/gridnode-telemetry.js?v=20260814.1" defer></script><script src="./js/gridnode-native.js?v=20260814.1" defer></script><script src="./js/gridnode-i18n-overlay.js?v=20260814.1" defer></script><script src="./js/gridnode-whatsnew.js?v=20260814.1" defer></script><script src="./js/gridnode-onboarding.js?v=20260814.1" defer></script>
 <script>
 (function() {
   try {

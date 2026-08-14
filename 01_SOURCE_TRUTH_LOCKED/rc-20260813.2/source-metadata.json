@@ -1,5 +1,5 @@
 {
-  "created": "2026-08-14T03:44:12Z",
+  "created": "2026-08-14T04:54:17Z",
   "source_version": "0.15.20.1",
   "build": "20260813.2",
   "lock_root": "01_SOURCE_TRUTH_LOCKED/rc-20260813.2",
@@ -177,24 +177,24 @@
       "sha256": "3307bd9e30a16c310b519a4ce8124216a3465e9a1986b4adcfa3d68d8fadd5b2"
     },
     "assets/scanner/arms/arms-cinematic.webp": {
-      "bytes": 163460,
-      "sha256": "4f0df5f7745bdead35bacee6e06eab314d0ff3b795442888ff6d1d4d26bfe58c"
+      "bytes": 105100,
+      "sha256": "67684f9ab64fb8bda84c3c18223e91e255c98f5c5008b6d09b2c94cb05dcfe80"
     },
     "assets/scanner/arms/arms.webp": {
       "bytes": 104550,
       "sha256": "1c20e667d637e878481ad151a5c5105363610d60d2b7fa438dbffa47112b5e8d"
     },
     "assets/scanner/core/core-cinematic.webp": {
-      "bytes": 96002,
-      "sha256": "24fbd85806254394205a1d085d8030f6ff9f3d42530ede4eec522a70714cfe74"
+      "bytes": 89004,
+      "sha256": "a881f6dfb648f9f653ae68f732fa4e47251ca0b152b85911734008f4814e897f"
     },
     "assets/scanner/core/core.webp": {
       "bytes": 85032,
       "sha256": "00bfa1c453dab8b19e348c1b6a020d35f0f2148dd2ec8eac4717cea04f50d335"
     },
     "assets/scanner/legs/legs-cinematic.webp": {
-      "bytes": 92360,
-      "sha256": "0a8dcf8ee5358c8d14c89f0f75c9b7929c72bbc95ac1878b80f52bf4f7a60f19"
+      "bytes": 66130,
+      "sha256": "b0eea2d96111377fcb02236f95b57588fd5390abe351cfa67036fb59a3c847da"
     },
     "assets/scanner/legs/legs.webp": {
       "bytes": 66348,
@@ -249,24 +249,24 @@
       "sha256": "2d180b9c4ea6c4e2c6ce615cc4c4d3319e392d11fb7a7e60f8a62248a9f19f69"
     },
     "i18n/en.json": {
-      "bytes": 90528,
-      "sha256": "48c4765113b6033ac15d7704bdebcf51d8f087df1e6681487ffcbccc6ef26fe0"
+      "bytes": 90790,
+      "sha256": "c9ae62587100531ae83dac7de5da43a01b25dfe6013ded65c2b2fcbded881a5e"
     },
     "i18n/es-419.json": {
-      "bytes": 100477,
-      "sha256": "421bf460b83e83100ee5aca16335a52de1b3b1671952d4c9f8a0a3e70c7a586e"
+      "bytes": 100839,
+      "sha256": "044bffd513e45f0166fbc76180fc6f75ea3adf518ebc287a0bc6e30a24b2ff21"
     },
     "index.html": {
-      "bytes": 476401,
-      "sha256": "ad6344996e7d1a8705a16bd034f22a04b9ace52fd54a49eb39f0df435e42f350"
+      "bytes": 479646,
+      "sha256": "1cbc98af27366d1cd023c06b47fc0147d22613a89f2c0c65db61fc45bc9065c9"
     },
     "js/gridnode-app.js": {
       "bytes": 30630,
       "sha256": "e0fd8f62bfb964f40f1740478f1d1cda1325373bad06c1e542bd81120d619a0f"
     },
     "js/gridnode-bundle.js": {
-      "bytes": 396055,
-      "sha256": "bfe241f596deefcd423798464c03aa49f62e23a4baf7551ad68556c437b05e14"
+      "bytes": 391075,
+      "sha256": "ab6b87d647dd39831cd9c6a3c3c2b14636daf66d69ad55678fe0503a48c64350"
     },
     "js/gridnode-core.js": {
       "bytes": 33103,
@@ -281,8 +281,8 @@
       "sha256": "dc6eb685b6faed9966f98771945350ecdb9428b048b85d5819d33888fb960308"
     },
     "js/gridnode-modules.js": {
-      "bytes": 86843,
-      "sha256": "852139f58c3fda3aabd7890ab17f77e766e3338462fc015f6a7d2fa410ea41bc"
+      "bytes": 85997,
+      "sha256": "3dbfe2de0e9c57564c733187f590d65adc83cacb682fab157a1de82867d3da02"
     },
     "js/gridnode-motivation.js": {
       "bytes": 14265,
@@ -321,12 +321,12 @@
       "sha256": "0e3461f6c13ed29bd5f34d11e6a8cb248103c3a4de77d4edc987097a6d776fe2"
     },
     "js/gridnode-version.js": {
-      "bytes": 359,
-      "sha256": "ebb4a84b21e03cfa6dc7cd4a8fe0acb68dca0339245ffeab1a5d5cd4a469db9b"
+      "bytes": 347,
+      "sha256": "d01fbf5495f1661256f7a42739035a1a504a1c62020a24403bbe6baecb0c93af"
     },
     "js/gridnode-whatsnew.js": {
-      "bytes": 83885,
-      "sha256": "fdd15952d167c91ead0d0468e8f8f197bffdd3d2661a00fc5f5b599e68ed7cd3"
+      "bytes": 90878,
+      "sha256": "963d517d4d0b4da2672f0b31e146d21734aa17de08a13ed2247b2b7e13f6df7e"
     },
     "manifest.json": {
       "bytes": 1414,
@@ -421,8 +421,8 @@
       "sha256": "90730825ded0b334d54112bcf5814c190658cc4b76b77054f3906df2c274900c"
     },
     "scripts/test-mode-switching.py": {
-      "bytes": 4384,
-      "sha256": "c8c8b9554c3ee3b03ebd6198e31b1a9f759b567bc85a88411181ffae1a9c2671"
+      "bytes": 4470,
+      "sha256": "5ce9ef901303cd3b445df1bc330cc70411caa14fc253a185bb8188d5e0f458f7"
     },
     "scripts/test-production-candidate.cjs": {
       "bytes": 44016,
@@ -441,8 +441,8 @@
       "sha256": "6029b59a1465f4c2cee6db7ab6589a853a18514eb14c5099dfc23ff03d96da3f"
     },
     "scripts/test-scanner-static.py": {
-      "bytes": 18394,
-      "sha256": "33928f63d19d35b4264f947517e2db78cf8f3634c5f696deaeb5f3300858ca7a"
+      "bytes": 17638,
+      "sha256": "6a7db48a6b0a952272267cf06c804ab75c10ea3f3c6683994943614ae7456904"
     },
     "scripts/test-scanner-visual-feedback.cjs": {
       "bytes": 6614,
@@ -454,7 +454,7 @@
     },
     "scripts/verify.sh": {
       "bytes": 4173,
-      "sha256": "364deb3e1c3d35b9add0ebf1a36dd76b578c6d8d422b47dd29a875101c4185c7"
+      "sha256": "b4219f85dc9a2a6d81cbab36fa03b72e2db3c513e7e525c0429fc26795001b28"
     },
     "scripts/visual-regression-guard.cjs": {
       "bytes": 12348,
@@ -502,7 +502,7 @@
     },
     "sw.js": {
       "bytes": 6503,
-      "sha256": "629f64c45c768dc1660cf1fc162c6cb960b7df92f60b557a27282db6505b5679"
+      "sha256": "a2331af56627de5a08ddacdbd0d573a8462a7c5906f2dfcdd601f01bf8c5b842"
     }
   }
 }

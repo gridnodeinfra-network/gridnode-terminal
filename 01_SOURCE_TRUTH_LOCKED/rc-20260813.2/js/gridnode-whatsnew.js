@@ -733,6 +733,46 @@
     },
 
 
+    '20260814.1': {
+      version: '0.15.21', title: 'GRID//NODE PRECISION SCANNER EXPANSION', date: '2026-08-14',
+      en: {
+        NEW: [
+          'The body scanner gains two new CORE zones: Middle Left and Middle Right. CORE is now a 3x2 grid of anatomically separated sectors, with a smooth body-shaped curve for every visible contour and a larger invisible hit region around each one.',
+          'LEGS gains two new sectors: Left Thigh Outer and Right Thigh Outer, bringing the thigh map to six zones — upper, lower, and outer per thigh. The outer sectors follow the curved side taper of each thigh, not a straight rectangle.',
+          'ARMS keeps four zones, but every visible contour and invisible hit region now follows a body-shaped curve instead of a rectangle. The triceps and shoulder tap targets land where the thumb actually lands.',
+          'The three cinematic body substrates are regenerated in the same surgical v3 style as the original CORE rework: the engraved rectangular hot-spots are removed from the LEGS and ARMS images, the long horizontal and vertical crosshair is removed from the CORE image, and the central navel reads as a single recessed contour integrated into the shell.',
+          'Zone identifiers move to a stable three-row naming model: core-upper-left through core-lower-right, leg-upper-left through leg-outer-right, arm-upper-left through arm-lower-right. Each zone has a code (CORE-01, LEG-05, ARM-02, etc.) and a display label, both shown in the live read-out.'
+        ],
+        IMPROVED: [
+          'Visible contours and hit regions now follow organic, body-shaped curves (Bezier paths traced from the approved surgical v3 markup), not rectangular boxes. The 44-48 pixel effective touch target per zone is preserved by the larger invisible hit area, but the visible outline is anatomically clean.',
+          'The CORE image is replaced with the surgical v3 substrate: no central crosshair, no abdominal seam lines, only the recessed navel contour and continuous dark shell. LEGS and ARMS substrates are rebuilt in the same surgical style with no rectangular zone engravings.',
+          'selectScannerLocation still resolves the same data model, but the zone identifiers stored in SHOTS records use the new stable codes (CORE-01 .. CORE-06, LEG-01 .. LEG-06, ARM-01 .. ARM-04) for forward compatibility.',
+          'Scanner audio is now part of the locked experience. A SCANNER AUDIO // OFF|ON switch sits in the scanner header (44px minimum height, role=switch, Cyber Cyan border, Signal Yellow focus ring, Mars Red ON glow). Off by default, opt-in via direct user gesture, remembered locally under gn_scanner_audio_v1. When enabled, a 24ms 920Hz contact cue and a 110ms 320->96Hz two-stage lock cue are generated procedurally by the Web Audio API (no downloads, no base64, no autoplay) and a 4-12-6 ms haptic fires once per lock. The switch label and state are now i18n-driven via shots.scannerAudio / shots.soundOn / shots.soundOff in both English and Spanish.'
+        ],
+        FIXED: [
+          'The rectangular zone engravings baked into the original cinematic body images no longer leak through the SVG overlays — the LEGS substrate no longer shows the four old rectangle marks, and the CORE substrate no longer shows the central crosshair.'
+        ]
+      },
+      es: {
+        NEW: [
+          'El escaner corporal gana dos zonas CORE nuevas: Medio izquierdo y Medio derecho. CORE ahora es una cuadricula 3x2 de sectores separados anatomicamente, con una curva suave con forma de cuerpo para cada contorno visible y una region de hit invisible mas grande alrededor de cada uno.',
+          'PIERNAS gana dos sectores nuevos: Muslo izquierdo exterior y Muslo derecho exterior, llevando el mapa del muslo a seis zonas — superior, inferior y exterior por muslo. Los sectores exteriores siguen la curva lateral de cada muslo, no un rectangulo recto.',
+          'BRAZOS mantiene cuatro zonas, pero cada contorno visible y region de hit invisible ahora sigue una curva con forma de cuerpo en lugar de un rectangulo. Los objetivos de toque del triceps y el hombro aterrizan donde realmente aterriza el pulgar.',
+          'Los tres sustratos corporales cinematicos se regeneran en el mismo estilo v3 quirurgico que el retrabajo original de CORE: los puntos calientes rectangulares grabados se eliminan de las imagenes de PIERNAS y BRAZOS, la cruz horizontal y vertical larga se elimina de la imagen de CORE, y el ombligo central se lee como un unico contorno rebajado integrado en el casco.',
+          'Los identificadores de zona pasan a un modelo de nombres estable de tres filas: core-upper-left a core-lower-right, leg-upper-left a leg-outer-right, arm-upper-left a arm-lower-right. Cada zona tiene un codigo (CORE-01, LEG-05, ARM-02, etc.) y una etiqueta visible, ambos en la lectura en vivo.'
+        ],
+        IMPROVED: [
+          'Los contornos visibles y las regiones de hit ahora siguen curvas organicas con forma de cuerpo (caminos Bezier trazados desde el marcado v3 quirurgico aprobado), no cajas rectangulares. El objetivo tactil efectivo de 44-48 pixeles por zona se preserva mediante el area de hit invisible mas grande, pero el contorno visible es anatomicamente limpio.',
+          'La imagen de CORE se reemplaza con el sustrato v3 quirurgico: sin cruz central, sin lineas de costura abdominal, solo el contorno del ombligo rebajado y el casco oscuro continuo. Los sustratos de PIERNAS y BRAZOS se reconstruyen en el mismo estilo quirurgico sin grabados rectangulares de zona.',
+          'selectScannerLocation sigue resolviendo el mismo modelo de datos, pero los identificadores de zona almacenados en los registros SHOTS usan los nuevos codigos estables (CORE-01 .. CORE-06, LEG-01 .. LEG-06, ARM-01 .. ARM-04) para compatibilidad futura.',
+          'El audio del escaner ahora es parte de la experiencia bloqueada. Un interruptor SCANNER AUDIO // OFF|ON se asienta en el encabezado del escaner (44px de altura minima, role=switch, borde Cyber Cyan, anillo de foco Signal Yellow, brillo ON Mars Red). Apagado por defecto, opcional mediante gesto directo del usuario, recordado localmente bajo gn_scanner_audio_v1. Cuando esta activo, una pista de contacto de 24ms a 920Hz y una pista de bloqueo de 110ms de 320->96Hz en dos etapas se generan proceduralmente por la Web Audio API (sin descargas, sin base64, sin autoplay) y un haptic 4-12-6 ms se dispara una vez por bloqueo. La etiqueta y el estado del interruptor ahora estan dirigidos por i18n mediante shots.scannerAudio / shots.soundOn / shots.soundOff tanto en ingles como en espanol.'
+        ],
+        FIXED: [
+          'Las grabaciones de zona rectangulares integradas en las imagenes corporales cinematicas originales ya no se filtran a traves de las superposiciones SVG — el sustrato de PIERNAS ya no muestra las cuatro marcas rectangulares antiguas, y el sustrato de CORE ya no muestra la cruz central.'
+        ]
+      }
+    },
+
     '20260813.2': {
       version: '0.15.20.1', title: 'GRID//NODE V2.0 LOCKED EXPANDED SOURCE TRUTH', date: '2026-08-13',
       en: {

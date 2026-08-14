@@ -121,10 +121,11 @@ for mode in ["core", "lower", "upper"]:
         m = re.search(stage_pattern, html, re.DOTALL)
         stage_html = m.group(0)
         zone_count = stage_html.count('class="zone-path zone-hit"')
-        if zone_count == 4:
-            print(f"  [ok] stage {mode} has 4 zone-hit elements")
+        expected = {"core": 6, "lower": 6, "upper": 4}[mode]
+        if zone_count == expected:
+            print(f"  [ok] stage {mode} has {expected} zone-hit elements")
         else:
-            failures.append(f"stage {mode} has {zone_count} zone-hit elements, expected 4")
+            failures.append(f"stage {mode} has {zone_count} zone-hit elements, expected {expected}")
     else:
         failures.append(f"could not find stage div for {mode}")
 

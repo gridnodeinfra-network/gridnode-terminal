@@ -40,32 +40,38 @@ export const moduleState = {
 
 const ZONES = Object.freeze({
   core: [
-    'Right Abdomen — Upper', 'Right Abdomen — Lower',
-    'Left Abdomen — Upper', 'Left Abdomen — Lower'
+    'Upper Left', 'Upper Right',
+    'Middle Left', 'Middle Right',
+    'Lower Left', 'Lower Right'
   ],
   lower: [
-    'Right Thigh — Upper', 'Right Thigh — Lower',
-    'Left Thigh — Upper', 'Left Thigh — Lower'
+    'Left Thigh Upper', 'Right Thigh Upper',
+    'Left Thigh Lower', 'Right Thigh Lower',
+    'Left Thigh Outer', 'Right Thigh Outer'
   ],
   upper: [
-    'Left Back Upper Arm — Upper', 'Left Back Upper Arm — Lower',
-    'Right Back Upper Arm — Upper', 'Right Back Upper Arm — Lower'
+    'Left Back Upper Arm Upper', 'Left Back Upper Arm Lower',
+    'Right Back Upper Arm Upper', 'Right Back Upper Arm Lower'
   ]
 });
 
 const ZONE_IDS = Object.freeze({
-  'Right Abdomen — Upper': 'zone.rightAbdomenUpper',
-  'Right Abdomen — Lower': 'zone.rightAbdomenLower',
-  'Left Abdomen — Upper': 'zone.leftAbdomenUpper',
-  'Left Abdomen — Lower': 'zone.leftAbdomenLower',
-  'Right Thigh — Upper': 'zone.rightThighUpper',
-  'Right Thigh — Lower': 'zone.rightThighLower',
-  'Left Thigh — Upper': 'zone.leftThighUpper',
-  'Left Thigh — Lower': 'zone.leftThighLower',
-  'Left Back Upper Arm — Upper': 'zone.leftBackUpperArmUpper',
-  'Left Back Upper Arm — Lower': 'zone.leftBackUpperArmLower',
-  'Right Back Upper Arm — Upper': 'zone.rightBackUpperArmUpper',
-  'Right Back Upper Arm — Lower': 'zone.rightBackUpperArmLower'
+  'Upper Left': 'zone.coreUpperLeft',
+  'Upper Right': 'zone.coreUpperRight',
+  'Middle Left': 'zone.coreMiddleLeft',
+  'Middle Right': 'zone.coreMiddleRight',
+  'Lower Left': 'zone.coreLowerLeft',
+  'Lower Right': 'zone.coreLowerRight',
+  'Left Thigh Upper': 'zone.legUpperLeft',
+  'Right Thigh Upper': 'zone.legUpperRight',
+  'Left Thigh Lower': 'zone.legLowerLeft',
+  'Right Thigh Lower': 'zone.legLowerRight',
+  'Left Thigh Outer': 'zone.legOuterLeft',
+  'Right Thigh Outer': 'zone.legOuterRight',
+  'Left Back Upper Arm Upper': 'zone.armUpperLeft',
+  'Left Back Upper Arm Lower': 'zone.armLowerLeft',
+  'Right Back Upper Arm Upper': 'zone.armUpperRight',
+  'Right Back Upper Arm Lower': 'zone.armLowerRight'
 });
 const zoneLabel = function (stored) {
   if (!stored) return '';
@@ -508,7 +514,9 @@ function gnScannerAudioRenderSwitch() {
   const control = $('gnScannerAudioSwitch');
   if (!control) return;
   control.setAttribute('aria-checked', gnScannerAudioEnabled ? 'true' : 'false');
-  control.innerHTML = `SCANNER AUDIO // <span>${gnScannerAudioEnabled ? 'ON' : 'OFF'}</span>`;
+  const label = tx('shots.scannerAudio', 'SCANNER AUDIO');
+  const state = tx(gnScannerAudioEnabled ? 'shots.soundOn' : 'shots.soundOff', gnScannerAudioEnabled ? 'ON' : 'OFF');
+  control.innerHTML = `${label} // <span data-scanner-sound-state>${state}</span>`;
 }
 
 function gnScannerAudioContextForGesture(gestureToken = null) {
@@ -570,50 +578,57 @@ function gnScannerAudioTone(durationSeconds, frequency, peak, offsetSeconds = 0)
     filter.connect(gain);
     gain.connect(gnScannerAudioMaster);
     oscillator.onended = () => gnScannerAudioDisconnectVoice(voice);
-    gnScannerAudioVoices.add(voice);
     oscillator.start(start);
-    oscillator.stop(start + durationSeconds);
-  } catch (_) { if (voice) gnScannerAudioDisconnectVoice(voice); }
-}
-
-function gnScannerAudioSetEnabled(next, gestureToken = null) {
-  const enabled = Boolean(next);
-  if (!enabled) gnScannerAudioStopVoices();
-  gnScannerAudioEnabled = enabled;
-  try { localStorage.setItem(GN_SCANNER_AUDIO_STORAGE_KEY, gnScannerAudioEnabled ? '1' : '0'); } catch (_) {}
-  gnScannerAudioRenderSwitch();
-  if (gnScannerAudioEnabled) gnScannerAudioContextForGesture(gestureToken);
-}
-
-function gnScannerAudioPlayContact(gestureToken = null) {
-  if (!gnScannerAudioEnabled) return;
-  if (!gnScannerAudioContextForGesture(gestureToken)) return;
-  const now = performance.now();
-  if (now - gnScannerAudioLastContactAt < GN_SCANNER_AUDIO_CONTACT_THROTTLE_MS) return;
-  gnScannerAudioLastContactAt = now;
-  gnScannerAudioTone(0.042, 880, 0.022);
-}
-
-function gnScannerAudioPlayLock(gestureToken = null) {
-  if (!gnScannerAudioEnabled || !gnScannerAudioContextForGesture(gestureToken)) return;
-  gnScannerAudioTone(0.11, 520, 0.02, 0);
-  gnScannerAudioTone(0.11, 780, 0.018, 0.035);
-}
-
-function initScannerAudioControl() {
-  gnScannerAudioEnabled = gnScannerAudioStoredPreference();
-  gnScannerAudioRenderSwitch();
-  const control = $('gnScannerAudioSwitch');
-  if (control && !control.__gnScannerAudioBound) {
-    control.__gnScannerAudioBound = true;
-    control.addEventListener('click', event => gnScannerAudioSetEnabled(!gnScannerAudioEnabled, gnScannerAudioGesture.fromEvent(event)));
+    oscillator.stop(start + durationSeconds + 0.02);
+    gnScannerAudioVoices.add(voice);
+  } catch (_) {
+    if (voice) gnScannerAudioDisconnectVoice(voice);
   }
 }
 
-window.GNScannerAudio = {
+function gnScannerAudioPlayContact(gestureToken) {
+  if (!gnScannerAudioEnabled) return;
+  const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+  if (now - gnScannerAudioLastContactAt < GN_SCANNER_AUDIO_CONTACT_THROTTLE_MS) return;
+  gnScannerAudioLastContactAt = now;
+  const context = gnScannerAudioContextForGesture(gestureToken);
+  if (!context) return;
+  // 24ms high-frequency tap (sine, 920Hz, fast decay)
+  gnScannerAudioTone(0.024, 920, 0.024);
+}
+
+function gnScannerAudioPlayLock(gestureToken) {
+  if (!gnScannerAudioEnabled) return;
+  const context = gnScannerAudioContextForGesture(gestureToken);
+  if (!context) return;
+  // 110ms descending confirmation tone (sine, 320->96Hz, slow decay)
+  gnScannerAudioTone(0.11, 320, 0.022, 0);
+  gnScannerAudioTone(0.11, 96, 0.022, 0.11);
+}
+
+function gnScannerAudioToggle() {
+  gnScannerAudioEnabled = !gnScannerAudioEnabled;
+  try { localStorage.setItem(GN_SCANNER_AUDIO_STORAGE_KEY, gnScannerAudioEnabled ? '1' : '0'); } catch (_) {}
+  gnScannerAudioRenderSwitch();
+  return gnScannerAudioEnabled;
+}
+
+window.GNScannerAudio = Object.freeze({
+  isEnabled: () => gnScannerAudioEnabled,
+  setEnabled: (value) => {
+    gnScannerAudioEnabled = Boolean(value);
+    try { localStorage.setItem(GN_SCANNER_AUDIO_STORAGE_KEY, gnScannerAudioEnabled ? '1' : '0'); } catch (_) {}
+    gnScannerAudioRenderSwitch();
+    return gnScannerAudioEnabled;
+  },
+  toggle: () => gnScannerAudioToggle(),
   playContact: gnScannerAudioPlayContact,
-  playLock: gnScannerAudioPlayLock
-};
+  playLock: gnScannerAudioPlayLock,
+  syncControl: () => gnScannerAudioRenderSwitch()
+});
+
+gnScannerAudioEnabled = gnScannerAudioStoredPreference();
+gnScannerAudioRenderSwitch();
 /* GN_SCANNER_AUDIO_CONTROLLER_V1_END */
 
 /* v0.15.19 SKIN TONE REMOVED - synthetic biotech scanner, single body per mode */
