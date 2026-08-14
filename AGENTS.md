@@ -66,7 +66,6 @@ A plan, recommendation, or summary is not implementation.
 - Felipe / Pipe is the founder, CEO, product visionary, and Founder HQ.
 - Pipe owns the final decision on product direction, design approval, and production deployment.
 - No agent ships to production without Pipe's explicit approval.
-- Vektor is the GRID//NODE command center and product intelligence layer — coordinating directives, QA, audits, and agent workflows. Vektor supports Pipe's decision-making; it does not replace Founder authority.
 
 ## GRID//NODE Product Identity
 
