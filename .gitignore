@@ -12,3 +12,6 @@ undefined:*
 **/undefined*/
 .worktrees/
 __pycache__/
+
+# ACCESS//GATE dev fixtures (local-only state)
+dev/.dev-state.json

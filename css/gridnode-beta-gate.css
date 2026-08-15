@@ -1,0 +1,429 @@
+/* GRID//NODE ACCESS//GATE v0.15.22 — private-beta authorization overlay.
+ *
+ * Style rules:
+ *   - No new design tokens. Reuses --font-m, --font-d, --text, --text-mid,
+ *     --text-dim, --cyan family, --lava-core, --panel, --surface, --border.
+ *   - Uses existing gn-* class family where possible.
+ *   - Extends .gn-card-* via the panel surface (.gn-beta-gate__panel inherits
+ *     instrument-well inset depth).
+ *   - One focal glow source only: AUTHORIZE // ACCESS CTA.
+ *   - Reduced-motion respected: no jitter, no shake, no collapse animation.
+ *   - All durations and easings use the existing cubic-bezier vocabulary.
+ */
+
+/* ----------------------------------------------------------------------- */
+/* Feature flag — the CSS only mounts if window.GN_BETA_GATE === true.    */
+/* The script checks the flag and exits early; the CSS is harmless if    */
+/* unused but we scope it under .gn-beta-gate so it never leaks.        */
+/* ----------------------------------------------------------------------- */
+
+.gn-beta-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483003;       /* above everything (LAB uses 2147483001) */
+  background: rgba(5, 7, 12, 0.62);  /* matches --bg / theme-color */
+  backdrop-filter: blur(20px) saturate(1.3);
+  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  display: grid;
+  grid-template-rows: auto auto auto auto auto auto auto 1fr auto auto;
+  grid-template-columns: 1fr;
+  align-content: start;
+  padding: clamp(1rem, 2.5vh, 1.5rem) clamp(1.25rem, 4vw, 2rem);
+  gap: 0.5rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  isolation: isolate;
+  opacity: 1;
+  transform: translateZ(0);
+  will-change: opacity, transform;
+}
+
+.gn-beta-gate[hidden] { display: none !important; }
+
+/* Glass overlay above the landing */
+.gn-beta-gate__glass {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(at 22% 18%, rgba(0, 212, 255, 0.06), transparent 55%),
+    radial-gradient(at 82% 88%, rgba(255, 45, 77, 0.05), transparent 55%),
+    rgba(14, 14, 22, 0.62);
+  mix-blend-mode: normal;
+}
+
+/* Top microstatus strip */
+.gn-beta-gate__top {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.35rem 0.6rem 0.45rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+  font: 0.62rem/1 var(--font-m);
+  letter-spacing: 0.18em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+.gn-beta-gate__live {
+  color: var(--cyan);
+  letter-spacing: 0.12em;
+}
+.gn-beta-gate__live::before {
+  content: "";
+  display: inline-block;
+  width: 6px; height: 6px;
+  margin-right: 0.35rem;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 6px var(--cyan);
+  animation: gnBetaGatePulse 2.6s ease-in-out infinite;
+}
+@keyframes gnBetaGatePulse {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 1; }
+}
+.gn-beta-gate__brand {
+  color: var(--text);
+  letter-spacing: 0.18em;
+}
+.gn-beta-gate__badge {
+  margin-left: auto;
+  padding: 0.18rem 0.55rem;
+  border: 1px solid rgba(255, 90, 110, 0.45);
+  color: var(--lava-core-hi, #ff5a6e);
+  letter-spacing: 0.22em;
+}
+
+/* Kicker */
+.gn-beta-gate__kicker {
+  margin-top: 0.9rem;
+  text-align: center;
+  font: 0.72rem/1 var(--font-m);
+  letter-spacing: 0.32em;
+  color: var(--cyan);
+}
+
+/* GN mark + wordmark */
+.gn-beta-gate__mark {
+  margin-top: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+}
+.gn-beta-gate__gn {
+  display: flex;
+  align-items: center;
+  gap: 0.05em;
+  font: 800 3.4rem/1 var(--font-d);
+  letter-spacing: 0.02em;
+}
+.gn-beta-gate__gn .g { color: var(--cyan); }
+.gn-beta-gate__gn .n { color: var(--lava-core-hi, #ff5a6e); }
+.gn-beta-gate__wordmark {
+  font: 0.86rem/1 var(--font-d);
+  letter-spacing: 0.36em;
+  color: var(--text);
+  text-transform: uppercase;
+}
+
+/* Product line */
+.gn-beta-gate__product {
+  margin-top: 1.2rem;
+  text-align: center;
+  font: 0.74rem/1.2 var(--font-d);
+  letter-spacing: 0.22em;
+  color: var(--text-mid);
+  text-transform: uppercase;
+}
+
+/* PRIVATE // BETA */
+.gn-beta-gate__beta {
+  margin-top: 0.55rem;
+  text-align: center;
+  font: 0.66rem/1 var(--font-d);
+  letter-spacing: 0.34em;
+  color: var(--lava-core-hi, #ff5a6e);
+  text-shadow: 0 0 10px rgba(255, 90, 110, 0.35);
+}
+
+/* Headline */
+.gn-beta-gate__headline {
+  margin: 1.6rem auto 0.85rem;
+  text-align: center;
+  font: 700 0.96rem/1.3 var(--font-d);
+  letter-spacing: 0.28em;
+  color: var(--text);
+  text-transform: uppercase;
+  max-width: 28ch;
+}
+
+/* Access panel (glass card) */
+.gn-beta-gate__panel {
+  position: relative;
+  align-self: center;
+  width: min(100%, 460px);
+  margin: 0 auto;
+  padding: 1.1rem 1.1rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 4px 8px rgba(0, 0, 0, 0.14),
+    0 16px 48px rgba(0, 0, 0, 0.12);
+  display: grid;
+  gap: 0.6rem;
+}
+
+.gn-beta-gate[data-state="FOCUSED"] .gn-beta-gate__panel,
+.gn-beta-gate[data-state="READY"] .gn-beta-gate__panel,
+.gn-beta-gate[data-state="VERIFYING"] .gn-beta-gate__panel {
+  border-color: rgba(0, 212, 255, 0.35);
+}
+
+.gn-beta-gate[data-state="REJECTED"] .gn-beta-gate__panel {
+  border-color: rgba(255, 90, 110, 0.55);
+}
+
+.gn-beta-gate[data-state="GRANTED"] .gn-beta-gate__panel {
+  border-color: rgba(255, 90, 110, 0.75);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 4px 8px rgba(0, 0, 0, 0.14),
+    0 16px 48px rgba(0, 0, 0, 0.12),
+    0 0 24px rgba(255, 45, 77, 0.45),
+    0 0 64px rgba(255, 45, 77, 0.18);
+}
+
+/* HUD corner ticks (instrument signature) */
+.gn-hud-tick {
+  position: absolute;
+  width: 14px; height: 14px;
+  border-color: rgba(0, 212, 255, 0.45);
+  border-style: solid;
+  border-width: 0;
+  pointer-events: none;
+}
+.gn-hud-tick--tl { top: -1px; left: -1px; border-top-width: 1.5px; border-left-width: 1.5px; }
+.gn-hud-tick--tr { top: -1px; right: -1px; border-top-width: 1.5px; border-right-width: 1.5px; }
+.gn-hud-tick--bl { bottom: -1px; left: -1px; border-bottom-width: 1.5px; border-left-width: 1.5px; }
+.gn-hud-tick--br { bottom: -1px; right: -1px; border-bottom-width: 1.5px; border-right-width: 1.5px; }
+
+.gn-beta-gate[data-state="GRANTED"] .gn-hud-tick {
+  border-color: var(--lava-core-hi, #ff5a6e);
+}
+
+/* Panel label */
+.gn-beta-gate__panel-label {
+  text-align: center;
+  font: 0.6rem/1 var(--font-m);
+  letter-spacing: 0.32em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+/* Form */
+.gn-beta-gate__form {
+  display: grid;
+  gap: 0.7rem;
+}
+.gn-beta-gate__label {
+  /* visually hidden but available to AT */
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.gn-beta-gate__input {
+  width: 100%;
+  height: 56px;
+  padding: 0 1rem;
+  background: var(--surface, #0a0a14);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  color: var(--text);
+  font: 1.05rem/1.1 var(--font-m);
+  letter-spacing: 0.12em;
+  outline: none;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+.gn-beta-gate__input:focus-visible {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.35);
+}
+.gn-beta-gate__input::placeholder {
+  color: var(--text-dim);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+}
+.gn-beta-gate__input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* CTA — single focal glow source */
+.gn-beta-gate__cta {
+  position: relative;
+  height: 56px;
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ff5a6e 0%, #ff2d4d 55%, #8f0f28 100%);
+  color: #fff;
+  font: 0.7rem/1 var(--font-d);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  box-shadow:
+    0 0 24px rgba(255, 45, 77, 0.35),
+    0 0 64px rgba(255, 45, 77, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  transition: transform 120ms ease, filter 120ms ease, box-shadow 200ms ease;
+}
+.gn-beta-gate__cta:hover:not(:disabled) { filter: brightness(1.08); }
+.gn-beta-gate__cta:active:not(:disabled) { transform: scale(0.985); }
+.gn-beta-gate__cta:focus-visible {
+  outline: 2px solid rgba(255, 90, 110, 0.6);
+  outline-offset: 3px;
+}
+.gn-beta-gate__cta:disabled {
+  background: rgba(255, 90, 110, 0.10);
+  color: var(--text-dim);
+  box-shadow: none;
+  text-shadow: none;
+  cursor: not-allowed;
+}
+
+/* FOUNDING TESTER ACCESS */
+.gn-beta-gate__founding {
+  margin: 0.55rem auto 0;
+  text-align: center;
+  font: 0.58rem/1 var(--font-m);
+  letter-spacing: 0.34em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+/* Closing line — same canonical mantra, used as a quiet footer */
+.gn-beta-gate__closing {
+  margin-top: 0.5rem;
+  text-align: center;
+  font: 0.58rem/1 var(--font-m);
+  letter-spacing: 0.30em;
+  color: var(--text-dim);
+}
+
+/* Truthful telemetry strip */
+.gn-beta-gate__telemetry {
+  margin: 1.4rem auto 0.4rem;
+  width: min(100%, 420px);
+  display: grid;
+  gap: 0.25rem;
+  font: 0.55rem/1.3 var(--font-m);
+  letter-spacing: 0.24em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+.gn-beta-gate__tel-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.18rem 0.4rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.gn-beta-gate__tel-key {
+  color: var(--text-dim);
+}
+.gn-beta-gate__tel-arrow {
+  color: rgba(0, 212, 255, 0.55);
+}
+.gn-beta-gate[data-state="VERIFYING"] .gn-beta-gate__tel-key:last-child,
+.gn-beta-gate[data-state="GRANTED"] .gn-beta-gate__tel-key:last-child {
+  color: var(--cyan);
+}
+.gn-beta-gate[data-state="GRANTED"] .gn-beta-gate__tel-key:last-child {
+  color: var(--lava-core-hi, #ff5a6e);
+}
+.gn-beta-gate[data-state="REJECTED"] .gn-beta-gate__tel-key:last-child,
+.gn-beta-gate[data-state="INTERRUPTED"] .gn-beta-gate__tel-key:last-child,
+.gn-beta-gate[data-state="LIMITED"] .gn-beta-gate__tel-key:last-child {
+  color: var(--lava-core-hi, #ff5a6e);
+}
+
+/* ----------------------------------------------------------------------- */
+/* Unlock choreography — 0.9-1.2s total. Only fires when GRANTED.        */
+/* Reduced motion short-circuits via the JS module skipping classes.     */
+/* ----------------------------------------------------------------------- */
+
+@keyframes gnBetaGateShake {
+  0%, 100% { transform: translate3d(0,0,0); }
+  20%      { transform: translate3d(-6px, 0, 0); }
+  40%      { transform: translate3d(6px, 0, 0); }
+  60%      { transform: translate3d(-4px, 0, 0); }
+  80%      { transform: translate3d(3px, 0, 0); }
+}
+.gn-beta-gate--shake .gn-beta-gate__panel {
+  animation: gnBetaGateShake 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes gnBetaGatePanelJitter {
+  0%   { transform: translate3d(0, 0, 0); }
+  25%  { transform: translate3d(2px, 0, 0); }
+  50%  { transform: translate3d(-3px, 0, 0); }
+  75%  { transform: translate3d(1px, 0, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+.gn-beta-gate--granted .gn-beta-gate__panel {
+  animation: gnBetaGatePanelJitter 220ms cubic-bezier(0.22, 1, 0.36, 1) 240ms;
+}
+
+.gn-beta-gate--granted .gn-hud-tick--tl,
+.gn-beta-gate--granted .gn-hud-tick--bl {
+  animation: gnBetaGateTickDown 140ms cubic-bezier(0.34, 1.56, 0.64, 1) 80ms;
+}
+.gn-beta-gate--granted .gn-hud-tick--tr,
+.gn-beta-gate--granted .gn-hud-tick--br {
+  animation: gnBetaGateTickDown 140ms cubic-bezier(0.34, 1.56, 0.64, 1) 140ms;
+}
+@keyframes gnBetaGateTickDown {
+  0%   { transform: translate3d(0, 0, 0); }
+  50%  { transform: translate3d(0, 4px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes gnBetaGateDissolve {
+  0%   { opacity: 1; transform: translateZ(0); }
+  100% { opacity: 0; transform: translateZ(0); }
+}
+.gn-beta-gate--dissolving {
+  animation: gnBetaGateDissolve 200ms ease-out forwards;
+  pointer-events: none;
+}
+
+/* Reduced motion override */
+@media (prefers-reduced-motion: reduce) {
+  .gn-beta-gate,
+  .gn-beta-gate__panel,
+  .gn-hud-tick,
+  .gn-beta-gate__cta,
+  .gn-beta-gate__input,
+  .gn-beta-gate__live::before,
+  .gn-beta-gate--shake .gn-beta-gate__panel,
+  .gn-beta-gate--granted .gn-beta-gate__panel,
+  .gn-beta-gate--granted .gn-hud-tick {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 200ms !important;
+  }
+}
