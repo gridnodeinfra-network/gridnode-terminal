@@ -1,0 +1,2054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DOSE//NODE — Dose Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--cyan:#00d4ff;--cyan-dim:rgba(0,212,255,0.12);--cyan-glow:rgba(0,212,255,0.28);--cyan-2:#006B8A;--red:#FF3B3B;--red-dim:rgba(255,59,59,0.4);--green:#00ff88;--green-dim:rgba(0,255,136,0.4);--yellow:#FCEE0A;--yellow-dim:rgba(252,238,10,0.4);--bg:#050708;--bg2:#08080d;--panel:#0e0e16;--panel2:#121218;--panel3:#161622;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);--text:#eeeef5;--text-mid:#9898b0;--text-dim:#6f6f88;--font-d:'Orbitron',monospace;--font-m:'Share Tech Mono',monospace;--font-b:'Rajdhani',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+html,body{background:var(--bg);color:var(--text);font-family:var(--font-b);font-size:16px;line-height:1.5;background-image:linear-gradient(rgba(0,212,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.025) 1px,transparent 1px);background-size:48px 48px;background-position:-1px -1px}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,0.6) 100%);z-index:1}
+.scanlines{position:fixed;inset:0;z-index:9999;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.02) 3px,rgba(0,0,0,0.02) 4px);opacity:.4}
+.scan-sweep{position:fixed;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.06),transparent);z-index:9998;pointer-events:none;animation:sweepDown 14s linear infinite;opacity:.5}
+@keyframes sweepDown{0%{top:0}100%{top:100%}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+a{color:inherit;text-decoration:none}
+
+/* HEADER (original diagonal stripes) */
+.header{background:repeating-linear-gradient(45deg,#0a0a14,#0a0a14 8px,#08080f 8px,#08080f 16px);border-bottom:1px solid var(--border);padding:18px 24px;position:sticky;top:0;z-index:50}
+.header-inner{display:flex;align-items:center;justify-content:space-between;max-width:1200px;margin:0 auto}
+.site-name{font-family:var(--font-d);font-size:1.8rem;color:var(--text);letter-spacing:6px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:12px}
+.site-name svg.brand-mark{width:32px;height:32px;flex-shrink:0;color:var(--cyan);filter:drop-shadow(0 0 3px var(--cyan-glow))}
+.search-btn{width:40px;height:40px;background:var(--panel);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-dim);transition:all 0.2s}
+.search-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+.search-desktop-bar{padding:16px 24px;background:var(--bg);position:relative}
+.search-desktop{max-width:760px;margin:0 auto}
+.search-bar{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--border2);padding:12px 16px;transition:all 0.2s}
+.search-bar:focus-within{border-color:var(--cyan);box-shadow:0 0 16px var(--cyan-dim)}
+.search-bar-icon{color:var(--text-dim);font-size:1.1rem;display:flex;align-items:center}
+.search-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-family:var(--font-m);font-size:0.95rem;letter-spacing:0.5px}
+.search-input::placeholder{color:var(--text-dim)}
+.search-kbd-hint{font-family:var(--font-m);font-size:0.65rem;color:var(--text-dim);border:1px solid var(--border2);padding:3px 8px;letter-spacing:1px;background:var(--panel2)}
+.search-results{position:absolute;top:100%;left:24px;right:24px;max-width:760px;margin:0 auto;background:var(--panel);border:1px solid var(--cyan);border-top:none;max-height:300px;overflow-y:auto;display:none;z-index:40}
+.search-results.active{display:block}
+.search-result{padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:12px}
+.search-result:hover{background:var(--panel2)}
+.search-result .type{font-family:var(--font-m);font-size:0.55rem;color:var(--cyan);letter-spacing:2px;text-transform:uppercase;min-width:60px}
+.search-result .name{font-family:var(--font-d);font-size:0.85rem;color:var(--text)}
+mark{background:var(--yellow);color:#050508;padding:0 2px}
+
+.status-bar{background:linear-gradient(90deg,#0a0f14,#0d1116,#0a0f14);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:8px 24px;display:flex;align-items:center;justify-content:space-between;font-family:var(--font-m);font-size:0.62rem;color:var(--text-dim);letter-spacing:2px}
+.status-bar .left,.status-bar .right{display:flex;gap:18px;align-items:center}
+.status-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite;margin-right:6px;vertical-align:middle}
+.status-bar .cyan{color:var(--cyan)}
+
+.breadcrumb{padding:12px 24px;background:var(--bg2);border-bottom:1px solid var(--border);font-family:var(--font-m);font-size:0.65rem;color:var(--text-dim);letter-spacing:2px;display:none}
+.breadcrumb.active{display:flex;align-items:center;gap:8px}
+.breadcrumb a{color:var(--cyan);cursor:pointer}
+.breadcrumb .sep{color:var(--text-dim)}
+
+.content-area{max-width:760px;margin:0 auto;padding:0 24px 60px}
+.view{display:none}
+.view.active{display:block}
+
+.App-header{text-align:center;padding:40px 0 16px;position:relative}
+.hero-mark{width:64px;height:64px;margin:0 auto 8px;color:var(--cyan);filter:drop-shadow(0 0 6px var(--cyan-glow));animation:float 4s ease-in-out infinite}
+.hero-mark svg{width:100%;height:100%}
+.hero-tag{font-family:var(--font-m);font-size:0.6rem;color:var(--cyan);letter-spacing:4px;margin-bottom:12px;text-transform:uppercase;opacity:0.7}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.App-header::before,.App-header::after{content:'';position:absolute;top:48px;width:28px;height:28px}
+.App-header::before{left:0;border-top:2px solid var(--cyan);border-left:2px solid var(--cyan)}
+.App-header::after{right:0;border-top:2px solid var(--cyan);border-right:2px solid var(--cyan)}
+h1{font-family:var(--font-d);font-size:2.2rem;color:var(--text);letter-spacing:2px;line-height:1.1}
+h1 .cyan{color:var(--cyan)}
+.calc-description{text-align:center;color:var(--text-mid);max-width:640px;margin:0 auto 24px;line-height:1.6;font-size:0.95rem}
+.calc-description b{color:var(--text)}
+
+/* CALCULATOR */
+.calculator-container{background:var(--panel);border:1px solid var(--border2);padding:24px;position:relative;margin-bottom:16px}
+.calculator-container::before,.calculator-container::after{content:'';position:absolute;bottom:0;width:18px;height:18px}
+.calculator-container::before{left:0;border-bottom:2px solid var(--cyan);border-left:2px solid var(--cyan)}
+.calculator-container::after{right:0;border-bottom:2px solid var(--cyan);border-right:2px solid var(--cyan)}
+.input-container{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.input-container--wide-first{grid-template-columns:1.1fr 1fr}
+.input-container--stack{grid-template-columns:1fr;gap:16px}
+.input-container--three{grid-template-columns:1fr 1fr 1fr;gap:12px}
+.input-box{position:relative}
+.input-box__header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;min-height:24px}
+.clickable-text{font-family:var(--font-m);font-size:0.65rem;color:var(--cyan);letter-spacing:2px;text-transform:uppercase;cursor:pointer;background:none;border:none;padding:0}
+.input-box__addon{display:flex}
+.unit-toggle{display:flex;border:1px solid var(--border2)}
+.unit-toggle__button{font-family:var(--font-m);font-size:0.6rem;padding:4px 12px;background:transparent;border:none;color:var(--text-mid);cursor:pointer;letter-spacing:1px;transition:all 0.15s}
+.unit-toggle__button:first-child{border-right:1px solid var(--border2)}
+.unit-toggle__button--active{background:var(--cyan);color:#050508}
+.input-wrap{display:flex;background:var(--bg2);border:1px solid var(--border2);transition:all 0.15s}
+.input-wrap:focus-within{border-color:var(--cyan)}
+input[type="text"],input[type="number"],input[type="email"]{flex:1;background:transparent;border:none;outline:none;padding:10px 12px;color:var(--text);font-family:var(--font-m);font-size:0.95rem;letter-spacing:0.5px;width:100%}
+input[type="text"]::placeholder,input[type="number"]::placeholder{color:var(--text-dim)}
+.input-unit{padding:10px 12px;background:var(--panel2);border-left:1px solid var(--border2);font-family:var(--font-m);font-size:0.75rem;color:var(--cyan);letter-spacing:1px;min-width:60px;display:flex;align-items:center}
+.calculate-btn{width:100%;padding:14px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);font-family:var(--font-d);font-size:0.9rem;letter-spacing:4px;cursor:pointer;text-transform:uppercase;transition:all 0.2s;margin-top:8px;position:relative;overflow:hidden}
+.calculate-btn:hover{background:rgba(0,212,255,0.08);box-shadow:0 0 20px var(--cyan-glow)}
+.calc-help-link{text-align:center;margin-top:14px;font-family:var(--font-m);font-size:0.7rem}
+.calc-help-link a{color:var(--cyan);cursor:pointer}
+.formula-box{background:var(--bg2);border:1px solid var(--border2);padding:12px;margin-top:12px;font-family:var(--font-m);font-size:0.7rem;color:var(--text-mid);line-height:1.7}
+.formula-box b{color:var(--cyan)}
+
+/* === RESULTS (matches original .resultsText style) === */
+.results-text{display:none;margin-top:20px;padding:20px;background:linear-gradient(135deg,#1a1426,#0f1520);border:1px solid var(--yellow-dim);border-top:2px solid var(--yellow);position:relative;text-align:center}
+.results-text.active{display:block}
+.results-text.warning{border-color:var(--red);border-top-color:var(--red);background:rgba(255,59,59,0.06)}
+.results-text.warning .main-result{color:var(--red)}
+.results-text.active{display:block}
+.results-text::before{content:'// RESULT';position:absolute;top:6px;right:12px;font-family:var(--font-m);font-size:0.5rem;color:var(--yellow);letter-spacing:2px}
+.results-text .main-result{font-family:var(--font-d);font-size:clamp(20px,5vw,36px);color:var(--yellow);letter-spacing:1px;line-height:1.2;margin-bottom:8px}
+.results-text .sub-result{font-family:var(--font-b);font-size:1rem;color:var(--text);line-height:1.5}
+.results-text .formula{font-family:var(--font-m);font-size:0.7rem;color:var(--text-dim);margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.results-text .formula b{color:var(--cyan)}
+.results-text .notes{margin-top:12px;padding:10px;background:var(--bg);border:1px solid var(--border2);font-family:var(--font-m);font-size:0.65rem;color:var(--text-mid);text-align:left;line-height:1.5}
+
+/* === DOSE TERMS EXPLAINER (the "Help Me Understand" cards) === */
+.dose-terms-explainer{margin:40px auto 0;max-width:900px}
+.dose-terms-header{text-align:center;background:linear-gradient(135deg,#1a1426,#0f1520);border:1px solid var(--yellow-dim);border-top:2px solid var(--yellow);padding:20px;margin-bottom:16px}
+.dose-terms-title{font-family:var(--font-d);font-size:1rem;color:var(--yellow);letter-spacing:2px;margin-bottom:8px;text-transform:uppercase}
+.dose-terms-subtitle{font-size:0.85rem;color:var(--text-mid);font-style:italic}
+.dose-terms-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.dose-term-card{background:var(--panel);border:1px solid var(--border2);padding:14px;border-top:3px solid var(--yellow);position:relative}
+.dose-term-card.volume{border-top-color:#3498db}
+.dose-term-card.volume .dose-term-title{color:#3498db}
+.dose-term-card.concentration{border-top-color:#9b59b6}
+.dose-term-card.concentration .dose-term-title{color:#9b59b6}
+.dose-term-card.units{border-top-color:#27ae60}
+.dose-term-card.units .dose-term-title{color:#27ae60}
+.dose-term-title{font-family:var(--font-m);font-size:0.7rem;color:var(--yellow);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px}
+.dose-term-desc{font-size:0.8rem;color:var(--text-mid);line-height:1.4}
+
+/* === CALCULATOR GRID (8 tiles) === */
+.calc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:30px 0}
+/* DARK INSTRUMENT TILES — match the DOSE//NODE system */
+.calc-tile{background:var(--bg2);border:1px solid var(--border2);border-radius:4px;padding:18px 14px;text-align:center;position:relative;transition:all .2s;cursor:pointer;display:flex;flex-direction:column;align-items:center;min-height:180px;color:var(--text)}
+.calc-tile::before{content:'';position:absolute;top:0;left:0;width:8px;height:8px;border-top:1px solid var(--cyan);border-left:1px solid var(--cyan);opacity:0.7;transition:opacity 0.2s}
+.calc-tile::after{content:'';position:absolute;bottom:0;right:0;width:8px;height:8px;border-bottom:1px solid var(--cyan);border-right:1px solid var(--cyan);opacity:0.7;transition:opacity 0.2s}
+.calc-tile:hover{transform:translateY(-2px);background:var(--panel);border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan),0 6px 20px rgba(0,212,255,0.12)}
+.calc-tile:hover::before,.calc-tile:hover::after{opacity:1}
+.calc-tile:hover .tile-icon{transform:scale(1.05);border-color:var(--cyan)}
+.calc-tile:hover .tile-title{color:var(--cyan)}
+.calc-tile.active{background:var(--panel);border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan)}
+.calc-tile.active::before,.calc-tile.active::after{opacity:1}
+.calc-tile.active .tile-icon{transform:scale(1.05);border-color:var(--cyan);color:var(--cyan)}
+.calc-tile.active .tile-title{color:var(--cyan)}
+.tile-icon{color:#fff;background:#252441;border:2px solid #252441;border-radius:8px;justify-content:center;align-items:center;width:64px;height:64px;margin-bottom:15px;transition:all .2s;display:flex;position:relative;overflow:hidden}
+.tile-icon svg{width:32px;height:32px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.tile-icon::before{content:'';position:absolute;top:0;left:0;width:8px;height:8px;border-top:2px solid var(--cyan);border-left:2px solid var(--cyan);opacity:0.7}
+.tile-icon::after{content:'';position:absolute;bottom:0;right:0;width:8px;height:8px;border-bottom:2px solid var(--cyan);border-right:2px solid var(--cyan);opacity:0.7}
+.tile-icon.split{color:#ff69b4}
+.tile-icon.zep{color:#20b2aa}
+.tile-title{font-family:'Orbitron',sans-serif;text-transform:uppercase;color:#252441;margin-bottom:8px;font-size:0.95rem;font-weight:700;line-height:1.1;text-align:center}
+.calc-tile:hover .tile-desc,.calc-tile.active .tile-desc{color:rgba(255,255,255,.85)}
+.tile-desc{color:#777;text-align:center;flex-grow:1;align-items:center;font-size:.78rem;line-height:1.3;display:flex}
+
+/* === GUIDES === */
+.guides-section{margin:40px 0 20px}
+.guides-section h2{font-family:var(--font-d);font-size:1.4rem;color:var(--text);letter-spacing:2px;text-align:center;margin-bottom:20px;text-transform:uppercase}
+.section-header{display:flex;align-items:center;justify-content:center;gap:14px;margin:36px 0 20px}
+.section-title{font-family:var(--font-d);font-size:1.2rem;color:var(--text);letter-spacing:3px;text-transform:uppercase;margin:0}
+.section-marks{color:var(--cyan);display:flex;align-items:center;opacity:0.7}
+.guides-grid{display:flex;flex-direction:column;gap:6px;max-width:760px;margin:0 auto}
+.guide-item{display:flex;gap:14px;align-items:center;background:var(--panel);border:1px solid var(--border2);padding:14px 18px;cursor:pointer;transition:all 0.2s;position:relative}
+.guide-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--cyan);transform:scaleY(0);transition:transform 0.2s}
+.guide-item:hover{border-color:var(--cyan);background:var(--panel2);transform:translateX(4px)}
+.guide-item:hover::before{transform:scaleY(1)}
+.guide-icon{width:42px;height:42px;background:var(--panel2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;color:var(--cyan);flex-shrink:0;position:relative}
+.guide-icon svg{width:22px;height:22px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.guide-text h3{font-family:var(--font-d);font-size:0.82rem;color:var(--text);letter-spacing:1px;margin-bottom:2px}
+.guide-text p{font-family:var(--font-b);font-size:0.78rem;color:var(--text-mid)}
+
+.disclaimer{margin:24px 0;padding:0 8px;text-align:center;font-family:var(--font-m);font-size:0.58rem;color:var(--text-dim);line-height:1.7;letter-spacing:0.5px}
+.supporter-banner{display:flex;align-items:center;justify-content:center;gap:12px;background:linear-gradient(135deg,#0a2540,#0d2d4d);border:1px solid #1e88e5;border-radius:6px;padding:12px 20px;margin:0 0 40px;font-size:0.88rem;color:#aed4f7;cursor:pointer;transition:all 0.2s}
+.supporter-banner:hover{background:linear-gradient(135deg,#0d2d4d,#0a2540);transform:translateY(-1px)}
+.supporter-banner .emoji{font-size:1rem;color:#FCEE0A;display:inline-flex;align-items:center}
+.supporter-banner b{color:#fff}
+
+/* Range slider (for split dose) */
+input[type="range"]{-webkit-appearance:none;appearance:none;width:100%;height:6px;background:var(--panel2);border:1px solid var(--border2);outline:none;cursor:pointer;margin:8px 0}
+input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:18px;background:var(--cyan);cursor:pointer;border:2px solid #050508;box-shadow:0 0 8px var(--cyan-glow)}
+input[type="range"]::-moz-range-thumb{width:18px;height:18px;background:var(--cyan);cursor:pointer;border:2px solid #050508;box-shadow:0 0 8px var(--cyan-glow)}
+.range-display{text-align:center;font-family:var(--font-m);font-size:0.9rem;color:var(--cyan);margin:8px 0;letter-spacing:1px}
+
+/* Day picker for split dose (7 buttons) */
+.day-picker{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:8px 0}
+.day-btn{font-family:var(--font-m);font-size:0.7rem;padding:8px 4px;background:transparent;border:1px solid var(--border2);color:var(--text-mid);cursor:pointer;letter-spacing:1px;transition:all 0.15s}
+.day-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+.day-btn.selected{background:var(--cyan);color:#050508;border-color:var(--cyan)}
+
+/* Footer */
+footer{background:#0a0f14;padding:28px 24px;margin-top:40px;text-align:center;font-family:var(--font-m);font-size:0.65rem;color:var(--text-dim);letter-spacing:2px}
+.foot-nav{display:flex;justify-content:center;gap:24px;margin-bottom:14px;flex-wrap:wrap}
+.foot-nav a,.foot-nav button{color:var(--text-mid);text-transform:uppercase;background:none;border:none;cursor:pointer;font-family:inherit;font-size:inherit;letter-spacing:inherit;transition:color 0.2s}
+.foot-nav a:hover,.foot-nav button:hover{color:var(--cyan)}
+.foot-trust{color:var(--cyan);margin-bottom:8px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;letter-spacing:1.5px;font-weight:600}
+.foot-trust::before{content:''}
+.foot-copy{font-size:0.6rem;color:var(--text-dim);overflow-wrap:anywhere}
+.foot-version{font-size:0.55rem;color:var(--text-dim);margin-top:6px;letter-spacing:3px;overflow-wrap:anywhere}
+
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-backdrop.active{display:flex}
+.modal{background:var(--panel);border:1px solid var(--border2);max-width:560px;width:100%;max-height:80vh;overflow-y:auto;position:relative;padding:28px}
+.modal-close{position:absolute;top:12px;right:12px;width:32px;height:32px;background:transparent;border:1px solid var(--border2);color:var(--text-mid);cursor:pointer;font-size:1rem}
+.modal-close:hover{border-color:var(--red);color:var(--red)}
+@media print {
+  /* Tracer v1: printCalc() sets body[data-print-region] = active view's id.
+     Hide all chrome (header, search, footer, status bar, breadcrumb, buttons, modals, label editor).
+     Show only the active view's .calculator-container — the inputs, result, formula, notes. */
+  body { background: white !important; color: black !important; }
+  /* Kill the page-level dark radial-gradient overlay (body::before) so it can't tint the print. */
+  body::before, body::after { content: none !important; background: none !important; display: none !important; }
+  body * { visibility: hidden; }
+  body[data-print-region] .view.active { visibility: visible; }
+  body[data-print-region] .view.active .calculator-container,
+  body[data-print-region] .view.active .calculator-container *,
+  body[data-print-region] .view.active .App-header,
+  body[data-print-region] .view.active .App-header *,
+  body[data-print-region] .view.active .calc-description,
+  body[data-print-region] .view.active .calc-description * { visibility: visible; }
+  body[data-print-region] .view.active { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; background: white; color: black; }
+  body[data-print-region] .view.active .calculator-container { margin: 12px 0; padding: 16px; border: 1px solid #888; }
+  body[data-print-region] .App-header h1 { color: black !important; }
+  body[data-print-region] .calc-description { color: #333 !important; }
+  body[data-print-region] .input-box, body[data-print-region] .input-box__header span, body[data-print-region] .input-box__header button { color: #333 !important; background: white !important; border-color: #888 !important; }
+  body[data-print-region] .input-wrap input { color: black !important; background: white !important; border-color: #888 !important; }
+  body[data-print-region] .input-unit { color: #333 !important; background: white !important; }
+  body[data-print-region] .results-text { color: black !important; background: white !important; border-color: #888 !important; }
+  body[data-print-region] .main-result { color: black !important; }
+  body[data-print-region] .sub-result { color: #333 !important; }
+  body[data-print-region] .formula { color: #333 !important; background: #f4f4f4 !important; }
+  body[data-print-region] .notes { color: #333 !important; background: #fffbe6 !important; }
+  body[data-print-region] .calculate-btn, body[data-print-region] .label-cta-row { display: none !important; }
+  /* Hide page chrome. NOTE: do NOT hide <header> by tag name — the per-view .App-header is
+     a <header> element with the calculator title (e.g. "TIRZEPATIDE DOSE CALCULATOR") and
+     must remain visible during print. Only hide the global .header (page-level chrome). */
+  body[data-print-region] .header, body[data-print-region] footer, body[data-print-region] .status-bar, body[data-print-region] .breadcrumb, body[data-print-region] .search-desktop, body[data-print-region] .search-btn, body[data-print-region] .modal-backdrop { display: none !important; }
+  /* Preserve input units — the input-unit spans show "mg/mL" or "mg/0.5mL" etc; keep them */
+  body[data-print-region] .input-unit { font-weight: bold; }
+}
+.modal-tag{font-family:var(--font-m);font-size:0.6rem;color:var(--cyan);letter-spacing:3px;margin-bottom:8px;text-transform:uppercase}
+.modal h2{font-family:var(--font-d);font-size:1.3rem;color:var(--text);letter-spacing:2px;margin-bottom:16px}
+.modal p,.modal li{font-family:var(--font-b);font-size:0.9rem;color:var(--text-mid);line-height:1.6;margin-bottom:10px}
+.modal ul{padding-left:20px}
+.modal b{color:var(--text)}
+.modal a{color:var(--cyan);text-decoration:underline}
+
+.section{padding:20px 0 0}
+
+/* ============================================================
+   RESPONSIVE — main app (1280 desktop → 768 tablet → 390 mobile)
+   ============================================================ */
+@media (max-width:1024px){
+  .calc-grid{grid-template-columns:repeat(3,1fr)}
+  .guides-grid{grid-template-columns:repeat(3,1fr)}
+  .dose-terms-grid{grid-template-columns:repeat(2,1fr)}
+  .header-inner{padding:0 12px}
+  .site-name{font-size:1.4rem;letter-spacing:4px;gap:10px}
+  .site-name svg{width:26px;height:26px}
+  .header h2,.App-header h1{font-size:1.6rem}
+  .calculator-container{padding:20px 16px}
+}
+@media (max-width:768px){
+  .content-area{padding:0 16px 40px}
+  .header{padding:14px 16px}
+  .site-name{font-size:1.1rem;letter-spacing:3px}
+  .search-desktop-bar{padding:10px 16px}
+  .search-bar{padding:10px 14px;font-size:0.85rem}
+  .search-bar-icon{display:none}
+  .status-bar{font-size:0.55rem;letter-spacing:1px;padding:6px 12px;flex-wrap:wrap;gap:8px}
+  .status-bar .left,.status-bar .right{gap:10px}
+  .breadcrumb{padding:10px 16px;font-size:0.7rem}
+  .calc-grid{grid-template-columns:repeat(2,1fr);gap:12px}
+  .calc-tile{min-height:160px;padding:14px 10px}
+  .tile-icon{width:54px;height:54px}
+  .tile-title{font-size:0.85rem}
+  .tile-desc{display:none}
+  .guides-section h2,.section-header .section-title,.guides-section .section-title{font-size:1.1rem}
+  .guides-grid{grid-template-columns:1fr}
+  .dose-terms-explainer{padding:20px 16px}
+  .dose-terms-grid{grid-template-columns:1fr}
+  .dose-term-title{font-size:0.7rem}
+  .App-header{padding:24px 0 12px}
+  .App-header h1{font-size:1.4rem;line-height:1.1}
+  .App-header h1 span{display:block}
+  .calc-description{font-size:0.85rem;padding:0 4px}
+  .calculator-container{padding:16px 12px}
+  .input-container{grid-template-columns:1fr;gap:12px}
+  .input-container--stack{grid-template-columns:1fr}
+  .modal{max-width:100%;max-height:90vh;margin:0 12px;padding:20px}
+  .modal h2{font-size:1.1rem}
+  .print-modal{max-width:100%;padding:20px}
+  .results-text{padding:12px}
+  .main-result{font-size:1.4rem}
+  .disclaimer{font-size:0.75rem;padding:0 4px}
+  .section-header{flex-direction:column;gap:8px}
+  .section-header .section-title{font-size:0.95rem;letter-spacing:2px}
+  .section-marks svg{width:16px;height:16px}
+  .guides-section{margin-top:30px}
+  .hero-mark{width:48px;height:48px}
+  .hero-tag{font-size:0.55rem;letter-spacing:3px}
+  .dose-terms-header{text-align:left;margin-bottom:14px}
+  .dose-terms-title{font-size:0.85rem}
+  footer{padding:24px 16px}
+  /* 2-column mobile grid for the 4 legal links, full-width centered anchors */
+  .foot-nav{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;width:100%;max-width:480px;margin:0 auto 14px}
+  .foot-nav li{list-style:none;min-width:0}
+  .foot-nav a,
+  .foot-nav button{display:block;width:100%;text-align:center;padding:8px 4px;line-height:1.3;letter-spacing:1px}
+  .foot-copy{font-size:0.65rem;letter-spacing:1px;line-height:1.6}
+  .foot-version{font-size:0.58rem;letter-spacing:1.2px;line-height:1.7;overflow-wrap:anywhere}
+  .foot-trust{letter-spacing:1px}
+  .disclaimers,.legal{padding:0 8px}
+  .input-wrap{flex-wrap:wrap}
+  .input-wrap input{min-width:0;flex:1;font-size:1rem}
+  .input-unit{font-size:0.7rem;padding:8px}
+  .modal-close{width:28px;height:28px}
+  .investigational-banner{font-size:0.7rem;padding:12px 14px}
+  .investigational-banner div:first-child{font-size:0.65rem}
+}
+@media (max-width:480px){
+  .site-name{font-size:0.95rem;letter-spacing:2px;gap:8px}
+  .site-name svg{width:22px;height:22px}
+  .search-kbd-hint{display:none}
+  .status-bar{font-size:0.5rem}
+  .status-bar .right span:nth-child(2){display:none}
+  .calc-grid{grid-template-columns:1fr}
+  .App-header h1{font-size:1.2rem}
+  .hero-mark{width:40px;height:40px}
+  .main-result{font-size:1.2rem}
+  .sub-result{font-size:0.75rem}
+  .results-text{font-size:0.75rem}
+  .formula{font-size:0.7rem}
+  .notes{font-size:0.7rem}
+}
+
+/* === LABEL//OUTPUT MODAL (NIIMBOT) === */
+.label-modal{max-width:920px;width:96%;max-height:92vh;overflow-y:auto;padding:20px 24px}
+.label-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:12px}
+.label-section{margin-bottom:18px}
+.label-section__label{font-family:var(--font-m);font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--cyan);margin-bottom:8px}
+.label-section__label .muted{color:var(--text-dim);font-weight:normal;letter-spacing:1px}
+.label-radio-group{display:flex;flex-direction:column;gap:6px}
+.label-radio{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--border2);border-radius:2px;cursor:pointer;background:rgba(0,212,255,0.02);font-size:0.78rem}
+.label-radio:hover{border-color:var(--cyan);background:rgba(0,212,255,0.06)}
+.label-radio input{margin:0;cursor:pointer;accent-color:var(--cyan)}
+.label-radio .muted{color:var(--text-dim);font-size:0.7rem;margin-left:4px}
+.label-advanced-toggle{background:none;border:1px dashed var(--border2);color:var(--text-mid);font-family:var(--font-m);font-size:0.6rem;letter-spacing:2px;padding:6px 10px;cursor:pointer;width:100%;margin-top:4px}
+.label-advanced-toggle:hover{color:var(--cyan);border-color:var(--cyan)}
+.label-field{margin-bottom:10px}
+.label-field label{display:block;font-family:var(--font-m);font-size:0.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-mid);margin-bottom:4px}
+.label-field .muted{color:var(--text-dim);font-weight:normal;letter-spacing:1px;text-transform:none}
+.label-field input[type=text]{width:100%;background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:var(--font-m);font-size:0.85rem;padding:8px;border-radius:2px;letter-spacing:1px}
+.label-field input[type=text]:focus{outline:none;border-color:var(--cyan)}
+.label-toggle label{display:flex;align-items:center;gap:8px;cursor:pointer}
+.label-toggle input{accent-color:var(--cyan)}
+
+.label-preview{display:flex;flex-direction:column;gap:10px}
+.label-preview-frame{background:#f0f0f0;border:1px solid var(--border2);padding:20px;display:flex;align-items:center;justify-content:center;min-height:200px;border-radius:2px}
+.label-preview-frame canvas{background:#ffffff;box-shadow:0 2px 8px rgba(0,0,0,0.4);max-width:100%;height:auto;image-rendering:pixelated}
+.label-preview-meta{display:flex;justify-content:space-between;font-family:var(--font-m);font-size:0.6rem;letter-spacing:1.5px;color:var(--text-dim);text-transform:uppercase;padding:0 4px}
+.label-export-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.label-export-btn{font-size:0.7rem;padding:10px 8px;letter-spacing:1.5px}
+.label-export-niimbot{font-size:0.75rem;padding:12px;letter-spacing:2px;background:var(--cyan);color:var(--bg);font-weight:700}
+.label-export-warning{background:rgba(255,59,59,0.1);border:1px solid var(--red);padding:10px 12px;margin-bottom:8px;font-size:0.7rem;color:var(--red);font-family:var(--font-m);letter-spacing:0.5px;line-height:1.5}
+.label-export-warning b{color:var(--red);letter-spacing:1px}
+.label-export-warning ul{margin:6px 0 0 0;padding-left:18px}
+.label-export-warning li{font-size:0.65rem;color:var(--text-mid);font-family:var(--font-m);letter-spacing:0.5px;margin-bottom:2px;word-break:break-all}
+.label-export-row:has(+ .label-export-niimbot[data-disabled="true"]), .label-export-niimbot[data-disabled="true"]{opacity:0.4;cursor:not-allowed}
+.label-export-btn[data-disabled="true"]{opacity:0.4;cursor:not-allowed;pointer-events:none}
+.label-export-niimbot:hover{background:#7fe5ff;box-shadow:0 0 12px rgba(0,212,255,0.4)}
+.label-niimbot-guide{background:rgba(0,212,255,0.04);border:1px solid var(--cyan);padding:12px 16px;margin-top:8px;border-radius:2px}
+.label-niimbot-guide__title{font-family:var(--font-m);font-size:0.65rem;letter-spacing:2px;color:var(--cyan);margin-bottom:8px;text-transform:uppercase}
+.label-niimbot-guide ol{margin:0;padding-left:20px;font-size:0.8rem;line-height:1.7;color:var(--text-mid)}
+.label-niimbot-guide li{margin-bottom:4px}
+.label-niimbot-guide b{color:var(--text);letter-spacing:0.5px}
+
+/* PRINT//LABEL button — sits next to PRINT CALCULATION in result panel */
+.label-cta-row{margin-top:12px;text-align:center;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.label-cta-btn{font-size:0.7rem;padding:10px 16px;letter-spacing:1.5px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);font-family:var(--font-m);font-weight:600;cursor:pointer;border-radius:0;text-transform:uppercase;transition:all 0.2s}
+.label-cta-btn:hover{background:rgba(0,212,255,0.1);box-shadow:0 0 10px rgba(0,212,255,0.3)}
+.label-cta-btn[data-stale="true"]{opacity:0.4;cursor:not-allowed;border-color:var(--text-dim);color:var(--text-dim);box-shadow:none}
+.label-cta-btn[data-stale="true"]:hover{background:transparent;box-shadow:none}
+.label-cta-btn[data-disabled="true"]{display:none}
+
+@media (max-width:768px){
+  .label-modal{padding:16px;max-height:100vh;height:100vh;width:100%;max-width:100%;border-radius:0}
+  .label-grid{grid-template-columns:1fr;gap:16px}
+  .label-preview-frame{min-height:140px;padding:12px}
+  .label-export-btn{font-size:0.65rem;padding:12px 6px;letter-spacing:1px;min-height:44px}
+  .label-export-niimbot{min-height:48px;font-size:0.7rem}
+  .label-cta-row{flex-direction:column;align-items:stretch}
+  .label-cta-btn{width:100%;min-height:44px;padding:12px}
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+<div class="scanlines"></div>
+<div class="scan-sweep"></div>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="site-name" data-action="home">
+      <svg class="brand-mark" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="58" height="58" rx="7" opacity="0.85"/>
+        <g stroke-width="6">
+          <line x1="17" y1="15" x2="17" y2="49"/>
+          <line x1="47" y1="15" x2="47" y2="49"/>
+          <line x1="17" y1="15" x2="29" y2="27"/>
+          <line x1="32" y1="30" x2="38" y2="36"/>
+          <line x1="41" y1="39" x2="47" y2="49"/>
+        </g>
+        <path d="M9 7 L43 7 L48 7" stroke-width="1.5"/>
+        <circle cx="48" cy="7" r="1.6" fill="currentColor" stroke="none"/>
+        <line x1="48" y1="3" x2="48" y2="5.5" stroke-width="1.5"/>
+      </svg>
+      <span>DOSE//NODE</span>
+    </div>
+    <button class="search-btn" id="search-btn" aria-label="Open search">
+      <svg viewBox="64 64 896 896" width="1em" height="1em" fill="currentColor"><path d="M909.6 854.5L649.9 594.8C690.2 542.7 712 479 712 412c0-80.2-31.3-155.4-87.9-212.1-56.6-56.7-132-87.9-212.1-87.9s-155.5 31.3-212.1 87.9C143.2 256.5 112 331.8 112 412c0 80.1 31.3 155.5 87.9 212.1C256.5 680.8 331.8 712 412 712c67 0 130.6-21.8 182.7-62l259.7 259.6a8.2 8.2 0 0011.6 0l43.6-43.5a8.2 8.2 0 000-11.6zM570.4 570.4C528 612.7 471.8 636 412 636s-116-23.3-158.4-65.6C211.3 528 188 471.8 188 412s23.3-116.1 65.6-158.4C296 211.3 352.2 188 412 188s116.1 23.2 158.4 65.6S636 352.2 636 412s-23.3 116.1-65.6 158.4z"></path></svg>
+    </button>
+  </div>
+</header>
+
+<div class="search-desktop-bar">
+  <div class="search-desktop">
+    <div class="search-bar">
+      <span class="search-bar-icon">
+        <svg viewBox="64 64 896 896" width="1em" height="1em" fill="currentColor"><path d="M909.6 854.5L649.9 594.8C690.2 542.7 712 479 712 412c0-80.2-31.3-155.4-87.9-212.1-56.6-56.7-132-87.9-212.1-87.9s-155.5 31.3-212.1 87.9C143.2 256.5 112 331.8 112 412c0 80.1 31.3 155.5 87.9 212.1C256.5 680.8 331.8 712 412 712c67 0 130.6-21.8 182.7-62l259.7 259.6a8.2 8.2 0 0011.6 0l43.6-43.5a8.2 8.2 0 000-11.6zM570.4 570.4C528 612.7 471.8 636 412 636s-116-23.3-158.4-65.6C211.3 528 188 471.8 188 412s23.3-116.1 65.6-158.4C296 211.3 352.2 188 412 188s116.1 23.2 158.4 65.6S636 352.2 636 412s-23.3 116.1-65.6 158.4z"></path></svg>
+      </span>
+      <input type="text" class="search-input" id="search-input" placeholder="What can we help you find?">
+      <kbd class="search-kbd-hint">⌘K</kbd>
+    </div>
+    <div class="search-results" id="search-results"></div>
+  </div>
+</div>
+
+<div class="status-bar">
+  <div class="left">
+    <span><span class="status-dot"></span>NODE LIVE</span>
+    <span class="cyan" id="status-context">// CALCULATOR ENGINE — ARMED</span>
+  </div>
+  <div class="right">
+    <span>VISUAL SYSTEM 2.0</span>
+    <span class="cyan" style="display:flex;align-items:center;gap:6px">
+      <svg viewBox="0 0 64 64" width="14" height="14" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="15" x2="17" y2="49"/><line x1="47" y1="15" x2="47" y2="49"/><line x1="17" y1="15" x2="47" y2="49"/></svg>
+      GRID//NODE
+    </span>
+  </div>
+</div>
+
+<div class="breadcrumb" id="breadcrumb">
+  <a data-action="home">HOME</a>
+  <span class="sep">/</span>
+  <span id="breadcrumb-current">CALCULATORS</span>
+</div>
+
+<div class="content-area">
+
+  <!-- =================== HOME VIEW =================== -->
+  <div class="view active" id="view-home">
+    <header class="App-header">
+      <div class="hero-mark" aria-hidden="true">
+        <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="58" height="58" rx="7" opacity="0.85"/>
+          <g stroke-width="6">
+            <line x1="17" y1="15" x2="17" y2="49"/>
+            <line x1="47" y1="15" x2="47" y2="49"/>
+            <line x1="17" y1="15" x2="29" y2="27"/>
+            <line x1="32" y1="30" x2="38" y2="36"/>
+            <line x1="41" y1="39" x2="47" y2="49"/>
+          </g>
+          <path d="M9 7 L43 7 L48 7" stroke-width="1.5"/>
+          <circle cx="48" cy="7" r="1.6" fill="currentColor" stroke="none"/>
+          <line x1="48" y1="3" x2="48" y2="5.5" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="hero-tag">// DOSE//NODE ENGINE</div>
+      <h1>TIRZEPATIDE <span class="cyan">DOSE CALCULATOR</span></h1>
+    </header>
+    <p class="calc-description">Need help figuring out dosing for your tirzepatide (Mounjaro/Zepbound) prescription? You've come to the right place! You just need the <b>concentration in your vial</b> (listed as mg/mL or mg/0.5mL) and the <b>dose in mg you want</b>.</p>
+
+    <div class="calculator-container">
+      <div class="input-container input-container--wide-first">
+        <div class="input-box">
+          <div class="input-box__header">
+            <button type="button" class="clickable-text" data-modal="modal-concentration">Concentration</button>
+            <div class="input-box__addon"><div class="unit-toggle"><button type="button" class="unit-toggle__button unit-toggle__button--active" data-unit="mg/mL">mg/mL</button><button type="button" class="unit-toggle__button" data-unit="mg/0.5mL">mg/0.5mL</button></div></div>
+          </div>
+          <div class="input-wrap">
+            <input id="tirz-conc" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" min="0" placeholder="e.g., 10" type="text" value="">
+            <div class="input-unit" id="tirz-unit">mg/mL</div>
+          </div>
+        </div>
+        <div class="input-box">
+          <div class="input-box__header"><span class="clickable-text" style="color:var(--text-mid);cursor:default">Desired Dosage (mg)</span></div>
+          <div class="input-wrap">
+            <input id="tirz-dose" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" min="0" placeholder="e.g., 2.5" type="text" value="">
+            <div class="input-unit">mg</div>
+          </div>
+        </div>
+      </div>
+      <button class="calculate-btn" id="tirz-calc">// CALCULATE DOSE</button>
+      <div class="calc-help-link"><a data-modal="modal-concentration">Click here to learn more about how to read your concentration from your label.</a></div>
+      <div class="results-text" id="tirz-result">
+        <div class="main-result" id="tirz-main">—</div>
+        <div class="sub-result" id="tirz-sub">—</div>
+        <div class="formula"><b>FORMULA:</b> volume_mL = dose_mg ÷ (concentration_mg_per_mL) · syringe_units = volume_mL × 100</div>
+        <div class="notes">⚠ This is the dose to draw from your vial, not what you take. The units correspond to a U-100 syringe. Double-check the concentration on your vial label.</div>
+      </div>
+      <div style="margin-top:12px;text-align:center">
+        <div class="label-cta-row">
+          <button class="calculate-btn" style="margin-top:0" data-action="print-calc" data-view="view-home">// PRINT CALCULATION</button>
+          <button class="label-cta-btn" data-label-trigger data-view="view-home" data-calc="tirzepatide" data-disabled="true">// PRINT//LABEL</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="disclaimer">Important Disclaimer: This calculator is for informational purposes only and is NOT a substitute for professional medical advice. Always verify your dose with your healthcare provider. GRID//NODE is not responsible or liable for any consequences of using this tool.</div>
+
+    <div class="section-header">
+      <div class="section-marks">
+        <svg viewBox="0 0 64 64" width="22" height="22" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="15" x2="17" y2="49"/><line x1="47" y1="15" x2="47" y2="49"/><line x1="17" y1="15" x2="47" y2="49"/></svg>
+      </div>
+      <h2 class="section-title">// DOSE//NODE CALCULATORS</h2>
+      <div class="section-marks">
+        <svg viewBox="0 0 64 64" width="22" height="22" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="15" x2="17" y2="49"/><line x1="47" y1="15" x2="47" y2="49"/><line x1="17" y1="15" x2="47" y2="49"/></svg>
+      </div>
+    </div>
+    <div class="calc-grid">
+      <a class="calc-tile" data-action="tirzepatide"><div class="tile-icon"><svg viewBox="0 0 32 32"><rect x="4" y="11" width="20" height="10" rx="1"/><line x1="24" y1="13" x2="24" y2="19"/><line x1="24" y1="16" x2="28" y2="16"/><line x1="27" y1="13" x2="27" y2="19"/><line x1="4" y1="13" x2="2" y2="13"/><line x1="4" y1="19" x2="2" y2="19"/><line x1="2" y1="13" x2="2" y2="19"/><circle cx="29" cy="16" r="1.5" fill="currentColor" stroke="none"/><line x1="9" y1="11" x2="9" y2="21"/><line x1="14" y1="11" x2="14" y2="21"/><line x1="19" y1="11" x2="19" y2="21"/></svg></div><div class="tile-title">Tirzepatide Dosage Calculator</div><div class="tile-desc">Calculate dosage for Tirzepatide (Mounjaro/Zepbound)</div></a>
+      <a class="calc-tile" data-action="semaglutide"><div class="tile-icon"><svg viewBox="0 0 32 32"><rect x="4" y="4" width="24" height="24" rx="2"/><rect x="6" y="6" width="6" height="6"/><rect x="14" y="6" width="6" height="6"/><rect x="22" y="6" width="4" height="6"/><rect x="6" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/><rect x="6" y="22" width="12" height="4"/><rect x="20" y="14" width="4" height="4"/><rect x="20" y="20" width="4" height="4"/><rect x="26" y="14" width="2" height="4"/><rect x="26" y="20" width="2" height="4"/></svg></div><div class="tile-title">Semaglutide Dosage Calculator</div><div class="tile-desc">Calculate dosage for Semaglutide (Ozempic/Wegovy)</div></a>
+      <a class="calc-tile" data-action="reverse"><div class="tile-icon"><svg viewBox="0 0 32 32"><path d="M26 10 A12 12 0 1 0 28 18"/><polyline points="28 4 28 10 22 10"/><path d="M6 22 A12 12 0 1 0 4 14"/><polyline points="4 28 4 22 10 22"/></svg></div><div class="tile-title">Reverse Dosage Calculator</div><div class="tile-desc">How much did you take? Calculate the dosage from the units you injected.</div></a>
+      <a class="calc-tile" data-action="split"><div class="tile-icon split"><svg viewBox="0 0 32 32"><rect x="3" y="6" width="26" height="20" rx="1"/><line x1="16" y1="6" x2="16" y2="26"/><line x1="9" y1="6" x2="9" y2="26" stroke-dasharray="2 2"/><line x1="23" y1="6" x2="23" y2="26" stroke-dasharray="2 2"/><line x1="16" y1="3" x2="16" y2="6"/><line x1="16" y1="26" x2="16" y2="29"/></svg></div><div class="tile-title">Split Dose Interval Calculator</div><div class="tile-desc">Math tool: convert weekly dose to per-injection amount at different intervals. Not a recommendation.</div></a>
+      <a class="calc-tile" data-action="zepbound"><div class="tile-icon zep"><svg viewBox="0 0 32 32"><path d="M11 4 L11 6 L9 6 L9 26 L11 26 L11 28 L21 28 L21 26 L23 26 L23 6 L21 6 L21 4 Z"/><line x1="13" y1="10" x2="19" y2="10"/><line x1="13" y1="14" x2="19" y2="14"/><line x1="13" y1="18" x2="19" y2="18"/><line x1="13" y1="22" x2="19" y2="22"/><line x1="16" y1="6" x2="16" y2="26" stroke-dasharray="2 2"/></svg></div><div class="tile-title">Zepbound Reverse Dosage Calculator</div><div class="tile-desc">For Zepbound: Calculate dosage from units injected and the exact mg and mL printed on your vial or pen label.</div></a>
+      <a class="calc-tile" data-action="retatrutide"><div class="tile-icon"><svg viewBox="0 0 32 32"><path d="M8 2 Q16 8 24 2"/><path d="M8 8 Q16 14 24 8"/><path d="M8 14 Q16 20 24 14"/><path d="M8 20 Q16 26 24 20"/><path d="M8 26 Q16 32 24 26"/><path d="M24 2 Q16 8 8 2"/><path d="M24 8 Q16 14 8 8"/><path d="M24 14 Q16 20 8 14"/><path d="M24 20 Q16 26 8 20"/><path d="M24 26 Q16 32 8 26"/></svg></div><div class="tile-title">Retatrutide Dosage Calculator</div><div class="tile-desc">Calculate dosage for Retatrutide (investigational).</div></a>
+      <a class="calc-tile" data-action="vial" style="border-color:var(--red)"><div class="tile-icon" style="color:var(--red);border-color:var(--red)"><svg viewBox="0 0 32 32"><path d="M5 8 L5 26 Q5 30 9 30 L13 30 Q17 30 17 26 L17 8 Z"/><line x1="5" y1="8" x2="17" y2="8"/><path d="M15 16 L25 16 L25 26 Q25 30 21 30 L17 30 L17 14"/><line x1="19" y1="20" x2="21" y2="20"/><line x1="19" y1="24" x2="21" y2="24"/></svg></div><div class="tile-title" style="color:var(--red)">Vial Transition Dosage Calculator</div><div class="tile-desc">Combine doses from two vials (e.g., when finishing one and starting another).</div></a>
+      <a class="calc-tile" data-action="reconstitution"><div class="tile-icon"><svg viewBox="0 0 32 32"><path d="M11 2 L11 6 L9 6 L9 26 Q9 30 13 30 L19 30 Q23 30 23 26 L23 6 L21 6 L21 2 Z"/><line x1="11" y1="6" x2="21" y2="6"/><circle cx="13" cy="22" r="0.8" fill="currentColor" stroke="none"/><circle cx="17" cy="24" r="0.8" fill="currentColor" stroke="none"/><circle cx="15" cy="19" r="0.8" fill="currentColor" stroke="none"/><circle cx="19" cy="20" r="0.8" fill="currentColor" stroke="none"/><path d="M27 4 L27 10 L25 10 Q25 12 27 12 Q29 12 29 10 L29 4"/><line x1="27" y1="14" x2="27" y2="16"/></svg></div><div class="tile-title">Reconstitution Calculator</div><div class="tile-desc">Get your concentration, calculate units to draw, and print a label for your vial.</div></a>
+    </div>
+
+    <div class="guides-section">
+      <div class="section-header">
+        <div class="section-marks">
+          <svg viewBox="0 0 64 64" width="18" height="18" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="15" x2="17" y2="49"/><line x1="47" y1="15" x2="47" y2="49"/><line x1="17" y1="15" x2="47" y2="49"/></svg>
+        </div>
+        <h2 class="section-title">// GUIDES AND FAQS</h2>
+        <div class="section-marks">
+          <svg viewBox="0 0 64 64" width="18" height="18" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="15" x2="17" y2="49"/><line x1="47" y1="15" x2="47" y2="49"/><line x1="17" y1="15" x2="47" y2="49"/></svg>
+        </div>
+      </div>
+      <div class="guides-grid">
+        <a class="guide-item" data-modal="modal-concentration"><div class="guide-icon"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><line x1="14.5" y1="14.5" x2="20" y2="20"/><line x1="8" y1="10" x2="12" y2="10"/><line x1="10" y1="8" x2="10" y2="12"/></svg></div><div class="guide-text"><h3>Finding Your Medication Concentration</h3><p>Learn how to find and understand your medication's concentration</p></div></a>
+        <a class="guide-item" data-modal="modal-glp1"><div class="guide-icon"><svg viewBox="0 0 24 24"><rect x="3" y="8" width="14" height="8" rx="1"/><line x1="17" y1="9" x2="17" y2="15"/><line x1="17" y1="12" x2="20" y2="12"/><line x1="19" y1="9" x2="19" y2="15"/><line x1="3" y1="10" x2="2" y2="10"/><line x1="3" y1="14" x2="2" y2="14"/><line x1="2" y1="10" x2="2" y2="14"/><circle cx="21" cy="12" r="1" fill="currentColor" stroke="none"/></svg></div><div class="guide-text"><h3>Just Starting on GLP-1s? What You Need To Know</h3><p>Some things you'll want to know when starting your weight loss journey</p></div></a>
+        <a class="guide-item" data-modal="modal-foundayo"><div class="guide-icon"><svg viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="6" rx="3"/><line x1="12" y1="9" x2="12" y2="15"/><line x1="6" y1="11" x2="9" y2="11"/><line x1="6" y1="13" x2="9" y2="13"/><line x1="15" y1="11" x2="18" y2="11"/><line x1="15" y1="13" x2="18" y2="13"/></svg></div><div class="guide-text"><h3>Foundayo (Orforglipron): The New Oral GLP-1</h3><p>Everything you need to know about the latest FDA-approved pill for weight loss</p></div></a>
+        <a class="guide-item" data-modal="modal-split"><div class="guide-icon"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="1"/><line x1="12" y1="6" x2="12" y2="18"/><line x1="6" y1="9" x2="6" y2="9.5"/><line x1="6" y1="11" x2="6" y2="11.5"/><line x1="6" y1="13" x2="6" y2="13.5"/><line x1="6" y1="15" x2="6" y2="15.5"/><line x1="18" y1="9" x2="18" y2="9.5"/><line x1="18" y1="11" x2="18" y2="11.5"/><line x1="18" y1="13" x2="18" y2="13.5"/><line x1="18" y1="15" x2="18" y2="15.5"/></svg></div><div class="guide-text"><h3>What Is Split Dosing?</h3><p>Breaking your weekly dose into smaller, more frequent injections</p></div></a>
+        <a class="guide-item" data-modal="modal-faq"><div class="guide-icon"><svg viewBox="0 0 24 24"><path d="M4 5 L4 17 L8 17 L8 20 L12 17 L20 17 L20 5 Z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="14" y2="13"/></svg></div><div class="guide-text"><h3>See All Frequently Asked Questions</h3><p>Check out our complete collection of common questions and answers</p></div></a>
+      </div>
+    </div>
+
+    <div class="dose-terms-explainer">
+      <div class="dose-terms-header">
+        <div class="dose-terms-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:8px;color:var(--cyan)"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>// HELP ME UNDERSTAND!</div>
+        <p class="dose-terms-subtitle">Some key concepts to help you understand your prescription, and how the dosage units are calculated. No math needed.</p>
+      </div>
+      <div class="dose-terms-grid">
+        <div class="dose-term-card dosage"><div class="dose-term-title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><rect x="3" y="9" width="18" height="6" rx="3"/><line x1="12" y1="9" x2="12" y2="15"/></svg>DOSAGE (MG)</div><p class="dose-term-desc">The amount of medication you want to take, measured in milligrams (mg). This is not the same as the volume of liquid you need to inject!</p></div>
+        <div class="dose-term-card volume"><div class="dose-term-title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><path d="M9 2 L9 6 L7 6 L7 20 Q7 22 9 22 L15 22 Q17 22 17 20 L17 6 L15 6 L15 2 Z"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="15" y2="15"/></svg>VOLUME (ML)</div><p class="dose-term-desc">The amount of liquid that contains the medication, measured in milliliters (mL). The dosage in a given volume is indicated by the concentration.</p></div>
+        <div class="dose-term-card concentration"><div class="dose-term-title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg>CONCENTRATION (MG/ML)</div><p class="dose-term-desc">This is how much medication (in milligrams) is present per milliliter of liquid. For example, if the concentration is 10 mg/mL, it means there are 10 milligrams of medication in each milliliter of liquid.</p></div>
+        <div class="dose-term-card units"><div class="dose-term-title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><rect x="3" y="8" width="14" height="8" rx="1"/><line x1="17" y1="9" x2="17" y2="15"/><line x1="17" y1="12" x2="20" y2="12"/><line x1="19" y1="9" x2="19" y2="15"/></svg>UNITS</div><p class="dose-term-desc">Units are another measure of volume, used to define the amount to pull into your syringe. On a typical (U-100) syringe, there are 100 units in 1 milliliter (mL). So 0.5 mL would be 50 units.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== TIRZEPATIDE =================== -->
+  <div class="view" id="view-tirzepatide">
+    <header class="App-header"><h1>TIRZEPATIDE <span class="cyan">DOSE CALCULATOR</span></h1></header>
+    <p class="calc-description">Standard tirzepatide dose calculator. Enter the <b>vial concentration</b> and your <b>desired dose in mg</b>.</p>
+    <div class="calculator-container">
+      <div class="input-container input-container--wide-first">
+        <div class="input-box"><div class="input-box__header"><button type="button" class="clickable-text" data-modal="modal-concentration">Concentration</button><div class="input-box__addon"><div class="unit-toggle"><button type="button" class="unit-toggle__button unit-toggle__button--active" data-unit="mg/mL">mg/mL</button><button type="button" class="unit-toggle__button" data-unit="mg/0.5mL">mg/0.5mL</button></div></div></div><div class="input-wrap"><input class="js-conc" inputmode="decimal" min="0" placeholder="e.g., 10" type="text"><div class="input-unit js-unit">mg/mL</div></div></div>
+        <div class="input-box"><div class="input-box__header"><span style="color:var(--text-mid);font-family:var(--font-m);font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;cursor:default">Desired Dosage (mg)</span></div><div class="input-wrap"><input class="js-dose" inputmode="decimal" min="0" placeholder="e.g., 2.5" type="text"><div class="input-unit">mg</div></div></div>
+      </div>
+      <button class="calculate-btn js-calc">// CALCULATE DOSE</button>
+      <div class="results-text js-result"><div class="main-result js-main">—</div><div class="sub-result js-sub">—</div><div class="formula"><b>FORMULA:</b> volume_mL = dose_mg ÷ (concentration_mg_per_mL) · syringe_units = volume_mL × 100</div><div class="notes">⚠ This is the dose to draw from your vial, not what you take. The units correspond to a U-100 syringe. Double-check the concentration on your vial label.</div></div>
+      <div style="margin-top:12px;text-align:center">
+        <div class="label-cta-row">
+          <button class="calculate-btn" style="margin-top:0" data-action="print-calc" data-view="view-tirzepatide">// PRINT CALCULATION</button>
+          <button class="label-cta-btn" data-label-trigger data-view="view-tirzepatide" data-calc="tirzepatide" data-disabled="true">// PRINT//LABEL</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== SEMAGLUTIDE =================== -->
+  <div class="view" id="view-semaglutide">
+    <header class="App-header"><h1>SEMAGLUTIDE <span class="cyan">DOSE CALCULATOR</span></h1></header>
+    <p class="calc-description">Standard semaglutide dose calculator for <b>compounded vials only</b>. This U-100 calculator is <b>not</b> for use with FDA-approved Ozempic or Wegovy prefilled pens — those products deliver fixed doses in mg clicks, not syringe units. Converting between mg, mL, and syringe units has caused reported 5–20× overdoses; the FDA has specifically warned about this. Use this calculator only for compounded semaglutide vials labeled in mg/mL.</p>
+    <div class="calculator-container">
+      <div class="input-container input-container--wide-first">
+        <div class="input-box"><div class="input-box__header"><button type="button" class="clickable-text" data-modal="modal-concentration">Concentration</button><div class="input-box__addon"><div class="unit-toggle"><button type="button" class="unit-toggle__button unit-toggle__button--active" data-unit="mg/mL">mg/mL</button><button type="button" class="unit-toggle__button" data-unit="mg/0.5mL">mg/0.5mL</button></div></div></div><div class="input-wrap"><input class="js-conc" inputmode="decimal" min="0" placeholder="e.g., 1" type="text"><div class="input-unit js-unit">mg/mL</div></div></div>
+        <div class="input-box"><div class="input-box__header"><span style="color:var(--text-mid);font-family:var(--font-m);font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;cursor:default">Desired Dosage (mg)</span></div><div class="input-wrap"><input class="js-dose" inputmode="decimal" min="0" placeholder="e.g., 0.5" type="text"><div class="input-unit">mg</div></div></div>
+      </div>
+      <button class="calculate-btn js-calc">// CALCULATE DOSE</button>
+      <div class="results-text js-result"><div class="main-result js-main">—</div><div class="sub-result js-sub">—</div><div class="formula"><b>FORMULA:</b> volume_mL = dose_mg ÷ (concentration_mg_per_mL) · syringe_units = volume_mL × 100</div><div class="notes">⚠ This is the dose to draw from your vial, not what you take. The units correspond to a U-100 syringe. Double-check the concentration on your vial label.</div>
+      <div style="margin-top:12px;text-align:center">
+        <div class="label-cta-row">
+          <button class="calculate-btn" style="margin-top:0" data-action="print-calc" data-view="view-semaglutide">// PRINT CALCULATION</button>
+          <button class="label-cta-btn" data-label-trigger data-view="view-semaglutide" data-calc="semaglutide" data-disabled="true">// PRINT//LABEL</button>
+        </div>
+      </div>
+</div>
+    </div>
+  </div>
+
+  <!-- =================== REVERSE =================== -->
+  <div class="view" id="view-reverse">
+    <header class="App-header"><h1>REVERSE <span class="cyan">DOSAGE CALCULATOR</span></h1></header>
+    <p class="calc-description">How much did I take? Enter the <b>concentration (mg/mL or mg/0.5mL)</b> and the <b>number of units</b> to calculate the dosage in milligrams.</p>
+    <div class="calculator-container">
+      <div class="input-container input-container--wide-first">
+        <div class="input-box"><div class="input-box__header"><span style="color:var(--text-mid);font-family:var(--font-m);font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;cursor:default">Units Injected (U-100)</span></div><div class="input-wrap"><input class="js-units" inputmode="decimal" min="0" placeholder="e.g., 50" type="text"><div class="input-unit">units</div></div></div>
+        <div class="input-box"><div class="input-box__header"><button type="button" class="clickable-text" data-modal="modal-concentration">Vial Concentration</button><div class="input-box__addon"><div class="unit-toggle"><button type="button" class="unit-toggle__button unit-toggle__button--active" data-unit="mg/mL">mg/mL</button><button type="button" class="unit-toggle__button" data-unit="mg/0.5mL">mg/0.5mL</button></div></div></div><div class="input-wrap"><input class="js-conc" inputmode="decimal" min="0" placeholder="e.g., 10" type="text"><div class="input-unit js-unit">mg/mL</div></div></div>
+      </div>
+      <button class="calculate-btn js-calc">// CALCULATE DOSE</button>
+      <div class="results-text js-result"><div class="main-result js-main">—</div><div class="sub-result js-sub">—</div><div class="formula"><b>FORMULA:</b> volume_mL = units ÷ 100 · dose_mg = volume_mL × (concentration_mg_per_mL)</div><div class="notes">⚠ This tells you the actual dose in mg you administered. Use this to verify you've taken the correct amount.</div>
+      <div style="margin-top:12px;text-align:center">
+        <button class="calculate-btn" style="margin-top:0" data-action="print-calc" data-view="view-reverse">// PRINT CALCULATION</button>
+      </div>
+</div>
+    </div>
+  </div>
+
+  <!-- =================== ZEPBOUND REVERSE =================== -->
+  <div class="view" id="view-zepbound">
+    <header class="App-header"><h1>ZEPBOUND <span class="cyan">REVERSE CALCULATOR</span></h1></header>
+    <p class="calc-description">For Zepbound vial users only: Select the dosage listed on your vial and enter the number of units you injected to calculate the actual dosage in milligrams (mg) you administered.</p>
+    <div class="calculator-container">
+      <div class="input-container input-container--wide-first">
+        <div class="input-box"><div class="input-box__header"><span style="color:var(--text-mid);font-family:var(--font-m);font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;cursor:default">Units Injected (U-100)</span></div><div class="input-wrap"><input class="js-units" inputmode="decimal" min="0" placeholder="e.g., 25" type="text"><div class="input-unit">units</div></div></div>
+        <div class="input-box"><div class="input-box__header"><span style="color:var(--text-mid);font-family:var(--font-m);font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;cursor:default">Vial Listed Dose</span></div><div class="input-wrap"><input class="js-dose" inputmode="decimal" min="0" placeholder="e.g., 5" type="text"><div class="input-unit">mg</div></div></div>
+        <div class="input-box"><div class="input-box__header"><span style="color:var(--text-mid);font-family:var(--font-m);font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;cursor:default">Vial Volume (mL)</span></div><div class="input-wrap"><input class="js-vol" inputmode="decimal" min="0" step="0.1" placeholder="enter mL from label" type="text" value=""><div class="input-unit">mL</div></div></div>
+      </div>
+      <button class="calculate-btn js-calc">// CALCULATE DOSE</button>
+      <div class="results-text js-result"><div class="main-result js-main">—</div><div class="sub-result js-sub">—</div><div class="formula"><b>FORMULA:</b> volume_mL = units ÷ 100 · dose_mg = (volume_mL ÷ vial_volume_mL) × listed_dose_mg</div><div class="notes">⚠ Enter the <b>exact mg and mL printed on your specific vial label</b>. Vial and pen formats vary by product and lot. Do not assume a standard size — read the label, then enter both numbers as shown.</div>
+      <div style="margin-top:12px;text-align:center">
+        <button class="calculate-btn" style="margin-top:0" data-action="print-calc" data-view="view-zepbound">// PRINT CALCULATION</button>
+      </div>
+</div>
+    </div>
+  </div>
+
+  <!-- =================== RETATRUTIDE =================== -->
+  <div class="view" id="view-retatrutide">
+    <header class="App-header"><h1>RETATRUTIDE <span class="cyan">DOSE CALCULATOR</span></h1></header>
+    <div class="investigational-banner" style="background:rgba(255,59,59,0.08);border:1px solid var(--red);border-left:4px solid var(--red);padding:14px 18px;margin:16px 0;font-family:var(--font-m);font-size:0.78rem;color:var(--text);line-height:1.6">
+      <div style="color:var(--red);font-weight:700;letter-spacing:2px;margin-bottom:6px;font-size:0.75rem">⚠ INVESTIGATIONAL — NOT FOR PUBLIC USE</div>
+      <div>Retatrutide is an investigational compound by Eli Lilly. <b>It is not FDA-approved, not available for purchase, and not legally obtainable outside of approved clinical trials.</b> Any product marketed as "research chemical" or "compounded" retatrutide for human use is unregulated. This calculator is published for <b>clinical-trial participants and researchers</b> only, as a math reference. Do not use this tool to source, dose, or administer retatrutide outside an approved trial protocol.</div>
+    </div>
+    <p class="calc-description">Trial-participant math reference: enter vial concentration and desired mg dose. The result is for protocol-tracking only. Always defer to your trial investigator's prescribed titration.</p>
+    <div class="calculator-container">
+      <div class="input-container input-container--wide-first">
+        <div class="input-box"><div class="input-box__header"><button type="button" class="clickable-text" data-modal="modal-concentration">Concentration</button><div class="input-box__addon"><div class="unit-toggle"><button type="button" class="unit-toggle__button unit-toggle__button--active" data-unit="mg/mL">mg/mL</button><button type="button" class="unit-toggle__button" data-unit="mg/0.5mL">mg/0.5mL</button></div></div></div><div class="input-wrap"><input class="js-conc" inputmode="decimal" min="0" placeholder="e.g., 10" type="text"><div class="input-unit js-unit">mg/mL</div></div></div>
+        <div class="input-box"><div class="input-box__header"><span style="color:var(--text-mid);font-family:var(--font-m);font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;cursor:default">Desired Dosage (mg)</span></div><div class="input-wrap"><input class="js-dose" inputmode="decimal" min="0" placeholder="e.g., 4" type="text"><div class="input-unit">mg</div></div></div>
+      </div>
+      <button class="calculate-btn js-calc">// CALCULATE DOSE</button>
+      <div class="results-text js-result"><div class="main-result js-main">—</div><div class="sub-result js-sub">—</div><div class="formula"><b>FORMULA:</b> volume_mL = dose_mg ÷ (concentration_mg_per_mL) · syringe_units = volume_mL × 100</div><div class="notes">⚠ Retatrutide is investigational. <b>Clinical-trial participants and researchers only.</b> Not available for public use. This is a math reference, not a prescription.</div>
+      <div style="margin-top:12px;text-align:center">
+        <button class="calculate-btn" style="margin-top:0" data-action="print-calc" data-view="view-retatrutide">// PRINT CALCULATION</button>
+      </div>
+</div>
+    </div>
+  </div>
+
+  <!-- =================== SPLIT DOSE =================== -->
+  <div class="view" id="view-split">
+    <header class="App-header"><h1>SPLIT DOSE <span class="cyan">CALCULATOR</span></h1></header>
+    <p class="calc-description"><b>Interval-equivalence calculator.</b> Enter a weekly dose and see the per-injection amount at different intervals (every 3.5, 5, 7 days, etc.). This is a math tool — <b>not a recommendation</b> to change your prescribed schedule. Do not split doses or increase frequency without explicit direction from your prescriber. The FDA has issued warnings about adverse events with compounded GLP-1s taken outside approved titration schedules.</p>
+    <div class="calculator-container">
+      <div class="input-container input-container--stack">
+        <div class="input-box"><div class="input-box__header"><span style="color:var(--text-mid);font-family:var(--font-m);font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;cursor:default">Weekly Dose (mg)</span></div><div class="input-wrap"><input id="split-total" inputmode="decimal" min="0" placeholder="e.g., 10" type="text"><div class="input-unit">mg/week</div></div></div>
+        <div class="input-box"><div class="input-box__header"><span style="color:var(--text-mid);font-family:var(--font-m);font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;cursor:default">Days Between Injections</span></div>
+          <div class="day-picker" id="split-picker">
+            <button type="button" class="day-btn" data-day="1">EVERY 1</button>
+            <button type="button" class="day-btn" data-day="2">EVERY 2</button>
+            <button type="button" class="day-btn" data-day="3">EVERY 3</button>
+            <button type="button" class="day-btn" data-day="3.5">EVERY 3.5</button>
+            <button type="button" class="day-btn" data-day="4">EVERY 4</button>
+            <button type="button" class="day-btn" data-day="5">EVERY 5</button>
+            <button type="button" class="day-btn selected" data-day="7">EVERY 7</button>
+          </div>
+          <div class="range-display" id="split-range">Every 7 days</div>
+        </div>
+      </div>
+      <button class="calculate-btn" id="split-calc">// CALCULATE SPLIT</button>
+      <div class="results-text" id="split-result">
+        <div class="main-result" id="split-main">—</div>
+        <div class="sub-result" id="split-sub">—</div>
+        <div class="formula"><b>FORMULA:</b> per_dose_mg = (total_mg ÷ 7) × days_between · doses_per_week = 7 ÷ days_between</div>
+        <div class="notes">⚠ <b>Not medical advice.</b> Do not change your prescribed schedule without consulting your provider. The FDA has issued warnings about adverse events with compounded GLP-1s taken outside approved titration.</div>
+
+      <div style="margin-top:12px;text-align:center">
+        <button class="calculate-btn" style="margin-top:0" data-action="print-calc" data-view="view-split">// PRINT CALCULATION</button>
+      </div>
+</div>
+    </div>
+  </div>
+
+  <!-- =================== VIAL TRANSITION =================== -->
+  <div class="view" id="view-vial">
+    <header class="App-header"><h1>VIAL TRANSITION <span class="cyan">DOSAGE CALCULATOR</span></h1></header>
+    <p class="calc-description">Almost done with your current vial, and switching to a new vial with a different concentration? This calculator will help you figure out how much to draw from each to get your desired total dose. First, enter the details for your current vial and desired total dosage.</p>
+    <div class="calculator-container">
+      <div class="input-container input-container--stack">
+        <div style="font-family:var(--font-m);font-size:0.6rem;color:var(--cyan);letter-spacing:2px;margin-bottom:4px">// VIAL A (current)</div>
+        <div class="input-container input-container--wide-first" style="margin-bottom:0">
+          <div class="input-box"><div class="input-box__header"><span style="color:var(--text-mid);font-family:var(--font-m);font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;cursor:default">Units Drawn (U-100)</span></div><div class="input-wrap"><input id="via-a-units" inputmode="decimal" min="0" placeholder="e.g., 25" type="text"><div class="input-unit">units</div></div></div>
+          <div class="input-box"><div class="input-box__header"><span style="color:var(--text-mid);font-family:var(--font-m);font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;cursor:default">Vial A Concentration</span></div><div class="input-wrap"><input id="via-a-conc" inputmode="decimal" min="0" placeholder="e.g., 10" type="text"><div class="input-unit">mg/mL</div></div></div>
+        </div>
+        <div class="input-box"><div class="input-box__header"><span style="color:var(--text-mid);font-family:var(--font-m);font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;cursor:default">Desired Total Dose (mg)</span></div><div class="input-wrap"><input id="via-total" inputmode="decimal" min="0" placeholder="e.g., 5" type="text"><div class="input-unit">mg</div></div></div>
+        <div style="font-family:var(--font-m);font-size:0.6rem;color:var(--cyan);letter-spacing:2px;margin:16px 0 4px">// VIAL B (new)</div>
+        <div class="input-box"><div class="input-box__header"><span style="color:var(--text-mid);font-family:var(--font-m);font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;cursor:default">Vial B Concentration</span></div><div class="input-wrap"><input id="via-b-conc" inputmode="decimal" min="0" placeholder="e.g., 15" type="text"><div class="input-unit">mg/mL</div></div></div>
+      </div>
+      <button class="calculate-btn" id="via-calc">// COMBINE DOSES</button>
+      <div class="results-text" id="via-result">
+        <div class="main-result" id="via-main">—</div>
+        <div class="sub-result" id="via-sub">—</div>
+        <div class="formula"><b>FORMULA:</b> vial_a_mg = (a_units ÷ 100) × a_conc · vial_b_mg_needed = total - vial_a_mg · vial_b_units = (vial_b_mg_needed ÷ b_conc) × 100</div>
+        <div class="notes">⚠ This combines doses from two vials to hit your target total. Verify the math with a second calculation before injecting.</div>
+      
+      <div style="margin-top:12px;text-align:center">
+        <button class="calculate-btn" style="margin-top:0" data-action="print-calc" data-view="view-vial">// PRINT CALCULATION</button>
+      </div>
+</div>
+    </div>
+  </div>
+
+  <!-- =================== RECONSTITUTION =================== -->
+  <div class="view" id="view-reconstitution">
+    <header class="App-header"><h1>RECONSTITUTION <span class="cyan">CALCULATOR</span></h1></header>
+    <p class="calc-description">Reconstituting a peptide vial? Enter your vial size and BAC water volume to get your concentration, calculate units to draw for your dose, and print a label for your vial.</p>
+    <div class="calculator-container">
+      <div class="input-container input-container--stack">
+        <div class="input-box"><div class="input-box__header"><span style="color:var(--text-mid);font-family:var(--font-m);font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;cursor:default">Medication / Peptide Name <span style="color:var(--cyan);font-size:0.55rem">← METADATA ONLY</span></span></div><div class="input-wrap"><input id="rec-medication" type="text" maxlength="40" placeholder="e.g., TIRZEPATIDE" autocomplete="off"></div></div>
+        <div class="input-box"><div class="input-box__header"><span style="color:var(--text-mid);font-family:var(--font-m);font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;cursor:default">Peptide Mass in Vial (mg)</span></div><div class="input-wrap"><input id="rec-mass" inputmode="decimal" min="0" placeholder="e.g., 10" type="text"><div class="input-unit">mg</div></div></div>
+        <div class="input-box"><div class="input-box__header"><span style="color:var(--text-mid);font-family:var(--font-m);font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;cursor:default">BAC Water to Add (mL)</span></div><div class="input-wrap"><input id="rec-water" inputmode="decimal" min="0" placeholder="e.g., 2" type="text"><div class="input-unit">mL</div></div></div>
+        <div class="input-box"><div class="input-box__header"><span style="color:var(--text-mid);font-family:var(--font-m);font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;cursor:default">Desired Dose (mg)</span></div><div class="input-wrap"><input id="rec-dose" inputmode="decimal" min="0" placeholder="e.g., 2.5" type="text"><div class="input-unit">mg</div></div></div>
+        <div class="input-box"><div class="input-box__header"><span style="color:var(--text-mid);font-family:var(--font-m);font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;cursor:default">Reconstitution Date <span style="color:var(--cyan);font-size:0.55rem">← WHEN YOU MIXED IT</span></span></div><div class="input-wrap"><input id="rec-mixed" type="date"><div class="input-unit" style="color:var(--cyan)">MIXED</div></div></div>
+        <div class="input-box"><div class="input-box__header"><span style="color:var(--text-mid);font-family:var(--font-m);font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;cursor:default">Beyond-Use Date / Expiration <span style="color:var(--cyan);font-size:0.55rem">← FROM PHARMACY</span></span></div><div class="input-wrap"><input id="rec-bud" type="date"><div class="input-unit" style="color:var(--yellow)">BUD</div></div></div>
+      </div>
+      <button class="calculate-btn" id="rec-calc">// CALCULATE</button>
+      <div class="results-text" id="rec-result">
+        <div class="main-result" id="rec-main">—</div>
+        <div class="sub-result" id="rec-sub">—</div>
+        <div class="formula"><b>FORMULA:</b> concentration_mg_per_mL = peptide_mg ÷ diluent_mL · units_per_mg = 100 ÷ concentration</div>
+        <div class="notes">⚠ <b>Beyond-use date is product-specific</b> — enter the BUD and any storage instructions from your pharmacy's documentation or the manufacturer's labeling. Do not guess; different formulations, diluents, and storage conditions have different shelf lives.</div>
+      </div>
+      <div style="margin-top:12px;text-align:center">
+      
+      <div style="margin-top:12px;text-align:center">
+        <div class="label-cta-row">
+          <button class="calculate-btn" style="margin-top:0" data-action="print-calc" data-view="view-reconstitution">// PRINT CALCULATION</button>
+          <button class="label-cta-btn" data-label-trigger data-view="view-reconstitution" data-calc="reconstitution" data-disabled="true">// PRINT//LABEL</button>
+        </div>
+      </div>
+</div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <ul class="foot-nav">
+    <li><a data-modal="modal-about">About DOSE//NODE</a></li>
+    <li><a data-modal="modal-terms">Terms &amp; Disclaimer</a></li>
+    <li><a data-modal="modal-privacy">Privacy Policy</a></li>
+    <li><button type="button" data-modal="modal-cookies">Cookies</button></li>
+  </ul>
+  <a href="https://gridnode.network" target="_blank" rel="noopener noreferrer" class="foot-trust">// GRIDNODE.NETWORK</a>
+  <p class="foot-copy">Copyright © 2026 GRID//NODE. All rights reserved.</p>
+  <p class="foot-version">DOSE//NODE // GRID//NODE SYSTEM MODULE</p>
+</footer>
+
+
+<!-- LABEL//OUTPUT — NIIMBOT vial/dose label editor (v1) -->
+<div class="modal-backdrop" id="label-backdrop">
+  <div class="modal label-modal" id="label-modal" role="dialog" aria-labelledby="label-modal-title">
+    <button class="modal-close" id="label-close" aria-label="Close label editor">×</button>
+    <div class="modal-tag">// LABEL//OUTPUT — NIIMBOT</div>
+    <h2 id="label-modal-title">Label Editor</h2>
+
+    <div class="label-grid">
+      <!-- LEFT: settings -->
+      <div class="label-settings">
+        <div class="label-section">
+          <div class="label-section__label">TYPE</div>
+          <div class="label-radio-group" id="label-type-group" role="radiogroup">
+            <!-- radio buttons injected by LabelEngine based on eligibility -->
+          </div>
+        </div>
+
+        <div class="label-section">
+          <div class="label-section__label">PRINTER</div>
+          <div class="label-radio-group" id="label-printer-group" role="radiogroup">
+            <label class="label-radio"><input type="radio" name="label-printer" value="D11-H" checked><span>D11-H <span class="muted">(300dpi · compact ref)</span></span></label>
+            <label class="label-radio"><input type="radio" name="label-printer" value="D110"><span>D110 <span class="muted">(203dpi)</span></span></label>
+            <label class="label-radio"><input type="radio" name="label-printer" value="D11"><span>D11 <span class="muted">(203dpi)</span></span></label>
+            <label class="label-radio"><input type="radio" name="label-printer" value="M2"><span>M2 <span class="muted">(300dpi · value ref)</span></span></label>
+            <label class="label-radio"><input type="radio" name="label-printer" value="M2_H"><span>M2_H <span class="muted">(300dpi · max)</span></span></label>
+          </div>
+        </div>
+
+        <div class="label-section">
+          <div class="label-section__label">VIAL</div>
+          <div class="label-radio-group" id="label-vial-group" role="radiogroup">
+            <label class="label-radio"><input type="radio" name="label-vial" value="3" checked><span>3 mL</span></label>
+            <label class="label-radio"><input type="radio" name="label-vial" value="5"><span>5 mL</span></label>
+          </div>
+        </div>
+
+        <div class="label-section">
+          <div class="label-section__label">LABEL <span class="muted" id="label-preset-recommended"></span></div>
+          <div class="label-radio-group" id="label-preset-group" role="radiogroup">
+            <!-- preset radios injected by LabelEngine based on printer + vial -->
+          </div>
+        </div>
+
+        <div class="label-section label-advanced" id="label-advanced" hidden>
+          <div class="label-section__label">// MORE</div>
+          <div class="label-field">
+            <label for="label-storage">Storage Note <span class="muted">(optional, from your label)</span></label>
+            <input type="text" id="label-storage" maxlength="30" placeholder="Copy from pharmacy label">
+          </div>
+          <div class="label-field label-toggle">
+            <label><input type="checkbox" id="label-bud-toggle"> Show BUD reminder <span class="muted">(only if BUD unknown)</span></label>
+          </div>
+        </div>
+        <button class="label-advanced-toggle" id="label-advanced-toggle" type="button">// MORE OPTIONS</button>
+      </div>
+
+      <!-- RIGHT: preview + export -->
+      <div class="label-preview">
+        <div class="label-preview-frame" id="label-preview-frame">
+          <canvas id="label-canvas" width="591" height="177"></canvas>
+        </div>
+        <div class="label-preview-meta" id="label-preview-meta">
+          <span id="label-dims">—</span>
+          <span id="label-dpi">—</span>
+          <span id="label-wrap">—</span>
+        </div>
+        <div class="label-export-warning" id="label-export-warning" hidden>
+          <b>// EXPORTS BLOCKED</b> — critical line(s) too long for this label size. Try a larger preset or shorten the medication name.
+          <ul id="label-export-warning-list"></ul>
+        </div>
+        <div class="label-export-row">
+          <button class="calculate-btn label-export-btn" id="label-export-png" type="button">// EXPORT PNG</button>
+          <button class="calculate-btn label-export-btn" id="label-export-pdf" type="button">// EXPORT PDF</button>
+        </div>
+        <button class="calculate-btn label-export-btn label-export-niimbot" id="label-export-niimbot" type="button">// EXPORT//NIIMBOT</button>
+        <div class="label-niimbot-guide" id="label-niimbot-guide" hidden>
+          <div class="label-niimbot-guide__title">// NIIMBOT IMPORT — 3 STEPS</div>
+          <ol>
+            <li><b>SAVE LABEL</b> — file was downloaded to your device.</li>
+            <li><b>OPEN NIIMBOT</b> — launch the official NIIMBOT app on your phone.</li>
+            <li><b>IMPORT + PRINT</b> — import the file and send to your printer.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <button class="modal-close" data-close>×</button>
+    <div class="modal-tag" id="modal-tag">// MODAL</div>
+    <h2 id="modal-title">Title</h2>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+const views = { home: 'view-home', tirzepatide: 'view-tirzepatide', semaglutide: 'view-semaglutide', reverse: 'view-reverse', zepbound: 'view-zepbound', split: 'view-split', vial: 'view-vial', retatrutide: 'view-retatrutide', reconstitution: 'view-reconstitution' };
+
+function showView(name) {
+  // Capture the view being navigated away from, so we can invalidate its label state
+  const prevActive = document.querySelector('.view.active');
+  const prevViewId = prevActive ? prevActive.id : null;
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const v = document.getElementById(views[name] || 'view-home');
+  if (v) v.classList.add('active');
+  // If the label editor is open for the previous view, close it
+  if (typeof LabelEngine !== 'undefined' && prevViewId && prevViewId !== v.id) {
+    LabelEngine.close();
+  }
+  // Invalidate the previous view's label state (it's no longer the active calc)
+  // and reset isolated metadata so overrides from the previous view don't leak.
+  if (prevViewId && prevViewId !== v.id && typeof LabelEngine !== 'undefined') {
+    LabelEngine.invalidate(prevViewId);
+    LabelEngine.resetMetadata();
+  }
+  const bc = document.getElementById('breadcrumb');
+  if (name === 'home') bc.classList.remove('active');
+  else { bc.classList.add('active'); document.getElementById('breadcrumb-current').textContent = (name || '').toUpperCase().replace(/-/g, ' '); }
+  // Mark active tile
+  document.querySelectorAll('.calc-tile').forEach(t => t.classList.toggle('active', t.dataset.action === name));
+  const ctx = document.getElementById('status-context');
+  if (name === 'home') ctx.textContent = '// CALCULATOR ENGINE — ARMED';
+  else ctx.textContent = '// ' + (name || '').toUpperCase().replace(/-/g, ' ') + ' CALCULATOR — ACTIVE';
+  window.scrollTo(0, 0);
+}
+
+document.body.addEventListener('click', e => {
+  const a = e.target.closest('[data-action]');
+  if (a) {
+    // data-action="print-calc" is handled by the dedicated printCalc() listener below.
+    if (a.dataset.action === 'print-calc') return;
+    // Tile navigation — only the calculator names + "home".
+    const validViews = ['home', 'tirzepatide', 'semaglutide', 'reverse', 'split', 'zepbound', 'retatrutide', 'vial', 'reconstitution'];
+    if (validViews.includes(a.dataset.action)) {
+      e.preventDefault(); showView(a.dataset.action);
+    }
+  }
+});
+
+// === UNIT TOGGLE ===
+// Unit toggles are <div>s, not <input>s — textContent changes don't fire 'input' events.
+// So we attach the result-clearing logic directly to the unit toggle click.
+document.querySelectorAll('.unit-toggle').forEach(toggle => {
+  toggle.addEventListener('click', e => {
+    const btn = e.target.closest('.unit-toggle__button');
+    if (!btn) return;
+    toggle.querySelectorAll('.unit-toggle__button').forEach(b => { b.classList.remove('unit-toggle__button--active'); b.setAttribute('aria-pressed', 'false'); });
+    btn.classList.add('unit-toggle__button--active'); btn.setAttribute('aria-pressed', 'true');
+    const unit = btn.dataset.unit;
+    const sib = toggle.closest('.input-box').querySelector('.input-unit');
+    if (sib) sib.textContent = unit;
+    // Clear ALL results in the same view when units change (avoids stale display)
+    const view = toggle.closest('.view');
+    if (view) {
+      view.querySelectorAll('.results-text').forEach(r => r.classList.remove('active', 'warning'));
+      view.querySelectorAll('.js-main, .js-sub, [id$="-main"], [id$="-sub"]').forEach(el => el.textContent = '—');
+      // Invalidate label state for the view that just had its unit toggled
+      if (view.id) LabelEngine.invalidate(view.id);
+    }
+  });
+});
+
+// === GENERIC CALC (tirzepatide, semaglutide, retatrutide) ===
+document.querySelectorAll('.view').forEach(view => {
+  const calcBtn = view.querySelector('.js-calc');
+  if (!calcBtn) return;
+  const conc = view.querySelector('.js-conc');
+  const dose = view.querySelector('.js-dose');
+  const unitDisplay = view.querySelector('.js-unit');
+  const result = view.querySelector('.js-result');
+  const main = view.querySelector('.js-main');
+  const sub = view.querySelector('.js-sub');
+  // Determine calculator type from the view id
+  const viewId = view.id;
+  const calcType = viewId === 'view-tirzepatide' ? 'tirzepatide'
+                 : viewId === 'view-semaglutide' ? 'semaglutide'
+                 : viewId === 'view-retatrutide'  ? 'retatrutide'
+                 : viewId === 'view-reverse'      ? 'reverse'
+                 : viewId === 'view-zepbound'     ? 'zepbound_reverse'
+                 : null;
+  calcBtn.addEventListener('click', () => {
+    if (!conc || !dose) return;
+    const c = parseFloat(conc.value), d = parseFloat(dose.value);
+    if (isNaN(c) || isNaN(d) || c <= 0 || d <= 0) { result && result.classList.remove('active'); LabelEngine.invalidate(viewId); return; }
+    const unit = unitDisplay ? unitDisplay.textContent : 'mg/mL';
+    const cm = unit === 'mg/0.5mL' ? c * 2 : c;
+    const v = d / cm, u = v * 100;
+    main && (main.textContent = v.toFixed(3) + ' mL');
+    sub && (sub.textContent = '= ' + u.toFixed(1) + ' units on a U-100 syringe');
+    result && result.classList.add('active');
+    // Set LabelEngine result only for eligible calcs (Tirz/Sema)
+    if (calcType === 'tirzepatide' || calcType === 'semaglutide') {
+      const med = calcType === 'tirzepatide' ? 'TIRZEPATIDE' : 'SEMAGLUTIDE';
+      LabelEngine.setResult(viewId, calcType, {
+        calculator_type: calcType,
+        medication_name: med,
+        vial_strength_mg: null,
+        concentration_mg_ml: cm,
+        desired_dose_mg: d,
+        volume_ml: v,
+        syringe_units_u100: u,
+        bac_water_ml: null,
+        reconstitution_date: null,
+        bud: null,
+        vial_size_ml: null,
+        vial_a_conc_mg_ml: null,
+        vial_b_conc_mg_ml: null,
+        vial_a_drawn_u: null,
+        source_inputs: { concentration_input: c, unit_input: unit },
+        calculated_outputs: { volume_ml: v, syringe_units: u },
+        generated_at: new Date().toISOString(),
+      });
+    } else if (calcType) {
+      // Eligible calculators with a js-calc but NOT label-eligible:
+      // we still call invalidate to clear any stale state.
+      LabelEngine.invalidate(viewId);
+    }
+  });
+  [conc, dose].forEach(el => el && el.addEventListener('keydown', e => { if (e.key === 'Enter') calcBtn.click(); }));
+  // Clear stale result when numeric inputs change. (Unit display is a <div>, doesn't fire input;
+  // that's handled by the unit-toggle click handler.)
+  [conc, dose].forEach(el => el && el.addEventListener('input', () => { result && result.classList.remove('active'); LabelEngine.invalidate(viewId); }));
+});
+
+// === REVERSE CALC ===
+(function() {
+  const v = document.getElementById('view-reverse');
+  if (!v) return;
+  const units = v.querySelector('.js-units');
+  const conc = v.querySelector('.js-conc');
+  const unitDisplay = v.querySelector('.js-unit');
+  const result = v.querySelector('.js-result');
+  const main = v.querySelector('.js-main');
+  const sub = v.querySelector('.js-sub');
+  const btn = v.querySelector('.js-calc');
+  btn.addEventListener('click', () => {
+    const u = parseFloat(units.value), c = parseFloat(conc.value);
+    if (isNaN(u) || isNaN(c) || u <= 0 || c <= 0) { result.classList.remove('active'); return; }
+    const unit = unitDisplay ? unitDisplay.textContent : 'mg/mL';
+    const cm = unit === 'mg/0.5mL' ? c * 2 : c;
+    const vol = u / 100, dose = vol * cm;
+    main.textContent = dose.toFixed(2) + ' mg';
+    sub.textContent = '= ' + vol.toFixed(3) + ' mL volume';
+    result.classList.add('active');
+  });
+  [units, conc].forEach(el => el && el.addEventListener('keydown', e => { if (e.key === 'Enter') btn.click(); }));
+  [units, conc, unitDisplay].forEach(el => el && el.addEventListener('input', () => { result.classList.remove('active'); }));
+})();
+
+// === ZEPBOUND REVERSE CALC ===
+(function() {
+  const v = document.getElementById('view-zepbound');
+  if (!v) return;
+  const units = v.querySelector('.js-units');
+  const dose = v.querySelector('.js-dose');
+  const volIn = v.querySelector('.js-vol');
+  const result = v.querySelector('.js-result');
+  const main = v.querySelector('.js-main');
+  const sub = v.querySelector('.js-sub');
+  const btn = v.querySelector('.js-calc');
+  btn.addEventListener('click', () => {
+    const u = parseFloat(units.value), d = parseFloat(dose.value), vol = parseFloat(volIn.value);
+    if (isNaN(u) || isNaN(d) || isNaN(vol) || u <= 0 || d <= 0 || vol <= 0) { result.classList.remove('active'); return; }
+    const vml = u / 100, mg = (vml / vol) * d;
+    main.textContent = mg.toFixed(2) + ' mg';
+    sub.textContent = '= ' + vml.toFixed(3) + ' mL volume · listed at ' + d + ' mg per ' + vol + ' mL';
+    result.classList.add('active');
+  });
+  [units, dose, volIn].forEach(el => el && el.addEventListener('keydown', e => { if (e.key === 'Enter') btn.click(); }));
+  [units, dose, volIn].forEach(el => el && el.addEventListener('input', () => { result.classList.remove('active'); }));
+})();
+
+// === SPLIT DOSE CALC (with day picker) ===
+let selectedDays = 7;
+document.querySelectorAll('#split-picker .day-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#split-picker .day-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    const newDays = parseFloat(btn.dataset.day);
+    if (newDays !== selectedDays) {
+      // Day changed — clear the previous result (it's stale)
+      const r = document.getElementById('split-result');
+      const main = document.getElementById('split-main');
+      const sub = document.getElementById('split-sub');
+      if (r) r.classList.remove('active');
+      if (main) main.textContent = '—';
+      if (sub) sub.textContent = '—';
+    }
+    selectedDays = newDays;
+    document.getElementById('split-range').textContent = 'Every ' + selectedDays + ' days';
+  });
+});
+(function() {
+  const total = document.getElementById('split-total');
+  const result = document.getElementById('split-result');
+  const main = document.getElementById('split-main');
+  const sub = document.getElementById('split-sub');
+  const btn = document.getElementById('split-calc');
+  btn.addEventListener('click', () => {
+    const t = parseFloat(total.value);
+    if (isNaN(t) || t <= 0 || selectedDays <= 0 || selectedDays > 7) { result.classList.remove('active'); return; }
+    const perDose = (t / 7) * selectedDays;
+    const doses = 7 / selectedDays;
+    main.textContent = perDose.toFixed(2) + ' mg per dose';
+    sub.textContent = '= ' + doses.toFixed(1) + ' injections per week (every ' + selectedDays + ' days)';
+    result.classList.add('active');
+  });
+  total.addEventListener('keydown', e => { if (e.key === 'Enter') btn.click(); });
+  total.addEventListener('input', () => { result.classList.remove('active'); });
+})();
+
+// === VIAL TRANSITION CALC ===
+(function() {
+  const aU = document.getElementById('via-a-units');
+  const aC = document.getElementById('via-a-conc');
+  const total = document.getElementById('via-total');
+  const bC = document.getElementById('via-b-conc');
+  const result = document.getElementById('via-result');
+  const main = document.getElementById('via-main');
+  const sub = document.getElementById('via-sub');
+  const btn = document.getElementById('via-calc');
+  btn.addEventListener('click', () => {
+    const au = parseFloat(aU.value), ac = parseFloat(aC.value), t = parseFloat(total.value), bc = parseFloat(bC.value);
+    if ([au, ac, t, bc].some(v => isNaN(v) || v <= 0)) { result.classList.remove('active'); return; }
+    const aMg = (au / 100) * ac;
+    if (aMg > t) {
+      const overage = aMg - t;
+      main.textContent = '⚠ VIAL A EXCEEDS TARGET';
+      sub.textContent = 'Vial A delivers ' + aMg.toFixed(2) + ' mg — ' + overage.toFixed(2) + ' mg MORE than your ' + t + ' mg target. Do NOT draw from Vial B. Discard excess or consult your prescriber.';
+      result.classList.add('active', 'warning');
+      return;
+    }
+    result.classList.remove('warning');
+    const bMg = t - aMg;
+    const bUnits = (bMg / bc) * 100;
+    main.textContent = bUnits.toFixed(1) + ' units from VIAL B';
+    sub.textContent = 'Vial A gave you ' + aMg.toFixed(2) + ' mg. You need ' + bMg.toFixed(2) + ' mg more from Vial B (' + bc + ' mg/mL).';
+    result.classList.add('active');
+  });
+  [aU, aC, total, bC].forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') btn.click(); }));
+  [aU, aC, total, bC].forEach(el => el.addEventListener('input', () => { result.classList.remove('active', 'warning'); }));
+})();
+
+// === RECONSTITUTION CALC ===
+(function() {
+  const mass = document.getElementById('rec-mass');
+  const water = document.getElementById('rec-water');
+  const dose = document.getElementById('rec-dose');
+  const bud = document.getElementById('rec-bud');
+  const mixed = document.getElementById('rec-mixed');
+  const result = document.getElementById('rec-result');
+  const main = document.getElementById('rec-main');
+  const sub = document.getElementById('rec-sub');
+  const btn = document.getElementById('rec-calc');
+  btn.addEventListener('click', () => {
+    const m = parseFloat(mass.value), w = parseFloat(water.value), d = parseFloat(dose.value);
+    if ([m, w, d].some(v => isNaN(v) || v <= 0)) { result.classList.remove('active'); LabelEngine.invalidate('view-reconstitution'); return; }
+    const c = m / w;
+    const unitsToDraw = (d / c) * 100;
+    main.textContent = c.toFixed(2) + ' mg/mL';
+    sub.textContent = 'For ' + d + ' mg dose, draw ' + unitsToDraw.toFixed(1) + ' units on U-100 syringe';
+    result.classList.add('active');
+    // VIAL//LABEL requires explicit medication; default to placeholder if user didn't type.
+    // The label editor will show an editable field for medication name.
+    const medEl = document.getElementById('rec-medication');
+    const medName = medEl && medEl.value ? medEl.value.trim() : '';
+    LabelEngine.setResult('view-reconstitution', 'reconstitution', {
+      calculator_type: 'reconstitution',
+      medication_name: medName || null,
+      vial_strength_mg: m,
+      concentration_mg_ml: c,
+      desired_dose_mg: d,
+      volume_ml: d / c,
+      syringe_units_u100: unitsToDraw,
+      bac_water_ml: w,
+      reconstitution_date: mixed && mixed.value ? mixed.value : null,
+      bud: bud && bud.value ? bud.value : null,
+      vial_size_ml: null,
+      vial_a_conc_mg_ml: null,
+      vial_b_conc_mg_ml: null,
+      vial_a_drawn_u: null,
+      source_inputs: { mass_mg: m, bac_ml: w, dose_mg: d, mixed_input: mixed ? mixed.value : '', bud_input: bud ? bud.value : '' },
+      calculated_outputs: { concentration_mg_ml: c, volume_ml: d / c, syringe_units: unitsToDraw },
+      generated_at: new Date().toISOString(),
+    });
+  });
+  [mass, water, dose].forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') btn.click(); }));
+  // Medication name, MIXED date, and BUD edits also invalidate the label
+  const medEl = document.getElementById('rec-medication');
+  [mass, water, dose, document.getElementById('rec-bud'), document.getElementById('rec-mixed'), medEl].forEach(el => el && el.addEventListener('input', () => { result.classList.remove('active'); LabelEngine.invalidate('view-reconstitution'); }));
+})();
+
+// === ID-BASED CALCULATORS (home tirz + dedicated split/vial/rec) ===
+// The generic .js-calc iteration handles views with `.js-calc` buttons + `.js-conc/.js-dose` inputs
+// (sema, reverse, zep, retat). These views have richer input schemes, so we wire them by ID.
+// - view-home (Tirzepatide) — the hero calc, has a unit toggle (mg/mL vs mg/0.5mL)
+// - view-split (Split Dose) — has a day picker
+// - view-vial (Vial Transition) — has 4 inputs
+// - view-reconstitution (Reconstitution) — has 3 inputs + 21d expiry for vial label
+// IDs are unique per view, so no collision between the generic loop and this IIFE.
+(function() {
+  // Tirzepatide (home view — hero calculator with unit toggle)
+  const tCalc = document.getElementById('tirz-calc');
+  if (tCalc) {
+    const tConc = document.getElementById('tirz-conc');
+    const tDose = document.getElementById('tirz-dose');
+    const tUnit = document.getElementById('tirz-unit');
+    const tResult = document.getElementById('tirz-result');
+    const tMain = document.getElementById('tirz-main');
+    const tSub = document.getElementById('tirz-sub');
+    const run = () => {
+      const c = parseFloat(tConc.value), d = parseFloat(tDose.value);
+      if (isNaN(c) || isNaN(d) || c <= 0 || d <= 0) { tResult.classList.remove('active'); LabelEngine.invalidate('view-home'); return; }
+      const unit = tUnit ? tUnit.textContent : 'mg/mL';
+      const cm = unit === 'mg/0.5mL' ? c * 2 : c;
+      const v = d / cm, u = v * 100;
+      tMain.textContent = v.toFixed(3) + ' mL';
+      tSub.textContent = '= ' + u.toFixed(1) + ' units on a U-100 syringe';
+      tResult.classList.add('active');
+      LabelEngine.setResult('view-home', 'tirzepatide', {
+        calculator_type: 'tirzepatide',
+        medication_name: 'TIRZEPATIDE',
+        vial_strength_mg: null,
+        concentration_mg_ml: cm,
+        desired_dose_mg: d,
+        volume_ml: v,
+        syringe_units_u100: u,
+        bac_water_ml: null,
+        reconstitution_date: null,
+        bud: null,
+        vial_size_ml: null,
+        vial_a_conc_mg_ml: null,
+        vial_b_conc_mg_ml: null,
+        vial_a_drawn_u: null,
+        source_inputs: { concentration_input: c, unit_input: unit },
+        calculated_outputs: { volume_ml: v, syringe_units: u },
+        generated_at: new Date().toISOString(),
+      });
+    };
+    tCalc.addEventListener('click', run);
+    [tConc, tDose].forEach(el => el && el.addEventListener('keydown', e => { if (e.key === 'Enter') run(); }));
+    // Clear stale result on input or unit change
+    [tConc, tDose, tUnit].forEach(el => el && el.addEventListener('input', () => { tResult.classList.remove('active'); LabelEngine.invalidate('view-home'); }));
+    // Also update tirz-unit when home unit toggle clicked
+    const tToggle = document.getElementById('view-home')?.querySelector('.unit-toggle');
+    if (tToggle) {
+      tToggle.addEventListener('click', e => {
+        const btn = e.target.closest('.unit-toggle__button');
+        if (!btn) return;
+        tToggle.querySelectorAll('.unit-toggle__button').forEach(b => b.classList.remove('unit-toggle__button--active'));
+        btn.classList.add('unit-toggle__button--active');
+        if (tUnit) tUnit.textContent = btn.dataset.unit;
+        tResult.classList.remove('active');
+      });
+    }
+  }
+
+  // Split / Vial / Reconstitution wiring lives in their dedicated IIFEs above.
+  // (Lines 808-868: split-dose, vial-transition, reconstitution.)
+  // This IIFE handles only the home-view Tirzepatide because the .js-calc iteration
+  // does NOT match #tirz-calc (it only finds elements with the .js-calc class).
+})();
+
+// === MODAL ===
+const modalContent = {
+  'modal-concentration': { tag: '// HELP — READING YOUR LABEL', title: 'How to read your concentration from the vial label', body: `<p>Your vial label will list the concentration in one of two ways:</p><ul><li><b>mg/mL</b> — milligrams of peptide per milliliter of liquid.</li><li><b>mg/0.5mL</b> (or any other volume) — milligrams of peptide per the specified volume of liquid.</li></ul><p><b>Examples:</b></p><ul><li>"10 mg/mL" → 10mg in every 1mL of liquid</li><li>"5 mg / 0.5 mL" → 5mg in every 0.5mL (which means 10mg/mL — same as the first example!)</li></ul><p>Use the unit toggle to match what's on your label.</p>` },
+  'modal-supporter': { tag: '// GOLD SUPPORTER', title: 'Support DOSE//NODE', body: `<p>DOSE//NODE is <b>community-supported</b> and ad-free. A $3/month Gold Supporter subscription helps us keep the calculators free.</p><p>Part of the GRID//NODE family.</p>` },
+  'modal-about': { tag: '// ABOUT', title: 'About DOSE//NODE', body: `<p>DOSE//NODE is a <b>free precision calculator</b> for people using compounded GLP-1 medications like tirzepatide and semaglutide.</p><p>It is part of the <b>GRID//NODE</b> system — a family of calculation instruments built for medication math where errors are dangerous.</p><p>The calculator is for <b>informational purposes only</b> and is not medical advice. Always verify your dose with a healthcare provider.</p>` },
+  'modal-terms': { tag: '// LEGAL', title: 'Terms & Disclaimer', body: `<p>By using this calculator, you acknowledge that:</p><ul><li>This tool is for <b>informational purposes only</b></li><li>It is <b>not medical advice</b></li><li>You should always verify your dose with a healthcare provider</li><li>GRID//NODE is <b>not liable</b> for any consequences of using this tool</li></ul>` },
+  'modal-privacy': { tag: '// LEGAL', title: 'Privacy Policy', body: `<p>DOSE//NODE <b>does not collect personal health information</b>.</p><p>The calculator runs entirely in your browser. No dosage data is sent to any server.</p>` },
+  'modal-cookies': { tag: '// COOKIES', title: 'Cookie Notice', body: `<p>DOSE//NODE uses <b>no tracking cookies</b>. Only essential cookies for site functionality.</p><p><b>Current behavior:</b> Essential only ✓</p><p>There are no configurable cookie options because no non-essential cookies are used. This page documents that fact, not controls that don't exist.</p>` },
+  'modal-glp1': { tag: '// GUIDE', title: 'Just Starting on GLP-1s? What You Need To Know', body: `<p>Some things you'll want to know when starting your weight loss journey:</p><ul><li>Start low, go slow — most providers start at the lowest dose</li><li>Common side effects: nausea, vomiting, fatigue, reduced appetite</li><li>Rotate injection sites: stomach, thigh, upper arm</li><li>Storage and handling — follow the instructions on your specific product's label or ask your pharmacist. Different products have different requirements.</li><li>When to call your provider: severe abdominal pain, persistent vomiting, vision changes</li></ul>` },
+  'modal-foundayo': { tag: '// GUIDE', title: 'Foundayo (Orforglipron): The New Oral GLP-1', body: `<p><b>Foundayo</b> (orforglipron) is a new oral GLP-1 — a <b>pill, not an injection</b>.</p><ul><li><b>FDA-approved April 1, 2026</b></li><li>Once daily tablet</li><li>No refrigeration required</li><li>No needles</li><li>Similar weight loss efficacy to injectable GLP-1s</li></ul>` },
+  'modal-split': { tag: '// GUIDE', title: 'Interval-Equivalence Calculator (not a recommendation)', body: `<p>The Split Dose calculator is a <b>mathematical interval-equivalence tool</b>. Given a total weekly dose, it computes the per-injection amount at a different interval (e.g., every 3.5, 5, or 7 days).</p><p>It does <b>not</b> advise changing your prescribed frequency, endorse any particular schedule, or claim therapeutic benefits such as fewer side effects or better appetite control.</p><p><b>Do not alter your prescribed dosing frequency without explicit direction from your prescriber.</b> The FDA has issued warnings about adverse events associated with compounded semaglutide and tirzepatide being taken more frequently than labeled or following accelerated titration.</p><p>Always follow the dosing schedule on your prescription label.</p>` },
+  'modal-faq': { tag: '// FAQ', title: 'Frequently Asked Questions', body: `<p><b>Q: My vial says "10mg/0.5mL" — which unit?</b></p><p>A: Select "mg/0.5mL" in the unit toggle. The calculator handles the conversion.</p><p><b>Q: Can I use this for compounded peptides?</b></p><p>A: Yes. As long as you know the concentration in mg/mL or mg/0.5mL, the math is the same.</p><p><b>Q: My syringe has 30 units — I need 25. What do I do?</b></p><p>A: 30-unit (0.3 mL) and 50-unit (0.5 mL) syringes are still U-100 insulin syringes — the same 100 units = 1 mL scale as a 100-unit syringe. The smaller capacity just means a more compact barrel, not a different concentration. The calculator's "U-100 syringe" reading applies.</p><p><b>Q: How long does a reconstituted vial last?</b></p><p>A: It is <b>product-specific</b>. Check the beyond-use date (BUD) printed on your vial label or provided by the pharmacy. Different peptides, concentrations, and storage conditions have different shelf lives. Do not guess.</p><p><b>Q: Should I inject in the same spot every time?</b></p><p>A: No. Rotate between at least 4-6 different spots.</p><p><b>Q: Can I mix tirzepatide and semaglutide?</b></p><p>A: No. They're different medications with different mechanisms.</p>` },
+};
+
+function openModal(id) {
+  const d = modalContent[id];
+  if (!d) return;
+  document.getElementById('modal-tag').textContent = d.tag;
+  document.getElementById('modal-title').textContent = d.title;
+  document.getElementById('modal-body').innerHTML = d.body;
+  document.getElementById('modal-backdrop').classList.add('active');
+}
+function closeModal() { document.getElementById('modal-backdrop').classList.remove('active'); }
+
+document.body.addEventListener('click', e => {
+  if (e.target.closest('[data-modal]')) { e.preventDefault(); openModal(e.target.closest('[data-modal]').dataset.modal); }
+  if (e.target.closest('[data-close]')) closeModal();
+  if (e.target.id === 'modal-backdrop') closeModal();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); LabelEngine.close(); } });
+
+// === SEARCH ===
+const searchInput = document.getElementById('search-input');
+const searchResults = document.getElementById('search-results');
+const searchIndex = [
+  { type: 'CALC', name: 'Tirzepatide Dose Calculator', action: 'tirzepatide' },
+  { type: 'CALC', name: 'Semaglutide Dose Calculator', action: 'semaglutide' },
+  { type: 'CALC', name: 'Reverse Dosage Calculator', action: 'reverse' },
+  { type: 'CALC', name: 'Split Dose Calculator', action: 'split' },
+  { type: 'CALC', name: 'Zepbound Reverse Dosage Calculator', action: 'zepbound' },
+  { type: 'CALC', name: 'Retatrutide Dosage Calculator', action: 'retatrutide' },
+  { type: 'CALC', name: 'Vial Transition Dosage Calculator', action: 'vial' },
+  { type: 'CALC', name: 'Reconstitution Calculator', action: 'reconstitution' },
+  { type: 'GUIDE', name: 'Finding Your Medication Concentration', modal: 'modal-concentration' },
+  { type: 'GUIDE', name: 'Just Starting on GLP-1s', modal: 'modal-glp1' },
+  { type: 'GUIDE', name: 'Foundayo (Orforglipron)', modal: 'modal-foundayo' },
+  { type: 'GUIDE', name: 'What Is Split Dosing?', modal: 'modal-split' },
+  { type: 'GUIDE', name: 'All Frequently Asked Questions', modal: 'modal-faq' },
+];
+function renderSearch(q) {
+  if (!q) { searchResults.classList.remove('active'); return; }
+  const ql = q.toLowerCase();
+  const matches = searchIndex.filter(x => x.name.toLowerCase().includes(ql));
+  searchResults.innerHTML = matches.length ? matches.map(m => { const safe = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); return `<div class="search-result" data-handler='${JSON.stringify(m).replace(/'/g, "&#39;")}'><span class="type">${m.type}</span><span class="name">${m.name.replace(new RegExp('(' + safe + ')', 'gi'), '<mark>$1</mark>')}</span></div>`; }).join('') : '<div class="search-result"><span class="type">NONE</span><span class="name" style="color:var(--text-dim)">No results</span></div>';
+  searchResults.classList.add('active');
+}
+searchInput.addEventListener('input', e => renderSearch(e.target.value));
+searchInput.addEventListener('focus', e => { if (e.target.value) renderSearch(e.target.value); });
+document.body.addEventListener('click', e => {
+  const r = e.target.closest('.search-result');
+  if (r) {
+    const m = JSON.parse(r.dataset.handler);
+    if (m.action) showView(m.action);
+    else openModal(m.modal);
+    searchResults.classList.remove('active'); searchInput.value = '';
+  } else if (!e.target.closest('.search-desktop') && !e.target.closest('.search-btn')) {
+    searchResults.classList.remove('active');
+  }
+});
+document.addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); searchInput.focus(); } });
+// Header search button — focus the input and scroll it into view on mobile
+document.getElementById('search-btn').addEventListener('click', e => { e.preventDefault(); searchInput.focus(); searchInput.scrollIntoView({behavior:'smooth',block:'center'}); });
+
+
+
+// === PRINT CALCULATION ===
+// Tracer v1: print the calculator region of the currently active view (the one the user is looking at).
+// We scope to .calculator-container (not the whole view) so the print output is a clean, focused
+// record of the inputs and result. Input units (mg/mL vs mg/0.5mL) are preserved via @media print rules.
+function printCalc() {
+  const v = document.querySelector('.view.active');
+  if (!v || !v.id) {
+    alert('No active calculator view to print.');
+    return;
+  }
+  // Find the calculator container inside the active view
+  const calc = v.querySelector('.calculator-container');
+  if (!calc) {
+    alert('This view has no calculator to print.');
+    return;
+  }
+  // SAFETY: only print if the calculator's result is currently active.
+  const resultEl = calc.querySelector('.results-text, [class*="result"]');
+  if (!resultEl || !resultEl.classList.contains('active')) {
+    alert('No active calculation to print.\n\nEnter values and click // CALCULATE first.');
+    return;
+  }
+  // Mark the calculator region so @media print CSS can scope the print output to just the calc.
+  document.body.dataset.printRegion = v.id;
+  // Use the browser's native print. The @media print rules handle the rest.
+  window.print();
+  // Clean up after print dialog closes (some browsers fire afterprint, but fallback to immediate)
+  setTimeout(() => { delete document.body.dataset.printRegion; }, 100);
+}
+
+document.body.addEventListener('click', e => {
+  const btn = e.target.closest('[data-action="print-calc"]');
+  if (btn) { e.preventDefault(); printCalc(); }
+});
+
+
+// ============================================================================
+// === LABEL ENGINE (Tracer — DOSE//NODE NIIMBOT label system v1) ============
+// ============================================================================
+//
+// Owns: NIIMBOT label rendering, VIAL//LABEL + DOSE//LABEL, PNG/PDF export,
+//       calculator→label integration, stale-label protection.
+//
+// Reads from each calculator's CALCULATION_RESULT (set via setResult()).
+// Does NOT recompute any medication math. The calculator is the single
+// source of truth for concentration/dose/volume/units.
+//
+// All output is browser-side. No uploads, no history, no accounts.
+// ============================================================================
+
+const LabelEngine = (() => {
+  // ----- PHYSICAL GEOMETRY (locked Tracer spec) -----
+  const GEOMETRY = {
+    D_VIAL:      { stock_size_mm: [15, 50],  render_w: 50, render_h: 15, wrap_axis: 50, vertical_axis: 15, printers: ['D110','D11','D11-H'], max_lines: 4, family: 'D' },
+    M2_VIAL_3ML: { stock_size_mm: [40, 20],  render_w: 40, render_h: 20, wrap_axis: 40, vertical_axis: 20, printers: ['M2','M2_H'],         max_lines: 6, family: 'M2' },
+    M2_VIAL_5ML: { stock_size_mm: [50, 20],  render_w: 50, render_h: 20, wrap_axis: 50, vertical_axis: 20, printers: ['M2','M2_H'],         max_lines: 6, family: 'M2' },
+    M2_EXT_3ML:  { stock_size_mm: [50, 20],  render_w: 50, render_h: 20, wrap_axis: 50, vertical_axis: 20, printers: ['M2','M2_H'],         max_lines: 6, family: 'M2', v1_status: 'official' },  // 50×20mm sized for 3mL (94% wrap) vs M2_VIAL_5ML (72% wrap)
+    M2_FULL:     { stock_size_mm: [50, 30],  render_w: 50, render_h: 30, wrap_axis: 50, vertical_axis: 30, printers: ['M2','M2_H'],         max_lines: 10, family: 'M2', shoulder_risk_3ml: true },
+  };
+
+  // ----- PRINTER PROFILES -----
+  const PRINTERS = {
+    'D110':  { native_dpi: 203, tech: 'thermal_direct' },
+    'D11':   { native_dpi: 203, tech: 'thermal_direct' },
+    'D11-H': { native_dpi: 300, tech: 'thermal_direct' },
+    'M2':    { native_dpi: 300, tech: 'thermal_transfer' },
+    'M2_H':  { native_dpi: 300, tech: 'thermal_transfer' },
+  };
+
+  // ----- VIAL CIRCUMFERENCE (for wrap % display) -----
+  const VIAL_CIRC = { '3': 53.4, '5': 69.1 }; // mm — 17mm OD and 22mm OD respectively
+
+  // ----- ELIGIBILITY (locked Tracer spec) -----
+  // Only Tirzepatide, Semaglutide, Reconstitution. VIAL//LABEL is conditional
+  // on the calculator having explicit medication identity + explicit concentration.
+  // DOSE//LABEL is available for the same set.
+  // Reverse, Split, Zepbound Reverse, Retatrutide, Vial Transition → NO labels.
+  const ELIGIBLE = {
+    tirzepatide: { vial: true, dose: true },     // med identity = calculator name; conc = user input
+    semaglutide: { vial: true, dose: true },     // same
+    reconstitution: { vial: true, dose: true },  // med identity required (user-provided or default)
+    reverse:         { vial: false, dose: false },
+    split:           { vial: false, dose: false },
+    zepbound_reverse:{ vial: false, dose: false },
+    retatrutide:     { vial: false, dose: false },
+    vial_transition: { vial: false, dose: false },
+  };
+
+  // ----- STATE -----
+  const state = {
+    viewId: null,
+    calcType: null,
+    result: null,           // CALCULATION_RESULT
+    labelType: 'VIAL',      // 'VIAL' | 'DOSE'
+    printer: 'D11-H',
+    vial: '3',
+    presetKey: null,
+    advancedOpen: false,
+    userStorage: '',
+    budToggle: false,
+    unfitCriticalCanvas: [],  // Canvas-specific unfit rows; blocks PNG + NIIMBOT
+    unfitCriticalPdf: [],     // PDF-specific unfit rows; blocks PDF (set during exportPDF)
+    unfitCritical: [],        // mirror of unfitCriticalCanvas (kept for back-compat with warning UI)
+  };
+
+  // ----- HELPERS -----
+  function pxFromMm(mm, dpi) { return Math.round(mm / 25.4 * dpi); }
+  function wrapPct(preset, vialMl) { return Math.round((preset.wrap_axis / VIAL_CIRC[vialMl]) * 100); }
+  function fmt(n, d=2) { if (n === null || n === undefined || isNaN(n)) return ''; return Number(n).toFixed(d); }
+  function fmtDate(iso) {
+    if (!iso) return '';
+    // Timezone-safe parser: accept YYYY-MM-DD (date input) or full ISO datetime.
+    // Date inputs (YYYY-MM-DD) are parsed as local-date to avoid off-by-one day shifts.
+    // ISO datetimes are parsed as UTC then displayed in UTC.
+    let y, m, d;
+    if (typeof iso === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+      // Date-only — parse as local
+      const parts = iso.split('-');
+      y = parts[0]; m = parts[1]; d = parts[2];
+    } else {
+      const dt = new Date(iso);
+      if (isNaN(dt)) return '';
+      y = dt.getUTCFullYear(); m = String(dt.getUTCMonth() + 1).padStart(2, '0'); d = String(dt.getUTCDate()).padStart(2, '0');
+    }
+    const mm = String(parseInt(m, 10)).padStart(2, '0');
+    const dd = String(parseInt(d, 10)).padStart(2, '0');
+    const yy = String(y).slice(-2);
+    return `${mm}/${dd}/${yy}`;
+  }
+  function ts() { return new Date().toISOString().replace(/[:.]/g, '-'); }
+
+  // ----- ELIGIBILITY -----
+  function isEligible(calcType, labelType) {
+    const e = ELIGIBLE[calcType];
+    if (!e) return false;
+    if (labelType === 'VIAL') return e.vial === true;
+    if (labelType === 'DOSE') return e.dose === true;
+    return false;
+  }
+
+  function vialLabelAllowed(result) {
+    // VIAL//LABEL requires explicit medication identity + explicit concentration.
+    if (!result) return false;
+    const med = (result.medication_name || '').trim();
+    if (!med) return false;
+    if (result.concentration_mg_ml === null || result.concentration_mg_ml === undefined || isNaN(result.concentration_mg_ml)) return false;
+    if (result.concentration_mg_ml <= 0) return false;
+    return true;
+  }
+
+  function doseLabelAllowed(result) {
+    // DOSE//LABEL requires the current dose AND a known medication identity.
+    // If the calculator doesn't carry med identity (Reconstitution with no med entered),
+    // DOSE//LABEL is NOT allowed — the label would be anonymous and dangerous.
+    if (!result) return false;
+    if (result.desired_dose_mg === null || result.desired_dose_mg === undefined || isNaN(result.desired_dose_mg)) return false;
+    if (result.desired_dose_mg <= 0) return false;
+    // Medication identity is also required (captured at calc time)
+    const med = (result.medication_name || '').trim();
+    if (!med) return false;
+    return true;
+  }
+
+  // ----- PRESET SELECTION -----
+  function presetsForPrinter(printer) {
+    return Object.entries(GEOMETRY).filter(([_, g]) => g.printers.includes(printer));
+  }
+  function defaultPresetFor(printer, vialMl) {
+    const presets = presetsForPrinter(printer);
+    // D-series: only D_VIAL
+    if (PRINTERS[printer].tech === 'thermal_direct') return 'D_VIAL';
+    // M2: 3mL → M2_VIAL_3ML; 5mL → M2_VIAL_5ML
+    if (vialMl === '3') return 'M2_VIAL_3ML';
+    if (vialMl === '5') return 'M2_VIAL_5ML';
+    return 'M2_VIAL_3ML';
+  }
+
+  // ----- CALCULATION_RESULT ACCEPTANCE (called by each calculator) -----
+  // The calculator passes its already-computed values. We do NOT recompute math.
+  function setResult(viewId, calcType, result) {
+    // Isolate metadata per calculation: any state that was edited in the label editor
+    // belongs to the previous calculation. Reset before populating the new one.
+    const previousViewId = state.viewId;
+    state.userStorage = '';
+    state.budToggle = false;
+    // Also reset DOM state if the editor is open for a different view
+    if (previousViewId !== viewId) {
+      const stoEl = document.getElementById('label-storage');
+      const budEl = document.getElementById('label-bud-toggle');
+      if (stoEl) stoEl.value = '';
+      if (budEl) budEl.checked = false;
+    }
+    state.viewId = viewId;
+    state.calcType = calcType;
+    state.result = result;
+    // Enable the PRINT//LABEL button if any label type is allowed
+    const anyAllowed = (isEligible(calcType, 'VIAL') && vialLabelAllowed(result)) || (isEligible(calcType, 'DOSE') && doseLabelAllowed(result));
+    setLabelButtonState(viewId, !anyAllowed);
+    // Default to VIAL if eligible, else DOSE
+    if (isEligible(calcType, 'VIAL') && vialLabelAllowed(result)) state.labelType = 'VIAL';
+    else if (isEligible(calcType, 'DOSE') && doseLabelAllowed(result)) state.labelType = 'DOSE';
+    // Reset printer/vial to safe defaults for the new calc
+    state.printer = 'D11-H';
+    state.vial = '3';
+    state.presetKey = defaultPresetFor(state.printer, state.vial);
+  }
+
+  function setLabelButtonState(viewId, isStale) {
+    const btn = document.querySelector(`[data-label-trigger][data-view="${viewId}"]`);
+    if (!btn) return;
+    if (isStale) {
+      btn.setAttribute('data-disabled', 'true');
+      btn.setAttribute('data-stale', 'true');
+    } else {
+      btn.removeAttribute('data-disabled');
+      btn.removeAttribute('data-stale');
+    }
+  }
+
+  function invalidate(viewId) {
+    setLabelButtonState(viewId, true);
+    if (state.viewId === viewId) {
+      state.result = null;
+    }
+  }
+
+  // Reset isolated metadata — called on navigation, on setResult, etc.
+  // Clears any user-entered label editor overrides (storage, BUD toggle).
+  function resetMetadata() {
+    state.userStorage = '';
+    state.budToggle = false;
+    const stoEl = document.getElementById('label-storage');
+    const budEl = document.getElementById('label-bud-toggle');
+    if (stoEl) stoEl.value = '';
+    if (budEl) budEl.checked = false;
+  }
+
+  // ----- OPEN / CLOSE MODAL -----
+  function open(viewId) {
+    if (state.viewId !== viewId) {
+      // Different view opened without setResult; refuse.
+      return;
+    }
+    if (!state.result) {
+      alert('No active calculation. Calculate first, then PRINT//LABEL.');
+      return;
+    }
+    const anyAllowed = (isEligible(state.calcType, 'VIAL') && vialLabelAllowed(state.result)) || (isEligible(state.calcType, 'DOSE') && doseLabelAllowed(state.result));
+    if (!anyAllowed) {
+      alert('Label not available for this calculator. Use PRINT//CALCULATION instead.');
+      return;
+    }
+    // Default label type on open
+    if (isEligible(state.calcType, 'VIAL') && vialLabelAllowed(state.result)) state.labelType = 'VIAL';
+    else state.labelType = 'DOSE';
+    // Default printer (already set), default vial (already set)
+    state.presetKey = defaultPresetFor(state.printer, state.vial);
+    populateTypeGroup();
+    populatePresetGroup();
+    setActiveRadio('label-printer', state.printer);
+    setActiveRadio('label-vial', state.vial);
+    // Storage note + BUD toggle (medication is captured at calc time, not overridden here)
+    document.getElementById('label-storage').value = state.userStorage || '';
+    document.getElementById('label-bud-toggle').checked = state.budToggle;
+    state.advancedOpen = false;
+    document.getElementById('label-advanced').hidden = true;
+    document.getElementById('label-niimbot-guide').hidden = true;
+    document.getElementById('label-backdrop').classList.add('active');
+    render();
+  }
+
+  function close() {
+    document.getElementById('label-backdrop').classList.remove('active');
+  }
+
+  function setActiveRadio(groupName, value) {
+    const radios = document.querySelectorAll(`input[name="${groupName}"]`);
+    radios.forEach(r => { r.checked = (r.value === value); });
+  }
+  function getActiveRadio(groupName) {
+    const checked = document.querySelector(`input[name="${groupName}"]:checked`);
+    return checked ? checked.value : null;
+  }
+
+  function isDSeriesPrinter(printer) {
+    return printer === 'D110' || printer === 'D11' || printer === 'D11-H';
+  }
+
+  function populateTypeGroup() {
+    const grp = document.getElementById('label-type-group');
+    grp.innerHTML = '';
+    // D-series printers do not offer DOSE//LABEL — 50×15mm has no room for the marker + dose + units + draw.
+    const dSeries = isDSeriesPrinter(state.printer);
+    // For D-series, force VIAL BEFORE building the radio list (so it's selected).
+    if (dSeries) state.labelType = 'VIAL';
+    if (isEligible(state.calcType, 'VIAL') && vialLabelAllowed(state.result)) {
+      const lbl = document.createElement('label');
+      lbl.className = 'label-radio';
+      lbl.innerHTML = `<input type="radio" name="label-type" value="VIAL" ${state.labelType === 'VIAL' ? 'checked' : ''}><span>VIAL//LABEL <span class="muted">(stable vial facts)</span></span>`;
+      grp.appendChild(lbl);
+    }
+    if (isEligible(state.calcType, 'DOSE') && doseLabelAllowed(state.result) && !dSeries) {
+      const lbl = document.createElement('label');
+      lbl.className = 'label-radio';
+      lbl.innerHTML = `<input type="radio" name="label-type" value="DOSE" ${state.labelType === 'DOSE' ? 'checked' : ''}><span>DOSE//LABEL <span class="muted">(current calculation)</span></span>`;
+      grp.appendChild(lbl);
+    }
+  }
+
+  // M2 preset compatibility with the selected vial size.
+  // 3mL-compatible: M2_VIAL_3ML (40×20), M2_EXT_3ML (50×20, opt-in extended)
+  // 5mL-compatible: M2_VIAL_5ML (50×20), M2_FULL (50×30, more lines, shoulder risk on 3mL)
+  function presetMatchesVial(presetKey, vialMl) {
+    if (presetKey === 'D_VIAL') return true; // D-series: same for both
+    if (presetKey === 'M2_VIAL_3ML' || presetKey === 'M2_EXT_3ML') return vialMl === '3';
+    if (presetKey === 'M2_VIAL_5ML' || presetKey === 'M2_FULL') return vialMl === '5';
+    return true;
+  }
+
+  function populatePresetGroup() {
+    const grp = document.getElementById('label-preset-group');
+    grp.innerHTML = '';
+    const presets = presetsForPrinter(state.printer).filter(([key, _]) => presetMatchesVial(key, state.vial));
+    presets.forEach(([key, g]) => {
+      let suffix = `${g.render_w}×${g.render_h}mm`;
+      if (key === 'M2_EXT_3ML') suffix += ' · 3mL extended';
+      if (key === 'M2_FULL') suffix += ' · 5mL only';
+      const lbl = document.createElement('label');
+      lbl.className = 'label-radio';
+      lbl.innerHTML = `<input type="radio" name="label-preset" value="${key}" ${state.presetKey === key ? 'checked' : ''}><span>${key} <span class="muted">${suffix}</span></span>`;
+      grp.appendChild(lbl);
+    });
+    // If current preset is no longer in the list, pick the default
+    const stillThere = presets.find(([k, _]) => k === state.presetKey);
+    if (!stillThere) state.presetKey = defaultPresetFor(state.printer, state.vial);
+    setActiveRadio('label-preset', state.presetKey);
+    // Update recommended label
+    const def = defaultPresetFor(state.printer, state.vial);
+    const recEl = document.getElementById('label-preset-recommended');
+    if (state.presetKey === def) {
+      recEl.textContent = '// RECOMMENDED';
+    } else {
+      const dg = GEOMETRY[def];
+      recEl.textContent = `(recommended: ${dg.render_w}×${dg.render_h}mm)`;
+    }
+  }
+
+  // ----- BUILD LABEL CONTENT (text rows) -----
+  // Returns array of { text, size, weight } sorted by priority.
+  // VIAL//LABEL priority per spec: med, concentration, vial_strength, BUD, recon_date, BAC, storage
+  function buildVialLabelRows(result) {
+    // Build a priority-ordered candidate list, then take up to max_lines from the front.
+    // critical: true means the line must fit (exports are blocked if it overflows at min font).
+    const candidates = [];
+    const med = (result.medication_name || '').toUpperCase().trim();
+    if (med) candidates.push({ text: med, weight: 700, size: 'med', priority: 0, critical: true });
+    if (result.concentration_mg_ml != null) candidates.push({ text: 'CONC ' + fmt(result.concentration_mg_ml, 2) + ' mg/mL', weight: 700, size: 'lg', priority: 1, critical: true });
+    if (result.vial_strength_mg != null) candidates.push({ text: 'VIAL ' + fmt(result.vial_strength_mg, 2).replace(/\.?0+$/, '') + ' mg', weight: 600, size: 'sm', priority: 2, critical: false });
+    if (result.bud) candidates.push({ text: 'BUD ' + fmtDate(result.bud), weight: 600, size: 'sm', priority: 3, critical: true });
+    else if (state.budToggle) candidates.push({ text: 'BUD // CHECK LABEL', weight: 500, size: 'sm', priority: 3, critical: false });
+    if (result.reconstitution_date) candidates.push({ text: 'MIXED ' + fmtDate(result.reconstitution_date), weight: 500, size: 'sm', priority: 4, critical: false });
+    if (result.bac_water_ml != null) candidates.push({ text: 'BAC ' + fmt(result.bac_water_ml, 2).replace(/\.?0+$/, '') + ' mL', weight: 600, size: 'sm', priority: 5, critical: false });
+    const storage = (state.userStorage || '').trim();
+    if (storage) candidates.push({ text: 'STORE: ' + storage, weight: 500, size: 'sm', priority: 6, critical: false });
+    // Sort by priority and take up to max_lines
+    candidates.sort((a, b) => a.priority - b.priority);
+    const g = getPreset();
+    return candidates.slice(0, g.max_lines);
+  }
+
+  // DOSE//LABEL priority: med, CURRENT DOSE, DRAW U-100, draw volume, calc date
+  function buildDoseLabelRows(result) {
+    const candidates = [];
+    const med = (result.medication_name || '').toUpperCase().trim();
+    if (med) candidates.push({ text: med, weight: 700, size: 'med', priority: 0, critical: true });
+    candidates.push({ text: '// CURRENT DOSE', weight: 500, size: 'sm', priority: 1, critical: true });
+    if (result.desired_dose_mg != null) candidates.push({ text: fmt(result.desired_dose_mg, 2).replace(/\.?0+$/, '') + ' mg', weight: 800, size: 'xl', priority: 2, critical: true });
+    if (result.syringe_units_u100 != null) candidates.push({ text: 'DRAW ' + fmt(result.syringe_units_u100, 1) + ' U // U-100', weight: 800, size: 'lg', priority: 3, critical: true });
+    if (result.volume_ml != null) candidates.push({ text: fmt(result.volume_ml, 3) + ' mL volume', weight: 500, size: 'sm', priority: 4, critical: false });
+    if (result.generated_at) candidates.push({ text: 'CALC ' + fmtDate(result.generated_at), weight: 500, size: 'sm', priority: 5, critical: false });
+    candidates.sort((a, b) => a.priority - b.priority);
+    const g = getPreset();
+    return candidates.slice(0, g.max_lines);
+  }
+
+  // ----- CANVAS RENDER -----
+  function getPreset() { return GEOMETRY[state.presetKey]; }
+  function getDpi() { return PRINTERS[state.printer].native_dpi; }
+  function getCanvasSize() {
+    const g = getPreset();
+    const dpi = getDpi();
+    return { w: pxFromMm(g.render_w, dpi), h: pxFromMm(g.render_h, dpi), g, dpi };
+  }
+
+  function fontSizesFor(g) {
+    // g.vertical_axis in mm. Safe margin 2mm top + 2mm bottom = 4mm.
+    // usable_mm = vertical_axis - 4
+    // rows: up to max_lines
+    const usable = g.vertical_axis - 4;
+    const lineH = usable / g.max_lines;
+    // Cap height roughly 65% of lineH. In mm.
+    const capH = lineH * 0.65;
+    // Convert to px at any DPI (used in canvas context)
+    return { lineH_mm: lineH, capH_mm: capH, usable_mm: usable };
+  }
+
+  // Size token → mm cap-height
+  // Conservative: use 60% of cap as actual cap-height. Never exceed lineH.
+  function sizeTokenToMM(token, g) {
+    const usable = g.vertical_axis - 4;
+    const lineH = usable / g.max_lines;
+    const cap = lineH * 0.6;
+    if (token === 'xl') return Math.min(cap * 1.25, lineH * 0.85);
+    if (token === 'lg') return Math.min(cap * 1.05, lineH * 0.75);
+    if (token === 'med') return cap;
+    if (token === 'sm') return cap * 0.78;
+    return cap;
+  }
+
+  function render() {
+    if (!state.result) return;
+    const { w, h, g, dpi } = getCanvasSize();
+    const canvas = document.getElementById('label-canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    // White background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+    // Safe area border (1px gray, only in preview)
+    const safeMm = 2;
+    const safePx = pxFromMm(safeMm, dpi);
+    // We don't draw the safe area in the export — only in the live preview
+    // (preview frame is just the canvas).
+    // Build rows
+    const rows = state.labelType === 'VIAL' ? buildVialLabelRows(state.result) : buildDoseLabelRows(state.result);
+    // Limit to max_lines
+    const limited = rows.slice(0, g.max_lines);
+    // Approach: divide the available vertical area into N equal line slots.
+    // Each slot has a fixed height. Within each slot, the cap-height varies by size token.
+    // The slot provides natural padding above and below the text.
+    const usableH_mm = g.vertical_axis - 4; // 2mm top + 2mm bottom
+    const slotH_mm = usableH_mm / g.max_lines;
+    // Cap-height (mm) for each size token as a fraction of slot height
+    const capH_mm = limited.map(r => {
+      if (r.size === 'xl') return slotH_mm * 0.55;
+      if (r.size === 'lg') return slotH_mm * 0.45;
+      if (r.size === 'med') return slotH_mm * 0.40;
+      if (r.size === 'sm') return slotH_mm * 0.30;
+      return slotH_mm * 0.35;
+    });
+    // Readable minimum font size: 5pt (the same physical floor as the PDF export).
+    // 5pt = 5/72 inch = 0.0694 inch = 1.764 mm of FONT SIZE (em).
+    // Convert to pixels at the active printer's native DPI for an apples-to-apples floor.
+    const MIN_FONT_MM = 5 / 72 * 25.4; // 1.764 mm
+    const MIN_FONT_PX = pxFromMm(MIN_FONT_MM, dpi);
+    // Font size in px: cap-height is roughly 0.7× font size for Helvetica
+    const fontPx = capH_mm.map(cap => Math.max(MIN_FONT_PX, pxFromMm(cap / 0.7, dpi)));
+    // Auto-shrink: if a row's text would overflow the safe width at its current fontPx,
+    // reduce that row's fontPx until it fits (min MIN_FONT_PX). Below this, text is unreadable.
+    const usableW_px = w - 2 * safePx; // safe area width
+    // Track which critical lines fail to fit even at the minimum.
+    const unfitCritical = [];
+    limited.forEach((r, i) => {
+      ctx.font = `${r.weight} ${fontPx[i]}px "Helvetica", "Arial", sans-serif`;
+      let measured = ctx.measureText(r.text).width;
+      while (measured > usableW_px && fontPx[i] > MIN_FONT_PX) {
+        fontPx[i] -= 1;
+        ctx.font = `${r.weight} ${fontPx[i]}px "Helvetica", "Arial", sans-serif`;
+        measured = ctx.measureText(r.text).width;
+      }
+      // After auto-shrink: if text still doesn't fit at the minimum, this critical line is unfit.
+      // Store in mm (convert px → mm at the active DPI) so display + PDF agree on units.
+      if (r.critical && measured > usableW_px) {
+        const measuredMm = measured / dpi * 25.4;
+        const capacityMm = usableW_px / dpi * 25.4;
+        unfitCritical.push({ row: r.text, measured: measuredMm, capacity: capacityMm, source: 'canvas' });
+      }
+    });
+    state.unfitCriticalCanvas = unfitCritical;
+    // Back-compat: state.unfitCritical mirrors the canvas value (used by the warning UI).
+    state.unfitCritical = unfitCritical;
+    // Render each line
+    limited.forEach((r, i) => {
+      const slotY = 2 + i * slotH_mm; // top of this line's slot
+      // Center the cap-height within the slot
+      const capTop = slotY + (slotH_mm - capH_mm[i]) / 2;
+      const yPx = pxFromMm(capTop, dpi);
+      ctx.fillStyle = '#000000';
+      ctx.font = `${r.weight} ${fontPx[i]}px "Helvetica", "Arial", sans-serif`;
+      ctx.textBaseline = 'top';
+      // Center horizontally in safe area
+      const x = pxFromMm(safeMm, dpi);
+      ctx.fillText(r.text, x, yPx);
+    });
+    // Render small DOSE//NODE mark in bottom-right corner if there's room
+    if (g.vertical_axis >= 20) {
+      const markPx = pxFromMm(0.2, dpi); // tiny
+      ctx.fillStyle = '#000000';
+      ctx.font = `${markPx}px "Helvetica", "Arial", sans-serif`;
+      ctx.textBaseline = 'bottom';
+      ctx.textAlign = 'right';
+      ctx.fillText('DOSE//NODE', w - pxFromMm(0.5, dpi), h - pxFromMm(0.3, dpi));
+      ctx.textAlign = 'left';
+    }
+    // Update preview meta
+    document.getElementById('label-dims').textContent = `${g.render_w}×${g.render_h} mm`;
+    document.getElementById('label-dpi').textContent = `${dpi} DPI (native)`;
+    document.getElementById('label-wrap').textContent = `${wrapPct(g, state.vial)}% wrap on ${state.vial}mL vial`;
+    // Surface unfit-critical state: show warning + disable exports if any critical line overflows.
+    // Use the Canvas unfit state for the warning UI (Canvas is what the user sees in the preview).
+    const unfit = state.unfitCriticalCanvas || [];
+    const warn = document.getElementById('label-export-warning');
+    const list = document.getElementById('label-export-warning-list');
+    if (warn && list) {
+      if (unfit.length > 0) {
+        warn.hidden = false;
+        list.innerHTML = unfit.map(u => `<li>"${u.row}" (${Math.round(u.measured * 10) / 10}mm wide, only ${Math.round(u.capacity * 10) / 10}mm available)</li>`).join('');
+        ['label-export-png', 'label-export-pdf', 'label-export-niimbot'].forEach(id => {
+          const b = document.getElementById(id);
+          if (b) b.setAttribute('data-disabled', 'true');
+        });
+      } else {
+        warn.hidden = true;
+        list.innerHTML = '';
+        ['label-export-png', 'label-export-pdf', 'label-export-niimbot'].forEach(id => {
+          const b = document.getElementById(id);
+          if (b) b.removeAttribute('data-disabled');
+        });
+      }
+    }
+  }
+
+  // ----- EXPORT -----
+  function exportPNG() {
+    if (!state.result) { alert('No active label.'); return; }
+    // Use the Canvas-specific unfit state. The PDF has its own measurement and its own
+    // guard in exportPDF(); do not let a stale PDF unfit state block PNG.
+    if (state.unfitCriticalCanvas && state.unfitCriticalCanvas.length > 0) {
+      alert('Export blocked: critical line(s) too long for this label size. Try a larger preset or shorten the medication name.');
+      return;
+    }
+    const canvas = document.getElementById('label-canvas');
+    // We need a clean canvas without dev preview overlays. Re-render to an off-screen canvas.
+    const off = document.createElement('canvas');
+    off.width = canvas.width;
+    off.height = canvas.height;
+    const ctx = off.getContext('2d');
+    ctx.drawImage(canvas, 0, 0);
+    // Trigger download
+    const url = off.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dose-node-${state.calcType}-${state.labelType.toLowerCase()}-${ts()}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  // PDF export: exact physical page = render_width_mm × render_height_mm
+  function exportPDF() {
+    if (!state.result) { alert('No active label.'); return; }
+    const g = getPreset();
+    // Guard BEFORE destructuring: if window.jspdf is missing, { jsPDF } throws before the
+    // !jsPDF check can run, so the alert is unreachable. Check the parent object first.
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      alert('PDF library not loaded. Check your network connection and try again.');
+      return;
+    }
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({
+      unit: 'mm',
+      format: [g.render_w, g.render_h],
+      orientation: g.render_w > g.render_h ? 'landscape' : 'portrait',
+    });
+    // Render text via jsPDF in mm coordinates — same slot approach as canvas
+    const safeMm = 2;
+    const usableH_mm = g.vertical_axis - 4;
+    const slotH_mm = usableH_mm / g.max_lines;
+    const usableW_mm = g.render_w - 2 * safeMm;
+    const rows = state.labelType === 'VIAL' ? buildVialLabelRows(state.result) : buildDoseLabelRows(state.result);
+    const limited = rows.slice(0, g.max_lines);
+    const capH_mm = limited.map(r => {
+      if (r.size === 'xl') return slotH_mm * 0.55;
+      if (r.size === 'lg') return slotH_mm * 0.45;
+      if (r.size === 'med') return slotH_mm * 0.40;
+      if (r.size === 'sm') return slotH_mm * 0.30;
+      return slotH_mm * 0.35;
+    });
+    // Readable minimum font size: 5pt (matches Canvas floor in physical terms).
+    // 5pt = 5/72 inch = 1.764 mm of FONT SIZE (em). Below this, text is unreadable.
+    const MIN_FONT_PT = 5;
+    // Fit-to-width: same logic as Canvas — reduce font size until text fits the safe width.
+    // jsPDF font size: cap-height is ~0.7× font size, and jsPDF uses pt (1mm = 2.835pt)
+    const fontPt = capH_mm.map(cap => Math.max(MIN_FONT_PT, (cap / 0.7) * 2.835));
+    // Track which critical lines fail to fit even at the minimum.
+    const unfitCritical = [];
+    limited.forEach((r, i) => {
+      const style = r.weight >= 800 ? 'bold' : (r.weight >= 700 ? 'bold' : 'normal');
+      pdf.setFont('helvetica', style);
+      // Auto-shrink loop: cap at MIN_FONT_PT minimum to avoid unreadable text
+      let pt = fontPt[i];
+      pdf.setFontSize(pt);
+      let measured = pdf.getTextWidth(r.text); // mm
+      while (measured > usableW_mm && pt > MIN_FONT_PT) {
+        pt = Math.max(MIN_FONT_PT, pt - 0.5);
+        pdf.setFontSize(pt);
+        measured = pdf.getTextWidth(r.text);
+      }
+      if (r.critical && measured > usableW_mm) {
+        unfitCritical.push({ row: r.text, measured, capacity: usableW_mm, source: 'pdf' });
+      }
+      const slotY = 2 + i * slotH_mm;
+      const capTop = slotY + (slotH_mm - capH_mm[i]) / 2;
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(r.text, safeMm, capTop + capH_mm[i]);
+    });
+    state.unfitCriticalPdf = unfitCritical;
+    // PDF-specific safety guard: abort BEFORE save if any critical row failed to fit.
+    // This is the PDF's own measurement (may disagree with Canvas), so the check is here,
+    // after the fit loop, not at the top of the function.
+    if (unfitCritical.length > 0) {
+      alert('Export blocked: critical line(s) too long for this label size. Try a larger preset or shorten the medication name.');
+      return;
+    }
+    if (g.vertical_axis >= 20) {
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(1.5);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text('DOSE//NODE', g.render_w - 0.5, g.render_h - 0.3, { align: 'right' });
+    }
+    pdf.save(`dose-node-${state.calcType}-${state.labelType.toLowerCase()}-${ts()}.pdf`);
+  }
+
+  function exportNiimbot() {
+    if (!state.result) { alert('No active label.'); return; }
+    // NIIMBOT uses the PNG path internally, so check the Canvas unfit state, not PDF's.
+    if (state.unfitCriticalCanvas && state.unfitCriticalCanvas.length > 0) {
+      alert('Export blocked: critical line(s) too long for this label size. Try a larger preset or shorten the medication name.');
+      return;
+    }
+    // v1: export PNG, show the 3-step import guide
+    exportPNG();
+    document.getElementById('label-niimbot-guide').hidden = false;
+  }
+
+  // ----- INIT (wire up event listeners) -----
+  function init() {
+    // PRINT//LABEL trigger buttons
+    document.body.addEventListener('click', e => {
+      const btn = e.target.closest('[data-label-trigger]');
+      if (btn) {
+        e.preventDefault();
+        if (btn.getAttribute('data-disabled') === 'true') return;
+        open(btn.dataset.view);
+      }
+    });
+    // Close
+    document.getElementById('label-close').addEventListener('click', close);
+    document.getElementById('label-backdrop').addEventListener('click', e => {
+      if (e.target.id === 'label-backdrop') close();
+    });
+    // Type radios
+    document.body.addEventListener('change', e => {
+      if (e.target.name === 'label-type') {
+        state.labelType = e.target.value;
+        render();
+      }
+      if (e.target.name === 'label-printer') {
+        state.printer = e.target.value;
+        state.presetKey = defaultPresetFor(state.printer, state.vial);
+        populateTypeGroup();
+        populatePresetGroup();
+        render();
+      }
+      if (e.target.name === 'label-vial') {
+        state.vial = e.target.value;
+        state.presetKey = defaultPresetFor(state.printer, state.vial);
+        populatePresetGroup();
+        render();
+      }
+      if (e.target.name === 'label-preset') {
+        state.presetKey = e.target.value;
+        render();
+      }
+      if (e.target.id === 'label-bud-toggle') {
+        state.budToggle = e.target.checked;
+        render();
+      }
+    });
+    // Storage text input
+    document.getElementById('label-storage').addEventListener('input', e => {
+      state.userStorage = e.target.value;
+      render();
+    });
+    // Advanced toggle
+    document.getElementById('label-advanced-toggle').addEventListener('click', () => {
+      state.advancedOpen = !state.advancedOpen;
+      document.getElementById('label-advanced').hidden = !state.advancedOpen;
+      document.getElementById('label-advanced-toggle').textContent = state.advancedOpen ? '// HIDE OPTIONS' : '// MORE OPTIONS';
+    });
+    // Export buttons
+    document.getElementById('label-export-png').addEventListener('click', exportPNG);
+    document.getElementById('label-export-pdf').addEventListener('click', exportPDF);
+    document.getElementById('label-export-niimbot').addEventListener('click', exportNiimbot);
+  }
+
+  return {
+    setResult,
+    invalidate,
+    resetMetadata,
+    open,
+    close,
+    init,
+    // exposed for tests
+    _state: state,
+    _GEOMETRY: GEOMETRY,
+    _PRINTERS: PRINTERS,
+    _isEligible: isEligible,
+    _vialLabelAllowed: vialLabelAllowed,
+    _doseLabelAllowed: doseLabelAllowed,
+    _defaultPresetFor: defaultPresetFor,
+  };
+})();
+
+LabelEngine.init();
+
+showView('home');
+</script>
+
+</body></html>
