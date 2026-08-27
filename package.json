@@ -10,6 +10,7 @@
     "visual:compare": "node scripts/visual-regression-guard.cjs compare"
   },
   "devDependencies": {
-    "playwright": "1.62.1"
+    "playwright": "1.62.1",
+    "supabase": "^2.116.0"
   }
 }
