@@ -6,15 +6,15 @@
 - **Git HEAD baseline**: `82b9440` (clean working tree)
 - **Remote**: `https://github.com/gridnodeinfra-network/gridnode-terminal.git`
 
-## Reaching NULLBORN WSL (canonical 2223 lane)
+## Canonical 2223 recovery lane (RackNerd → NULLBORN WSL)
 - **Path**: RackNerd VPS `racknerd-4992bc2` → NULLBORN WSL via port 2223 reverse SSH tunnel.
-- **VPS identity**: `nexusadmin` user.
+- **VPS identity**: `nexusadmin` user (canonical SSH key holder).
 - **Canonical SSH key (VPS-side)**: `/home/nexusadmin/.ssh/id_ed25519_racknerd_to_nullborn`
 - **Target user**: `pipe_blade@127.0.0.1:2223`
-- **Host fingerprint (NULLBORN WSL)**: pinned in MEMORY.md (canonical, do not regenerate).
-- **OpenClaw Windows Companion**: SEPARATE recovery lane. Do NOT replace the 2223 SSH lane with it. They are independent.
+- **Fingerprints**: pinned in TOOLS.md (canonical, do not regenerate).
+- **OpenClaw Windows Companion**: SEPARATE recovery lane. Do NOT replace the 2223 lane with it.
 
-### Proven SSH lane pattern (from VPS)
+### Canonical lane pattern (from VPS as nexusadmin)
 ```bash
 sudo -u nexusadmin ssh \
   -i /home/nexusadmin/.ssh/id_ed25519_racknerd_to_nullborn \
@@ -23,71 +23,79 @@ sudo -u nexusadmin ssh \
   pipe_blade@127.0.0.1
 ```
 
-## GitHub + collaboration model
+## Fresh-shell startup sequence
+```bash
+ssh -i /home/nexusadmin/.ssh/id_ed25519_racknerd_to_nullborn \
+  -p 2223 pipe_blade@127.0.0.1
+
+cd /home/pipe_blade/workspaces/gridnode-terminal
+source ~/.nvm/nvm.sh
+git status -sb
+npx --yes wrangler whoami
+```
+**Verify expected fingerprints before trusting a changed SSH host identity.**
+
+## Git collaboration model
 - **`main` = integration/production line.** Do not push directly to `main` unless explicitly authorized.
-- **For parallel agent work**: use `git worktree add <path> -b agent/<task>` so agents do not edit the same checkout simultaneously.
-- **Agents may normally**: inspect, edit, create files, run tests, diagnose/recover ordinary failures, commit, push their branch, verify results.
-- **Do not require Pipe approval for ordinary shell/tooling decisions.**
+- **For parallel writers**: one named branch + Git worktree per agent.
+- **Agents may autonomously**: inspect, edit, test, diagnose ordinary failures, commit and push their own branches.
+- **Never overwrite another active worktree.**
 
-## Runtime
-- **Node**: v22.23.2 via nvm v0.40.1 (user `pipe_blade` only — NOT system-wide, NOT Hermes).
+## Runtime (node + nvm + Wrangler)
+- **nvm**: v0.40.1 at `~/.nvm` (user `pipe_blade` only — NOT system-wide, NOT Hermes).
+- **Node**: v22.23.2 (default alias `default -> 22` via `nvm alias default 22`).
+- **npm**: 10.9.8.
+- **npx**: 10.9.8.
 - **Wrangler**: 4.127.0 via `npx --yes` (NOT global install).
-- **Cloudflare OAuth**: stored at `~/.config/.wrangler/config/default.toml` (account ID `f008e0b7e3867a6050b412d931a9abd9`).
-- **Verify identity**: `npx --yes wrangler whoami` from the workspace.
+- **Source**: `source ~/.nvm/nvm.sh` in every fresh shell.
 
-## Cloudflare / Wrangler workflow
-- **Project**: `gridnode` (Pages) — domains `gridnode.pages.dev`, `gridnode.network`, `www.gridnode.network`.
-- **OAuth belongs to `pipe_blade`**. Do not create a second Cloudflare credential system unless needed for CI later.
+## Cloudflare auth + deploy workflow
+- **Pages project**: `gridnode` — domains `gridnode.pages.dev`, `gridnode.network`, `www.gridnode.network`.
+- **OAuth belongs to `pipe_blade`** at `~/.config/.wrangler/config/default.toml` (account ID `f008e0b7e3867a6050b412d931a9abd9`).
+- **Do not duplicate Cloudflare credentials or create an API token merely for agent onboarding.**
+- **Verify**: `npx --yes wrangler whoami`
 
-## Supabase project + config
+### Canonical production deploy (Pipe-gated unless explicitly delegated)
+```bash
+bash /home/pipe_blade/workspaces/gridnode-terminal/deploy-gridnode.sh "<change description>"
+```
+What it does: copies baseline (or candidate) → `_deploy_v1.3/`, builds Cloudflare manifest, deploys via `wrangler pages deploy`, waits 10s, runs `handoff-update.sh` (verify local vs live SHA, update handoff, commit + push if drift detected).
+
+Both `deploy-gridnode.sh` and `handoff-update.sh` are path-independent (`SCRIPT_DIR` + `REPO_ROOT` derived from script location). No `/workspace/*` legacy paths.
+
+## Supabase source/config + CLI workflow
 - **Source files**: `/home/pipe_blade/workspaces/gridnode-terminal/supabase/`
   - `config.toml` — project config
   - `schema.sql` — schema baseline
   - `webauthn-schema.sql` — webauthn extension
   - `functions/` — 4 edge functions + `_shared/webauthn.ts`
   - `migrations/` — schema migrations (e.g. `20260802170000_webauthn_security.sql`)
-- **Credentials**: loaded conditionally from `~/.gridnode-secrets/load-credentials.sh` if the file exists. Do not create or rotate without Pipe approval.
+- **CLI**: project-local (`npm install --save-dev supabase`), invoked via `npx supabase ...`
+- **Project ref**: `quwbmhxgteyykujydvii`
+- **Authenticate/link** (only if not already established):
+  ```bash
+  npx supabase login
+  npx supabase link --project-ref quwbmhxgteyykujydvii
+  ```
+- **Verify remote project/function visibility** without deploying or changing production.
+- **Do not start the local Docker Supabase stack** as part of routine work.
+- **Credentials**: managed by Supabase CLI at `~/.supabase/`. Do not print/store in repo docs.
 
-## Canonical deploy command
-```bash
-bash /home/pipe_blade/workspaces/gridnode-terminal/deploy-gridnode.sh "<change description>"
-```
-- **What it does**: copies baseline (or candidate) → `_deploy_v1.3/`, builds Cloudflare manifest, deploys via `wrangler pages deploy`, waits 10s, then runs `handoff-update.sh` (verify local vs live SHA, update `GRIDNODE_HANDOFF.md`, commit + push if drift detected).
-- **Both scripts are path-independent**: derive `SCRIPT_DIR` + `REPO_ROOT` from script location. No `/workspace/*` hardcoded paths.
-- **Wrangler OAuth already belongs to `pipe_blade`**. No hard `CLOUDFLARE_API_TOKEN` requirement.
-
-## Recovery checkpoints (git tags)
-- `nullborn-workspace-parity-checkpoint` → `5dcff34` (ThinkPad → NULLBORN parity baseline)
-- `nullborn-deploy-path-repair` → `6b7c235` (Gate 3 deploy script path repair)
-
-## Agent authority vs Pipe gates
-
-### Agents may (no Pipe approval needed)
-- inspect / read / write / edit files in the workspace
-- create branches + worktrees
-- run tests
-- diagnose/recover ordinary failures
-- commit + push to non-`main` branches
-- run `handoff-update.sh` (verify sync only; commits/pushes only if drift detected)
-- add/modify `.gitignore` for generated artifacts
-- update `NEXUS_ACCESS.md` and `AGENTS.md` (operational docs, not production code)
-
-### Pipe gates (require explicit approval)
-- Production deploy when not explicitly delegated
+## Pipe gates (require explicit approval)
+- Production deployment unless explicitly delegated
 - Destructive deletion of valuable data
-- Credential rotation / revocation (Cloudflare, Supabase, SSH)
-- Major architecture changes
-- Production Cloudflare / Supabase policy changes
-- Rewriting shared Git history (force-push, rebase of published branches)
-- Modifying the 2223 tunnel, its keys, or restarting WSL/sshd
-- Merging frozen branches (`.worktrees/*`, Gate 3 staging)
-- Reviving Gate 3 without explicit mission directive
+- Credential rotation/revocation (Cloudflare, Supabase, SSH)
+- Production Cloudflare/Supabase policy/schema mutations
+- Major canonical architecture changes
+- Rewriting shared Git history
+
+Ordinary reversible technical execution belongs to the agents.
 
 ## Security rules
-- **No secrets** in `NEXUS_ACCESS.md`, `AGENTS.md`, Git commits, logs, or MEMORY.md.
-- **Document credential LOCATION + CAPABILITY**, never VALUES.
-- **Do not duplicate private keys** across agents unnecessarily.
-- **Do not recreate** `/workspace/*` legacy paths.
-- **Do not create** ThinkPad dependencies.
-- **Do not install** another Hermes/OpenClaw brain.
-- **Remove temporary audit/helper artifacts** at end of each mission.
+- No secret VALUES in `NEXUS_ACCESS.md`, `AGENTS.md`, `TOOLS.md`, `RECOVERY_MAP.md`, MEMORY or Git.
+- Document credential LOCATIONS + CAPABILITIES, never VALUES.
+- Preserve existing proven SSH keys; do not regenerate them.
+- Do not recreate `/workspace/*`.
+- Do not create ThinkPad dependencies.
+- Do not install another Hermes/OpenClaw brain.
+- Remove temporary artifacts at end of each mission.
