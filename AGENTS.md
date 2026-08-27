@@ -1,3 +1,21 @@
+## ⚠️ MANDATORY PRE-READ for any infrastructure, deployment, or Cloudflare/Supabase work
+
+Before any infrastructure change, deploy, or Cloudflare/Supabase operation on this workspace, read these three files IN ORDER:
+
+1. [`NEXUS_ACCESS.md`](./NEXUS_ACCESS.md) — canonical operational facts: workspace, 2223 lane, deploy command, Pipe gates
+2. [`TOOLS.md`](./TOOLS.md) — environment-specific notes: SSH key, fingerprints, runtime, no /workspace assumptions
+3. [`RECOVERY_MAP.md`](./RECOVERY_MAP.md) — current proven recovery paths
+
+Do not rediscover infrastructure or depend on ThinkPad.
+
+---
+
+## ⚠️ NEXUS ACCESS LAYER
+
+**Before any infrastructure, deploy, or Cloudflare/Supabase/Git operation on this workspace, read [`NEXUS_ACCESS.md`](./NEXUS_ACCESS.md) at the workspace root.** It contains the canonical access model, SSH lane, deploy command, recovery tags, and Pipe gates. Do not rediscover infrastructure or depend on ThinkPad.
+
+---
+
 # GRID//NODE Agent Execution Policy
 
 ## GRID//NODE identity and standard
