@@ -80,8 +80,6 @@ fi
 
 # CLOUDFLARE_API_TOKEN is optional. If set, wrangler uses it directly.
 # If not set, wrangler falls back to OAuth credentials from ~/.config/.wrangler/.
-# CLOUDFLARE_API_TOKEN is optional. If set, wrangler uses it directly.
-# If not set, wrangler falls back to OAuth credentials from ~/.config/.wrangler/.
 export CLOUDFLARE_ACCOUNT_ID="${CLOUDFLARE_ACCOUNT_ID:-f008e0b7e3867a6050b412d931a9abd9}"
 npx --yes wrangler pages deploy . --project-name=gridnode --branch=main --commit-dirty=true 2>&1 | tail -8
 echo ""
