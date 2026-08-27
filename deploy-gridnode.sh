@@ -20,9 +20,9 @@ set -e
 
 CHANGELOG="${1:-Routine deploy}"
 CANDIDATE="${2:-}"  # Optional 2nd arg: path to candidate file
-BASELINE="/workspace/gridnode-project/01_SOURCE_TRUTH_LOCKED/gridnode-v1.3_post-phase-D_baseline.html"
-DEPLOY="/workspace/gridnode-project/_deploy_v1.3"
-HANDOFF="/workspace/deliverables/GRIDNODE_HANDOFF.md"
+BASELINE="/home/pipe_blade/workspaces/gridnode-terminal/01_SOURCE_TRUTH_LOCKED/gridnode-v1.3_post-phase-D_baseline.html"
+DEPLOY="/home/pipe_blade/workspaces/gridnode-terminal/_deploy_v1.3"
+HANDOFF="/home/pipe_blade/workspaces/gridnode-terminal/GRIDNODE_HANDOFF.md"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  GRID//NODE DEPLOY + HANDOFF SYNC"
@@ -74,14 +74,14 @@ echo "🚀 Step 3/5: Deploying to Cloudflare Pages..."
 cd "$DEPLOY"
 
 # Load credentials if secret store exists (see CREDENTIALS.md)
-if [ -f /workspace/.gridnode-secrets/load-credentials.sh ]; then
-  source /workspace/.gridnode-secrets/load-credentials.sh >/dev/null 2>&1
+if [ -f /home/pipe_blade/.gridnode-secrets/load-credentials.sh ]; then
+  source /home/pipe_blade/.gridnode-secrets/load-credentials.sh >/dev/null 2>&1
 fi
 
 # Allow override via env, fall back to per-session
 if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
   echo "❌ CLOUDFLARE_API_TOKEN not set"
-  echo "   Run: source /workspace/.gridnode-secrets/load-credentials.sh"
+  echo "   Run: source /home/pipe_blade/.gridnode-secrets/load-credentials.sh"
   echo "   Or:  export CLOUDFLARE_API_TOKEN=... (see CREDENTIALS.md)"
   exit 1
 fi
@@ -97,8 +97,8 @@ echo "✅ Step 5/5: Verifying live + auto-syncing handoff + pushing to GitHub...
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -f "$SCRIPT_DIR/handoff-update.sh" ]; then
   bash "$SCRIPT_DIR/handoff-update.sh" "$CHANGELOG"
-elif [ -f /workspace/gridnode-project/handoff-update.sh ]; then
-  bash /workspace/gridnode-project/handoff-update.sh "$CHANGELOG"
+elif [ -f /home/pipe_blade/workspaces/gridnode-terminal/handoff-update.sh ]; then
+  bash /home/pipe_blade/workspaces/gridnode-terminal/handoff-update.sh "$CHANGELOG"
 else
   echo "⚠️  handoff-update.sh not found, skipping handoff sync"
 fi

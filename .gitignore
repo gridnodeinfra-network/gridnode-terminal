@@ -1,3 +1,6 @@
 
 # Gate 3 staging residue (deploy-gridnode.sh mutation backups, 2026-08-27)
 deploy-gridnode.sh.bak-*
+
+# Wrangler runtime cache (created by wrangler login/deploy)
+_deploy_v1.3/.wrangler/
