@@ -11,9 +11,11 @@
 # Usage: ./handoff-update.sh "Brief description of what changed"
 
 set -e
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="${REPO_ROOT:-${SCRIPT_DIR}}"
 LIVE_URL="https://gridnode.network/"
-HANDOFF="/workspace/deliverables/GRIDNODE_HANDOFF.md"
-LOCKED="/workspace/gridnode-project/01_SOURCE_TRUTH_LOCKED/gridnode-v1.3_post-phase-D_baseline.html"
+HANDOFF="${REPO_ROOT}/GRIDNODE_HANDOFF.md"
+LOCKED="${REPO_ROOT}/01_SOURCE_TRUTH_LOCKED/gridnode-v1.3_post-phase-D_baseline.html"
 CHANGELOG="${1:-No description provided}"
 
 echo "🔄 GRID//NODE handoff sync"
@@ -104,7 +106,7 @@ PYEOF
 
 # Git commit + push
 git add "$HANDOFF" 2>/dev/null || true
-git add /workspace/gridnode-project/01_SOURCE_TRUTH_LOCKED/ 2>/dev/null || true
+git add "${REPO_ROOT}/01_SOURCE_TRUTH_LOCKED/" 2>/dev/null || true
 git commit -m "auto: handoff sync - $CHANGELOG
 
 Live: $LIVE_SHA
