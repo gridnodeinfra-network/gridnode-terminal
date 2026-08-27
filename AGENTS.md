@@ -1,3 +1,9 @@
+## ⚠️ NEXUS ACCESS LAYER
+
+**Before any infrastructure, deploy, or Cloudflare/Supabase/Git operation on this workspace, read [`NEXUS_ACCESS.md`](./NEXUS_ACCESS.md) at the workspace root.** It contains the canonical access model, SSH lane, deploy command, recovery tags, and Pipe gates. Do not rediscover infrastructure or depend on ThinkPad.
+
+---
+
 # GRID//NODE Agent Execution Policy
 
 ## GRID//NODE identity and standard
