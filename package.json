@@ -1,0 +1,15 @@
+{
+  "name": "gridnode-terminal-qa",
+  "private": true,
+  "version": "0.1.0",
+  "description": "QA harness dependencies for GRID//NODE (mobile shell, contrast audits). No runtime deps — dev only.",
+  "scripts": {
+    "test:mobile": "node scripts/test-mobile-shell.cjs",
+    "audit:themes": "node scripts/audit-served-day-ops.cjs",
+    "visual:capture": "node scripts/visual-regression-guard.cjs capture",
+    "visual:compare": "node scripts/visual-regression-guard.cjs compare"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}
