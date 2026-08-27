@@ -4,3 +4,6 @@ deploy-gridnode.sh.bak-*
 
 # Wrangler runtime cache (created by wrangler login/deploy)
 _deploy_v1.3/.wrangler/
+
+# Wrangler runtime cache (device flow, login state)
+.wrangler/
