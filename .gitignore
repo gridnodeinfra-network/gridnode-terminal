@@ -10,3 +10,6 @@ _deploy_v1.3/.wrangler/
 
 # Generated staging output: copy of baseline written by deploy-gridnode.sh Step 1
 _deploy_v1.3/index.html
+
+# Generated staging output: copy of baseline written by deploy-gridnode.sh Step 1
+_deploy_v1.3/index.html
