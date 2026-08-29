@@ -1,7 +1,7 @@
 #!/bin/bash
 # Source nvm to get Node v22 (wrangler requires it)
 export NVM_DIR="/home/pipe_blade/.nvm"
-[ -s "/nvm.sh" ] && . "/nvm.sh"
+[ -s "$NVM_DIR/nvm.sh" ] [ -s "/nvm.sh" ] && . "/nvm.sh"[ -s "/nvm.sh" ] && . "/nvm.sh" . "$NVM_DIR/nvm.sh"
 # GRID//NODE handoff auto-updater
 # Run this after every deploy: ./handoff-update.sh
 # What it does:
