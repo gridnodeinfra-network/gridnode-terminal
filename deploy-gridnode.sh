@@ -1,4 +1,7 @@
 #!/bin/bash
+# Source nvm to get Node v22 (wrangler requires it)
+export NVM_DIR="/home/pipe_blade/.nvm"
+[ -s "/nvm.sh" ] && . "/nvm.sh"
 # GRID//NODE auto-deploy script
 # What it does:
 #   1. Copies the candidate (or baseline if no candidate) to the deploy folder
