@@ -1645,6 +1645,7 @@
   "shots.zoneRecent": "ZONA/RECIENTE",
   "shots.historyRecent": "HISTORIAL//RECIENTE",
   "shots.locationReady": "UBICACIÓN//LISTA",
+  "shots.scannerAudio": "AUDIO DEL ESCANER",
   "shots": {
     "scannerAudio": "AUDIO DEL ESCANER",
     "soundOn": "ACTIVO",

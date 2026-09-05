@@ -1645,6 +1645,7 @@
   "shots.zoneRecent": "ZONE/RECENT",
   "shots.historyRecent": "HISTORY//RECENT",
   "shots.locationReady": "LOCATION//READY",
+  "shots.scannerAudio": "SCANNER AUDIO",
   "shots": {
     "scannerAudio": "SCANNER AUDIO",
     "soundOn": "ON",
