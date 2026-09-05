@@ -27,7 +27,8 @@
   async function loadCatalog(lang) {
     if (catalogs[lang]) return catalogs[lang];
     try {
-      const res = await fetch(`./i18n/${lang}.json`, { cache: 'force-cache' });
+      const file = lang == 'es' ? 'es-419.json' : `${lang}.json`;
+      const res = await fetch(`./i18n/${file}`, { cache: 'no-cache' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       catalogs[lang] = data;
@@ -61,6 +62,11 @@
     }
     if (typeof value === 'object') value = value[0] || '';
     return interpolate(value, vars);
+  }
+
+  function text(key, fallback, vars) {
+    const value = t(key, vars);
+    return value === key ? (fallback || key) : value;
   }
 
   function plural(key, count, vars) {
@@ -116,7 +122,13 @@
       const key = el.getAttribute('data-i18n-html');
       if (key) el.innerHTML = t(key);
     });
-    doc.documentElement.setAttribute('lang', currentLang);
+    const html = doc.documentElement || document.documentElement;
+    if (html) html.setAttribute('lang', currentLang);
+    doc.querySelectorAll('[data-lang-choice]').forEach(button => {
+      const selected = button.getAttribute('data-lang-choice') === currentLang;
+      button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+      button.classList.toggle('active', selected);
+    });
   }
 
   async function setLang(lang) {
@@ -155,5 +167,5 @@
 
   const ready = init();
 
-  window.GN_I18N = { init, ready, setLang, getLang, getSupported, t, plural, applyTo, isReady, formatDate, formatTime, formatNumber, SUPPORTED, DEFAULT_LANG };
+  window.GN_I18N = { init, ready, setLang, getLang, getSupported, t, text, plural, applyTo, isReady, formatDate, formatTime, formatNumber, SUPPORTED, DEFAULT_LANG };
 })();

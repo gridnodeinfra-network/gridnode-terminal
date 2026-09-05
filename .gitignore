@@ -16,3 +16,12 @@ _deploy_v1.3/index.html
 
 # Dependencies (project-local — installed via npm in workspace root)
 node_modules/
+
+# Windows path leak (accidental mkdir from WSL/Windows crossover)
+C:/
+
+# Codex-generated images (not source assets)
+Codex Image *.png
+
+# Staging directories (build output, not source)
+.staging/

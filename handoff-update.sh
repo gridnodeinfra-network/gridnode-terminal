@@ -108,16 +108,10 @@ print(f"✅ Updated {handoff}")
 PYEOF
 
 # Git commit + push
-git add "$HANDOFF" 2>/dev/null || true
-git add "${REPO_ROOT}/01_SOURCE_TRUTH_LOCKED/" 2>/dev/null || true
-git commit -m "auto: handoff sync - $CHANGELOG
-
-Live: $LIVE_SHA
-Local: $LOCAL_SHA
-Size: $LIVE_SIZE bytes" 2>&1 | tail -3
-
-git push origin main 2>&1 | tail -3
-
+# Note: Git commit and push have been REMOVED from handoff-update.sh.
+# Deployment scripts must NOT autonomously push to main or any branch.
+# Handoff metadata is logged locally only — commit/push is a separate manual step.
 echo ""
-echo "✅ Handoff updated and pushed to GitHub"
+echo "✅ Handoff metadata logged locally (no git push)"
 echo "📋 Session log appended to $HANDOFF.log"
+echo "⚠️  Git commit/push is a manual step — this script no longer auto-pushes"
