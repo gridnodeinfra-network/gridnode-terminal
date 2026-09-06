@@ -1818,12 +1818,12 @@ function renderDashboard() {
     }
     const wandaEl = document.getElementById('gnWandaDashboard');
     if (wandaEl) wandaEl.style.display = 'none';
-    document.body.classList.add('gn-empty-state');
+    document.body.classList.add('gn-dashboard-empty');
   } else {
     if (hero) hero.remove();
     const wandaEl = document.getElementById('gnWandaDashboard');
     if (wandaEl) wandaEl.style.display = '';
-    document.body.classList.remove('gn-empty-state');
+    document.body.classList.remove('gn-dashboard-empty');
   }
   const weightMetrics = computeTotalChange(weights, profile, 'profile');
   setNumericText('stShots', shots.length);
@@ -2248,8 +2248,12 @@ window.GNScannerAudio = Object.freeze({
   syncControl: () => gnScannerAudioRenderSwitch()
 });
 
-gnScannerAudioEnabled = gnScannerAudioStoredPreference();
-gnScannerAudioRenderSwitch();
+function initScannerAudioControl() {
+  gnScannerAudioEnabled = gnScannerAudioStoredPreference();
+  gnScannerAudioRenderSwitch();
+}
+
+initScannerAudioControl();
 /* GN_SCANNER_AUDIO_CONTROLLER_V1_END */
 
 /* v0.15.19 SKIN TONE REMOVED - synthetic biotech scanner, single body per mode */

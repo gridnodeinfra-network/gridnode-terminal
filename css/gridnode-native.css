@@ -2942,7 +2942,7 @@ html:not([data-theme="light"]) .gn-auth-note {
 .gn-tip-card p { margin: 0; font: .74rem/1.45 var(--font-b); color: #c2d7de; }
 .gn-wanda-card.info { border-left-color: #00d4ff; }
 .gn-wanda-card.info .gn-wanda-value { color: #eef6f8; }
-body.gn-empty-state .fab { display: none !important; }
+body.gn-dashboard-empty .fab { display: none !important; }
 
 /* ── Batch C: drawer dose form + undoable toast ── */
 #logOv, #wtOv { align-items: flex-end !important; }
