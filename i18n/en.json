@@ -1652,5 +1652,12 @@
     "soundOn": "ON",
     "soundOff": "OFF",
     "scannerAudioHint": "Optional procedural confirmation tones. Off by default; opt in to play a short tone when a zone locks."
+  },
+  "vault": {
+    "vault.hapticsTitle": "Tactile Feedback",
+    "vault.hapticsHelp": "Vibration confirms saves, locks, and selections when the device supports it.",
+    "vault.hapticsOn": "ON — save and lock actions vibrate briefly.",
+    "vault.hapticsOff": "OFF — silent confirmation. Tap to enable.",
+    "vault.hapticsUnsupported": "Not supported on this device."
   }
 }

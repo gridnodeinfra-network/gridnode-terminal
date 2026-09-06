@@ -4676,3 +4676,146 @@ html[data-theme="light"] .gn-form-error { color: #8a0f2a !important; }
 .gn-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 input[aria-invalid="true"], textarea[aria-invalid="true"], select[aria-invalid="true"] { box-shadow: 0 0 0 1px #ff5a6e inset !important; }
 html[data-theme="light"] input[aria-invalid="true"], html[data-theme="light"] textarea[aria-invalid="true"], html[data-theme="light"] select[aria-invalid="true"] { box-shadow: 0 0 0 1px #d32349 inset !important; }
+
+
+/* ──────────────────────────────────────────────────────────────────────────
+   v0.15.30 — premium polish + tactile feedback (ADDITIVE)
+   Every rule below is additive: no removals, no destructive overrides.
+   Reduced-motion users get the static end state immediately.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Lift the most-touched interactive controls slightly on hover. Stacks with
+   existing :active scale feedback and respects reduced-motion (no transition). */
+@media (prefers-reduced-motion: no-preference) {
+  .btn-primary, .btn-full.btn-primary, .gn-auth-primary, .gn-whatsnew-close,
+  .future-confirm-save, .landing-btn.primary, .gn-foundation-tile,
+  .nav-item, .gn-chip, .gn-mode-tab, .cp-option, .modal-btn, .topbar-btn,
+  .scanner-mode-btn, .gn-stable-zone-btn {
+    transition: transform 180ms cubic-bezier(.2,.75,.25,1),
+                box-shadow 180ms ease,
+                background-position 320ms ease,
+                filter 180ms ease;
+  }
+}
+.btn-primary:hover, .btn-full.btn-primary:hover, .gn-auth-primary:hover,
+.gn-whatsnew-close:hover, .future-confirm-save:hover {
+  transform: translateY(-1px);
+  filter: saturate(1.05) brightness(1.04);
+}
+.landing-btn.primary:hover {
+  transform: translateY(-1px);
+  filter: saturate(1.04) brightness(1.06);
+}
+.gn-foundation-tile:hover, .gn-chip:hover, .nav-item:hover, .cp-option:hover,
+.gn-mode-tab:hover, .scanner-mode-btn:hover, .gn-stable-zone-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+/* Unified, visible focus ring for every interactive control — 2px cyan core +
+   3px cyan glow. Suppressed when the user is using a pointer, via
+   :focus-visible only. */
+.topbar-btn:focus-visible, .modal-btn:focus-visible,
+.btn-primary:focus-visible, .btn-full.btn-primary:focus-visible,
+.gn-auth-primary:focus-visible, .gn-whatsnew-close:focus-visible,
+.future-confirm-save:focus-visible, .landing-btn:focus-visible,
+.landing-btn.primary:focus-visible,
+.nav-item:focus-visible, .gn-chip:focus-visible,
+.gn-foundation-tile:focus-visible, .cp-option:focus-visible,
+.gn-mode-tab:focus-visible, .scanner-mode-btn:focus-visible,
+.gn-stable-zone-btn:focus-visible, .gn-theme-opt:focus-visible {
+  outline: 2px solid var(--cyan-core, #00d4ff) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 3px rgba(0, 212, 255, .14) !important;
+}
+html[data-theme="light"] .topbar-btn:focus-visible, html[data-theme="light"] .modal-btn:focus-visible,
+html[data-theme="light"] .btn-primary:focus-visible, html[data-theme="light"] .btn-full.btn-primary:focus-visible,
+html[data-theme="light"] .gn-auth-primary:focus-visible, html[data-theme="light"] .gn-whatsnew-close:focus-visible,
+html[data-theme="light"] .future-confirm-save:focus-visible, html[data-theme="light"] .landing-btn:focus-visible,
+html[data-theme="light"] .landing-btn.primary:focus-visible,
+html[data-theme="light"] .nav-item:focus-visible, html[data-theme="light"] .gn-chip:focus-visible,
+html[data-theme="light"] .gn-foundation-tile:focus-visible, html[data-theme="light"] .cp-option:focus-visible,
+html[data-theme="light"] .gn-mode-tab:focus-visible, html[data-theme="light"] .scanner-mode-btn:focus-visible,
+html[data-theme="light"] .gn-stable-zone-btn:focus-visible, html[data-theme="light"] .gn-theme-opt:focus-visible {
+  outline-color: #006f82 !important;
+  box-shadow: 0 0 0 3px rgba(0, 111, 130, .14) !important;
+}
+
+/* Active bottom-nav item reads as a deliberate instrument read-out — stronger
+   top-edge accent and slightly tighter glow.  */
+.bottom-nav .nav-item.active {
+  box-shadow: inset 0 2px 0 0 var(--cyan-core, #00d4ff), 0 0 12px rgba(0, 212, 255, .32) !important;
+}
+html[data-theme="light"] .bottom-nav .nav-item.active {
+  box-shadow: inset 0 2px 0 0 #006f82, 0 0 10px rgba(0, 111, 130, .22) !important;
+}
+
+/* Instrument gauge: hairline cyan top-edge wash on data cards. Reads as a
+   power-on glint, not extra chrome. */
+.stat-card, .card, .s6-card, .gn-wanda-card {
+  border-top-color: rgba(0, 212, 255, .35) !important;
+}
+html[data-theme="light"] .stat-card, html[data-theme="light"] .card,
+html[data-theme="light"] .s6-card, html[data-theme="light"] .gn-wanda-card {
+  border-top-color: rgba(0, 111, 130, .45) !important;
+}
+
+/* Heading rhythm: technical headings get a tightened letter-spacing + a one-shot
+   breath on first paint, so the page feels like it woke up.
+   Reduced-motion users see the static end state immediately. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes gn-heading-breath {
+    0%   { letter-spacing: 0.04em; opacity: 0.86; }
+    60%  { letter-spacing: 0.08em; opacity: 1; }
+    100% { letter-spacing: 0.04em; opacity: 1; }
+  }
+  .page-hdr h1, h1.landing-headline, .gn-tool-title, .gn-hub-title,
+  .gn-foundation-head h2, .gn-lab-tool-head h2 {
+    animation: gn-heading-breath 520ms cubic-bezier(.2,.75,.25,1) both;
+  }
+}
+
+/* Subtle ambient edge glow under the topbar (a faint instrument glow). */
+#app .topbar::after {
+  content: "";
+  position: absolute;
+  left: 8px; right: 8px; bottom: -6px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(0, 212, 255, .32) 50%, transparent 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+#app .topbar { position: relative; }
+
+/* Node toast: a slightly faster, more decisive arrival so the confirmation feels
+   tactile rather than decorative. Existing toast content is unchanged. */
+.toast {
+  transition: transform 220ms cubic-bezier(.34, 1.56, .64, 1), opacity 180ms ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast { transition: none !important; }
+}
+
+/* Save buttons that successfully capture: 1-frame lava-glow halo. Already
+   added by actionFeedback's existing class swap, but a tighter pulse feels
+   right at this release. */
+@keyframes gn-capture-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 90, 110, .55), 0 0 12px rgba(255, 45, 77, .35); }
+  100% { box-shadow: 0 0 0 14px rgba(255, 90, 110, 0), 0 0 12px rgba(255, 45, 77, 0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .btn-primary.gn-capture-pulse,
+  .btn-full.btn-primary.gn-capture-pulse,
+  .gn-auth-primary.gn-capture-pulse {
+    animation: gn-capture-pulse 520ms cubic-bezier(.2,.75,.25,1) both;
+  }
+}
+
+/* Touch target floor for legacy controls (guarded, not over-riding existing
+   44px rules; only additive for any control that might otherwise be too thin). */
+.gn-tab, .gn-chip, .gn-mode-tab, .gn-foundation-tile { min-height: 44px; }
+
+/* NODE / Profile hub row: tighter, more deliberate hover affordance. */
+.gn-profile-row:hover, .gn-profile-section button:hover {
+  filter: brightness(1.08);
+}

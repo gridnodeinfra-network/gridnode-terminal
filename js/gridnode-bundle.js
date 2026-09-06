@@ -1496,6 +1496,8 @@ function actionFeedback(title, detail, isError = false) {
   toast.className = `toast active${isError ? ' err' : ''}`;
   clearTimeout(toast._timer);
   toast._timer = setTimeout(() => toast.classList.remove('active'), 2000);
+  /* v0.15.30 — premium vibration feedback */
+  try { (isError ? gnHaptics.error() : gnHaptics.confirm()); } catch (_) {}
 }
 
 function nodeSyncLabel() {
@@ -2368,7 +2370,7 @@ function selectScannerLocation(label, options = {}) {
   });
   if (feedback) {
     try { window.GNScannerAudio?.playLock?.(gestureToken); } catch (_) {}
-    if (navigator.vibrate) try { navigator.vibrate([4, 12, 6]); } catch (_) {}
+    try { gnHaptics.lock(); } catch (_) {}
   }
   if ($('logOv')?.classList.contains('active')) {
     setText('modalSelectedLocation', zoneLabel(label));
@@ -3917,6 +3919,48 @@ function announceLabToolStatus(label, detail) {
   requestAnimationFrame(() => { banner.textContent = combined; });
 }
 
+/* v0.15.30 — premium vibration feedback (additive). Gated by user pref + reduced-motion. */
+const gnHaptics = (() => {
+  const KEY = 'gn_haptics_v1';
+  let enabled = (() => {
+    try {
+      const stored = localStorage.getItem(KEY);
+      if (stored === 'on' || stored === 'off') return stored === 'on';
+    } catch (_) {}
+    return true;
+  })();
+  const reduceMotion = () => typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const supported = () => typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
+  const focusInsideField = () => {
+    const el = document.activeElement;
+    if (!el) return false;
+    const tag = el.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
+  };
+  const play = (pattern) => {
+    if (!enabled || reduceMotion() || focusInsideField()) return;
+    if (!supported()) return;
+    try { navigator.vibrate(pattern); } catch (_) {}
+  };
+  const setEnabled = (next) => {
+    enabled = !!next;
+    try { localStorage.setItem(KEY, enabled ? 'on' : 'off'); } catch (_) {}
+  };
+  return {
+    supported,
+    enabled: () => enabled,
+    setEnabled,
+    tap: () => play(6),
+    confirm: () => play([8, 30, 12]),
+    error: () => play([4, 30, 4, 30, 4]),
+    lock: () => play([4, 18, 10]),
+    mode: () => play([6, 30, 6]),
+    select: () => play([10, 24, 6])
+  };
+})();
+
+try { window.gnHaptics = gnHaptics; } catch (_) {}
+
 function renderLabFoundations() {
   const list = $('gnResearchList');
   if (list) {
@@ -4047,6 +4091,7 @@ function saveResearchRecord() {
     const successDetail = tx('research.timelineSignal', 'TIMELINE UPDATED // USER-ENTERED ONLY');
     announceLabToolStatus(successLabel, successDetail);
     actionFeedback(successLabel, successDetail);
+    pulseGnCapture($('gnResearchSave'));
 }
 
 function handleResearchAction(event) {
@@ -4087,7 +4132,7 @@ function ensureProfileHub() {
     <div class="gn-profile-sections">
       <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.node">// YOUR NODE</div><div class="gn-profile-row"><span><b data-i18n="vault.medicationLabel">Medication</b><small id="gnProfileMedication">Not entered</small></span><span class="gn-profile-chevron">›</span></div><div class="gn-profile-row"><span><b data-i18n="vault.bodyMetrics">Body Metrics</b><small id="gnProfileBody">Not entered</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row" onclick="openSystemUpdate()"><span><b data-i18n="vault.whatsNew">What's New</b><small data-gn-whatsnew-version></small></span><span class="gn-profile-chevron">›</span></button></section>
       <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.yourData">// YOUR DATA</div><button type="button" class="gn-profile-row" onclick="exportCSV()"><span><b data-i18n="vault.exportCsv">Export CSV</b><small data-i18n="vault.exportCsvHelp">Download readable records</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="exportBackup()"><span><b data-i18n="vault.exportBackup">Export Backup</b><small data-i18n="vault.exportBackupHelp">Save a complete local copy</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.dataOwnership">Data Ownership</b><small data-i18n="vault.dataOwnershipHelp">Export or delete anytime</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row gn-profile-danger-row" onclick="openDeleteLocalData()"><span><b data-i18n="vault.deleteAllData">Delete All Local Data</b><small data-i18n="vault.deleteAllDataHelp">Remove this device record</small></span><span class="gn-profile-chevron">›</span></button></section>
-      <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.tools">// TOOLS</div><button type="button" class="gn-profile-row" onclick="document.querySelector('.gn-device-vault')?.scrollIntoView({behavior:'smooth',block:'start'})"><span><b data-i18n="vault.deviceVaultLink">Device Vault</b><small data-i18n="vault.deviceVaultLinkHelp">Private identity registry</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.connectedAccount">Connected Account</b><small id="gnProfileAccount">Local device session</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row gn-profile-danger-row" onclick="openDeleteCloudAccount()"><span><b data-i18n="vault.deleteCloudAccount">Delete Cloud Account</b><small data-i18n="vault.deleteCloudAccountHelp">Requires server deletion control</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.appVersion">App Version</b><small id="gnProfileVersion">0.12.0</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row" onclick="window.location.reload()"><span><b data-i18n="vault.reloadApp">Reload App</b><small data-i18n="vault.reloadAppHelp">Refresh the current build</small></span><span class="gn-profile-chevron">›</span></button></section>
+      <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.tools">// TOOLS</div><button type="button" class="gn-profile-row" onclick="document.querySelector('.gn-device-vault')?.scrollIntoView({behavior:'smooth',block:'start'})"><span><b data-i18n="vault.deviceVaultLink">Device Vault</b><small data-i18n="vault.deviceVaultLinkHelp">Private identity registry</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.connectedAccount">Connected Account</b><small id="gnProfileAccount">Local device session</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row gn-profile-danger-row" onclick="openDeleteCloudAccount()"><span><b data-i18n="vault.deleteCloudAccount">Delete Cloud Account</b><small data-i18n="vault.deleteCloudAccountHelp">Requires server deletion control</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" id="gnHapticsToggle" onclick="toggleGnHaptics()"><span><b data-i18n="vault.hapticsTitle">Tactile Feedback</b><small id="gnHapticsHelp" data-i18n="vault.hapticsHelp">Vibration confirms saves, locks, and selections when the device supports it.</small></span><span class="gn-profile-chevron" id="gnHapticsState">·</span></button><div class="gn-profile-row"><span><b data-i18n="vault.appVersion">App Version</b><small id="gnProfileVersion">0.12.0</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row" onclick="window.location.reload()"><span><b data-i18n="vault.reloadApp">Reload App</b><small data-i18n="vault.reloadAppHelp">Refresh the current build</small></span><span class="gn-profile-chevron">›</span></button></section>
     </div>
     <button type="button" class="gn-profile-signout" onclick="openSignOutModal()"><span><b data-i18n="vault.signOut">SIGN OUT</b><small data-i18n="vault.localOnlyFooter">Your data stays on this device.</small></span><span class="gn-profile-chevron">›</span></button>
     <div class="gn-device-vault"><div class="gn-device-vault-head"><div><div class="gn-foundation-kicker" data-i18n="vault.deviceVaultKicker">// DEVICE VAULT</div><h3 data-i18n="vault.deviceVaultSubhead">PHYSICAL OBJECT IDENTITY</h3></div><span class="gn-record-state" data-i18n="vault.deviceVaultPrivate">PRIVATE REGISTRY</span></div><p class="gn-ledger-copy" data-i18n="vault.deviceVaultPhilosophy">The device is not the cartridge. The cartridge is not the dose. The dose is not the plan. Device identity, inventory, SHOT events, and LOADOUT remain separate records.</p><form class="gn-record-form" id="gnDeviceForm"><div class="gn-form-grid"><label><span data-i18n="vault.deviceName">DEVICE NAME</span><input id="gnDeviceName" required placeholder="e.g. Home pen A" data-i18n-placeholder="vault.deviceNamePlaceholder"></label><label><span data-i18n="vault.deviceType">DEVICE TYPE</span><select id="gnDeviceType"><option value="REUSABLE" data-i18n="vault.deviceTypeReusable">Reusable pen</option><option value="DISPOSABLE" data-i18n="vault.deviceTypeDisposable">Disposable pen</option><option value="AUTOINJECTOR" data-i18n="vault.deviceTypeAutoinjector">Autoinjector</option><option value="OTHER" data-i18n="vault.deviceTypeOther">Other device</option></select></label><label><span data-i18n="vault.deviceStatus">STATUS</span><select id="gnDeviceStatus">${DEVICE_STATUSES.map(status => { const key = 'vault.status' + status.replace(/\s+/g, ''); return `<option value="${status}" data-i18n="${key}">${tx(key, status)}</option>`; }).join('')}</select></label></div><label><span data-i18n="vault.deviceLabelNotes">LABEL / NOTES</span><textarea id="gnDeviceNotes" rows="2" placeholder="User-entered identity notes" data-i18n-placeholder="vault.deviceNotesPlaceholder"></textarea></label><button class="btn-full btn-secondary" type="submit" data-i18n="vault.deviceRegister">REGISTER DEVICE IDENTITY</button></form><div class="gn-device-list" id="gnDeviceList"></div></div>
@@ -4111,6 +4156,7 @@ function ensureProfileHub() {
   $('gnDeviceList')?.addEventListener('click', handleDeviceAction);
   renderDeviceVault();
   ensurePasskeySection();
+  renderGnHapticsState();
 }
 
 function renderDeviceVault() {
@@ -4119,6 +4165,36 @@ function renderDeviceVault() {
   const devices = S.get('devices', []);
   const active = devices.filter(device => !device.archived), archived = devices.filter(device => device.archived);
   list.innerHTML = devices.length ? `${active.slice().reverse().map(device => `<article class="gn-record-row"><div><b>${safeText(device.name)}</b><small>${safeText(deviceTypeLabel(device.type))} · ${tx('vault.privateId', 'PRIVATE ID')} ${safeText(device.qrIdentity || tx('vault.devicePending', 'PENDING'))}</small></div><span class="gn-record-state">${safeText(deviceStatusLabel(device.status))}</span><div style="display:flex;gap:4px"><button type="button" class="gn-record-delete" data-device-edit="${safeText(device.id)}" aria-label="${tx('vault.editDevice', 'Edit device')}">✎</button><button type="button" class="gn-record-delete" data-device-retire="${safeText(device.id)}" aria-label="${tx('vault.retireDevice', 'Retire device')}">×</button></div></article>`).join('')}${archived.length ? `<div class="gn-ledger-copy" style="margin-top:10px">${tx('vault.deviceArchived', 'RETIRED / ARCHIVED DEVICES')}</div>${archived.slice().reverse().map(device => `<article class="gn-record-row"><div><b>${safeText(device.name)}</b><small>${safeText(deviceTypeLabel(device.type))} · ${tx('vault.privateIdentityPreserved', 'Private identity preserved')}</small></div><span class="gn-record-state">${safeText(deviceStatusLabel(device.status || 'RETIRED'))}</span><button type="button" class="gn-record-delete" data-device-restore="${safeText(device.id)}" aria-label="${tx('vault.restoreDevice', 'Restore device')}">↺</button></article>`).join('')}` : ''}` : `<div class="gn-empty-state"><span class="gn-icon gn-icon-md gn-accent-y"><svg><use href="#gn-vault-core"></use></svg></span><b>${tx('vault.deviceReadyEmpty', 'DEVICE VAULT READY')}</b><span>${tx('vault.deviceReadyEmptyHelp', 'Register a physical object when you want its identity and lifecycle preserved.')}</span></div>`;
+}
+
+function renderGnHapticsState() {
+  const stateEl = $('gnHapticsState');
+  const helpEl = $('gnHapticsHelp');
+  if (!stateEl) return;
+  const supported = window.gnHaptics?.supported?.();
+  const enabled = window.gnHaptics?.enabled?.();
+  if (!supported) {
+    stateEl.textContent = '·';
+    if (helpEl) helpEl.textContent = tx('vault.hapticsUnsupported', 'Not supported on this device.');
+    return;
+  }
+  stateEl.textContent = enabled ? '◆' : '◇';
+  if (helpEl) helpEl.textContent = enabled ? tx('vault.hapticsOn', 'ON — save and lock actions vibrate briefly.') : tx('vault.hapticsOff', 'OFF — silent confirmation. Tap to enable.');
+}
+
+function toggleGnHaptics() {
+  if (!window.gnHaptics?.supported?.()) return;
+  window.gnHaptics.setEnabled(!window.gnHaptics.enabled());
+  renderGnHapticsState();
+  try { window.gnHaptics.tap(); } catch (_) {}
+}
+
+function pulseGnCapture(saveButton) {
+  if (!saveButton || !saveButton.classList) return;
+  saveButton.classList.remove('gn-capture-pulse');
+  void saveButton.offsetWidth;
+  saveButton.classList.add('gn-capture-pulse');
+  setTimeout(() => saveButton.classList.remove('gn-capture-pulse'), 560);
 }
 
 function saveDeviceRecord() {
@@ -4394,6 +4470,7 @@ function renderProfile() {
   if (status) status.innerHTML = `<span class="gn-cloud-dot ${state.cloud ? 'cloud' : 'local'}"></span><span>${tx('vault.vaultLabel', 'VAULT')}: ${safeText(nodeSyncLabel())} · ${state.cloud ? tx('vault.cloudConnected', 'Cloud account connected') : tx('vault.cloudLocal', 'Data stays on this device until you connect an account')}</span>`;
   renderDeviceVault();
   ensurePasskeySection();
+  renderGnHapticsState();
 }
 
 function dismissSystemUpdate() {

@@ -10,6 +10,27 @@
   const LEGACY_ACK_KEY = 'gn_whatsnew_acknowledged_release_v2';
   const ORDER = ['NEW', 'IMPROVED', 'FIXED', 'ACCESSIBILITY', 'MOBILE', 'COMPATIBILITY', 'SECURITY'];
   const NOTES = Object.freeze({
+    '20260906.9': {
+      version: '0.15.30', title: 'PREMIUM POLISH + TACTILE FEEDBACK', date: '2026-09-06',
+      en: {
+        IMPROVED: [
+          'Premium polish pass: hover lift on CTAs and tiles, refined focus rings across interactive controls, instrument-gauge edge wash on data cards, a 1px instrument glow under the topbar, a tightened heading sweep on first paint, and a faster tactile toast arrival.',
+          'Mobile buttons and tiles keep their 44px touch floor; press feedback still respects prefers-reduced-motion.'
+        ],
+        NEW: [
+          'Opt-in tactile feedback now confirms saves, scanner locks, and selections with brief, premium vibration patterns. Toggle it from NODE → Tools → Tactile Feedback. Vibration is automatically suspended while typing in a field or when prefers-reduced-motion is set.'
+        ]
+      },
+      es: {
+        IMPROVED: [
+          'Pase de pulido premium: elevación al pasar el cursor en CTAs y mosaicos, anillos de enfoque refinados, banda de luz de instrumento en tarjetas de datos, brillo de 1px bajo la barra superior, barrido de encabezado en primera carga y llegada de notificación más táctil.',
+          'Botones y mosaicos móviles siguen manteniendo el suelo táctil de 44px; el feedback al pulsar sigue respetando prefers-reduced-motion.'
+        ],
+        NEW: [
+          'La respuesta táctil opcional ahora confirma guardados, bloqueos del escáner y selecciones con patrones de vibración breves y premium. Actívala desde NODE → Herramientas → Respuesta táctil. La vibración se suspende automáticamente mientras se escribe en un campo o cuando se establece prefers-reduced-motion.'
+        ]
+      }
+    },
     '20260906.8': {
       version: '0.15.29', title: 'CORE SCANNER NAVEL NUDGE', date: '2026-09-06',
       en: {

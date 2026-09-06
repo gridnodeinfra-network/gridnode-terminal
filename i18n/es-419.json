@@ -1652,5 +1652,12 @@
     "soundOn": "ACTIVO",
     "soundOff": "APAGADO",
     "scannerAudioHint": "Tonos de confirmacion procedurales opcionales. Apagado por defecto; activa para reproducir un tono breve cuando una zona se bloquea."
+  },
+  "vault": {
+    "vault.hapticsTitle": "Respuesta táctil",
+    "vault.hapticsHelp": "La vibración confirma guardados, bloqueos y selecciones cuando el dispositivo lo admite.",
+    "vault.hapticsOn": "ACTIVA — las acciones de guardar y bloquear vibran brevemente.",
+    "vault.hapticsOff": "APAGADA — confirmación silenciosa. Toca para activar.",
+    "vault.hapticsUnsupported": "No compatible con este dispositivo."
   }
 }

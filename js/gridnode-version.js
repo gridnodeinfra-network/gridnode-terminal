@@ -2,11 +2,11 @@
 (function () {
   'use strict';
   window.GN_VERSION = Object.freeze({
-    APP_VERSION: '0.15.29',
-    APP_BUILD: '20260906.8',
-    semver: '0.15.29',
-    release: '20260906.8',
-    title: 'V0.15.29 — CORE SCANNER NAVEL NUDGE',
+    APP_VERSION: '0.15.30',
+    APP_BUILD: '20260906.9',
+    semver: '0.15.30',
+    release: '20260906.9',
+    title: 'V0.15.30 — PREMIUM POLISH + TACTILE FEEDBACK',
     date: '2026-09-06'
   });
 })();
