@@ -10,6 +10,15 @@
   const LEGACY_ACK_KEY = 'gn_whatsnew_acknowledged_release_v2';
   const ORDER = ['NEW', 'IMPROVED', 'FIXED', 'ACCESSIBILITY', 'MOBILE', 'COMPATIBILITY', 'SECURITY'];
   const NOTES = Object.freeze({
+    '20260906.8': {
+      version: '0.15.29', title: 'CORE SCANNER NAVEL NUDGE', date: '2026-09-06',
+      en: {
+        FIXED: ['The CORE navel circle nudges up another notch toward the upper/middle abdomen seam.']
+      },
+      es: {
+        FIXED: ['El círculo del ombligo CORE sube otro poco más hacia la costura del abdomen superior y medio.']
+      }
+    },
     '20260906.7': {
       version: '0.15.28', title: 'CORE SCANNER NAVEL FINE-TUNE', date: '2026-09-06',
       en: {
