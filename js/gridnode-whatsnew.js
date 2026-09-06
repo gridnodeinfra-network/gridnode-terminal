@@ -10,6 +10,15 @@
   const LEGACY_ACK_KEY = 'gn_whatsnew_acknowledged_release_v2';
   const ORDER = ['NEW', 'IMPROVED', 'FIXED', 'ACCESSIBILITY', 'MOBILE', 'COMPATIBILITY', 'SECURITY'];
   const NOTES = Object.freeze({
+    '20260906.6': {
+      version: '0.15.27', title: 'CORE SCANNER NAVEL LIFT ×2', date: '2026-09-06',
+      en: {
+        FIXED: ['The CORE navel circle moves up another notch — now between the upper and middle abdomen zones.']
+      },
+      es: {
+        FIXED: ['El círculo del ombligo CORE sube otro nivel — ahora entre las zonas superior y media del abdomen.']
+      }
+    },
     '20260906.5': {
       version: '0.15.26', title: 'CORE SCANNER NAVEL LIFT', date: '2026-09-06',
       en: {

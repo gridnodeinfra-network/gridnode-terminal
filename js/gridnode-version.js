@@ -2,11 +2,11 @@
 (function () {
   'use strict';
   window.GN_VERSION = Object.freeze({
-    APP_VERSION: '0.15.26',
-    APP_BUILD: '20260906.5',
-    semver: '0.15.26',
-    release: '20260906.5',
-    title: 'V0.15.26 — CORE SCANNER NAVEL LIFT',
+    APP_VERSION: '0.15.27',
+    APP_BUILD: '20260906.6',
+    semver: '0.15.27',
+    release: '20260906.6',
+    title: 'V0.15.27 — CORE SCANNER NAVEL LIFT ×2',
     date: '2026-09-06'
   });
 })();
