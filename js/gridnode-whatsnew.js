@@ -10,6 +10,17 @@
   const LEGACY_ACK_KEY = 'gn_whatsnew_acknowledged_release_v2';
   const ORDER = ['NEW', 'IMPROVED', 'FIXED', 'ACCESSIBILITY', 'MOBILE', 'COMPATIBILITY', 'SECURITY'];
   const NOTES = Object.freeze({
+    '20260906.2': {
+      version: '0.15.23', title: 'COMPACT SCANNER AUDIO TOGGLE', date: '2026-09-06',
+      en: {
+        IMPROVED: ['Scanner audio now uses a compact ON/OFF toggle instead of an oversized text button.'],
+        MOBILE: ['The scanner title, audio toggle, and badge now stay inside the SHOT LOG panel at phone widths.']
+      },
+      es: {
+        IMPROVED: ['El audio del escáner ahora usa un interruptor compacto de ON/OFF en lugar de un botón de texto demasiado grande.'],
+        MOBILE: ['El título del escáner, el interruptor de audio y la insignia ahora permanecen dentro del panel de DOSIS en teléfonos.']
+      }
+    },
     '20260906.1': {
       version: '0.15.22', title: 'PREMIUM COMMAND SURFACE', date: '2026-09-06',
       en: {

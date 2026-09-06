@@ -109,12 +109,12 @@ async function bootstrap(page, { stored = false } = {}) {
 }
 
 function audioSwitch(page) {
-  return page.locator('#shotsRegionScanner [role="switch"]').filter({ hasText: /SCANNER AUDIO/i });
+  return page.locator('#gnScannerAudioSwitch[role="switch"]');
 }
 
 async function requireAudioSwitch(page) {
   const control = audioSwitch(page);
-  assert(await control.count() === 1, 'scanner-local SCANNER AUDIO role=switch control is missing');
+  assert(await control.count() === 1, 'scanner-local audio role=switch control is missing');
   return control;
 }
 
@@ -175,7 +175,9 @@ async function testDefaultOff(browser) {
     await bootstrap(page);
     const control = await requireAudioSwitch(page);
     assert((await control.getAttribute('aria-checked')) === 'false', 'scanner audio defaults to aria-checked=false');
-    assert((await control.innerText()).trim() === 'SCANNER AUDIO // OFF', 'scanner audio defaults to exact OFF copy');
+    assert((await control.getAttribute('aria-label')) === 'SCANNER AUDIO', 'scanner audio exposes a stable accessible name');
+    assert((await control.locator('[data-scanner-sound-state]').innerText()).trim() === 'OFF', 'scanner audio defaults to an OFF state label');
+    assert(await control.locator('.scanner-audio-track .scanner-audio-thumb').count() === 1, 'scanner audio renders a visible toggle track and thumb');
     assert((await page.evaluate(() => window.__gnScannerAudioProbe.contexts.length)) === 0, 'default boot must not construct AudioContext');
   });
 }
@@ -186,11 +188,12 @@ async function testPersistenceAndLayout(browser) {
     const control = await requireAudioSwitch(page);
     const box = await control.boundingBox();
     assert(box && box.width >= 44 && box.height >= 44, `390x844 scanner audio target must be at least 44px; got ${JSON.stringify(box)}`);
+    assert(box && box.width <= 120, `390x844 scanner audio toggle must remain compact; got ${JSON.stringify(box)}`);
     const tabs = await page.locator('#shotsRegionScanner .scanner-mode-tabs').boundingBox();
     assert(tabs && box && (box.y + box.height <= tabs.y || tabs.y + tabs.height <= box.y || box.x + box.width <= tabs.x || tabs.x + tabs.width <= box.x), '390x844 audio control must not overlap scanner mode tabs');
     await control.click();
     assert((await control.getAttribute('aria-checked')) === 'true', 'toggle ON must expose aria-checked=true');
-    assert((await control.innerText()).trim() === 'SCANNER AUDIO // ON', 'toggle ON must expose exact ON copy');
+    assert((await control.locator('[data-scanner-sound-state]').innerText()).trim() === 'ON', 'toggle ON must expose an ON state label');
     const key = await storedAudioKey(page);
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(900);

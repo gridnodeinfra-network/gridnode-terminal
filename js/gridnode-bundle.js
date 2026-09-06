@@ -2151,7 +2151,9 @@ function gnScannerAudioRenderSwitch() {
   control.setAttribute('aria-checked', gnScannerAudioEnabled ? 'true' : 'false');
   const label = tx('shots.scannerAudio', 'SCANNER AUDIO');
   const state = tx(gnScannerAudioEnabled ? 'shots.soundOn' : 'shots.soundOff', gnScannerAudioEnabled ? 'ON' : 'OFF');
-  control.innerHTML = `${label} // <span data-scanner-sound-state>${state}</span>`;
+  control.setAttribute('aria-label', label);
+  const stateLabel = control.querySelector('[data-scanner-sound-state]');
+  if (stateLabel) stateLabel.textContent = state;
 }
 
 function gnScannerAudioContextForGesture(gestureToken = null) {

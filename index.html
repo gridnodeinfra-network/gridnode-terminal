@@ -30,9 +30,9 @@
   <meta name="color-scheme" content="dark light">
   <meta name="supported-color-schemes" content="dark light">
 
-<script src="./js/gridnode-theme.js?v=20260906.1"></script>
-<link rel="stylesheet" href="./css/daylight-nexus-pilot.css?v=20260906.1">
-<link id="gnNativeCss" rel="stylesheet" href="./css/gridnode-native.css?v=20260906.1">
+<script src="./js/gridnode-theme.js?v=20260906.2"></script>
+<link rel="stylesheet" href="./css/daylight-nexus-pilot.css?v=20260906.2">
+<link id="gnNativeCss" rel="stylesheet" href="./css/gridnode-native.css?v=20260906.2">
 
 <link rel="manifest" href="/manifest.json">
 <meta name="description" content="GRID//NODE is a local-first personal biotech system for tracking GLP-1 protocols, peptides, weight, phases, and user-entered outcomes.">
@@ -3869,8 +3869,15 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 #shotsRegionScanner .zone-hit { pointer-events:all; }
 #shotsRegionScanner .zone-visible { vector-effect:non-scaling-stroke; transform-box:fill-box; transform-origin:center; transition:fill 120ms ease,stroke 120ms ease,stroke-width 120ms ease,opacity 120ms ease,filter 120ms ease; }
 #shotsRegionScanner .scanner-selected-panel { position:relative; overflow:hidden; scroll-margin-bottom:calc(92px + var(--safe-bottom)); }
-#shotsRegionScanner .scanner-audio-switch { min-width:184px; min-height:44px; padding:9px 12px; border:1px solid rgba(6,187,227,.42); border-radius:9px; background:rgba(5,7,8,.78); color:#9ab4ba; font:700 .62rem/1 var(--font-m,monospace); letter-spacing:1px; text-align:center; }
+#shotsRegionScanner .shots-scanner-head > div { flex:1 1 auto; min-width:0; }
+#shotsRegionScanner .scanner-audio-switch { flex:0 0 104px; min-width:104px; min-height:44px; padding:5px 7px; display:grid; grid-template-columns:minmax(0,1fr) 36px; grid-template-areas:"label track" "state track"; align-items:center; column-gap:6px; row-gap:1px; border:1px solid rgba(6,187,227,.42); border-radius:9px; background:rgba(5,7,8,.78); color:#9ab4ba; text-align:left; cursor:pointer; }
+#shotsRegionScanner .scanner-audio-label { grid-area:label; font:700 12px/1 var(--font-m,monospace); letter-spacing:.6px; white-space:nowrap; }
+#shotsRegionScanner .scanner-audio-state { grid-area:state; font:700 10px/1 var(--font-m,monospace); letter-spacing:1px; opacity:.82; }
+#shotsRegionScanner .scanner-audio-track { grid-area:track; position:relative; width:36px; height:20px; border:1px solid rgba(154,180,186,.48); border-radius:999px; background:rgba(154,180,186,.14); box-shadow:inset 0 1px 3px rgba(0,0,0,.42); }
+#shotsRegionScanner .scanner-audio-thumb { position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:#9ab4ba; box-shadow:0 1px 3px rgba(0,0,0,.52); transition:transform 140ms ease,background 140ms ease,box-shadow 140ms ease; }
 #shotsRegionScanner .scanner-audio-switch[aria-checked="true"] { border-color:#06BBE3; background:rgba(6,187,227,.12); color:#EAFDFF; box-shadow:0 0 10px rgba(6,187,227,.16); }
+#shotsRegionScanner .scanner-audio-switch[aria-checked="true"] .scanner-audio-track { border-color:#06BBE3; background:rgba(6,187,227,.24); }
+#shotsRegionScanner .scanner-audio-switch[aria-checked="true"] .scanner-audio-thumb { transform:translateX(16px); background:#06BBE3; box-shadow:0 0 8px rgba(6,187,227,.72); }
 #shotsRegionScanner .scanner-audio-switch:focus-visible { outline:2px solid #FCEE0A; outline-offset:2px; }
 #shotsRegionScanner .zone-hit.pressed + .zone-visible { stroke:#FCEE0A; stroke-width:4; fill:rgba(234,9,23,.24); filter:drop-shadow(0 0 6px rgba(252,238,10,.42)); opacity:1; transition:none; }
 #shotsRegionScanner .zone-hit.zone-acquiring + .zone-visible { stroke:#06BBE3; stroke-width:4; fill:rgba(234,9,23,.20); stroke-dasharray:18 11; animation:gn-scanner-acquire 420ms cubic-bezier(.2,.75,.25,1) both; }
@@ -3892,9 +3899,19 @@ html[data-theme="light"] #shotsRegionScanner .scanner-audio-switch { background:
 html[data-theme="light"] #shotsRegionScanner .scanner-audio-switch[aria-checked="true"] { color:#003C4C; }
 @media (max-width:430px) {
   #shotsRegionScanner { padding:12px; }
+  #shotsRegionScanner .shots-scanner-head { gap:8px; }
   #shotsRegionScanner .site-scanner { padding:9px; border-radius:16px; }
   #shotsRegionScanner .biotech-scanner { margin-top:10px; }
   #pageLog { padding-bottom:calc(104px + var(--safe-bottom)); }
+}
+@media (max-width:360px) {
+  #shotsRegionScanner .shots-scanner-head { display:grid; grid-template-columns:minmax(0,1fr) 48px; }
+  #shotsRegionScanner .shots-scanner-head > div { grid-column:1; grid-row:1; }
+  #shotsRegionScanner .gn-scanner-badge { grid-column:2; grid-row:1; }
+  #shotsRegionScanner .scanner-audio-switch { grid-column:2; grid-row:2; justify-self:end; }
+}
+@media (prefers-reduced-motion:reduce) {
+  #shotsRegionScanner .scanner-audio-thumb { transition:none; }
 }
 </style>
 
@@ -4452,7 +4469,7 @@ function continueLocallyFromWelcome() {
             <h2 data-i18n="shots.scannerTitle">// BODY SCANNER</h2>
             <p data-i18n="shots.userEnteredLocation">USER-ENTERED LOCATION TRACKING</p>
           </div>
-          <button id="gnScannerAudioSwitch" class="scanner-audio-switch" type="button" role="switch" aria-checked="false" aria-label="Scanner audio" onclick="window.GNScannerAudio && window.GNScannerAudio.toggle()"><span data-i18n="shots.scannerAudio">SCANNER AUDIO</span> // <span data-scanner-sound-state>OFF</span></button>
+          <button id="gnScannerAudioSwitch" class="scanner-audio-switch" type="button" role="switch" aria-checked="false" aria-label="Scanner audio" data-i18n-aria-label="shots.scannerAudio" onclick="window.GNScannerAudio && window.GNScannerAudio.toggle()"><span class="scanner-audio-label" data-i18n="shots.audioLabel">AUDIO</span><span class="scanner-audio-track" aria-hidden="true"><span class="scanner-audio-thumb"></span></span><span class="scanner-audio-state" data-scanner-sound-state>OFF</span></button>
           <img class="gn-scanner-badge" src="/assets/brand/ui/scanner-badge.svg" alt="GRID//NODE scanner badge" width="48" height="48" decoding="async">
         </div>
         <div class="scanner-mode-tabs" role="tablist" aria-label="Body scanner mode" data-i18n-aria-label="shot.zoneModeAria">
@@ -9958,7 +9975,7 @@ html[data-theme="light"] #shotsRegionScanner .gn-zone-path.selected {
   </div>
 </div>
 
-<script src="./js/gridnode-version.js?v=20260906.1" defer></script><script src="./js/gridnode-i18n.js?v=20260906.1" defer></script><script src="./js/gridnode-bundle.js?v=20260906.1" defer></script><script src="./js/gridnode-phase-sphere.js?v=20260906.1" defer></script><script src="./js/gridnode-product-completion.js?v=20260906.1" defer></script><script src="./js/gridnode-peptide-pk.js?v=20260906.1" defer></script><script src="./js/gridnode-peptide-viz.js?v=20260906.1" defer></script><script src="./js/gridnode-motivation.js?v=20260906.1" defer></script><script src="./js/gridnode-telemetry.js?v=20260906.1" defer></script><script src="./js/gridnode-native.js?v=20260906.1" defer></script><script src="./js/gridnode-i18n-overlay.js?v=20260906.1" defer></script><script src="./js/gridnode-whatsnew.js?v=20260906.1" defer></script><script src="./js/gridnode-onboarding.js?v=20260906.1" defer></script>
+<script src="./js/gridnode-version.js?v=20260906.2" defer></script><script src="./js/gridnode-i18n.js?v=20260906.2" defer></script><script src="./js/gridnode-bundle.js?v=20260906.2" defer></script><script src="./js/gridnode-phase-sphere.js?v=20260906.2" defer></script><script src="./js/gridnode-product-completion.js?v=20260906.2" defer></script><script src="./js/gridnode-peptide-pk.js?v=20260906.2" defer></script><script src="./js/gridnode-peptide-viz.js?v=20260906.2" defer></script><script src="./js/gridnode-motivation.js?v=20260906.2" defer></script><script src="./js/gridnode-telemetry.js?v=20260906.2" defer></script><script src="./js/gridnode-native.js?v=20260906.2" defer></script><script src="./js/gridnode-i18n-overlay.js?v=20260906.2" defer></script><script src="./js/gridnode-whatsnew.js?v=20260906.2" defer></script><script src="./js/gridnode-onboarding.js?v=20260906.2" defer></script>
 <script>
 (function() {
   try {
