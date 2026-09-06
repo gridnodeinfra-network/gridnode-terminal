@@ -10,6 +10,39 @@
   const LEGACY_ACK_KEY = 'gn_whatsnew_acknowledged_release_v2';
   const ORDER = ['NEW', 'IMPROVED', 'FIXED', 'ACCESSIBILITY', 'MOBILE', 'COMPATIBILITY', 'SECURITY'];
   const NOTES = Object.freeze({
+    '20260906.1': {
+      version: '0.15.22', title: 'PREMIUM COMMAND SURFACE', date: '2026-09-06',
+      en: {
+        IMPROVED: [
+          'The mobile entry now reveals the live GRID//NODE dashboard inside the first screen, with tighter hierarchy, stronger depth, and clearer action priority.',
+          'The command shell, active navigation, page headers, and first-run dashboard now read as one cohesive biotech instrument.'
+        ],
+        FIXED: [
+          'App startup no longer stalls while initializing scanner audio.',
+          'Empty-dashboard styling no longer reduces text size across the entire interface.'
+        ],
+        ACCESSIBILITY: [
+          'Functional links, filters, result actions, profile controls, and navigation now keep reliable touch targets and visible focus.',
+          'Keyboard navigation now keeps its semantic current-page state synchronized with the visible tab.'
+        ],
+        MOBILE: ['The first viewport now fits both entry actions and the complete live product preview without horizontal overflow.']
+      },
+      es: {
+        IMPROVED: [
+          'La entrada móvil ahora muestra el panel activo de GRID//NODE dentro de la primera pantalla, con jerarquía más clara, mayor profundidad y mejor prioridad de acciones.',
+          'La interfaz de mando, la navegación activa, los encabezados y el panel inicial ahora se perciben como un solo instrumento biotecnológico.'
+        ],
+        FIXED: [
+          'El inicio de la app ya no se detiene al inicializar el audio del escáner.',
+          'El estilo del panel vacío ya no reduce el tamaño del texto en toda la interfaz.'
+        ],
+        ACCESSIBILITY: [
+          'Enlaces, filtros, acciones de resultados, controles de perfil y navegación ahora conservan áreas táctiles fiables y enfoque visible.',
+          'La navegación con teclado ahora mantiene el estado semántico de página actual sincronizado con la pestaña visible.'
+        ],
+        MOBILE: ['La primera pantalla ahora incluye ambas acciones de entrada y la vista previa completa del producto sin desbordamiento horizontal.']
+      }
+    },
     '20260804.1': {
       version: '0.12.0', title: 'PRODUCTION READINESS + MEDICATION INTEGRITY', date: '2026-08-04',
       en: {
