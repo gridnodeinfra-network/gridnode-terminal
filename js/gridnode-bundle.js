@@ -1044,9 +1044,17 @@ const ZONE_IDS = Object.freeze({
   'Right Back Upper Arm Upper': 'zone.armUpperRight',
   'Right Back Upper Arm Lower': 'zone.armLowerRight'
 });
+const LEGACY_ZONE_IDS = Object.freeze({
+  'Left Abdomen — Upper': 'zone.coreUpperLeft',
+  'Right Abdomen — Upper': 'zone.coreUpperRight',
+  'Left Abdomen — Lower': 'zone.coreLowerLeft',
+  'Right Abdomen — Lower': 'zone.coreLowerRight'
+});
 const zoneLabel = function (stored) {
   if (!stored) return '';
-  const key = ZONE_IDS[stored];
+  const legacyKey = LEGACY_ZONE_IDS[stored];
+  if (legacyKey && String(document.documentElement.lang || 'en').toLowerCase().startsWith('en')) return stored;
+  const key = ZONE_IDS[stored] || legacyKey;
   if (key) { const t = tx(key, stored); if (t && t !== key) return t; }
   return stored;
 };
@@ -1561,9 +1569,15 @@ function showPage(name, navElement) {
   document.body.classList.toggle('gn-fab-hidden-context', ['Lab', 'Profile', 'Cal'].includes(name));
   qa('.page').forEach(item => item.classList.remove('active'));
   page.classList.add('active');
-  qa('.nav-item').forEach(item => item.classList.remove('active'));
+  qa('.nav-item').forEach(item => {
+    item.classList.remove('active');
+    item.removeAttribute('aria-current');
+  });
   const nav = navElement || document.getElementById({ Dash: 'navDash', Log: 'navLog', Results: 'navRes', Lab: 'navLab', Profile: 'navPro', Cal: 'navCal' }[name]);
-  if (nav) nav.classList.add('active');
+  if (nav) {
+    nav.classList.add('active');
+    nav.setAttribute('aria-current', 'page');
+  }
   $('scrollBody')?.scrollTo({ top: 0, behavior: 'auto' });
   if (name === 'Log') renderShots();
   if (name === 'Results') renderResults();
@@ -3589,6 +3603,13 @@ function installCustomSelect(select) {
     }
   });
   trigger.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && wrapper.classList.contains('open')) {
+      event.preventDefault();
+      event.stopPropagation();
+      wrapper.classList.remove('open');
+      trigger.setAttribute('aria-expanded', 'false');
+      return;
+    }
     if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return;
     event.preventDefault();
     closeCustomPickers(wrapper);
