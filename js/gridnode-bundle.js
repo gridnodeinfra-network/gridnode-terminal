@@ -3668,8 +3668,12 @@ function installCustomDate(input) {
   trigger.className = 'gn-custom-date-trigger';
   trigger.dataset.gnDateTrigger = 'true';
   trigger.setAttribute('aria-haspopup', 'dialog');
+  trigger.setAttribute('aria-expanded', 'false');
   const popover = document.createElement('div');
   popover.className = 'gn-custom-date-popover';
+  popover.id = `${input.id || createId('date')}-popover`;
+  popover.setAttribute('role', 'dialog');
+  trigger.setAttribute('aria-controls', popover.id);
   popover.innerHTML = '<div class="gn-custom-date-head"><button type="button" data-gn-date-prev aria-label="' + tx('date.prevMonth', 'Previous month') + '">‹</button><strong data-gn-date-label></strong><button type="button" data-gn-date-next aria-label="' + tx('date.nextMonth', 'Next month') + '">›</button></div><div class="gn-custom-date-grid" data-gn-date-grid></div><div class="gn-custom-date-foot"><button type="button" data-gn-date-today data-i18n="date.useToday">' + tx('date.useToday', 'USE TODAY') + '</button><button type="button" data-gn-date-close data-i18n="date.close">' + tx('date.close', 'CLOSE') + '</button></div>';
   input.type = 'text';
   input.readOnly = true;
@@ -3679,20 +3683,42 @@ function installCustomDate(input) {
   input.parentNode.insertBefore(wrapper, input);
   wrapper.append(trigger, popover, input);
   window.GN_I18N?.applyTo?.(popover);
+
+  function closeDatePopover({ restoreFocus = false } = {}) {
+    wrapper.classList.remove('open');
+    trigger.setAttribute('aria-expanded', 'false');
+    if (restoreFocus) trigger.focus({ preventScroll: true });
+  }
+
   trigger.addEventListener('click', () => {
     const open = !wrapper.classList.contains('open');
     closeCustomPickers(wrapper);
     wrapper.classList.toggle('open', open);
+    trigger.setAttribute('aria-expanded', String(open));
     if (open) { wrapper._month = input.value ? new Date(`${input.value}T00:00:00`) : new Date(); wrapper._month = new Date(wrapper._month.getFullYear(), wrapper._month.getMonth(), 1); renderCustomDatePopover(wrapper); }
   });
   popover.addEventListener('click', event => {
     const target = event.target.closest('button');
     if (!target) return;
-    if (target.dataset.gnDatePrev) wrapper._month.setMonth(wrapper._month.getMonth() - 1);
-    else if (target.dataset.gnDateNext) wrapper._month.setMonth(wrapper._month.getMonth() + 1);
-    else if (target.dataset.gnDateToday) { input.value = todayISO(); input.dispatchEvent(new Event('input', { bubbles: true })); input.dispatchEvent(new Event('change', { bubbles: true })); wrapper._month = new Date(); wrapper._month = new Date(wrapper._month.getFullYear(), wrapper._month.getMonth(), 1); syncCustomDate(input); }
-    else if (target.dataset.gnDateValue) { input.value = target.dataset.gnDateValue; input.dispatchEvent(new Event('input', { bubbles: true })); input.dispatchEvent(new Event('change', { bubbles: true })); syncCustomDate(input); wrapper.classList.remove('open'); }
-    else if (target.dataset.gnDateClose) wrapper.classList.remove('open');
+    if (target.hasAttribute('data-gn-date-prev')) wrapper._month.setMonth(wrapper._month.getMonth() - 1);
+    else if (target.hasAttribute('data-gn-date-next')) wrapper._month.setMonth(wrapper._month.getMonth() + 1);
+    else if (target.hasAttribute('data-gn-date-today')) {
+      input.value = todayISO();
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      wrapper._month = new Date();
+      wrapper._month = new Date(wrapper._month.getFullYear(), wrapper._month.getMonth(), 1);
+      syncCustomDate(input);
+      closeDatePopover({ restoreFocus: true });
+    }
+    else if (target.dataset.gnDateValue) {
+      input.value = target.dataset.gnDateValue;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      syncCustomDate(input);
+      closeDatePopover({ restoreFocus: true });
+    }
+    else if (target.hasAttribute('data-gn-date-close')) closeDatePopover({ restoreFocus: true });
     renderCustomDatePopover(wrapper);
   });
   input.addEventListener('change', () => syncCustomDate(input));
@@ -3784,6 +3810,8 @@ function ensureLabFoundations() {
   document.body.appendChild(overlay);
   overlay.querySelector('[data-lab-back]')?.addEventListener('click', closeLabTool);
   qa('[data-lab-focus]').forEach(tile => tile.addEventListener('click', () => openLabTool(tile.dataset.labFocus)));
+  const banner = page.querySelector('#gnLabToolBanner');
+  if (!banner) page.insertAdjacentHTML('beforeend', `<div id="gnLabToolBanner" class="gn-sr-only" role="status" aria-live="polite" aria-atomic="true"></div>`);
   renderLabFoundations();
 }
 
@@ -3881,6 +3909,14 @@ window.addEventListener('popstate', function (event) {
   }
 });
 
+function announceLabToolStatus(label, detail) {
+  const banner = document.getElementById('gnLabToolBanner');
+  if (!banner) return;
+  const combined = detail ? `${label} — ${detail}` : label;
+  banner.textContent = '';
+  requestAnimationFrame(() => { banner.textContent = combined; });
+}
+
 function renderLabFoundations() {
   const list = $('gnResearchList');
   if (list) {
@@ -3950,16 +3986,67 @@ function exportInventory() {
 
 function saveResearchRecord() {
   const name = $('gnResearchName')?.value?.trim();
-  if (!name) { actionFeedback(tx('research.notSaved', 'RESEARCH RECORD NOT SAVED'), tx('research.addName', 'ADD A NAME BEFORE COMMITTING'), true); return; }
+  const nameInput = $('gnResearchName');
+  const dateInput = $('gnResearchDate');
+  if (nameInput) nameInput.setAttribute('aria-invalid', 'false');
+  if (dateInput) dateInput.setAttribute('aria-invalid', 'false');
+  if (!name) {
+    if (nameInput) {
+      nameInput.setAttribute('aria-invalid', 'true');
+      nameInput.setAttribute('aria-describedby', 'gnResearchErrorName');
+      let hint = $('gnResearchErrorName');
+      if (!hint) {
+        hint = document.createElement('div');
+        hint.id = 'gnResearchErrorName';
+        hint.className = 'gn-form-error';
+        hint.dataset.i18n = 'research.addName';
+        hint.textContent = tx('research.addName', 'ADD A NAME BEFORE COMMITTING');
+        nameInput.insertAdjacentElement('afterend', hint);
+      } else {
+        hint.textContent = tx('research.addName', 'ADD A NAME BEFORE COMMITTING');
+      }
+    }
+    announceLabToolStatus(tx('research.notSaved', 'RESEARCH RECORD NOT SAVED'), tx('research.addName', 'ADD A NAME BEFORE COMMITTING'));
+    actionFeedback(tx('research.notSaved', 'RESEARCH RECORD NOT SAVED'), tx('research.addName', 'ADD A NAME BEFORE COMMITTING'), true);
+    nameInput?.focus();
+    return;
+  }
+  if (nameInput) nameInput.removeAttribute('aria-describedby');
   const records = S.get('researchRecords', []), now = new Date().toISOString(), id = moduleState.researchEditId || createId('research'), existing = records.find(item => item.id === id);
   const categoryInput = $('gnResearchCategory');
-  const shotDate = $('gnResearchDate')?.value?.trim();
-  if (!shotDate) { actionFeedback(tx('research.notSaved', 'RESEARCH RECORD NOT SAVED'), tx('research.addDate', 'SELECT A DATE BEFORE COMMITTING'), true); return; }
+  const shotDate = dateInput?.value?.trim();
+  if (!shotDate) {
+    if (dateInput) {
+      dateInput.setAttribute('aria-invalid', 'true');
+      dateInput.setAttribute('aria-describedby', 'gnResearchErrorDate');
+      let hint = $('gnResearchErrorDate');
+      if (!hint) {
+        hint = document.createElement('div');
+        hint.id = 'gnResearchErrorDate';
+        hint.className = 'gn-form-error';
+        hint.dataset.i18n = 'research.addDate';
+        hint.textContent = tx('research.addDate', 'SELECT A DATE BEFORE COMMITTING');
+        dateInput.insertAdjacentElement('afterend', hint);
+      } else {
+        hint.textContent = tx('research.addDate', 'SELECT A DATE BEFORE COMMITTING');
+      }
+    }
+    announceLabToolStatus(tx('research.notSaved', 'RESEARCH RECORD NOT SAVED'), tx('research.addDate', 'SELECT A DATE BEFORE COMMITTING'));
+    actionFeedback(tx('research.notSaved', 'RESEARCH RECORD NOT SAVED'), tx('research.addDate', 'SELECT A DATE BEFORE COMMITTING'), true);
+    dateInput?.focus();
+    return;
+  }
+  if (dateInput) dateInput.removeAttribute('aria-describedby');
   const record = { id, name, category: normalizeResearchCategory(categoryInput?.dataset.categoryId || categoryInput?.value), date: shotDate, notes: $('gnResearchNotes')?.value?.trim() || '', source: $('gnResearchSource')?.value?.trim() || existing?.source || 'manual', state: $('gnResearchState')?.value || existing?.state || 'TRACKING', archived: existing?.archived || false, createdAt: existing?.createdAt || now, modifiedAt: now };
   const index = records.findIndex(item => item.id === id);
   if (index >= 0) records[index] = record; else records.push(record);
   S.set('researchRecords', records); appendEventLedger({ type: 'RESEARCH', recordId: record.id, date: record.date, label: existing ? 'RESEARCH RECORD UPDATED' : 'RESEARCH RECORD CAPTURED' });
-  queueCloudSync('workspace'); moduleState.researchEditId = null; $('gnResearchForm')?.reset(); if ($('gnResearchName')) { $('gnResearchName').readOnly = false; $('gnResearchName').removeAttribute('data-research-locked'); $('gnResearchName')?.setAttribute('placeholder', tx('research.recordNamePlaceholder', 'Select a library entry or type a custom name')); } const sb = $('gnResearchForm')?.querySelector('[data-research-badge]'); if (sb) sb.textContent = ''; setText('gnResearchSave', tx('research.save', 'SAVE RESEARCH RECORD')); const sr = $('gnResearchSave'); if (sr) sr.textContent = tx('research.save', 'SAVE RESEARCH RECORD'); const rm = $('gnResearchMode'); if (rm) { rm.style.display = 'none'; rm.dataset.mode = 'pick'; } const rcat = $('gnResearchCategory'); if (rcat) { rcat.readOnly = false; rcat.removeAttribute('data-category-locked'); } renderLabFoundations(); actionFeedback(existing ? tx('research.updated', 'RESEARCH RECORD UPDATED') : tx('research.captured', 'RESEARCH RECORD CAPTURED'), tx('research.timelineSignal', 'TIMELINE UPDATED // USER-ENTERED ONLY'));
+  queueCloudSync('workspace'); moduleState.researchEditId = null; $('gnResearchForm')?.reset(); if ($('gnResearchName')) { $('gnResearchName').readOnly = false; $('gnResearchName').removeAttribute('data-research-locked'); $('gnResearchName')?.setAttribute('placeholder', tx('research.recordNamePlaceholder', 'Select a library entry or type a custom name')); } const sb = $('gnResearchForm')?.querySelector('[data-research-badge]'); if (sb) sb.textContent = ''; setText('gnResearchSave', tx('research.save', 'SAVE RESEARCH RECORD')); const sr = $('gnResearchSave'); if (sr) sr.textContent = tx('research.save', 'SAVE RESEARCH RECORD'); const rm = $('gnResearchMode'); if (rm) { rm.style.display = 'none'; rm.dataset.mode = 'pick'; } const rcat = $('gnResearchCategory'); if (rcat) { rcat.readOnly = false; rcat.removeAttribute('data-category-locked'); } $('gnResearchErrorName')?.remove(); $('gnResearchErrorDate')?.remove(); if ($('gnResearchName')) { $('gnResearchName').removeAttribute('aria-invalid'); $('gnResearchName').removeAttribute('aria-describedby'); } if ($('gnResearchDate')) { $('gnResearchDate').removeAttribute('aria-invalid'); $('gnResearchDate').removeAttribute('aria-describedby'); }
+    renderLabFoundations();
+    const successLabel = existing ? tx('research.updated', 'RESEARCH RECORD UPDATED') : tx('research.captured', 'RESEARCH RECORD CAPTURED');
+    const successDetail = tx('research.timelineSignal', 'TIMELINE UPDATED // USER-ENTERED ONLY');
+    announceLabToolStatus(successLabel, successDetail);
+    actionFeedback(successLabel, successDetail);
 }
 
 function handleResearchAction(event) {

@@ -2,11 +2,11 @@
 (function () {
   'use strict';
   window.GN_VERSION = Object.freeze({
-    APP_VERSION: '0.15.23',
-    APP_BUILD: '20260906.2',
-    semver: '0.15.23',
-    release: '20260906.2',
-    title: 'V0.15.23 — COMPACT SCANNER AUDIO TOGGLE',
+    APP_VERSION: '0.15.24',
+    APP_BUILD: '20260906.3',
+    semver: '0.15.24',
+    release: '20260906.3',
+    title: 'V0.15.24 — LAB RESEARCH SAVE FIX + A11Y FEEDBACK',
     date: '2026-09-06'
   });
 })();

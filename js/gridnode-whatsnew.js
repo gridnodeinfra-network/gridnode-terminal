@@ -10,6 +10,19 @@
   const LEGACY_ACK_KEY = 'gn_whatsnew_acknowledged_release_v2';
   const ORDER = ['NEW', 'IMPROVED', 'FIXED', 'ACCESSIBILITY', 'MOBILE', 'COMPATIBILITY', 'SECURITY'];
   const NOTES = Object.freeze({
+    '20260906.3': {
+      version: '0.15.24', title: 'LAB RESEARCH SAVE FIX + A11Y FEEDBACK', date: '2026-09-06',
+      en: {
+        FIXED: ['LAB Research Save/Log now persists the record through the date picker — pick a library entry, set a date, and tap Save to capture the entry.'],
+        IMPROVED: ['Research Save now clears when a record is captured, so back-to-back entries work without manual reset.'],
+        ACCESSIBILITY: ['Research form errors now flag the failing field, link a description, and announce the outcome through a polite live region in both English and Spanish.']
+      },
+      es: {
+        FIXED: ['Guardar Registro en LAB Research ahora persiste el registro correctamente al usar el selector de fecha — elige una entrada, asigna fecha y pulsa Guardar.'],
+        IMPROVED: ['Guardar Registro ahora se limpia después de capturar, permitiendo registrar entradas seguidas sin reinicio manual.'],
+        ACCESSIBILITY: ['Los errores del formulario Research ahora marcan el campo problemático, enlazan una descripción y anuncian el resultado en una región en vivo en inglés y español.']
+      }
+    },
     '20260906.2': {
       version: '0.15.23', title: 'COMPACT SCANNER AUDIO TOGGLE', date: '2026-09-06',
       en: {
