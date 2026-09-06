@@ -10,6 +10,15 @@
   const LEGACY_ACK_KEY = 'gn_whatsnew_acknowledged_release_v2';
   const ORDER = ['NEW', 'IMPROVED', 'FIXED', 'ACCESSIBILITY', 'MOBILE', 'COMPATIBILITY', 'SECURITY'];
   const NOTES = Object.freeze({
+    '20260906.7': {
+      version: '0.15.28', title: 'CORE SCANNER NAVEL FINE-TUNE', date: '2026-09-06',
+      en: {
+        FIXED: ['The CORE navel circle receives a small upward adjustment to fine-tune its position.']
+      },
+      es: {
+        FIXED: ['El círculo del ombligo CORE recibe un pequeño ajuste hacia arriba para afinar su posición.']
+      }
+    },
     '20260906.6': {
       version: '0.15.27', title: 'CORE SCANNER NAVEL LIFT ×2', date: '2026-09-06',
       en: {
