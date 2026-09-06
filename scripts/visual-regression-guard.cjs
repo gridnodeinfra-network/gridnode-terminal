@@ -36,7 +36,7 @@ const VIEWPORTS = [
   { width: 1280, height: 900 },
 ];
 const THEMES = ['dark', 'light'];
-const CHROME = '/home/thinkpadwinbash/.cache/ms-playwright/chromium-1234/chrome-linux64/chrome';
+const CHROME = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || chromium.executablePath();
 // Per-channel RGB tolerance (0-255). 32 absorbs anti-aliasing/font noise
 // without swallowing real color changes.
 const DIFF_THRESHOLD = 32;

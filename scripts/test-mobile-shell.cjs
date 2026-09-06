@@ -148,7 +148,7 @@ async function runCell(browser, cell, release, version) {
 }
 
 async function main() {
-  const browser = await chromium.launch({ headless: true, executablePath: '/home/thinkpadwinbash/.cache/ms-playwright/chromium-1234/chrome-linux64/chrome', args: ['--no-sandbox'] });
+  const browser = await chromium.launch({ headless: true, executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || chromium.executablePath(), args: ['--no-sandbox'] });
   let failed = 0;
   for (const cell of MATRIX) {
     const label = `${cell.width}x${cell.height} ${cell.theme}`;

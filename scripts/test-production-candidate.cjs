@@ -611,7 +611,7 @@ async function authRecoveryFlow(browser) {
 
 async function main() {
   const started = Date.now();
-  const browser = await chromium.launch({ headless: true, executablePath: '/home/thinkpadwinbash/.cache/ms-playwright/chromium-1234/chrome-linux64/chrome', args: ['--no-sandbox'] });
+  const browser = await chromium.launch({ headless: true, executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || chromium.executablePath(), args: ['--no-sandbox'] });
   try {
     await newUserFlow(browser);
     await onboardingFlow(browser);

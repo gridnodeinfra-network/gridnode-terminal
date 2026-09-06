@@ -7,7 +7,7 @@ const { chromium } = require('playwright');
 
 const ROOT = path.resolve(__dirname, '..');
 const PROOF = path.join(ROOT, 'assets', 'brand', 'proof');
-const CHROME = '/home/thinkpadwinbash/.cache/ms-playwright/chromium-1234/chrome-linux64/chrome';
+const CHROME = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || chromium.executablePath();
 
 async function capture(page, source, output, width, height, background = null) {
   const svg = fs.readFileSync(path.join(PROOF, source), 'utf8');
