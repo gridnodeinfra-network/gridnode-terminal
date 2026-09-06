@@ -10,6 +10,21 @@
   const LEGACY_ACK_KEY = 'gn_whatsnew_acknowledged_release_v2';
   const ORDER = ['NEW', 'IMPROVED', 'FIXED', 'ACCESSIBILITY', 'MOBILE', 'COMPATIBILITY', 'SECURITY'];
   const NOTES = Object.freeze({
+    '20260906.4': {
+      version: '0.15.25', title: 'CORE SCANNER NAVEL + LOWER ZONES', date: '2026-09-06',
+      en: {
+        FIXED: [
+          'The CORE navel circle now sits at the natural belly-button position instead of below the lower zones.',
+          'The two lower CORE abdomen zones are positioned where the lower abdomen actually is, with a clean gap between zones — no overlap with Middle or each other.'
+        ]
+      },
+      es: {
+        FIXED: [
+          'El círculo del ombligo de CORE ahora se ubica en la posición natural del ombligo en lugar de debajo de las zonas inferiores.',
+          'Las dos zonas inferiores del abdomen CORE están posicionadas donde realmente está el abdomen inferior, con un espacio limpio entre zonas, sin superposición con Middle ni entre ellas.'
+        ]
+      }
+    },
     '20260906.3': {
       version: '0.15.24', title: 'LAB RESEARCH SAVE FIX + A11Y FEEDBACK', date: '2026-09-06',
       en: {
