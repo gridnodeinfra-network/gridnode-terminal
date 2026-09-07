@@ -1496,11 +1496,16 @@ function actionFeedback(title, detail, isError = false) {
   toast.className = `toast active${isError ? ' err' : ''}`;
   clearTimeout(toast._timer);
   toast._timer = setTimeout(() => toast.classList.remove('active'), 2000);
-  /* v0.15.30 — premium vibration feedback. Use gnHaptics.fire() (skipFocus)
-     so the confirmation pulse still fires even though the user may still
-     be in a form input — focus-clearing from a form reset is asynchronous
-     on some Android Chrome versions and the rAF below matches it. */
-  try { requestAnimationFrame(() => (isError ? gnHaptics.error() : gnHaptics.confirm())); } catch (_) {}
+  /* v0.15.32 — premium vibration feedback. actionFeedback is only called
+     from user-initiated success/error paths (Save / Scanner lock) and
+     those paths already show a visible toast. Bypass the focus gate
+     entirely via gnHaptics.fire() so the haptic actually lands even when
+     focus is inside a form input. The focus gate is preserved for
+     ambient calls (tap / mode / select) which fire from typing. */
+  try {
+    const live = window.gnHaptics || (typeof gnHaptics !== 'undefined' ? gnHaptics : null);
+    if (live) { if (isError) live.fire([4, 30, 4, 30, 4]); else live.fire([8, 30, 12]); }
+  } catch (_) {}
 }
 
 function nodeSyncLabel() {
@@ -3914,6 +3919,28 @@ window.addEventListener('popstate', function (event) {
   }
 });
 
+/* v0.15.32 — global gesture tagger. Wraps the document so EVERY click anywhere
+   in the app is captured at the very first moment and registers as a
+   "user gesture element" with gnHaptics. This means the focus-gate
+   permits confirm/error haptic for the next 250ms — fixing the
+   Android Chrome case where tapping Save leaves focus on the save
+   button and the focus-gate would otherwise suppress the success pulse. */
+if (typeof document !== 'undefined' && !document.documentElement.dataset.gnGestureTagger) {
+  document.documentElement.dataset.gnGestureTagger = '1';
+  document.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!target || typeof target.closest !== 'function') return;
+    /* Tag the most-actionable ancestor — the clickable thing. */
+    const actionable = target.closest('button, a, summary, [role="button"], label, [tabindex]:not([tabindex="-1"])');
+    /* Note: gnHaptics const declaration lives below this block; we read
+       via window.gnHaptics (exposed by try { window.gnHaptics = gnHaptics; } further down)
+       to avoid a Temporal Dead Zone ReferenceError on initial top-level execution. */
+    if (actionable && typeof window.gnHaptics !== 'undefined' && window.gnHaptics.markUserGesture) {
+      window.gnHaptics.markUserGesture(actionable);
+    }
+  }, true /* capture phase — runs before any handler */);
+}
+
 function announceLabToolStatus(label, detail) {
   const banner = document.getElementById('gnLabToolBanner');
   if (!banner) return;
@@ -3935,17 +3962,19 @@ const gnHaptics = (() => {
   })();
   const reduceMotion = () => typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const supported = () => typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
-  /* v0.15.31 — focus gate: don't suppress haptics for an element that JUST
-     received the user gesture. We track the most recent gesture target via
-     gnHaptics.gestureTarget (set by gesture handlers / actionFeedback
-     callers). If the current focus is the same element that just dispatched
-     a user gesture, allow the haptic through. */
+
+  /* v0.15.32 — gesture-tag: gesture handlers register the element that
+     received the user gesture (e.g. a Save button). The focus gate allows
+     the haptic through for 250ms even if focus happens to be on that
+     element (clicking a button leaves focus on the button). */
   let lastGestureEl = null;
   let lastGestureAt = 0;
-  const gestureTarget = (el) => {
+  const markUserGesture = (el) => {
     lastGestureEl = el || null;
     lastGestureAt = Date.now();
   };
+  const gestureTarget = (el) => markUserGesture(el);
+
   const focusInsideField = () => {
     const el = document.activeElement;
     if (!el) return false;
@@ -3954,9 +3983,11 @@ const gnHaptics = (() => {
   };
   const shouldSuppressForFocus = () => {
     if (!focusInsideField()) return false;
-    /* If the focused field is the SAME element that just received a user
-       gesture in the last 250ms, allow it (user tapped the field, save
-       fires on click, focus landed there synchronously — don't block). */
+    /* v0.15.32 — gesture window: if the user just dispatched a gesture on
+       this same element within the last 250ms, allow the haptic. Real world
+       fix for the Android-Chrome-WebView case where tapping Save briefly
+       leaves focus on the Save button (or a submit input inside the form)
+       and the focus-gate was suppressing the success pulse. */
     const el = document.activeElement;
     if (lastGestureEl === el && Date.now() - lastGestureAt < 250) return false;
     return true;
@@ -3967,26 +3998,43 @@ const gnHaptics = (() => {
     const skipFocus = opts && opts.skipFocus;
     if (!skipFocus && shouldSuppressForFocus()) return;
     if (!supported()) return;
-    try { navigator.vibrate(pattern); } catch (_) {}
+    /* v0.15.32 — wrap in try/catch but DO NOT silently swallow: log a
+       single warning for diagnostics. Android Chrome WebView occasionally
+       throws "vibrate() must be called from a user gesture" — that's fine
+       to swallow, but any other error is unexpected and we want to see it. */
+    try {
+      navigator.vibrate(pattern);
+    } catch (err) {
+      const msg = String(err && err.message || err);
+      if (!/user gesture|secure context|not allowed|gestureactivation/i.test(msg)) {
+        try { console.warn('[GRID//NODE gnHaptics]', msg); } catch (_) {}
+      }
+    }
   };
   const setEnabled = (next) => {
     enabled = !!next;
     try { localStorage.setItem(KEY, enabled ? 'on' : 'off'); } catch (_) {}
   };
+  /* v0.15.32 — direct-fire API used by actionFeedback: passes the gesture
+     gate ONLY if a gesture was just registered. */
+  const confirmNow = (gestureEl) => { if (gestureEl) markUserGesture(gestureEl); play([8, 30, 12]); };
+  const errorNow = (gestureEl) => { if (gestureEl) markUserGesture(gestureEl); play([4, 30, 4, 30, 4]); };
+  const lockNow = (gestureEl) => { if (gestureEl) markUserGesture(gestureEl); play([4, 18, 10]); };
   return {
     supported,
     enabled: () => enabled,
     setEnabled,
+    markUserGesture,
     gestureTarget,
-    /* Standard presets — focus-gated as before. */
+    confirmNow,
+    errorNow,
+    lockNow,
     tap: () => play(6),
     confirm: () => play([8, 30, 12]),
     error: () => play([4, 30, 4, 30, 4]),
     lock: () => play([4, 18, 10]),
     mode: () => play([6, 30, 6]),
     select: () => play([10, 24, 6]),
-    /* Explicit fire — ignores focus gating, used when the user clearly
-       intended a haptic and the focus-blame case must be bypassed. */
     fire: (pattern) => play(pattern, { skipFocus: true })
   };
 })();
@@ -5034,7 +5082,7 @@ function injectStableStyles() {
     .overlay,.modal,.cp-dropdown,.gn-lab-tool-shell,.gn-import-panel,.gn-delete-panel,.archive-confirm-panel{background:#0e0e16!important;color:#eeeef5!important;border-color:rgba(0,212,255,.12)!important;border-radius:6px}
     .cp-dropdown,.cp-option{background:#0e0e16!important;color:#eeeef5!important}.cp-option{border-bottom-color:rgba(255,255,255,.05)!important}.cp-option:hover,.cp-option.selected,.cp-option[aria-selected=true]{color:#00d4ff!important;box-shadow:0 0 10px rgba(0,212,255,.18)}
     select,input[type=date],input[type=time]{color-scheme:dark;background:#0e0e16!important;color:#eeeef5!important;border-color:rgba(0,212,255,.18)!important}select option{background:#0e0e16;color:#eeeef5}input[type=date]::-webkit-calendar-picker-indicator{filter:invert(78%) sepia(53%) saturate(1150%) hue-rotate(150deg);opacity:.9}
-    .gn-custom-picker,.gn-custom-date{position:relative;width:100%;min-width:0}.gn-custom-picker-trigger,.gn-custom-date-trigger{width:100%;min-height:40px;padding:10px;text-align:left;border:1px solid rgba(0,212,255,.18);background:#0e0e16;color:#eeeef5;font:16px var(--font-m,monospace);border-radius:2px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.gn-custom-picker-trigger::after,.gn-custom-date-trigger::after{content:'⌄';float:right;color:#00d4ff;margin-left:8px}.gn-custom-picker-trigger:focus-visible,.gn-custom-date-trigger:focus-visible{outline:none;border-color:#00d4ff;box-shadow:0 0 0 2px rgba(0,212,255,.12)}.gn-custom-picker-menu,.gn-custom-date-popover{display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:640;padding:4px;background:#0e0e16;border:1px solid rgba(0,212,255,.28);border-radius:6px;box-shadow:0 16px 42px rgba(0,0,0,.72),0 0 18px rgba(0,212,255,.1)}.gn-custom-picker.open .gn-custom-picker-menu,.gn-custom-date.open .gn-custom-date-popover{display:grid}.gn-custom-picker-option{min-height:38px;padding:9px 10px;border:0;border-bottom:1px solid rgba(255,255,255,.05);background:transparent;color:#9898b0;text-align:left;font:600 .68rem var(--font-m,monospace);cursor:pointer}.gn-custom-picker-option:last-child{border-bottom:0}.gn-custom-picker-option:hover,.gn-custom-picker-option[aria-selected=true]{color:#00d4ff;background:rgba(0,212,255,.08);box-shadow:0 0 10px rgba(0,212,255,.18)}.gn-custom-date-popover{width:min(330px,calc(100vw - 38px));right:auto;padding:10px}.gn-custom-date-head{display:grid;grid-template-columns:34px 1fr 34px;align-items:center;gap:8px;margin-bottom:9px}.gn-custom-date-head button,.gn-custom-date-foot button{min-height:32px;border:1px solid rgba(0,212,255,.24);background:rgba(0,212,255,.06);color:#00d4ff;font:700 .6rem var(--font-d,monospace);cursor:pointer}.gn-custom-date-head strong{color:#eeeef5;text-align:center;font:700 .68rem var(--font-m,monospace);letter-spacing:1px}.gn-custom-date-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.gn-custom-date-dow{padding:3px 0;color:#8295a0;text-align:center;font:600 .48rem var(--font-m,monospace)}.gn-custom-date-blank{min-height:32px}.gn-custom-date-day{min-height:32px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025);color:#9898b0;font:600 .62rem var(--font-m,monospace);cursor:pointer}.gn-custom-date-day:hover,.gn-custom-date-day.selected{border-color:#00d4ff;color:#00d4ff;background:rgba(0,212,255,.12);box-shadow:0 0 10px rgba(0,212,255,.18)}.gn-custom-date-foot{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}.gn-custom-date-foot button:last-child{color:#9898b0;border-color:rgba(255,255,255,.14);background:transparent}
+    .gn-custom-picker,.gn-custom-date{position:relative;width:100%;min-width:0}.gn-custom-picker-trigger,.gn-custom-date-trigger{width:100%;min-height:44px;padding:10px 14px 10px 12px;text-align:left;border:1px solid rgba(0,212,255,.55);background:linear-gradient(180deg,rgba(0,212,255,.07),rgba(0,0,0,.18));color:#eeeef5;font:600 16px var(--font-m,monospace);border-radius:4px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 0 0 0 rgba(0,212,255,0);transition:border-color .15s ease,background-color .15s ease,box-shadow .15s ease}.gn-custom-picker-trigger::after,.gn-custom-date-trigger::after{content:'⌄';float:right;color:#00d4ff;margin-left:8px}.gn-custom-picker-trigger:focus-visible,.gn-custom-date-trigger:focus-visible{outline:none;border-color:#00d4ff;box-shadow:0 0 0 2px rgba(0,212,255,.12)}.gn-custom-picker-menu,.gn-custom-date-popover{display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:640;padding:4px;background:#0e0e16;border:1px solid rgba(0,212,255,.28);border-radius:6px;box-shadow:0 16px 42px rgba(0,0,0,.72),0 0 18px rgba(0,212,255,.1)}.gn-custom-picker.open .gn-custom-picker-menu,.gn-custom-date.open .gn-custom-date-popover{display:grid}.gn-custom-picker-option{min-height:38px;padding:9px 10px;border:0;border-bottom:1px solid rgba(255,255,255,.05);background:transparent;color:#9898b0;text-align:left;font:600 .68rem var(--font-m,monospace);cursor:pointer}.gn-custom-picker-option:last-child{border-bottom:0}.gn-custom-picker-option:hover,.gn-custom-picker-option[aria-selected=true]{color:#00d4ff;background:rgba(0,212,255,.08);box-shadow:0 0 10px rgba(0,212,255,.18)}.gn-custom-date-popover{width:min(330px,calc(100vw - 38px));right:auto;padding:10px}.gn-custom-date-head{display:grid;grid-template-columns:34px 1fr 34px;align-items:center;gap:8px;margin-bottom:9px}.gn-custom-date-head button,.gn-custom-date-foot button{min-height:32px;border:1px solid rgba(0,212,255,.24);background:rgba(0,212,255,.06);color:#00d4ff;font:700 .6rem var(--font-d,monospace);cursor:pointer}.gn-custom-date-head strong{color:#eeeef5;text-align:center;font:700 .68rem var(--font-m,monospace);letter-spacing:1px}.gn-custom-date-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.gn-custom-date-dow{padding:3px 0;color:#8295a0;text-align:center;font:600 .48rem var(--font-m,monospace)}.gn-custom-date-blank{min-height:32px}.gn-custom-date-day{min-height:32px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025);color:#9898b0;font:600 .62rem var(--font-m,monospace);cursor:pointer}.gn-custom-date-day:hover,.gn-custom-date-day.selected{border-color:#00d4ff;color:#00d4ff;background:rgba(0,212,255,.12);box-shadow:0 0 10px rgba(0,212,255,.18)}.gn-custom-date-foot{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}.gn-custom-date-foot button:last-child{color:#9898b0;border-color:rgba(255,255,255,.14);background:transparent}
     .toast{max-width:90vw!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}.toast .gn-toast-message{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .phase-ring-svg-wrap .phase-segment-ring,.landing-phase-visual .phase-segment-ring{position:absolute;border-radius:50%;background:conic-gradient(from -90deg,#00d4ff 0deg 72deg,#2f7bff 72deg 144deg,#ffd700 144deg 216deg,#FF5B5B 216deg 288deg,#9898b0 288deg 360deg);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px));mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px));pointer-events:none;z-index:0;opacity:.72}
     .phase-ring-svg-wrap .phase-segment-ring{inset:-4px}.phase-ring-svg-wrap .ring-svg{z-index:1}.phase-ring-svg-wrap .phase-nodes{z-index:3}.phase-ring-svg-wrap .ring-center{z-index:4}.phase-marker{position:absolute;width:10px;height:10px;border-radius:50%;transform:translate(-50%,-50%);z-index:5;box-shadow:0 0 6px currentColor,0 0 12px currentColor;opacity:.9;pointer-events:none}.phase-marker[hidden]{display:none!important}@keyframes gnPhaseBreathe{0%,100%{box-shadow:0 0 6px currentColor,0 0 12px currentColor;opacity:.9}50%{box-shadow:0 0 12px currentColor,0 0 24px currentColor;opacity:1}}

@@ -10,6 +10,25 @@
   const LEGACY_ACK_KEY = 'gn_whatsnew_acknowledged_release_v2';
   const ORDER = ['NEW', 'IMPROVED', 'FIXED', 'ACCESSIBILITY', 'MOBILE', 'COMPATIBILITY', 'SECURITY'];
   const NOTES = Object.freeze({
+    '20260906.11': {
+      version: '0.15.32', title: 'LAB ARCHIVE LAYOUT + HAPTICS + LANG PERSISTENCE', date: '2026-09-06',
+      en: {
+        FIXED: [
+          'Haptics on Android: vibration now fires synchronously inside Save confirmations and Scanner lock, bypassing the focus-gate that was suppressing pulses when focus was inside the active form input. A capture-phase click tagger registers every clickable element with the haptics module.',
+          'LAB Research Peptide date and selector triggers now read as clearly tappable: stronger cyan border (0.55 alpha), gradient background, larger caret glyph, 44px minimum height. fainted 0.18 borders were being read as inert text on bright Android displays.',
+          'Archived Research Records no longer collapse the peptide name column to one-character-wide: grid columns use minmax(0, 1fr), word-break is allowed on the inner <b> and <small>, and the RESTORE TO EDIT button now wraps its label across two lines inside a smaller padded box instead of stretching the row past the container.',
+          'Language toggle now writes to localStorage, sessionStorage, and a same-site cookie together so the choice survives Android Chrome tab discards, private-mode restrictions, and OS-level memory pressure. Detection reads them in priority order on the next boot.'
+        ]
+      },
+      es: {
+        FIXED: [
+          'Vibración en Android: ahora se dispara de forma sincrónica dentro de la confirmación de guardado y el bloqueo del escáner, evitando el filtro de foco que suprimía los pulsos cuando el foco estaba dentro del campo de formulario activo.',
+          'Disparadores de fecha y selector de Research en LAB ahora se leen como claramente tocables: borde cian más fuerte, fondo en degradado, glifo de caret más grande, altura mínima 44px.',
+          'Registros de Investigación archivados ya no colapsan la columna del nombre del péptido a un solo carácter: las columnas del grid usan minmax(0, 1fr), se permite word-break en los elementos internos y el botón RESTORE TO EDIT ahora ajusta la etiqueta en dos líneas dentro de una caja más pequeña en vez de estirar la fila más allá del contenedor.',
+          'El selector de idioma ahora escribe en localStorage, sessionStorage y una cookie same-site de forma conjunta para que la elección sobreviva a descartes de pestañas de Android Chrome, restricciones de modo privado y presión de memoria del SO.'
+        ]
+      }
+    },
     '20260906.10': {
       version: '0.15.31', title: 'REGRESSION HOTFIX (vibration + language)', date: '2026-09-06',
       en: {

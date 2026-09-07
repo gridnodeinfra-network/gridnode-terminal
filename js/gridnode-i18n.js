@@ -19,10 +19,24 @@
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored && SUPPORTED.includes(stored)) return stored;
     } catch (_) { /* localStorage may be unavailable in private mode */ }
-    /* v0.15.31 — also accept an already-set <html lang> as authoritative.
-       Critical when the bundle wrote `document.documentElement.lang = lang`
-       before catalog load completed — without this fallback the init could
-       race and reset to navigator.language. */
+    /* v0.15.32 — fallback 1: sessionStorage */
+    try {
+      const s = sessionStorage.getItem(STORAGE_KEY);
+      if (s && SUPPORTED.includes(s)) return s;
+    } catch (_) {}
+    /* v0.15.32 — fallback 2: cookie (works in private mode on Android Chrome
+       where localStorage is per-tab). */
+    try {
+      const m = document.cookie && document.cookie.match(new RegExp('(?:^|;\\s*)' + STORAGE_KEY + '=([^;]+)'));
+      if (m) {
+        const c = decodeURIComponent(m[1]);
+        if (SUPPORTED.includes(c)) return c;
+      }
+    } catch (_) {}
+    /* v0.15.32 — fallback 3: already-set <html lang>. Critical when the
+       bundle wrote document.documentElement.lang = lang synchronously
+       before catalog load completed (prevents an init race that reset to
+       navigator.language). */
     try {
       const docLang = (document.documentElement?.lang || '').toLowerCase().split('-')[0];
       if (SUPPORTED.includes(docLang)) return docLang;
@@ -144,6 +158,13 @@
     await loadCatalog(lang);
     currentLang = lang;
     try { localStorage.setItem(STORAGE_KEY, lang); } catch (_) {}
+    /* v0.15.32 — write to sessionStorage AND document.cookie for cross-reload
+       reliability. On Android Chrome, localStorage in private/incognito
+       tabs CAN be wiped (memory pressure, tab discard). Writing to multiple
+       stores ensures the lang choice survives an OS-level reload. The
+       detectInitialLang path reads them in priority order. */
+    try { sessionStorage.setItem(STORAGE_KEY, lang); } catch (_) {}
+    try { document.cookie = `${STORAGE_KEY}=${encodeURIComponent(lang)};path=/;max-age=31536000;samesite=lax`; } catch (_) {}
     document.documentElement.setAttribute('lang', lang);
     document.body && document.body.setAttribute('data-lang', lang);
     applyTo(document);

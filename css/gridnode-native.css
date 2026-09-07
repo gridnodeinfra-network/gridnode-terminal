@@ -1400,6 +1400,9 @@ html[data-theme="light"] #boot { background: #0b0f16 !important; }
     padding: 12px 10px !important;
   }
   .gn-record-row > div, .gn-shot-card > div { min-width: 0; flex: 1 1 auto; }
+  .gn-record-row { grid-template-columns: minmax(0, 1fr) auto auto !important; align-items: center; }
+  .gn-record-row > div > b, .gn-record-row > div > small { word-break: break-word; overflow-wrap: anywhere; }
+  .gn-restore-edit { white-space: normal !important; line-height: 1.2 !important; text-align: center !important; font-size: .72rem !important; padding: 8px 10px !important; }
   .gn-record-delete, .gn-record-edit, .gn-shot-actions button,
   .gn-archive-btn, .gn-restore-edit {
     min-width: 44px !important;
