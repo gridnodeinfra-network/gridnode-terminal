@@ -18,7 +18,7 @@ const indexMarkers = [...index.matchAll(/\?v=(20\d{6}\.\d+)/g)].map(match => mat
 if (!indexMarkers.length || indexMarkers.some(marker => marker !== release)) fail('Index cache markers are not synchronized');
 if (!sw.includes(`const RELEASE = '${release}'`)) fail('Service worker release is stale');
 if (!native.includes(`const V = '${release}'`)) fail('Native shell release is stale');
-if (!core.includes(`APP_VERSION = '${semver}'`)) fail('Core semver is stale');
+if (!core.includes('window.GN_VERSION') || !core.includes(`|| '${semver}'`)) fail('Core semver is stale');
 if (!index.includes(`GRID//NODE v${semver}`)) fail('Visible version marker is stale');
 const releaseKeyCount = (notesSource.match(new RegExp("'" + release.replace('.', '\\.') + "'\\s*:", 'g')) || []).length;
 if (releaseKeyCount !== 1) fail(`Latest changelog release appears ${releaseKeyCount} times`);

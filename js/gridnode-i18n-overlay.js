@@ -25,7 +25,6 @@
     // Scanner / log modal location reads (bundle writes via textContent)
     // Measurements card
     ['#gnMeasurementsTitle', 'PESO + MEDIDAS'],
-    ['#gnMeasurementsForm label span', 'UNIDAD'],
     ['#gnMeasurementsSave, #gnMeasurementsForm button[type="submit"]', 'GUARDAR MEDIDAS'],
     ['#gnMeasurementsEmpty', 'Aún no hay medidas registradas.'],
   ];

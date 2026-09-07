@@ -5,7 +5,7 @@
  * No UI code belongs in this file.
  */
 
-const APP_VERSION = (typeof window !== 'undefined' && window.GN_VERSION && window.GN_VERSION.semver) || '0.9.0';
+const APP_VERSION = (typeof window !== 'undefined' && window.GN_VERSION && window.GN_VERSION.semver) || '0.15.33';
 
 const GOOGLE_OAUTH_CLIENT_ID = '305099332421-u752btn6p8cbaq8opapvdkfau9gnd9a3.apps.googleusercontent.com';
 
@@ -193,6 +193,94 @@ const S = Object.freeze({
     try { return logicalStorageValue(accountStorageKey(key), recovery.journal) !== null; } catch { return false; }
   }
 });
+
+const MEDICATION_ALIASES = Object.freeze({
+  zepbound: 'zepbound_tirzepatide',
+  'zepbound (tirzepatide)': 'zepbound_tirzepatide',
+  mounjaro: 'mounjaro_tirzepatide',
+  'mounjaro (tirzepatide)': 'mounjaro_tirzepatide',
+  tirzepatide: 'tirzepatide_compound',
+  'tirzepatide compound': 'tirzepatide_compound',
+  'tirzepatide (compound)': 'tirzepatide_compound',
+  wegovy: 'wegovy_semaglutide',
+  'wegovy (semaglutide)': 'wegovy_semaglutide',
+  ozempic: 'ozempic_semaglutide',
+  'ozempic (semaglutide)': 'ozempic_semaglutide',
+  semaglutide: 'semaglutide_compound',
+  'semaglutide compound': 'semaglutide_compound',
+  'semaglutide (compound)': 'semaglutide_compound',
+  retatrutide: 'retatrutide',
+  custom: 'custom_compound',
+  'custom compound': 'custom_compound',
+  'bpc-157': 'bpc157',
+  bpc157: 'bpc157',
+  bpc: 'bpc157',
+  bepecin: 'bpc157',
+  'tb-500': 'tb500',
+  tb500: 'tb500',
+  tb: 'tb500',
+  'thymosin beta-4': 'thymosin_beta4',
+  'thymosin beta 4': 'thymosin_beta4',
+  'thymosin b4': 'thymosin_beta4',
+  tbeta4: 'thymosin_beta4',
+  tb4: 'thymosin_beta4',
+  'thymosin alpha-1': 'thymosin_alpha1',
+  'thymosin alpha 1': 'thymosin_alpha1',
+  thymalfasin: 'thymosin_alpha1',
+  zadaxin: 'thymosin_alpha1',
+  'cjc-1295': 'cjc1295_dac',
+  'cjc1295': 'cjc1295_dac',
+  'cjc-1295 dac': 'cjc1295_dac',
+  'cjc1295 dac': 'cjc1295_dac',
+  'cjc-1295 no dac': 'cjc1295_nodac',
+  'cjc1295 no dac': 'cjc1295_nodac',
+  'cjc-1295 without dac': 'cjc1295_nodac',
+  'mod grf': 'cjc1295_nodac',
+  'mod grf 1-29': 'cjc1295_nodac',
+  'mod-grf': 'cjc1295_nodac',
+  'modified grf 1-29': 'cjc1295_nodac',
+  'grf 1-29': 'cjc1295_nodac',
+  ipamorelin: 'ipamorelin',
+  sermorelin: 'sermorelin',
+  'grf(1-29)': 'sermorelin',
+  tesamorelin: 'tesamorelin',
+  egrifta: 'tesamorelin',
+  semax: 'semax',
+  selank: 'selank',
+  'ghk-cu': 'ghk_cu_topical',
+  'ghk cu': 'ghk_cu_topical',
+  'copper tripeptide': 'ghk_cu_topical',
+  'ghk-cu topical': 'ghk_cu_topical',
+  'ghk-cu injectable': 'ghk_cu_injectable',
+  'ghk-cu injection': 'ghk_cu_injectable',
+  epitalon: 'epitalon',
+  epithalon: 'epitalon',
+  'mots-c': 'mots_c',
+  'mots c': 'mots_c',
+  mots: 'mots_c',
+  kpv: 'kpv',
+  elamipretide: 'elamipretide_ss31',
+  'ss-31': 'elamipretide_ss31',
+  ss31: 'elamipretide_ss31',
+  bendavia: 'elamipretide_ss31',
+  forzinity: 'elamipretide_ss31'
+});
+
+const CANONICAL_MEDICATION_IDS = Object.freeze([...new Set(Object.values(MEDICATION_ALIASES))]);
+
+function normalizeMedicationId(value) {
+  const raw = String(value || '').trim();
+  if (CANONICAL_MEDICATION_IDS.includes(raw)) return raw;
+  return MEDICATION_ALIASES[raw.toLowerCase()] || '';
+}
+
+const CANONICAL_SIDE_EFFECT_IDS = Object.freeze(['nausea', 'fatigue', 'headache', 'diarrhea', 'constipation', 'vomiting', 'insomnia', 'bloating', 'reflux', 'dizziness']);
+
+function normalizeSideEffectId(value) {
+  const raw = String(value || '').trim();
+  const canonical = raw.toLowerCase();
+  return CANONICAL_SIDE_EFFECT_IDS.includes(canonical) ? canonical : raw;
+}
 
 function normalizeLegacyText(value) {
   if (typeof value !== 'string') return value;
@@ -463,10 +551,19 @@ function cloudShotPayload(record, userId) {
     site: record.site || null,
     notes: record.notes || null,
     side_effects: Array.isArray(record.se) ? record.se : [],
-    archived: Boolean(record.archived)
+    archived: Boolean(record.archived),
+    updated_at: record.modifiedAt || record.updatedAt || record.createdAt || record.date
   };
   if (record.cloudId) payload.id = record.cloudId;
   return payload;
+}
+
+function ensureCloudRecordId(record, createUuid = () => globalThis.crypto?.randomUUID?.()) {
+  if (record?.cloudId) return record.cloudId;
+  const cloudId = createUuid();
+  if (!record || !cloudId) throw new Error('CLOUD_RECORD_ID_UNAVAILABLE');
+  record.cloudId = cloudId;
+  return cloudId;
 }
 
 function cloudWeightPayload(record, userId) {
@@ -474,10 +571,40 @@ function cloudWeightPayload(record, userId) {
     user_id: userId,
     date: record.date,
     weight_kg: Number(record.weightKg || (Number(record.weight) / 2.2046226218)) || 0,
-    notes: record.notes || null
+    notes: record.shotCloudId ? `GRIDNODE_LINKED_SHOT:${record.shotCloudId}` : record.notes || null,
+    updated_at: record.modifiedAt || record.updatedAt || record.createdAt || record.date
   };
+  // The currently shared schema does not yet have shot_id. Only send the
+  // column for linked records, where syncWeight can safely retry using the
+  // notes marker until the additive migration is approved and applied.
+  if (record.shotCloudId) payload.shot_id = record.shotCloudId;
   if (record.cloudId) payload.id = record.cloudId;
   return payload;
+}
+
+function parseLinkedShotCloudId(value) {
+  const match = String(value || '').match(/^GRIDNODE_LINKED_SHOT:([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i);
+  return match ? match[1] : null;
+}
+
+function planPermanentShotDelete(record, weights = [], cloudDeletes = []) {
+  const linkedWeights = weights.filter(weight =>
+    weight.shotId === record?.id || Boolean(record?.cloudId && weight.shotCloudId === record.cloudId)
+  );
+  const linkedIds = new Set(linkedWeights.map(weight => weight.id));
+  const linkedCloudIds = new Set(linkedWeights.map(weight => weight.cloudId).filter(Boolean));
+  const nextDeletes = cloudDeletes.map(item => ({ ...item }));
+  const appendDelete = (table, id) => {
+    if (id && !nextDeletes.some(item => item.table === table && item.id === id)) nextDeletes.push({ table, id });
+  };
+  appendDelete('shots', record?.cloudId);
+  linkedCloudIds.forEach(id => appendDelete('weights', id));
+  return {
+    linkedWeights,
+    remainingWeights: weights.filter(weight => !linkedIds.has(weight.id) && !(weight.cloudId && linkedCloudIds.has(weight.cloudId))),
+    cloudDeletes: nextDeletes,
+    inventoryReturn: record?.inventoryDeduction ? { ...record.inventoryDeduction } : null,
+  };
 }
 
 async function syncShot(record) {
@@ -486,10 +613,22 @@ async function syncShot(record) {
   if (!record?.id || syncInFlight.has(`shot:${record.id}`)) return;
   syncInFlight.add(`shot:${record.id}`);
   try {
-    const query = record.cloudId
-      ? state.cloudClient.from('shots').upsert(cloudShotPayload(record, state.session.user.id)).select().single()
-      : state.cloudClient.from('shots').insert(cloudShotPayload(record, state.session.user.id)).select().single();
-    const { data, error } = await withTimeout(query, 8000);
+    const assignedCloudId = !record.cloudId;
+    ensureCloudRecordId(record);
+    if (assignedCloudId) {
+      const all = getAllShots();
+      const index = all.findIndex(item => item.id === record.id);
+      if (index < 0) throw new Error('CLOUD_RECORD_ID_PERSIST_FAILED');
+      all[index] = record;
+      if (!S.set('shots', all)) throw new Error('CLOUD_RECORD_ID_PERSIST_FAILED');
+    }
+    const payload = cloudShotPayload(record, state.session.user.id);
+    let { data, error } = await withTimeout(state.cloudClient.from('shots').upsert(payload).select().single(), 8000);
+    if (error && /updated_at|PGRST204|42703/i.test(`${error.code || ''} ${error.message || ''}`)) {
+      const compatiblePayload = { ...payload };
+      delete compatiblePayload.updated_at;
+      ({ data, error } = await withTimeout(state.cloudClient.from('shots').upsert(compatiblePayload).select().single(), 8000));
+    }
     if (error) throw error;
     if (data?.id && !record.cloudId) {
       record.cloudId = data.id;
@@ -513,10 +652,23 @@ async function syncWeight(record) {
   if (!record?.id || syncInFlight.has(`weight:${record.id}`)) return;
   syncInFlight.add(`weight:${record.id}`);
   try {
-    const query = record.cloudId
-      ? state.cloudClient.from('weights').upsert(cloudWeightPayload(record, state.session.user.id)).select().single()
-      : state.cloudClient.from('weights').insert(cloudWeightPayload(record, state.session.user.id)).select().single();
-    const { data, error } = await withTimeout(query, 8000);
+    const assignedCloudId = !record.cloudId;
+    ensureCloudRecordId(record);
+    if (assignedCloudId) {
+      const all = getWeights();
+      const index = all.findIndex(item => item.id === record.id);
+      if (index < 0) throw new Error('CLOUD_RECORD_ID_PERSIST_FAILED');
+      all[index] = record;
+      if (!S.set('weights', all)) throw new Error('CLOUD_RECORD_ID_PERSIST_FAILED');
+    }
+    const payload = cloudWeightPayload(record, state.session.user.id);
+    let { data, error } = await withTimeout(state.cloudClient.from('weights').upsert(payload).select().single(), 8000);
+    if (error && /shot_id|updated_at|PGRST204|42703/i.test(`${error.code || ''} ${error.message || ''}`)) {
+      const compatiblePayload = { ...payload };
+      delete compatiblePayload.shot_id;
+      delete compatiblePayload.updated_at;
+      ({ data, error } = await withTimeout(state.cloudClient.from('weights').upsert(compatiblePayload).select().single(), 8000));
+    }
     if (error) throw error;
     if (data?.id && !record.cloudId) {
       record.cloudId = data.id;
@@ -656,21 +808,30 @@ async function hydrateCloudData() {
       notes: item.notes || null,
       se: Array.isArray(item.side_effects) ? item.side_effects : [],
       archived: Boolean(item.archived),
-      createdAt: item.created_at || item.date
+      createdAt: item.created_at || item.date,
+      modifiedAt: item.updated_at || item.created_at || item.date
     }));
     const pendingDeleteIds = new Set(S.get('cloudDeletes', []).map(item => item.id));
     const mergedShots = mergeRecords(localShots, cloudShots.filter(item => !(item.cloudId && pendingDeleteIds.has(item.cloudId))), record => record.cloudId || record.id);
     if (mergedShots.length) S.set('shots', mergedShots);
 
     const localWeights = getWeights();
-    const cloudWeights = (weightsResult.data || []).map(item => ({
+    const cloudWeights = (weightsResult.data || []).map(item => {
+      const shotCloudId = item.shot_id || parseLinkedShotCloudId(item.notes);
+      return ({
       id: `cloud_${item.id}`,
       cloudId: item.id,
+      shotId: shotCloudId ? `cloud_${shotCloudId}` : null,
+      shotCloudId,
       date: item.date,
       weight: Number(item.weight_kg) * 2.2046226218,
       weightKg: Number(item.weight_kg),
-      notes: item.notes || null
-    }));
+      notes: shotCloudId ? 'Logged with SHOT' : item.notes || null,
+      source: shotCloudId ? 'shot' : 'cloud',
+      createdAt: item.created_at || item.date,
+      modifiedAt: item.updated_at || item.created_at || item.date
+    });
+    });
     const mergedWeights = mergeRecords(localWeights, cloudWeights.filter(item => !(item.cloudId && pendingDeleteIds.has(item.cloudId))), record => record.cloudId || record.id);
     if (mergedWeights.length) S.set('weights', mergedWeights);
 
@@ -775,6 +936,7 @@ async function syncAllCloudData() {
 function queueCloudSync(kind, record) {
   const work = kind === 'shot' ? syncShot(record) : kind === 'weight' ? syncWeight(record) : kind === 'profile' ? syncProfile(record) : syncWorkspace();
   work.catch(error => console.warn('[GRID//NODE cloud queue]', error));
+  return work;
 }
 
 function enqueueSync(kind, record) {
@@ -1172,83 +1334,6 @@ const MEDICATIONS = Object.freeze({
   elamipretide_ss31: 'Elamipretide / SS-31'
 });
 
-const MEDICATION_ALIASES = Object.freeze({
-  zepbound: 'zepbound_tirzepatide',
-  'zepbound (tirzepatide)': 'zepbound_tirzepatide',
-  mounjaro: 'mounjaro_tirzepatide',
-  'mounjaro (tirzepatide)': 'mounjaro_tirzepatide',
-  tirzepatide: 'tirzepatide_compound',
-  'tirzepatide compound': 'tirzepatide_compound',
-  'tirzepatide (compound)': 'tirzepatide_compound',
-  wegovy: 'wegovy_semaglutide',
-  'wegovy (semaglutide)': 'wegovy_semaglutide',
-  ozempic: 'ozempic_semaglutide',
-  'ozempic (semaglutide)': 'ozempic_semaglutide',
-  semaglutide: 'semaglutide_compound',
-  'semaglutide compound': 'semaglutide_compound',
-  'semaglutide (compound)': 'semaglutide_compound',
-  retatrutide: 'retatrutide',
-  custom: 'custom_compound',
-  'custom compound': 'custom_compound',
-  'bpc-157': 'bpc157',
-  bpc157: 'bpc157',
-  bpc: 'bpc157',
-  bepecin: 'bpc157',
-  'tb-500': 'tb500',
-  tb500: 'tb500',
-  tb: 'tb500',
-  'thymosin beta-4': 'thymosin_beta4',
-  'thymosin beta 4': 'thymosin_beta4',
-  'thymosin b4': 'thymosin_beta4',
-  tbeta4: 'thymosin_beta4',
-  tb4: 'thymosin_beta4',
-  'thymosin alpha-1': 'thymosin_alpha1',
-  'thymosin alpha 1': 'thymosin_alpha1',
-  thymalfasin: 'thymosin_alpha1',
-  zadaxin: 'thymosin_alpha1',
-  'cjc-1295': 'cjc1295_dac',
-  'cjc1295': 'cjc1295_dac',
-  'cjc-1295 dac': 'cjc1295_dac',
-  'cjc1295 dac': 'cjc1295_dac',
-  'cjc-1295 no dac': 'cjc1295_nodac',
-  'cjc1295 no dac': 'cjc1295_nodac',
-  'cjc-1295 without dac': 'cjc1295_nodac',
-  'mod grf': 'cjc1295_nodac',
-  'mod grf 1-29': 'cjc1295_nodac',
-  'mod-grf': 'cjc1295_nodac',
-  'modified grf 1-29': 'cjc1295_nodac',
-  'grf 1-29': 'cjc1295_nodac',
-  ipamorelin: 'ipamorelin',
-  sermorelin: 'sermorelin',
-  'grf(1-29)': 'sermorelin',
-  tesamorelin: 'tesamorelin',
-  egrifta: 'tesamorelin',
-  semax: 'semax',
-  selank: 'selank',
-  'ghk-cu': 'ghk_cu_topical',
-  'ghk cu': 'ghk_cu_topical',
-  'copper tripeptide': 'ghk_cu_topical',
-  'ghk-cu topical': 'ghk_cu_topical',
-  'ghk-cu injectable': 'ghk_cu_injectable',
-  'ghk-cu injection': 'ghk_cu_injectable',
-  epitalon: 'epitalon',
-  epithalon: 'epitalon',
-  'mots-c': 'mots_c',
-  'mots c': 'mots_c',
-  mots: 'mots_c',
-  kpv: 'kpv',
-  elamipretide: 'elamipretide_ss31',
-  'ss-31': 'elamipretide_ss31',
-  ss31: 'elamipretide_ss31',
-  bendavia: 'elamipretide_ss31',
-  forzinity: 'elamipretide_ss31'
-});
-
-function normalizeMedicationId(value) {
-  const raw = String(value || '').trim();
-  if (Object.prototype.hasOwnProperty.call(MEDICATIONS, raw)) return raw;
-  return MEDICATION_ALIASES[raw.toLowerCase()] || '';
-}
 
 function medicationLabel(value) {
   const id = normalizeMedicationId(value);
@@ -1266,11 +1351,6 @@ const SIDE_EFFECT_KEYS = Object.freeze({
   diarrhea: 'shot.diarrhea', constipation: 'shot.constipation', vomiting: 'shot.vomiting',
   insomnia: 'shot.insomnia', bloating: 'shot.bloating', reflux: 'shot.reflux', dizziness: 'shot.dizziness'
 });
-function normalizeSideEffectId(value) {
-  const raw = String(value || '').trim();
-  const canonical = raw.toLowerCase();
-  return SIDE_EFFECT_KEYS[canonical] ? canonical : raw;
-}
 function sideEffectLabel(value) {
   const canonical = normalizeSideEffectId(value);
   return SIDE_EFFECT_KEYS[canonical] ? tx(SIDE_EFFECT_KEYS[canonical], canonical) : canonical;
@@ -1999,7 +2079,7 @@ function renderPhase(lastShot, shots) {
   const elapsedDays = Math.max(0, (Date.now() - new Date(lastShot.date).getTime()) / 86400000);
   const cyclePosition = Math.min(elapsedDays / 7, 0.999);
   const phase = PHASES.find(item => cyclePosition >= item.start && cyclePosition < item.end) || PHASES.at(-1);
-  const since = elapsedDays < 1 ? Math.round(elapsedDays * 24) + 'h' : Math.floor(elapsedDays) + 'd ' + Math.floor((elapsedDays % 1) * 24) + 'h';
+  const since = elapsedDays < 1 ? Math.floor(elapsedDays * 24) + 'h' : Math.floor(elapsedDays) + 'd ' + Math.floor((elapsedDays % 1) * 24) + 'h';
   const phaseName = localizedPhaseName(phase);
   setText('phaseNameTxt', phaseName);
   setText('phaseNumTxt', tx('phase.phaseN', 'PHASE {n} / {total}', { n: PHASES.indexOf(phase) + 1, total: PHASES.length }));
@@ -2117,12 +2197,12 @@ function renderShots() {
   }
   list.innerHTML = visible.map(record => {
     const archived = Boolean(record.archived);
-    return `<article class="log-entry ${archived ? 'archived' : ''}">
+    return `<article class="log-entry ${archived ? 'archived archived-record' : ''}">
       <div class="log-main"><div><div class="log-date">${archived ? tx('shots.archivedPrefix', 'ARCHIVED') + ' ' : ''}${safeText(formatDateTime(record.date))}</div><div class="log-med">${safeText(medicationLabel(record.med))}</div></div>
       <div class="log-dose">${safeText(record.dose || '—')}mg</div></div>
       <div class="log-chips">${record.site ? `<span class="log-chip lc-site">${safeText(zoneLabel(record.site))}</span>` : ''}${record.deviceId ? `<span class="log-chip lc-site">${tx('shot.deviceUsed', 'DEVICE')}: ${safeText(deviceLabel(record.deviceId) || tx('runtime.notAvailable', 'NOT AVAILABLE'))}</span>` : ''}${record.wt ? `<span class="log-chip lc-wt">${safeText(record.wt)}lb</span>` : ''}${record.se?.length ? `<span class="log-chip lc-se">${safeText(record.se.map(sideEffectLabel).join(', '))}</span>` : ''}</div>
       ${record.notes ? `<div class="log-notes">${safeText(record.notes)}</div>` : ''}
-      <div class="log-actions">${archived ? `<button type="button" class="log-action-btn" data-shot-action="restore-edit" data-shot-id="${safeText(record.id)}">${tx('shots.restoreToEdit', 'RESTORE TO EDIT')}</button>` : `<button type="button" class="log-action-btn" data-shot-action="edit" data-shot-id="${safeText(record.id)}">${tx('shots.edit', 'EDIT')}</button><button type="button" class="log-action-btn del" data-shot-action="archive" data-shot-id="${safeText(record.id)}">${tx('shots.archive', 'ARCHIVE')}</button>`}</div>
+      <div class="log-actions ${archived ? 'archive-actions' : ''}">${archived ? `<button type="button" class="log-action-btn restore archived-action-btn" data-shot-action="restore-edit" data-shot-id="${safeText(record.id)}"><span class="archive-action-main">${tx('shots.restore', 'RESTORE')}</span><span class="archive-action-sub">${tx('shots.restoreToEdit', 'RESTORE TO EDIT')}</span></button><button type="button" class="log-action-btn del archived-action-btn" data-shot-action="delete" data-shot-id="${safeText(record.id)}"><span class="archive-action-main">${tx('deletePerm.confirm', 'DELETE RECORD')}</span><span class="archive-action-sub">${tx('shots.deletePermanently', 'DELETE PERMANENTLY')}</span></button>` : `<button type="button" class="log-action-btn" data-shot-action="edit" data-shot-id="${safeText(record.id)}">${tx('shots.edit', 'EDIT')}</button><button type="button" class="log-action-btn del" data-shot-action="archive" data-shot-id="${safeText(record.id)}">${tx('shots.archive', 'ARCHIVE')}</button>`}</div>
       ${archived ? `<div class="shot-history-helper">${tx('shots.archivedRestoreNote', 'Restore the record before editing.')}</div>` : ''}
     </article>`;
   }).join('');
@@ -2407,6 +2487,15 @@ function renderScanner() {
 
   const panel = document.querySelector('#shotsRegionScanner .scanner-selected-panel');
   if (!panel) return;
+  const scanner = document.querySelector('#shotsRegionScanner .site-scanner');
+  scanner?.setAttribute('aria-label', tx('shots.scannerAria', 'GRID//NODE user-entered location scanner'));
+  qa('#shotsRegionScanner .biotech-stage').forEach(stage => {
+    const mode = stage.dataset.view || 'core';
+    const modeLabel = scannerModeLabel(mode);
+    stage.setAttribute('aria-label', tx('shots.scannerPanelAria', '{mode} location scanner', { mode: modeLabel }));
+    stage.querySelector('.biotech-zones')?.setAttribute('aria-label', tx('shots.scannerZonesAria', '{mode} tracking zones', { mode: modeLabel }));
+    qa('.zone-path', stage).forEach(path => path.setAttribute('aria-label', zoneLabel(path.getAttribute('data-site'))));
+  });
   let picker = panel.querySelector('.gn-stable-zone-picker');
   if (!picker) { picker = document.createElement('div'); picker.className = 'gn-stable-zone-picker'; panel.appendChild(picker); }
   picker.innerHTML = `<div class="gn-stable-zone-title">${tx('shots.trackableZones', 'TRACKABLE {zone} ZONES', { zone: scannerModeLabel(moduleState.scannerMode) })}</div>${ZONES[moduleState.scannerMode].map(label => `<button type="button" class="gn-stable-zone-btn ${label === moduleState.selectedLocation ? 'selected' : ''}" data-stable-zone="${safeText(label)}" data-zone-key="${safeText(ZONE_IDS[label] || '')}" aria-pressed="${label === moduleState.selectedLocation ? 'true' : 'false'}">${safeText(zoneLabel(label))}</button>`).join('')}`;
@@ -2719,6 +2808,7 @@ function confirmArchiveShot() {
   if (!record) return;
   record.archived = true;
   record.archivedAt = new Date().toISOString();
+  record.modifiedAt = record.archivedAt;
   if (!S.set('shots', all)) { showToast(tx('shots.archiveStorageError', 'Could not archive — storage unavailable.'), true); return; }
   queueCloudSync('shot', record);
   refreshAll();
@@ -2762,6 +2852,7 @@ function restoreArchivedShot(id) {
   }
   record.archived = false;
   record.archivedAt = null;
+  record.modifiedAt = now;
   delete record.undoSnapshot;
   ops.unshift({ key: 'shots', value: all });
   if (!S.multiWrite(ops)) { showToast(tx('shots.restoreStorageError', 'Could not restore — storage unavailable.'), true); return false; }
@@ -2787,18 +2878,29 @@ async function confirmPermanentDeleteShot() {
   const id = moduleState.pendingPermanentDeleteId;
   cancelPermanentDeleteShot();
   const record = getAllShots().find(item => item.id === id);
+  if (!record) return;
   const next = getAllShots().filter(item => item.id !== id);
-  const ops = [{ key: 'shots', value: next }];
-  let queuedCloudDelete = false;
-  if (record?.cloudId) {
-    const pending = S.get('cloudDeletes', []);
-    if (!pending.some(item => item.table === 'shots' && item.id === record.cloudId)) pending.push({ table: 'shots', id: record.cloudId });
-    ops.push({ key: 'cloudDeletes', value: pending });
-    queuedCloudDelete = true;
+  const plan = planPermanentShotDelete(record, getWeights(), S.get('cloudDeletes', []));
+  const ops = [
+    { key: 'shots', value: next },
+    { key: 'weights', value: plan.remainingWeights },
+    { key: 'cloudDeletes', value: plan.cloudDeletes },
+  ];
+  if (plan.inventoryReturn?.itemId && Number(plan.inventoryReturn.amount) > 0) {
+    const inventory = S.get('inventory', []);
+    const item = inventory.find(candidate => candidate.id === plan.inventoryReturn.itemId);
+    if (item) {
+      const at = new Date().toISOString();
+      item.quantity = Number(item.quantity || 0) + Number(plan.inventoryReturn.amount);
+      item.modifiedAt = at;
+      item.history = [...(item.history || []), { at, action: 'AUTO-DEDUCTION REVERSED FOR SHOT DELETE', source: 'System Generated', shotId: record.id }];
+      ops.push({ key: 'inventory', value: inventory });
+    }
   }
   if (!S.multiWrite(ops)) { showToast(tx('shots.deleteStorageUnavailable', 'Could not delete — storage unavailable.'), true); return; }
+  appendEventLedger({ type: 'SHOT', recordId: record.id, date: record.date, label: 'SHOT DELETED' });
   refreshAll();
-  const cloudDeleted = queuedCloudDelete ? await flushCloudDeletes() : true;
+  const cloudDeleted = plan.cloudDeletes.length ? await flushCloudDeletes() : true;
   showToast(cloudDeleted ? tx('shots.deletedCloud', 'Archived record deleted.') : tx('shots.deletedLocalQueued', 'Deleted locally. Cloud deletion queued for retry.'));
 }
 
@@ -2848,8 +2950,10 @@ function saveShot(allowFuture = false) {
       notes: $('sNotes')?.value?.trim() || null,
       se: qa('#logOv input[type="checkbox"]:checked').map(input => normalizeSideEffectId(input.value)),
       archived: false, archivedAt: null, createdAt: existing?.createdAt || new Date().toISOString(),
+      modifiedAt: new Date().toISOString(),
       source: existing?.source || 'manual', state: existing?.state || 'confirmed'
     };
+    if (state.cloud) ensureCloudRecordId(record);
     const all = getAllShots();
     const index = all.findIndex(item => item.id === record.id);
     // B4: compute the next inventory state WITHOUT writing (pure prep).
@@ -2869,8 +2973,11 @@ function saveShot(allowFuture = false) {
       const linkedWeight = linkedIndex >= 0 ? weights[linkedIndex] : null;
       weightRecord = {
         ...(linkedWeight || {}), id: linkedWeight?.id || createId('weight'), shotId: record.id,
-        date: record.date, weight: record.wt, notes: 'Logged with SHOT'
+        shotCloudId: record.cloudId || linkedWeight?.shotCloudId || null,
+        date: record.date, weight: record.wt, notes: 'Logged with SHOT', source: 'shot',
+        createdAt: linkedWeight?.createdAt || new Date().toISOString(), modifiedAt: record.modifiedAt
       };
+      if (state.cloud) ensureCloudRecordId(weightRecord);
       if (linkedIndex >= 0) weights[linkedIndex] = weightRecord; else weights.push(weightRecord);
       ops.push({ key: 'weights', value: weights });
     } else if (linkedIndex >= 0) {
@@ -2890,9 +2997,11 @@ function saveShot(allowFuture = false) {
       return;
     }
     // Cloud sync ONLY after the local batch committed atomically.
-    queueCloudSync('shot', record);
+    const shotSync = queueCloudSync('shot', record);
     if (changed) queueCloudSync('workspace');
-    if (weightRecord) queueCloudSync('weight', weightRecord);
+    // Preserve the FK order once shot_id is available. The cloud functions
+    // remain fail-safe and queued if the shot upsert itself cannot complete.
+    if (weightRecord) shotSync.then(() => queueCloudSync('weight', weightRecord));
     if (queuedCloudDelete) flushCloudDeletes();
     appendEventLedger({ type: 'SHOT', recordId: record.id, date: record.date, label: existing ? 'SHOT UPDATED' : 'SHOT EVENT CONFIRMED' });
     moduleState.pendingFutureShot = false;
@@ -3066,7 +3175,9 @@ function saveWt() {
     const weight = moduleState.weightUnit === 'kg' ? raw * 2.2046226218 : raw;
     const previousWeight = sortedWeights().at(-1)?.weight;
     const milestone = weightMilestone(previousWeight, weight, getProfile());
-    const record = { id: createId('weight'), date: `${date}T${$('wtTime')?.value || '12:00'}`, weight, weightKg: moduleState.weightUnit === 'kg' ? raw : raw / 2.2046226218, unit: moduleState.weightUnit, notes: $('wtNotes')?.value?.trim() || null, source: 'manual', state: 'confirmed' };
+    const now = new Date().toISOString();
+    const record = { id: createId('weight'), date: `${date}T${$('wtTime')?.value || '12:00'}`, weight, weightKg: moduleState.weightUnit === 'kg' ? raw : raw / 2.2046226218, unit: moduleState.weightUnit, notes: $('wtNotes')?.value?.trim() || null, source: 'manual', state: 'confirmed', createdAt: now, modifiedAt: now };
+    if (state.cloud) ensureCloudRecordId(record);
     const weights = getWeights(); weights.push(record);
     if (!S.set('weights', weights)) { setText('wtError', tx('weight.storageUnavailable', 'STORAGE UNAVAILABLE — WEIGHT NOT SAVED')); setDisplay('wtError', true); return; }
     queueCloudSync('weight', record);
@@ -3130,7 +3241,7 @@ function renderWeightRecords(weights) {
   const list = $('weightRecordsList');
   if (!list) return;
   setDisplay('weightRecordsEmpty', !weights.length);
-  list.innerHTML = [...weights].reverse().filter(record => record && Number.isFinite(Number(record.weight))).map(record => `<div class="gn-weight-record"><div><b>${Number(record.weight).toFixed(1)} lb</b><span>${safeText(formatDateTime(record.date))}</span>${record.notes ? `<small>${safeText(record.notes)}</small>` : ''}</div></div>`).join('');
+  list.innerHTML = [...weights].reverse().filter(record => record && Number.isFinite(Number(record.weight))).map(record => `<div class="gn-weight-record"><div><b>${Number(record.weight).toFixed(1)} lb</b><span>${safeText(formatDateTime(record.date))}</span>${record.notes ? `<small>${safeText(record.source === 'shot' || record.notes === 'Logged with SHOT' ? tx('results.loggedWithShot', 'Logged with SHOT') : record.notes)}</small>` : ''}</div></div>`).join('');
 }
 
 function filterWeightsForChart(weights) {
@@ -4911,7 +5022,7 @@ function initModules() {
     const historyButton = event.target.closest('[data-shot-history-view]');
     if (historyButton) setShotHistoryView(historyButton.dataset.shotHistoryView);
     const shotAction = event.target.closest('[data-shot-action]');
-    if (shotAction) { const action = shotAction.dataset.shotAction, id = shotAction.dataset.shotId; if (action === 'edit') editShot(id); if (action === 'archive') openArchiveConfirm(id); if (action === 'restore') restoreArchivedShot(id); if (action === 'restore-edit') restoreArchivedShotToEdit(id); }
+    if (shotAction) { const action = shotAction.dataset.shotAction, id = shotAction.dataset.shotId; if (action === 'edit') editShot(id); if (action === 'archive') openArchiveConfirm(id); if (action === 'restore') restoreArchivedShot(id); if (action === 'restore-edit') restoreArchivedShotToEdit(id); if (action === 'delete') openPermanentDeleteConfirm(id); }
     if (event.target.closest('[data-empty-shot]')) handleShotFab();
     const pickerDay = event.target.closest('[data-gn-picker-date]'); if (pickerDay) gnSelectPickerDate(pickerDay.dataset.gnPickerDate);
     const calendarDay = event.target.closest('[data-calendar-day]'); if (calendarDay) calDayClick(calendarDay.dataset.calendarDay);
@@ -4989,7 +5100,7 @@ function initModules() {
 document.addEventListener("DOMContentLoaded", () => { installScannerPointerHandlers(); installScannerDebugMode(); });
 window.addEventListener("load", () => { installScannerPointerHandlers(); installScannerDebugMode(); });
 
-window.GNModules=Object.freeze({selectState:selectState,moduleState:moduleState,refreshNodeHeader:refreshNodeHeader,showScreen:showScreen,showPage:showPage,refreshAll:refreshAll,getProfile:getProfile,getProfileForEvidence:getProfileForEvidence,loadApp:loadApp,computeTotalChange:computeTotalChange,saveProfileMed:saveProfileMed,saveProfileMetrics:saveProfileMetrics,calcAndShowBMI:calcAndShowBMI,toggleSelect:toggleSelect,selectOpt:selectOpt,showPhasesModal:showPhasesModal,closePhases:closePhases,renderShots:renderShots,setShotHistoryView:setShotHistoryView,setScannerMode:setScannerMode,setScannerSkinTone:setScannerSkinTone,scannerSkinTone:scannerSkinTone,selectScannerLocation:selectScannerLocation,renderScanner:renderScanner,openLogModal:openLogModal,closeLog:closeLog,editShot:editShot,openArchiveConfirm:openArchiveConfirm,cancelArchiveShot:cancelArchiveShot,confirmArchiveShot:confirmArchiveShot,restoreArchivedShot:restoreArchivedShot,openPermanentDeleteConfirm:openPermanentDeleteConfirm,cancelPermanentDeleteShot:cancelPermanentDeleteShot,confirmPermanentDeleteShot:confirmPermanentDeleteShot,saveShot:saveShot,openFutureTimestampConfirm:openFutureTimestampConfirm,closeFutureTimestampConfirm:closeFutureTimestampConfirm,cancelFutureTimestampSave:cancelFutureTimestampSave,confirmFutureTimestampSave:confirmFutureTimestampSave,handleShotFab:handleShotFab,goToScannerForLocationFromLog:goToScannerForLocationFromLog,openWeightModal:openWeightModal,closeWt:closeWt,setWeightUnit:setWeightUnit,saveWt:saveWt,renderResults:renderResults,setRange:setRange,setWtRange:setWtRange,showLabSeg:showLabSeg,showYouSeg:showYouSeg,openLabTool:openLabTool,closeLabTool:closeLabTool,exportInventory:exportInventory,updateDoseProjection:updateDoseProjection,saveCalculatorReference:saveCalculatorReference,renderLab:renderLab,updateSyr:updateSyr,updateRecon:updateRecon,updateSupply:updateSupply,setMeasurementUnit:setMeasurementUnit,saveMeasurements:saveMeasurements,openDeleteLocalData:openDeleteLocalData,closeDeleteLocalData:closeDeleteLocalData,updateDeleteLocalButton:updateDeleteLocalButton,confirmDeleteLocalData:confirmDeleteLocalData,openDeleteCloudAccount:openDeleteCloudAccount,closeDeleteCloudAccount:closeDeleteCloudAccount,confirmDeleteCloudAccount:confirmDeleteCloudAccount,renderProfile:renderProfile,dismissSystemUpdate:dismissSystemUpdate,openSystemUpdate:openSystemUpdate,exportCSV:exportCSV,exportBackup:exportBackup,prepareCSVImport:prepareCSVImport,handleCSVImportFile:handleCSVImportFile,openImportDialog:openImportDialog,closeImportDialog:closeImportDialog,handleUnifiedCsvSelection:handleUnifiedCsvSelection,handleBackupImportFile:handleBackupImportFile,confirmBackupImport:confirmBackupImport,cancelCSVImport:cancelCSVImport,confirmCSVImport:confirmCSVImport,previewCSVImportForTesting:previewCSVImportForTesting,renderCalendar:renderCalendar,calPrev:calPrev,calNext:calNext,calDayClick:calDayClick,openArsenalMod:openArsenalMod,closeArs:closeArs,saveArs:saveArs,requestLoadoutRemove:requestLoadoutRemove,cancelLoadoutRemove:cancelLoadoutRemove,confirmLoadoutRemove:confirmLoadoutRemove,formatTime24:formatTime24,formatTime12:formatTime12,gnSetShotMeridiem:gnSetShotMeridiem,gnShotClockLiveFormat:gnShotClockLiveFormat,gnNormalizeShotClockField:gnNormalizeShotClockField,gnWeightDateInput:gnWeightDateInput,gnWeightTimeInput:gnWeightTimeInput,gnOpenShotDatePicker:gnOpenShotDatePicker,gnCloseShotDatePicker:gnCloseShotDatePicker,gnDatePickerMove:gnDatePickerMove,gnSelectPickerDate:gnSelectPickerDate,gnSetShotDateFromPicker:gnSetShotDateFromPicker,gnSetShotDateValue:gnSetShotDateValue,gnSetShotTimeValue:gnSetShotTimeValue,gnMedRevealGroup:gnMedRevealGroup,updatePills:updatePills,selPill:selPill,initModules:initModules});
+window.GNModules=Object.freeze({getProfile:getProfile,getProfileForEvidence:getProfileForEvidence,selectState:selectState,moduleState:moduleState,refreshNodeHeader:refreshNodeHeader,showScreen:showScreen,showPage:showPage,refreshAll:refreshAll,loadApp:loadApp,computeTotalChange:computeTotalChange,saveProfileMed:saveProfileMed,saveProfileMetrics:saveProfileMetrics,calcAndShowBMI:calcAndShowBMI,toggleSelect:toggleSelect,selectOpt:selectOpt,showPhasesModal:showPhasesModal,closePhases:closePhases,renderShots:renderShots,setShotHistoryView:setShotHistoryView,scannerSkinTone:scannerSkinTone,setScannerSkinTone:setScannerSkinTone,setScannerMode:setScannerMode,selectScannerLocation:selectScannerLocation,renderScanner:renderScanner,openLogModal:openLogModal,closeLog:closeLog,editShot:editShot,openArchiveConfirm:openArchiveConfirm,cancelArchiveShot:cancelArchiveShot,confirmArchiveShot:confirmArchiveShot,restoreArchivedShot:restoreArchivedShot,openPermanentDeleteConfirm:openPermanentDeleteConfirm,cancelPermanentDeleteShot:cancelPermanentDeleteShot,confirmPermanentDeleteShot:confirmPermanentDeleteShot,saveShot:saveShot,openFutureTimestampConfirm:openFutureTimestampConfirm,closeFutureTimestampConfirm:closeFutureTimestampConfirm,cancelFutureTimestampSave:cancelFutureTimestampSave,confirmFutureTimestampSave:confirmFutureTimestampSave,handleShotFab:handleShotFab,goToScannerForLocationFromLog:goToScannerForLocationFromLog,openWeightModal:openWeightModal,closeWt:closeWt,setWeightUnit:setWeightUnit,saveWt:saveWt,renderResults:renderResults,setRange:setRange,setWtRange:setWtRange,showLabSeg:showLabSeg,showYouSeg:showYouSeg,openLabTool:openLabTool,closeLabTool:closeLabTool,exportInventory:exportInventory,updateDoseProjection:updateDoseProjection,saveCalculatorReference:saveCalculatorReference,renderLab:renderLab,updateSyr:updateSyr,updateRecon:updateRecon,updateSupply:updateSupply,setMeasurementUnit:setMeasurementUnit,saveMeasurements:saveMeasurements,openDeleteLocalData:openDeleteLocalData,closeDeleteLocalData:closeDeleteLocalData,updateDeleteLocalButton:updateDeleteLocalButton,confirmDeleteLocalData:confirmDeleteLocalData,openDeleteCloudAccount:openDeleteCloudAccount,closeDeleteCloudAccount:closeDeleteCloudAccount,confirmDeleteCloudAccount:confirmDeleteCloudAccount,renderProfile:renderProfile,dismissSystemUpdate:dismissSystemUpdate,openSystemUpdate:openSystemUpdate,exportCSV:exportCSV,exportBackup:exportBackup,prepareCSVImport:prepareCSVImport,handleCSVImportFile:handleCSVImportFile,openImportDialog:openImportDialog,closeImportDialog:closeImportDialog,handleUnifiedCsvSelection:handleUnifiedCsvSelection,handleBackupImportFile:handleBackupImportFile,confirmBackupImport:confirmBackupImport,cancelCSVImport:cancelCSVImport,confirmCSVImport:confirmCSVImport,previewCSVImportForTesting:previewCSVImportForTesting,renderCalendar:renderCalendar,calPrev:calPrev,calNext:calNext,calDayClick:calDayClick,openArsenalMod:openArsenalMod,closeArs:closeArs,saveArs:saveArs,requestLoadoutRemove:requestLoadoutRemove,cancelLoadoutRemove:cancelLoadoutRemove,confirmLoadoutRemove:confirmLoadoutRemove,formatTime24:formatTime24,formatTime12:formatTime12,gnSetShotMeridiem:gnSetShotMeridiem,gnShotClockLiveFormat:gnShotClockLiveFormat,gnNormalizeShotClockField:gnNormalizeShotClockField,gnWeightDateInput:gnWeightDateInput,gnWeightTimeInput:gnWeightTimeInput,gnOpenShotDatePicker:gnOpenShotDatePicker,gnCloseShotDatePicker:gnCloseShotDatePicker,gnDatePickerMove:gnDatePickerMove,gnSelectPickerDate:gnSelectPickerDate,gnSetShotDateFromPicker:gnSetShotDateFromPicker,gnSetShotDateValue:gnSetShotDateValue,gnSetShotTimeValue:gnSetShotTimeValue,gnMedRevealGroup:gnMedRevealGroup,updatePills:updatePills,selPill:selPill,initModules:initModules});
 
 const modules=window.GNModules;
 
@@ -5258,7 +5369,8 @@ async function renderGoogleIdentityButton() {
       text: 'continue_with',
       shape: 'rectangular',
       logo_alignment: 'left',
-      width: Math.min(336, Math.max(260, host.clientWidth || 336))
+      width: Math.min(336, Math.max(260, host.clientWidth || 336)),
+      locale: document.documentElement.lang === 'es' ? 'es' : 'en'
     });
   } catch (error) {
     console.warn('[GRID//NODE Google identity]', error);
@@ -5822,7 +5934,7 @@ function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   if (window.GN_SW?.register) { window.GN_SW.register(); return; }
   navigator.serviceWorker
-    .register('/sw.js?v=20260812.5', { updateViaCache: 'none' })
+    .register('/sw.js?v=20260907.1', { updateViaCache: 'none' })
     .then(registration => registration.update())
     .catch(() => {});
 }

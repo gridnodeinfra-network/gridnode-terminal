@@ -2,11 +2,11 @@
 (function () {
   'use strict';
   window.GN_VERSION = Object.freeze({
-    APP_VERSION: '0.15.32',
-    APP_BUILD: '20260906.11',
-    semver: '0.15.32',
-    release: '20260906.11',
-    title: 'V0.15.32 — LAB ARCHIVE LAYOUT + HAPTICS + LANG PERSISTENCE',
-    date: '2026-09-06'
+    APP_VERSION: '0.15.33',
+    APP_BUILD: '20260907.1',
+    semver: '0.15.33',
+    release: '20260907.1',
+    title: 'V0.15.33 — RELEASE INTEGRITY + DATA SAFETY',
+    date: '2026-09-07'
   });
 })();

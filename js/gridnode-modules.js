@@ -3,12 +3,37 @@
  */
 
 import {
-  APP_VERSION, S, state, getProfile, getShots, getAllShots, getWeights, normalizeLegacyText,
-  createId, safeText, formatDate, formatDateTime, normalizeDateInput,
-  todayISO, downloadFile, queueCloudSync, deleteCloudShot, sessionLabel
+  APP_VERSION, GOOGLE_OAUTH_CLIENT_ID, CLOUD_CONFIG, state, SESSION_KEY, LOCAL_CLOUD_OWNER_KEY, LEGACY_ACCOUNT_KEYS, WORKSPACE_KEYS, jsonParse, notify, subscribe, safeText, createId, accountStorageKey, legacyStorageKeys, STORAGE_TRANSACTION_SUFFIX, transactionStorageKey, readStorageTransaction, recoverPendingStorageTransaction, logicalStorageValue, S, normalizeLegacyText, normalizeShotRecord, getProfile as coreGetProfile, getProfileForEvidence as coreGetProfileForEvidence, getShots, getAllShots, getWeights, readAccountValue, captureWorkspace, workspaceHasData, localWorkspaceMigrationAllowed, markLocalWorkspaceMigrated, restoreWorkspace, localSession, restoreLocalSession, activateSession, clearSession, withTimeout, cloudLoadPromise, cloudClientPromise, loadCloudLibrary, getCloudClient, getCloudSession, signInCloud, signUpCloud, resetPasswordCloud, updateCloudPassword, isCloudProviderEnabled, signInWithGoogle, signInWithGoogleIdToken, signOutCloud, cloudShotPayload, cloudWeightPayload, ensureCloudRecordId, planPermanentShotDelete, normalizeMedicationId, normalizeSideEffectId, parseLinkedShotCloudId, syncShot, syncWeight, syncProfile, workspacePayload, syncWorkspace, flushCloudDeletes, deleteCloudShot, hydrateCloudData, mergeRecords, mergeJsonRecords, syncPassFailed, syncInFlight, syncAllCloudData, queueCloudSync, enqueueSync, sessionLabel, deleteCloudAccount, migrateLegacyLocalData, repairStorageShapes, parseLocalDate, formatDate, formatDateTime, normalizeDateInput, todayISO, formatEditableDate, parseEditableDate, setHumanDateInput, readHumanDateInput, downloadFile
 } from './gridnode-core.js';
 
+export const getProfile = coreGetProfile;
+export const getProfileForEvidence = coreGetProfileForEvidence;
+
 const $ = id => document.getElementById(id);
+const tx = (key, fallback, vars) => window.GN_I18N?.text?.(key, fallback, vars) || fallback;
+const PHASE_I18N = Object.freeze({
+  ONSET: { name: 'results.onset', support: 'phase.supportOnset', context: 'phase.contextOnset' },
+  ACTIVE: { name: 'results.active', support: 'phase.supportActive', context: 'phase.contextActive' },
+  'PEAK WINDOW': { name: 'results.peakWindow', support: 'phase.supportPeak', context: 'phase.contextPeak' },
+  RESPONSE: { name: 'results.response', support: 'phase.supportResponse', context: 'phase.contextResponse' },
+  DECAY: { name: 'results.decay', support: 'phase.supportDecay', context: 'phase.contextDecay' },
+  BASELINE: { name: 'results.baseline', support: 'phase.supportBaseline', context: 'phase.contextBaseline' }
+});
+function localizedPhaseName(phase) {
+  if (!phase) return '';
+  const key = PHASE_I18N[phase.name]?.name;
+  return key ? tx(key, phase.name) : phase.name;
+}
+function localizedPhaseSupport(phase) {
+  if (!phase) return '';
+  const key = PHASE_I18N[phase.name]?.support;
+  return key ? tx(key, phase.support) : phase.support;
+}
+function localizedPhaseContext(phase) {
+  if (!phase) return '';
+  const key = PHASE_I18N[phase.name]?.context;
+  return key ? tx(key, phase.context) : phase.context;
+}
 const qa = selector => Array.from(document.querySelectorAll(selector));
 
 export const selectState = {};
@@ -21,67 +46,489 @@ export const moduleState = {
   shotHistoryView: 'active',
   pendingArchiveId: null,
   pendingPermanentDeleteId: null,
+  shotFilters: { medication: '', site: '', range: 'all', query: '' },
   pendingFutureShot: false,
   pendingLocationDraft: false,
+  shotDraft: null,
   pendingImport: null,
+  pendingImportMeta: null,
+  pendingBackup: null,
   meridiem: new Date().getHours() >= 12 ? 'PM' : 'AM',
   weightUnit: 'lb',
   weightRange: 'all',
   medRange: '1m',
   calendarDate: new Date(),
   selectedCalendarDay: null,
+  shotPickerMonth: new Date(),
+  shotPickerSelected: null,
+  shotPickerOriginal: null,
   arsenalEditId: null,
-  pendingArsenalId: null
+  pendingArsenalId: null,
+  inventoryEditId: null,
+  researchEditId: null,
+  deviceEditId: null,
+  labTool: null,
+  labOriginalSlots: new Map()
 };
 
 const ZONES = Object.freeze({
   core: [
-    'Right Abdomen — Upper', 'Right Abdomen — Lower',
-    'Left Abdomen — Upper', 'Left Abdomen — Lower'
+    'Upper Left', 'Upper Right',
+    'Middle Left', 'Middle Right',
+    'Lower Left', 'Lower Right'
   ],
   lower: [
-    'Right Thigh — Upper', 'Right Thigh — Lower',
-    'Left Thigh — Upper', 'Left Thigh — Lower'
+    'Left Thigh Upper', 'Right Thigh Upper',
+    'Left Thigh Lower', 'Right Thigh Lower',
+    'Left Thigh Outer', 'Right Thigh Outer'
   ],
   upper: [
-    'Left Back Upper Arm — Upper', 'Left Back Upper Arm — Lower',
-    'Right Back Upper Arm — Upper', 'Right Back Upper Arm — Lower'
+    'Left Back Upper Arm Upper', 'Left Back Upper Arm Lower',
+    'Right Back Upper Arm Upper', 'Right Back Upper Arm Lower'
   ]
 });
 
+const ZONE_IDS = Object.freeze({
+  'Upper Left': 'zone.coreUpperLeft',
+  'Upper Right': 'zone.coreUpperRight',
+  'Middle Left': 'zone.coreMiddleLeft',
+  'Middle Right': 'zone.coreMiddleRight',
+  'Lower Left': 'zone.coreLowerLeft',
+  'Lower Right': 'zone.coreLowerRight',
+  'Left Thigh Upper': 'zone.legUpperLeft',
+  'Right Thigh Upper': 'zone.legUpperRight',
+  'Left Thigh Lower': 'zone.legLowerLeft',
+  'Right Thigh Lower': 'zone.legLowerRight',
+  'Left Thigh Outer': 'zone.legOuterLeft',
+  'Right Thigh Outer': 'zone.legOuterRight',
+  'Left Back Upper Arm Upper': 'zone.armUpperLeft',
+  'Left Back Upper Arm Lower': 'zone.armLowerLeft',
+  'Right Back Upper Arm Upper': 'zone.armUpperRight',
+  'Right Back Upper Arm Lower': 'zone.armLowerRight'
+});
+const LEGACY_ZONE_IDS = Object.freeze({
+  'Left Abdomen — Upper': 'zone.coreUpperLeft',
+  'Right Abdomen — Upper': 'zone.coreUpperRight',
+  'Left Abdomen — Lower': 'zone.coreLowerLeft',
+  'Right Abdomen — Lower': 'zone.coreLowerRight'
+});
+const zoneLabel = function (stored) {
+  if (!stored) return '';
+  const legacyKey = LEGACY_ZONE_IDS[stored];
+  if (legacyKey && String(document.documentElement.lang || 'en').toLowerCase().startsWith('en')) return stored;
+  const key = ZONE_IDS[stored] || legacyKey;
+  if (key) { const t = tx(key, stored); if (t && t !== key) return t; }
+  return stored;
+};
+function scannerModeLabel(mode) {
+  /* v0.15.19 - UI rename: LOWER->LEGS, UPPER->ARMS. Data model stable. */
+  const labels = {
+    core: ['shots.modeCore', 'CORE'],
+    lower: ['shots.modeLegs', 'LEGS'],
+    upper: ['shots.modeArms', 'ARMS']
+  };
+  const [key, fallback] = labels[mode] || labels.core;
+  return tx(key, fallback);
+}
+
+function deviceStatusLabel(status) {
+  const canonical = String(status || 'READY').toUpperCase();
+  return tx(`vault.status${canonical.replace(/\s+/g, '')}`, canonical);
+}
+
+const DEVICE_TYPE_KEYS = Object.freeze({
+  REUSABLE: 'vault.deviceTypeReusable',
+  DISPOSABLE: 'vault.deviceTypeDisposable',
+  AUTOINJECTOR: 'vault.deviceTypeAutoinjector',
+  OTHER: 'vault.deviceTypeOther'
+});
+function normalizeDeviceType(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (['reusable', 'reusable pen', 'pluma reutilizable'].includes(normalized)) return 'REUSABLE';
+  if (['disposable', 'disposable pen', 'pluma desechable'].includes(normalized)) return 'DISPOSABLE';
+  if (['autoinjector', 'autoinyector'].includes(normalized)) return 'AUTOINJECTOR';
+  return Object.prototype.hasOwnProperty.call(DEVICE_TYPE_KEYS, String(value || '').toUpperCase()) ? String(value).toUpperCase() : 'OTHER';
+}
+function deviceTypeLabel(type) {
+  const canonical = normalizeDeviceType(type);
+  const fallback = { REUSABLE: 'Reusable pen', DISPOSABLE: 'Disposable pen', AUTOINJECTOR: 'Autoinjector', OTHER: 'Other device' }[canonical];
+  return tx(DEVICE_TYPE_KEYS[canonical], fallback);
+}
+
+function researchStateLabel(state) {
+  const canonical = String(state || 'TRACKING').toUpperCase();
+  const keys = { TRACKING: 'research.tracking', COMPLETED: 'research.completed', ARCHIVED: 'research.archived', 'RESEARCH NOTE ONLY': 'research.noteOnly' };
+  return tx(keys[canonical] || 'research.tracking', canonical);
+}
+
+const RESEARCH_CATEGORY_KEYS = Object.freeze({
+  'RECOVERY & REPAIR': 'lab.recoveryRepair',
+  'METABOLIC & BODY COMPOSITION': 'lab.metabolic',
+  'CELLULAR & MITOCHONDRIAL': 'lab.cellular',
+  'IMMUNE & NEUROLOGICAL': 'lab.immune'
+});
+function normalizeResearchCategory(value) {
+  const raw = String(value || '').trim();
+  if (Object.values(RESEARCH_CATEGORY_KEYS).includes(raw)) return raw;
+  const match = Object.entries(RESEARCH_CATEGORY_KEYS).find(([label, key]) => raw === label || raw === tx(key, label));
+  return match?.[1] || raw || 'lab.customResearch';
+}
+function researchCategoryLabel(value) {
+  const canonical = normalizeResearchCategory(value);
+  const fallback = Object.entries(RESEARCH_CATEGORY_KEYS).find(([, key]) => key === canonical)?.[0] || tx('lab.customResearch', 'CUSTOM RESEARCH');
+  return canonical.startsWith('lab.') ? tx(canonical, fallback) : canonical;
+}
+
+const INVENTORY_TYPE_KEYS = Object.freeze({
+  VIAL: 'lab.typeVial',
+  CARTRIDGE: 'lab.typeCartridge',
+  DISPOSABLE_PEN: 'lab.typeDisposable',
+  BOX_PACKAGE: 'lab.typeBox',
+  SUPPLY: 'lab.typeSupply',
+  CUSTOM: 'lab.typeCustom'
+});
+function normalizeInventoryType(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  const aliases = {
+    vial: 'VIAL', frasco: 'VIAL',
+    cartridge: 'CARTRIDGE', cartucho: 'CARTRIDGE',
+    'disposable pen': 'DISPOSABLE_PEN', 'pluma desechable': 'DISPOSABLE_PEN',
+    'box or package': 'BOX_PACKAGE', 'caja o paquete': 'BOX_PACKAGE',
+    'general supply item': 'SUPPLY', 'artículo de suministro general': 'SUPPLY',
+    'custom item': 'CUSTOM', 'artículo personalizado': 'CUSTOM'
+  };
+  const canonical = String(value || '').toUpperCase();
+  return Object.prototype.hasOwnProperty.call(INVENTORY_TYPE_KEYS, canonical) ? canonical : aliases[normalized] || 'CUSTOM';
+}
+function inventoryTypeLabel(type) {
+  const canonical = normalizeInventoryType(type);
+  const fallback = { VIAL: 'Vial', CARTRIDGE: 'Cartridge', DISPOSABLE_PEN: 'Disposable pen', BOX_PACKAGE: 'Box or package', SUPPLY: 'General supply item', CUSTOM: 'Custom item' }[canonical];
+  return tx(INVENTORY_TYPE_KEYS[canonical], fallback);
+}
+
 const MEDICATIONS = Object.freeze({
-  Zepbound: 'Zepbound (Tirzepatide)',
-  Mounjaro: 'Mounjaro (Tirzepatide)',
-  Tirzepatide: 'Tirzepatide (Compound)',
-  Wegovy: 'Wegovy (Semaglutide)',
-  Ozempic: 'Ozempic (Semaglutide)',
-  Semaglutide: 'Semaglutide (Compound)',
-  Retatrutide: 'Retatrutide',
-  Custom: 'Custom Compound'
+  zepbound_tirzepatide: 'Zepbound (Tirzepatide)',
+  mounjaro_tirzepatide: 'Mounjaro (Tirzepatide)',
+  tirzepatide_compound: 'Tirzepatide (Compound)',
+  wegovy_semaglutide: 'Wegovy (Semaglutide)',
+  ozempic_semaglutide: 'Ozempic (Semaglutide)',
+  semaglutide_compound: 'Semaglutide (Compound)',
+  retatrutide: 'Retatrutide',
+  custom_compound: 'Custom Compound',
+  bpc157: 'BPC-157',
+  tb500: 'TB-500',
+  thymosin_beta4: 'Thymosin β-4 (Full)',
+  thymosin_alpha1: 'Thymosin α-1',
+  cjc1295_dac: 'CJC-1295 (DAC)',
+  cjc1295_nodac: 'Mod GRF 1-29 (CJC no-DAC)',
+  ipamorelin: 'Ipamorelin',
+  sermorelin: 'Sermorelin',
+  tesamorelin: 'Tesamorelin',
+  semax: 'Semax',
+  selank: 'Selank',
+  ghk_cu_topical: 'GHK-Cu (Topical)',
+  ghk_cu_injectable: 'GHK-Cu (Injectable)',
+  epitalon: 'Epitalon',
+  mots_c: 'MOTS-c',
+  kpv: 'KPV',
+  elamipretide_ss31: 'Elamipretide / SS-31'
 });
 
+
+function medicationLabel(value) {
+  const id = normalizeMedicationId(value);
+  return id ? MEDICATIONS[id] : tx('shots.invalidMedication', 'Unknown medication');
+}
+
+window.GN_MEDICATION_IDENTITY = Object.freeze({
+  ids: Object.freeze(Object.keys(MEDICATIONS)),
+  normalize: normalizeMedicationId,
+  label: medicationLabel
+});
+
+const SIDE_EFFECT_KEYS = Object.freeze({
+  nausea: 'shot.nausea', fatigue: 'shot.fatigue', headache: 'shot.headache',
+  diarrhea: 'shot.diarrhea', constipation: 'shot.constipation', vomiting: 'shot.vomiting',
+  insomnia: 'shot.insomnia', bloating: 'shot.bloating', reflux: 'shot.reflux', dizziness: 'shot.dizziness'
+});
+function sideEffectLabel(value) {
+  const canonical = normalizeSideEffectId(value);
+  return SIDE_EFFECT_KEYS[canonical] ? tx(SIDE_EFFECT_KEYS[canonical], canonical) : canonical;
+}
+
 const PHASES = [
-  { name: 'ONSET', support: 'Early cycle visibility from the most recent logged SHOT.', color: '#00d4ff', start: 0, end: 0.08 },
-  { name: 'ACTIVE', support: 'Estimated active-cycle window from user-entered timing.', color: '#00ff88', start: 0.08, end: 0.28 },
-  { name: 'PEAK WINDOW', support: 'Estimated cycle peak window. This is not a lab measurement.', color: '#ffd700', start: 0.28, end: 0.52 },
-  { name: 'RESPONSE', support: 'Estimated response window from the logged cycle.', color: '#ff8c00', start: 0.52, end: 0.76 },
-  { name: 'DECAY', support: 'Estimated downward protocol curve toward the next cycle.', color: '#ff5577', start: 0.76, end: 0.94 },
-  { name: 'BASELINE', support: 'Late-cycle visibility before another logged event.', color: '#9898b0', start: 0.94, end: 1 }
+  { name: 'ONSET', support: 'Early cycle after the latest logged SHOT. New observations begin shaping this signal.', context: 'Early cycle after the latest logged SHOT. Your own appetite, energy, symptoms, and notes may begin shaping this signal.', color: '#00d4ff', start: 0, end: 0.08 },
+  { name: 'ACTIVE', support: 'Estimated active-cycle window. Compare this point with your own earlier logged cycles.', context: 'Estimated active-cycle window. Compare this point with your own earlier logged observations.', color: '#00ff88', start: 0.08, end: 0.28 },
+  { name: 'PEAK WINDOW', support: 'Estimated highest relative level in this cycle. This is not a laboratory measurement.', context: 'Estimated highest relative level in this cycle. Individual response varies; this is not a laboratory measurement.', color: '#ffd700', start: 0.28, end: 0.52 },
+  { name: 'RESPONSE', support: 'A middle-cycle estimate built from timing and user-entered history.', context: 'A middle-cycle estimate built from timing and user-entered history.', color: '#ff8c00', start: 0.52, end: 0.76 },
+  { name: 'DECAY', support: 'Estimated level is declining toward the next expected event. Individual response varies.', context: 'Estimated level is declining toward the next expected event. Watch your own logged patterns; individual response varies.', color: '#FF5B5B', start: 0.76, end: 0.94 },
+  { name: 'BASELINE', support: 'Late-cycle estimate before the next expected event. Keep logging your own patterns.', context: 'Late-cycle estimate before the next expected event. Keep logging your own patterns.', color: '#9898b0', start: 0.94, end: 1 }
 ];
 
-function activeShots() { return getAllShots().filter(record => !record.archived); }
+const RESEARCH_LIBRARY = Object.freeze([
+  { category: 'RECOVERY & REPAIR', names: ['BPC-157', 'TB-500', 'Thymosin Beta-4', 'GHK-Cu', 'KPV'], context: 'RESEARCH-FOCUSED RECORDS · REGULATORY STATUS IS NOT VERIFIED HERE.' },
+  { category: 'METABOLIC & BODY COMPOSITION', names: ['CJC-1295', 'Ipamorelin', 'Sermorelin', 'Tesamorelin', 'MOTS-c'], context: 'MIXED CONTEXT · SOME ENTRIES MAY HAVE SPECIFIC FDA-APPROVED INDICATIONS; OTHERS ARE RESEARCH-FOCUSED. VERIFY EACH ENTRY INDEPENDENTLY.' },
+  { category: 'CELLULAR & MITOCHONDRIAL', names: ['SS-31', 'Elamipretide'], context: 'RESEARCH-FOCUSED RECORDS · REGULATORY STATUS IS NOT VERIFIED HERE.' },
+  { category: 'IMMUNE & NEUROLOGICAL', names: ['Thymosin Alpha-1', 'Semax', 'Selank', 'Epitalon'], context: 'RESEARCH-FOCUSED RECORDS · REGULATORY STATUS IS NOT VERIFIED HERE.' }
+]);
+
+const DEVICE_STATUSES = Object.freeze(['READY', 'EMPTY', 'NEEDS CHECKING', 'FAILED', 'RETIRED', 'LOST']);
+function activeShots() {
+  const now = Date.now();
+  return getAllShots().filter(record => {
+    const timestamp = new Date(record.date).getTime();
+    return !record.archived && Number.isFinite(timestamp) && timestamp <= now;
+  });
+}
 function sortedShots() { return activeShots().sort((a, b) => new Date(a.date) - new Date(b.date)); }
 function sortedWeights() { return [...getWeights()].sort((a, b) => new Date(a.date) - new Date(b.date)); }
 function latestShot() { return sortedShots().at(-1) || null; }
 function latestWeight() { return sortedWeights().at(-1) || null; }
+function deviceLabel(id) { return S.get('devices', []).find(device => device.id === id)?.name || ''; }
 
-function showToast(message, isError = false) {
+function showToast(message, isError = false, undoCallback = null, detail = '') {
   const toast = $('toastEl');
   if (!toast) return;
-  toast.textContent = message;
+  const prefix = isError ? '// SYSTEM CHECK — ' : 'NODE CONFIRMED — ';
+  const displayMessage = /Shot (?:logged|updated)/.test(String(message))
+    ? formatToastLocation(String(message))
+    : String(message);
+  if (undoCallback) {
+    toast.innerHTML = '<div class="gn-toast-body"><span class="gn-toast-check" aria-hidden="true">✓</span><div class="gn-toast-main"><div class="gn-toast-title">' + safeText(displayMessage) + '</div>' + (detail ? '<div class="gn-toast-detail">' + safeText(detail) + '</div>' : '') + '</div><button type="button" class="gn-toast-undo">' + safeText(tx('toast.undo', 'UNDO')) + '</button></div><div class="gn-toast-bar" aria-hidden="true"></div>';
+    toast.className = 'toast active undoable';
+    clearTimeout(toast._timer);
+    const doUndo = () => { clearTimeout(toast._timer); toast.classList.remove('active'); if (typeof undoCallback === 'function') undoCallback(); };
+    const btn = toast.querySelector('.gn-toast-undo');
+    if (btn) btn.addEventListener('click', doUndo);
+    toast._timer = setTimeout(() => toast.classList.remove('active'), 5000);
+    return;
+  }
+  toast.innerHTML = `<span class="gn-toast-message">${safeText(`${prefix}${displayMessage}`)}</span>`;
   toast.className = `toast active${isError ? ' err' : ''}`;
   clearTimeout(toast._timer);
-  toast._timer = setTimeout(() => toast.classList.remove('active'), 2800);
+  toast._timer = setTimeout(() => toast.classList.remove('active'), 2000);
+}
+
+function undoShot(id) {
+  const all = getAllShots();
+  const record = all.find(item => item.id === id);
+  if (!record) return;
+  const now = new Date().toISOString();
+  record.archived = true;
+  record.archivedAt = now;
+  const weights = getWeights() || [];
+  const linkedWeights = weights.filter(weight => weight.shotId === id);
+  record.undoSnapshot = { linkedWeights: linkedWeights.map(weight => ({ ...weight })) };
+  const ops = [{ key: 'shots', value: all }];
+  if (linkedWeights.length) ops.push({ key: 'weights', value: weights.filter(weight => weight.shotId !== id) });
+  let inventoryChanged = false;
+  if (record.inventoryDeduction?.itemId && Number(record.inventoryDeduction.amount) > 0) {
+    const inventory = S.get('inventory', []);
+    const item = inventory.find(candidate => candidate.id === record.inventoryDeduction.itemId);
+    if (item) {
+      const reversed = { ...record.inventoryDeduction, reversedAt: now };
+      item.quantity = Number(item.quantity || 0) + Number(record.inventoryDeduction.amount);
+      item.modifiedAt = now;
+      item.history = [...(item.history || []), { at: now, action: 'AUTO-DEDUCTION REVERSED FOR SHOT UNDO', source: 'System Generated', shotId: record.id }];
+      record.inventoryDeductionReversed = reversed;
+      delete record.inventoryDeduction;
+      ops[0] = { key: 'shots', value: all };
+      ops.push({ key: 'inventory', value: inventory });
+      inventoryChanged = true;
+    }
+  }
+  let queuedCloudDelete = false;
+  const pending = S.get('cloudDeletes', []);
+  linkedWeights.forEach(weight => {
+    if (weight.cloudId && !pending.some(item => item.table === 'weights' && item.id === weight.cloudId)) {
+      pending.push({ table: 'weights', id: weight.cloudId });
+      queuedCloudDelete = true;
+    }
+  });
+  if (queuedCloudDelete) ops.push({ key: 'cloudDeletes', value: pending });
+  if (!S.multiWrite(ops)) { showToast(tx('shots.undoStorageError', 'Could not undo — storage unavailable.'), true); return; }
+  if (queuedCloudDelete) flushCloudDeletes();
+  queueCloudSync('shot', record);
+  if (inventoryChanged) queueCloudSync('workspace');
+  refreshAll();
+  showToast(tx('shots.undone', 'SHOT undone.'));
+}
+
+function undoWeight(id) {
+  const all = getWeights();
+  const record = all.find(item => item.id === id);
+  if (!record) return;
+  const ops = [{ key: 'weights', value: all.filter(item => item.id !== id) }];
+  let queuedCloudDelete = false;
+  if (record.cloudId) {
+    const pending = S.get('cloudDeletes', []);
+    if (!pending.some(item => item.table === 'weights' && item.id === record.cloudId)) pending.push({ table: 'weights', id: record.cloudId });
+    ops.push({ key: 'cloudDeletes', value: pending });
+    queuedCloudDelete = true;
+  }
+  if (!S.multiWrite(ops)) { showToast(tx('weight.undoStorageError', 'Could not undo — storage unavailable.'), true); return; }
+  if (queuedCloudDelete) flushCloudDeletes();
+  refreshAll();
+  showToast(tx('weight.undone', 'WEIGHT ENTRY undone.'));
+}
+
+function formatToastLocation(site) {
+  const text = String(site || '').replace(/\s+/g, ' ').trim();
+  if (!text) return '';
+  const compact = text.replace(/\bLeft\b/g, 'L.').replace(/\bRight\b/g, 'R.').replace(/\s*[—–-]\s*/g, ' · ');
+  if (compact.length <= 42) return compact;
+  const words = compact.split(' ');
+  let result = '';
+  for (const word of words) {
+    const candidate = result ? `${result} ${word}` : word;
+    if (candidate.length > 39) break;
+    result = candidate;
+  }
+  return result || compact.slice(0, 39);
+}
+
+function celebrateMilestone(type, value) {
+  const container = $('app') || document.body;
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    for (let index = 0; index < 20; index += 1) {
+      const particle = document.createElement('div');
+      particle.className = 'gn-celebrate-particle';
+      particle.style.setProperty('--x', `${Math.random() * 100}%`);
+      particle.style.setProperty('--delay', `${Math.random() * 0.3}s`);
+      particle.style.setProperty('--drift', `${(Math.random() - 0.5) * 100}px`);
+      particle.style.setProperty('--size', `${4 + Math.random() * 8}px`);
+      container.appendChild(particle);
+      setTimeout(() => particle.remove(), 2500);
+    }
+  }
+  showToast(type === 'goal' ? 'GOAL REACHED' : `${value} LBS DOWN`);
+}
+
+function weightMilestone(previousWeight, nextWeight, profile) {
+  const start = Number(profile?.startWt);
+  if (!Number.isFinite(start) || start <= 0 || !Number.isFinite(nextWeight)) return null;
+  const previousLoss = Number.isFinite(Number(previousWeight)) ? start - Number(previousWeight) : 0;
+  const nextLoss = start - nextWeight;
+  const goal = Number(profile?.goalWt);
+  if (goal > 0 && nextWeight <= goal && (!Number.isFinite(Number(previousWeight)) || Number(previousWeight) > goal)) return { type: 'goal', value: null };
+  const previousStep = Math.floor(Math.max(0, previousLoss) / 5);
+  const nextStep = Math.floor(Math.max(0, nextLoss) / 5);
+  if (nextStep > previousStep && nextStep > 0) return { type: 'weight', value: nextStep * 5 };
+  return null;
+}
+
+const EVENT_LABEL_TOKENS = Object.freeze({
+  'SHOT UPDATED': 'shot.updated', 'SHOT EVENT CONFIRMED': 'shot.confirmed',
+  'INVENTORY UPDATED': 'inventory.updated', 'INVENTORY ITEM SAVED': 'inventory.saved',
+  'INVENTORY ARCHIVED': 'inventory.archived', 'INVENTORY RESTORED': 'inventory.restored',
+  'CALCULATOR REFERENCE SAVED': 'reference.saved',
+  'RESEARCH RECORD UPDATED': 'research.updated', 'RESEARCH RECORD CAPTURED': 'research.captured',
+  'RESEARCH RECORD ARCHIVED': 'research.archived', 'RESEARCH RECORD RESTORED': 'research.restored',
+  'DEVICE IDENTITY UPDATED': 'device.updated', 'DEVICE IDENTITY REGISTERED': 'device.registered',
+  'DEVICE RETIRED': 'device.retired', 'DEVICE RESTORED': 'device.restored',
+  'GRID//NODE BACKUP RESTORED': 'backup.restored', 'CSV IMPORT SAVED': 'csv.saved',
+  'RESULTS UPDATED': 'results.updated'
+});
+const EVENT_LABEL_KEYS = Object.freeze({
+  'shot.updated': ['ledger.shotUpdated', 'SHOT UPDATED'], 'shot.confirmed': ['ledger.shotConfirmed', 'SHOT EVENT CONFIRMED'],
+  'inventory.updated': ['ledger.inventoryUpdated', 'INVENTORY UPDATED'], 'inventory.saved': ['ledger.inventorySaved', 'INVENTORY ITEM SAVED'],
+  'inventory.archived': ['ledger.inventoryArchived', 'INVENTORY ARCHIVED'], 'inventory.restored': ['ledger.inventoryRestored', 'INVENTORY RESTORED'],
+  'reference.saved': ['ledger.referenceSaved', 'CALCULATOR REFERENCE SAVED'],
+  'research.updated': ['ledger.researchUpdated', 'RESEARCH RECORD UPDATED'], 'research.captured': ['ledger.researchCaptured', 'RESEARCH RECORD CAPTURED'],
+  'research.archived': ['ledger.researchArchived', 'RESEARCH RECORD ARCHIVED'], 'research.restored': ['ledger.researchRestored', 'RESEARCH RECORD RESTORED'],
+  'device.updated': ['ledger.deviceUpdated', 'DEVICE IDENTITY UPDATED'], 'device.registered': ['ledger.deviceRegistered', 'DEVICE IDENTITY REGISTERED'],
+  'device.retired': ['ledger.deviceRetired', 'DEVICE RETIRED'], 'device.restored': ['ledger.deviceRestored', 'DEVICE RESTORED'],
+  'backup.restored': ['ledger.backupRestored', 'GRID//NODE BACKUP RESTORED'], 'csv.saved': ['ledger.csvSaved', 'CSV IMPORT SAVED'],
+  'results.updated': ['ledger.resultsUpdated', 'RESULTS UPDATED']
+});
+const EVENT_SOURCE_TOKENS = Object.freeze({
+  manual: 'manual', 'manual entry': 'manual', import: 'import', 'device reported': 'device', device: 'device',
+  'system generated': 'system', system: 'system', 'grid//node backup': 'backup', backup: 'backup',
+  'csv import': 'csv', csv_import_shotsy: 'csv', csv_import_glapp: 'csv'
+});
+const EVENT_STATE_TOKENS = Object.freeze({
+  confirmed: 'confirmed', 'user confirmed': 'confirmed', review: 'review', 'needs review': 'review', corrected: 'corrected'
+});
+
+function eventLabelToken(value) {
+  const raw = String(value || '').trim();
+  return EVENT_LABEL_KEYS[raw] ? raw : EVENT_LABEL_TOKENS[raw.toUpperCase()] || 'event.generic';
+}
+function eventSourceToken(value) { return EVENT_SOURCE_TOKENS[String(value || 'manual').trim().toLowerCase()] || 'manual'; }
+function eventStateToken(value) { return EVENT_STATE_TOKENS[String(value || 'confirmed').trim().toLowerCase()] || 'confirmed'; }
+function eventLabelText(value) { const token = eventLabelToken(value); const entry = EVENT_LABEL_KEYS[token]; return entry ? tx(entry[0], entry[1]) : tx('ledger.eventGeneric', 'EVENT'); }
+function eventSourceText(value) {
+  const token = eventSourceToken(value);
+  const entry = { manual: ['ledger.sourceManual', 'Manual Entry'], import: ['ledger.sourceImport', 'Import'], device: ['ledger.sourceDevice', 'Device Reported'], system: ['ledger.sourceSystem', 'System Generated'], backup: ['ledger.sourceBackup', 'GRID//NODE Backup'], csv: ['ledger.sourceCsv', 'CSV Import'] }[token];
+  return tx(entry[0], entry[1]);
+}
+function eventStateText(value) {
+  const token = eventStateToken(value);
+  const entry = { confirmed: ['ledger.stateConfirmed', 'User Confirmed'], review: ['ledger.stateReview', 'Needs Review'], corrected: ['ledger.stateCorrected', 'Corrected'] }[token];
+  return tx(entry[0], entry[1]);
+}
+
+function actionFeedback(title, detail, isError = false) {
+  const toast = $('toastEl');
+  if (!toast) return;
+  const prefix = isError ? tx('toast.systemCheck', 'SYSTEM CHECK') : tx('toast.nodeConfirmed', 'NODE CONFIRMED');
+  toast.innerHTML = `<span class="gn-toast-message">${safeText(`// ${prefix} — ${title}${detail ? ` · ${detail}` : ''}`)}</span>`;
+  toast.className = `toast active${isError ? ' err' : ''}`;
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => toast.classList.remove('active'), 2000);
+  /* v0.15.32 — premium vibration feedback. actionFeedback is only called
+     from user-initiated success/error paths (Save / Scanner lock) and
+     those paths already show a visible toast. Bypass the focus gate
+     entirely via gnHaptics.fire() so the haptic actually lands even when
+     focus is inside a form input. The focus gate is preserved for
+     ambient calls (tap / mode / select) which fire from typing. */
+  try {
+    const live = window.gnHaptics || (typeof gnHaptics !== 'undefined' ? gnHaptics : null);
+    if (live) { if (isError) live.fire([4, 30, 4, 30, 4]); else live.fire([8, 30, 12]); }
+  } catch (_) {}
+}
+
+function nodeSyncLabel() {
+  if (state.cloudStatus === 'CLOUD_SYNCED') return tx('runtime.cloudSynced', 'CLOUD SYNCED');
+  if (state.cloudStatus === 'CLOUD_CONNECTED') return tx('runtime.syncing', 'SYNCING');
+  if (state.cloudStatus === 'LOCAL_BACKUP') return tx('runtime.localBackup', 'LOCAL BACKUP');
+  return tx('runtime.localMode', 'LOCAL MODE');
+}
+
+function nodeDateTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return tx('runtime.notAvailable', 'NOT AVAILABLE');
+  const locale = document.documentElement?.lang?.startsWith('es') ? 'es-419' : 'en-US';
+  return [date.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' }), date.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' })].join(' · ');
+}
+
+function nodePhaseDay(lastShot) {
+  if (!lastShot) return tx('runtime.awaitingFirstShot', 'AWAITING FIRST SHOT');
+  const elapsedDays = Math.max(0, (Date.now() - new Date(lastShot.date).getTime()) / 86400000);
+  if (!Number.isFinite(elapsedDays)) return tx('runtime.awaitingVerifiedTiming', 'AWAITING VERIFIED TIMING');
+  const day = Math.floor(elapsedDays) + 1;
+  return elapsedDays < 1
+    ? tx('runtime.dayRecentEvent', 'DAY {day} · {event}', { day, event: tx('runtime.recentEvent', 'RECENT EVENT') })
+    : tx('runtime.daySinceShot', 'DAY {day} · {days}d since SHOT', { day, days: Math.floor(elapsedDays) });
+}
+
+export function refreshNodeHeader({ phase } = {}) {
+  const sync = nodeSyncLabel();
+  const phaseLabel = localizedPhaseName(phase) || tx('runtime.awaitingFirstShot', 'AWAITING FIRST SHOT');
+  setText('nodeHeaderPhase', phaseLabel);
+  setText('nodeHeaderState', sync);
+}
+
+function appendEventLedger(event) {
+  const ledger = S.get('eventLedger', []);
+  ledger.push({
+    id: createId('event'), createdAt: new Date().toISOString(), ...event,
+    label: eventLabelToken(event.label || event.type),
+    source: eventSourceToken(event.source),
+    state: eventStateToken(event.state)
+  });
+  S.set('eventLedger', ledger.slice(-250));
+  queueCloudSync('workspace');
 }
 
 function setPrivateShell(active) {
@@ -105,20 +552,34 @@ export function showScreen(id) {
 }
 
 export function showPage(name, navElement) {
+  const previousPage = document.querySelector('.page.active')?.id || '';
+  try { localStorage.setItem('gn_last_active_page_v1', previousPage.replace('page', '') || 'Dash'); } catch (e) {}
   const page = $(`page${name}`);
   if (!page) return;
+  document.body.classList.toggle('gn-fab-hidden-context', ['Lab', 'Profile', 'Cal'].includes(name));
   qa('.page').forEach(item => item.classList.remove('active'));
   page.classList.add('active');
-  qa('.nav-item').forEach(item => item.classList.remove('active'));
+  qa('.nav-item').forEach(item => {
+    item.classList.remove('active');
+    item.removeAttribute('aria-current');
+  });
   const nav = navElement || document.getElementById({ Dash: 'navDash', Log: 'navLog', Results: 'navRes', Lab: 'navLab', Profile: 'navPro', Cal: 'navCal' }[name]);
-  if (nav) nav.classList.add('active');
+  if (nav) {
+    nav.classList.add('active');
+    nav.setAttribute('aria-current', 'page');
+  }
   $('scrollBody')?.scrollTo({ top: 0, behavior: 'auto' });
   if (name === 'Log') renderShots();
   if (name === 'Results') renderResults();
   if (name === 'Lab') renderLab();
   if (name === 'Profile') renderProfile();
   if (name === 'Cal') renderCalendar();
+  document.dispatchEvent(new CustomEvent('gn:pagechange', { detail: { name, previousPage } }));
 }
+
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.querySelector('.page.active')?.id === 'pageProfile') { closeProfileHub(); } });
+document.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target && typeof e.target.matches === 'function' && e.target.matches('.cp-group-minimized')) { e.preventDefault(); e.target.click(); } });
+document.addEventListener('keydown', function (e) { if (e.key !== 'Escape') return; var disc = document.getElementById('shotDiscardConfirmOv'); if (disc && (disc.classList.contains('active') || getComputedStyle(disc).display !== 'none')) { cancelShotDiscard(); return; } if (document.querySelector('#futureTimestampConfirm.active')) return; if (document.querySelector('#logOv.active')) { closeLog(); } if (document.querySelector('#wtOv.active')) { closeWt(); } });
 
 export function refreshAll() {
   renderProfile();
@@ -133,11 +594,12 @@ export function refreshAll() {
 export function loadApp() {
   const profile = getProfile();
   moduleState.selectedLocation = normalizeLegacyText(S.get('selectedLocation', moduleState.selectedLocation || ''));
-  setText('dashSub', `// ${window.CU?.defaultName || profile.name || 'NODE_USER'} // NODE_ACTIVE`);
+  syncIdentityAvatars();
+  setText('dashSub', tx('dashboard.nodeOnline', '// {name} // NODE ONLINE', { name: window.CU?.defaultName || profile.name || 'NODE_USER' }));
   setText('profSub', `// ${window.CU?.defaultName || profile.name || 'NODE_USER'} //`);
-  setText('profNameTxt', window.CU?.defaultName || profile.name || 'NODE_USER');
+  setText('profNameTxt', window.CU?.defaultName || profile.name || tx('profile.anonFallback', 'NODE_USER'));
   setText('profEmail', sessionLabel());
-  setText('profMedTxt', profile.med ? `// ${profile.med.toUpperCase()}` : '// NO MEDICATION SET');
+  setText('profMedTxt', normalizeMedicationId(profile.med) ? `// ${medicationLabel(profile.med).toUpperCase()}` : tx('profile.noMedicationSet', '// NO MEDICATION SET'));
   hydrateProfileFields(profile);
   setTodayDefaults();
   refreshAll();
@@ -146,16 +608,94 @@ export function loadApp() {
 function setText(id, value) { const element = $(id); if (element) element.textContent = value; }
 function setDisplay(id, visible) { const element = $(id); if (element) element.style.display = visible ? '' : 'none'; }
 
+// B15 (2026-08-08): number tickers. Stats count up/down over ~600ms with
+// ease-out; changed numbers flash Mars Red (200ms fade). Only animates on
+// actual value change; reduced-motion renders instantly. Tracks previous
+// value per element id so repeated renders with the same value stay still.
+const _tickerPrev = new Map();
+function animateNumber(element, from, to, duration) {
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotion || !Number.isFinite(from) || !Number.isFinite(to) || from === to) {
+    element.textContent = String(to);
+    return;
+  }
+  const start = performance.now();
+  function frame(now) {
+    const t = Math.min(1, (now - start) / duration);
+    const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
+    const value = Math.round(from + (to - from) * eased);
+    element.textContent = String(value);
+    if (t < 1) requestAnimationFrame(frame);
+    else element.textContent = String(to);
+  }
+  requestAnimationFrame(frame);
+}
+function setNumericText(id, rawValue) {
+  const element = $(id);
+  if (!element) return;
+  const value = Number(rawValue);
+  if (!Number.isFinite(value)) { element.textContent = String(rawValue ?? ''); return; }
+  const prev = _tickerPrev.has(id) ? _tickerPrev.get(id) : value;
+  _tickerPrev.set(id, value);
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotion || prev === value) {
+    element.textContent = String(value);
+    return;
+  }
+  element.classList.remove('gn-ticker-flash');
+  void element.offsetWidth;
+  element.classList.add('gn-ticker-flash');
+  animateNumber(element, prev, value, 600);
+  setTimeout(() => element.classList.remove('gn-ticker-flash'), 260);
+}
+
+function syncIdentityAvatars() {
+  const avatarUrl = window.CU?.avatarUrl || '/assets/brand/icons/pwa-192.png';
+  ['topAvaIcon', 'profAvaIcon'].forEach(id => {
+    const image = $(id);
+    if (!image) return;
+    image.src = avatarUrl;
+    image.alt = avatarUrl === '/assets/brand/icons/pwa-192.png' ? 'GRID//NODE mark' : 'Google account profile photo';
+  });
+}
+
+export function computeTotalChange(weights = [], profile = {}, baseline = 'profile') {
+  const ordered = [...weights]
+    .filter(record => Number.isFinite(Number(record?.weight)) && Number(record.weight) > 0)
+    .sort((a, b) => parseLocalDate(a.date) - parseLocalDate(b.date));
+  const first = ordered[0] || null;
+  const latest = ordered.at(-1) || null;
+  const profileStart = Number(profile?.startWt);
+  const hasProfileBaseline = Number.isFinite(profileStart) && profileStart > 0;
+  const baselineWeight = baseline === 'profile' && hasProfileBaseline ? profileStart : Number(first?.weight) || null;
+  const currentWeight = Number(latest?.weight) || baselineWeight;
+  const change = baselineWeight && currentWeight ? currentWeight - baselineWeight : null;
+  const spanDays = first && latest ? Math.max(0, (parseLocalDate(latest.date) - parseLocalDate(first.date)) / 86400000) : 0;
+  const basis = baseline === 'profile' && hasProfileBaseline ? 'from profile start weight' : 'from first recorded weight';
+  return {
+    first,
+    latest,
+    baselineWeight,
+    currentWeight,
+    change,
+    percentLost: change !== null && baselineWeight ? Math.abs(change) / baselineWeight * 100 : null,
+    weeklyAverage: change !== null && spanDays >= 14 ? change / (spanDays / 7) : null,
+    basis,
+    spanDays
+  };
+}
+
 function setTodayDefaults() {
   const now = new Date();
   const date = $('sDate');
   const time = $('sTime');
   const wtDate = $('wtDate');
-  if (date && !date.value) date.value = todayISO();
+  if (date && !date.value) setHumanDateInput(date, todayISO());
   if (time && !time.value) time.value = formatTime12(now);
-  if (wtDate && !wtDate.value) wtDate.value = todayISO();
+  if (wtDate && !wtDate.value) setHumanDateInput(wtDate, todayISO(), true);
   moduleState.meridiem = now.getHours() >= 12 ? 'PM' : 'AM';
   updateMeridiemButtons();
+  syncCustomPickers(document);
 }
 
 function hydrateProfileFields(profile) {
@@ -164,7 +704,8 @@ function hydrateProfileFields(profile) {
     profAge: profile.age, profStartWt: profile.startWt, profGoalWt: profile.goalWt
   };
   Object.entries(fields).forEach(([id, value]) => { if ($(id) && value != null) $(id).value = value; });
-  if (profile.med) setSelect('cpMedProf', profile.med, MEDICATIONS[profile.med] || profile.med);
+  const medicationId = normalizeMedicationId(profile.med);
+  if (medicationId) setSelect('cpMedProf', medicationId, medicationLabel(medicationId));
   if (profile.shotDay !== undefined && profile.shotDay !== '') {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     setSelect('cpShotDayProf', String(profile.shotDay), days[Number(profile.shotDay)] || 'Select shot day');
@@ -176,7 +717,7 @@ function hydrateProfileFields(profile) {
 function profileSnapshot() {
   const profile = getProfile();
   profile.name = profile.name || window.CU?.defaultName || 'NODE_USER';
-  profile.med = selectState.cpMedProf?.val || profile.med || '';
+  profile.med = normalizeMedicationId(selectState.cpMedProf?.val || profile.med);
   profile.dose = $('profDose')?.value || profile.dose || '';
   profile.shotDay = selectState.cpShotDayProf?.val !== undefined ? Number(selectState.cpShotDayProf.val) : profile.shotDay;
   profile.htFt = $('profHtFt')?.value || profile.htFt || '';
@@ -190,17 +731,16 @@ function profileSnapshot() {
 
 export function saveProfileMed() {
   const profile = profileSnapshot();
-  S.set('profile', profile);
-  setText('profMedTxt', profile.med ? `// ${profile.med.toUpperCase()}` : '// NO MEDICATION SET');
-  queueCloudSync('profile', profile);
-  showToast('Profile protocol context saved.');
+  const saved = S.set('profile', profile);
+  setText('profMedTxt', normalizeMedicationId(profile.med) ? `// ${medicationLabel(profile.med).toUpperCase()}` : tx('profile.noMedicationSet', '// NO MEDICATION SET'));
+  if (saved) queueCloudSync('profile', profile);
+  showToast(saved ? tx('profile.protocolSaved', 'Profile protocol context saved.') : tx('profile.storageFull', 'Profile could not be saved — storage is full.'), !saved);
 }
 
 export function saveProfileMetrics() {
   const profile = profileSnapshot();
-  S.set('profile', profile);
+  if (S.set('profile', profile)) queueCloudSync('profile', profile);
   calcAndShowBMI();
-  queueCloudSync('profile', profile);
 }
 
 export function calcAndShowBMI() {
@@ -212,7 +752,7 @@ export function calcAndShowBMI() {
   if (!feet || !current || !totalInches) { setDisplay('profBMIDisplay', false); return null; }
   const bmi = (current / (totalInches ** 2) * 703).toFixed(1);
   setText('profBMIVal', bmi);
-  setText('profBMICat', bmi < 18.5 ? 'UNDERWEIGHT' : bmi < 25 ? 'NORMAL' : bmi < 30 ? 'OVERWEIGHT' : 'OBESE');
+  setText('profBMICat', '');
   setDisplay('profBMIDisplay', true);
   return Number(bmi);
 }
@@ -221,6 +761,11 @@ function setSelect(id, value, label) {
   selectState[id] = { val: value, label };
   const valueElement = $(`${id}Val`);
   if (valueElement) { valueElement.textContent = label; valueElement.classList.remove('placeholder'); }
+  qa(`#${id}Drop .cp-option`).forEach(option => {
+    const selected = option.textContent.trim() === String(label).trim();
+    option.classList.toggle('selected', selected);
+    option.setAttribute('aria-selected', String(selected));
+  });
 }
 
 export function toggleSelect(id) {
@@ -228,10 +773,11 @@ export function toggleSelect(id) {
   const trigger = dropdown?.previousElementSibling;
   if (!dropdown || !trigger) return;
   qa('.cp-dropdown.open').forEach(item => item.classList.remove('open'));
-  qa('.cp-select-trigger.open').forEach(item => item.classList.remove('open'));
+  qa('.cp-select-trigger.open').forEach(item => { item.classList.remove('open'); item.setAttribute('aria-expanded', 'false'); });
   const willOpen = !dropdown.classList.contains('open');
   dropdown.classList.toggle('open', willOpen);
   trigger.classList.toggle('open', willOpen);
+  trigger.setAttribute('aria-expanded', String(willOpen));
 }
 
 export function selectOpt(id, value, label, callback) {
@@ -239,50 +785,162 @@ export function selectOpt(id, value, label, callback) {
   const dropdown = $(`${id}Drop`);
   dropdown?.classList.remove('open');
   dropdown?.previousElementSibling?.classList.remove('open');
+  dropdown?.previousElementSibling?.setAttribute('aria-expanded', 'false');
   if (typeof callback === 'function') callback();
 }
 
 function renderDashboard() {
+  ensureWandaDashboard();
   const shots = sortedShots();
   const weights = sortedWeights();
   const lastShot = shots.at(-1);
   const lastWeight = weights.at(-1);
   const profile = getProfile();
-  setText('stShots', shots.length);
+  const dashboard = document.getElementById('pageDash');
+  const firstShotMission = document.getElementById('gnFirstShotMission');
+  if (dashboard) dashboard.dataset.activation = shots.length ? 'active' : 'pending';
+  if (firstShotMission) firstShotMission.hidden = shots.length > 0;
+  // Batch B: empty state — ONE red CTA, cyan ghosts, tip card; wanda + FAB hidden.
+  let hero = document.getElementById('gnEmptyHero');
+  if (shots.length === 0) {
+    if (!hero && dashboard) {
+      const heroMarkup = '<section id="gnEmptyHero" class="gn-empty-hero" aria-label="' + safeText(tx('dashboard.emptyTitle', 'Get started')) + '">'
+        + '<h2 data-i18n="dashboard.emptyTitle">' + tx('dashboard.emptyTitle', 'Empieza con tu primera dosis') + '</h2>'
+        + '<p data-i18n="dashboard.emptyBody">' + tx('dashboard.emptyBody', 'Una dosis desbloquea el Motor de Fases, RESULTADOS y tu tablero completo.') + '</p>'
+        + '<button class="btn-full btn-primary gn-empty-cta" type="button" data-onboard="empty-cta" onclick="openLogModal()" data-i18n="dashboard.emptyCta">' + tx('dashboard.emptyCta', 'REGISTRAR MI PRIMERA DOSIS') + '</button>'
+        + '<div class="gn-empty-ghosts">'
+        + '<button class="gn-empty-ghost" type="button" data-onboard="log-weight" onclick="openWeightModal()" data-i18n="dashboard.emptyWeight">' + tx('dashboard.emptyWeight', 'Registrar peso') + '</button>'
+        + '<button class="gn-empty-ghost" type="button" onclick="showPage(\'Log\',document.getElementById(\'navLog\'))" data-i18n="dashboard.emptyScan">' + tx('dashboard.emptyScan', 'Escanear zona') + '</button>'
+        + '<button class="gn-empty-ghost" type="button" onclick="showPage(\'Lab\',document.getElementById(\'navLab\'))" data-i18n="dashboard.emptyLab">' + tx('dashboard.emptyLab', 'Ver LAB') + '</button>'
+        + '</div>'
+        + '<div class="gn-tip-card"><span class="gn-tip-kicker" data-i18n="dashboard.tipTitle">' + tx('dashboard.tipTitle', 'TIP') + '</span><p data-i18n="dashboard.tipBody">' + tx('dashboard.tipBody', 'Choose the medication and dose, then add the date, time, and application zone.') + '</p></div>'
+        + '</section>';
+      const wanda = document.getElementById('gnWandaDashboard');
+      if (wanda) wanda.insertAdjacentHTML('beforebegin', heroMarkup);
+      else dashboard.insertAdjacentHTML('afterbegin', heroMarkup);
+      hero = document.getElementById('gnEmptyHero');
+    }
+    const wandaEl = document.getElementById('gnWandaDashboard');
+    if (wandaEl) wandaEl.style.display = 'none';
+    document.body.classList.add('gn-dashboard-empty');
+  } else {
+    if (hero) hero.remove();
+    const wandaEl = document.getElementById('gnWandaDashboard');
+    if (wandaEl) wandaEl.style.display = '';
+    document.body.classList.remove('gn-dashboard-empty');
+  }
+  const weightMetrics = computeTotalChange(weights, profile, 'profile');
+  setNumericText('stShots', shots.length);
   setText('stDose', lastShot?.dose ? `${lastShot.dose}mg` : '—');
-  setText('stDoseDate', lastShot ? formatDate(lastShot.date, { month: 'short', day: 'numeric' }) : 'NO DATA');
+  setText('stDoseDate', lastShot ? formatDate(lastShot.date, { month: 'short', day: 'numeric' }) : tx('runtime.noData', 'NO DATA'));
   const next = nextShotDate(lastShot, profile);
   setText('stNext', next ? formatDate(next, { month: 'short', day: 'numeric' }) : '—');
-  setText('stNextSub', next ? 'ESTIMATED FROM PROFILE' : 'LOG SHOT');
+  setText('stNextSub', next ? tx('runtime.estimatedFromProfile', 'ESTIMATED FROM PROFILE') : tx('runtime.logShot', 'LOG SHOT'));
+  const nextCard = $('nextShotStatCard');
+  if (nextCard) nextCard.classList.remove('gn-next-today', 'gn-next-tomorrow', 'gn-next-overdue');
+  if (next) {
+    const deltaDays = Math.round((parseLocalDate(next).getTime() - parseLocalDate(todayISO()).getTime()) / 86400000);
+    if (deltaDays === 0) { nextCard?.classList.add('gn-next-today'); setText('stNextSub', '// ' + tx('dashboard.today', 'TODAY')); }
+    else if (deltaDays === 1) { nextCard?.classList.add('gn-next-tomorrow'); setText('stNextSub', tx('dashboard.tomorrow', 'TOMORROW')); }
+    else if (deltaDays < 0) { nextCard?.classList.add('gn-next-overdue'); setText('stNextSub', '// ' + tx('dashboard.overdue', 'OVERDUE')); }
+  }
   const todayShot = shots.find(record => record.date?.slice(0, 10) === todayISO());
   const todayWeight = weights.find(record => record.date?.slice(0, 10) === todayISO());
-  setText('todayShot', todayShot ? `${todayShot.dose || '—'}mg logged` : 'TAP TO LOG');
-  setText('todayWt', todayWeight ? `${Number(todayWeight.weight).toFixed(1)} lb` : 'TAP TO LOG');
-  const startWeight = Number(profile.startWt) || Number(weights[0]?.weight) || 0;
-  const currentWeight = Number(lastWeight?.weight) || startWeight;
-  const change = startWeight && currentWeight ? currentWeight - startWeight : null;
-  const percent = startWeight && change !== null ? (Math.abs(change) / startWeight * 100) : null;
+  setText('todayShot', todayShot ? tx('dashboard.loggedDose', '{dose}mg logged', { dose: todayShot.dose || '—' }) : tx('runtime.tapToLog', 'TAP TO LOG'));
+  setText('todayWt', todayWeight ? Number(todayWeight.weight).toFixed(1) + ' lb' : tx('runtime.tapToLog', 'TAP TO LOG'));
+  const currentWeight = weightMetrics.currentWeight || 0;
+  const change = weightMetrics.change;
   const goalGap = Number(profile.goalWt) && currentWeight ? currentWeight - Number(profile.goalWt) : null;
-  const weeklyAverage = weights.length > 1 ? ((Number(weights.at(-1).weight) - Number(weights[0].weight)) / Math.max(1, (new Date(weights.at(-1).date) - new Date(weights[0].date)) / 604800000)).toFixed(1) : null;
+  setText('s6TotalLabel', tx('dashboard.resultsTotal', 'TOTAL CHANGE'));
+  setText('s6TotalBasis', weightMetrics.basis === 'from profile start weight' ? tx('dashboard.fromProfileStart', '(from profile start)') : tx('dashboard.fromFirstWeight', '(from first recorded weight)'));
   setText('s6Total', change === null ? '—' : `${change > 0 ? '+' : ''}${change.toFixed(1)} lb`);
-  setText('s6BMI', calcBMIValue(currentWeight, profile) || '—');
+  const dashboardBMI = calcBMIValue(currentWeight, profile);
+  setText('s6BMI', dashboardBMI || '');
+  setDisplay('s6BMICard', Boolean(dashboardBMI));
   setText('s6Wt', currentWeight ? `${currentWeight.toFixed(1)} lb` : '—');
-  setText('s6Pct', percent === null ? '—' : `${percent.toFixed(1)}%`);
-  setText('s6Avg', weeklyAverage === null ? '—' : `${weeklyAverage} lb/wk`);
+  setText('s6Pct', weightMetrics.percentLost === null ? '—' : `${weightMetrics.percentLost.toFixed(1)}%`);
+  setText('s6Avg', weightMetrics.weeklyAverage === null ? '—' : tx('dashboard.weeklyRate', '{value} lb/wk', { value: weightMetrics.weeklyAverage.toFixed(1) }));
   setText('s6Goal', goalGap === null ? '—' : `${Math.max(0, goalGap).toFixed(1)} lb`);
   const phase = renderPhase(lastShot, shots);
   renderProtocolCurve(shots, phase);
-  setText('tk1', lastShot ? formatDate(lastShot.date, { month: 'short', day: 'numeric' }) : '—');
-  setText('tk1b', lastShot ? formatDate(lastShot.date, { month: 'short', day: 'numeric' }) : '—');
-  setText('tk2', next ? formatDate(next, { month: 'short', day: 'numeric' }) : '—');
-  setText('tk2b', next ? formatDate(next, { month: 'short', day: 'numeric' }) : '—');
-  setText('tk3', phase?.name || 'NO DATA');
-  setText('tk3b', phase?.name || 'NO DATA');
-  setText('tk4', currentWeight ? `${currentWeight.toFixed(1)} lb` : '—');
-  setText('tk4b', currentWeight ? `${currentWeight.toFixed(1)} lb` : '—');
-  setText('tk5', calcBMIValue(currentWeight, profile) || '—');
-  setText('streakText', shots.length ? `${shots.length} SHOT${shots.length === 1 ? '' : 'S'} IN YOUR LOCAL RECORD` : 'NO SHOTS LOGGED');
+  refreshNodeHeader({ lastShot, next, phase, currentWeight: lastWeight?.weight });
+  setText('streakText', shots.length ? tx(shots.length === 1 ? 'dashboard.shotsInLocalRecord_one' : 'dashboard.shotsInLocalRecord_other', '{count} SHOTS IN YOUR LOCAL RECORD', { count: shots.length }) : tx('dashboard.noShotCadence', 'NO SHOT CADENCE YET · LOG YOUR FIRST SHOT'));
   drawCanvasChart($('dashWtChart'), weights.map(item => Number(item.weight)), '#00d4ff');
+  renderWandaDashboard({ shots, weights, lastShot, lastWeight, profile, next, phase, weightMetrics, goalGap });
+}
+
+function ensureWandaDashboard() {
+  const header = document.getElementById('pageDash')?.querySelector('.page-hdr');
+  if (!header || document.getElementById('gnWandaDashboard')) return;
+  const markup = '<section id="gnWandaDashboard" aria-label="' + safeText(tx('dashboard.currentProtocolSignals', 'Current protocol signals')) + '">'
+    + '<section class="gn-dashboard-mission" id="gnFirstShotMission" aria-labelledby="gnFirstShotMissionTitle"><span class="gn-dashboard-mission-kicker" data-i18n="dashboard.firstShotKicker">START HERE</span><h2 id="gnFirstShotMissionTitle" data-i18n="shots.activateYourGrid">LOG YOUR FIRST SHOT TO ACTIVATE YOUR GRID</h2><p data-i18n="shots.firstShotSub">One shot unlocks the Phase Engine, RESULTS, and your full dashboard.</p><button type="button" data-onboard="empty-cta" onclick="openLogModal()" data-i18n="shots.logYourFirst">LOG YOUR FIRST SHOT</button></section>'
+    + '<div class="gn-wanda-grid">'
+    + '<button class="gn-wanda-card" id="gnWandaNext" type="button" onclick="openLogModal()"><span class="gn-wanda-label" data-i18n="dashboard.nextShotLabel">NEXT SHOT</span><b class="gn-wanda-value" id="gnWandaNextValue">' + tx('runtime.logShot', 'LOG SHOT') + '</b><small class="gn-wanda-note" id="gnWandaNextNote" data-i18n="dashboard.logShotStartTimeline">Log a shot to start your timeline</small></button>'
+    + '<button class="gn-wanda-card" id="gnWandaPhase" type="button" onclick="showPhasesModal()"><span class="gn-wanda-label" data-i18n="dashboard.currentPhase">CURRENT PHASE</span><b class="gn-wanda-value" id="gnWandaPhaseValue">' + tx('dashboard.startWithShot', 'START WITH A SHOT') + '</b><small class="gn-wanda-note" data-i18n="phase.educationalEstimate">EDUCATIONAL ESTIMATE</small></button>'
+    + '<button class="gn-wanda-card info" id="gnWandaWeight" type="button" onclick="openWeightModal()"><span class="gn-wanda-label" data-i18n="dashboard.currentWeight">CURRENT WEIGHT</span><b class="gn-wanda-value" id="gnWandaWeightValue">' + tx('dashboard.logWeight', 'LOG WEIGHT') + '</b><small class="gn-wanda-note" data-i18n="dashboard.latestRecord">Latest record</small></button>'
+    + '<button class="gn-wanda-card" id="gnWandaLevel" type="button" onclick="showPhasesModal()"><span class="gn-wanda-label" data-i18n="dashboard.relativeLevel">RELATIVE LEVEL</span><b class="gn-wanda-value" id="gnWandaLevelValue">' + tx('dashboard.startWithShot', 'START WITH A SHOT') + '</b><small class="gn-wanda-note" data-i18n="dashboard.estimatedNotMeasured">Estimated, not measured</small></button>'
+    + '<button class="gn-wanda-card" id="gnWandaRate" type="button" onclick="showPage(\'Results\',document.getElementById(\'navRes\'))"><span class="gn-wanda-label" data-i18n="dashboard.weeklyRateLabel">WEEKLY RATE</span><b class="gn-wanda-value" id="gnWandaRateValue">' + tx('dashboard.keepLogging', 'KEEP LOGGING') + '</b><small class="gn-wanda-note" data-i18n="dashboard.keepLoggingBuilds">Keep logging — data builds over time</small></button>'
+    + '<button class="gn-wanda-card info" id="gnWandaGoal" type="button" onclick="showPage(\'Profile\',document.getElementById(\'navPro\'))"><span class="gn-wanda-label" data-i18n="dashboard.toGoal">TO GOAL</span><b class="gn-wanda-value" id="gnWandaGoalValue">' + tx('dashboard.setGoal', 'SET GOAL') + '</b><small class="gn-wanda-note" data-i18n="dashboard.fromLatestWeight">From latest weight</small></button>'
+    + '</div><div class="gn-wanda-actions"><button type="button" onclick="openLogModal()" data-i18n="runtime.logShot">LOG SHOT</button><button type="button" onclick="openWeightModal()" data-i18n="dashboard.logWeight">LOG WEIGHT</button></div><div class="gn-streak-card" id="gnStreakCard" hidden><b id="gnStreakValue"></b><span id="gnStreakCopy"></span></div></section>';
+  header.insertAdjacentHTML('afterend', markup);
+  window.GN_I18N?.applyTo?.(document.getElementById('gnWandaDashboard'));
+  ['.stat-row', '.weight-quick', '.stats-6', '#dashAdherence', '#dashWtChart'].forEach(selector => {
+    const element = document.getElementById('pageDash')?.querySelector(selector);
+    if (element) element.closest('.chart-wrap')?.style.setProperty('display', 'none') || element.style.setProperty('display', 'none');
+  });
+  Array.from(document.querySelectorAll('#pageDash > .sec-hdr')).slice(0, 2).forEach(element => element.style.display = 'none');
+}
+
+function calculateShotStreak(shots = []) {
+  const timestamps = shots.map(item => new Date(item.date).getTime()).filter(Number.isFinite).filter(value => value <= Date.now());
+  if (!timestamps.length) return 0;
+  const latest = Math.max(...timestamps);
+  const buckets = new Set(timestamps.map(value => Math.floor((latest - value) / 604800000)));
+  let streak = 0;
+  while (buckets.has(streak)) streak += 1;
+  return streak;
+}
+
+function renderShotStreak(shots, next) {
+  const card = document.getElementById('gnStreakCard');
+  if (!card) return;
+  const weeks = calculateShotStreak(shots);
+  if (weeks < 2) { card.hidden = true; return; }
+  const due = next || new Date(Math.max(...shots.map(item => new Date(item.date).getTime()).filter(Number.isFinite)) + 604800000).toISOString();
+  const date = formatDate(due, { month: 'short', day: 'numeric' });
+  card.hidden = false;
+  setText('gnStreakValue', tx(weeks === 1 ? 'dashboard.weeksInRow_one' : 'dashboard.weeksInRow_other', '{count} WEEKS IN A ROW ✓', { count: weeks }));
+  setText('gnStreakCopy', tx('dashboard.streakCopy', 'Log your next shot by {date} to keep your streak alive.', { date }));
+}
+
+function renderWandaDashboard({ shots, lastShot, lastWeight, next, phase, weightMetrics, goalGap }) {
+  window.GN_I18N?.applyTo?.(document.getElementById('gnWandaDashboard'));
+  setText('gnWandaNextValue', next ? formatDate(next, { month: 'short', day: 'numeric' }) : tx('runtime.logShot', 'LOG SHOT'));
+  let nextNote = tx('dashboard.logShotStartTimeline', 'Log a shot to start your timeline');
+  const nextCard = document.getElementById('gnWandaNext');
+  nextCard?.classList.remove('attention', 'empty');
+  if (next) {
+    const delta = Math.round((parseLocalDate(next).getTime() - parseLocalDate(todayISO()).getTime()) / 86400000);
+    nextNote = delta < 0
+      ? tx('dashboard.daysPastExpected', '{days}d past expected', { days: Math.abs(delta) })
+      : delta === 0 ? tx('dashboard.expectedToday', 'Expected today')
+        : delta === 1 ? tx('dashboard.expectedTomorrow', 'Expected tomorrow')
+          : tx('dashboard.expectedInDays', 'Expected in {days}d', { days: delta });
+    nextCard?.classList.toggle('attention', delta <= 0);
+  } else nextCard?.classList.add('empty');
+  setText('gnWandaNextNote', nextNote);
+  const localizedName = localizedPhaseName(phase);
+  setText('gnWandaPhaseValue', localizedName || tx('dashboard.startWithShot', 'START WITH A SHOT'));
+  setText('gnWandaWeightValue', lastWeight ? Number(lastWeight.weight).toFixed(1) + ' lb' : tx('dashboard.logWeight', 'LOG WEIGHT'));
+  setText('gnWandaLevelValue', localizedName || tx('dashboard.startWithShot', 'START WITH A SHOT'));
+  setText('gnWandaRateValue', weightMetrics.weeklyAverage === null ? tx('dashboard.keepLogging', 'KEEP LOGGING') : tx('dashboard.weeklyRate', '{value} lb/wk', { value: weightMetrics.weeklyAverage.toFixed(1) }));
+  setText('gnWandaGoalValue', goalGap === null ? tx('dashboard.setGoal', 'SET GOAL') : Math.max(0, goalGap).toFixed(1) + ' lb');
+  document.getElementById('gnWandaPhase')?.classList.toggle('empty', !phase);
+  document.getElementById('gnWandaWeight')?.classList.toggle('empty', !lastWeight);
+  document.getElementById('gnWandaLevel')?.classList.toggle('empty', !phase);
+  document.getElementById('gnWandaRate')?.classList.toggle('empty', weightMetrics.weeklyAverage === null);
+  document.getElementById('gnWandaGoal')?.classList.toggle('empty', goalGap === null);
+  renderShotStreak(shots, next);
 }
 
 function calcBMIValue(weight, profile) {
@@ -303,65 +961,149 @@ function nextShotDate(shot, profile) {
 
 function renderPhase(lastShot, shots) {
   if (!lastShot) {
-    setText('phaseNameTxt', 'NO PROTOCOL DATA');
-    setText('phaseNumTxt', 'INITIATE PROTOCOL — log first shot');
+    setText('phaseNameTxt', tx('dashboard.noShotsRecorded', 'NO SHOTS RECORDED'));
+    setText('phaseNumTxt', tx('boot.initiateProtocol', 'INITIATE PROTOCOL — log first shot'));
     setText('phaseTimeSince', '—');
     setText('phaseCyclePosition', '—');
     setText('ringDays', '—');
-    setText('ringPct', 'TAP FAB // LOG FIRST SHOT');
-    setText('phaseNext', '> INITIATE PROTOCOL — log first shot');
-    setText('pibBody', 'Awaiting first logged SHOT — protocol initializes on first record.');
+    setText('ringPct', tx('phase.firstShotCta', 'TAP FAB // LOG FIRST SHOT'));
+    setText('phaseContextText', tx('phase.logShotContext', 'Log a SHOT to see educational cycle context grounded in your own records.'));
+    setText('phaseNext', tx('phase.initiateProtocol', '> INITIATE PROTOCOL — log first shot'));
+    setText('pibBody', tx('phase.awaitingFirstRecord', 'Awaiting first logged SHOT — protocol initializes on first record.'));
+    setText('pibSE', tx('phase.sideEffectsVary', 'Side effects vary by phase and medication.'));
+    setText('pibPay', tx('phase.appetiteSymptoms', 'Track appetite, symptoms, energy, side effects, and notes as your protocol history develops.'));
+    const emptyMarker = document.getElementById('phaseMarker');
+    if (emptyMarker) emptyMarker.hidden = true;
     return null;
   }
   const elapsedDays = Math.max(0, (Date.now() - new Date(lastShot.date).getTime()) / 86400000);
-  const cyclePosition = Math.min((elapsedDays % 7) / 7, 0.999);
+  const cyclePosition = Math.min(elapsedDays / 7, 0.999);
   const phase = PHASES.find(item => cyclePosition >= item.start && cyclePosition < item.end) || PHASES.at(-1);
-  const since = elapsedDays < 1 ? `${Math.round(elapsedDays * 24)}h` : `${Math.floor(elapsedDays)}d ${Math.floor((elapsedDays % 1) * 24)}h`;
-  setText('phaseNameTxt', phase.name);
-  setText('phaseNumTxt', `PHASE ${PHASES.indexOf(phase) + 1} / ${PHASES.length}`);
-  setText('phaseSupportTxt', phase.support);
+  const since = elapsedDays < 1 ? Math.floor(elapsedDays * 24) + 'h' : Math.floor(elapsedDays) + 'd ' + Math.floor((elapsedDays % 1) * 24) + 'h';
+  const phaseName = localizedPhaseName(phase);
+  setText('phaseNameTxt', phaseName);
+  setText('phaseNumTxt', tx('phase.phaseN', 'PHASE {n} / {total}', { n: PHASES.indexOf(phase) + 1, total: PHASES.length }));
+  setText('phaseSupportTxt', localizedPhaseSupport(phase));
+  setText('phaseContextText', localizedPhaseContext(phase));
   setText('phaseTimeSince', since);
-  setText('phaseCyclePosition', `${Math.round(cyclePosition * 100)}% of 7-day reference cycle`);
-  setText('ringDays', `${Math.max(0, 7 - Math.floor(elapsedDays))}d`);
-  setText('ringPct', `${Math.round(cyclePosition * 100)}% CYCLE POSITION`);
-  setText('phaseNext', `> ${phase.name} // ${shots.length} ACTIVE SHOT RECORD${shots.length === 1 ? '' : 'S'}`);
-  setText('pibBody', `${phase.name} visibility is estimated from ${since} since the most recent user-entered SHOT.`);
-  setText('pibSE', lastShot.se?.length ? `Recent logged observations: ${lastShot.se.join(', ')}.` : 'No side effects were attached to the most recent SHOT record.');
-  setText('pibPay', 'Track appetite, symptoms, energy, side effects, and notes as your protocol history develops.');
-  const arc = $('phaseArc');
+  setText('phaseCyclePosition', tx('phase.cyclePct', '{pct}% of 7-day reference cycle', { pct: Math.round(cyclePosition * 100) }));
+  setText('ringDays', tx('phase.daysLeft', '{n}d', { n: Math.max(0, 7 - Math.floor(elapsedDays)) }));
+  setText('ringPct', tx('phase.cyclePositionRing', '{pct}% CYCLE POSITION', { pct: Math.round(cyclePosition * 100) }));
+  setText('phaseNext', tx(shots.length === 1 ? 'phase.activeRecords_one' : 'phase.activeRecords_other', '> {phase} // {n} ACTIVE SHOT RECORDS', { phase: phaseName, n: shots.length }));
+  setText('pibBody', tx('phase.pibBody', '{phase} visibility is estimated from {since} since the most recent user-entered SHOT.', { phase: phaseName, since }));
+  setText('pibSE', lastShot.se?.length ? tx('phase.recentObservations', 'Recent logged observations: {items}.', { items: lastShot.se.map(sideEffectLabel).join(', ') }) : tx('phase.noRecentObservations', 'No side effects were attached to the most recent SHOT record.'));
+  setText('pibPay', tx('phase.appetiteSymptoms', 'Track appetite, symptoms, energy, side effects, and notes as your protocol history develops.'));
+  const arc = document.getElementById('phaseArc');
   if (arc) { const circumference = 678.6; arc.style.strokeDashoffset = String(circumference * (1 - cyclePosition)); arc.style.stroke = phase.color; }
-  const icon = $('phaseIconBox');
-  if (icon) icon.innerHTML = `<span class="gn-icon gn-icon-lg gn-icon-hud" style="color:${phase.color}"><svg><use href="#gn-phase-ring"></use></svg></span>`;
+  const marker = document.getElementById('phaseMarker');
+  if (marker) {
+    const angle = (cyclePosition * Math.PI * 2) - (Math.PI / 2);
+    marker.style.left = (50 + (Math.cos(angle) * 45)) + '%';
+    marker.style.top = (50 + (Math.sin(angle) * 45)) + '%';
+    marker.style.background = phase.color;
+    marker.style.color = phase.color;
+    marker.hidden = false;
+  }
+  const icon = document.getElementById('phaseIconBox');
+  if (icon) icon.innerHTML = '<span class="gn-icon gn-icon-lg gn-icon-hud" style="color:' + phase.color + '"><svg><use href="#gn-phase-ring"></use></svg></span>';
   return phase;
 }
 
 export function showPhasesModal() {
   const content = $('allPhasesContent');
-  if (content) content.innerHTML = PHASES.map((phase, index) => `<div class="gn-phase-row"><span class="gn-phase-index">0${index + 1}</span><div><b style="color:${phase.color}">${phase.name}</b><p>${safeText(phase.support)}</p></div></div>`).join('');
+  if (content) content.innerHTML = PHASES.map((phase, index) => '<div class="gn-phase-row"><span class="gn-phase-index">0' + (index + 1) + '</span><div><b style="color:' + phase.color + '">' + localizedPhaseName(phase) + '</b><p>' + safeText(localizedPhaseSupport(phase)) + '</p></div></div>').join('');
   $('phasesOv')?.classList.add('active');
 }
 export function closePhases() { $('phasesOv')?.classList.remove('active'); }
 
+function ensureShotHistoryFilters() {
+  const controls = $('shotHistoryControls');
+  if (!controls || $('gnShotFilters')) return;
+  controls.insertAdjacentHTML('afterend', `<details class="gn-shot-filters" id="gnShotFilters"><summary><span data-i18n="shots.filterHistory">FILTER SHOT HISTORY</span> <span class="gn-filter-count" id="gnShotFilterCount"></span></summary><div class="gn-shot-filter-grid"><label><span data-i18n="shot.medication">MEDICATION</span><select id="gnShotFilterMedication"><option value="" data-i18n="shots.allMedications">ALL MEDICATIONS</option></select></label><label><span data-i18n="shot.location">LOCATION</span><select id="gnShotFilterSite"><option value="" data-i18n="shots.allLocations">ALL LOCATIONS</option></select></label><label><span data-i18n="shots.dateRange">DATE RANGE</span><select id="gnShotFilterRange"><option value="all" data-i18n="shots.allTime">ALL TIME</option><option value="today" data-i18n="shots.today">TODAY</option><option value="week" data-i18n="shots.thisWeek">THIS WEEK</option><option value="month" data-i18n="shots.thisMonth">THIS MONTH</option></select></label><label><span data-i18n="shots.notesSearch">NOTES SEARCH</span><input id="gnShotFilterQuery" type="search" placeholder="Search notes" data-i18n-placeholder="shots.searchNotes"></label></div><button type="button" class="gn-shot-filter-clear" id="gnShotFilterClear" hidden data-i18n="shots.clearAllFilters">CLEAR ALL FILTERS</button></details>`);
+  window.GN_I18N?.applyTo?.($('gnShotFilters'));
+  $('gnShotFilters')?.addEventListener('input', event => {
+    const id = event.target.id;
+    if (id === 'gnShotFilterMedication') moduleState.shotFilters.medication = event.target.value;
+    if (id === 'gnShotFilterSite') moduleState.shotFilters.site = event.target.value;
+    if (id === 'gnShotFilterRange') moduleState.shotFilters.range = event.target.value;
+    if (id === 'gnShotFilterQuery') moduleState.shotFilters.query = event.target.value;
+    renderShots();
+  });
+  $('gnShotFilterClear')?.addEventListener('click', () => { moduleState.shotFilters = { medication: '', site: '', range: 'all', query: '' }; renderShots(); });
+}
+
+function filterShots(records) {
+  const filters = moduleState.shotFilters;
+  const query = filters.query.trim().toLowerCase();
+  let cutoff = null;
+  if (filters.range === 'today') {
+    const d = new Date(); d.setHours(0,0,0,0); cutoff = d.getTime();
+  } else if (filters.range === 'week') {
+    const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - 6); cutoff = d.getTime();
+  } else if (filters.range === 'month') {
+    const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - 29); cutoff = d.getTime();
+  }
+  return records.filter(record => {
+    if (filters.medication && normalizeMedicationId(record.med) !== filters.medication) return false;
+    if (filters.site && (record.site || '') !== filters.site) return false;
+    if (cutoff && new Date(record.date).getTime() < cutoff) return false;
+    if (query && !String(record.notes || '').toLowerCase().includes(query)) return false;
+    return true;
+  });
+}
+
+function renderShotFilterOptions(records) {
+  const filters = moduleState.shotFilters;
+  const med = $('gnShotFilterMedication');
+  const site = $('gnShotFilterSite');
+  if (med) { const values = [...new Set(records.map(record => normalizeMedicationId(record.med)).filter(Boolean))].sort(); med.innerHTML = `<option value="">${tx('shots.allMedications', 'ALL MEDICATIONS')}</option>` + values.map(value => `<option value="${safeText(value)}">${safeText(medicationLabel(value))}</option>`).join(''); med.value = filters.medication; }
+  if (site) { const values = [...new Set(records.map(record => record.site).filter(Boolean))].sort(); site.innerHTML = `<option value="">${tx('shots.allLocations', 'ALL LOCATIONS')}</option>` + values.map(value => `<option value="${safeText(value)}">${safeText(value)}</option>`).join(''); site.value = filters.site; }
+  const query = $('gnShotFilterQuery'); if (query && query.value !== filters.query) query.value = filters.query;
+  const range = $('gnShotFilterRange'); if (range) range.value = filters.range;
+  const count = Object.values(filters).filter(value => value && value !== 'all').length;
+  setText('gnShotFilterCount', count ? tx(count === 1 ? 'shots.filterActive_one' : 'shots.filterActive_other', '{count} FILTERS ACTIVE', { count }) : '');
+  const clear = $('gnShotFilterClear'); if (clear) clear.hidden = !count;
+}
+
 export function renderShots() {
   renderScanner();
+  ensureShotHistoryFilters();
   const list = $('logList');
   if (!list) return;
   const all = getAllShots();
-  const visible = all.filter(record => moduleState.shotHistoryView === 'archived' ? record.archived : !record.archived).sort((a, b) => new Date(b.date) - new Date(a.date));
-  setText('shotHistoryHelper', moduleState.shotHistoryView === 'archived' ? 'Archived records remain stored for review and can be restored.' : 'Active SHOT records are retained in your local VAULT.');
+  const visible = filterShots(all.filter(record => moduleState.shotHistoryView === 'archived' ? record.archived : !record.archived).sort((a, b) => new Date(b.date) - new Date(a.date)));
+  renderShotFilterOptions(all);
+  installCustomPickers(document);
+  document.addEventListener('gn:langchange', () => {
+    const shotDate = $('sDate');
+    const weightDate = $('wtDate');
+    if (shotDate?.dataset.isoDate) setHumanDateInput(shotDate, shotDate.dataset.isoDate);
+    if (weightDate?.dataset.isoDate) setHumanDateInput(weightDate, weightDate.dataset.isoDate, true);
+    window.requestAnimationFrame(() => {
+      installCustomPickers(document);
+      syncCustomPickers(document);
+      qa('.gn-custom-date').forEach(renderCustomDatePopover);
+      renderScanner();
+    });
+  });
+  syncCustomPickers($('gnShotFilters') || document);
+  setText('shotHistoryHelper', moduleState.shotHistoryView === 'archived' ? tx('shots.archivedRetained', 'Archived records remain stored for review and can be restored.') : tx('shots.activeRecordsRetained', 'Active SHOT records are retained in your local VAULT.'));
   qa('[data-shot-history-view]').forEach(button => button.classList.toggle('active', button.dataset.shotHistoryView === moduleState.shotHistoryView));
   if (!visible.length) {
-    list.innerHTML = `<div class="empty"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span>${moduleState.shotHistoryView === 'archived' ? 'NO ARCHIVED SHOTS' : 'NO SHOTS LOGGED YET'}<br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>LOG YOUR FIRST SHOT</button></div>`;
+    const activeFilters = Object.values(moduleState.shotFilters).some(value => value && value !== 'all');
+    list.innerHTML = `<div class="empty${activeFilters ? '' : ' gn-first-run-card'}"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${activeFilters ? tx('shots.noFilterMatch', 'NO SHOTS MATCH THESE FILTERS.') : moduleState.shotHistoryView === 'archived' ? tx('shots.noArchivedShots', 'NO ARCHIVED SHOTS') : tx('shots.activateYourGrid', 'LOG YOUR FIRST SHOT TO ACTIVATE YOUR GRID')}</b>${activeFilters ? '<br><button class="btn-full btn-secondary empty-cta" type="button" id="gnShotFilterEmptyClear">' + tx('shots.clearFilters', 'CLEAR FILTERS') + '</button>' : '<span class="gn-first-run-sub">' + tx('shots.firstShotSub', 'One shot unlocks the Phase Engine, RESULTS, and your full dashboard.') + '</span><br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>' + tx('shots.logYourFirst', 'LOG YOUR FIRST SHOT') + '</button>'}</div>`;
+    $('gnShotFilterEmptyClear')?.addEventListener('click', () => { moduleState.shotFilters = { medication: '', site: '', range: 'all', query: '' }; renderShots(); });
     return;
   }
   list.innerHTML = visible.map(record => {
     const archived = Boolean(record.archived);
-    return `<article class="log-entry ${archived ? 'archived' : ''}">
-      <div class="log-main"><div><div class="log-date">${archived ? 'ARCHIVED ' : ''}${safeText(formatDateTime(record.date))}</div><div class="log-med">${safeText(MEDICATIONS[record.med] || record.med || 'CUSTOM')}</div></div>
+    return `<article class="log-entry ${archived ? 'archived archived-record' : ''}">
+      <div class="log-main"><div><div class="log-date">${archived ? tx('shots.archivedPrefix', 'ARCHIVED') + ' ' : ''}${safeText(formatDateTime(record.date))}</div><div class="log-med">${safeText(medicationLabel(record.med))}</div></div>
       <div class="log-dose">${safeText(record.dose || '—')}mg</div></div>
-      <div class="log-chips">${record.site ? `<span class="log-chip lc-site">${safeText(record.site)}</span>` : ''}${record.wt ? `<span class="log-chip lc-wt">${safeText(record.wt)}lb</span>` : ''}${record.se?.length ? `<span class="log-chip lc-se">${safeText(record.se.join(', '))}</span>` : ''}</div>
+      <div class="log-chips">${record.site ? `<span class="log-chip lc-site">${safeText(zoneLabel(record.site))}</span>` : ''}${record.deviceId ? `<span class="log-chip lc-site">${tx('shot.deviceUsed', 'DEVICE')}: ${safeText(deviceLabel(record.deviceId) || tx('runtime.notAvailable', 'NOT AVAILABLE'))}</span>` : ''}${record.wt ? `<span class="log-chip lc-wt">${safeText(record.wt)}lb</span>` : ''}${record.se?.length ? `<span class="log-chip lc-se">${safeText(record.se.map(sideEffectLabel).join(', '))}</span>` : ''}</div>
       ${record.notes ? `<div class="log-notes">${safeText(record.notes)}</div>` : ''}
-      <div class="log-actions"><button type="button" class="log-action-btn" data-shot-action="edit" data-shot-id="${safeText(record.id)}" ${archived ? 'disabled' : ''}>EDIT</button><button type="button" class="log-action-btn ${archived ? '' : 'del'}" data-shot-action="${archived ? 'restore' : 'archive'}" data-shot-id="${safeText(record.id)}">${archived ? 'RESTORE' : 'ARCHIVE'}</button></div>
+      <div class="log-actions ${archived ? 'archive-actions' : ''}">${archived ? `<button type="button" class="log-action-btn restore archived-action-btn" data-shot-action="restore-edit" data-shot-id="${safeText(record.id)}"><span class="archive-action-main">${tx('shots.restore', 'RESTORE')}</span><span class="archive-action-sub">${tx('shots.restoreToEdit', 'RESTORE TO EDIT')}</span></button><button type="button" class="log-action-btn del archived-action-btn" data-shot-action="delete" data-shot-id="${safeText(record.id)}"><span class="archive-action-main">${tx('deletePerm.confirm', 'DELETE RECORD')}</span><span class="archive-action-sub">${tx('shots.deletePermanently', 'DELETE PERMANENTLY')}</span></button>` : `<button type="button" class="log-action-btn" data-shot-action="edit" data-shot-id="${safeText(record.id)}">${tx('shots.edit', 'EDIT')}</button><button type="button" class="log-action-btn del" data-shot-action="archive" data-shot-id="${safeText(record.id)}">${tx('shots.archive', 'ARCHIVE')}</button>`}</div>
+      ${archived ? `<div class="shot-history-helper">${tx('shots.archivedRestoreNote', 'Restore the record before editing.')}</div>` : ''}
     </article>`;
   }).join('');
 }
@@ -371,82 +1113,588 @@ export function setShotHistoryView(view) {
   renderShots();
 }
 
+
+/* GN_SCANNER_AUDIO_CONTROLLER_V1_START */
+const GN_SCANNER_AUDIO_STORAGE_KEY = 'gn_scanner_audio_v1';
+const GN_SCANNER_AUDIO_MASTER_GAIN = 0.6;
+const GN_SCANNER_AUDIO_CONTACT_THROTTLE_MS = 45;
+const gnScannerAudioGesture = (() => {
+  const token = Symbol('GNScannerAudioGesture');
+  return Object.freeze({
+    fromEvent(event) { return event?.isTrusted === true ? token : null; },
+    accepts(candidate) { return candidate === token; }
+  });
+})();
+let gnScannerAudioEnabled = false;
+let gnScannerAudioContext = null;
+let gnScannerAudioMaster = null;
+let gnScannerAudioLastContactAt = -Infinity;
+const gnScannerAudioVoices = new Set();
+
+function gnScannerAudioStoredPreference() {
+  try { return localStorage.getItem(GN_SCANNER_AUDIO_STORAGE_KEY) === '1'; } catch (_) { return false; }
+}
+
+function gnScannerAudioRenderSwitch() {
+  const control = $('gnScannerAudioSwitch');
+  if (!control) return;
+  control.setAttribute('aria-checked', gnScannerAudioEnabled ? 'true' : 'false');
+  const label = tx('shots.scannerAudio', 'SCANNER AUDIO');
+  const state = tx(gnScannerAudioEnabled ? 'shots.soundOn' : 'shots.soundOff', gnScannerAudioEnabled ? 'ON' : 'OFF');
+  control.setAttribute('aria-label', label);
+  const stateLabel = control.querySelector('[data-scanner-sound-state]');
+  if (stateLabel) stateLabel.textContent = state;
+}
+
+function gnScannerAudioContextForGesture(gestureToken = null) {
+  if (!gnScannerAudioEnabled || !gnScannerAudioGesture.accepts(gestureToken)) return null;
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return null;
+    if (!gnScannerAudioContext) {
+      gnScannerAudioContext = new AudioContextClass();
+      gnScannerAudioMaster = gnScannerAudioContext.createGain();
+      gnScannerAudioMaster.gain.setValueAtTime(GN_SCANNER_AUDIO_MASTER_GAIN, gnScannerAudioContext.currentTime);
+      gnScannerAudioMaster.connect(gnScannerAudioContext.destination);
+    }
+    if (gnScannerAudioContext.state === 'suspended') {
+      Promise.resolve(gnScannerAudioContext.resume()).catch(() => {});
+    }
+    return gnScannerAudioContext;
+  } catch (_) { return null; }
+}
+
+function gnScannerAudioDisconnectVoice(voice) {
+  try { voice.oscillator.disconnect(); } catch (_) {}
+  try { voice.filter.disconnect(); } catch (_) {}
+  try { voice.gain.disconnect(); } catch (_) {}
+  gnScannerAudioVoices.delete(voice);
+}
+
+function gnScannerAudioStopVoices() {
+  const stopTime = gnScannerAudioContext?.currentTime || 0;
+  for (const voice of Array.from(gnScannerAudioVoices)) {
+    try {
+      voice.gain.gain.cancelScheduledValues(stopTime);
+      voice.gain.gain.setValueAtTime(0, stopTime);
+    } catch (_) {}
+    try { voice.oscillator.stop(stopTime); } catch (_) {}
+    gnScannerAudioDisconnectVoice(voice);
+  }
+  gnScannerAudioVoices.clear();
+}
+
+function gnScannerAudioTone(durationSeconds, frequency, peak, offsetSeconds = 0) {
+  const context = gnScannerAudioContext;
+  if (!context || !gnScannerAudioMaster) return;
+  let voice = null;
+  try {
+    const start = context.currentTime + offsetSeconds;
+    const oscillator = context.createOscillator();
+    const filter = context.createBiquadFilter();
+    const gain = context.createGain();
+    voice = { oscillator, filter, gain };
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(frequency, start);
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(Math.min(frequency * 2, 2200), start);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.linearRampToValueAtTime(Math.min(peak, GN_SCANNER_AUDIO_MASTER_GAIN), start + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + durationSeconds);
+    oscillator.connect(filter);
+    filter.connect(gain);
+    gain.connect(gnScannerAudioMaster);
+    oscillator.onended = () => gnScannerAudioDisconnectVoice(voice);
+    oscillator.start(start);
+    oscillator.stop(start + durationSeconds + 0.02);
+    gnScannerAudioVoices.add(voice);
+  } catch (_) {
+    if (voice) gnScannerAudioDisconnectVoice(voice);
+  }
+}
+
+function gnScannerAudioPlayContact(gestureToken) {
+  if (!gnScannerAudioEnabled) return;
+  const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+  if (now - gnScannerAudioLastContactAt < GN_SCANNER_AUDIO_CONTACT_THROTTLE_MS) return;
+  gnScannerAudioLastContactAt = now;
+  const context = gnScannerAudioContextForGesture(gestureToken);
+  if (!context) return;
+  // 24ms high-frequency tap (sine, 920Hz, fast decay)
+  gnScannerAudioTone(0.024, 920, 0.5);
+}
+
+function gnScannerAudioPlayLock(gestureToken) {
+  if (!gnScannerAudioEnabled) return;
+  const context = gnScannerAudioContextForGesture(gestureToken);
+  if (!context) return;
+  // 110ms descending confirmation tone (sine, 320->96Hz, slow decay)
+  gnScannerAudioTone(0.11, 320, 0.45, 0);
+  gnScannerAudioTone(0.11, 96, 0.45, 0.11);
+}
+
+function gnScannerAudioToggle() {
+  gnScannerAudioEnabled = !gnScannerAudioEnabled;
+  try { localStorage.setItem(GN_SCANNER_AUDIO_STORAGE_KEY, gnScannerAudioEnabled ? '1' : '0'); } catch (_) {}
+  gnScannerAudioRenderSwitch();
+  return gnScannerAudioEnabled;
+}
+
+window.GNScannerAudio = Object.freeze({
+  isEnabled: () => gnScannerAudioEnabled,
+  setEnabled: (value) => {
+    gnScannerAudioEnabled = Boolean(value);
+    try { localStorage.setItem(GN_SCANNER_AUDIO_STORAGE_KEY, gnScannerAudioEnabled ? '1' : '0'); } catch (_) {}
+    gnScannerAudioRenderSwitch();
+    return gnScannerAudioEnabled;
+  },
+  toggle: () => gnScannerAudioToggle(),
+  playContact: gnScannerAudioPlayContact,
+  playLock: gnScannerAudioPlayLock,
+  syncControl: () => gnScannerAudioRenderSwitch()
+});
+
+function initScannerAudioControl() {
+  gnScannerAudioEnabled = gnScannerAudioStoredPreference();
+  gnScannerAudioRenderSwitch();
+}
+
+initScannerAudioControl();
+/* GN_SCANNER_AUDIO_CONTROLLER_V1_END */
+
+/* v0.15.19 SKIN TONE REMOVED - synthetic biotech scanner, single body per mode */
+export function scannerSkinTone() { return null; }
+
+/* v0.15.19 SKIN TONE REMOVED - synthetic biotech scanner, single body per mode */
+export function setScannerSkinTone(tone, button) {
+  /* no-op: skin-tone selector is dead in v0.15.19 */
+  try { localStorage.removeItem('gn_scanner_skin_tone'); } catch (e) {}
+}
+
+/* v0.15.19 INTENSITY REMOVED - single body per mode, no 9-state map */
+function scannerIntensityForMode(mode) { return null; }
+
 export function setScannerMode(mode, button) {
   moduleState.scannerMode = ZONES[mode] ? mode : 'core';
-  qa('.scanner-mode-btn').forEach(item => item.classList.toggle('active', item === button || item.dataset.mode === moduleState.scannerMode));
-  const stage = document.querySelector('.asset-scan-stage');
-  if (stage) { stage.classList.remove('mode-core', 'mode-lower', 'mode-upper'); stage.classList.add(`mode-${moduleState.scannerMode}`); }
-  setText('scannerModeLabel', `${moduleState.scannerMode.toUpperCase()} TRACKABLE ZONES`);
+  /* v0.15.19 - drive .biotech-stage SVG architecture */
+  qa('.scanner-mode-btn').forEach(item => {
+    const active = item === button || item.dataset.mode === moduleState.scannerMode;
+    item.classList.toggle('active', active);
+    item.setAttribute('aria-pressed', active ? 'true' : 'false');
+    item.setAttribute('aria-selected', active ? 'true' : 'false');
+    item.setAttribute('tabindex', active ? '0' : '-1');
+  });
+  clearScannerTransientState();
+  /* toggle .biotech-stage visibility - one stage per mode */
+  qa('.biotech-stage').forEach(stage => {
+    const isActive = stage.dataset.view === moduleState.scannerMode;
+    stage.hidden = !isActive;
+    stage.classList.toggle('active', isActive);
+    if (isActive) {
+      /* re-trigger scanline sweep on stage entry */
+      const scan = stage.querySelector('.biotech-scanline');
+      if (scan) {
+        scan.classList.remove('sweep');
+        void scan.offsetWidth;
+        scan.classList.add('sweep');
+      }
+    }
+  });
+  setText('scannerModeLabel', tx('shots.trackableZones', 'TRACKABLE {zone} ZONES', { zone: scannerModeLabel(moduleState.scannerMode) }));
+  const helper = document.querySelector('#shotsRegionScanner .asset-helper');
+  if (helper) {
+    /* v0.15.19 - GRID//NODE biotech microcopy */
+    const help = {
+      core: tx('shots.coreHint', 'ZONE//CORE - Tap a quadrant around the navel. Center excluded.'),
+      lower: tx('shots.legsHint', 'ZONE//LEGS - Tap the upper or lower front-thigh zone.'),
+      upper: tx('shots.armsHint', 'ZONE//ARMS - Tap a triceps zone above the elbow. Rear view.')
+    };
+    helper.textContent = help[moduleState.scannerMode] || help.core;
+  }
+  installScannerPointerHandlers();
   renderScanner();
 }
 
-export function selectScannerLocation(label) {
+
+export function selectScannerLocation(label, options = {}) {
+  const { source = 'programmatic', feedback = source !== 'programmatic', gestureToken = null } = options;
+  try {
+    localStorage.setItem('gn_scanner_hint_shown', '1');
+    const cap = document.querySelector('.gn-zone-hint-caption');
+    if (cap) cap.remove();
+    document.querySelectorAll('.gn-zone-hint').forEach(el => el.classList.remove('gn-zone-hint'));
+  } catch (e) {}
   moduleState.selectedLocation = label;
   S.set('selectedLocation', label);
   queueCloudSync('workspace');
   renderScanner();
-  showToast(`Location staged: ${label}`);
+  const panel = document.querySelector('#shotsRegionScanner .scanner-selected-panel');
+  if (panel) {
+    panel.classList.add('gn-zone-confirmed');
+    clearTimeout(panel._confirmTimer);
+    panel._confirmTimer = setTimeout(() => panel.classList.remove('gn-zone-confirmed'), 900);
+    let lock = panel.querySelector('.gn-location-lock');
+    if (!lock) {
+      lock = document.createElement('div');
+      lock.className = 'gn-location-lock';
+      lock.setAttribute('role', 'status');
+      lock.setAttribute('aria-live', 'polite');
+      panel.insertBefore(lock, panel.firstChild);
+    }
+    lock.innerHTML = `<small>${tx('shots.locationLocked', 'LOCATION//LOCKED')}</small><span>${safeText(zoneLabel(label))}</span>`;
+    lock.classList.add('is-on');
+  }
+  /* v0.15.19 - drive SVG .zone-path rects; add .zone-acquiring pulse */
+  qa('#shotsRegionScanner .zone-path').forEach(path => {
+    const on = path.getAttribute('data-site') === label;
+    path.classList.toggle('selected', on);
+    path.classList.toggle('selected-active', on);
+    if (on) {
+      path.classList.remove('zone-acquiring');
+      void path.getBoundingClientRect();
+      path.classList.add('zone-acquiring');
+      setTimeout(() => path.classList.remove('zone-acquiring'), 480);
+    }
+  });
+  if (feedback) {
+    try { window.GNScannerAudio?.playLock?.(gestureToken); } catch (_) {}
+    try { gnHaptics.lock(); } catch (_) {}
+  }
+  if ($('logOv')?.classList.contains('active')) {
+    setText('modalSelectedLocation', zoneLabel(label));
+  }
 }
 
+const scannerPointerStates = new WeakMap();
+
 export function renderScanner() {
+  try {
+    if (!localStorage.getItem('gn_scanner_hint_shown')) {
+      setTimeout(() => {
+        if (localStorage.getItem('gn_scanner_hint_shown')) return;
+        /* v0.15.19 - hint targets the first zone-path in the active stage */
+        const zone = document.querySelector('#shotsRegionScanner .biotech-stage:not([hidden]) .zone-path');
+        if (zone && !zone.classList.contains('gn-zone-hint')) {
+          zone.classList.add('gn-zone-hint');
+          const cap = document.createElement('div');
+          cap.className = 'gn-zone-hint-caption';
+          cap.textContent = tx('scanner.tapZoneHint', 'TAP A ZONE');
+          zone.parentElement?.parentElement?.insertBefore(cap, zone.parentElement);
+        }
+      }, 700);
+    }
+  } catch (e) {}
+
   const panel = document.querySelector('#shotsRegionScanner .scanner-selected-panel');
   if (!panel) return;
+  const scanner = document.querySelector('#shotsRegionScanner .site-scanner');
+  scanner?.setAttribute('aria-label', tx('shots.scannerAria', 'GRID//NODE user-entered location scanner'));
+  qa('#shotsRegionScanner .biotech-stage').forEach(stage => {
+    const mode = stage.dataset.view || 'core';
+    const modeLabel = scannerModeLabel(mode);
+    stage.setAttribute('aria-label', tx('shots.scannerPanelAria', '{mode} location scanner', { mode: modeLabel }));
+    stage.querySelector('.biotech-zones')?.setAttribute('aria-label', tx('shots.scannerZonesAria', '{mode} tracking zones', { mode: modeLabel }));
+    qa('.zone-path', stage).forEach(path => path.setAttribute('aria-label', zoneLabel(path.getAttribute('data-site'))));
+  });
   let picker = panel.querySelector('.gn-stable-zone-picker');
   if (!picker) { picker = document.createElement('div'); picker.className = 'gn-stable-zone-picker'; panel.appendChild(picker); }
-  picker.innerHTML = `<div class="gn-stable-zone-title">TRACKABLE ${moduleState.scannerMode.toUpperCase()} ZONES</div>${ZONES[moduleState.scannerMode].map(label => `<button type="button" class="gn-stable-zone-btn ${label === moduleState.selectedLocation ? 'selected' : ''}" data-stable-zone="${safeText(label)}">${safeText(label)}</button>`).join('')}`;
-  setText('scannerSelectedDisplay', moduleState.selectedLocation || 'No location selected');
-  const recent = sortedShots().slice(-4).reverse().map(item => item.site).filter(Boolean);
-  setText('scannerHistoryDisplay', recent.length ? recent.join(' · ') : 'No logged location yet');
-  qa('.zone-overlay').forEach(button => {
-    const visible = button.dataset.mode === moduleState.scannerMode;
-    button.style.pointerEvents = visible ? 'auto' : 'none';
-    button.classList.toggle('selected', button.dataset.site === moduleState.selectedLocation);
+  picker.innerHTML = `<div class="gn-stable-zone-title">${tx('shots.trackableZones', 'TRACKABLE {zone} ZONES', { zone: scannerModeLabel(moduleState.scannerMode) })}</div>${ZONES[moduleState.scannerMode].map(label => `<button type="button" class="gn-stable-zone-btn ${label === moduleState.selectedLocation ? 'selected' : ''}" data-stable-zone="${safeText(label)}" data-zone-key="${safeText(ZONE_IDS[label] || '')}" aria-pressed="${label === moduleState.selectedLocation ? 'true' : 'false'}">${safeText(zoneLabel(label))}</button>`).join('')}`;
+  setText('scannerSelectedDisplay', zoneLabel(moduleState.selectedLocation) || tx('shots.noLocationSelected', 'No location selected'));
+  const recent = sortedShots().slice(-6).reverse().map(item => item.site).filter(Boolean);
+  const uniqRecent = [...new Set(recent)];
+  const lastSite = uniqRecent[0] || '';
+  setText('scannerHistoryDisplay', uniqRecent.length ? uniqRecent.slice(0, 4).map(zoneLabel).join(' · ') : tx('shots.noLoggedLocationYet', 'No logged location yet'));
+  const lock = panel.querySelector('.gn-location-lock');
+  if (lock && moduleState.selectedLocation) {
+    lock.innerHTML = `<small>${tx('shots.locationLocked', 'LOCATION//LOCKED')}</small><span>${safeText(zoneLabel(moduleState.selectedLocation))}</span>`;
+    lock.classList.add('is-on');
+  } else if (lock) {
+    lock.classList.remove('is-on');
+  }
+  /* v0.15.19 - drive .zone-path SVG rects in the active .biotech-stage */
+  qa('#shotsRegionScanner .biotech-stage:not([hidden]) .zone-path').forEach(path => {
+    const site = path.getAttribute('data-site');
+    const isSel = site === moduleState.selectedLocation;
+    path.classList.toggle('selected', isSel);
+    path.classList.toggle('selected-active', isSel);
+    path.classList.toggle('last', Boolean(lastSite && site === lastSite && site !== moduleState.selectedLocation));
+    path.classList.toggle('recent', Boolean(site && uniqRecent.includes(site) && site !== lastSite && site !== moduleState.selectedLocation));
+    path.classList.toggle('is-dim', Boolean(moduleState.selectedLocation && !isSel));
+    path.setAttribute('aria-pressed', isSel ? 'true' : 'false');
   });
+  /* v0.15.19 - no skin-tone asset sync. Single body per mode. Image already set in HTML. */
+}
+
+
+/* v0.15.19 SCANNER POINTER + HIT-TEST ENGINE */
+function pointerToSvgPoint(svg, clientX, clientY) {
+  const point = (typeof DOMPoint === "function") ? new DOMPoint(clientX, clientY) : { x: clientX, y: clientY, matrixTransform: function(m) { return { x: clientX * m.a + m.e, y: clientY * m.d + m.f }; } };
+  const ctm = svg.getScreenCTM();
+  if (!ctm) return null;
+  return point.matrixTransform(ctm.inverse());
+}
+
+function hitTestScannerZone(svg, clientX, clientY) {
+  const sp = pointerToSvgPoint(svg, clientX, clientY);
+  if (!sp) return null;
+  /* Try native path.isPointInFill first */
+  const hitPaths = svg.querySelectorAll(".zone-hit");
+  for (let i = 0; i < hitPaths.length; i++) {
+    const p = hitPaths[i];
+    if (typeof p.isPointInFill === "function") {
+      try { if (p.isPointInFill(sp)) return p; } catch (e) {}
+    }
+  }
+  /* Fallback: nearest zone by distance (should never trigger on real devices) */
+  return null;
+}
+
+function installScannerPointerHandlers() {
+  if (window.__gnScannerPointerInstalled) return;
+  window.__gnScannerPointerInstalled = true;
+  const TAP_THRESHOLD = 10; /* px */
+  qa("#shotsRegionScanner .biotech-stage").forEach(stage => {
+    const svg = stage.querySelector(".biotech-zones");
+    if (!svg || svg.__gnPointerBound) return;
+    svg.__gnPointerBound = true;
+    const clearPointerState = (releaseCapture = true) => {
+      const state = scannerPointerStates.get(svg);
+      if (!state) return;
+      if (state.candidate) state.candidate.classList.remove('pressed');
+      if (releaseCapture && state.pointerId !== null) {
+        try { svg.releasePointerCapture(state.pointerId); } catch (_) {}
+      }
+      scannerPointerStates.delete(svg);
+    };
+    svg.addEventListener("pointerdown", (e) => {
+      if (stage.hidden) return;
+      clearPointerState();
+      const candidate = hitTestScannerZone(svg, e.clientX, e.clientY);
+      const state = {
+        pointerId: e.pointerId,
+        startX: e.clientX,
+        startY: e.clientY,
+        candidate,
+        cancelled: !candidate
+      };
+      scannerPointerStates.set(svg, state);
+      if (candidate) {
+        try { window.GNScannerAudio?.playContact?.(gnScannerAudioGesture.fromEvent(e)); } catch (_) {}
+        try { svg.setPointerCapture(e.pointerId); } catch (_) {}
+        candidate.classList.add("pressed");
+      }
+    }, { passive: true });
+    svg.addEventListener("pointermove", (e) => {
+      const state = scannerPointerStates.get(svg);
+      if (!state || state.pointerId !== e.pointerId) return;
+      const dx = e.clientX - state.startX, dy = e.clientY - state.startY;
+      if (Math.hypot(dx, dy) > TAP_THRESHOLD) {
+        state.cancelled = true;
+        if (state.candidate) state.candidate.classList.remove("pressed");
+      }
+    }, { passive: true });
+    function endPointer(e) {
+      const state = scannerPointerStates.get(svg);
+      if (!state || state.pointerId !== e.pointerId) return;
+      const endpoint = hitTestScannerZone(svg, e.clientX, e.clientY);
+      const candidate = state.candidate;
+      const validTap = !state.cancelled && candidate && endpoint === candidate;
+      const site = validTap ? candidate.getAttribute("data-site") : '';
+      clearPointerState();
+      if (site) selectScannerLocation(site, { source: 'pointer', gestureToken: gnScannerAudioGesture.fromEvent(e) });
+    }
+    svg.addEventListener("pointerup", endPointer, { passive: true });
+    svg.addEventListener("pointercancel", () => clearPointerState(), { passive: true });
+    svg.addEventListener("lostpointercapture", () => clearPointerState(false), { passive: true });
+    /* Keyboard a11y */
+    qa("#shotsRegionScanner .zone-path").forEach(zp => {
+      if (zp.__gnKeyBound) return;
+      zp.__gnKeyBound = true;
+      zp.addEventListener("keydown", (e) => {
+        if ((e.key === "Enter" || e.key === " ") && !e.repeat) {
+          e.preventDefault();
+          const site = zp.getAttribute("data-site");
+          if (site) {
+            selectScannerLocation(site, { source: 'keyboard', gestureToken: gnScannerAudioGesture.fromEvent(e) });
+          }
+        }
+      });
+    });
+  });
+}
+
+function clearScannerTransientState() {
+  qa('#shotsRegionScanner .zone-path.pressed, #shotsRegionScanner .zone-path.zone-acquiring')
+    .forEach(path => path.classList.remove('pressed', 'zone-acquiring'));
+}
+
+/* v0.15.19 SCANNER DEBUG MODE - ?scannerDebug=1 */
+function installScannerDebugMode() {
+  if (!/[?&]scannerDebug=1\b/.test(location.search)) return;
+  qa("#shotsRegionScanner .zone-path").forEach(zp => {
+    zp.classList.add("debug-on");
+  });
+  document.addEventListener("pointermove", (e) => {
+    const svg = (e.target && e.target.closest && e.target.closest(".biotech-zones")) || null;
+    if (!svg) return;
+    const sp = pointerToSvgPoint(svg, e.clientX, e.clientY);
+    if (!sp) return;
+    let zoneId = "none", matches = 0;
+    qa(svg, ".zone-hit").forEach(p => {
+      if (typeof p.isPointInFill === "function") {
+        try { if (p.isPointInFill(sp)) { matches++; zoneId = p.getAttribute("data-site") || zoneId; } } catch (err) {}
+      }
+    });
+    let dbg = document.getElementById("__gnScannerDebug");
+    if (!dbg) {
+      dbg = document.createElement("pre");
+      dbg.id = "__gnScannerDebug";
+      dbg.style.cssText = "position:fixed;bottom:80px;left:8px;z-index:99999;background:rgba(0,0,0,0.85);color:#06BBE3;font:11px monospace;padding:6px 8px;border:1px solid #06BBE3;border-radius:4px;pointer-events:none;white-space:pre;";
+      document.body.appendChild(dbg);
+    }
+    dbg.textContent = "SCREEN " + Math.round(e.clientX) + "," + Math.round(e.clientY) + "\nSVG " + Math.round(sp.x) + "," + Math.round(sp.y) + "\nZONE " + zoneId + "\nMATCHES " + matches;
+  }, { passive: true });
 }
 
 export function openLogModal(options = {}) {
   const modal = $('logOv');
   if (!modal) return;
-  const preserveDraft = Boolean(options.preserve || moduleState.pendingLocationDraft);
+  let draftDeviceId = '';
+  if (!modal.querySelector('[data-gn-shot-step="timing"]')) {
+    modal.querySelector('.gn-shot-datetime-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="timing">' + tx('shot.timing', '01 // TIMING') + '</div>');
+    $('cpShotMed')?.closest('.form-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="protocol">' + tx('shot.protocol', '02 // PROTOCOL') + '</div>');
+    $('modalSelectedLocation')?.closest('.form-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="location">' + tx('shot.location', '03 // LOCATION') + '</div>');
+  }
+  const preserveDraft = Boolean(options.preserve || moduleState.pendingLocationDraft || moduleState.shotDraft);
   moduleState.pendingLocationDraft = false;
+  if (preserveDraft && moduleState.shotDraft) {
+    // Restore the full unsaved draft (canonical med key + every entered field).
+    const d = moduleState.shotDraft;
+    const draftMedicationId = normalizeMedicationId(d.med);
+    if (draftMedicationId) setSelect('cpShotMed', draftMedicationId, medicationLabel(draftMedicationId));
+    if ($('sDose')) $('sDose').value = d.dose || '';
+    setHumanDateInput($('sDate'), d.date || todayISO());
+    if ($('sTime')) $('sTime').value = d.time || '';
+    if (d.meridiem) moduleState.meridiem = d.meridiem;
+    if ($('sWt')) $('sWt').value = d.wt || '';
+    if ($('sNotes')) $('sNotes').value = d.notes || '';
+    draftDeviceId = d.deviceId || '';
+    if (Array.isArray(d.se)) {
+      const draftSideEffects = d.se.map(normalizeSideEffectId);
+      qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = draftSideEffects.includes(input.value); });
+    }
+    moduleState.shotDraft = null; // consumed once
+  }
   if (!preserveDraft) {
     moduleState.editingShotId = null;
-    document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode('LOG SHOT'));
+    document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode(tx('shot.logShot', 'LOG SHOT')));
     setTodayDefaults();
     const profile = getProfile();
-    if (profile.med) setSelect('cpShotMed', profile.med, MEDICATIONS[profile.med] || profile.med);
+    const profileMedicationId = normalizeMedicationId(profile.med);
+    if (profileMedicationId) setSelect('cpShotMed', profileMedicationId, medicationLabel(profileMedicationId));
     if (profile.dose && $('sDose')) $('sDose').value = profile.dose;
     if ($('sWt')) $('sWt').value = '';
     if ($('sNotes')) $('sNotes').value = '';
     qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = false; });
   }
-  setText('modalSelectedLocation', moduleState.selectedLocation || 'No location selected');
-  setText('logLocationAction', moduleState.selectedLocation ? 'CHANGE LOGGED LOCATION' : 'SELECT LOGGED LOCATION');
+  setText('modalSelectedLocation', zoneLabel(moduleState.selectedLocation) || tx('shots.noLocationSelected', 'No location selected'));
+  setText('logLocationAction', moduleState.selectedLocation ? tx('shots.changeLoggedLocation', 'CHANGE LOGGED LOCATION') : tx('shots.selectLoggedLocation', 'SELECT LOGGED LOCATION'));
+  renderShotDevicePicker(draftDeviceId);
+  if (!modal.querySelector('.gn-drawer-handle')) modal.insertAdjacentHTML('afterbegin', '<div class="gn-drawer-handle" aria-hidden="true"></div>');
   modal.classList.add('active');
 }
 
-export function closeLog() {
+function renderShotDevicePicker(selectedId = '') {
+  const picker = $('shotDeviceId');
+  if (!picker) return;
+  const devices = S.get('devices', []).filter(device => !device.archived);
+  picker.innerHTML = `<option value="">${tx('shot.unknownDevice', 'Unknown / Not applicable')}</option>${devices.map(device => `<option value="${safeText(device.id)}">${safeText(device.name)} · ${safeText(deviceStatusLabel(device.status))}</option>`).join('')}`;
+  picker.value = selectedId || '';
+}
+
+function isShotFormDirty() {
+  const editingId = moduleState.editingShotId;
+  if (editingId) {
+    const original = getAllShots().find(item => item.id === editingId);
+    if (!original) return false;
+    const medNow = selectState.cpShotMed?.val || '';
+    const doseNow = $('sDose')?.value?.trim() || '';
+    const dateNow = readHumanDateInput($('sDate')) || '';
+    const timeNow = $('sTime')?.value?.trim() || '';
+    const notesNow = $('sNotes')?.value?.trim() || '';
+    const wtNow = $('sWt')?.value?.trim() || '';
+    if (medNow && medNow !== normalizeMedicationId(original.med)) return true;
+    if (doseNow && Number(doseNow) !== Number(original.dose)) return true;
+    if (dateNow && dateNow !== String(original.date || '').slice(0, 10)) return true;
+    if (timeNow && timeNow !== formatTime12(new Date(original.date))) return true;
+    if (notesNow !== (original.notes || '')) return true;
+    if (wtNow && Number(wtNow) !== Number(original.wt)) return true;
+    const seNow = qa('#logOv input[type="checkbox"]:checked').map(input => input.value).sort().join(',');
+    const seOrig = (original.se || []).map(normalizeSideEffectId).sort().join(',');
+    if (seNow !== seOrig) return true;
+    return false;
+  }
+  const hasNotes = Boolean($('sNotes')?.value?.trim());
+  const hasWt = Number($('sWt')?.value) > 0;
+  const hasSe = qa('#logOv input[type="checkbox"]:checked').length > 0;
+  if (hasNotes || hasWt || hasSe) return true;
+  const hasMed = Boolean(selectState.cpShotMed?.val);
+  const hasDose = Number($('sDose')?.value) > 0;
+  if (!hasMed && !hasDose) return false;
+  const profile = getProfile();
+  const profileMed = normalizeMedicationId(profile.med);
+  const prefilledFromProfile = Boolean(profileMed) && hasMed && (Number($('sDose')?.value) === Number(profile.dose) || !profile.dose);
+  if (prefilledFromProfile) return false;
+  return true;
+}
+
+function cancelShotDiscard() { $('shotDiscardConfirmOv')?.classList.remove('active'); if ($('shotDiscardConfirmOv')) $('shotDiscardConfirmOv').style.display = 'none'; }
+
+function confirmShotDiscard() {
+  $('shotDiscardConfirmOv')?.classList.remove('active');
+  if ($('shotDiscardConfirmOv')) $('shotDiscardConfirmOv').style.display = 'none';
   $('logOv')?.classList.remove('active');
   moduleState.pendingLocationDraft = false;
+  moduleState.shotDraft = null;
+  moduleState.editingShotId = null;
+}
+
+export function closeLog(force = false) {
+  const dirty = isShotFormDirty();
+  if (dirty && !force) {
+    const ov = $('shotDiscardConfirmOv');
+    if (ov) { ov.style.display = 'flex'; requestAnimationFrame(() => ov.classList.add('active')); }
+    return;
+  }
+  $('logOv')?.classList.remove('active');
+  moduleState.pendingLocationDraft = false;
+  moduleState.shotDraft = null;
   moduleState.editingShotId = null;
 }
 
 export function editShot(id) {
   const record = getAllShots().find(item => item.id === id && !item.archived);
   if (!record) return;
+  // Never let a pending location-detour draft hijack an EDIT session.
+  moduleState.shotDraft = null;
   moduleState.editingShotId = id;
-  setText('modalSelectedLocation', record.site || 'No location selected');
+  setText('modalSelectedLocation', zoneLabel(record.site) || tx('shots.noLocationSelected', 'No location selected'));
   moduleState.selectedLocation = record.site || moduleState.selectedLocation;
-  if ($('sDate')) $('sDate').value = record.date?.slice(0, 10) || todayISO();
-  if ($('sTime')) $('sTime').value = formatTime12(new Date(record.date));
-  moduleState.meridiem = new Date(record.date).getHours() >= 12 ? 'PM' : 'AM';
+  const recordDate = new Date(record.date);
+  const safeRecordDate = Number.isNaN(recordDate.getTime()) ? new Date() : recordDate;
+  setHumanDateInput($('sDate'), record.date?.slice(0, 10) || todayISO());
+  if ($('sTime')) $('sTime').value = formatTime12(safeRecordDate);
+  moduleState.meridiem = safeRecordDate.getHours() >= 12 ? 'PM' : 'AM';
   updateMeridiemButtons();
-  setSelect('cpShotMed', record.med, MEDICATIONS[record.med] || record.med);
+  const medicationId = normalizeMedicationId(record.med);
+  setSelect('cpShotMed', medicationId, medicationLabel(medicationId));
   if ($('sDose')) $('sDose').value = record.dose || '';
   if ($('sWt')) $('sWt').value = record.wt || '';
   if ($('sNotes')) $('sNotes').value = record.notes || '';
-  qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = record.se?.includes(input.value); });
-  document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode('EDIT SHOT'));
+  renderShotDevicePicker(record.deviceId || '');
+  const recordSideEffects = (record.se || []).map(normalizeSideEffectId);
+  qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = recordSideEffects.includes(input.value); });
+  document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode(tx('shot.editShot', 'EDIT SHOT')));
   openLogModal({ preserve: true });
 }
 
@@ -460,23 +1708,68 @@ export function confirmArchiveShot() {
   if (!record) return;
   record.archived = true;
   record.archivedAt = new Date().toISOString();
-  S.set('shots', all);
+  record.modifiedAt = record.archivedAt;
+  if (!S.set('shots', all)) { showToast(tx('shots.archiveStorageError', 'Could not archive — storage unavailable.'), true); return; }
   queueCloudSync('shot', record);
   refreshAll();
-  showToast('SHOT record archived.');
+  showToast(tx('runtime.shotArchived', 'SHOT record archived.'));
 }
 
 export function restoreArchivedShot(id) {
   const all = getAllShots();
   const record = all.find(item => item.id === id);
-  if (!record) return;
+  if (!record) return false;
+  const now = new Date().toISOString();
+  const restoredWeights = Array.isArray(record.undoSnapshot?.linkedWeights) ? record.undoSnapshot.linkedWeights.map(weight => ({ ...weight })) : [];
+  const ops = [];
+  let inventoryChanged = false;
+  if (record.inventoryDeductionReversed?.itemId && Number(record.inventoryDeductionReversed.amount) > 0) {
+    const reversed = record.inventoryDeductionReversed;
+    const inventory = S.get('inventory', []);
+    const item = inventory.find(candidate => candidate.id === reversed.itemId);
+    const amount = Number(reversed.amount);
+    if (!item || Number(item.quantity) < amount) {
+      showToast(tx('shots.restoreInventoryUnavailable', 'Could not restore — linked inventory is unavailable.'), true);
+      return false;
+    }
+    item.quantity = Number(item.quantity) - amount;
+    item.modifiedAt = now;
+    item.history = [...(item.history || []), { at: now, action: 'AUTO-DEDUCTION REAPPLIED FOR SHOT RESTORE', source: 'System Generated', shotId: record.id }];
+    record.inventoryDeduction = { itemId: reversed.itemId, amount, unit: reversed.unit || 'mg' };
+    delete record.inventoryDeductionReversed;
+    ops.push({ key: 'inventory', value: inventory });
+    inventoryChanged = true;
+  }
+  if (restoredWeights.length) {
+    const restoredIds = new Set(restoredWeights.map(weight => weight.id));
+    const restoredCloudIds = new Set(restoredWeights.map(weight => weight.cloudId).filter(Boolean));
+    const weights = getWeights().filter(weight => !restoredIds.has(weight.id) && !(weight.cloudId && restoredCloudIds.has(weight.cloudId)));
+    weights.push(...restoredWeights);
+    ops.push({ key: 'weights', value: weights });
+    const pending = S.get('cloudDeletes', []);
+    const nextPending = pending.filter(item => !(item.table === 'weights' && restoredCloudIds.has(item.id)));
+    if (nextPending.length !== pending.length) ops.push({ key: 'cloudDeletes', value: nextPending });
+  }
   record.archived = false;
   record.archivedAt = null;
-  S.set('shots', all);
+  record.modifiedAt = now;
+  delete record.undoSnapshot;
+  ops.unshift({ key: 'shots', value: all });
+  if (!S.multiWrite(ops)) { showToast(tx('shots.restoreStorageError', 'Could not restore — storage unavailable.'), true); return false; }
   queueCloudSync('shot', record);
+  restoredWeights.forEach(weight => queueCloudSync('weight', weight));
+  if (inventoryChanged) queueCloudSync('workspace');
   moduleState.shotHistoryView = 'active';
   refreshAll();
-  showToast('SHOT record restored.');
+  showToast(tx('shots.restored', 'SHOT record restored.'));
+  return true;
+}
+
+function restoreArchivedShotToEdit(id) {
+  if (!restoreArchivedShot(id)) return;
+  moduleState.shotHistoryView = 'active';
+  renderShots();
+  editShot(id);
 }
 
 export function openPermanentDeleteConfirm(id) { moduleState.pendingPermanentDeleteId = id; $('permanentDeleteConfirmOv')?.classList.add('active'); }
@@ -485,54 +1778,179 @@ export async function confirmPermanentDeleteShot() {
   const id = moduleState.pendingPermanentDeleteId;
   cancelPermanentDeleteShot();
   const record = getAllShots().find(item => item.id === id);
+  if (!record) return;
   const next = getAllShots().filter(item => item.id !== id);
-  S.set('shots', next);
+  const plan = planPermanentShotDelete(record, getWeights(), S.get('cloudDeletes', []));
+  const ops = [
+    { key: 'shots', value: next },
+    { key: 'weights', value: plan.remainingWeights },
+    { key: 'cloudDeletes', value: plan.cloudDeletes },
+  ];
+  if (plan.inventoryReturn?.itemId && Number(plan.inventoryReturn.amount) > 0) {
+    const inventory = S.get('inventory', []);
+    const item = inventory.find(candidate => candidate.id === plan.inventoryReturn.itemId);
+    if (item) {
+      const at = new Date().toISOString();
+      item.quantity = Number(item.quantity || 0) + Number(plan.inventoryReturn.amount);
+      item.modifiedAt = at;
+      item.history = [...(item.history || []), { at, action: 'AUTO-DEDUCTION REVERSED FOR SHOT DELETE', source: 'System Generated', shotId: record.id }];
+      ops.push({ key: 'inventory', value: inventory });
+    }
+  }
+  if (!S.multiWrite(ops)) { showToast(tx('shots.deleteStorageUnavailable', 'Could not delete — storage unavailable.'), true); return; }
+  appendEventLedger({ type: 'SHOT', recordId: record.id, date: record.date, label: 'SHOT DELETED' });
   refreshAll();
-  const cloudDeleted = await deleteCloudShot(record);
-  showToast(cloudDeleted ? 'Archived record deleted.' : 'Deleted locally. Cloud deletion queued for retry.');
+  const cloudDeleted = plan.cloudDeletes.length ? await flushCloudDeletes() : true;
+  showToast(cloudDeleted ? tx('shots.deletedCloud', 'Archived record deleted.') : tx('shots.deletedLocalQueued', 'Deleted locally. Cloud deletion queued for retry.'));
 }
 
 export function saveShot(allowFuture = false) {
-  const med = selectState.cpShotMed?.val;
-  const dose = Number($('sDose')?.value);
-  const date = normalizeDateInput($('sDate')?.value);
-  const time = getShotTime24($('sTime')?.value);
-  const site = moduleState.selectedLocation;
-  if (!med || !dose || !date || !time || !site) { showToast('Add medication, dose, date, time, and a logged location.', true); return; }
-  const dateTime = new Date(`${date}T${time}`);
-  if (!allowFuture && dateTime > new Date()) { moduleState.pendingFutureShot = true; $('futureTimestampConfirm')?.classList.add('active'); return; }
-  const existing = moduleState.editingShotId ? getAllShots().find(item => item.id === moduleState.editingShotId) : null;
-  const record = {
-    ...(existing || {}), id: existing?.id || createId('shot'), date: `${date}T${time}`,
-    med, dose, site, wt: Number($('sWt')?.value) || null,
-    notes: $('sNotes')?.value?.trim() || null,
-    se: qa('#logOv input[type="checkbox"]:checked').map(input => input.value),
-    archived: false, archivedAt: null, createdAt: existing?.createdAt || new Date().toISOString()
-  };
-  const all = getAllShots();
-  const index = all.findIndex(item => item.id === record.id);
-  if (index >= 0) all[index] = record; else all.push(record);
-  S.set('shots', all);
-  queueCloudSync('shot', record);
-  if (record.wt) {
+  if (moduleState.savingShot) return;
+  moduleState.savingShot = true;
+  try {
+    const med = normalizeMedicationId(selectState.cpShotMed?.val);
+    const dose = Number($('sDose')?.value);
+    const weightRaw = String($('sWt')?.value || '').trim();
+    const weight = weightRaw ? Number(weightRaw) : null;
+    const date = readHumanDateInput($('sDate'));
+    const time = getShotTime24($('sTime')?.value);
+    const site = moduleState.selectedLocation;
+    qa('#logOv [aria-invalid="true"]').forEach(field => field.removeAttribute('aria-invalid'));
+    const invalidFields = [];
+    if (!med) invalidFields.push($('cpShotMed'));
+    if (!(Number.isFinite(dose) && dose > 0)) invalidFields.push($('sDose'));
+    if (!date) invalidFields.push($('sDate'));
+    if (!time) invalidFields.push($('sTime'));
+    if (!site) invalidFields.push($('logLocationAction'));
+    if (invalidFields.length) {
+      invalidFields.filter(Boolean).forEach(field => field.setAttribute('aria-invalid', 'true'));
+      invalidFields.find(Boolean)?.focus?.();
+      showToast(tx('shots.requiredFields', 'Add medication, dose, date, time, and a logged location.'), true);
+      return;
+    }
+    if (weightRaw && !(Number.isFinite(weight) && weight > 0)) {
+      $('sWt')?.setAttribute('aria-invalid', 'true');
+      $('sWt')?.focus();
+      showToast(tx('shots.validWeightRequired', 'Optional weight must be greater than zero.'), true);
+      return;
+    }
+    // FAIL CLOSED: never persist a medication that isn't a known canonical key.
+    // Ambiguous/invalid historical values must be corrected, never silently mapped.
+    if (!Object.prototype.hasOwnProperty.call(MEDICATIONS, med)) {
+      showToast(tx('shots.validMedicationRequired', 'Select a valid medication for this record.'), true);
+      moduleState.savingShot = false;
+      return;
+    }
+    const dateTime = new Date(`${date}T${time}`);
+    if (!allowFuture && dateTime > new Date()) { moduleState.pendingFutureShot = true; $('futureTimestampConfirm')?.classList.add('active'); return; }
+    const existing = moduleState.editingShotId ? getAllShots().find(item => item.id === moduleState.editingShotId) : null;
+    const record = {
+      ...(existing || {}), id: existing?.id || createId('shot'), date: `${date}T${time}`,
+      med, dose, site, deviceId: $('shotDeviceId')?.value || null, wt: weight,
+      notes: $('sNotes')?.value?.trim() || null,
+      se: qa('#logOv input[type="checkbox"]:checked').map(input => normalizeSideEffectId(input.value)),
+      archived: false, archivedAt: null, createdAt: existing?.createdAt || new Date().toISOString(),
+      modifiedAt: new Date().toISOString(),
+      source: existing?.source || 'manual', state: existing?.state || 'confirmed'
+    };
+    if (state.cloud) ensureCloudRecordId(record);
+    const all = getAllShots();
+    const index = all.findIndex(item => item.id === record.id);
+    // B4: compute the next inventory state WITHOUT writing (pure prep).
+    const { inventory, changed } = prepareInventoryForShot(record, existing);
+    if (index >= 0) all[index] = record; else all.push(record);
+    // B4: single atomic batch — SHOT record + inventory + linked weight.
+    const ops = [{ key: 'shots', value: all }];
+    if (changed) ops.push({ key: 'inventory', value: inventory });
+    let weightRecord = null;
+    let removedLinkedWeight = null;
     const weights = getWeights();
     const linkedIndex = weights.findIndex(item => item.shotId === record.id || (
       existing && !item.shotId && item.notes === 'Logged with SHOT'
       && item.date === existing.date && Number(item.weight) === Number(existing.wt)
     ));
-    const linkedWeight = linkedIndex >= 0 ? weights[linkedIndex] : null;
-    const weightRecord = {
-      ...(linkedWeight || {}), id: linkedWeight?.id || createId('weight'), shotId: record.id,
-      date: record.date, weight: record.wt, notes: 'Logged with SHOT'
-    };
-    if (linkedIndex >= 0) weights[linkedIndex] = weightRecord; else weights.push(weightRecord);
-    S.set('weights', weights); queueCloudSync('weight', weightRecord);
+    if (record.wt !== null) {
+      const linkedWeight = linkedIndex >= 0 ? weights[linkedIndex] : null;
+      weightRecord = {
+        ...(linkedWeight || {}), id: linkedWeight?.id || createId('weight'), shotId: record.id,
+        shotCloudId: record.cloudId || linkedWeight?.shotCloudId || null,
+        date: record.date, weight: record.wt, notes: 'Logged with SHOT', source: 'shot',
+        createdAt: linkedWeight?.createdAt || new Date().toISOString(), modifiedAt: record.modifiedAt
+      };
+      if (state.cloud) ensureCloudRecordId(weightRecord);
+      if (linkedIndex >= 0) weights[linkedIndex] = weightRecord; else weights.push(weightRecord);
+      ops.push({ key: 'weights', value: weights });
+    } else if (linkedIndex >= 0) {
+      removedLinkedWeight = weights[linkedIndex];
+      weights.splice(linkedIndex, 1);
+      ops.push({ key: 'weights', value: weights });
+    }
+    let queuedCloudDelete = false;
+    if (removedLinkedWeight?.cloudId) {
+      const pending = S.get('cloudDeletes', []);
+      if (!pending.some(item => item.table === 'weights' && item.id === removedLinkedWeight.cloudId)) pending.push({ table: 'weights', id: removedLinkedWeight.cloudId });
+      ops.push({ key: 'cloudDeletes', value: pending });
+      queuedCloudDelete = true;
+    }
+    if (!S.multiWrite(ops)) {
+      showToast(tx('shots.storageFull', 'SHOT could not be saved — storage is full.'), true);
+      return;
+    }
+    // Cloud sync ONLY after the local batch committed atomically.
+    const shotSync = queueCloudSync('shot', record);
+    if (changed) queueCloudSync('workspace');
+    // Preserve the FK order once shot_id is available. The cloud functions
+    // remain fail-safe and queued if the shot upsert itself cannot complete.
+    if (weightRecord) shotSync.then(() => queueCloudSync('weight', weightRecord));
+    if (queuedCloudDelete) flushCloudDeletes();
+    appendEventLedger({ type: 'SHOT', recordId: record.id, date: record.date, label: existing ? 'SHOT UPDATED' : 'SHOT EVENT CONFIRMED' });
+    moduleState.pendingFutureShot = false;
+    $('futureTimestampConfirm')?.classList.remove('active');
+    closeLog(true);
+    refreshAll();
+    const shotTimeLabel = formatTime12(new Date(record.date));
+    const shotDetail = `${record.dose}mg ${medicationLabel(normalizeMedicationId(record.med))} · ${zoneLabel(record.site)}`;
+    showToast(`${tx('toast.shotLogged', 'Dosis registrada')} · ${shotTimeLabel}`, false, () => undoShot(record.id), shotDetail);
+    return record;
+  } finally {
+    moduleState.savingShot = false;
   }
-  moduleState.pendingFutureShot = false;
-  $('futureTimestampConfirm')?.classList.remove('active');
-  closeLog();
-  refreshAll();
-  showToast(existing ? 'SHOT record updated.' : 'SHOT recorded.');
+}
+
+function prepareInventoryForShot(record, existing) {
+  // Pure prep (B4): computes the next inventory state WITHOUT writing storage.
+  const inventory = S.get('inventory', []);
+  let changed = false;
+  const matchingItem = () => inventory.find(candidate => {
+    const medicationId = normalizeMedicationId(candidate.medication || candidate.name);
+    return !candidate.archived && candidate.autoDeduct && String(candidate.units || '').toLowerCase() === 'mg' && medicationId === record.med;
+  });
+  const prior = existing?.inventoryDeduction;
+  const unchangedItem = matchingItem();
+  if (prior?.itemId && Number(prior.amount) > 0 && unchangedItem?.id === prior.itemId && Number(prior.amount) === Number(record.dose)) {
+    record.inventoryDeduction = { ...prior };
+    return { inventory, changed: false };
+  }
+  if (prior?.itemId && Number(prior.amount) > 0) {
+    const previousItem = inventory.find(item => item.id === prior.itemId);
+    if (previousItem) {
+      const now = new Date().toISOString();
+      previousItem.quantity = Number(previousItem.quantity || 0) + Number(prior.amount);
+      previousItem.modifiedAt = now;
+      previousItem.history = [...(previousItem.history || []), { at: now, action: 'AUTO-DEDUCTION REVERSED FOR SHOT EDIT', source: 'System Generated', shotId: record.id }];
+      changed = true;
+    }
+  }
+  delete record.inventoryDeduction;
+  const item = matchingItem();
+  if (item && Number(item.quantity) >= Number(record.dose)) {
+    item.quantity = Number(item.quantity) - Number(record.dose);
+    item.modifiedAt = new Date().toISOString();
+    item.history = [...(item.history || []), { at: item.modifiedAt, action: `AUTO-DEDUCTED ${record.dose} mg FOR SHOT`, source: 'System Generated', shotId: record.id }];
+    record.inventoryDeduction = { itemId: item.id, amount: Number(record.dose), unit: 'mg' };
+    changed = true;
+  }
+  return { inventory, changed };
 }
 
 export function openFutureTimestampConfirm() { $('futureTimestampConfirm')?.classList.add('active'); }
@@ -540,18 +1958,104 @@ export function closeFutureTimestampConfirm() { $('futureTimestampConfirm')?.cla
 export function cancelFutureTimestampSave() { closeFutureTimestampConfirm(); }
 export function confirmFutureTimestampSave() { $('futureTimestampConfirm')?.classList.remove('active'); saveShot(true); }
 
-export function handleShotFab() { openLogModal(); }
+export function handleShotFab() { quickLogShot(); }
+
+function quickLogShot() {
+  // B7 (v0.15.1): NEVER auto-log. Pre-fill the bottom-sheet drawer via the app's
+  // own draft machinery (moduleState.shotDraft + openLogModal({preserve:true}))
+  // and let the user review + confirm. saveShot() fires only on the explicit
+  // SAVE tap, which already shows the undoable bottom toast and closes without
+  // any view jump.
+  const shots = getAllShots();
+  const lastShot = shots.filter(s => !s.archived).sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
+  const profile = getProfile();
+  const medId = lastShot?.med ? normalizeMedicationId(lastShot.med) : normalizeMedicationId(profile.med);
+  if (!medId || !Object.prototype.hasOwnProperty.call(MEDICATIONS, medId)) { openLogModal(); return; }
+  const dose = lastShot?.dose ?? profile.dose ?? '';
+  const site = lastShot?.site || moduleState.selectedLocation;
+  if (!(Number.isFinite(Number(dose)) && Number(dose) > 0) || !site) { openLogModal(); return; }
+  const now = new Date();
+  moduleState.editingShotId = null;
+  moduleState.selectedLocation = site;
+  // Clear the native sessionStorage draft so its restoreShotDraft() (wired to the
+  // drawer-open event) does not wipe our pre-fill with stale/empty values.
+  try { sessionStorage.removeItem('gn_shot_draft_session_v1'); } catch (_) {}
+  // Draft is consumed once by openLogModal's preserveDraft branch (restores every field).
+  moduleState.shotDraft = {
+    med: medId,
+    dose: String(dose),
+    date: todayISO(),
+    time: formatTime12(now),
+    meridiem: now.getHours() >= 12 ? 'PM' : 'AM',
+    wt: '', notes: '', se: [], deviceId: ''
+  };
+  openLogModal({ preserve: true });
+}
+function researchEnterCustomMode() {
+  const mode = $('gnResearchMode');
+  if (mode) { mode.style.display = ''; mode.dataset.mode = 'custom'; }
+  const mlc = $('gnModeLibraryChip'), mcc = $('gnModeCategoryChip');
+  if (mlc) mlc.style.display = 'none';
+  if (mcc) mcc.style.display = 'none';
+  const mcb = $('gnModeBack');
+  if (mcb) mcb.style.display = '';
+  const customTitle = document.querySelector('.gn-research-mode-custom .gn-research-mode-title');
+  if (customTitle) customTitle.style.display = '';
+  if ($('gnResearchName')) { $('gnResearchName').value = ''; $('gnResearchName').readOnly = false; $('gnResearchName').removeAttribute('data-research-locked'); }
+  $('gnResearchName')?.setAttribute('placeholder', tx('research.recordNamePlaceholder', 'Select a library entry or type a custom name'));
+  const category = $('gnResearchCategory');
+  if (category) { category.readOnly = false; category.removeAttribute('data-category-locked'); category.dataset.categoryId = 'lab.customResearch'; category.value = tx('research.customCategoryDefault', 'Personalizada'); }
+  const badgeHost = $('gnResearchForm')?.querySelector('[data-research-badge]');
+  if (badgeHost) badgeHost.textContent = '';
+  const customSave = $('gnResearchSave');
+  if (customSave) customSave.textContent = tx('research.customSave', 'GUARDAR ENTRADA PERSONALIZADA');
+  const cw = $('gnCustomWarning');
+  if (cw) cw.style.display = '';
+  if (!window.matchMedia || window.matchMedia('(pointer: fine)').matches) $('gnResearchName')?.focus();
+}
+
+function researchBackToLibrary() {
+  const mode = $('gnResearchMode');
+  if (mode) { mode.style.display = 'none'; mode.dataset.mode = 'pick'; }
+  if ($('gnResearchName')) { $('gnResearchName').value = ''; $('gnResearchName').readOnly = false; $('gnResearchName').removeAttribute('data-research-locked'); }
+  const category = $('gnResearchCategory');
+  if (category) { category.readOnly = false; category.removeAttribute('data-category-locked'); category.dataset.categoryId = ''; category.value = ''; }
+  $('gnResearchName')?.setAttribute('placeholder', tx('research.recordNamePlaceholder', 'Select a library entry or type a custom name'));
+  const badgeHost = $('gnResearchForm')?.querySelector('[data-research-badge]');
+  if (badgeHost) badgeHost.textContent = '';
+  const customSave = $('gnResearchSave');
+  if (customSave) customSave.textContent = tx('research.save', 'SAVE RESEARCH RECORD');
+  const cw = $('gnCustomWarning');
+  if (cw) cw.style.display = 'none';
+}
+
 export function goToScannerForLocationFromLog() {
   moduleState.pendingLocationDraft = true;
+  // Snapshot the ENTIRE unsaved draft so reopening restores every field.
+  moduleState.shotDraft = {
+    med: selectState.cpShotMed?.val || null,
+    dose: $('sDose')?.value || '',
+    date: readHumanDateInput($('sDate')) || todayISO(),
+    time: $('sTime')?.value || '',
+    meridiem: moduleState.meridiem || null,
+    wt: $('sWt')?.value || '',
+    notes: $('sNotes')?.value || '',
+    deviceId: $('shotDeviceId')?.value || '',
+    se: qa('#logOv input[type="checkbox"]:checked').map(input => input.value)
+  };
   $('logOv')?.classList.remove('active');
   showPage('Log', $('navLog'));
   document.querySelector('.gn-stable-zone-picker')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  showToast('Select a trackable zone, then open LOG SHOT again.');
+  showToast(tx('shots.selectZoneAgain', 'Select a trackable zone, then open LOG SHOT again.'));
 }
 
 export function openWeightModal() {
-  if ($('wtDate')) $('wtDate').value = todayISO();
+  const wtOvEl = $('wtOv');
+  if (wtOvEl && !wtOvEl.querySelector('.gn-drawer-handle')) wtOvEl.insertAdjacentHTML('afterbegin', '<div class="gn-drawer-handle" aria-hidden="true"></div>');
+  setHumanDateInput($('wtDate'), todayISO(), true);
   if ($('wtTime')) $('wtTime').value = formatTime24(new Date());
+  syncCustomPickers(document);
+  window.GN_I18N?.applyTo?.(document.getElementById('wtOv'));
   $('wtOv')?.classList.add('active');
 }
 export function closeWt() { $('wtOv')?.classList.remove('active'); }
@@ -560,92 +2064,420 @@ export function setWeightUnit(unit) {
   qa('[data-wt-unit]').forEach(button => button.classList.toggle('active', button.dataset.wtUnit === moduleState.weightUnit));
 }
 export function saveWt() {
-  const raw = Number($('wtVal')?.value);
-  const date = normalizeDateInput($('wtDate')?.value) || todayISO();
-  if (!raw || raw <= 0) { setText('wtError', 'ENTER A VALID WEIGHT VALUE'); setDisplay('wtError', true); return; }
-  const weight = moduleState.weightUnit === 'kg' ? raw * 2.2046226218 : raw;
-  const record = { id: createId('weight'), date: `${date}T${$('wtTime')?.value || '12:00'}`, weight, weightKg: moduleState.weightUnit === 'kg' ? raw : raw / 2.2046226218, unit: moduleState.weightUnit, notes: $('wtNotes')?.value?.trim() || null };
-  const weights = getWeights(); weights.push(record); S.set('weights', weights); queueCloudSync('weight', record);
-  closeWt();
-  if ($('wtVal')) $('wtVal').value = '';
-  if ($('wtNotes')) $('wtNotes').value = '';
-  refreshAll(); showToast('Weight record saved.');
+  if (moduleState.savingWt) return;
+  moduleState.savingWt = true;
+  try {
+    const raw = Number($('wtVal')?.value);
+    const date = readHumanDateInput($('wtDate'), true) || todayISO();
+    if (!Number.isFinite(raw) || raw <= 0) { setText('wtError', tx('weight.invalid', 'ENTER A VALID WEIGHT VALUE')); setDisplay('wtError', true); return; }
+    const dateTime = new Date(`${date}T${$('wtTime')?.value || '12:00'}`);
+    if (Number.isNaN(dateTime.getTime()) || dateTime > new Date()) { setText('wtError', tx('weight.futureNotAllowed', 'FUTURE DATE NOT ALLOWED')); setDisplay('wtError', true); return; }
+    const weight = moduleState.weightUnit === 'kg' ? raw * 2.2046226218 : raw;
+    const previousWeight = sortedWeights().at(-1)?.weight;
+    const milestone = weightMilestone(previousWeight, weight, getProfile());
+    const now = new Date().toISOString();
+    const record = { id: createId('weight'), date: `${date}T${$('wtTime')?.value || '12:00'}`, weight, weightKg: moduleState.weightUnit === 'kg' ? raw : raw / 2.2046226218, unit: moduleState.weightUnit, notes: $('wtNotes')?.value?.trim() || null, source: 'manual', state: 'confirmed', createdAt: now, modifiedAt: now };
+    if (state.cloud) ensureCloudRecordId(record);
+    const weights = getWeights(); weights.push(record);
+    if (!S.set('weights', weights)) { setText('wtError', tx('weight.storageUnavailable', 'STORAGE UNAVAILABLE — WEIGHT NOT SAVED')); setDisplay('wtError', true); return; }
+    queueCloudSync('weight', record);
+    appendEventLedger({ type: 'WEIGHT', recordId: record.id, date: record.date, label: 'RESULTS UPDATED' });
+    closeWt();
+    if ($('wtVal')) $('wtVal').value = '';
+    if ($('wtNotes')) $('wtNotes').value = '';
+    refreshAll();
+    if (milestone) celebrateMilestone(milestone.type, milestone.value);
+    showToast(tx('toast.weightLogged', 'Peso registrado'), false, () => undoWeight(record.id), `${raw} ${moduleState.weightUnit === 'kg' ? 'kg' : 'lb'}`);
+  } finally {
+    moduleState.savingWt = false;
+  }
 }
 
 export function renderResults() {
+  ensureResultsEnhancements();
+  window.GN_I18N?.applyTo?.(document.getElementById('pageResults'));
   const shots = sortedShots();
   const weights = sortedWeights();
   const profile = getProfile();
-  const latest = weights.at(-1);
-  const first = weights[0];
-  const change = latest && first ? latest.weight - first.weight : null;
-  const percent = change !== null && first.weight ? Math.abs(change) / first.weight * 100 : null;
+  const weightMetrics = computeTotalChange(weights, profile, 'profile');
+  const latest = weightMetrics.latest;
+  const first = weightMetrics.first;
+  const change = weightMetrics.change;
+  const spanDays = weightMetrics.spanDays;
+  const directionReady = weights.length >= 3 && spanDays >= 7;
   setText('resLatestWeight', latest ? `${latest.weight.toFixed(1)} lb` : '—');
   setText('resShotCount', String(shots.length));
-  setText('resLatestAppetite', 'Foundation Ready');
-  setText('resLatestEnergy', 'Foundation Ready');
+  setText('resLatestAppetite', tx('results.logObservations', 'LOG OBSERVATIONS'));
+  setText('resLatestEnergy', tx('results.logObservations', 'LOG OBSERVATIONS'));
   setText('resContinuityEvents', String(shots.length));
   setText('resContinuityRecent', latestShot() ? formatDate(latestShot().date, { month: 'short', day: 'numeric' }) : '—');
   setText('resContinuityActive', String(shots.length));
+  setText('r6TotalLabel', tx('dashboard.resultsTotal', 'TOTAL CHANGE'));
+  setText('r6TotalBasis', weightMetrics.basis === 'from profile start weight' ? tx('dashboard.fromProfileStart', '(from profile start)') : tx('dashboard.fromFirstWeight', '(from first recorded weight)'));
   setText('r6Total', change === null ? '—' : `${change > 0 ? '+' : ''}${change.toFixed(1)} lb`);
-  setText('r6BMI', calcBMIValue(latest?.weight, profile) || '—');
+  const resultsBMI = calcBMIValue(latest?.weight, profile);
+  setText('r6BMI', resultsBMI || '');
+  setDisplay('r6BMICard', Boolean(resultsBMI));
   setText('r6Wt', latest ? `${latest.weight.toFixed(1)} lb` : '—');
-  setText('r6Pct', percent === null ? '—' : `${percent.toFixed(1)}%`);
-  const weekly = weights.length > 1 ? ((latest.weight - first.weight) / Math.max(1, (new Date(latest.date) - new Date(first.date)) / 604800000)).toFixed(1) : null;
-  setText('r6Avg', weekly === null ? '—' : `${weekly} lb/wk`);
+  setText('r6Pct', weightMetrics.percentLost === null ? '—' : `${weightMetrics.percentLost.toFixed(1)}%`);
+  setText('r6Avg', weightMetrics.weeklyAverage === null ? '—' : tx('dashboard.weeklyRate', '{value} lb/wk', { value: weightMetrics.weeklyAverage.toFixed(1) }));
   setText('r6Goal', profile.goalWt && latest ? `${Math.max(0, latest.weight - Number(profile.goalWt)).toFixed(1)} lb` : '—');
   const wtChartValue = $('wtChartVal');
-  if (wtChartValue) wtChartValue.innerHTML = latest ? `${latest.weight.toFixed(1)}<span>lbs current</span>` : '—';
+  if (wtChartValue) wtChartValue.innerHTML = latest ? Number(latest.weight).toFixed(1) + '<span>' + tx('results.lbsCurrent', 'lbs current') + '</span>' : '—';
   const direction = $('resWeightDirection');
-  if (direction) { direction.textContent = change === null ? 'Trend direction: Insufficient Data' : `Trend direction: ${change < 0 ? 'Downward' : change > 0 ? 'Upward' : 'Stable'} from logged records`; direction.className = `results-direction ${change == null ? 'insufficient' : change <= 0 ? 'good' : 'warn'}`; }
+  if (direction) { direction.textContent = directionReady ? tx(change < 0 ? 'results.trendDownAcross' : change > 0 ? 'results.trendUpAcross' : 'results.trendStableAcross', 'Trend direction: Stable across logged measurements') : tx('results.trendInsufficient', 'Trend direction: Insufficient Data'); direction.className = 'results-direction ' + (!directionReady ? 'insufficient' : change <= 0 ? 'good' : 'warn'); }
   setDisplay('weightTrendEmpty', !weights.length); setDisplay('weightTrendLive', Boolean(weights.length));
   setDisplay('resultsSummaryEmpty', !weights.length && !shots.length);
-  drawCanvasChart($('wtChart'), weights.map(item => Number(item.weight)), '#00ff88');
+  drawWeightTrendChart($('wtChart'), filterWeightsForChart(weights), shots, profile.goalWt);
+  drawTrendArrow($('wtChart'), filterWeightsForChart(weights), profile.goalWt);
   renderWeightRecords(weights);
+  renderMeasurementTrend();
   renderPhaseSource(latestShot());
   renderTrendLists(shots);
+  renderWeeklyReport(shots, weights);
 }
 
 function renderWeightRecords(weights) {
   const list = $('weightRecordsList');
   if (!list) return;
   setDisplay('weightRecordsEmpty', !weights.length);
-  list.innerHTML = [...weights].reverse().map(record => `<div class="gn-weight-record"><div><b>${record.weight.toFixed(1)} lb</b><span>${safeText(formatDateTime(record.date))}</span>${record.notes ? `<small>${safeText(record.notes)}</small>` : ''}</div></div>`).join('');
+  list.innerHTML = [...weights].reverse().filter(record => record && Number.isFinite(Number(record.weight))).map(record => `<div class="gn-weight-record"><div><b>${Number(record.weight).toFixed(1)} lb</b><span>${safeText(formatDateTime(record.date))}</span>${record.notes ? `<small>${safeText(record.source === 'shot' || record.notes === 'Logged with SHOT' ? tx('results.loggedWithShot', 'Logged with SHOT') : record.notes)}</small>` : ''}</div></div>`).join('');
+}
+
+function filterWeightsForChart(weights) {
+  const range = moduleState.weightRange;
+  if (range === 'all') return weights;
+  const days = range === '1m' ? 30 : range === '3m' ? 90 : 180;
+  const cutoff = Date.now() - days * 86400000;
+  return weights.filter(record => new Date(record.date).getTime() >= cutoff);
+}
+
+function ensureResultsEnhancements() {
+  const ledger = document.getElementById('pageResults')?.querySelector('.results-ledger');
+  if (ledger && !document.getElementById('gnWeeklyReport')) {
+    const markup = '<section class="gn-weekly-report" id="gnWeeklyReport"><div class="gn-foundation-kicker" data-i18n="results.weeklyKicker">// WEEKLY NODE REPORT</div><h3 id="gnWeeklyTitle" data-i18n="results.moreDataNeeded">MORE DATA NEEDED</h3><p id="gnWeeklyCopy" data-i18n="results.weeklyEmptyCopy">Log a shot or log your weight to begin building your SIGNAL.</p><div class="gn-weekly-signals" id="gnWeeklySignals"></div><div class="gn-weekly-actions" id="gnWeeklyActions"><button type="button" onclick="openLogModal()" data-i18n="runtime.logShot">LOG SHOT</button><button type="button" onclick="openWeightModal()" data-i18n="dashboard.logWeight">LOG WEIGHT</button></div></section><div class="gn-reference-pending"><strong data-i18n="results.referencePendingTitle">REFERENCE DATA NOT LOADED</strong><br><span data-i18n="results.referencePendingHtml">Clinical comparison remains off until a medication-specific, source-verified dataset and uncertainty model are available. Your SIGNAL uses your own logged history.</span></div>';
+    ledger.insertAdjacentHTML('afterbegin', markup);
+  }
+  const weightCard = document.getElementById('weightRecordsPanel')?.closest('.results-card');
+  if (weightCard && !document.getElementById('measurementTrendCard')) {
+    const markup = '<section class="results-card" id="measurementTrendCard"><div class="results-card-title"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-biometric-gauge"></use></svg></span><span data-i18n="results.measurementsTitle">MEASUREMENTS</span></div><div class="results-card-sub" data-i18n="results.measurementsSub">Latest user-entered body measurements</div><div id="measurementTrendList" class="gn-measurement-trend-list"></div><div id="measurementTrendEmpty" class="results-empty" data-i18n="results.noMeasurements">No measurements logged yet.</div></section>';
+    weightCard.insertAdjacentHTML('afterend', markup);
+  }
+  const chart = document.getElementById('wtChart');
+  if (chart && !document.getElementById('weightTrendChartSummary')) chart.parentElement?.insertAdjacentHTML('afterend', '<div class="results-copy" id="weightTrendChartSummary" data-i18n="results.weightTrendEmptyHtml">Log weight to build your trend.</div>');
+}
+
+function renderWeeklyReport(shots, weights) {
+  if (!document.getElementById('gnWeeklyReport')) return;
+  if (shots.length < 2) {
+    setText('gnWeeklyTitle', tx('results.moreDataNeeded', 'MORE DATA NEEDED'));
+    setText('gnWeeklyCopy', tx('results.weeklyEmptyCopy', 'Log a shot or log your weight to begin building your SIGNAL.'));
+    const signals = document.getElementById('gnWeeklySignals');
+    if (signals) signals.innerHTML = '';
+    setDisplay('gnWeeklyActions', true);
+    return;
+  }
+  const cutoff = Date.now() - 7 * 86400000;
+  const weekShots = shots.filter(item => new Date(item.date).getTime() >= cutoff);
+  const weekWeights = weights.filter(item => new Date(item.date).getTime() >= cutoff);
+  const observations = weekShots.flatMap(item => item.se || []);
+  const change = weekWeights.length > 1 ? Number(weekWeights.at(-1).weight) - Number(weekWeights[0].weight) : null;
+  setText('gnWeeklyTitle', tx('results.last7Days', 'YOUR LAST 7 DAYS'));
+  setText('gnWeeklyCopy', tx('results.weeklyCopy', 'This report summarizes only your logged timeline. Gaps remain visible and no clinical comparison is inferred.'));
+  const signals = document.getElementById('gnWeeklySignals');
+  if (signals) signals.innerHTML = '<span>' + tx('results.shotEvents', 'SHOT EVENTS') + '<b>' + weekShots.length + '</b></span><span>' + tx('results.weightChange', 'WEIGHT CHANGE') + '<b>' + (change === null ? tx('results.notEnoughData', 'NOT ENOUGH DATA') : (change > 0 ? '+' : '') + change.toFixed(1) + ' lb') + '</b></span><span>' + tx('results.observations', 'OBSERVATIONS') + '<b>' + (observations.length || tx('results.noneLogged', 'NONE LOGGED')) + '</b></span>';
+  setDisplay('gnWeeklyActions', false);
+}
+
+function renderMeasurementTrend() {
+  const list = $('measurementTrendList');
+  const records = S.get('measurements', []);
+  if (!list) return;
+  const latest = new Map();
+  records.forEach(record => { const current = latest.get(record.type); if (!current || new Date(record.date) > new Date(current.date)) latest.set(record.type, record); });
+  const rows = [...latest.values()].sort((a, b) => a.type.localeCompare(b.type));
+  setDisplay('measurementTrendEmpty', !rows.length);
+  list.innerHTML = rows.filter(record => Number.isFinite(Number(record.value))).map(record => `<div class="gn-measurement-trend-row"><b>${safeText(record.type)}</b><span>${Number(record.value).toFixed(1)} ${safeText(record.unit)}</span></div>`).join('');
+}
+
+function drawWeightTrendChart(canvas, weights, shots, goal) {
+  const summary = $('weightTrendChartSummary');
+  if (!canvas) return null;
+  const width = Math.max(280, canvas.clientWidth || 320), height = Math.max(200, canvas.clientHeight || 220), scale = window.devicePixelRatio || 1;
+  canvas.width = width * scale; canvas.height = height * scale;
+  const context = canvas.getContext('2d'); if (!context) return null;
+  context.setTransform(scale, 0, 0, scale, 0, 0); context.clearRect(0, 0, width, height);
+  if (!weights.length) {
+    if (summary) summary.textContent = tx('dashboard.logWeight', 'LOG WEIGHT');
+    // Overnight polish (2026-08-09): RESULTS chart empty state — quiet
+    // grid + message instead of a dead blank canvas.
+    const light = document.documentElement.getAttribute('data-theme') === 'light';
+    context.strokeStyle = light ? 'rgba(20,60,70,.1)' : 'rgba(255,255,255,.08)';
+    context.lineWidth = 1;
+    for (let i = 1; i < 4; i++) { const y = (height / 4) * i; context.beginPath(); context.moveTo(0, y); context.lineTo(width, y); context.stroke(); }
+    context.fillStyle = light ? 'rgba(46,66,75,.75)' : 'rgba(158,178,190,.78)';
+    context.font = `700 ${Math.max(12, Math.round(width * .034))}px "Share Tech Mono", monospace`;
+    context.textAlign = 'center'; context.textBaseline = 'middle';
+    context.fillText(tx('dashboard.noRecordsYet', 'NO RECORDS YET · LOG YOUR FIRST WEIGHT'), width / 2, height / 2);
+    const overlay = document.getElementById(canvas.id + 'Overlay');
+    if (overlay) overlay.innerHTML = '';
+    renderWeightChartLegend(canvas, null);
+    return null;
+  }
+
+  const left = 42, right = 12, top = 16, bottom = 30, plotWidth = width - left - right, plotHeight = height - top - bottom;
+  const values = weights.map(item => Number(item.weight));
+  const minValue = Math.min(...values, Number(goal) || Infinity), maxValue = Math.max(...values, Number(goal) || -Infinity);
+  const padding = Math.max(1, (maxValue - minValue || 1) * .14), min = minValue - padding, max = maxValue + padding, span = max - min || 1;
+  const xFor = index => weights.length === 1 ? left + plotWidth / 2 : left + (index / (weights.length - 1)) * plotWidth;
+  const yFor = value => top + (max - Number(value)) / span * plotHeight;
+  context.font = '10px Share Tech Mono, monospace'; context.fillStyle = '#8295a0'; context.strokeStyle = 'rgba(255,255,255,.10)'; context.lineWidth = 1;
+  for (let index = 0; index <= 3; index++) { const y = top + plotHeight * index / 3; context.beginPath(); context.moveTo(left, y); context.lineTo(width - right, y); context.stroke(); context.fillText(`${(max - (span * index / 3)).toFixed(1)}`, 4, y + 3); }
+  if (Number(goal) > 0) { const goalY = yFor(goal); context.save(); context.setLineDash([5, 4]); context.strokeStyle = 'rgba(255,215,0,.55)'; context.beginPath(); context.moveTo(left, goalY); context.lineTo(width - right, goalY); context.stroke(); context.restore(); }
+
+  // Premium REFINEMENT (2026-08-10): cyan area gradient under the curve, then a
+  // boosted glow halo on the line itself. Halo is drawn twice — once wider, once
+  // tight — so the cyan reads as luminous at hi-DPI without bleeding into the grid.
+  const points = values.map((value, index) => ({ x: xFor(index), y: yFor(value), index, value }));
+  const areaGrad = context.createLinearGradient(0, top, 0, top + plotHeight);
+  areaGrad.addColorStop(0, 'rgba(0, 230, 240, 0.42)');
+  areaGrad.addColorStop(0.55, 'rgba(0, 230, 240, 0.16)');
+  areaGrad.addColorStop(1, 'rgba(0, 230, 240, 0)');
+  context.fillStyle = areaGrad;
+  context.beginPath();
+  context.moveTo(points[0].x, top + plotHeight);
+  points.forEach(p => context.lineTo(p.x, p.y));
+  context.lineTo(points.at(-1).x, top + plotHeight);
+  context.closePath();
+  context.fill();
+
+  context.shadowColor = 'rgba(0, 230, 240, 0.65)'; context.shadowBlur = 14; context.strokeStyle = 'rgba(0, 230, 240, 0.55)'; context.lineWidth = 4; context.beginPath();
+  points.forEach((p, i) => { if (!i) context.moveTo(p.x, p.y); else context.lineTo(p.x, p.y); });
+  context.stroke();
+  context.shadowBlur = 7; context.strokeStyle = '#00E6F0'; context.lineWidth = 2; context.beginPath();
+  points.forEach((p, i) => { if (!i) context.moveTo(p.x, p.y); else context.lineTo(p.x, p.y); });
+  context.stroke(); context.shadowBlur = 0;
+
+  context.fillStyle = '#00E6F0';
+  points.forEach(p => { context.beginPath(); context.arc(p.x, p.y, 3, 0, Math.PI * 2); context.fill(); });
+  const start = parseLocalDate(weights[0].date), end = parseLocalDate(weights.at(-1).date); context.fillStyle = '#8295a0'; context.fillText(formatDate(start, { month: 'short', day: 'numeric' }), left, height - 8); context.textAlign = 'right'; context.fillText(formatDate(end, { month: 'short', day: 'numeric' }), width - right, height - 8); context.textAlign = 'left';
+  let priorDose = null;
+  const shotMarkers = [];
+  shots.forEach(shot => {
+    const time = parseLocalDate(shot.date).getTime();
+    const dose = Number(shot.dose) || priorDose;
+    if (!Number.isFinite(time) || time < start.getTime() || time > end.getTime()) { priorDose = dose; return; }
+    const nearest = points.reduce((best, item, index) => Math.abs(parseLocalDate(weights[index].date).getTime() - time) < Math.abs(parseLocalDate(weights[best.index].date).getTime() - time) ? item : best, points[0]).index;
+    const changed = priorDose !== null && dose !== priorDose;
+    const px = xFor(nearest), py = yFor(values[nearest]);
+    context.fillStyle = changed ? '#ffd700' : '#FF3B3B';
+    context.beginPath(); context.arc(px, py, changed ? 6 : 4, 0, Math.PI * 2); context.fill();
+    if (changed) { context.fillStyle = '#ffd700'; context.font = '9px Share Tech Mono, monospace'; context.fillText(tx('results.chartDose', 'DOSE'), Math.min(width - 38, px + 5), Math.max(10, py - 7)); }
+    shotMarkers.push({ x: px, y: py, kind: changed ? 'dose' : 'shot', t: time });
+    priorDose = dose;
+  });
+  const profileStart = Number(getProfile().startWt) || values[0];
+  const milestoneMarkers = [];
+  [5, 10, 15, 20].forEach(percent => {
+    const target = profileStart * (1 - percent / 100);
+    const firstIndex = values.findIndex(value => value <= target);
+    if (firstIndex < 0) return;
+    const mx = xFor(firstIndex), my = yFor(values[firstIndex]);
+    context.fillStyle = '#00ff88'; context.beginPath(); context.arc(mx, my, 5, 0, Math.PI * 2); context.fill();
+    milestoneMarkers.push({ x: mx, y: my, percent });
+  });
+  if (summary) { const summaryText = weights.length === 1 ? tx('results.oneWeightPoint', 'One data point logged. Keep tracking to see your trend.') : Number(goal) > 0 ? tx('results.showingWeightRecordsWithGoal', 'Showing {count} weight records · goal {goal} lb', { count: weights.length, goal: Number(goal).toFixed(1) }) : tx('results.showingWeightRecords', 'Showing {count} weight records', { count: weights.length }); summary.textContent = summaryText; }
+
+  const geometry = { width, height, left, right, top, bottom, plotWidth, plotHeight, min, max, span, points, goalY: Number(goal) > 0 ? yFor(goal) : null, startTime: start.getTime(), endTime: end.getTime(), shotMarkers, milestoneMarkers };
+  renderWeightChartOverlay(canvas, geometry, { compact: false });
+  renderWeightChartLegend(canvas, geometry);
+  return geometry;
+}
+
+/* Premium REFINEMENT (2026-08-10): SVG overlay painted on top of the canvas.
+   Provides the phase band behind the curve, an animated cyan trace flowing along
+   the line as a 'live signal', and a pulsing dot at the latest datapoint. All
+   animations honour prefers-reduced-motion via CSS. */
+function renderWeightChartOverlay(canvas, geometry, options = {}) {
+  if (!canvas) return;
+  const overlay = document.getElementById(canvas.id + 'Overlay');
+  if (!overlay) return;
+  if (!geometry) { overlay.innerHTML = ''; overlay.removeAttribute('viewBox'); return; }
+  const compact = options.compact === true;
+  const { width, height, left, right, top, bottom, plotWidth, plotHeight, points, goalY, startTime, endTime, shotMarkers } = geometry;
+  const ns = 'http://www.w3.org/2000/svg';
+  overlay.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  overlay.setAttribute('preserveAspectRatio', 'none');
+  overlay.innerHTML = '';
+
+  // Phase band: emit the 7-day reference cycle coloured by phase, anchored to
+  // the most-recent shot and clipped strictly to the visible curve area. Each
+  // phase becomes a coloured rect that sits behind the cyan line, giving the
+  // user a visual sense of which medication phase their current weight sits in.
+  if (!compact && startTime && endTime) {
+    const lastShot = latestShot();
+    if (lastShot) {
+      const lastShotTime = parseLocalDate(lastShot.date).getTime();
+      const cycleMs = 7 * 86400000;
+      const cycleStart = lastShotTime - Math.floor((lastShotTime - startTime) / cycleMs) * cycleMs;
+      const totalSpan = endTime - startTime;
+      if (totalSpan > 0) {
+        const xFromTime = t => left + ((t - startTime) / totalSpan) * plotWidth;
+        PHASES.forEach(phase => {
+          // Phase rects are clipped to [startTime, endTime] — the data window —
+          // so the band never extends into the empty area past the curve.
+          const visStart = Math.max(cycleStart + phase.start * cycleMs, startTime);
+          const visEnd = Math.min(cycleStart + phase.end * cycleMs, endTime);
+          if (visEnd <= visStart) return;
+          const x1 = xFromTime(visStart);
+          const x2 = xFromTime(visEnd);
+          const rect = document.createElementNS(ns, 'rect');
+          rect.setAttribute('class', 'gn-phase-band');
+          rect.setAttribute('x', x1);
+          rect.setAttribute('y', top);
+          rect.setAttribute('width', Math.max(1, x2 - x1));
+          rect.setAttribute('height', plotHeight);
+          rect.setAttribute('fill', phase.color);
+          overlay.appendChild(rect);
+        });
+      }
+    }
+  }
+
+  // Animated live trace — a soft cyan path that mirrors the curve line.
+  // Drawn as a continuous (non-dashed) stroke with reduced opacity so the static
+  // canvas line stays crisp while the overlay adds motion. The trace is offset
+  // by a moving dashed highlight to give the sense of flow.
+  if (points.length >= 2) {
+    const d = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' ');
+    // Soft halo path
+    const halo = document.createElementNS(ns, 'path');
+    halo.setAttribute('d', d);
+    halo.setAttribute('fill', 'none');
+    halo.setAttribute('stroke', '#00E6F0');
+    halo.setAttribute('stroke-width', '6');
+    halo.setAttribute('stroke-linecap', 'round');
+    halo.setAttribute('stroke-linejoin', 'round');
+    halo.setAttribute('opacity', '0.35');
+    overlay.appendChild(halo);
+    // Animated dash on top
+    const trace = document.createElementNS(ns, 'path');
+    trace.setAttribute('d', d);
+    trace.setAttribute('fill', 'none');
+    trace.setAttribute('stroke', '#7FF7FF');
+    trace.setAttribute('stroke-width', '2.5');
+    trace.setAttribute('stroke-linecap', 'round');
+    trace.setAttribute('stroke-linejoin', 'round');
+    trace.setAttribute('class', 'gn-live-trace');
+    overlay.appendChild(trace);
+  }
+
+  // Pulse at the latest datapoint — the 'live signal' indicator.
+  const last = points.at(-1);
+  if (last && !compact) {
+    const ring = document.createElementNS(ns, 'circle');
+    ring.setAttribute('class', 'gn-pulse-ring');
+    ring.setAttribute('cx', last.x);
+    ring.setAttribute('cy', last.y);
+    ring.setAttribute('r', 5);
+    ring.setAttribute('fill', 'none');
+    ring.setAttribute('stroke', '#00E6F0');
+    ring.setAttribute('stroke-width', '1.5');
+    ring.setAttribute('opacity', '0.85');
+    overlay.appendChild(ring);
+
+    const core = document.createElementNS(ns, 'circle');
+    core.setAttribute('class', 'gn-pulse-core');
+    core.setAttribute('cx', last.x);
+    core.setAttribute('cy', last.y);
+    core.setAttribute('r', 4);
+    core.setAttribute('fill', '#00E6F0');
+    overlay.appendChild(core);
+  }
+}
+
+/* Premium REFINEMENT (2026-08-10): clean inline legend below the chart. Replaces
+   the dense sentence-form summary copy that mixed metric counts and a key in one
+   line. The full summary still lives in #weightTrendChartSummary for screen readers. */
+function renderWeightChartLegend(canvas, geometry) {
+  const legend = document.getElementById(canvas.id + 'Legend');
+  if (!legend) return;
+  if (!geometry) { legend.innerHTML = ''; return; }
+  const items = [
+    { key: 'cyan',   label: tx('results.legendWeight', 'WEIGHT') },
+    { key: 'red',    label: tx('results.legendShot', 'SHOT') },
+    { key: 'yellow', label: tx('results.legendDose', 'DOSE') },
+    { key: 'green',  label: tx('results.legendMilestone', 'MILESTONE') },
+    { key: 'goal',   label: tx('results.legendGoal', 'GOAL') }
+  ];
+  legend.innerHTML = items.map(item => `<span><i class="sw-${item.key}"></i>${safeText(item.label)}</span>`).join('');
+}
+
+function drawTrendArrow(canvas, weights, goal) {
+  if (!canvas || weights.length < 2) return;
+  const width = Math.max(280, canvas.clientWidth || 320), height = Math.max(200, canvas.clientHeight || 220), scale = window.devicePixelRatio || 1;
+  const context = canvas.getContext('2d'); if (!context) return;
+  const left = 42, right = 12, top = 16, bottom = 30, plotWidth = width - left - right, plotHeight = height - top - bottom;
+  const values = weights.map(item => Number(item.weight));
+  const minValue = Math.min(...values, Number(goal) || Infinity), maxValue = Math.max(...values, Number(goal) || -Infinity);
+  const padding = Math.max(1, (maxValue - minValue || 1) * .14), min = minValue - padding, max = maxValue + padding, span = max - min || 1;
+  const xFor = index => left + (index / (values.length - 1)) * plotWidth;
+  const yFor = value => top + (max - Number(value)) / span * plotHeight;
+  const delta = values.at(-1) - values.at(-2);
+  const arrow = delta < -0.05 ? '▼' : delta > 0.05 ? '▲' : '►';
+  context.setTransform(scale, 0, 0, scale, 0, 0);
+  context.fillStyle = delta < -0.05 ? '#00ff88' : delta > 0.05 ? '#FF5B5B' : '#ffd700';
+  context.font = '700 14px Share Tech Mono, monospace';
+  context.textAlign = 'left';
+  context.fillText(arrow, Math.min(width - 16, xFor(values.length - 1) + 7), yFor(values.at(-1)) + 5);
 }
 
 function renderPhaseSource(shot) {
   setDisplay('phaseEngineSourceEmpty', !shot); setDisplay('phaseEngineSourceReadout', Boolean(shot));
-  const readout = $('phaseEngineSourceReadout');
+  const readout = document.getElementById('phaseEngineSourceReadout');
   if (!readout || !shot) return;
   const elapsed = Math.max(0, (Date.now() - new Date(shot.date).getTime()) / 86400000);
-  readout.innerHTML = `<div><span>LAST SHOT</span><b>${safeText(formatDateTime(shot.date))}</b></div><div><span>MEDICATION</span><b>${safeText(MEDICATIONS[shot.med] || shot.med || 'CUSTOM')}</b></div><div><span>TIME SINCE</span><b>${Math.floor(elapsed)}d</b></div><div><span>DATA SOURCE</span><b>USER-ENTERED HISTORY</b></div>`;
+  readout.innerHTML = '<div><span>' + tx('runtime.lastShot', 'LAST SHOT') + '</span><b>' + safeText(formatDateTime(shot.date)) + '</b></div><div><span>' + tx('runtime.medication', 'MEDICATION') + '</span><b>' + safeText(medicationLabel(shot.med)) + '</b></div><div><span>' + tx('runtime.timeSince', 'TIME SINCE') + '</span><b>' + Math.floor(elapsed) + 'd</b></div><div><span>' + tx('runtime.dataSource', 'DATA SOURCE') + '</span><b>' + tx('runtime.userHistory', 'USER-ENTERED HISTORY') + '</b></div>';
 }
 
 function renderTrendLists(shots) {
   const effects = shots.flatMap(item => item.se || []);
   setDisplay('sideEffectTrendEmpty', !effects.length); setDisplay('sideEffectTrendLive', Boolean(effects.length));
-  const sideEffectTrend = $('sideEffectTrendLive');
+  const sideEffectTrend = document.getElementById('sideEffectTrendLive');
   if (sideEffectTrend) {
     sideEffectTrend.innerHTML = effects.length
-      ? effects.slice(-6).reverse().map(effect => `<div class="results-list-row"><b>${safeText(effect)}</b><span>logged observation</span></div>`).join('')
+      ? effects.slice(-6).reverse().map(effect => '<div class="results-list-row"><b>' + safeText(sideEffectLabel(effect)) + '</b><span>' + tx('runtime.loggedObservation', 'logged observation') + '</span></div>').join('')
       : '';
   }
   setDisplay('appetiteTrendEmpty', true); setDisplay('energyTrendEmpty', true);
 }
 
 function drawCanvasChart(canvas, values, color) {
-  if (!canvas || !values.length) return;
+  if (!canvas) return;
   const width = Math.max(280, canvas.clientWidth || 320);
   const height = Math.max(110, canvas.clientHeight || 150);
   const scale = window.devicePixelRatio || 1;
   canvas.width = width * scale; canvas.height = height * scale;
   const context = canvas.getContext('2d'); if (!context) return;
   context.scale(scale, scale); context.clearRect(0, 0, width, height);
+  if (!values.length) {
+    // Overnight polish (2026-08-09): empty charts were a dead blank zone —
+    // draw a faint grid + a quiet "no records yet" line, theme-aware.
+    const light = document.documentElement.getAttribute('data-theme') === 'light';
+    context.strokeStyle = light ? 'rgba(20,60,70,.1)' : 'rgba(255,255,255,.08)';
+    context.lineWidth = 1;
+    for (let i = 1; i < 4; i++) { const y = (height / 4) * i; context.beginPath(); context.moveTo(0, y); context.lineTo(width, y); context.stroke(); }
+    context.fillStyle = light ? 'rgba(46,66,75,.75)' : 'rgba(158,178,190,.78)';
+    context.font = `700 ${Math.max(12, Math.round(width * .034))}px "Share Tech Mono", monospace`;
+    context.textAlign = 'center'; context.textBaseline = 'middle';
+    context.fillText(tx('dashboard.noRecordsYet', 'NO RECORDS YET · LOG YOUR FIRST WEIGHT'), width / 2, height / 2);
+    return;
+  }
   const min = Math.min(...values), max = Math.max(...values), span = max - min || 1;
   context.strokeStyle = 'rgba(255,255,255,.09)'; context.lineWidth = 1;
   for (let i = 1; i < 4; i++) { const y = (height / 4) * i; context.beginPath(); context.moveTo(0, y); context.lineTo(width, y); context.stroke(); }
   context.strokeStyle = color; context.shadowColor = color; context.shadowBlur = 8; context.lineWidth = 2; context.beginPath();
-  values.forEach((value, index) => { const x = values.length === 1 ? width / 2 : (index / (values.length - 1)) * (width - 16) + 8; const y = height - 12 - ((value - min) / span) * (height - 28); if (index === 0) context.moveTo(x, y); else context.lineTo(x, y); });
+  values.forEach((value, index) => { const x = values.length === 1 ? width / 2 : (index / (values.length - 1)) * (width - 16) + 8; const y = height - 18 - ((value - min) / span) * (height - 36); if (index === 0) context.moveTo(x, y); else context.lineTo(x, y); });
   context.stroke(); context.shadowBlur = 0;
 }
 
@@ -655,7 +2487,7 @@ function renderProtocolCurve(shots, phase) {
   if (!shots.length) {
     if (readout) {
       const detail = document.createElement('span');
-      detail.textContent = 'log a shot to begin';
+      detail.textContent = tx('results.logToBegin', 'log a shot to begin');
       readout.replaceChildren(document.createTextNode('—'), detail);
     }
     const context = canvas?.getContext('2d');
@@ -663,10 +2495,21 @@ function renderProtocolCurve(shots, phase) {
     return;
   }
 
+  /* Peptide evidence layer (2026-08-10): vivid, evidence-aware renderer.
+     Delegates to gridnode-peptide-viz.js when present; synthetic fallback below
+     stays intact for environments without the layer. */
+  if (window.GN_PEPTIDE_VIZ && typeof window.GN_PEPTIDE_VIZ.render === 'function') {
+    const medId = normalizeMedicationId(shots.at(-1)?.med);
+    const labelMap = {};
+    shots.forEach(shot => { const id = normalizeMedicationId(shot.med); if (id && !labelMap[id]) labelMap[id] = medicationLabel(id); });
+    window.GN_PEPTIDE_VIZ.render({ canvas, readout, shots, medId, medLabel: medicationLabel(medId), labelMap, range: moduleState.medRange, now: Date.now(), phaseName: localizedPhaseName(phase) || phase?.name || 'ACTIVE' });
+    return;
+  }
+
   if (readout) {
     const detail = document.createElement('span');
-    detail.textContent = 'relative cycle model · not a measured level';
-    readout.replaceChildren(document.createTextNode(phase?.name || 'ACTIVE'), detail);
+    detail.textContent = tx('results.relativeCycleModel', 'relative cycle model · not a measured level');
+    readout.replaceChildren(document.createTextNode(localizedPhaseName(phase) || tx('results.active', 'ACTIVE')), detail);
   }
 
   const now = Date.now();
@@ -702,103 +2545,1305 @@ export function showYouSeg(segment, button) {
   qa('#youSegTabs .time-tab').forEach(item => item.classList.toggle('active', item === button || item.dataset.youseg === segment));
 }
 
-export function renderLab() { updateSyr(); updateRecon(); updateSupply(); }
+function closeCustomPickers(except) {
+  qa('.gn-custom-picker.open,.gn-custom-date.open').forEach(wrapper => {
+    if (wrapper === except) return;
+    wrapper.classList.remove('open');
+    wrapper.querySelector('[aria-expanded="true"]')?.setAttribute('aria-expanded', 'false');
+  });
+}
+
+function populateCustomPickerMenu(select, menu, wrapper, trigger) {
+  menu.replaceChildren();
+  Array.from(select.options).forEach(option => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'gn-custom-picker-option';
+    button.dataset.gnPickerValue = option.value;
+    button.setAttribute('role', 'option');
+    button.disabled = option.disabled;
+    button.textContent = option.dataset.i18n ? tx(option.dataset.i18n, option.textContent) : option.textContent;
+    button.addEventListener('click', () => {
+      select.value = option.value;
+      select.dispatchEvent(new Event('input', { bubbles: true }));
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      syncCustomPicker(select);
+      wrapper.classList.remove('open');
+      trigger.setAttribute('aria-expanded', 'false');
+      trigger.focus({ preventScroll: true });
+    });
+    menu.appendChild(button);
+  });
+}
+
+function syncCustomPicker(select) {
+  const wrapper = select?.closest('.gn-custom-picker');
+  const trigger = wrapper?.querySelector('[data-gn-picker-trigger]');
+  const menu = wrapper?.querySelector('.gn-custom-picker-menu');
+  const option = Array.from(select?.options || []).find(item => item.value === select.value) || select?.options?.[0];
+  if (!wrapper || !trigger || !menu || !option) return;
+  const sourceValues = Array.from(select.options).map(item => item.value);
+  const renderedValues = Array.from(menu.querySelectorAll('[data-gn-picker-value]')).map(item => item.dataset.gnPickerValue);
+  if (sourceValues.length !== renderedValues.length || sourceValues.some((value, index) => renderedValues[index] !== value)) {
+    populateCustomPickerMenu(select, menu, wrapper, trigger);
+  }
+  trigger.textContent = option.textContent;
+  wrapper.querySelectorAll('[data-gn-picker-value]').forEach(button => {
+    const source = Array.from(select.options).find(item => item.value === button.dataset.gnPickerValue);
+    if (source) button.textContent = source.textContent;
+    button.setAttribute('aria-selected', String(button.dataset.gnPickerValue === select.value));
+    button.disabled = Boolean(source?.disabled);
+  });
+}
+
+function installCustomSelect(select) {
+  if (!select || select.dataset.gnPickerWired) return;
+  const wrapper = document.createElement('div');
+  wrapper.className = 'gn-custom-picker';
+  const trigger = document.createElement('button');
+  trigger.type = 'button';
+  trigger.className = 'gn-custom-picker-trigger';
+  trigger.dataset.gnPickerTrigger = 'true';
+  trigger.setAttribute('aria-haspopup', 'listbox');
+  trigger.setAttribute('aria-expanded', 'false');
+  const menu = document.createElement('div');
+  menu.className = 'gn-custom-picker-menu';
+  menu.setAttribute('role', 'listbox');
+  select.hidden = true;
+  select.setAttribute('aria-hidden', 'true');
+  select.dataset.gnPickerWired = 'true';
+  select.parentNode.insertBefore(wrapper, select);
+  wrapper.append(trigger, menu, select);
+  populateCustomPickerMenu(select, menu, wrapper, trigger);
+  trigger.addEventListener('click', () => {
+    const open = !wrapper.classList.contains('open');
+    closeCustomPickers(wrapper);
+    wrapper.classList.toggle('open', open);
+    trigger.setAttribute('aria-expanded', String(open));
+    if (open) {
+      syncCustomPicker(select);
+      window.requestAnimationFrame(() => (menu.querySelector('[aria-selected="true"]:not(:disabled)') || menu.querySelector('button:not(:disabled)'))?.focus());
+    }
+  });
+  trigger.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && wrapper.classList.contains('open')) {
+      event.preventDefault();
+      event.stopPropagation();
+      wrapper.classList.remove('open');
+      trigger.setAttribute('aria-expanded', 'false');
+      return;
+    }
+    if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return;
+    event.preventDefault();
+    closeCustomPickers(wrapper);
+    wrapper.classList.add('open');
+    trigger.setAttribute('aria-expanded', 'true');
+    syncCustomPicker(select);
+    const options = Array.from(menu.querySelectorAll('button:not(:disabled)'));
+    (event.key === 'ArrowUp' ? options.at(-1) : options.find(item => item.getAttribute('aria-selected') === 'true') || options[0])?.focus();
+  });
+  menu.addEventListener('keydown', event => {
+    const options = Array.from(menu.querySelectorAll('button:not(:disabled)'));
+    const index = options.indexOf(document.activeElement);
+    if (event.key === 'Escape') { event.preventDefault(); wrapper.classList.remove('open'); trigger.setAttribute('aria-expanded', 'false'); trigger.focus(); return; }
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const next = event.key === 'Home' ? 0 : event.key === 'End' ? options.length - 1 : event.key === 'ArrowDown' ? Math.min(options.length - 1, index + 1) : Math.max(0, index - 1);
+    options[next]?.focus();
+  });
+  select.addEventListener('change', () => syncCustomPicker(select));
+  syncCustomPicker(select);
+}
+
+function renderCustomDatePopover(wrapper) {
+  const month = wrapper._month;
+  const year = month.getFullYear();
+  const monthIndex = month.getMonth();
+  const label = wrapper.querySelector('[data-gn-date-label]');
+  const grid = wrapper.querySelector('[data-gn-date-grid]');
+  if (!label || !grid) return;
+  label.textContent = month.toLocaleDateString(document.documentElement.lang?.startsWith('es') ? 'es-419' : 'en-US', { month: 'long', year: 'numeric' });
+  const first = new Date(year, monthIndex, 1).getDay();
+  const total = new Date(year, monthIndex + 1, 0).getDate();
+  const selected = wrapper.input.value || '';
+  const dayLabels = document.documentElement.lang?.startsWith('es') ? ['D', 'L', 'M', 'X', 'J', 'V', 'S'] : ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  grid.innerHTML = `${dayLabels.map(day => `<span class="gn-custom-date-dow">${day}</span>`).join('')}${Array.from({ length: first }, () => '<span class="gn-custom-date-blank"></span>').join('')}${Array.from({ length: total }, (_, index) => { const day = index + 1, value = `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; return `<button type="button" class="gn-custom-date-day${value === selected ? ' selected' : ''}" data-gn-date-value="${value}">${day}</button>`; }).join('')}`;
+}
+
+function syncCustomDate(input) {
+  const wrapper = input?.closest('.gn-custom-date');
+  const trigger = wrapper?.querySelector('[data-gn-date-trigger]');
+  if (!wrapper || !trigger) return;
+  trigger.textContent = input.value ? formatDate(input.value, { month: 'short', day: 'numeric', year: 'numeric' }) : tx('research.selectDate', 'SELECT DATE');
+}
+
+function installCustomDate(input) {
+  if (!input || input.dataset.gnDateWired) return;
+  const wrapper = document.createElement('div');
+  wrapper.className = 'gn-custom-date';
+  wrapper.input = input;
+  wrapper._month = input.value ? parseLocalDate(input.value) : new Date();
+  wrapper._month = new Date(wrapper._month.getFullYear(), wrapper._month.getMonth(), 1);
+  const trigger = document.createElement('button');
+  trigger.type = 'button';
+  trigger.className = 'gn-custom-date-trigger';
+  trigger.dataset.gnDateTrigger = 'true';
+  trigger.setAttribute('aria-haspopup', 'dialog');
+  trigger.setAttribute('aria-expanded', 'false');
+  const popover = document.createElement('div');
+  popover.className = 'gn-custom-date-popover';
+  popover.id = `${input.id || createId('date')}-popover`;
+  popover.setAttribute('role', 'dialog');
+  trigger.setAttribute('aria-controls', popover.id);
+  popover.innerHTML = '<div class="gn-custom-date-head"><button type="button" data-gn-date-prev aria-label="' + tx('date.prevMonth', 'Previous month') + '">‹</button><strong data-gn-date-label></strong><button type="button" data-gn-date-next aria-label="' + tx('date.nextMonth', 'Next month') + '">›</button></div><div class="gn-custom-date-grid" data-gn-date-grid></div><div class="gn-custom-date-foot"><button type="button" data-gn-date-today data-i18n="date.useToday">' + tx('date.useToday', 'USE TODAY') + '</button><button type="button" data-gn-date-close data-i18n="date.close">' + tx('date.close', 'CLOSE') + '</button></div>';
+  input.type = 'text';
+  input.readOnly = true;
+  input.hidden = true;
+  input.setAttribute('aria-hidden', 'true');
+  input.dataset.gnDateWired = 'true';
+  input.parentNode.insertBefore(wrapper, input);
+  wrapper.append(trigger, popover, input);
+  window.GN_I18N?.applyTo?.(popover);
+
+  function closeDatePopover({ restoreFocus = false } = {}) {
+    wrapper.classList.remove('open');
+    trigger.setAttribute('aria-expanded', 'false');
+    if (restoreFocus) trigger.focus({ preventScroll: true });
+  }
+
+  trigger.addEventListener('click', () => {
+    const open = !wrapper.classList.contains('open');
+    closeCustomPickers(wrapper);
+    wrapper.classList.toggle('open', open);
+    trigger.setAttribute('aria-expanded', String(open));
+    if (open) { wrapper._month = input.value ? new Date(`${input.value}T00:00:00`) : new Date(); wrapper._month = new Date(wrapper._month.getFullYear(), wrapper._month.getMonth(), 1); renderCustomDatePopover(wrapper); }
+  });
+  popover.addEventListener('click', event => {
+    const target = event.target.closest('button');
+    if (!target) return;
+    if (target.hasAttribute('data-gn-date-prev')) wrapper._month.setMonth(wrapper._month.getMonth() - 1);
+    else if (target.hasAttribute('data-gn-date-next')) wrapper._month.setMonth(wrapper._month.getMonth() + 1);
+    else if (target.hasAttribute('data-gn-date-today')) {
+      input.value = todayISO();
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      wrapper._month = new Date();
+      wrapper._month = new Date(wrapper._month.getFullYear(), wrapper._month.getMonth(), 1);
+      syncCustomDate(input);
+      closeDatePopover({ restoreFocus: true });
+    }
+    else if (target.dataset.gnDateValue) {
+      input.value = target.dataset.gnDateValue;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      syncCustomDate(input);
+      closeDatePopover({ restoreFocus: true });
+    }
+    else if (target.hasAttribute('data-gn-date-close')) closeDatePopover({ restoreFocus: true });
+    renderCustomDatePopover(wrapper);
+  });
+  input.addEventListener('change', () => syncCustomDate(input));
+  syncCustomDate(input);
+}
+
+function syncCustomPickers(root = document) {
+  root.querySelectorAll('.gn-custom-picker select').forEach(syncCustomPicker);
+  root.querySelectorAll('.gn-custom-date input').forEach(syncCustomDate);
+}
+
+function installCustomPickers(root = document) {
+  root.querySelectorAll('select:not([data-gn-picker-wired])').forEach(installCustomSelect);
+  root.querySelectorAll('input[type="date"]:not([data-gn-date-wired])').forEach(installCustomDate);
+  if (!document.body.dataset.gnPickerDismiss) {
+    document.body.dataset.gnPickerDismiss = 'true';
+    document.addEventListener('click', event => { if (!event.target.closest('.gn-custom-picker,.gn-custom-date')) closeCustomPickers(); });
+  }
+}
+
+function ensureLabFoundations() {
+  const page = $('pageLab');
+  if (!page || page.querySelector('[data-gn-lab-foundation]')) return;
+  const header = page.querySelector('.page-hdr');
+  if (!header) return;
+  header.insertAdjacentHTML('afterend', `<section class="gn-foundation-panel" data-gn-lab-foundation aria-labelledby="gnLabFoundationTitle">
+    <div class="gn-foundation-head"><div><div class="gn-foundation-kicker" data-i18n="lab.organizedSystems">// ORGANIZED SYSTEMS</div><h2 id="gnLabFoundationTitle">LAB <span data-i18n="lab.expansionLayer">EXPANSION LAYER</span></h2></div><span class="gn-foundation-signal" data-i18n="lab.localRecords">LOCAL RECORDS</span></div>
+    <div class="gn-lab-breadcrumb">LAB <b>›</b> <span data-i18n="lab.chooseSystemPhrase">CHOOSE A SYSTEM</span></div>
+    <div class="gn-foundation-grid">
+      <button type="button" class="gn-foundation-tile" data-lab-focus="calculators"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-g"><svg><use href="#gn-biometric-gauge"></use></svg></span></span><b data-i18n="lab.calculators">CALCULATORS</b><small data-i18n="lab.calculatorsHelp">Focused educational tools</small></button>
+      <button type="button" class="gn-foundation-tile active" data-lab-focus="research"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-lab-vessel"></use></svg></span></span><b data-i18n="lab.researchPeptides">RESEARCH PEPTIDES</b><small data-i18n="lab.researchPeptidesHelp">Personal record tracking</small></button>
+      <button type="button" class="gn-foundation-tile" data-lab-focus="inventory"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-g"><svg><use href="#gn-inventory-core"></use></svg></span></span><b data-i18n="lab.inventory">INVENTORY</b><small data-i18n="lab.inventoryHelp">Supply records + deduction</small></button>
+      <button type="button" class="gn-foundation-tile" data-lab-focus="devices"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-y"><svg><use href="#gn-vault-core"></use></svg></span></span><b data-i18n="lab.deviceVault">DEVICE VAULT</b><small data-i18n="lab.deviceVaultHelp">Identity, lifecycle, status</small></button>
+      <button type="button" class="gn-foundation-tile" data-lab-focus="ledger"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-r"><svg><use href="#gn-timeline-node"></use></svg></span></span><b data-i18n="lab.eventLedger">EVENT LEDGER</b><small data-i18n="lab.eventLedgerHelp">Source-aware history</small></button>
+    </div>
+    <details class="gn-foundation-section" open id="gnResearchSection"><summary><span data-i18n="lab.researchPeptides">RESEARCH PEPTIDES</span><em data-i18n="research.organize">ORGANIZE · OBSERVE · REVIEW</em></summary>
+      <div class="gn-research-notice gn-research-notice-compact"><button type="button" class="gn-research-info-toggle" aria-expanded="false" aria-controls="gnResearchNoticeBody" data-i18n-aria-label="research.noticeToggleAria"><span aria-hidden="true">?</span></button><strong data-i18n="research.noticeTitle">USER-ENTERED RESEARCH RECORDS</strong><span class="gn-research-notice-body" id="gnResearchNoticeBody" hidden data-i18n="research.noticeBody">Some compounds above have FDA-approved indications in specific clinical contexts. This organizer does not distinguish regulated from research use. All records are user-entered. Verify independently.</span></div>
+      <div class="gn-research-library">${RESEARCH_LIBRARY.map(({ category, names, context }) => { const catKey = RESEARCH_CATEGORY_KEYS[category]; const ctxKey = context === 'RESEARCH-FOCUSED RECORDS · REGULATORY STATUS IS NOT VERIFIED HERE.' ? 'lab.researchKicker' : 'lab.mixedResearchContext'; return `<div class="gn-research-group"><span>${safeText(catKey ? tx(catKey, category) : category)}</span><small class="gn-research-context">${safeText(tx(ctxKey, context))}</small><div>${names.map(name => `<button type="button" data-research-name="${safeText(name)}" data-research-category="${safeText(catKey)}">${safeText(name)}</button>`).join('')}</div></div>`; }).join('')}<div class="gn-research-group gn-research-custom-group"><span data-i18n="lab.customEntry">CUSTOM ENTRY</span><small class="gn-research-context" data-i18n="lab.customEntryHelp">USER-ENTERED RECORD · REGULATORY STATUS IS NOT VERIFIED HERE.</small><div><button type="button" class="gn-research-custom-link" data-research-name="" data-research-category="lab.customResearch" data-i18n="research.customEntryLink">¿Necesitas un compuesto personalizado? → Crear entrada personalizada</button></div></div>
+      <div class="gn-custom-warning" id="gnCustomWarning" data-i18n="research.customWarning">⚠ CUSTOM ENTRIES ARE NOT VERIFIED AGAINST THE LIBRARY. Verify the name and category independently.</div></div>
+      <div class="gn-research-disclaimer" data-i18n="research.noticeBody">Some compounds above have FDA-approved indications in specific clinical contexts. This organizer does not distinguish regulated from research use. All records are user-entered. Verify independently.</div>
+      <div class="gn-research-mode" id="gnResearchMode" data-mode="pick" style="display:none">
+        <div class="gn-research-mode-chips"><span class="gn-research-chip" id="gnModeLibraryChip" data-i18n="research.modeLibrarySelected">BIBLIOTECA · SELECCIONADA</span><span class="gn-research-chip" id="gnModeCategoryChip" data-i18n="research.modeCategoryAssigned">CATEGORÍA · ASIGNADA</span></div>
+        <div class="gn-research-mode-custom"><span class="gn-research-mode-title" data-i18n="research.modeCustomTitle">CREAR ENTRADA PERSONALIZADA</span><button type="button" class="gn-research-back" id="gnModeBack" onclick="researchBackToLibrary()" data-i18n="research.backToLibrary">← Volver a la biblioteca</button></div>
+      </div>
+      <form class="gn-record-form" id="gnResearchForm"><div class="gn-form-grid"><label><span data-i18n="research.recordName">RECORD NAME</span> <em data-research-badge class="gn-research-preset-badge"></em><input id="gnResearchName" required placeholder="Select a library entry or type a custom name" data-i18n-placeholder="research.recordNamePlaceholder"></label><label><span data-i18n="research.category">CATEGORY</span><input id="gnResearchCategory" placeholder="Research category" data-i18n-placeholder="research.categoryPlaceholder"></label><label><span data-i18n="research.date">DATE</span><input id="gnResearchDate" type="date"></label></div><div class="gn-form-grid"><label><span data-i18n="research.status">STATUS</span><select id="gnResearchState"><option value="TRACKING" data-i18n="research.tracking">TRACKING</option><option value="COMPLETED" data-i18n="research.completed">COMPLETED</option><option value="ARCHIVED" data-i18n="research.archived">ARCHIVED</option><option value="RESEARCH NOTE ONLY" data-i18n="research.noteOnly">RESEARCH NOTE ONLY</option></select></label></div><div class="gn-advanced-fields"><button type="button" class="gn-advanced-toggle" aria-expanded="false" aria-controls="gnAdvancedFields" data-i18n="research.advanced">ADVANCED</button><div class="gn-advanced-body" id="gnAdvancedFields" hidden><div class="gn-form-grid"><label><span data-i18n="research.source">SOURCE</span><input id="gnResearchSource" placeholder="User-entered source or note" data-i18n-placeholder="research.sourcePlaceholder"></label></div><label><span data-i18n="research.observations">OBSERVATIONS / NOTES</span><textarea id="gnResearchNotes" rows="3" placeholder="User-entered observations only" data-i18n-placeholder="research.observationsPlaceholder"></textarea></label></div></div><button class="btn-full btn-primary" type="submit" id="gnResearchSave" data-i18n="research.save">SAVE RESEARCH RECORD</button></form>
+      <div class="gn-record-list" id="gnResearchList"></div>
+    </details>
+    <details class="gn-foundation-section" id="gnLedgerSection"><summary><span data-i18n="lab.ledgerTitle">SOURCE-AWARE EVENT LEDGER</span><em data-i18n="lab.noSilentRewrites">NO SILENT REWRITES</em></summary><div class="gn-ledger-copy" data-i18n="lab.ledgerCopy">Every important record keeps its origin and review state. Manual Entry, Import, Device Reported, and System Generated events remain distinguishable.</div><div class="gn-ledger-list" id="gnLedgerList"></div></details>
+    <details class="gn-foundation-section" id="gnSupplySection"><summary><span data-i18n="lab.savedInventory">SAVED INVENTORY</span><em data-i18n="lab.separateCalculators">SEPARATE FROM CALCULATORS</em></summary><div class="gn-ledger-copy"><strong data-i18n="lab.calculatorEstimate">CALCULATOR / REFERENCE ESTIMATE</strong> <span data-i18n="lab.inventoryBoundary">remains educational math. Saved Inventory is user-entered supply records and does not verify product, storage, potency, or safety.</span></div><form class="gn-record-form" id="gnInventoryForm"><div class="gn-form-grid"><label><span data-i18n="lab.itemName">ITEM NAME</span><input id="gnInventoryName" required placeholder="e.g. cartridge A" data-i18n-placeholder="lab.itemNamePlaceholder"></label><label><span data-i18n="lab.itemType">ITEM TYPE</span><select id="gnInventoryType"><option value="VIAL" data-i18n="lab.typeVial">Vial</option><option value="CARTRIDGE" data-i18n="lab.typeCartridge">Cartridge</option><option value="DISPOSABLE_PEN" data-i18n="lab.typeDisposable">Disposable pen</option><option value="BOX_PACKAGE" data-i18n="lab.typeBox">Box or package</option><option value="SUPPLY" data-i18n="lab.typeSupply">General supply item</option><option value="CUSTOM" data-i18n="lab.typeCustom">Custom item</option></select></label><label><span data-i18n="lab.quantity">QUANTITY</span><input id="gnInventoryQuantity" type="number" min="0" step="any" placeholder="0"></label></div><div class="gn-form-grid"><label><span data-i18n="lab.units">UNITS</span><input id="gnInventoryUnits" placeholder="items, mL, boxes" data-i18n-placeholder="lab.unitsPlaceholder"></label><label><span data-i18n="lab.expiration">EXPIRATION / BUD</span><input id="gnInventoryExpiry" type="date"></label><label><span data-i18n="lab.storageLocation">STORAGE LOCATION</span><input id="gnInventoryLocation" placeholder="User-entered location" data-i18n-placeholder="lab.storagePlaceholder"></label></div><label><span data-i18n="lab.notes">NOTES</span><textarea id="gnInventoryNotes" rows="2" placeholder="User-entered supply notes" data-i18n-placeholder="lab.supplyNotesPlaceholder"></textarea></label><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-full btn-secondary" type="submit" style="flex:1 1 180px" id="gnInventorySave" data-i18n="lab.saveInventory">SAVE INVENTORY ITEM</button><button class="btn-full btn-secondary" type="button" id="gnInventoryExport" style="flex:0 1 170px" data-i18n="lab.exportInventory">EXPORT INVENTORY</button></div></form><div class="gn-record-list" id="gnInventoryList"></div></details>
+  </section>`);
+  $('gnResearchForm')?.addEventListener('submit', event => { event.preventDefault(); saveResearchRecord(); });
+  // B12 (2026-08-08): compact research notice — "?" toggles the body.
+  document.querySelectorAll('.gn-research-info-toggle').forEach(toggle => {
+    toggle.addEventListener('click', () => {
+      const body = document.getElementById(toggle.getAttribute('aria-controls'));
+      const open = !body.hidden;
+      body.hidden = open;
+      toggle.setAttribute('aria-expanded', String(!open));
+    });
+  });
+  // B12 rev (2026-08-08): Advanced fields (FUENTE + OBSERVACIONES) collapse.
+  // Button + hidden div, not <details> — Chromium breaks details content
+  // layout when styled, so we drive it explicitly.
+  document.querySelectorAll('.gn-advanced-toggle').forEach(toggle => {
+    toggle.addEventListener('click', () => {
+      const body = document.getElementById(toggle.getAttribute('aria-controls'));
+      const open = !body.hidden;
+      body.hidden = open;
+      toggle.setAttribute('aria-expanded', String(!open));
+      toggle.classList.toggle('open', !open);
+    });
+  });
+  $('gnResearchList')?.addEventListener('click', handleResearchAction);
+  const inventoryNotesLabel = $('gnInventoryNotes')?.closest('label');
+  inventoryNotesLabel?.insertAdjacentHTML('beforebegin', `<div class="gn-form-grid"><label><span data-i18n="lab.concentration">CONCENTRATION</span><input id="gnInventoryConcentration" placeholder="User-entered label" data-i18n-placeholder="lab.userLabelPlaceholder"></label><label><span data-i18n="lab.volume">VOLUME</span><input id="gnInventoryVolume" placeholder="User-entered volume" data-i18n-placeholder="lab.userVolumePlaceholder"></label><label><span data-i18n="lab.acquiredDate">ACQUIRED DATE</span><input id="gnInventoryAcquired" type="date"></label></div><div class="gn-form-grid"><label><span data-i18n="research.source">SOURCE</span><input id="gnInventorySource" placeholder="User-entered source" data-i18n-placeholder="lab.userSourcePlaceholder"></label><label><span data-i18n="lab.linkedMedication">LINKED MEDICATION</span><input id="gnInventoryMedication" placeholder="e.g. Zepbound" data-i18n-placeholder="lab.medicationPlaceholder"></label><label style="display:flex;align-items:center;gap:8px;grid-template-columns:auto 1fr"><input id="gnInventoryAutoDeduct" type="checkbox" style="width:auto"><span data-i18n="lab.autoDeduct">AUTO-DEDUCT SHOTS</span> <small data-i18n="lab.autoDeductHelp">Requires quantity unit mg and a matching medication.</small></label></div>`);
+  installCustomPickers(page);
+  $('gnInventoryForm')?.addEventListener('submit', event => { event.preventDefault(); saveInventoryRecord(); });
+  $('gnInventoryExport')?.addEventListener('click', exportInventory);
+  $('gnInventoryList')?.addEventListener('click', handleInventoryAction);
+  page.classList.add('gn-lab-launchpad-mode');
+  const overlay = document.createElement('section');
+  overlay.className = 'gn-lab-tool-overlay';
+  overlay.id = 'gnLabToolOverlay';
+  overlay.hidden = true;
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-labelledby', 'gnLabToolTitle');
+  overlay.innerHTML = `<div class="gn-lab-tool-shell"><header class="gn-lab-tool-head"><button type="button" class="gn-lab-back" data-lab-back data-i18n="lab.back">${tx('lab.back', '← BACK TO LAB')}</button><div><div class="gn-foundation-kicker" data-i18n="lab.kicker">// LAB SYSTEM</div><h2 id="gnLabToolTitle">${tx('lab.chooseSystem', 'LAB > CHOOSE A SYSTEM')}</h2></div><span class="gn-foundation-signal" data-i18n="lab.localRecords">LOCAL RECORDS</span></header><div id="gnLabToolHost" class="gn-lab-tool-host"></div></div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('[data-lab-back]')?.addEventListener('click', closeLabTool);
+  qa('[data-lab-focus]').forEach(tile => tile.addEventListener('click', () => openLabTool(tile.dataset.labFocus)));
+  const banner = page.querySelector('#gnLabToolBanner');
+  if (!banner) page.insertAdjacentHTML('beforeend', `<div id="gnLabToolBanner" class="gn-sr-only" role="status" aria-live="polite" aria-atomic="true"></div>`);
+  renderLabFoundations();
+}
+
+function labSlot(node) {
+  if (!node || moduleState.labOriginalSlots.has(node)) return;
+  moduleState.labOriginalSlots.set(node, { parent: node.parentNode, next: node.nextSibling });
+}
+
+function restoreLabNodes() {
+  [...moduleState.labOriginalSlots.entries()].reverse().forEach(([node, slot]) => {
+    if (!slot.parent) return;
+    if (slot.next?.parentNode === slot.parent) slot.parent.insertBefore(node, slot.next);
+    else slot.parent.appendChild(node);
+  });
+  moduleState.labOriginalSlots.clear();
+}
+
+export function openLabTool(tool) {
+  ensureLabFoundations();
+  ensureDoseProjection();
+  ensureCalculatorInventoryActions();
+  if (tool === 'devices') ensureProfileHub();
+  const overlay = $('gnLabToolOverlay'), host = $('gnLabToolHost'), page = $('pageLab');
+  if (!overlay || !host || !page) return;
+  moduleState.labToolLauncher = document.activeElement?.closest?.('[data-lab-focus]') || document.querySelector(`[data-lab-focus="${tool}"]`);
+  const toolNodes = {
+    calculators: ['labSegTabs', 'labSeg-draw', 'labSeg-recon', 'labSeg-supply', 'gnDoseProjection'].map($),
+    research: [$('gnResearchSection')],
+    inventory: [$('gnSupplySection')],
+    devices: [document.querySelector('.gn-device-vault')],
+    ledger: [$('gnLedgerSection')]
+  }[tool]?.filter(Boolean) || [];
+  if (!toolNodes.length) return;
+  restoreLabNodes();
+  toolNodes.forEach(labSlot);
+  // LAB focus: subdue the directory while the tool content is moved.
+  page.classList.add('gn-tool-focus');
+  toolNodes.forEach(node => host.appendChild(node));
+  [$('gnResearchSection'), $('gnLedgerSection'), $('gnSupplySection')].forEach(section => { if (section) section.open = section.id === (tool === 'research' ? 'gnResearchSection' : tool === 'inventory' ? 'gnSupplySection' : 'gnLedgerSection'); });
+  const titles = { calculators: tx('lab.calculators', 'CALCULATORS'), research: tx('lab.researchPeptides', 'RESEARCH PEPTIDES'), inventory: tx('lab.inventory', 'INVENTORY'), devices: tx('lab.deviceVault', 'DEVICE VAULT'), ledger: tx('lab.eventLedger', 'EVENT LEDGER') };
+  setText('gnLabToolTitle', titles[tool] || 'LAB SYSTEM');
+  qa('[data-lab-focus]').forEach(tile => tile.classList.toggle('active', tile.dataset.labFocus === tool));
+  page.classList.add('gn-lab-tool-open');
+  overlay.hidden = false;
+  overlay.classList.add('active');
+  document.body.classList.add('gn-lab-tool-open');
+  if (tool === 'calculators') showLabSeg('draw', document.querySelector('[data-labseg="draw"]'));
+  renderLabFoundations();
+  if (tool === 'devices') renderDeviceVault();
+  // Focus scroll position: the overlay is the scroll container. For a newly
+  // opened tool, reset scrollTop to 0 after layout — the shell's layout already
+  // places the first content block below the sticky header (gap >= 12px).
+  // scrollIntoView is deliberately avoided here: it scrolls the container down
+  // and lands the content behind the sticky header. (CSS scroll-padding-top on
+  // .gn-lab-tool-overlay keeps later anchor jumps clear of the header.)
+  requestAnimationFrame(function () {
+    overlay.scrollTop = 0;
+  });
+  overlay.querySelector('[data-lab-back]')?.focus({ preventScroll: true });
+}
+
+export function closeLabTool() {
+  // Close the focused LAB tool view fully: hide the overlay, restore the DOM
+  // nodes to their original slots, and release the focused-view state.
+  const overlay = $('gnLabToolOverlay');
+  const page = $('pageLab');
+  if (overlay) {
+    overlay.classList.remove('active');
+    overlay.hidden = true;
+  }
+  try { restoreLabNodes(); } catch (_) {}
+  if (page) page.classList.remove('gn-tool-focus', 'gn-lab-tool-open');
+  document.body?.classList.remove('gn-lab-tool-open');
+  const launcher = moduleState.labToolLauncher;
+  moduleState.labToolLauncher = null;
+  if (launcher?.isConnected) window.setTimeout(() => launcher.focus({ preventScroll: true }), 0);
+}
+
+window.addEventListener('popstate', function (event) {
+  // Browser Back while the LAB tool overlay is open -> close the tool view.
+  const overlay = $('gnLabToolOverlay');
+  // A nested picker/popover returning to the LAB layer must not also dismiss
+  // the focused tool. The native shell owns that inner history entry first.
+  if (overlay && event.state?.gnLayer === overlay.id) return;
+  if (overlay && overlay.classList.contains('active')) {
+    overlay.classList.remove('active');
+    overlay.hidden = true;
+    try { restoreLabNodes(); } catch (_) {}
+    const page = $('pageLab');
+    if (page) page.classList.remove('gn-tool-focus', 'gn-lab-tool-open');
+    document.body?.classList.remove('gn-lab-tool-open');
+    const launcher = moduleState.labToolLauncher;
+    moduleState.labToolLauncher = null;
+    if (launcher?.isConnected) window.setTimeout(() => launcher.focus({ preventScroll: true }), 0);
+  }
+});
+
+/* v0.15.32 — global gesture tagger. Wraps the document so EVERY click anywhere
+   in the app is captured at the very first moment and registers as a
+   "user gesture element" with gnHaptics. This means the focus-gate
+   permits confirm/error haptic for the next 250ms — fixing the
+   Android Chrome case where tapping Save leaves focus on the save
+   button and the focus-gate would otherwise suppress the success pulse. */
+if (typeof document !== 'undefined' && !document.documentElement.dataset.gnGestureTagger) {
+  document.documentElement.dataset.gnGestureTagger = '1';
+  document.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!target || typeof target.closest !== 'function') return;
+    /* Tag the most-actionable ancestor — the clickable thing. */
+    const actionable = target.closest('button, a, summary, [role="button"], label, [tabindex]:not([tabindex="-1"])');
+    /* Note: gnHaptics const declaration lives below this block; we read
+       via window.gnHaptics (exposed by try { window.gnHaptics = gnHaptics; } further down)
+       to avoid a Temporal Dead Zone ReferenceError on initial top-level execution. */
+    if (actionable && typeof window.gnHaptics !== 'undefined' && window.gnHaptics.markUserGesture) {
+      window.gnHaptics.markUserGesture(actionable);
+    }
+  }, true /* capture phase — runs before any handler */);
+}
+
+function announceLabToolStatus(label, detail) {
+  const banner = document.getElementById('gnLabToolBanner');
+  if (!banner) return;
+  const combined = detail ? `${label} — ${detail}` : label;
+  banner.textContent = '';
+  requestAnimationFrame(() => { banner.textContent = combined; });
+}
+
+/* v0.15.30 — premium vibration feedback (additive). Gated by user pref + reduced-motion
+   + input focus (unless the focus belongs to the element that just dispatched the action). */
+const gnHaptics = (() => {
+  const KEY = 'gn_haptics_v1';
+  let enabled = (() => {
+    try {
+      const stored = localStorage.getItem(KEY);
+      if (stored === 'on' || stored === 'off') return stored === 'on';
+    } catch (_) {}
+    return true;
+  })();
+  const reduceMotion = () => typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const supported = () => typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
+
+  /* v0.15.32 — gesture-tag: gesture handlers register the element that
+     received the user gesture (e.g. a Save button). The focus gate allows
+     the haptic through for 250ms even if focus happens to be on that
+     element (clicking a button leaves focus on the button). */
+  let lastGestureEl = null;
+  let lastGestureAt = 0;
+  const markUserGesture = (el) => {
+    lastGestureEl = el || null;
+    lastGestureAt = Date.now();
+  };
+  const gestureTarget = (el) => markUserGesture(el);
+
+  const focusInsideField = () => {
+    const el = document.activeElement;
+    if (!el) return false;
+    const tag = el.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
+  };
+  const shouldSuppressForFocus = () => {
+    if (!focusInsideField()) return false;
+    /* v0.15.32 — gesture window: if the user just dispatched a gesture on
+       this same element within the last 250ms, allow the haptic. Real world
+       fix for the Android-Chrome-WebView case where tapping Save briefly
+       leaves focus on the Save button (or a submit input inside the form)
+       and the focus-gate was suppressing the success pulse. */
+    const el = document.activeElement;
+    if (lastGestureEl === el && Date.now() - lastGestureAt < 250) return false;
+    return true;
+  };
+  const play = (pattern, opts = {}) => {
+    if (!enabled) return;
+    if (reduceMotion()) return;
+    const skipFocus = opts && opts.skipFocus;
+    if (!skipFocus && shouldSuppressForFocus()) return;
+    if (!supported()) return;
+    /* v0.15.32 — wrap in try/catch but DO NOT silently swallow: log a
+       single warning for diagnostics. Android Chrome WebView occasionally
+       throws "vibrate() must be called from a user gesture" — that's fine
+       to swallow, but any other error is unexpected and we want to see it. */
+    try {
+      navigator.vibrate(pattern);
+    } catch (err) {
+      const msg = String(err && err.message || err);
+      if (!/user gesture|secure context|not allowed|gestureactivation/i.test(msg)) {
+        try { console.warn('[GRID//NODE gnHaptics]', msg); } catch (_) {}
+      }
+    }
+  };
+  const setEnabled = (next) => {
+    enabled = !!next;
+    try { localStorage.setItem(KEY, enabled ? 'on' : 'off'); } catch (_) {}
+  };
+  /* v0.15.32 — direct-fire API used by actionFeedback: passes the gesture
+     gate ONLY if a gesture was just registered. */
+  const confirmNow = (gestureEl) => { if (gestureEl) markUserGesture(gestureEl); play([8, 30, 12]); };
+  const errorNow = (gestureEl) => { if (gestureEl) markUserGesture(gestureEl); play([4, 30, 4, 30, 4]); };
+  const lockNow = (gestureEl) => { if (gestureEl) markUserGesture(gestureEl); play([4, 18, 10]); };
+  return {
+    supported,
+    enabled: () => enabled,
+    setEnabled,
+    markUserGesture,
+    gestureTarget,
+    confirmNow,
+    errorNow,
+    lockNow,
+    tap: () => play(6),
+    confirm: () => play([8, 30, 12]),
+    error: () => play([4, 30, 4, 30, 4]),
+    lock: () => play([4, 18, 10]),
+    mode: () => play([6, 30, 6]),
+    select: () => play([10, 24, 6]),
+    fire: (pattern) => play(pattern, { skipFocus: true })
+  };
+})();
+
+try { window.gnHaptics = gnHaptics; } catch (_) {}
+
+function renderLabFoundations() {
+  const list = $('gnResearchList');
+  if (list) {
+    const records = S.get('researchRecords', []);
+    const localizedRecords = records.map(record => ({
+      ...record,
+      category: researchCategoryLabel(record.category),
+      source: ['manual', 'Manual Entry', ''].includes(record.source || '') ? eventSourceText('manual') : record.source
+    }));
+    const active = localizedRecords.filter(record => !record.archived);
+    const archived = localizedRecords.filter(record => record.archived);
+    list.innerHTML = records.length ? `${active.slice().reverse().map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(record.category || tx('lab.customResearch', 'CUSTOM RESEARCH'))} · ${safeText(formatDate(record.date || record.createdAt))} · ${safeText(record.source || tx('research.manualEntry', 'Manual Entry'))}</small></div><span class="gn-record-state">${safeText(researchStateLabel(record.state))}</span><div style="display:flex;gap:4px"><button type="button" class="gn-record-delete" data-research-edit="${safeText(record.id)}" aria-label="${tx('lab.editResearch', 'Edit research record')}">✎</button><button type="button" class="gn-record-delete" data-research-archive="${safeText(record.id)}" aria-label="${tx('lab.archiveResearch', 'Archive research record')}">×</button></div></article>`).join('')}${archived.length ? `<div class="gn-ledger-copy" style="margin-top:10px">${tx("research.archivedHeading", "ARCHIVED RECORDS · Restore the record before editing.")}</div>${archived.slice().reverse().map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(record.category || tx('lab.customResearch', 'CUSTOM RESEARCH'))} · ${tx('research.archivedPrefix', 'Archived')} ${safeText(formatDate(record.modifiedAt || record.createdAt))}</small></div><span class="gn-record-state">${tx("research.archivedState", "ARCHIVED")}</span><button type="button" class="gn-record-delete gn-restore-edit" data-research-restore="${safeText(record.id)}" aria-label="${tx('lab.restoreResearch', 'Restore research record to edit')}">${tx("research.restoreToEdit", "RESTORE TO EDIT")}</button></article>`).join('')}` : ''}` : `<div class="gn-empty-state"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-lab-vessel"></use></svg></span><b>${tx("research.emptyTitle", "NO RESEARCH RECORDS YET")}</b><span>${tx("research.emptyBody", "Choose a library entry or create a custom record when you have something to preserve.")}</span></div>`;
+  }
+  const ledger = $('gnLedgerList');
+  if (ledger) {
+    const events = S.get('eventLedger', []).slice(-8).reverse();
+    ledger.innerHTML = events.length ? events.map(event => `<div class="gn-ledger-row"><span class="gn-ledger-dot"></span><div><b>${safeText(eventLabelText(event.label || event.type))}</b><small>${safeText(formatDateTime(event.date || event.createdAt))}</small></div><em>${safeText(eventSourceText(event.source))} · ${safeText(eventStateText(event.state))}</em></div>`).join('') : `<div class="gn-empty-state"><b>${tx('lab.ledgerReady', 'LEDGER READY')}</b><span>${tx('lab.ledgerEmpty', 'New SHOTS and RESULTS events will appear here with their origin.')}</span></div>`;
+  }
+  renderInventory();
+  syncCustomPickers($('pageLab') || document);
+}
+
+function renderInventory() {
+  const list = $('gnInventoryList');
+  if (!list) return;
+  const records = S.get('inventory', []);
+  const visible = records.filter(record => !record.archived);
+  const archived = records.filter(record => record.archived);
+  list.innerHTML = records.length ? `${visible.map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(inventoryTypeLabel(record.type))} · ${safeText(record.quantity ?? '—')} ${safeText(record.units || '')} · ${safeText(record.location || tx('lab.locationNotEntered', 'LOCATION NOT ENTERED'))}</small></div><span class="gn-record-state">${safeText(record.status === 'ARCHIVED' ? tx('research.archivedState', 'ARCHIVED') : tx('lab.active', 'ACTIVE'))}</span><div style="display:flex;gap:4px"><button type="button" class="gn-record-delete" data-inventory-edit="${safeText(record.id)}" aria-label="Edit inventory item" data-i18n-aria-label="lab.editInventoryAria">✎</button><button type="button" class="gn-record-delete" data-inventory-archive="${safeText(record.id)}" aria-label="Archive inventory item" data-i18n-aria-label="lab.archiveInventoryAria">×</button></div></article>`).join('')}${archived.length ? `<div class="gn-ledger-copy" style="margin-top:10px">${tx('research.archivedHeading', 'ARCHIVED RECORDS · Restore the record before editing.')}</div>${archived.map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(inventoryTypeLabel(record.type))} · ${tx('research.archivedPrefix', 'Archived')} ${safeText(formatDate(record.modifiedAt || record.createdAt))}</small></div><span class="gn-record-state">${tx('research.archivedState', 'ARCHIVED')}</span><button type="button" class="gn-record-delete gn-restore-edit" data-inventory-restore="${safeText(record.id)}" aria-label="Restore inventory item to edit" data-i18n-aria-label="lab.restoreInventoryAria">${tx('research.restoreToEdit', 'RESTORE TO EDIT')}</button></article>`).join('')}` : ''}` : `<div class="gn-empty-state"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-archive-core"></use></svg></span><b>${tx('lab.inventoryReady', 'SAVED INVENTORY READY')}</b><span>${tx('lab.inventoryEmpty', 'Record supplies separately from educational calculators when you want a persistent list.')}</span></div>`;
+}
+
+function saveInventoryRecord() {
+  const name = $('gnInventoryName')?.value?.trim();
+  if (!name) { actionFeedback(tx('inventory.notSaved', 'INVENTORY NOT SAVED'), tx('inventory.addName', 'ADD AN ITEM NAME BEFORE COMMITTING'), true); return; }
+  const records = S.get('inventory', []);
+  const now = new Date().toISOString();
+  const id = moduleState.inventoryEditId || createId('inventory');
+  const existing = records.find(record => record.id === id);
+  const history = [...(existing?.history || []), { at: now, action: existing ? 'UPDATED' : 'CREATED', source: 'manual' }];
+  const record = { id, name, type: normalizeInventoryType($('gnInventoryType')?.value), quantity: Number($('gnInventoryQuantity')?.value) || 0, units: $('gnInventoryUnits')?.value?.trim() || '', medication: $('gnInventoryMedication')?.value?.trim() || '', autoDeduct: Boolean($('gnInventoryAutoDeduct')?.checked), concentration: $('gnInventoryConcentration')?.value?.trim() || '', volume: $('gnInventoryVolume')?.value?.trim() || '', acquired: $('gnInventoryAcquired')?.value || '', expires: $('gnInventoryExpiry')?.value || '', inventorySource: $('gnInventorySource')?.value?.trim() || '', location: $('gnInventoryLocation')?.value?.trim() || '', notes: $('gnInventoryNotes')?.value?.trim() || '', status: existing?.status || 'ACTIVE', archived: existing?.archived || false, source: existing?.source || 'manual', state: existing?.state || 'confirmed', history, createdAt: existing?.createdAt || now, modifiedAt: now };
+  const index = records.findIndex(item => item.id === id);
+  if (index >= 0) records[index] = record; else records.push(record);
+  S.set('inventory', records); appendEventLedger({ type: 'INVENTORY', recordId: record.id, label: existing ? 'INVENTORY UPDATED' : 'INVENTORY ITEM SAVED' }); queueCloudSync('workspace');
+  moduleState.inventoryEditId = null; $('gnInventoryForm')?.reset(); setText('gnInventorySave', 'SAVE INVENTORY ITEM'); renderInventory(); actionFeedback(existing ? tx('inventory.updated', 'INVENTORY UPDATED') : tx('inventory.saved', 'INVENTORY SAVED'), tx('inventory.timelineUpdated', 'SAVED INVENTORY // TIMELINE UPDATED'));
+}
+
+function handleInventoryAction(event) {
+  const button = event.target.closest('button[data-inventory-edit],button[data-inventory-archive],button[data-inventory-restore]');
+  if (!button) return;
+  const id = button.dataset.inventoryEdit || button.dataset.inventoryArchive || button.dataset.inventoryRestore;
+  const records = S.get('inventory', []);
+  const record = records.find(item => item.id === id);
+  if (!record) return;
+  if (button.dataset.inventoryEdit) {
+    moduleState.inventoryEditId = id;
+    $('gnInventoryName').value = record.name || ''; $('gnInventoryType').value = normalizeInventoryType(record.type); $('gnInventoryQuantity').value = record.quantity || ''; $('gnInventoryUnits').value = record.units || ''; $('gnInventoryMedication').value = record.medication || ''; $('gnInventoryAutoDeduct').checked = Boolean(record.autoDeduct); $('gnInventoryConcentration').value = record.concentration || ''; $('gnInventoryVolume').value = record.volume || ''; $('gnInventoryAcquired').value = record.acquired || ''; $('gnInventoryExpiry').value = record.expires || ''; $('gnInventorySource').value = record.inventorySource || ''; $('gnInventoryLocation').value = record.location || ''; $('gnInventoryNotes').value = record.notes || ''; setText('gnInventorySave', tx('lab.updateInventory', 'UPDATE INVENTORY ITEM')); syncCustomPicker($('gnInventoryType')); syncCustomDate($('gnInventoryAcquired')); syncCustomDate($('gnInventoryExpiry')); $('gnInventoryForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
+  }
+  if (button.dataset.inventoryArchive) { record.archived = true; record.status = 'ARCHIVED'; record.modifiedAt = new Date().toISOString(); record.history = [...(record.history || []), { at: record.modifiedAt, action: 'ARCHIVED', source: 'manual' }]; actionFeedback(tx('inventory.archived', 'INVENTORY ARCHIVED'), tx('inventory.historyPreserved', 'HISTORY PRESERVED // RECORD REMAINS RECOVERABLE')); }
+  else { record.archived = false; record.status = 'ACTIVE'; record.modifiedAt = new Date().toISOString(); record.history = [...(record.history || []), { at: record.modifiedAt, action: 'RESTORED', source: 'manual' }]; actionFeedback(tx('inventory.restored', 'INVENTORY RESTORED'), tx('inventory.timelineUpdated', 'SAVED INVENTORY // TIMELINE UPDATED')); }
+  S.set('inventory', records); appendEventLedger({ type: 'INVENTORY', recordId: record.id, label: record.archived ? 'INVENTORY ARCHIVED' : 'INVENTORY RESTORED' }); queueCloudSync('workspace'); renderInventory();
+}
+
+export function exportInventory() {
+  downloadFile('gridnode-inventory.json', JSON.stringify({ app: 'GRID//NODE', exportedAt: new Date().toISOString(), inventory: S.get('inventory', []) }, null, 2), 'application/json');
+  actionFeedback(tx('inventory.exportReady', 'INVENTORY EXPORT READY'), tx('inventory.recordsPrepared', 'USER-CONTROLLED RECORDS PREPARED'));
+}
+
+function saveResearchRecord() {
+  const name = $('gnResearchName')?.value?.trim();
+  const nameInput = $('gnResearchName');
+  const dateInput = $('gnResearchDate');
+  if (nameInput) nameInput.setAttribute('aria-invalid', 'false');
+  if (dateInput) dateInput.setAttribute('aria-invalid', 'false');
+  if (!name) {
+    if (nameInput) {
+      nameInput.setAttribute('aria-invalid', 'true');
+      nameInput.setAttribute('aria-describedby', 'gnResearchErrorName');
+      let hint = $('gnResearchErrorName');
+      if (!hint) {
+        hint = document.createElement('div');
+        hint.id = 'gnResearchErrorName';
+        hint.className = 'gn-form-error';
+        hint.dataset.i18n = 'research.addName';
+        hint.textContent = tx('research.addName', 'ADD A NAME BEFORE COMMITTING');
+        nameInput.insertAdjacentElement('afterend', hint);
+      } else {
+        hint.textContent = tx('research.addName', 'ADD A NAME BEFORE COMMITTING');
+      }
+    }
+    announceLabToolStatus(tx('research.notSaved', 'RESEARCH RECORD NOT SAVED'), tx('research.addName', 'ADD A NAME BEFORE COMMITTING'));
+    actionFeedback(tx('research.notSaved', 'RESEARCH RECORD NOT SAVED'), tx('research.addName', 'ADD A NAME BEFORE COMMITTING'), true);
+    nameInput?.focus();
+    return;
+  }
+  if (nameInput) nameInput.removeAttribute('aria-describedby');
+  const records = S.get('researchRecords', []), now = new Date().toISOString(), id = moduleState.researchEditId || createId('research'), existing = records.find(item => item.id === id);
+  const categoryInput = $('gnResearchCategory');
+  const shotDate = dateInput?.value?.trim();
+  if (!shotDate) {
+    if (dateInput) {
+      dateInput.setAttribute('aria-invalid', 'true');
+      dateInput.setAttribute('aria-describedby', 'gnResearchErrorDate');
+      let hint = $('gnResearchErrorDate');
+      if (!hint) {
+        hint = document.createElement('div');
+        hint.id = 'gnResearchErrorDate';
+        hint.className = 'gn-form-error';
+        hint.dataset.i18n = 'research.addDate';
+        hint.textContent = tx('research.addDate', 'SELECT A DATE BEFORE COMMITTING');
+        dateInput.insertAdjacentElement('afterend', hint);
+      } else {
+        hint.textContent = tx('research.addDate', 'SELECT A DATE BEFORE COMMITTING');
+      }
+    }
+    announceLabToolStatus(tx('research.notSaved', 'RESEARCH RECORD NOT SAVED'), tx('research.addDate', 'SELECT A DATE BEFORE COMMITTING'));
+    actionFeedback(tx('research.notSaved', 'RESEARCH RECORD NOT SAVED'), tx('research.addDate', 'SELECT A DATE BEFORE COMMITTING'), true);
+    dateInput?.focus();
+    return;
+  }
+  if (dateInput) dateInput.removeAttribute('aria-describedby');
+  const record = { id, name, category: normalizeResearchCategory(categoryInput?.dataset.categoryId || categoryInput?.value), date: shotDate, notes: $('gnResearchNotes')?.value?.trim() || '', source: $('gnResearchSource')?.value?.trim() || existing?.source || 'manual', state: $('gnResearchState')?.value || existing?.state || 'TRACKING', archived: existing?.archived || false, createdAt: existing?.createdAt || now, modifiedAt: now };
+  const index = records.findIndex(item => item.id === id);
+  if (index >= 0) records[index] = record; else records.push(record);
+  S.set('researchRecords', records); appendEventLedger({ type: 'RESEARCH', recordId: record.id, date: record.date, label: existing ? 'RESEARCH RECORD UPDATED' : 'RESEARCH RECORD CAPTURED' });
+  queueCloudSync('workspace'); moduleState.researchEditId = null; $('gnResearchForm')?.reset(); if ($('gnResearchName')) { $('gnResearchName').readOnly = false; $('gnResearchName').removeAttribute('data-research-locked'); $('gnResearchName')?.setAttribute('placeholder', tx('research.recordNamePlaceholder', 'Select a library entry or type a custom name')); } const sb = $('gnResearchForm')?.querySelector('[data-research-badge]'); if (sb) sb.textContent = ''; setText('gnResearchSave', tx('research.save', 'SAVE RESEARCH RECORD')); const sr = $('gnResearchSave'); if (sr) sr.textContent = tx('research.save', 'SAVE RESEARCH RECORD'); const rm = $('gnResearchMode'); if (rm) { rm.style.display = 'none'; rm.dataset.mode = 'pick'; } const rcat = $('gnResearchCategory'); if (rcat) { rcat.readOnly = false; rcat.removeAttribute('data-category-locked'); } $('gnResearchErrorName')?.remove(); $('gnResearchErrorDate')?.remove(); if ($('gnResearchName')) { $('gnResearchName').removeAttribute('aria-invalid'); $('gnResearchName').removeAttribute('aria-describedby'); } if ($('gnResearchDate')) { $('gnResearchDate').removeAttribute('aria-invalid'); $('gnResearchDate').removeAttribute('aria-describedby'); }
+    renderLabFoundations();
+    const successLabel = existing ? tx('research.updated', 'RESEARCH RECORD UPDATED') : tx('research.captured', 'RESEARCH RECORD CAPTURED');
+    const successDetail = tx('research.timelineSignal', 'TIMELINE UPDATED // USER-ENTERED ONLY');
+    announceLabToolStatus(successLabel, successDetail);
+    actionFeedback(successLabel, successDetail);
+    pulseGnCapture($('gnResearchSave'));
+}
+
+function handleResearchAction(event) {
+  const button = event.target.closest('button[data-research-edit],button[data-research-archive],button[data-research-restore]');
+  if (!button) return;
+  const id = button.dataset.researchEdit || button.dataset.researchArchive || button.dataset.researchRestore;
+  const records = S.get('researchRecords', []), record = records.find(item => item.id === id);
+  if (!record) return;
+  if (button.dataset.researchEdit) {
+    moduleState.researchEditId = id; $('gnResearchName').value = record.name || ''; const isLibraryName = Boolean(record.name) && RESEARCH_LIBRARY.some(g => g.names.includes(record.name)); if (isLibraryName) { const em = $('gnResearchMode'); if (em) { em.style.display = ''; em.dataset.mode = 'library'; } const emc = $('gnModeLibraryChip'); if (emc) { emc.style.display = ''; emc.textContent = tx('research.modeLibrarySelected', 'BIBLIOTECA · SELECCIONADA') + ' ' + tx('research.lockGlyph', '🔒'); } const ecc = $('gnModeCategoryChip'); if (ecc) { ecc.style.display = ''; ecc.textContent = tx('research.modeCategoryAssigned', 'CATEGORÍA · ASIGNADA') + ' ' + tx('research.lockGlyph', '🔒'); } const ecb = $('gnModeBack'); if (ecb) ecb.style.display = 'none'; const ect = document.querySelector('.gn-research-mode-custom .gn-research-mode-title'); if (ect) ect.style.display = 'none'; const ecw = $('gnCustomWarning'); if (ecw) ecw.style.display = 'none'; } else { researchEnterCustomMode(); const ec2 = $('gnResearchMode'); if (ec2) ec2.style.display = ''; } $('gnResearchName').readOnly = isLibraryName; if (isLibraryName) $('gnResearchName').setAttribute('data-research-locked', '1'); else $('gnResearchName').removeAttribute('data-research-locked'); const editBadgeHost = $('gnResearchForm')?.querySelector('[data-research-badge]'); if (editBadgeHost) editBadgeHost.textContent = isLibraryName ? tx('research.presetBadge', 'PRESET') : ''; $('gnResearchName')?.setAttribute('placeholder', isLibraryName ? tx('research.presetLockedPlaceholder', 'Library entry — name is locked') : tx('research.recordNamePlaceholder', 'Select a library entry or type a custom name')); $('gnResearchCategory').dataset.categoryId = normalizeResearchCategory(record.category); $('gnResearchCategory').value = researchCategoryLabel(record.category); $('gnResearchDate').value = record.date || ''; $('gnResearchState').value = record.state || 'TRACKING'; $('gnResearchSource').value = (record.source && record.source !== 'manual') ? record.source : ''; $('gnResearchNotes').value = record.notes || ''; setText('gnResearchSave', tx('research.update', 'UPDATE RESEARCH RECORD')); syncCustomPicker($('gnResearchState')); syncCustomDate($('gnResearchDate')); $('gnResearchForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
+  }
+  record.archived = Boolean(button.dataset.researchArchive); record.state = record.archived ? 'ARCHIVED' : (record.state === 'ARCHIVED' ? 'TRACKING' : record.state); record.modifiedAt = new Date().toISOString(); S.set('researchRecords', records); appendEventLedger({ type: 'RESEARCH', recordId: record.id, label: record.archived ? 'RESEARCH RECORD ARCHIVED' : 'RESEARCH RECORD RESTORED' }); queueCloudSync('workspace'); renderLabFoundations(); actionFeedback(record.archived ? tx('research.archived', 'RESEARCH RECORD ARCHIVED') : tx('research.restored', 'RESEARCH RECORD RESTORED'), tx('inventory.historyPreserved', 'HISTORY PRESERVED // TIMELINE UPDATED'));
+}
+
+function deleteResearchRecord(id) {
+  S.set('researchRecords', S.get('researchRecords', []).filter(record => record.id !== id)); queueCloudSync('workspace'); renderLabFoundations(); actionFeedback(tx('research.removed', 'RESEARCH RECORD REMOVED'), tx('research.localUpdated', 'LOCAL RECORD UPDATED'));
+}
+
+function closeProfileHub() {
+  const prev = localStorage.getItem('gn_last_active_page_v1') || 'Dash';
+  showPage(prev === 'Profile' ? 'Dash' : prev, document.getElementById('navPro'));
+}
+
+function toggleProfileHub() {
+  const active = document.querySelector('.page.active')?.id;
+  if (active === 'pageProfile') { closeProfileHub(); return; }
+  showPage('Profile', document.getElementById('navPro'));
+}
+
+function ensureProfileHub() {
+  const page = $('pageProfile');
+  if (!page || page.querySelector('[data-gn-profile-hub]')) return;
+  const avatar = $('profAvaWrap');
+  const hero = avatar?.closest('[style*="background:#0e0e16"]');
+  if (!hero) return;
+  hero.insertAdjacentHTML('afterend', `<section class="gn-profile-hub" data-gn-profile-hub aria-labelledby="gnProfileHubTitle">
+    <div class="gn-foundation-head"><div><div class="gn-foundation-kicker" data-i18n="vault.kicker">// NODE PROFILE HUB</div><h2 id="gnProfileHubTitle" data-i18n="vault.hubTitle">YOUR NODE</h2></div><span class="gn-foundation-actions"><span class="gn-foundation-signal" id="gnProfileSync">LOCAL MODE</span><button type="button" class="gn-hub-close" id="gnHubClose" onclick="closeProfileHub()" aria-label="CERRAR" data-i18n-aria-label="vault.closeHub">✕</button></span></div>
+    <div class="gn-profile-sections">
+      <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.node">// YOUR NODE</div><div class="gn-profile-row"><span><b data-i18n="vault.medicationLabel">Medication</b><small id="gnProfileMedication">Not entered</small></span><span class="gn-profile-chevron">›</span></div><div class="gn-profile-row"><span><b data-i18n="vault.bodyMetrics">Body Metrics</b><small id="gnProfileBody">Not entered</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row" onclick="openSystemUpdate()"><span><b data-i18n="vault.whatsNew">What's New</b><small data-gn-whatsnew-version></small></span><span class="gn-profile-chevron">›</span></button></section>
+      <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.yourData">// YOUR DATA</div><button type="button" class="gn-profile-row" onclick="exportCSV()"><span><b data-i18n="vault.exportCsv">Export CSV</b><small data-i18n="vault.exportCsvHelp">Download readable records</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="exportBackup()"><span><b data-i18n="vault.exportBackup">Export Backup</b><small data-i18n="vault.exportBackupHelp">Save a complete local copy</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.dataOwnership">Data Ownership</b><small data-i18n="vault.dataOwnershipHelp">Export or delete anytime</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row gn-profile-danger-row" onclick="openDeleteLocalData()"><span><b data-i18n="vault.deleteAllData">Delete All Local Data</b><small data-i18n="vault.deleteAllDataHelp">Remove this device record</small></span><span class="gn-profile-chevron">›</span></button></section>
+      <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.tools">// TOOLS</div><button type="button" class="gn-profile-row" onclick="document.querySelector('.gn-device-vault')?.scrollIntoView({behavior:'smooth',block:'start'})"><span><b data-i18n="vault.deviceVaultLink">Device Vault</b><small data-i18n="vault.deviceVaultLinkHelp">Private identity registry</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.connectedAccount">Connected Account</b><small id="gnProfileAccount">Local device session</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row gn-profile-danger-row" onclick="openDeleteCloudAccount()"><span><b data-i18n="vault.deleteCloudAccount">Delete Cloud Account</b><small data-i18n="vault.deleteCloudAccountHelp">Requires server deletion control</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" id="gnHapticsToggle" onclick="toggleGnHaptics()"><span><b data-i18n="vault.hapticsTitle">Tactile Feedback</b><small id="gnHapticsHelp" data-i18n="vault.hapticsHelp">Vibration confirms saves, locks, and selections when the device supports it.</small></span><span class="gn-profile-chevron" id="gnHapticsState">·</span></button><div class="gn-profile-row"><span><b data-i18n="vault.appVersion">App Version</b><small id="gnProfileVersion">0.12.0</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row" onclick="window.location.reload()"><span><b data-i18n="vault.reloadApp">Reload App</b><small data-i18n="vault.reloadAppHelp">Refresh the current build</small></span><span class="gn-profile-chevron">›</span></button></section>
+    </div>
+    <button type="button" class="gn-profile-signout" onclick="openSignOutModal()"><span><b data-i18n="vault.signOut">SIGN OUT</b><small data-i18n="vault.localOnlyFooter">Your data stays on this device.</small></span><span class="gn-profile-chevron">›</span></button>
+    <div class="gn-device-vault"><div class="gn-device-vault-head"><div><div class="gn-foundation-kicker" data-i18n="vault.deviceVaultKicker">// DEVICE VAULT</div><h3 data-i18n="vault.deviceVaultSubhead">PHYSICAL OBJECT IDENTITY</h3></div><span class="gn-record-state" data-i18n="vault.deviceVaultPrivate">PRIVATE REGISTRY</span></div><p class="gn-ledger-copy" data-i18n="vault.deviceVaultPhilosophy">The device is not the cartridge. The cartridge is not the dose. The dose is not the plan. Device identity, inventory, SHOT events, and LOADOUT remain separate records.</p><form class="gn-record-form" id="gnDeviceForm"><div class="gn-form-grid"><label><span data-i18n="vault.deviceName">DEVICE NAME</span><input id="gnDeviceName" required placeholder="e.g. Home pen A" data-i18n-placeholder="vault.deviceNamePlaceholder"></label><label><span data-i18n="vault.deviceType">DEVICE TYPE</span><select id="gnDeviceType"><option value="REUSABLE" data-i18n="vault.deviceTypeReusable">Reusable pen</option><option value="DISPOSABLE" data-i18n="vault.deviceTypeDisposable">Disposable pen</option><option value="AUTOINJECTOR" data-i18n="vault.deviceTypeAutoinjector">Autoinjector</option><option value="OTHER" data-i18n="vault.deviceTypeOther">Other device</option></select></label><label><span data-i18n="vault.deviceStatus">STATUS</span><select id="gnDeviceStatus">${DEVICE_STATUSES.map(status => { const key = 'vault.status' + status.replace(/\s+/g, ''); return `<option value="${status}" data-i18n="${key}">${tx(key, status)}</option>`; }).join('')}</select></label></div><label><span data-i18n="vault.deviceLabelNotes">LABEL / NOTES</span><textarea id="gnDeviceNotes" rows="2" placeholder="User-entered identity notes" data-i18n-placeholder="vault.deviceNotesPlaceholder"></textarea></label><button class="btn-full btn-secondary" type="submit" data-i18n="vault.deviceRegister">REGISTER DEVICE IDENTITY</button></form><div class="gn-device-list" id="gnDeviceList"></div></div>
+  </section>`);
+  installCustomPickers(hero.parentElement || page);
+  window.GN_I18N?.applyTo?.(page);
+  const updateVersion = hero.parentElement?.querySelector('[data-system-update-version]');
+  if (updateVersion) updateVersion.textContent = APP_VERSION;
+  const updateCopy = hero.parentElement?.querySelector('#gnSystemUpdateCard p');
+  if (updateCopy) updateCopy.textContent = tx('vault.systemUpdateNotes', `${APP_VERSION} — LAB tools now open in focused views, the Phase Engine adds neutral cycle context, and the LIVE NODE status is compact on mobile and desktop.`).replace(/^v[^ ]+/, APP_VERSION);
+  const whatsNewVersion = document.querySelector('[data-gn-whatsnew-version]') || hero.parentElement?.querySelector('.gn-profile-section:first-of-type button small');
+  if (whatsNewVersion) whatsNewVersion.textContent = `v${APP_VERSION}`;
+  const deviceVault = hero.parentElement?.querySelector('.gn-device-vault');
+  const deviceKicker = deviceVault?.querySelector('.gn-foundation-kicker');
+  const deviceSignal = deviceVault?.querySelector('.gn-record-state');
+  if (deviceKicker) deviceKicker.textContent = tx('vault.deviceVaultKicker', '// DEVICE VAULT');
+  if (deviceSignal) deviceSignal.textContent = tx('vault.deviceVaultPrivate', 'PRIVATE REGISTRY');
+  $('gnSystemUpdateDismiss')?.addEventListener('click', dismissSystemUpdate);
+  document.querySelector('[data-system-update-open]')?.addEventListener('click', openSystemUpdate);
+  $('gnDeviceForm')?.addEventListener('submit', event => { event.preventDefault(); saveDeviceRecord(); });
+  $('gnDeviceList')?.addEventListener('click', handleDeviceAction);
+  renderDeviceVault();
+  ensurePasskeySection();
+  renderGnHapticsState();
+}
+
+function renderDeviceVault() {
+  const list = $('gnDeviceList');
+  if (!list) return;
+  const devices = S.get('devices', []);
+  const active = devices.filter(device => !device.archived), archived = devices.filter(device => device.archived);
+  list.innerHTML = devices.length ? `${active.slice().reverse().map(device => `<article class="gn-record-row"><div><b>${safeText(device.name)}</b><small>${safeText(deviceTypeLabel(device.type))} · ${tx('vault.privateId', 'PRIVATE ID')} ${safeText(device.qrIdentity || tx('vault.devicePending', 'PENDING'))}</small></div><span class="gn-record-state">${safeText(deviceStatusLabel(device.status))}</span><div style="display:flex;gap:4px"><button type="button" class="gn-record-delete" data-device-edit="${safeText(device.id)}" aria-label="${tx('vault.editDevice', 'Edit device')}">✎</button><button type="button" class="gn-record-delete" data-device-retire="${safeText(device.id)}" aria-label="${tx('vault.retireDevice', 'Retire device')}">×</button></div></article>`).join('')}${archived.length ? `<div class="gn-ledger-copy" style="margin-top:10px">${tx('vault.deviceArchived', 'RETIRED / ARCHIVED DEVICES')}</div>${archived.slice().reverse().map(device => `<article class="gn-record-row"><div><b>${safeText(device.name)}</b><small>${safeText(deviceTypeLabel(device.type))} · ${tx('vault.privateIdentityPreserved', 'Private identity preserved')}</small></div><span class="gn-record-state">${safeText(deviceStatusLabel(device.status || 'RETIRED'))}</span><button type="button" class="gn-record-delete" data-device-restore="${safeText(device.id)}" aria-label="${tx('vault.restoreDevice', 'Restore device')}">↺</button></article>`).join('')}` : ''}` : `<div class="gn-empty-state"><span class="gn-icon gn-icon-md gn-accent-y"><svg><use href="#gn-vault-core"></use></svg></span><b>${tx('vault.deviceReadyEmpty', 'DEVICE VAULT READY')}</b><span>${tx('vault.deviceReadyEmptyHelp', 'Register a physical object when you want its identity and lifecycle preserved.')}</span></div>`;
+}
+
+function renderGnHapticsState() {
+  const stateEl = $('gnHapticsState');
+  const helpEl = $('gnHapticsHelp');
+  if (!stateEl) return;
+  const supported = window.gnHaptics?.supported?.();
+  const enabled = window.gnHaptics?.enabled?.();
+  if (!supported) {
+    stateEl.textContent = '·';
+    if (helpEl) helpEl.textContent = tx('vault.hapticsUnsupported', 'Not supported on this device.');
+    return;
+  }
+  stateEl.textContent = enabled ? '◆' : '◇';
+  if (helpEl) helpEl.textContent = enabled ? tx('vault.hapticsOn', 'ON — save and lock actions vibrate briefly.') : tx('vault.hapticsOff', 'OFF — silent confirmation. Tap to enable.');
+}
+
+function toggleGnHaptics() {
+  if (!window.gnHaptics?.supported?.()) return;
+  window.gnHaptics.setEnabled(!window.gnHaptics.enabled());
+  renderGnHapticsState();
+  try { window.gnHaptics.tap(); } catch (_) {}
+}
+
+function pulseGnCapture(saveButton) {
+  if (!saveButton || !saveButton.classList) return;
+  saveButton.classList.remove('gn-capture-pulse');
+  void saveButton.offsetWidth;
+  saveButton.classList.add('gn-capture-pulse');
+  setTimeout(() => saveButton.classList.remove('gn-capture-pulse'), 560);
+}
+
+function saveDeviceRecord() {
+  const name = $('gnDeviceName')?.value?.trim();
+  if (!name) { actionFeedback(tx('device.notRegistered', 'DEVICE NOT REGISTERED'), tx('device.addName', 'ADD A DEVICE NAME BEFORE COMMITTING'), true); return; }
+  const devices = S.get('devices', []), now = new Date().toISOString(), id = moduleState.deviceEditId || createId('device'), existing = devices.find(item => item.id === id);
+  const device = { ...(existing || {}), id, name, type: normalizeDeviceType($('gnDeviceType')?.value), status: $('gnDeviceStatus')?.value || 'NEEDS CHECKING', notes: $('gnDeviceNotes')?.value?.trim() || '', qrIdentity: existing?.qrIdentity || `GN-${Math.random().toString(36).slice(2, 10).toUpperCase()}`, source: existing?.source || 'manual', state: existing?.state || 'confirmed', archived: existing?.archived || false, createdAt: existing?.createdAt || now, modifiedAt: now };
+  const index = devices.findIndex(item => item.id === id); if (index >= 0) devices[index] = device; else devices.push(device);
+  S.set('devices', devices); appendEventLedger({ type: 'DEVICE', recordId: device.id, label: existing ? 'DEVICE IDENTITY UPDATED' : 'DEVICE IDENTITY REGISTERED' }); queueCloudSync('workspace'); moduleState.deviceEditId = null; $('gnDeviceForm')?.reset(); renderDeviceVault(); actionFeedback(existing ? 'DEVICE IDENTITY UPDATED' : 'DEVICE IDENTITY REGISTERED', 'DEVICE VAULT UPDATED // HISTORY PRESERVED');
+}
+
+function handleDeviceAction(event) {
+  const button = event.target.closest('button[data-device-edit],button[data-device-retire],button[data-device-restore]');
+  if (!button) return;
+  const id = button.dataset.deviceEdit || button.dataset.deviceRetire || button.dataset.deviceRestore;
+  const devices = S.get('devices', []), device = devices.find(item => item.id === id);
+  if (!device) return;
+  if (button.dataset.deviceEdit) { moduleState.deviceEditId = id; $('gnDeviceName').value = device.name || ''; $('gnDeviceType').value = normalizeDeviceType(device.type); $('gnDeviceStatus').value = device.status || 'NEEDS CHECKING'; $('gnDeviceNotes').value = device.notes || ''; const submit = document.querySelector('#gnDeviceForm button[type="submit"]'); if (submit) submit.textContent = tx('vault.updateDevice', 'UPDATE DEVICE IDENTITY'); syncCustomPicker($('gnDeviceType')); syncCustomPicker($('gnDeviceStatus')); $('gnDeviceForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+  device.archived = Boolean(button.dataset.deviceRetire); device.status = device.archived ? 'RETIRED' : 'READY'; device.modifiedAt = new Date().toISOString(); S.set('devices', devices); appendEventLedger({ type: 'DEVICE', recordId: id, label: device.archived ? 'DEVICE RETIRED' : 'DEVICE RESTORED' }); queueCloudSync('workspace'); renderDeviceVault(); actionFeedback(device.archived ? 'DEVICE RETIRED' : 'DEVICE RESTORED', 'HARDWARE HISTORY PRESERVED // TIMELINE UPDATED');
+}
+
+function ensureDoseProjection() {
+  const page = $('pageLab');
+  if (!page || $('gnDoseProjection')) return;
+  page.insertAdjacentHTML('beforeend', `<section class="gn-dose-projection" id="gnDoseProjection" aria-labelledby="gnDoseProjectionTitle"><div class="gn-foundation-kicker" data-i18n="vault.educationalRefKicker">// EDUCATIONAL REFERENCE</div><h2 id="gnDoseProjectionTitle" data-i18n="vault.educationalRefTitle">DOSE PROJECTION</h2><p class="gn-dose-copy" data-i18n="vault.educationalRefCopy">Map a user-entered dose progression as a text timeline. This stores no protocol and makes no recommendation.</p><div class="gn-dose-grid"><label><span data-i18n="vault.currentDose">CURRENT DOSE (mg)</span><input id="gnDoseCurrent" type="number" min="0" step="0.1" inputmode="decimal" oninput="updateDoseProjection()"></label><label><span data-i18n="vault.stepIncrease">STEP INCREASE (mg)</span><input id="gnDoseStep" type="number" min="0" step="0.1" inputmode="decimal" oninput="updateDoseProjection()"></label><label><span data-i18n="vault.stepInterval">STEP INTERVAL (weeks)</span><input id="gnDoseInterval" type="number" min="1" step="1" inputmode="numeric" oninput="updateDoseProjection()"></label><label><span data-i18n="vault.targetDose">TARGET DOSE (mg)</span><input id="gnDoseTarget" type="number" min="0" step="0.1" inputmode="decimal" oninput="updateDoseProjection()"></label></div><div class="gn-dose-output" id="gnDoseOutput" data-i18n="vault.educationalRefAllValues">Enter all four values to view a text reference timeline.</div><div class="gn-dose-disclaimer"><strong data-i18n="vault.educationalRefOnly">EDUCATIONAL REFERENCE ONLY.</strong> <span data-i18n="vault.educationalRefDisclaimer">This is not a dosing recommendation. Titration schedules vary by individual protocol. Verify with prescribing guidance.</span></div></section>`);
+  const profile = getProfile();
+  if ($('gnDoseCurrent') && profile.dose) $('gnDoseCurrent').value = profile.dose;
+  if ($('gnDoseInterval')) $('gnDoseInterval').value = 4;
+}
+
+export function updateDoseProjection() {
+  const output = $('gnDoseOutput');
+  if (!output) return;
+  const current = Number($('gnDoseCurrent')?.value), step = Number($('gnDoseStep')?.value), interval = Number($('gnDoseInterval')?.value), target = Number($('gnDoseTarget')?.value);
+  if (![current, step, interval, target].every(value => Number.isFinite(value)) || current < 0 || step <= 0 || interval < 1 || !Number.isInteger(interval) || target < current) {
+    output.textContent = tx('vault.educationalRefInvalid', 'Enter a current dose, positive step, interval, and target at or above the current dose.');
+    return;
+  }
+  const stepCount = Math.ceil((target - current) / step);
+  if (stepCount > 99) {
+    output.textContent = tx('vault.educationalRefTooManySteps', 'This range creates too many steps to display. Increase the step or lower the target.');
+    return;
+  }
+  const segments = [];
+  let dose = current, startWeek = 1, guard = 0;
+  while (guard++ < 100) {
+    const endWeek = dose < target ? startWeek + interval - 1 : null;
+    segments.push(`${endWeek ? `WEEK ${startWeek}-${endWeek}` : `WEEK ${startWeek}+`}: ${dose.toFixed(1)} mg`);
+    if (dose >= target) break;
+    dose = Math.min(target, dose + step);
+    startWeek += interval;
+  }
+  output.textContent = segments.join('  →  ');
+}
+
+function ensureCalculatorInventoryActions() {
+  [['labSeg-draw', 'draw'], ['labSeg-recon', 'recon'], ['labSeg-supply', 'supply']].forEach(([id, type]) => {
+    const segment = $(id);
+    if (!segment || segment.querySelector('[data-save-calculator]')) return;
+    segment.insertAdjacentHTML('beforeend', `<button type="button" class="btn-full btn-secondary" data-save-calculator="${type}" onclick="saveCalculatorReference('${type}')" data-i18n="vault.saveReference">SAVE REFERENCE TO INVENTORY</button>`);
+  });
+}
+
+export function saveCalculatorReference(type) {
+  const snapshots = {
+    draw: { name: 'Draw calculator reference', notes: $('syrFormula')?.textContent || '' },
+    recon: { name: 'Mix calculator reference', notes: $('reconOut')?.textContent || '' },
+    supply: { name: 'Supply calculator reference', notes: $('supOut')?.textContent || '' }
+  };
+  const snapshot = snapshots[type];
+  const output = { draw: $('syrFormula'), recon: $('reconOut'), supply: $('supOut') }[type];
+  if (!snapshot?.notes || output?.dataset.valid !== 'true') { actionFeedback(tx('lab.referenceNotSaved', 'REFERENCE NOT SAVED'), tx('lab.enterValidFirst', 'ENTER VALID CALCULATOR VALUES FIRST'), true); return; }
+  const records = S.get('inventory', []), now = new Date().toISOString();
+  records.push({ id: createId('inventory'), name: snapshot.name, type: 'Calculator reference', quantity: 0, units: '', medication: '', autoDeduct: false, notes: snapshot.notes, status: 'REFERENCE', archived: false, source: 'System Generated', state: 'User Confirmed', history: [{ at: now, action: 'CALCULATOR REFERENCE SAVED', source: 'System Generated' }], createdAt: now, modifiedAt: now });
+  S.set('inventory', records); appendEventLedger({ type: 'INVENTORY', recordId: records.at(-1).id, label: 'CALCULATOR REFERENCE SAVED' }); queueCloudSync('workspace'); renderInventory(); actionFeedback(tx('lab.referenceSaved', 'REFERENCE SAVED'), tx('lab.referenceSavedDetail', 'INVENTORY UPDATED // EDUCATIONAL MATH ONLY'));
+}
+
+export function renderLab() { ensureLabFoundations(); ensureDoseProjection(); ensureCalculatorInventoryActions(); updateSyr(); updateRecon(); updateSupply(); updateDoseProjection(); renderLabFoundations(); window.GN_I18N?.applyTo?.(document.getElementById('pageLab')); }
+function positiveNumberField(id, label, maximum) {
+  const raw = String($(id)?.value ?? '').trim();
+  if (!raw) return { valid: false, message: tx('lab.requiredField', 'ENTER VALID VALUES · {label} IS REQUIRED', { label }) };
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value <= 0 || value > maximum) return { valid: false, message: tx('lab.invalidField', 'INVALID INPUT · CHECK {label}', { label }) };
+  return { valid: true, value };
+}
 export function updateSyr() {
-  const dose = Number($('cDose')?.value), concentration = Number($('cConc')?.value);
-  if (!dose || !concentration) { setText('syrUnits', '—'); setText('syrText', 'DRAW TO THE — UNIT LINE'); setText('syrML', '— mL'); setText('syrConcDisplay', '— mg/mL'); setText('syrResultLine', '—'); setText('syrVolResult', '— mL'); setText('syrFormula', 'Educational math only. Enter dose and concentration.'); setDisplay('syrTarget', false); return; }
+  setText('syrUnits', '—'); setText('syrText', tx('lab.enterValidValues', 'ENTER VALID VALUES')); setText('syrML', '— mL'); setText('syrConcDisplay', '— mg/mL'); setText('syrResultLine', '—'); setText('syrVolResult', '— mL'); setDisplay('syrTarget', false);
+  $('syrFormula')?.setAttribute('data-valid', 'false');
+  const doseField = positiveNumberField('cDose', tx('lab.userAmount', 'USER-ENTERED AMOUNT'), 1000), concentrationField = positiveNumberField('cConc', tx('lab.concentration', 'CONCENTRATION'), 10000);
+  if (!doseField.valid || !concentrationField.valid) { setText('syrFormula', !doseField.valid ? doseField.message : concentrationField.message); return; }
+  const dose = doseField.value, concentration = concentrationField.value;
   const volume = dose / concentration, units = volume * 100;
-  setText('syrUnits', `${units.toFixed(1)}u`); setText('syrText', `DRAW TO THE ${units.toFixed(1)} UNIT LINE`); setText('syrML', `${volume.toFixed(3)} mL`); setText('syrConcDisplay', `${concentration} mg/mL`); setText('syrResultLine', `${dose} mg`); setText('syrVolResult', `${volume.toFixed(3)} mL`); setText('syrFormula', `${dose} mg ÷ ${concentration} mg/mL = ${volume.toFixed(3)} mL = ${units.toFixed(1)} U-100 units. Educational math only.`); setDisplay('syrTarget', true);
+  if (!Number.isFinite(volume) || !Number.isFinite(units) || volume > 1000 || units > 100000) { setText('syrFormula', tx('lab.outOfRange', 'INVALID INPUT · CALCULATED RESULT IS OUTSIDE THE SUPPORTED RANGE')); return; }
+  setText('syrUnits', `${units.toFixed(1)}u`); setText('syrText', tx('lab.drawToUnit', 'DRAW TO THE {units} UNIT LINE', { units: units.toFixed(1) })); setText('syrML', `${volume.toFixed(3)} mL`); setText('syrConcDisplay', `${concentration} mg/mL`); setText('syrResultLine', `${dose} mg`); setText('syrVolResult', `${volume.toFixed(3)} mL`); setText('syrFormula', `${dose} mg ÷ ${concentration} mg/mL = ${volume.toFixed(3)} mL = ${units.toFixed(1)} U-100 units. ${tx('lab.educationalMathOnly', 'Educational math only.')}`); $('syrFormula')?.setAttribute('data-valid', 'true'); setDisplay('syrTarget', true);
   const target = $('syrTarget'); if (target) target.style.left = `${Math.min(100, Math.max(0, units))}%`;
 }
 export function updateRecon() {
-  const vial = Number($('rVial')?.value), conc = Number($('rConc')?.value);
-  const valid = vial > 0 && conc > 0;
-  setDisplay('reconRes', valid);
-  if (valid) { const volume = vial / conc; setText('reconOut', `Reference math: ${vial} mg ÷ ${conc} mg/mL = ${volume.toFixed(3)} mL total reference volume.`); setText('bacAmt', `${volume.toFixed(3)} mL`); }
+  setDisplay('reconRes', true); setText('bacAmt', '— mL');
+  $('reconOut')?.setAttribute('data-valid', 'false');
+  const vialField = positiveNumberField('rVial', tx('lab.totalAmount', 'TOTAL AMOUNT'), 10000), concField = positiveNumberField('rConc', tx('lab.targetConcentration', 'TARGET CONCENTRATION'), 10000);
+  if (!vialField.valid || !concField.valid) { setText('reconOut', !vialField.valid ? vialField.message : concField.message); return; }
+  const volume = vialField.value / concField.value;
+  if (!Number.isFinite(volume) || volume > 10000) { setText('reconOut', tx('lab.outOfRange', 'INVALID INPUT · CALCULATED RESULT IS OUTSIDE THE SUPPORTED RANGE')); return; }
+  setText('reconOut', `Reference math: ${vialField.value} mg ÷ ${concField.value} mg/mL = ${volume.toFixed(3)} mL total reference volume.`); $('reconOut')?.setAttribute('data-valid', 'true'); setText('bacAmt', `${volume.toFixed(3)} mL`);
 }
 export function updateSupply() {
-  const volume = Number($('sVol')?.value), conc = Number($('sConc')?.value), weekly = Number($('sDose2')?.value);
-  const valid = volume > 0 && conc > 0 && weekly > 0;
-  setDisplay('supRes', valid);
-  if (valid) { const total = volume * conc; setText('supOut', `Reference total: ${total.toFixed(2)} mg · User-entered weekly amount: ${weekly.toFixed(2)} mg · Approximate record coverage: ${(total / weekly).toFixed(1)} weeks. Educational organization only.`); }
+  setDisplay('supRes', true);
+  $('supOut')?.setAttribute('data-valid', 'false');
+  const volumeField = positiveNumberField('sVol', tx('lab.volume', 'VOLUME'), 10000), concField = positiveNumberField('sConc', tx('lab.concentration', 'CONCENTRATION'), 10000), weeklyField = positiveNumberField('sDose2', tx('lab.weeklyAmount', 'WEEKLY AMOUNT'), 1000);
+  const invalid = [volumeField, concField, weeklyField].find(field => !field.valid);
+  if (invalid) { setText('supOut', invalid.message); return; }
+  const total = volumeField.value * concField.value, coverage = total / weeklyField.value;
+  if (!Number.isFinite(total) || !Number.isFinite(coverage) || coverage > 100000) { setText('supOut', tx('lab.outOfRange', 'INVALID INPUT · CALCULATED RESULT IS OUTSIDE THE SUPPORTED RANGE')); return; }
+  setText('supOut', tx('lab.referenceTotal', 'Reference total: {total} mg · User-entered weekly amount: {weekly} mg · Approximate record coverage: {coverage} weeks. Educational record keeping only.', { total: total.toFixed(2), weekly: weeklyField.value.toFixed(2), coverage: coverage.toFixed(1) })); $('supOut')?.setAttribute('data-valid', 'true');
+}
+
+const MEASUREMENT_TYPES = [
+  ['waist', 'WAIST CIRCUMFERENCE', 'vault.waist'],
+  ['hip', 'HIP CIRCUMFERENCE', 'vault.hip'],
+  ['chest', 'CHEST CIRCUMFERENCE', 'vault.chest'],
+  ['left_arm', 'LEFT ARM CIRCUMFERENCE', 'vault.leftArm'],
+  ['right_arm', 'RIGHT ARM CIRCUMFERENCE', 'vault.rightArm'],
+  ['left_thigh', 'LEFT THIGH CIRCUMFERENCE', 'vault.leftThigh'],
+  ['right_thigh', 'RIGHT THIGH CIRCUMFERENCE', 'vault.rightThigh']
+];
+
+function measurementUnit() {
+  return S.get('preferences', {}).measurementUnit === 'cm' ? 'cm' : 'in';
+}
+
+function convertMeasurement(value, from, to) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return null;
+  if (from === to) return numeric;
+  return from === 'in' && to === 'cm' ? numeric * 2.54 : numeric / 2.54;
+}
+
+function latestMeasurement(type) {
+  return S.get('measurements', []).filter(record => record.type === type).sort((a, b) => new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0))[0] || null;
+}
+
+function ensureProfileMeasurements() {
+  const page = $('pageProfile');
+  if (!page || $('gnMeasurementsCard')) return;
+  const bodyInput = $('profHtFt');
+  const bodyCard = bodyInput?.closest('div[style*="background:#0e0e16"]');
+  if (!bodyCard) return;
+  bodyCard.insertAdjacentHTML('afterend', `<section class="gn-measurements-card" id="gnMeasurementsCard" aria-labelledby="gnMeasurementsTitle">
+    <div class="gn-foundation-kicker" data-i18n="vault.measurementsKicker">// BODY METRICS</div>
+    <h3 id="gnMeasurementsTitle" data-i18n="vault.measurementsTitle">WEIGHT + MEASUREMENTS</h3>
+    <p class="gn-measurements-copy" data-i18n="vault.measurementsCopy">Use this profile section as the single entry point for weight and user-entered body measurements.</p>
+    <button type="button" class="btn-full btn-primary" onclick="openWeightModal()" style="margin-bottom:10px" data-i18n="dashboard.logWeight">LOG WEIGHT</button>
+    <form id="gnMeasurementsForm" class="gn-measurements-form">
+      <div class="gn-measurements-tools"><label><span data-i18n="vault.measurementUnit">UNIT</span><select id="gnMeasurementUnit" onchange="setMeasurementUnit(this.value)"><option value="in" data-i18n="vault.inches">INCHES</option><option value="cm" data-i18n="vault.centimeters">CENTIMETERS</option></select></label><label><span data-i18n="vault.measurementDate">DATE</span><input id="gnMeasurementDate" type="date"></label></div>
+      <div class="gn-measurements-grid">${MEASUREMENT_TYPES.map(([type, label, key]) => `<label><span><b data-i18n="${key}">${label}</b><small id="gnMeasurementLatest_${type}" data-i18n="vault.noRecord">NO RECORD</small></span><input type="number" min="0" step="0.1" inputmode="decimal" data-measurement-type="${type}" aria-label="${tx(key, label)}"></label>`).join('')}</div>
+      <button type="submit" class="btn-full btn-secondary" data-i18n="vault.saveMeasurements">SAVE MEASUREMENTS</button>
+    </form>
+    <div class="gn-measurements-empty" id="gnMeasurementsEmpty">No measurements logged yet.</div>
+  </section>`);
+  window.GN_I18N?.applyTo?.($('gnMeasurementsCard'));
+  $('gnMeasurementsForm')?.addEventListener('submit', event => { event.preventDefault(); saveMeasurements(); });
+  installCustomPickers(page);
+}
+
+function renderMeasurements() {
+  const card = $('gnMeasurementsCard');
+  if (!card) return;
+  const unit = measurementUnit();
+  const unitSelect = $('gnMeasurementUnit');
+  if (unitSelect) unitSelect.value = unit;
+  syncCustomPickers(card);
+  const dateInput = $('gnMeasurementDate');
+  if (dateInput && !dateInput.value) dateInput.value = todayISO();
+  const records = S.get('measurements', []);
+  MEASUREMENT_TYPES.forEach(([type]) => {
+    const latest = latestMeasurement(type);
+    const converted = latest ? convertMeasurement(latest.value, latest.unit || 'in', unit) : null;
+    const latestText = latest && converted !== null ? `${converted.toFixed(1)} ${unit} · ${formatDate(latest.date || latest.createdAt)}` : tx('vault.noRecord', 'NO RECORD');
+    setText(`gnMeasurementLatest_${type}`, latestText);
+    const field = card.querySelector(`[data-measurement-type="${type}"]`);
+    if (field && document.activeElement !== field) field.value = converted === null ? '' : converted.toFixed(1);
+  });
+  setDisplay('gnMeasurementsEmpty', !records.length);
+}
+
+export function setMeasurementUnit(unit) {
+  const preferences = S.get('preferences', {});
+  preferences.measurementUnit = unit === 'cm' ? 'cm' : 'in';
+  S.set('preferences', preferences);
+  renderMeasurements();
+}
+
+export function saveMeasurements() {
+  const unit = measurementUnit();
+  const date = $('gnMeasurementDate')?.value || todayISO();
+  const records = S.get('measurements', []);
+  let saved = 0;
+  MEASUREMENT_TYPES.forEach(([type]) => {
+    const field = document.querySelector(`[data-measurement-type="${type}"]`);
+    const value = Number(field?.value);
+    if (!field?.value || !Number.isFinite(value) || value <= 0) return;
+    records.push({ id: createId('measurement'), type, value, unit, date, createdAt: new Date().toISOString() });
+    saved += 1;
+  });
+  if (!saved) { actionFeedback(tx('vault.noMeasurementsSaved', 'NO MEASUREMENTS SAVED'), tx('vault.enterPositiveValue', 'ENTER AT LEAST ONE POSITIVE VALUE'), true); return; }
+  S.set('measurements', records);
+  const preferences = S.get('preferences', {}); preferences.measurementUnit = unit; S.set('preferences', preferences);
+  queueCloudSync('workspace');
+  renderMeasurements();
+  renderResults();
+  actionFeedback(tx('vault.measurementsSaved', 'MEASUREMENTS SAVED'), tx('vault.measurementsSavedDetail', '{count} USER-ENTERED VALUE{plural} // TIMELINE UPDATED', { count: saved, plural: saved === 1 ? '' : 'S' }));
+}
+
+function ensureDestructiveDialogs() {
+  if ($('gnDeleteLocalOverlay')) return;
+  document.body.insertAdjacentHTML('beforeend', `<div class="gn-delete-overlay" id="gnDeleteLocalOverlay" role="dialog" aria-modal="true" aria-labelledby="gnDeleteLocalTitle"><div class="gn-delete-panel"><div class="gn-delete-kicker" data-i18n="deleteLocal.kicker">// VAULT CONTROL</div><h2 id="gnDeleteLocalTitle" data-i18n="deleteLocal.title">DELETE ALL LOCAL DATA?</h2><p data-i18n="deleteLocal.body">This removes all shots, weights, peptides, devices, and settings from this device. Cloud records will be restored on next sign-in. This action cannot be undone.</p><label><span data-i18n="deleteLocal.typeConfirm">TYPE DELETE TO CONFIRM</span><input id="gnDeleteLocalInput" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" oninput="updateDeleteLocalButton(this.value)"></label><div class="gn-delete-actions"><button type="button" class="btn-full btn-secondary" onclick="closeDeleteLocalData()" data-i18n="deleteLocal.cancel">CANCEL</button><button type="button" class="btn-full gn-delete-confirm" id="gnDeleteLocalConfirm" disabled onclick="confirmDeleteLocalData()" data-i18n="deleteLocal.confirm">DELETE LOCAL DATA</button></div></div></div><div class="gn-delete-overlay" id="gnDeleteCloudOverlay" role="dialog" aria-modal="true" aria-labelledby="gnDeleteCloudTitle"><div class="gn-delete-panel"><div class="gn-delete-kicker" data-i18n="deleteCloud.kicker">// CLOUD ACCOUNT CONTROL</div><h2 id="gnDeleteCloudTitle" data-i18n="deleteCloud.title">DELETE CLOUD ACCOUNT?</h2><p data-i18n="deleteCloud.body">This permanently removes all synced records from cloud storage. Local data on this device is not affected. You will be signed out.</p><p class="gn-delete-note" data-i18n="deleteCloud.note">A secure server request verifies the signed-in account before deletion. The browser never receives the server key.</p><div class="gn-delete-actions"><button type="button" class="btn-full btn-secondary" onclick="closeDeleteCloudAccount()" data-i18n="deleteCloud.cancel">CANCEL</button><button type="button" class="btn-full gn-delete-confirm" onclick="confirmDeleteCloudAccount()" data-i18n="deleteCloud.confirm">DELETE CLOUD ACCOUNT</button></div></div></div>`);
+    window.GN_I18N?.applyTo?.(document.getElementById('gnDeleteLocalOverlay'));
+    window.GN_I18N?.applyTo?.(document.getElementById('gnDeleteCloudOverlay'));
+}
+
+function clearLocalGridNodeData() {
+  Object.keys(localStorage).filter(key => key.startsWith('gn_')).forEach(key => localStorage.removeItem(key));
+}
+
+export function openDeleteLocalData() { ensureDestructiveDialogs(); const input = $('gnDeleteLocalInput'); if (input) input.value = ''; $('gnDeleteLocalConfirm')?.setAttribute('disabled', ''); $('gnDeleteLocalOverlay')?.classList.add('active'); setTimeout(() => input?.focus(), 0); }
+export function closeDeleteLocalData() { $('gnDeleteLocalOverlay')?.classList.remove('active'); }
+export function updateDeleteLocalButton(value) { const confirm = $('gnDeleteLocalConfirm'); if (confirm) confirm.disabled = String(value || '').trim().toUpperCase() !== 'DELETE'; }
+export async function confirmDeleteLocalData() {
+  if (String($('gnDeleteLocalInput')?.value || '').trim().toUpperCase() !== 'DELETE') return;
+  await signOutCloud();
+  clearLocalGridNodeData();
+  clearSession();
+  window.location.reload();
+}
+export function openDeleteCloudAccount() { ensureDestructiveDialogs(); $('gnDeleteCloudOverlay')?.classList.add('active'); }
+export function closeDeleteCloudAccount() { $('gnDeleteCloudOverlay')?.classList.remove('active'); }
+export async function confirmDeleteCloudAccount() {
+  const result = await deleteCloudAccount();
+  closeDeleteCloudAccount();
+  if (!result?.ok) { actionFeedback(tx('auth.accountNotDeleted', 'CLOUD ACCOUNT NOT DELETED'), tx('auth.deletionFailed', 'ACCOUNT DELETION FAILED // LOCAL DATA UNCHANGED'), true); return; }
+  clearLocalGridNodeData();
+  await signOutCloud();
+  clearSession();
+  window.location.reload();
 }
 
 export function renderProfile() {
+  ensureProfileHub();
+  ensureProfileMeasurements();
+  ensureDestructiveDialogs();
+  syncIdentityAvatars();
+  const legacyProfile = $('pageProfile')?.querySelector('[data-gn-legacy-profile]');
+  if (legacyProfile) legacyProfile.hidden = true;
+  const updateCard = $('gnSystemUpdateCard');
+  if (updateCard) updateCard.hidden = S.get('settings', {}).systemUpdateDismissed === APP_VERSION;
   const profile = getProfile();
-  setText('profNameTxt', window.CU?.defaultName || profile.name || 'NODE_USER');
+  setText('profNameTxt', window.CU?.defaultName || profile.name || tx('profile.anonFallback', 'NODE_USER'));
   setText('profEmail', sessionLabel());
-  setText('profMedTxt', profile.med ? `// ${profile.med.toUpperCase()}` : '// NO MEDICATION SET');
+  setText('profMedTxt', normalizeMedicationId(profile.med) ? `// ${medicationLabel(profile.med).toUpperCase()}` : tx('profile.noMedicationSet', '// NO MEDICATION SET'));
+  const currentWeight = latestWeight()?.weight;
+  const height = profile.htFt ? `${profile.htFt}'${profile.htIn || 0}"` : tx('profile.heightNotEntered', 'Height not entered');
+  setText('gnProfileMedication', normalizeMedicationId(profile.med) ? `${medicationLabel(profile.med)}${profile.dose ? ` · ${profile.dose}mg` : ''}` : tx('vault.notEntered', 'Not entered'));
+  setText('gnProfileBody', `${height}${currentWeight ? ` · ${Number(currentWeight).toFixed(1)} lb` : ''}`);
+  setText('gnProfileVersion', APP_VERSION);
+  setText('gnProfileAccount', state.cloud ? `${state.session?.user?.app_metadata?.provider === 'google' ? tx('profile.signedInWithGoogle', 'Signed in with Google') : tx('vault.cloudConnected', 'Cloud account connected')} · ${state.session?.user?.email || sessionLabel()}` : tx('profile.localDeviceSession', 'Local device session'));
+  setText('gnProfileSync', nodeSyncLabel());
   hydrateProfileFields(profile);
+  syncCustomPickers($('pageProfile') || document);
+  renderMeasurements();
   let status = document.querySelector('.gn-cloud-status');
   const hero = $('profAvaWrap')?.closest('[style*="background:#0e0e16"]');
   if (!status && hero) { status = document.createElement('div'); status.className = 'gn-cloud-status'; hero.parentElement.insertBefore(status, hero.nextSibling); }
-  if (status) status.innerHTML = `<span class="gn-cloud-dot ${state.cloud ? 'cloud' : 'local'}"></span><span>VAULT: ${safeText(state.cloudStatus)} · ${state.cloud ? 'Cloud account connected' : 'Data stays on this device until you connect an account'}</span>`;
+  if (status) status.innerHTML = `<span class="gn-cloud-dot ${state.cloud ? 'cloud' : 'local'}"></span><span>${tx('vault.vaultLabel', 'VAULT')}: ${safeText(nodeSyncLabel())} · ${state.cloud ? tx('vault.cloudConnected', 'Cloud account connected') : tx('vault.cloudLocal', 'Data stays on this device until you connect an account')}</span>`;
+  renderDeviceVault();
+  ensurePasskeySection();
+  renderGnHapticsState();
+}
+
+export function dismissSystemUpdate() {
+  const settings = S.get('settings', {});
+  settings.systemUpdateDismissed = APP_VERSION;
+  S.set('settings', settings);
+  const card = $('gnSystemUpdateCard');
+  if (card) card.hidden = true;
+}
+
+export function openSystemUpdate() {
+  if (window.GN_WHATS_NEW?.history) { window.GN_WHATS_NEW.history(); return; }
+  const card = $('gnSystemUpdateCard');
+  if (!card) return;
+  card.hidden = false;
+  const settings = S.get('settings', {});
+  if (settings.systemUpdateDismissed === APP_VERSION) {
+    delete settings.systemUpdateDismissed;
+    S.set('settings', settings);
+  }
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 export function exportCSV() {
-  const rows = [['record_type', 'date', 'medication', 'dose_mg', 'location', 'weight_lb', 'side_effects', 'notes', 'archived']];
-  getAllShots().forEach(record => rows.push(['shot', record.date || '', record.med || '', record.dose || '', record.site || '', record.wt || '', (record.se || []).join('|'), record.notes || '', record.archived ? 'true' : 'false']));
-  getWeights().forEach(record => rows.push(['weight', record.date || '', '', '', '', record.weight || '', '', record.notes || '', 'false']));
+  const rows = [['record_type', 'date', 'medication', 'dose_mg', 'location', 'weight_lb', 'side_effects', 'notes', 'archived', 'measurement_type', 'measurement_value', 'measurement_unit']];
+  getAllShots().forEach(record => rows.push(['shot', record.date || '', medicationLabel(record.med), record.dose || '', record.site || '', record.wt || '', (record.se || []).map(sideEffectLabel).join('|'), record.notes || '', record.archived ? 'true' : 'false', '', '', '']));
+  getWeights().forEach(record => rows.push(['weight', record.date || '', '', '', '', record.weight || '', '', record.notes || '', 'false', '', '', '']));
+  S.get('measurements', []).forEach(record => rows.push(['measurement', record.date || '', '', '', '', '', '', '', 'false', record.type || '', record.value || '', record.unit || 'in']));
   downloadFile('gridnode-records.csv', rows.map(row => row.map(csvCell).join(',')).join('\n'), 'text/csv;charset=utf-8');
-  showToast('CSV export prepared.');
+  showToast(tx('vault.csvExportReady', 'CSV export prepared.'));
 }
 
-function csvCell(value) { const text = String(value ?? ''); return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text; }
+function csvCell(value) {
+  let text = String(value ?? '');
+  if (/^[=+\-@]/.test(text)) text = `'${text}`;
+  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
 
 export function exportBackup() {
-  const backup = { app: 'GRID//NODE', version: APP_VERSION, exportedAt: new Date().toISOString(), profile: getProfile(), shots: getAllShots(), weights: getWeights(), results: S.get('results', []), notes: S.get('notes', []), symptoms: S.get('symptoms', []), labs: S.get('labs', []), preferences: S.get('preferences', {}), settings: S.get('settings', {}), arsenal: S.get('arsenal', []) };
+  const backup = { app: 'GRID//NODE', version: APP_VERSION, exportedAt: new Date().toISOString(), profile: getProfile(), shots: getAllShots(), weights: getWeights(), measurements: S.get('measurements', []), results: S.get('results', []), notes: S.get('notes', []), symptoms: S.get('symptoms', []), labs: S.get('labs', []), preferences: S.get('preferences', {}), settings: S.get('settings', {}), arsenal: S.get('arsenal', []), researchRecords: S.get('researchRecords', []), devices: S.get('devices', []), inventory: S.get('inventory', []), loadouts: S.get('loadouts', []), eventLedger: S.get('eventLedger', []), selectedLocation: S.get('selectedLocation', ''), importQueue: S.get('importQueue', []), cloudDeletes: S.get('cloudDeletes', []), workspaces: S.get('workspaces', {}) };
   downloadFile('gridnode-backup.json', JSON.stringify(backup, null, 2), 'application/json');
-  showToast('VAULT backup prepared.');
+  showToast(tx('vault.backupReady', 'VAULT backup prepared.'));
+}
+
+function rawCSVRows(text) {
+  const lines = String(text || '').split(/\r?\n/).filter(line => line.trim());
+  if (lines.length < 2) return { headers: [], rows: [] };
+  const parseLine = line => { const cells = []; let value = '', quoted = false; for (let index = 0; index < line.length; index++) { const char = line[index]; if (char === '"' && line[index + 1] === '"') { value += '"'; index++; } else if (char === '"') quoted = !quoted; else if (char === ',' && !quoted) { cells.push(value.trim()); value = ''; } else value += char; } cells.push(value.trim()); return cells; };
+  return { headers: parseLine(lines[0]).map(value => value.trim()), rows: lines.slice(1).map(parseLine) };
+}
+
+function normalizedImportHeader(value) { return String(value || '').toLowerCase().replace(/[()]/g, '').replace(/\s+/g, ' ').trim(); }
+function importColumn(headers, names) { return headers.findIndex(header => names.includes(normalizedImportHeader(header))); }
+function importCell(headers, cells, names) { const index = importColumn(headers, names); return index < 0 ? '' : String(cells[index] || '').trim(); }
+function parseImportedMedication(value) { const match = String(value || '').trim().match(/^(.*?)(?:\s+([0-9]+(?:\.[0-9]+)?)\s*mg)?$/i); return { medication: (match?.[1] || '').trim(), dose_mg: match?.[2] ? Number(match[2]) : null }; }
+function importSideEffects(headers, cells, excluded) { return headers.map((header, index) => ({ header, value: String(cells[index] || '').trim() })).filter(item => !excluded.has(normalizedImportHeader(item.header)) && item.value && !/^(no|none|false|0)$/i.test(item.value)).map(item => /^(yes|true)$/i.test(item.value) ? item.header : `${item.header}: ${item.value}`); }
+function genericCSVFromRows(rows) { const headers = ['record_type', 'date', 'medication', 'dose_mg', 'location', 'weight_lb', 'side_effects', 'notes', 'archived']; return [headers, ...rows.map(row => [row.record_type, row.date, row.medication || '', row.dose_mg ?? '', row.location || '', row.weight_lb ?? '', (row.side_effects || []).join('|'), row.notes || '', 'false'])].map(row => row.map(csvCell).join(',')).join('\n'); }
+function mergeImportRecords(existing, incoming) { const current = Array.isArray(existing) ? existing : []; const added = Array.isArray(incoming) ? incoming : []; const ids = new Set(current.map(record => record?.id || JSON.stringify(record))); return [...current, ...added.filter(record => { const id = record?.id || JSON.stringify(record); if (ids.has(id)) return false; ids.add(id); return true; })]; }
+
+// GLAPP column names are inferred from the available reference structure until a real export sample is supplied.
+export function prepareCSVImport(text) {
+  const raw = rawCSVRows(text); const headers = raw.headers.map(normalizedImportHeader); const has = value => headers.includes(value);
+  const isShotsy = has('shot') && has('site') && has('shot notes');
+  const isGlapp = has('weight lbs') || has('injection site') || has('dose mg');
+  if (!isShotsy && !isGlapp) return { format: 'Generic CSV', source: 'CSV Import', rows: parseCSV(text) };
+  const normalized = raw.rows.map(cells => {
+    if (isShotsy) {
+      const shotValue = importCell(raw.headers, cells, ['shot']); const parsed = parseImportedMedication(shotValue); const weightValue = importCell(raw.headers, cells, ['recorded weight lbs', 'weight lbs']);
+      const excluded = new Set(['shot', 'site', 'shot notes', 'recorded weight lbs', 'weight lbs', 'date', 'shot date', 'recorded date']);
+      return { record_type: shotValue ? 'shot' : 'weight', date: importCell(raw.headers, cells, ['date', 'shot date', 'recorded date', 'timestamp']), medication: parsed.medication, dose_mg: parsed.dose_mg, location: importCell(raw.headers, cells, ['site']), weight_lb: weightValue ? Number(weightValue) : null, side_effects: importSideEffects(raw.headers, cells, excluded), notes: importCell(raw.headers, cells, ['shot notes']) };
+    }
+    const date = importCell(raw.headers, cells, ['date', 'recorded date', 'timestamp']); const time = importCell(raw.headers, cells, ['time', 'recorded time']); const parsed = parseImportedMedication(importCell(raw.headers, cells, ['medication', 'shot'])); const sideEffects = importCell(raw.headers, cells, ['side effects', 'sideeffects']);
+    const explicitDose = importCell(raw.headers, cells, ['dose mg', 'dose']); const dose = explicitDose ? Number(explicitDose) : parsed.dose_mg; const weight = Number(importCell(raw.headers, cells, ['weight lbs', 'weight', 'recorded weight lbs'])) || null;
+    return { record_type: parsed.medication && Number.isFinite(dose) && dose > 0 ? 'shot' : 'weight', date: time && date ? `${date} ${time}` : date, medication: parsed.medication, dose_mg: dose, location: importCell(raw.headers, cells, ['injection site', 'site']), weight_lb: weight, side_effects: sideEffects ? sideEffects.split(/[|;]/).map(value => value.trim()).filter(Boolean) : [], notes: importCell(raw.headers, cells, ['notes', 'shot notes']) };
+  });
+  const format = isShotsy ? 'Shotsy Export' : 'GLAPP Export'; const source = isShotsy ? 'csv_import_shotsy' : 'csv_import_glapp';
+  return { format, source, rows: parseCSV(genericCSVFromRows(normalized)).map(row => ({ ...row, source })) };
 }
 
 export function handleCSVImportFile(event) {
   const file = event.target.files?.[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = () => {
-    moduleState.pendingImport = parseCSV(String(reader.result || ''));
-    setText('csvImportSummary', `${moduleState.pendingImport.length} record${moduleState.pendingImport.length === 1 ? '' : 's'} ready for review.`);
+    const prepared = prepareCSVImport(String(reader.result || ''));
+    const classified = classifyCSVRows(prepared.rows, getAllShots(), getWeights());
+    moduleState.pendingImport = classified.rows;
+    moduleState.pendingImportMeta = { fileName: file.name, format: prepared.format, source: prepared.source, ...classified.counts };
+    const counts = classified.counts;
+    setText('csvImportTitle', `${prepared.format.toUpperCase()} IMPORT PREVIEW`);
+    setText('csvImportFormat', `DETECTED FORMAT // ${prepared.format}`);
+    setText('csvImportSummary', `${counts.recognized} recognized · ${counts.duplicates} duplicates · ${counts.newRecords} new · ${counts.invalid} invalid. ${counts.invalid ? 'Invalid rows will not be saved.' : 'Review before saving.'}`);
+    const confirm = $('csvImportConfirmBtn');
+    if (confirm) { confirm.disabled = counts.newRecords === 0; confirm.textContent = counts.newRecords ? `IMPORT ${counts.newRecords} NEW RECORD${counts.newRecords === 1 ? '' : 'S'}` : 'NO NEW RECORDS'; }
     $('csvImportOverlay')?.classList.add('active');
   };
+  reader.onerror = () => actionFeedback(tx('backup.importNotOpened', 'IMPORT NOT OPENED'), tx('backup.csvCouldNotRead', 'THE SELECTED CSV COULD NOT BE READ'), true);
   reader.readAsText(file);
   event.target.value = '';
 }
-export function cancelCSVImport() { moduleState.pendingImport = null; $('csvImportOverlay')?.classList.remove('active'); }
+function ensureImportDialog() {
+  if ($('gnImportOverlay')) return;
+  document.body.insertAdjacentHTML('beforeend', `<div class="gn-import-overlay" id="gnImportOverlay" role="dialog" aria-modal="true" aria-labelledby="gnImportTitle"><div class="gn-import-panel"><div class="gn-import-title" id="gnImportTitle" data-i18n="import.title">IMPORT DATA</div><p data-i18n="import.copy">Choose a source. GRID//NODE will detect the file format and show a review before commit.</p><label><span data-i18n="import.fromApp">FROM ANOTHER APP</span><select id="gnImportSource"><option data-i18n="import.shotsy">Shotsy</option><option data-i18n="import.glapp">GLAPP</option><option data-i18n="import.genericCsv">Generic CSV</option></select></label><label class="gn-import-file"><span data-i18n="import.fromCsv">FROM CSV FILE</span><input type="file" id="gnUnifiedCsvInput" accept=".csv,text/csv"></label><label class="gn-import-file"><span data-i18n="import.fromBackup">FROM GRID//NODE BACKUP</span><input type="file" id="gnBackupInput" accept=".json,application/json"></label><button type="button" class="gn-import-close" onclick="closeImportDialog()" data-i18n="import.cancel">CANCEL</button></div></div>`);
+    window.GN_I18N?.applyTo?.(document.getElementById('gnImportOverlay'));
+  $('gnUnifiedCsvInput')?.addEventListener('change', handleUnifiedCsvSelection);
+  $('gnBackupInput')?.addEventListener('change', handleBackupImportFile);
+}
+export function openImportDialog() { ensureImportDialog(); $('gnImportOverlay')?.classList.add('active'); }
+export function closeImportDialog() { $('gnImportOverlay')?.classList.remove('active'); }
+export function handleUnifiedCsvSelection(event) { closeImportDialog(); handleCSVImportFile(event); }
+function validBackupDate(value) {
+  const raw = String(value || '').trim();
+  const calendar = raw.match(/^(\d{4})-(\d{2})-(\d{2})(?:T|$)/);
+  if (!calendar) return false;
+  const [, year, month, day] = calendar.map(Number);
+  const normalized = new Date(Date.UTC(year, month - 1, day, 12));
+  return Number.isFinite(new Date(raw).getTime()) && normalized.getUTCFullYear() === year && normalized.getUTCMonth() === month - 1 && normalized.getUTCDate() === day;
+}
+function normalizeBackupPayload(input) {
+  if (!input || input.app !== 'GRID//NODE' || !Array.isArray(input.shots) || !Array.isArray(input.weights)) throw new Error('BACKUP_FORMAT_NOT_RECOGNIZED');
+  const shots = input.shots.map((record, index) => {
+    if (!record || typeof record !== 'object') throw new Error(`BACKUP_SHOT_${index + 1}_INVALID`);
+    const medication = normalizeMedicationId(record.medicationId || record.med);
+    const dose = Number(record.dose);
+    const optionalWeight = record.wt == null || record.wt === '' ? null : Number(record.wt);
+    if (!validBackupDate(record.date) || !medication || !Number.isFinite(dose) || dose <= 0 || (optionalWeight !== null && (!Number.isFinite(optionalWeight) || optionalWeight <= 0))) throw new Error(`BACKUP_SHOT_${index + 1}_INVALID`);
+    return normalizeShotRecord({ ...record, id: record.id || createId('shot'), med: medication, dose, ...(optionalWeight === null ? {} : { wt: optionalWeight }) });
+  });
+  const validShotIds = new Set([...getAllShots(), ...shots].map(record => String(record?.id || '')).filter(Boolean));
+  const weights = input.weights.map((record, index) => {
+    if (!record || typeof record !== 'object') throw new Error(`BACKUP_WEIGHT_${index + 1}_INVALID`);
+    const weight = Number(record.weight);
+    if (!validBackupDate(record.date) || !Number.isFinite(weight) || weight <= 0 || (record.shotId && !validShotIds.has(String(record.shotId)))) throw new Error(`BACKUP_WEIGHT_${index + 1}_INVALID`);
+    return { ...record, id: record.id || createId('weight'), weight };
+  });
+  const profile = input.profile && typeof input.profile === 'object' && !Array.isArray(input.profile) ? { ...input.profile } : input.profile;
+  if (profile?.med) {
+    const medication = normalizeMedicationId(profile.med);
+    if (!medication) throw new Error('BACKUP_PROFILE_MEDICATION_INVALID');
+    profile.med = medication;
+  }
+  for (const key of ['heightIn', 'htFt', 'htIn', 'startWt', 'goalWt']) {
+    if (profile?.[key] == null || profile[key] === '') continue;
+    const value = Number(profile[key]);
+    if (!Number.isFinite(value) || value < 0 || ((key === 'heightIn' || key === 'htFt' || key === 'startWt' || key === 'goalWt') && value === 0)) throw new Error(`BACKUP_PROFILE_${key.toUpperCase()}_INVALID`);
+  }
+  return { ...input, shots, weights, ...(profile ? { profile } : {}) };
+}
+export function handleBackupImportFile(event) {
+  const file = event.target.files?.[0]; if (!file) return;
+  moduleState.pendingBackup = null;
+  closeImportDialog();
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const backup = normalizeBackupPayload(JSON.parse(String(reader.result || '{}')));
+      moduleState.pendingBackup = backup; moduleState.pendingImportMeta = { fileName: file.name, format: 'GRID//NODE Backup' };
+      setText('csvImportTitle', tx('backup.previewTitle', 'GRID//NODE BACKUP PREVIEW')); setText('csvImportFormat', tx('backup.detectedFormat', 'DETECTED FORMAT // GRID//NODE BACKUP · {file}', { file: file.name })); setText('csvImportSummary', tx('backup.summary', '{shots} shots · {weights} weights · {measurements} measurements. Review before commit.', { shots: backup.shots.length, weights: backup.weights.length, measurements: (backup.measurements || []).length }));
+      const confirm = $('csvImportConfirmBtn'); if (confirm) { confirm.disabled = false; confirm.textContent = tx('backup.restoreButton', 'RESTORE BACKUP'); confirm.setAttribute('onclick', 'confirmBackupImport()'); }
+      $('csvImportOverlay')?.classList.add('active');
+    } catch (error) { actionFeedback(tx('backup.notOpened', 'BACKUP NOT OPENED'), error.message === 'BACKUP_FORMAT_NOT_RECOGNIZED' ? tx('backup.notBackup', 'THIS FILE IS NOT A GRID//NODE BACKUP') : tx('backup.couldNotRead', 'THE SELECTED BACKUP COULD NOT BE READ'), true); }
+  };
+  reader.onerror = () => actionFeedback(tx('backup.notOpened', 'BACKUP NOT OPENED'), tx('backup.couldNotRead', 'THE SELECTED BACKUP COULD NOT BE READ'), true);
+  reader.readAsText(file); event.target.value = '';
+}
+export function confirmBackupImport() {
+  if (!moduleState.pendingBackup) return;
+  let backup;
+  try { backup = normalizeBackupPayload(moduleState.pendingBackup); }
+  catch (_) {
+    moduleState.pendingBackup = null;
+    actionFeedback(tx('backup.notOpened', 'BACKUP NOT OPENED'), tx('backup.couldNotRead', 'THE SELECTED BACKUP COULD NOT BE READ'), true);
+    return;
+  }
+  const ops = [];
+  const merge = (key, incoming) => { if (Array.isArray(incoming)) ops.push({ key, value: mergeImportRecords(S.get(key, []), incoming) }); };
+  merge('shots', backup.shots); merge('weights', backup.weights); merge('measurements', backup.measurements); merge('results', backup.results); merge('notes', backup.notes); merge('symptoms', backup.symptoms); merge('labs', backup.labs); merge('arsenal', backup.arsenal); merge('researchRecords', backup.researchRecords); merge('devices', backup.devices); merge('inventory', backup.inventory); merge('loadouts', backup.loadouts); merge('eventLedger', backup.eventLedger);
+  if (backup.profile && typeof backup.profile === 'object') ops.push({ key: 'profile', value: { ...getProfile(), ...backup.profile } });
+  if (backup.preferences && typeof backup.preferences === 'object') ops.push({ key: 'preferences', value: { ...S.get('preferences', {}), ...backup.preferences } });
+  if (backup.settings && typeof backup.settings === 'object') ops.push({ key: 'settings', value: { ...S.get('settings', {}), ...backup.settings } });
+  if (backup.selectedLocation) ops.push({ key: 'selectedLocation', value: backup.selectedLocation });
+  if (!S.multiWrite(ops)) { actionFeedback(tx('backup.importRolledBack', 'IMPORT ROLLED BACK'), tx('backup.storageRejectedTransaction', 'LOCAL STORAGE DID NOT ACCEPT THE COMPLETE TRANSACTION'), true); return; }
+  appendEventLedger({ type: 'IMPORT', label: 'GRID//NODE BACKUP RESTORED', source: 'GRID//NODE Backup', state: 'Needs Review' }); queueCloudSync('workspace'); const count = (backup.shots?.length || 0) + (backup.weights?.length || 0); cancelCSVImport(); refreshAll(); actionFeedback(tx('backup.restored', 'BACKUP RESTORED'), tx('backup.restoredDetail', '{count} RECORD{plural} REVIEWED // LOCAL HISTORY UPDATED', { count, plural: count === 1 ? '' : 'S' }));
+}
+export function cancelCSVImport() { moduleState.pendingImport = null; moduleState.pendingImportMeta = null; moduleState.pendingBackup = null; const confirm = $('csvImportConfirmBtn'); if (confirm) { confirm.setAttribute('onclick', 'confirmCSVImport()'); confirm.textContent = tx('backup.importButton', 'IMPORT TO SHOTS HISTORY'); } setText('csvImportTitle', tx('backup.csvPreviewTitle', 'CSV IMPORT PREVIEW')); setText('csvImportFormat', tx('backup.csvReviewCopy', 'Review detected user-entered protocol records before appending them to SHOTS HISTORY.')); $('csvImportOverlay')?.classList.remove('active'); }
 export function confirmCSVImport() {
-  const rows = moduleState.pendingImport || [];
-  const shots = getAllShots(), weights = getWeights();
-  rows.forEach(row => { if (row.type === 'weight' || (!row.medication && row.weight)) weights.push({ id: createId('weight'), date: row.date || `${todayISO()}T12:00`, weight: Number(row.weight) || 0, notes: row.notes || null }); else shots.push({ id: createId('shot'), date: row.date || new Date().toISOString(), med: row.medication || 'Custom', dose: Number(row.dose) || 0, site: row.location || '', wt: Number(row.weight) || null, se: row.sideEffects || [], notes: row.notes || null, archived: row.archived === 'true', createdAt: new Date().toISOString() }); });
-  S.set('shots', shots); S.set('weights', weights); cancelCSVImport(); refreshAll(); showToast(`${rows.length} record${rows.length === 1 ? '' : 's'} imported.`);
+  const pending = moduleState.pendingImport || [];
+  const rechecked = classifyCSVRows(pending.map(item => item.row || item), getAllShots(), getWeights());
+  const additions = rechecked.rows.filter(item => item.status === 'new').map(item => item.row);
+  if (!additions.length) { actionFeedback(tx('backup.noNewRecords', 'NO NEW RECORDS'), tx('backup.historyUnchanged', 'EXISTING HISTORY WAS NOT CHANGED')); cancelCSVImport(); return; }
+  const beforeShots = getAllShots(), beforeWeights = getWeights();
+  const shots = [...beforeShots], weights = [...beforeWeights];
+  const importedAt = new Date().toISOString();
+  additions.forEach(row => {
+    const provenance = { importedAt, fileName: moduleState.pendingImportMeta?.fileName || 'CSV file' };
+    if (row.record_type === 'weight') {
+      if (!weights.some(weight => csvWeightKey(weight) === csvWeightKey(row))) weights.push({ id: createId('weight'), date: row.date, weight: row.weight_lb, notes: row.notes || null, source: moduleState.pendingImportMeta?.source || 'csv', state: 'review', importProvenance: provenance });
+    } else {
+      const shotId = createId('shot');
+      shots.push({ id: shotId, date: row.date, med: normalizeMedicationId(row.medication), dose: row.dose_mg, site: row.location || '', wt: row.weight_lb || null, se: row.side_effects, notes: row.notes || null, archived: row.archived, createdAt: importedAt, source: moduleState.pendingImportMeta?.source || 'csv', state: 'review', importProvenance: provenance });
+      if (Number.isFinite(row.weight_lb) && row.weight_lb > 0 && !weights.some(weight => csvWeightKey(weight) === csvWeightKey(row))) weights.push({ id: createId('weight'), shotId, date: row.date, weight: row.weight_lb, notes: 'Logged with SHOT', source: moduleState.pendingImportMeta?.source || 'csv', state: 'review', importProvenance: provenance });
+    }
+  });
+  if (!S.multiWrite([{ key: 'shots', value: shots }, { key: 'weights', value: weights }])) {
+    actionFeedback(tx('backup.importRolledBack', 'IMPORT ROLLED BACK'), tx('backup.storageRejectedTransaction', 'LOCAL STORAGE DID NOT ACCEPT THE COMPLETE TRANSACTION'), true);
+    return;
+  }
+  appendEventLedger({ type: 'IMPORT', label: 'CSV IMPORT SAVED', source: moduleState.pendingImportMeta?.source || 'CSV Import', state: 'Needs Review', recordCount: additions.length });
+  queueCloudSync('workspace');
+  const count = additions.length; cancelCSVImport(); refreshAll(); actionFeedback(tx('backup.importSaved', 'IMPORT SAVED'), tx('backup.importSavedDetail', '{count} NEW RECORD{plural} // REVIEW STATE PRESERVED', { count, plural: count === 1 ? '' : 'S' }));
 }
 function parseCSV(text) {
   const lines = text.split(/\r?\n/).filter(Boolean); if (lines.length < 2) return [];
   const parseLine = line => { const cells = []; let value = '', quoted = false; for (let i = 0; i < line.length; i++) { const char = line[i]; if (char === '"' && line[i + 1] === '"') { value += '"'; i++; } else if (char === '"') quoted = !quoted; else if (char === ',' && !quoted) { cells.push(value); value = ''; } else value += char; } cells.push(value); return cells; };
   const headers = parseLine(lines[0]).map(header => header.trim().toLowerCase());
-  return lines.slice(1).map(line => { const cells = parseLine(line); const row = {}; headers.forEach((header, index) => row[header] = cells[index] || ''); row.sideEffects = row.side_effects ? row.side_effects.split('|').filter(Boolean) : []; return row; }).filter(row => row.date || row.weight || row.medication);
+  const aliases = { type: 'record_type', dose: 'dose_mg', weight: 'weight_lb', site: 'location', sideeffects: 'side_effects' };
+  return lines.slice(1).map((line, rowIndex) => {
+    const cells = parseLine(line), raw = {};
+    headers.forEach((header, index) => raw[aliases[header] || header] = (cells[index] || '').trim());
+    return { rowIndex: rowIndex + 2, record_type: String(raw.record_type || '').toLowerCase(), date: normalizeImportDate(raw.date), medication: raw.medication || '', dose_mg: raw.dose_mg === '' ? null : Number(raw.dose_mg), location: raw.location || '', weight_lb: raw.weight_lb === '' ? null : Number(raw.weight_lb), side_effects: raw.side_effects ? raw.side_effects.split('|').map(value => value.trim()).filter(Boolean) : [], notes: raw.notes || '', archived: String(raw.archived).toLowerCase() === 'true' };
+  });
+}
+
+function normalizeImportDate(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  const dateOnly = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (dateOnly) {
+    const [, year, month, day] = dateOnly;
+    const parsed = new Date(Number(year), Number(month) - 1, Number(day), 12, 0, 0, 0);
+    if (parsed.getFullYear() !== Number(year) || parsed.getMonth() !== Number(month) - 1 || parsed.getDate() !== Number(day)) return '';
+    return `${raw}T12:00`;
+  }
+  return Number.isNaN(new Date(raw).getTime()) ? '' : raw;
+}
+function csvShotKey(record) { const medicationId = normalizeMedicationId(record.medication || record.med); return [record.date || '', medicationId, Number(record.dose_mg ?? record.dose).toFixed(4), record.location || record.site || ''].join('|').toLowerCase(); }
+function csvWeightKey(record) { return [record.date || '', Number(record.weight_lb ?? record.weight).toFixed(4)].join('|').toLowerCase(); }
+function classifyCSVRows(rows, shots, weights) {
+  const shotKeys = new Set(shots.map(csvShotKey)), weightKeys = new Set(weights.map(csvWeightKey));
+  const seenShots = new Set(), seenWeights = new Set();
+  const classified = rows.map(row => {
+    const validType = row.record_type === 'shot' || row.record_type === 'weight';
+    const timestamp = new Date(row.date).getTime();
+    const validDate = Boolean(row.date) && Number.isFinite(timestamp) && timestamp <= Date.now();
+    const medicationId = normalizeMedicationId(row.medication);
+    const validValue = row.record_type === 'shot' ? Number.isFinite(row.dose_mg) && row.dose_mg > 0 && Object.prototype.hasOwnProperty.call(MEDICATIONS, medicationId) : Number.isFinite(row.weight_lb) && row.weight_lb > 0;
+    if (!validType || !validDate || !validValue) return { row, status: 'invalid' };
+    const key = row.record_type === 'shot' ? csvShotKey(row) : csvWeightKey(row);
+    const stored = row.record_type === 'shot' ? shotKeys : weightKeys;
+    const seen = row.record_type === 'shot' ? seenShots : seenWeights;
+    const duplicate = stored.has(key) || seen.has(key); seen.add(key);
+    return { row, status: duplicate ? 'duplicate' : 'new' };
+  });
+  return { rows: classified, counts: { recognized: classified.filter(item => item.status !== 'invalid').length, duplicates: classified.filter(item => item.status === 'duplicate').length, newRecords: classified.filter(item => item.status === 'new').length, invalid: classified.filter(item => item.status === 'invalid').length } };
+}
+
+export function previewCSVImportForTesting(text, shots = [], weights = []) {
+  return classifyCSVRows(parseCSV(text), shots, weights);
 }
 
 export function renderCalendar() {
   const grid = $('calGrid'); if (!grid) return;
   const date = moduleState.calendarDate, year = date.getFullYear(), month = date.getMonth();
-  const months = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
-  setText('calTitle', `${months[month]} ${year}`);
+  const locale = document.documentElement?.lang?.startsWith('es') ? 'es-419' : 'en-US';
+  const monthLabel = new Date(year, month, 1).toLocaleDateString(locale, { month: 'long', year: 'numeric' }).toLocaleUpperCase(locale);
+  const weekdayLabels = Array.from({ length: 7 }, (_, index) => new Date(2026, 7, 2 + index).toLocaleDateString(locale, { weekday: 'short' }).replace('.', '').toLocaleUpperCase(locale));
+  setText('calTitle', monthLabel);
   const first = new Date(year, month, 1).getDay(), total = new Date(year, month + 1, 0).getDate();
   const shots = new Set(sortedShots().map(item => item.date?.slice(0, 10))), weights = new Set(sortedWeights().map(item => item.date?.slice(0, 10)));
-  grid.innerHTML = `${['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => `<div class="cal-day-head">${day}</div>`).join('')}${Array.from({ length: first }, () => '<div class="cal-day empty-day"></div>').join('')}${Array.from({ length: total }, (_, index) => { const day = index + 1, key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; return `<button type="button" class="cal-day ${moduleState.selectedCalendarDay === key ? 'selected' : ''}" data-calendar-day="${key}"><span>${day}</span>${shots.has(key) ? '<i class="cal-mark shot"></i>' : ''}${weights.has(key) ? '<i class="cal-mark weight"></i>' : ''}</button>`; }).join('')}`;
+  grid.innerHTML = `${weekdayLabels.map(day => `<div class="cal-day-head">${day}</div>`).join('')}${Array.from({ length: first }, () => '<div class="cal-day empty-day"></div>').join('')}${Array.from({ length: total }, (_, index) => { const day = index + 1, key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; return `<button type="button" class="cal-day ${moduleState.selectedCalendarDay === key ? 'selected' : ''}" data-calendar-day="${key}"><span>${day}</span>${shots.has(key) ? '<i class="cal-mark shot"></i>' : ''}${weights.has(key) ? '<i class="cal-mark weight"></i>' : ''}</button>`; }).join('')}`;
   const selected = moduleState.selectedCalendarDay;
-  if (selected) { const records = [...getAllShots().filter(item => item.date?.slice(0, 10) === selected), ...getWeights().filter(item => item.date?.slice(0, 10) === selected)]; $('calDetail').innerHTML = records.length ? records.map(item => `<div class="gn-calendar-detail">${safeText(item.med || 'WEIGHT')} · ${safeText(formatDateTime(item.date))}</div>`).join('') : '<div class="gn-calendar-detail">No records on this day.</div>'; }
+  if (selected) { const records = [...getAllShots().filter(item => item.date?.slice(0, 10) === selected), ...getWeights().filter(item => item.date?.slice(0, 10) === selected)]; $('calDetail').innerHTML = records.length ? records.map(item => `<div class="gn-calendar-detail">${safeText(item.med ? medicationLabel(item.med) : tx('results.weight', 'WEIGHT'))} · ${safeText(formatDateTime(item.date))}</div>`).join('') : `<div class="gn-calendar-detail">${tx('calendar.noRecords', 'No records on this day.')}</div>`; }
 }
 export function calPrev() { moduleState.calendarDate.setMonth(moduleState.calendarDate.getMonth() - 1); renderCalendar(); }
 export function calNext() { moduleState.calendarDate.setMonth(moduleState.calendarDate.getMonth() + 1); renderCalendar(); }
 export function calDayClick(day) { moduleState.selectedCalendarDay = day; renderCalendar(); }
 
-export function openArsenalMod(type = 'compound', editId = null) { moduleState.arsenalEditId = editId; $('arsTitle')?.replaceChildren(document.createTextNode(editId ? 'EDIT CONTEXT' : 'ADD CONTEXT')); $('arsOv')?.classList.add('active'); }
+export function openArsenalMod(type = 'compound', editId = null) { moduleState.arsenalEditId = editId; $('arsTitle')?.replaceChildren(document.createTextNode(editId ? tx('shots.editContext', 'EDIT CONTEXT') : tx('shots.addContext', 'ADD CONTEXT'))); $('arsOv')?.classList.add('active'); }
 export function closeArs() { $('arsOv')?.classList.remove('active'); moduleState.arsenalEditId = null; }
-export function saveArs() { const items = S.get('arsenal', []); const record = { id: moduleState.arsenalEditId || createId('context'), name: $('aName')?.value?.trim(), concentration: Number($('aConc')?.value) || null, volume: Number($('aVol')?.value) || null, quantity: Number($('aQty')?.value) || 1, reviewDate: $('aExpiry')?.value || '' }; if (!record.name) { showToast('Enter a context name.', true); return; } const index = items.findIndex(item => item.id === record.id); if (index >= 0) items[index] = record; else items.push(record); S.set('arsenal', items); queueCloudSync('workspace'); closeArs(); showToast('VAULT context saved.'); }
+export function saveArs() { const items = S.get('arsenal', []); const record = { id: moduleState.arsenalEditId || createId('context'), name: $('aName')?.value?.trim(), concentration: Number($('aConc')?.value) || null, volume: Number($('aVol')?.value) || null, quantity: Number($('aQty')?.value) || 1, reviewDate: $('aExpiry')?.value || '' }; if (!record.name) { showToast(tx('shots.contextNameRequired', 'Enter a context name.'), true); return; } const index = items.findIndex(item => item.id === record.id); if (index >= 0) items[index] = record; else items.push(record); S.set('arsenal', items); queueCloudSync('workspace'); closeArs(); showToast(tx('lab.saveContext', 'VAULT context saved.')); }
 export function requestLoadoutRemove(id) { moduleState.pendingArsenalId = id; $('loadoutRemoveOverlay')?.classList.add('active'); }
 export function cancelLoadoutRemove() { moduleState.pendingArsenalId = null; $('loadoutRemoveOverlay')?.classList.remove('active'); }
-export function confirmLoadoutRemove() { const next = S.get('arsenal', []).filter(item => item.id !== moduleState.pendingArsenalId); S.set('arsenal', next); queueCloudSync('workspace'); cancelLoadoutRemove(); showToast('Context removed.'); }
-
-export function toggleSound() { window.GN_SOUND_ON = window.GN_SOUND_ON === false; const button = $('sndBtn'); if (button) button.style.opacity = window.GN_SOUND_ON ? '1' : '.4'; }
+export function confirmLoadoutRemove() { const next = S.get('arsenal', []).filter(item => item.id !== moduleState.pendingArsenalId); S.set('arsenal', next); queueCloudSync('workspace'); cancelLoadoutRemove(); showToast(tx('shots.contextRemoved', 'Context removed.')); }
 
 export function formatTime24(date) { return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`; }
 export function formatTime12(date) { const hour = date.getHours() % 12 || 12; return `${hour}:${String(date.getMinutes()).padStart(2, '0')}`; }
@@ -807,14 +3852,42 @@ export function gnSetShotMeridiem(value) { moduleState.meridiem = value === 'PM'
 function updateMeridiemButtons() { $('sTimeAM')?.classList.toggle('active', moduleState.meridiem === 'AM'); $('sTimePM')?.classList.toggle('active', moduleState.meridiem === 'PM'); }
 export function gnShotClockLiveFormat(input) { if (!input) return; input.value = input.value.replace(/[^0-9]/g, '').slice(0, 4).replace(/^(\d{1,2})(\d{2})$/, '$1:$2'); }
 export function gnNormalizeShotClockField(input) { if (!input) return; const parsed = getShotTime24(input.value); if (parsed) { const date = new Date(`2000-01-01T${parsed}`); input.value = formatTime12(date); } }
-export function gnWeightDateInput(input) { if (input) input.value = input.value.replace(/[^0-9\/-]/g, '').slice(0, 10); }
+export function gnWeightDateInput(input) {
+  if (!input) return;
+  input.value = input.value.replace(/[^0-9\/-]/g, '').slice(0, 10);
+  delete input.dataset.isoDate;
+  delete input.dataset.dateDisplay;
+}
 export function gnWeightTimeInput(input) { if (input) input.value = input.value.replace(/[^0-9:]/g, '').slice(0, 5); }
-export function gnOpenShotDatePicker() { const input = $('sDate'); if (input) { input.removeAttribute('readonly'); input.type = 'date'; input.value = normalizeDateInput(input.value) || todayISO(); input.focus(); } }
-export function gnCloseShotDatePicker() { const input = $('sDate'); if (input) { input.type = 'text'; input.setAttribute('readonly', 'readonly'); } }
-export function gnDatePickerMove() {}
-export function gnSelectPickerDate(date) { if ($('sDate')) $('sDate').value = date; gnCloseShotDatePicker(); }
-export function gnSetShotDateFromPicker() { gnCloseShotDatePicker(); }
-export function gnSetShotDateValue(value) { if ($('sDate')) $('sDate').value = value; }
+function renderShotDatePicker() {
+  const month = moduleState.shotPickerMonth;
+  const label = $('gnDatePickerMonth');
+  const grid = $('gnDatePickerGrid');
+  if (!label || !grid) return;
+  label.textContent = month.toLocaleDateString(document.documentElement.lang?.startsWith('es') ? 'es-419' : 'en-US', { month: 'long', year: 'numeric' });
+  const year = month.getFullYear(), monthIndex = month.getMonth(), first = new Date(year, monthIndex, 1).getDay(), total = new Date(year, monthIndex + 1, 0).getDate();
+  const selected = moduleState.shotPickerSelected || '';
+  const weekdays = document.documentElement.lang?.startsWith('es') ? ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'] : ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  grid.innerHTML = `${weekdays.map(day => `<div class="gn-date-dow">${day}</div>`).join('')}${Array.from({ length: first }, () => '<button type="button" class="gn-date-day blank" tabindex="-1"></button>').join('')}${Array.from({ length: total }, (_, index) => { const day = index + 1, value = `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; return `<button type="button" class="gn-date-day${value === selected ? ' selected' : ''}" data-gn-picker-date="${value}"><span>${day}</span></button>`; }).join('')}`;
+}
+export function gnOpenShotDatePicker() {
+  const input = $('sDate');
+  if (!input) return;
+  const selected = readHumanDateInput(input) || todayISO();
+  moduleState.shotPickerOriginal = { value: input.value, isoDate: input.dataset.isoDate || selected, dateDisplay: input.dataset.dateDisplay || input.value };
+  moduleState.shotPickerSelected = selected;
+  const parsed = parseLocalDate(selected);
+  moduleState.shotPickerMonth = new Date(parsed.getFullYear(), parsed.getMonth(), 1);
+  setHumanDateInput(input, selected);
+  input.type = 'text'; input.setAttribute('readonly', 'readonly');
+  renderShotDatePicker();
+  $('gnDatePickerOverlay')?.classList.add('active');
+}
+export function gnCloseShotDatePicker() { const input = $('sDate'); if (input && moduleState.shotPickerOriginal !== null) { input.value = moduleState.shotPickerOriginal.value; input.dataset.isoDate = moduleState.shotPickerOriginal.isoDate; input.dataset.dateDisplay = moduleState.shotPickerOriginal.dateDisplay; } moduleState.shotPickerOriginal = null; $('gnDatePickerOverlay')?.classList.remove('active'); if (input) { input.type = 'text'; input.setAttribute('readonly', 'readonly'); } }
+export function gnDatePickerMove(delta) { moduleState.shotPickerMonth.setMonth(moduleState.shotPickerMonth.getMonth() + Number(delta || 0)); renderShotDatePicker(); }
+export function gnSelectPickerDate(date) { moduleState.shotPickerSelected = normalizeDateInput(date) || todayISO(); setHumanDateInput($('sDate'), moduleState.shotPickerSelected); renderShotDatePicker(); }
+export function gnSetShotDateFromPicker() { if (moduleState.shotPickerSelected) setHumanDateInput($('sDate'), moduleState.shotPickerSelected); moduleState.shotPickerOriginal = null; $('gnDatePickerOverlay')?.classList.remove('active'); }
+export function gnSetShotDateValue(value) { setHumanDateInput($('sDate'), value); }
 export function gnSetShotTimeValue(value) { if ($('sTime')) $('sTime').value = formatTime12(new Date(`2000-01-01T${value}`)); }
 export function gnMedRevealGroup(dropId, group) {
   const drop = $(dropId);
@@ -825,26 +3898,104 @@ export function gnMedRevealGroup(dropId, group) {
     block.style.display = '';
   });
 }
-export function updatePills() { const med = selectState.cpShotMed?.val; const dose = Number(getProfile().dose); const container = $('dosePills'); if (!container) return; const values = dose ? [dose] : [0.5, 1, 2.5, 5, 7.5, 10]; container.innerHTML = values.map(value => `<button type="button" class="dose-pill" data-dose="${value}">${value} mg</button>`).join(''); setText('profMedTxt', med ? `// ${med.toUpperCase()}` : '// NO MEDICATION SET'); }
+export function updatePills() { const med = normalizeMedicationId(selectState.cpShotMed?.val); const dose = Number(getProfile().dose); const container = $('dosePills'); if (!container) return; const values = dose ? [dose] : [0.5, 1, 2.5, 5, 7.5, 10]; container.innerHTML = values.map(value => `<button type="button" class="dose-pill" data-dose="${value}">${value} mg</button>`).join(''); setText('profMedTxt', med ? `// ${medicationLabel(med).toUpperCase()}` : tx('profile.noMedicationSet', '// NO MEDICATION SET')); }
 export function selPill(button, dose) { if ($('sDose')) $('sDose').value = dose; qa('.dose-pill').forEach(item => item.classList.toggle('active', item === button)); }
 
+function wireSelectOptions() {
+  const callbacks = { saveProfileMed, saveProfileMetrics, updatePills };
+  qa('.cp-option').forEach(option => {
+    const inline = option.getAttribute('onclick') || '';
+    const match = inline.match(/^selectOpt\('([^']*)','([^']*)','([^']*)'/);
+    if (!match || option.dataset.gnSelectWired) return;
+    const callbackName = /saveProfileMed/.test(inline) ? 'saveProfileMed' : /saveProfileMetrics/.test(inline) ? 'saveProfileMetrics' : /updatePills/.test(inline) ? 'updatePills' : '';
+    option.dataset.gnSelectWired = 'true';
+    option.removeAttribute('onclick');
+    option.addEventListener('click', () => selectOpt(match[1], match[2], match[3], callbacks[callbackName] || null));
+  });
+}
+
 export function initModules() {
+  initScannerAudioControl();
   document.addEventListener('click', event => {
     const zone = event.target.closest('[data-stable-zone]');
-    if (zone) selectScannerLocation(zone.dataset.stableZone);
-    const overlay = event.target.closest('.zone-overlay');
-    if (overlay?.dataset.site) selectScannerLocation(overlay.dataset.site);
+    if (zone) selectScannerLocation(zone.dataset.stableZone, { source: 'fallback', gestureToken: gnScannerAudioGesture.fromEvent(event) });
     const historyButton = event.target.closest('[data-shot-history-view]');
     if (historyButton) setShotHistoryView(historyButton.dataset.shotHistoryView);
     const shotAction = event.target.closest('[data-shot-action]');
-    if (shotAction) { const action = shotAction.dataset.shotAction, id = shotAction.dataset.shotId; if (action === 'edit') editShot(id); if (action === 'archive') openArchiveConfirm(id); if (action === 'restore') restoreArchivedShot(id); }
+    if (shotAction) { const action = shotAction.dataset.shotAction, id = shotAction.dataset.shotId; if (action === 'edit') editShot(id); if (action === 'archive') openArchiveConfirm(id); if (action === 'restore') restoreArchivedShot(id); if (action === 'restore-edit') restoreArchivedShotToEdit(id); if (action === 'delete') openPermanentDeleteConfirm(id); }
     if (event.target.closest('[data-empty-shot]')) handleShotFab();
+    const pickerDay = event.target.closest('[data-gn-picker-date]'); if (pickerDay) gnSelectPickerDate(pickerDay.dataset.gnPickerDate);
     const calendarDay = event.target.closest('[data-calendar-day]'); if (calendarDay) calDayClick(calendarDay.dataset.calendarDay);
     const dosePill = event.target.closest('.dose-pill'); if (dosePill) selPill(dosePill, Number(dosePill.dataset.dose));
+    const researchPick = event.target.closest('[data-research-name]');
+    if (researchPick) {
+      const pickName = researchPick.dataset.researchName || '';
+      const mode = $('gnResearchMode');
+      if (pickName) {
+        if (mode) { mode.style.display = ''; mode.dataset.mode = 'library'; }
+        const mlc = $('gnModeLibraryChip'), mcc = $('gnModeCategoryChip'), mcb = $('gnModeBack');
+        if (mlc) { mlc.style.display = ''; mlc.textContent = tx('research.modeLibrarySelected', 'BIBLIOTECA · SELECCIONADA') + ' ' + tx('research.lockGlyph', '🔒'); }
+        if (mcc) { mcc.style.display = ''; mcc.textContent = tx('research.modeCategoryAssigned', 'CATEGORÍA · ASIGNADA') + ' ' + tx('research.lockGlyph', '🔒'); }
+        if (mcb) mcb.style.display = 'none';
+        const customTitle = document.querySelector('.gn-research-mode-custom .gn-research-mode-title');
+        if (customTitle) customTitle.style.display = 'none';
+        if ($('gnResearchName')) {
+          $('gnResearchName').value = pickName;
+          $('gnResearchName').readOnly = true;
+          $('gnResearchName').setAttribute('data-research-locked', '1');
+        }
+        const category = $('gnResearchCategory');
+        if (category) { category.dataset.categoryId = researchPick.dataset.researchCategory || 'lab.customResearch'; category.value = researchCategoryLabel(category.dataset.categoryId); category.readOnly = true; category.setAttribute('data-category-locked', '1'); }
+        $('gnResearchName')?.setAttribute('placeholder', tx('research.presetLockedPlaceholder', 'Library entry — name is locked'));
+        const badgeHost = $('gnResearchForm')?.querySelector('[data-research-badge]');
+        if (badgeHost) badgeHost.textContent = tx('research.presetBadge', 'PRESET');
+        const customSave = $('gnResearchSave');
+        if (customSave) customSave.textContent = tx('research.save', 'SAVE RESEARCH RECORD');
+        const cw = $('gnCustomWarning');
+        if (cw) cw.style.display = 'none';
+        // B12 rev (2026-08-08): after picking a peptide, bring the form
+        // into view so NOMBRE + CATEGORÍA are visibly auto-filled —
+        // the user can log in ≤3 taps + fill on a 360px screen.
+        $('gnResearchForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        researchEnterCustomMode();
+        $('gnResearchForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+    const researchDelete = event.target.closest('[data-research-delete]'); if (researchDelete) deleteResearchRecord(researchDelete.dataset.researchDelete);
   });
   document.addEventListener('click', event => { if (!event.target.closest('.cp-select')) { qa('.cp-dropdown.open').forEach(item => item.classList.remove('open')); qa('.cp-select-trigger.open').forEach(item => item.classList.remove('open')); } });
+  wireSelectOptions();
+  installCustomPickers(document);
+  $('gnResearchCategory')?.addEventListener('input', event => { delete event.currentTarget.dataset.categoryId; if ($('gnResearchName')) { $('gnResearchName').readOnly = false; $('gnResearchName').removeAttribute('data-research-locked'); const bH = $('gnResearchForm')?.querySelector('[data-research-badge]'); if (bH) bH.textContent = ''; $('gnResearchName')?.setAttribute('placeholder', tx('research.recordNamePlaceholder', 'Select a library entry or type a custom name')); } });
+  const scrollBody = $('scrollBody');
+  if (scrollBody && !scrollBody.dataset.gnSwipeWired) {
+    let touchStartX = 0;
+    let touchStartY = 0;
+    scrollBody.dataset.gnSwipeWired = 'true';
+    scrollBody.addEventListener('touchstart', event => {
+      const point = event.touches[0];
+      touchStartX = point?.clientX || 0;
+      touchStartY = point?.clientY || 0;
+    }, { passive: true });
+    scrollBody.addEventListener('touchend', event => {
+      const point = event.changedTouches[0];
+      const dx = (point?.clientX || 0) - touchStartX;
+      const dy = (point?.clientY || 0) - touchStartY;
+      if (Math.abs(dx) < 60 || Math.abs(dx) <= Math.abs(dy)) return;
+      const pages = ['navDash', 'navLog', 'navRes', 'navLab'];
+      const current = pages.findIndex(id => document.getElementById(id)?.classList.contains('active'));
+      if (current < 0) return;
+      if (dx > 0 && current > 0) document.getElementById(pages[current - 1])?.click();
+      if (dx < 0 && current < pages.length - 1) document.getElementById(pages[current + 1])?.click();
+    }, { passive: true });
+  }
   document.querySelector('.gn-shot-advanced-trigger')?.addEventListener('click', event => { const button = event.currentTarget, body = $(button.dataset.collapseTarget); const open = body?.classList.toggle('gn-hidden') === false; button.setAttribute('aria-expanded', String(open)); });
   setTodayDefaults();
   renderScanner();
 }
 
+
+/* v0.15.19 - install pointer handlers on first user interaction with scanner */
+document.addEventListener("DOMContentLoaded", () => { installScannerPointerHandlers(); installScannerDebugMode(); });
+window.addEventListener("load", () => { installScannerPointerHandlers(); installScannerDebugMode(); });

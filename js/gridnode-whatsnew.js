@@ -10,6 +10,25 @@
   const LEGACY_ACK_KEY = 'gn_whatsnew_acknowledged_release_v2';
   const ORDER = ['NEW', 'IMPROVED', 'FIXED', 'ACCESSIBILITY', 'MOBILE', 'COMPATIBILITY', 'SECURITY'];
   const NOTES = Object.freeze({
+    '20260907.1': {
+      version: '0.15.33', title: 'RELEASE INTEGRITY + DATA SAFETY', date: '2026-09-07',
+      en: {
+        FIXED: [
+          'Build identity now stays synchronized across the readable source, generated runtime, interface, native shell, service worker, and cache.',
+          'Permanent SHOT deletion is reachable from the archive and removes its linked weight without disturbing standalone RESULTS records.',
+          'Cloud writes use stable record identities before their first request, preventing duplicate SHOT and weight records after ambiguous retries.',
+          'Spanish profile measurements, linked-weight labels, scanner names, and tactile-feedback settings now remain correctly localized.'
+        ]
+      },
+      es: {
+        FIXED: [
+          'La identidad de compilación ahora permanece sincronizada entre el código fuente, el runtime generado, la interfaz, la capa nativa, el service worker y la caché.',
+          'La eliminación permanente de una DOSIS está disponible desde el archivo y elimina su peso vinculado sin alterar registros independientes de RESULTADOS.',
+          'La nube asigna identidades estables antes de la primera solicitud para evitar registros duplicados después de reintentos ambiguos.',
+          'Las medidas del perfil, las etiquetas de peso vinculado, los nombres del escáner y la respuesta táctil permanecen correctamente traducidos.'
+        ]
+      }
+    },
     '20260906.11': {
       version: '0.15.32', title: 'LAB ARCHIVE LAYOUT + HAPTICS + LANG PERSISTENCE', date: '2026-09-06',
       en: {

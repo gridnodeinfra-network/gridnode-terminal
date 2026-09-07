@@ -77,6 +77,7 @@ create policy webauthn_credentials_owner_update on public.webauthn_credentials
   with check ((select auth.uid()) = user_id);
 
 revoke all on table public.webauthn_credentials, public.webauthn_audit_log, public.webauthn_challenges, public.webauthn_rate_limits from anon;
+revoke all on table public.webauthn_credentials from authenticated;
 revoke all on table public.webauthn_audit_log, public.webauthn_challenges, public.webauthn_rate_limits from authenticated;
 grant select on table public.webauthn_credentials to authenticated;
 

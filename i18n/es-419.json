@@ -1647,17 +1647,17 @@
   "shots.locationReady": "UBICACIÓN//LISTA",
   "shots.scannerAudio": "AUDIO DEL ESCANER",
   "shots.audioLabel": "AUDIO",
-  "shots": {
-    "scannerAudio": "AUDIO DEL ESCANER",
-    "soundOn": "ACTIVO",
-    "soundOff": "APAGADO",
-    "scannerAudioHint": "Tonos de confirmacion procedurales opcionales. Apagado por defecto; activa para reproducir un tono breve cuando una zona se bloquea."
-  },
-  "vault": {
-    "vault.hapticsTitle": "Respuesta táctil",
-    "vault.hapticsHelp": "La vibración confirma guardados, bloqueos y selecciones cuando el dispositivo lo admite.",
-    "vault.hapticsOn": "ACTIVA — las acciones de guardar y bloquear vibran brevemente.",
-    "vault.hapticsOff": "APAGADA — confirmación silenciosa. Toca para activar.",
-    "vault.hapticsUnsupported": "No compatible con este dispositivo."
-  }
+  "shots.soundOn": "ACTIVO",
+  "shots.soundOff": "APAGADO",
+  "shots.scannerAudioHint": "Tonos de confirmación opcionales. Apagado por defecto; actívalo para reproducir un tono breve al bloquear una zona.",
+  "shots.deletePermanently": "ELIMINAR PERMANENTEMENTE",
+  "shots.scannerAria": "Escáner GRID//NODE de ubicación ingresada por el usuario",
+  "shots.scannerPanelAria": "Escáner de ubicación {mode}",
+  "shots.scannerZonesAria": "Zonas rastreables de {mode}",
+  "results.loggedWithShot": "Registrado con DOSIS",
+  "vault.hapticsTitle": "Respuesta táctil",
+  "vault.hapticsHelp": "La vibración confirma guardados, bloqueos y selecciones cuando el dispositivo lo admite.",
+  "vault.hapticsOn": "ACTIVA — las acciones de guardar y bloquear vibran brevemente.",
+  "vault.hapticsOff": "APAGADA — confirmación silenciosa. Toca para activar.",
+  "vault.hapticsUnsupported": "No compatible con este dispositivo."
 }

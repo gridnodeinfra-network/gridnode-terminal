@@ -5,7 +5,7 @@
 (function () {
   'use strict';
 
-  const V = '20260811.5';
+  const V = '20260907.1';
   const SHOT_DRAFT_KEY = 'gn_shot_draft_session_v1';
   const PAGE_KEY = 'gn_active_page_session_v1';
   const OVERLAY_SELECTOR = '.overlay, .archive-confirm-overlay, .future-confirm-overlay, .gn-date-overlay, .csv-import-overlay, .gn-import-overlay, .gn-whatsnew-overlay, .gn-peptide-overlay, .gn-onb-overlay, .gn-lab-tool-overlay';

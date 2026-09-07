@@ -87,7 +87,7 @@
     const progress = Math.min(elapsed / 7, 0.999);
     const phase = phases.find(item => progress >= item.start && progress < item.end) || phases.at(-1);
     const since = elapsed < 1
-      ? tx('phase.sphereSinceHours', '{hours}h since last SHOT', { hours: Math.max(1, Math.round(elapsed * 24)) })
+      ? tx('phase.sphereSinceHours', '{hours}h since last SHOT', { hours: Math.max(0, Math.floor(elapsed * 24)) })
       : tx('phase.sphereSinceDays', '{days}d since last SHOT', { days: Math.floor(elapsed) });
     panel.dataset.state = 'active';
     const localizedName = phaseLabel(phase);

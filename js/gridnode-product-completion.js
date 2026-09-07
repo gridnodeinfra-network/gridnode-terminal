@@ -40,7 +40,7 @@
   function formatSince(value) {
     const date = localDate(value); if (!date) return '—';
     const elapsed = Math.max(0, Date.now() - date.getTime());
-    if (elapsed < dayMs) return `${Math.max(1, Math.floor(elapsed / 3600000))}h`;
+    if (elapsed < dayMs) return `${Math.max(0, Math.floor(elapsed / 3600000))}h`;
     return `${Math.floor(elapsed / dayMs)}d`;
   }
 

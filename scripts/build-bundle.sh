@@ -47,6 +47,15 @@ modules = re.sub(
     modules_source,
     flags=re.MULTILINE | re.DOTALL,
 )
+# These ESM aliases expose core helpers through GNModules. In the classic bundle
+# the core declarations already use the public names, so retaining the alias
+# declarations would redeclare them in the same scope.
+modules = re.sub(
+    r"^export\s+const\s+getProfile(?:ForEvidence)?\s*=\s*coreGetProfile(?:ForEvidence)?;\s*",
+    "",
+    modules,
+    flags=re.MULTILINE,
+)
 modules = re.sub(r"^export\s+", "", modules, flags=re.MULTILINE)
 
 app = re.sub(
@@ -86,7 +95,7 @@ parts = [
     app.strip(),
 ]
 
-bundle = "\r\n\r\n".join(parts) + "\r\n\r\n"
+bundle = "\n\n".join(parts) + "\n"
 temp_path.write_bytes(bundle.encode("utf-8"))
 temp_path.replace(bundle_path)
 

@@ -1647,17 +1647,17 @@
   "shots.locationReady": "LOCATION//READY",
   "shots.scannerAudio": "SCANNER AUDIO",
   "shots.audioLabel": "AUDIO",
-  "shots": {
-    "scannerAudio": "SCANNER AUDIO",
-    "soundOn": "ON",
-    "soundOff": "OFF",
-    "scannerAudioHint": "Optional procedural confirmation tones. Off by default; opt in to play a short tone when a zone locks."
-  },
-  "vault": {
-    "vault.hapticsTitle": "Tactile Feedback",
-    "vault.hapticsHelp": "Vibration confirms saves, locks, and selections when the device supports it.",
-    "vault.hapticsOn": "ON — save and lock actions vibrate briefly.",
-    "vault.hapticsOff": "OFF — silent confirmation. Tap to enable.",
-    "vault.hapticsUnsupported": "Not supported on this device."
-  }
+  "shots.soundOn": "ON",
+  "shots.soundOff": "OFF",
+  "shots.scannerAudioHint": "Optional procedural confirmation tones. Off by default; opt in to play a short tone when a zone locks.",
+  "shots.deletePermanently": "DELETE PERMANENTLY",
+  "shots.scannerAria": "GRID//NODE user-entered location scanner",
+  "shots.scannerPanelAria": "{mode} location scanner",
+  "shots.scannerZonesAria": "{mode} tracking zones",
+  "results.loggedWithShot": "Logged with SHOT",
+  "vault.hapticsTitle": "Tactile Feedback",
+  "vault.hapticsHelp": "Vibration confirms saves, locks, and selections when the device supports it.",
+  "vault.hapticsOn": "ON — save and lock actions vibrate briefly.",
+  "vault.hapticsOff": "OFF — silent confirmation. Tap to enable.",
+  "vault.hapticsUnsupported": "Not supported on this device."
 }

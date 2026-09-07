@@ -5,6 +5,7 @@ import {
   SUPABASE_URL, SERVICE_ROLE_KEY, RP_ID,
   allowedOrigins, corsHeaders, json, text, verifyChallengeToken, consumeChallenge,
   checkRateLimit, recordAudit, clientInfo, mintSessionTokens,
+  base64UrlToBytes,
 } from "../_shared/webauthn.ts";
 
 function parseCoseEc2(raw: Uint8Array): Record<string, Uint8Array | number> {
@@ -134,6 +135,7 @@ async function manualVerifyFallback(body: any, payload: any, credentialRow: any,
 async function handle(req: Request): Promise<Response> {
   if (req.method !== "POST") return text("method not allowed", 405);
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+  const sessionClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
   const { ip, userAgent } = clientInfo(req);
   const body = await req.json().catch(() => ({}));
 
@@ -190,7 +192,7 @@ async function handle(req: Request): Promise<Response> {
         expectedRPID: RP_ID,
         authenticator: {
           credentialID: credentialRow.credential_id,
-          credentialPublicKey: credentialRow.public_key,
+          credentialPublicKey: base64UrlToBytes(credentialRow.public_key),
           counter: Number(credentialRow.sign_count),
           transports: Array.isArray(credentialRow.transports) ? credentialRow.transports : [],
         },
@@ -199,28 +201,25 @@ async function handle(req: Request): Promise<Response> {
     } catch (_) { /* try next allowed origin */ }
   }
   if (!verification?.verified) {
-    const fallbackResult = await manualVerifyFallback(body, payload, credentialRow, RP_ID);
-    if (!fallbackResult?.verified) {
-      await recordAudit(admin, { user_id: user.id, event: "authenticate_verify", credential_id: credentialId, success: false, error: "verification_failed", ip, user_agent: userAgent });
-      return text("verification failed", 400);
-    }
-    const tokens = await mintSessionTokens(admin, user.email!);
-    if (!tokens) {
-      await recordAudit(admin, { user_id: user.id, event: "authenticate_verify", credential_id: credentialId, success: false, error: "session_unavailable", ip, user_agent: userAgent });
-      return text("session unavailable", 500);
-    }
-    await admin.from("webauthn_credentials").update({ sign_count: fallbackResult.newCounter, last_used_at: new Date().toISOString() }).eq("id", credentialRow.id);
-    await recordAudit(admin, { user_id: user.id, event: "authenticate_verify", credential_id: credentialId, success: true, ip, user_agent: userAgent });
-    return json(tokens);
+    await recordAudit(admin, { user_id: user.id, event: "authenticate_verify", credential_id: credentialId, success: false, error: "verification_failed", ip, user_agent: userAgent });
+    return text("verification failed", 400);
   }
 
-  const tokens = await mintSessionTokens(admin, user.email!);
+  const { error: counterError } = await admin.from("webauthn_credentials")
+    .update({ sign_count: verification.authenticationInfo.newCounter, last_used_at: new Date().toISOString() })
+    .eq("id", credentialRow.id);
+  if (counterError) {
+    await recordAudit(admin, { user_id: user.id, event: "authenticate_verify", credential_id: credentialId, success: false, error: "counter_update_failed", ip, user_agent: userAgent });
+    return text("credential update unavailable", 500);
+  }
+
+  const tokens = await mintSessionTokens(admin, sessionClient, user.email!);
   if (!tokens) {
     await recordAudit(admin, { user_id: user.id, event: "authenticate_verify", credential_id: credentialId, success: false, error: "session_unavailable", ip, user_agent: userAgent });
     return text("session unavailable", 500);
   }
-  await admin.from("webauthn_credentials").update({ sign_count: verification.authenticationInfo.newCounter, last_used_at: new Date().toISOString() }).eq("id", credentialRow.id);
-  await recordAudit(admin, { user_id: user.id, event: "authenticate_verify", credential_id: credentialId, success: true, ip, user_agent: userAgent });
+  const audited = await recordAudit(admin, { user_id: user.id, event: "authenticate_verify", credential_id: credentialId, success: true, ip, user_agent: userAgent });
+  if (!audited) return text("audit unavailable", 500);
   return json(tokens);
 }
 

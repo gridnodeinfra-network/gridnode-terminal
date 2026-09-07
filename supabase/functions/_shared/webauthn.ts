@@ -14,14 +14,20 @@ export function allowedOrigins(): string[] {
   return [rp, ...extra.split(",").map((item) => item.trim()).filter(Boolean)];
 }
 
-// Production origin, Cloudflare Pages preview subdomains, and local dev are
+// Production origin, GRID//NODE Cloudflare Pages preview subdomains, and local dev are
 // allowed; anything else gets no CORS headers.
 export function isAllowedOrigin(origin: string | null): boolean {
   if (!origin) return false;
   if (allowedOrigins().includes(origin)) return true;
-  if (/^https:\/\/[a-z0-9-]+\.pages\.dev$/.test(origin)) return true;
+  if (/^https:\/\/[a-z0-9-]+\.gridnode\.pages\.dev$/.test(origin)) return true;
   if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return true;
   return false;
+}
+
+export function base64UrlToBytes(value: string): Uint8Array {
+  const normalized = String(value || "").replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+  return Uint8Array.from(atob(padded), (character) => character.charCodeAt(0));
 }
 
 export function corsHeaders(req: Request): Record<string, string> {
@@ -125,33 +131,42 @@ export async function consumeChallenge(admin: any, token: string): Promise<boole
 }
 
 // Atomic rate limit via the webauthn_rate_limit_check RPC. Returns true = allowed.
-// Fails open so an infra error cannot lock users out of their account.
+// Authentication throttling fails closed. Other sign-in methods remain available
+// if the rate-limit store is temporarily unavailable.
 export async function checkRateLimit(admin: any, bucket: string, max: number, windowMs: number): Promise<boolean> {
   const { data, error } = await admin.rpc("webauthn_rate_limit_check", { bucket, max_count: max, window_ms: windowMs });
   if (error) {
     console.warn("[webauthn] rateLimit", error);
-    return true;
+    return false;
   }
   return data === true;
 }
 
-export async function recordAudit(admin: any, entry: Record<string, unknown>): Promise<void> {
+export async function recordAudit(admin: any, entry: Record<string, unknown>): Promise<boolean> {
   try {
-    await admin.from("webauthn_audit_log").insert(entry);
+    const { error } = await admin.from("webauthn_audit_log").insert(entry);
+    if (error) throw error;
+    return true;
   } catch (error) {
     console.warn("[webauthn] audit", error);
+    return false;
   }
 }
 
 // Mints a session from the user's existing credentials WITHOUT ever touching
 // their password. Returns null when the magiclink path cannot yield tokens
 // (caller should refuse rather than reset the password).
-export async function mintSessionTokens(admin: any, email: string): Promise<{ access_token: string; refresh_token: string } | null> {
+export async function mintSessionTokens(admin: any, sessionClient: any, email: string): Promise<{ access_token: string; refresh_token: string } | null> {
   const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({ type: "magiclink", email });
-  if (linkError || !linkData?.properties?.action_link) return null;
-  const url = new URL(linkData.properties.action_link);
-  const access_token = url.searchParams.get("access_token");
-  const refresh_token = url.searchParams.get("refresh_token");
+  const tokenHash = linkData?.properties?.hashed_token;
+  if (linkError || !tokenHash) return null;
+  const verificationType = linkData.properties.verification_type === "email" ? "email" : "magiclink";
+  // Exchange on a separate client: verifyOtp mutates that client's auth state.
+  // The service-role client must remain service-scoped for counter/audit writes.
+  const { data: verified, error: verifyError } = await sessionClient.auth.verifyOtp({ token_hash: tokenHash, type: verificationType });
+  const access_token = verified?.session?.access_token;
+  const refresh_token = verified?.session?.refresh_token;
+  if (verifyError) return null;
   if (!access_token || !refresh_token) return null;
   return { access_token, refresh_token };
 }
