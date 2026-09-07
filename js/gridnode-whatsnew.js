@@ -10,6 +10,21 @@
   const LEGACY_ACK_KEY = 'gn_whatsnew_acknowledged_release_v2';
   const ORDER = ['NEW', 'IMPROVED', 'FIXED', 'ACCESSIBILITY', 'MOBILE', 'COMPATIBILITY', 'SECURITY'];
   const NOTES = Object.freeze({
+    '20260906.10': {
+      version: '0.15.31', title: 'REGRESSION HOTFIX (vibration + language)', date: '2026-09-06',
+      en: {
+        FIXED: [
+          'Tactile feedback: confirmation pulses (save, lock, mode switch) now fire reliably even when focus is inside a form input, on Android devices, and after a form reset.',
+          'Language toggle: tapping a language globe now persists the choice to localStorage before the catalog loads, and the i18n module reads the chosen <html lang> as a fallback. Toggle no longer flickers back to English within a few seconds.'
+        ]
+      },
+      es: {
+        FIXED: [
+          'Respuesta táctil: los pulsos de confirmación (guardar, bloquear, cambio de modo) ahora se disparan de forma confiable incluso con el foco dentro de un campo, en dispositivos Android y tras reiniciar un formulario.',
+          'Selector de idioma: tocar el globo de idioma ahora persiste la elección en localStorage antes de cargar el catálogo, y el módulo i18n usa el <html lang> elegido como respaldo. El selector ya no vuelve a inglés unos segundos después.'
+        ]
+      }
+    },
     '20260906.9': {
       version: '0.15.30', title: 'PREMIUM POLISH + TACTILE FEEDBACK', date: '2026-09-06',
       en: {

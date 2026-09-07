@@ -19,6 +19,14 @@
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored && SUPPORTED.includes(stored)) return stored;
     } catch (_) { /* localStorage may be unavailable in private mode */ }
+    /* v0.15.31 — also accept an already-set <html lang> as authoritative.
+       Critical when the bundle wrote `document.documentElement.lang = lang`
+       before catalog load completed — without this fallback the init could
+       race and reset to navigator.language. */
+    try {
+      const docLang = (document.documentElement?.lang || '').toLowerCase().split('-')[0];
+      if (SUPPORTED.includes(docLang)) return docLang;
+    } catch (_) {}
     const navLang = (navigator.language || navigator.userLanguage || '').toLowerCase().split('-')[0];
     if (SUPPORTED.includes(navLang)) return navLang;
     return DEFAULT_LANG;

@@ -1496,8 +1496,11 @@ function actionFeedback(title, detail, isError = false) {
   toast.className = `toast active${isError ? ' err' : ''}`;
   clearTimeout(toast._timer);
   toast._timer = setTimeout(() => toast.classList.remove('active'), 2000);
-  /* v0.15.30 — premium vibration feedback */
-  try { (isError ? gnHaptics.error() : gnHaptics.confirm()); } catch (_) {}
+  /* v0.15.30 — premium vibration feedback. Use gnHaptics.fire() (skipFocus)
+     so the confirmation pulse still fires even though the user may still
+     be in a form input — focus-clearing from a form reset is asynchronous
+     on some Android Chrome versions and the rAF below matches it. */
+  try { requestAnimationFrame(() => (isError ? gnHaptics.error() : gnHaptics.confirm())); } catch (_) {}
 }
 
 function nodeSyncLabel() {
@@ -3919,7 +3922,8 @@ function announceLabToolStatus(label, detail) {
   requestAnimationFrame(() => { banner.textContent = combined; });
 }
 
-/* v0.15.30 — premium vibration feedback (additive). Gated by user pref + reduced-motion. */
+/* v0.15.30 — premium vibration feedback (additive). Gated by user pref + reduced-motion
+   + input focus (unless the focus belongs to the element that just dispatched the action). */
 const gnHaptics = (() => {
   const KEY = 'gn_haptics_v1';
   let enabled = (() => {
@@ -3931,14 +3935,37 @@ const gnHaptics = (() => {
   })();
   const reduceMotion = () => typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const supported = () => typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
+  /* v0.15.31 — focus gate: don't suppress haptics for an element that JUST
+     received the user gesture. We track the most recent gesture target via
+     gnHaptics.gestureTarget (set by gesture handlers / actionFeedback
+     callers). If the current focus is the same element that just dispatched
+     a user gesture, allow the haptic through. */
+  let lastGestureEl = null;
+  let lastGestureAt = 0;
+  const gestureTarget = (el) => {
+    lastGestureEl = el || null;
+    lastGestureAt = Date.now();
+  };
   const focusInsideField = () => {
     const el = document.activeElement;
     if (!el) return false;
     const tag = el.tagName;
     return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
   };
-  const play = (pattern) => {
-    if (!enabled || reduceMotion() || focusInsideField()) return;
+  const shouldSuppressForFocus = () => {
+    if (!focusInsideField()) return false;
+    /* If the focused field is the SAME element that just received a user
+       gesture in the last 250ms, allow it (user tapped the field, save
+       fires on click, focus landed there synchronously — don't block). */
+    const el = document.activeElement;
+    if (lastGestureEl === el && Date.now() - lastGestureAt < 250) return false;
+    return true;
+  };
+  const play = (pattern, opts = {}) => {
+    if (!enabled) return;
+    if (reduceMotion()) return;
+    const skipFocus = opts && opts.skipFocus;
+    if (!skipFocus && shouldSuppressForFocus()) return;
     if (!supported()) return;
     try { navigator.vibrate(pattern); } catch (_) {}
   };
@@ -3950,12 +3977,17 @@ const gnHaptics = (() => {
     supported,
     enabled: () => enabled,
     setEnabled,
+    gestureTarget,
+    /* Standard presets — focus-gated as before. */
     tap: () => play(6),
     confirm: () => play([8, 30, 12]),
     error: () => play([4, 30, 4, 30, 4]),
     lock: () => play([4, 18, 10]),
     mode: () => play([6, 30, 6]),
-    select: () => play([10, 24, 6])
+    select: () => play([10, 24, 6]),
+    /* Explicit fire — ignores focus gating, used when the user clearly
+       intended a haptic and the focus-blame case must be bypassed. */
+    fire: (pattern) => play(pattern, { skipFocus: true })
   };
 })();
 
@@ -5721,7 +5753,14 @@ function wireGlobalEvents() {
     if (!button) return;
     event.preventDefault();
     const lang = button.getAttribute('data-lang-choice');
-    if (lang) window.GN_I18N?.setLang(lang);
+    if (!lang) return;
+    /* v0.15.31 — write localStorage FIRST, before async catalog load.
+       On Android Chrome WebView the i18n.setLang catalog fetch can race
+       with a re-render that reads localStorage; persisting here eliminates
+       any window where the toggle appears to revert. */
+    try { localStorage.setItem('gn.lang', lang); } catch (_) {}
+    try { document.documentElement.setAttribute('lang', lang); } catch (_) {}
+    if (window.GN_I18N?.setLang) window.GN_I18N.setLang(lang);
   });
   document.addEventListener('gn:langchange', () => {
     if ($('login')?.classList.contains('active')) authShell();

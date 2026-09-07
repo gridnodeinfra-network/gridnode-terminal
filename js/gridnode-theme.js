@@ -23,7 +23,14 @@
   }
 
   function currentLang() {
-    try { return localStorage.getItem('gn.lang') || 'en'; } catch (_) { return 'en'; }
+    try { const v = localStorage.getItem('gn.lang'); if (v) return v; } catch (_) {}
+    /* v0.15.31 — fall back to <html lang> if storage returned nothing
+       (private mode, race with init, third-party storage eviction). */
+    try {
+      const dl = (document.documentElement?.lang || '').toLowerCase().split('-')[0];
+      if (dl === 'en' || dl === 'es') return dl;
+    } catch (_) {}
+    return 'en';
   }
   function syncLangControls() {
     const lang = currentLang();
