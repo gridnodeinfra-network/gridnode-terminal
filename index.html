@@ -1482,10 +1482,10 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 }
 /* Excluded center (navel) — hatched cross pattern */
 .zone-excluded{
-  fill:rgba(234,9,23,0.06);
-  stroke:rgba(234,9,23,0.45);
-  stroke-width:2;
-  stroke-dasharray:6 4;
+  fill:none;
+  stroke:rgba(234,9,23,0.72);
+  stroke-width:3;
+  stroke-dasharray:9 7;
   pointer-events:none;
 }
 .zone-excluded::before{ /* fake diagonal hatching via fill */
@@ -1984,6 +1984,8 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
   line-height:1.45;
 }
 .scanner-status-helper b{color:var(--cyan);font-weight:400}
+.scanner-keepout-legend{display:flex;align-items:center;justify-content:center;gap:7px;margin:8px 0 0;color:#d9a4aa;font:600 .5rem/1.35 var(--font-m);letter-spacing:.85px;text-align:center;text-transform:uppercase}
+.scanner-keepout-symbol{width:17px;height:17px;flex:0 0 17px;border:2px dashed rgba(234,9,23,.78);border-radius:50%}
 .scanner-selected-panel{
   display:grid;
   gap:5px;
@@ -4487,7 +4489,7 @@ function continueLocallyFromWelcome() {
             <div class="biotech-stage active" data-view="core" role="tabpanel" aria-label="CORE abdomen scanner">
               <div class="biotech-stage-frame">
                 <div class="biotech-stage-glow" aria-hidden="true"></div>
-                <img class="biotech-asset" src="assets/scanner/core/core-cinematic.webp" width="1024" height="1024" alt="GRID//NODE CORE abdomen diagnostic shell" loading="lazy">
+                <img class="biotech-asset" src="assets/scanner/core/core-cinematic-no-navel.webp" width="1024" height="1024" alt="GRID//NODE CORE abdomen diagnostic shell" loading="lazy">
                 <svg class="biotech-zones" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="CORE tracking zones" role="group">
                   <!-- CORE — 6 zones (Upper, Middle, Lower × Left, Right) with body-shaped curves -->
                   <path class="zone-path zone-hit" data-mode="core" data-site="Upper Left" data-zone-key="zone.core-upper-left" d="M250 524C310 504 405 506 480 526L480 662C402 658 323 665 257 680C244 649 240 575 250 524Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Upper Left"/>
@@ -4503,7 +4505,7 @@ function continueLocallyFromWelcome() {
                   <path class="zone-path zone-hit" data-mode="core" data-site="Lower Right" data-zone-key="zone.core-lower-right" d="M662 877C622 858 572 856 510 860L510 937C562 946 612 934 653 916C664 908 668 887 662 877Z" fill="transparent" stroke="transparent" pointer-events="all" role="button" tabindex="0" aria-label="Lower Right"/>
                   <path class="zone-visible" data-mode="core" data-site="Lower Right" d="M646 887C614 867 571 861 520 864C510 879 510 902 518 922C557 931 599 926 639 909C648 904 651 894 646 887Z"/>
                   <!-- Excluded center / navel (NON-SELECTABLE) - rendered last so the red ring sits on top of zone outlines -->
-                  <circle class="zone-excluded" cx="500" cy="648" r="40" aria-hidden="true" pointer-events="none"/>
+                  <circle class="zone-excluded" cx="500" cy="730" r="70" aria-hidden="true" pointer-events="none"/>
                 </svg>
                 <div class="biotech-corner tl" aria-hidden="true"></div>
                 <div class="biotech-corner tr" aria-hidden="true"></div>
@@ -4566,6 +4568,7 @@ function continueLocallyFromWelcome() {
             </div>
           </div>
 
+          <div class="scanner-keepout-legend"><span class="scanner-keepout-symbol" aria-hidden="true"></span><span data-i18n="shots.navelKeepout">2 IN / 5 CM NAVEL KEEP-OUT</span></div>
           <div class="scanner-status-helper" data-i18n="shots.scannerLegend"><b>SELECTED</b> = active choice · LAST = last logged location · READY = available tracking zone · RECENT = recently logged</div>
         </div>
         <div class="scanner-selected-panel">

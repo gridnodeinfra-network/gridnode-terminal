@@ -1367,6 +1367,7 @@
   "shots.modeLower": "INFERIOR",
   "shots.modeUpper": "SUPERIOR",
   "shots.scannerLegend": "SELECCIONADA = opción activa · ÚLTIMA = última ubicación registrada · LISTA = zona rastreable disponible · RECIENTE = registrada recientemente",
+  "shots.navelKeepout": "MARGEN DEL OMBLIGO: 2 IN / 5 CM",
   "shots.scannerSafety": "// AVISO DEL SISTEMA: SOLO SE REGISTRA LA UBICACIÓN INGRESADA POR EL USUARIO. GRID//NODE NO PROPORCIONA RECOMENDACIONES DE UBICACIÓN NI ASESORÍA MÉDICA.",
   "vault.prefSavedLocal": "GUARDADO LOCALMENTE · SINCRONIZACIÓN OPCIONAL",
   "vault.prefSavedCloud": "GUARDADO · LA SINCRONIZACIÓN SIGUE TU CUENTA",

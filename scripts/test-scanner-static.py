@@ -53,7 +53,7 @@ for mode in EXPECTED:
 
 assets = re.findall(r'<img\b[^>]*\bclass="[^"]*\bbiotech-asset\b[^"]*"[^>]*\bsrc="([^"]+)"', html)
 assert sorted(assets) == sorted([
-    "assets/scanner/core/core-cinematic.webp",
+    "assets/scanner/core/core-cinematic-no-navel.webp",
     "assets/scanner/legs/legs-cinematic.webp",
     "assets/scanner/arms/arms-cinematic.webp",
 ])

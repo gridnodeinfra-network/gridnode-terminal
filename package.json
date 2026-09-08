@@ -6,6 +6,7 @@
   "scripts": {
     "test:integrity": "node scripts/test-record-integrity.cjs",
     "test:picker": "node scripts/test-medication-picker-contract.cjs",
+    "test:core-keepout": "node scripts/test-core-navel-keepout.cjs",
     "test:mobile": "node scripts/test-mobile-shell.cjs",
     "audit:themes": "node scripts/audit-served-day-ops.cjs",
     "visual:capture": "node scripts/visual-regression-guard.cjs capture",

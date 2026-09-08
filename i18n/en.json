@@ -1367,6 +1367,7 @@
   "shots.modeLower": "LOWER",
   "shots.modeUpper": "UPPER",
   "shots.scannerLegend": "SELECTED = active choice · LAST = last logged location · READY = available tracking zone · RECENT = recently logged",
+  "shots.navelKeepout": "2 IN / 5 CM NAVEL KEEP-OUT",
   "shots.scannerSafety": "// SYSTEM NOTICE: USER-ENTERED LOCATION TRACKING ONLY. GRID//NODE DOES NOT PROVIDE LOCATION RECOMMENDATIONS OR MEDICAL ADVICE.",
   "vault.prefSavedLocal": "SAVED LOCALLY · CLOUD SYNC OPTIONAL",
   "vault.prefSavedCloud": "SAVED · SYNC FOLLOWS YOUR ACCOUNT",
