@@ -126,8 +126,8 @@ begin
   delete from public.webauthn_rate_limits where window_start < now() - interval '1 day';
   delete from public.webauthn_challenges where created_at < now() - interval '1 day';
   insert into public.webauthn_rate_limits (bucket, window_start, count)
-    values (bucket, wstart, 1)
-    on conflict (bucket, window_start)
+    values (webauthn_rate_limit_check.bucket, wstart, 1)
+    on conflict on constraint webauthn_rate_limits_pkey
     do update set count = public.webauthn_rate_limits.count + 1
     returning count into newcount;
   return newcount <= max_count;
