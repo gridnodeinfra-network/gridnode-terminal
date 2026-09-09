@@ -26,7 +26,9 @@
       version: '0.15.33', title: 'DOSE REMINDERS + CHANGELOG POPUP RESTORED', date: '2026-09-09',
       en: {
         NEW: [
-          'Dose reminders are real now: set LOCAL REMINDERS in your VAULT preferences and the app schedules a notification for your next dose, plus an in-app due banner that catches anything missed while you were away. CLOUD REMINDERS run on the same local scheduling until the NODE backend ships.'
+          'Dose reminders are real now: set LOCAL REMINDERS in your VAULT preferences and the app schedules a notification for your next dose, plus an in-app due banner that catches anything missed while you were away. CLOUD REMINDERS run on the same local scheduling until the NODE backend ships.',
+          'Install GRID//NODE like a real app: the app now invites you to add it to your home screen (Android gets a one-tap install, iPhone gets guided Share-menu steps), and the Log Shot / Log Weight home-screen shortcuts actually open their screens.',
+          'iPhone launch screens: installing the app now boots with a proper GRID//NODE splash instead of a blank flash.'
         ],
         FIXED: [
           'Update notes are back: every new release now opens a changelog popup on first launch, so you always know what changed. Past notes stay reopenable from your profile.',
@@ -41,7 +43,9 @@
       },
       es: {
         NEW: [
-          'Los recordatorios de dosis ya funcionan: activa RECORDATORIOS LOCALES en tus preferencias del VAULT y la app programa una notificación para tu próxima dosis, además de un aviso en la app que detecta dosis pendientes al abrirla. RECORDATORIOS EN LA NUBE usa el mismo sistema local hasta que llegue el backend de NODE.'
+          'Los recordatorios de dosis ya funcionan: activa RECORDATORIOS LOCALES en tus preferencias del VAULT y la app programa una notificación para tu próxima dosis, además de un aviso en la app que detecta dosis pendientes al abrirla. RECORDATORIOS EN LA NUBE usa el mismo sistema local hasta que llegue el backend de NODE.',
+          'Instala GRID//NODE como una app de verdad: ahora la app te invita a añadirla a tu pantalla de inicio (instalación con un toque en Android, pasos guiados en iPhone), y los accesos directos de pantalla de inicio para registrar dosis y peso ahora abren sus pantallas.',
+          'Pantallas de inicio en iPhone: al instalar la app verás un splash de GRID//NODE en lugar de un destello en blanco.'
         ],
         FIXED: [
           'Las notas de actualización están de vuelta: cada nueva versión ahora muestra un aviso con los cambios al abrirla por primera vez. Las notas anteriores siguen disponibles desde tu perfil.',
