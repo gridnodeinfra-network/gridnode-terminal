@@ -49,6 +49,26 @@ wrangler pages deploy .\deploy-gridnode-stable --project-name=gridnode --branch=
 
 There is no server-side runtime or build command. HTTPS is required for production authentication and service-worker behavior.
 
+
+## WSL/Linux workflow
+
+Run from the repository root in WSL2 Ubuntu:
+
+- `bash scripts/build-bundle.sh` — deterministic bundle generator.
+- `bash scripts/deploy-preview.sh` — preview deploy.
+- `bash scripts/stage-deploy.sh` — staging deploy (`GRIDNODE_STAGING_NAME=gridnode-production bash scripts/stage-deploy.sh`).
+- `bash scripts/verify.sh` — post-deploy verification.
+- `bash scripts/backup.sh` — recoverable local archive with SHA-256.
+- `scripts/build-bundle.ps1` — legacy compatibility only; do not use for WSL development.
+
+Production requires `GRIDNODE_FOUNDER_APPROVAL=YES`:
+
+```
+GRIDNODE_FOUNDER_APPROVAL=YES bash scripts/deploy-production.sh --confirm-production
+```
+
+Credentials stay outside Git and are supplied through Wrangler authentication/environment variables. No script commits or pushes changes.
+
 ## Cloud status
 
 Verified against the production Supabase project on 2026-07-18:

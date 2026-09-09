@@ -1,0 +1,186 @@
+{
+  "canonical_name": "GRID//NODE",
+  "source_sha256": "c28b3e8c37867be291a281be94cfe5abfa50504526ef6fcef63e1495d03aab0f",
+  "source_size": [1536, 1024],
+  "core_crop": [540, 60, 900, 360],
+  "signature_crop": [500, 420, 705, 565],
+  "wordmark_crop": [1090, 285, 1490, 355],
+  "colors": {
+    "mars_red": "#EA0917",
+    "cyber_cyan": "#06BBE3",
+    "signal_yellow": "#FCEE0A",
+    "black_mars": "#050708",
+    "deep_navy": "#0A0F14",
+    "steel_gray": "#8A949E",
+    "white": "#FFFFFF",
+    "black": "#000000"
+  },
+  "hsv_masks": {
+    "mars_red": {
+      "hue_ranges": [[245, 255], [0, 10]],
+      "min_saturation": 110,
+      "min_value": 70
+    },
+    "cyber_cyan": {
+      "hue_ranges": [[124, 148]],
+      "min_saturation": 95,
+      "min_value": 65
+    },
+    "signal_yellow": {
+      "hue_ranges": [[32, 50]],
+      "min_saturation": 105,
+      "min_value": 95
+    },
+    "white": {
+      "hue_ranges": [[0, 255]],
+      "max_saturation": 55,
+      "min_value": 145
+    }
+  },
+  "allowed_paints": [
+    "#EA0917",
+    "#06BBE3",
+    "#FCEE0A",
+    "#050708",
+    "#0A0F14",
+    "#8A949E",
+    "#FFFFFF",
+    "#000000",
+    "none",
+    "transparent"
+  ],
+  "required_svg": [
+    "assets/brand/master/gridnode-core-mark.svg",
+    "assets/brand/master/gridnode-wordmark.svg",
+    "assets/brand/master/gridnode-lockup-horizontal.svg",
+    "assets/brand/master/gridnode-lockup-stacked.svg",
+    "assets/brand/master/gridnode-core-mark-mono-white.svg",
+    "assets/brand/master/gridnode-core-mark-mono-black.svg",
+    "assets/brand/icons/favicon.svg",
+    "assets/brand/ui/header-lockup.svg",
+    "assets/brand/ui/boot-mark.svg",
+    "assets/brand/ui/scanner-badge.svg",
+    "assets/brand/ui/update-badge.svg",
+    "assets/brand/ui/watermark.svg"
+  ],
+  "master_svg": [
+    "assets/brand/master/gridnode-core-mark.svg",
+    "assets/brand/master/gridnode-wordmark.svg",
+    "assets/brand/master/gridnode-lockup-horizontal.svg",
+    "assets/brand/master/gridnode-lockup-stacked.svg",
+    "assets/brand/master/gridnode-core-mark-mono-white.svg",
+    "assets/brand/master/gridnode-core-mark-mono-black.svg"
+  ],
+  "filter_prohibited_svg": [
+    "assets/brand/master/gridnode-core-mark.svg",
+    "assets/brand/master/gridnode-wordmark.svg",
+    "assets/brand/master/gridnode-lockup-horizontal.svg",
+    "assets/brand/master/gridnode-lockup-stacked.svg",
+    "assets/brand/master/gridnode-core-mark-mono-white.svg",
+    "assets/brand/master/gridnode-core-mark-mono-black.svg",
+    "assets/brand/icons/favicon.svg"
+  ],
+  "svg_output_geometry": {
+    "assets/brand/master/gridnode-core-mark.svg": {"uses_core": true, "uses_wordmark": false},
+    "assets/brand/master/gridnode-wordmark.svg": {"uses_core": false, "uses_wordmark": true},
+    "assets/brand/master/gridnode-lockup-horizontal.svg": {"uses_core": true, "uses_wordmark": true},
+    "assets/brand/master/gridnode-lockup-stacked.svg": {"uses_core": true, "uses_wordmark": true},
+    "assets/brand/master/gridnode-core-mark-mono-white.svg": {"uses_core": true, "uses_wordmark": false},
+    "assets/brand/master/gridnode-core-mark-mono-black.svg": {"uses_core": true, "uses_wordmark": false},
+    "assets/brand/icons/favicon.svg": {"uses_core": true, "uses_wordmark": false},
+    "assets/brand/ui/header-lockup.svg": {"uses_core": true, "uses_wordmark": true},
+    "assets/brand/ui/boot-mark.svg": {"uses_core": true, "uses_wordmark": false},
+    "assets/brand/ui/scanner-badge.svg": {"uses_core": true, "uses_wordmark": false},
+    "assets/brand/ui/update-badge.svg": {"uses_core": true, "uses_wordmark": false},
+    "assets/brand/ui/watermark.svg": {"uses_core": true, "uses_wordmark": true}
+  },
+  "required_png": {
+    "assets/brand/icons/favicon-16.png": [16, 16],
+    "assets/brand/icons/favicon-32.png": [32, 32],
+    "assets/brand/icons/apple-touch-icon.png": [180, 180],
+    "assets/brand/icons/pwa-192.png": [192, 192],
+    "assets/brand/icons/pwa-512.png": [512, 512],
+    "assets/brand/icons/pwa-maskable-512.png": [512, 512]
+  },
+  "transparent_png": [
+    "assets/brand/icons/favicon-16.png",
+    "assets/brand/icons/favicon-32.png",
+    "assets/brand/icons/apple-touch-icon.png",
+    "assets/brand/icons/pwa-192.png",
+    "assets/brand/icons/pwa-512.png"
+  ],
+  "png_color_requirements": {
+    "assets/brand/icons/favicon-16.png": ["mars_red", "cyber_cyan", "signal_yellow"],
+    "assets/brand/icons/favicon-32.png": ["mars_red", "cyber_cyan", "signal_yellow"],
+    "assets/brand/icons/apple-touch-icon.png": ["mars_red", "cyber_cyan", "signal_yellow"],
+    "assets/brand/icons/pwa-192.png": ["mars_red", "cyber_cyan", "signal_yellow"],
+    "assets/brand/icons/pwa-512.png": ["mars_red", "cyber_cyan", "signal_yellow"],
+    "assets/brand/icons/pwa-maskable-512.png": ["mars_red", "cyber_cyan", "signal_yellow"]
+  },
+  "maskable": {
+    "path": "assets/brand/icons/pwa-maskable-512.png",
+    "background": "#050708",
+    "important_colors": ["mars_red", "cyber_cyan", "signal_yellow", "white"],
+    "safe_circle": {
+      "center_fraction": [0.5, 0.5],
+      "radius_fraction": 0.4
+    }
+  },
+  "manifest_path": "assets/brand/brand-manifest.json",
+  "manifest_required_output_paths": [
+    "assets/brand/master/gridnode-core-mark.svg",
+    "assets/brand/master/gridnode-wordmark.svg",
+    "assets/brand/master/gridnode-lockup-horizontal.svg",
+    "assets/brand/master/gridnode-lockup-stacked.svg",
+    "assets/brand/master/gridnode-core-mark-mono-white.svg",
+    "assets/brand/master/gridnode-core-mark-mono-black.svg",
+    "assets/brand/icons/favicon.svg",
+    "assets/brand/icons/favicon-16.png",
+    "assets/brand/icons/favicon-32.png",
+    "assets/brand/icons/apple-touch-icon.png",
+    "assets/brand/icons/pwa-192.png",
+    "assets/brand/icons/pwa-512.png",
+    "assets/brand/icons/pwa-maskable-512.png",
+    "assets/brand/ui/header-lockup.svg",
+    "assets/brand/ui/boot-mark.svg",
+    "assets/brand/ui/scanner-badge.svg",
+    "assets/brand/ui/update-badge.svg",
+    "assets/brand/ui/watermark.svg"
+  ],
+  "proof": {
+    "core": {
+      "source_crop": "core_crop",
+      "reference": "assets/brand/proof/core-reference.png",
+      "render": "assets/brand/proof/core-render.png",
+      "difference": "assets/brand/proof/core-difference.png",
+      "size": [360, 300],
+      "iou_floor": 0.96,
+      "color_masks": ["mars_red", "cyber_cyan", "white"]
+    },
+    "wordmark": {
+      "source_crop": "wordmark_crop",
+      "reference": "assets/brand/proof/wordmark-reference.png",
+      "render": "assets/brand/proof/wordmark-render.png",
+      "difference": "assets/brand/proof/wordmark-difference.png",
+      "size": [400, 70],
+      "iou_floor": 0.94,
+      "color_masks": ["mars_red", "cyber_cyan"]
+    },
+    "small": {
+      "source_crop": "core_crop",
+      "contact_sheet": "assets/brand/proof/small-size-contact-sheet.png",
+      "contact_sheet_size": [1024, 320],
+      "maskable_safe_zone": "assets/brand/proof/maskable-safe-zone.png",
+      "maskable_safe_zone_size": [512, 512],
+      "clear_space": {
+        "source_component_mask": "white",
+        "axis": "width",
+        "multiplier": 1.0
+      },
+      "favicon_iou": {
+        "assets/brand/icons/favicon-32.png": 0.90,
+        "assets/brand/icons/favicon-16.png": 0.84
+      }
+    }
+  }
+}

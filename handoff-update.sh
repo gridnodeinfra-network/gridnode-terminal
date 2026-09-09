@@ -1,4 +1,7 @@
 #!/bin/bash
+# Source nvm to get Node v22 (wrangler requires it)
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 # GRID//NODE handoff auto-updater
 # Run this after every deploy: ./handoff-update.sh
 # What it does:
@@ -11,9 +14,11 @@
 # Usage: ./handoff-update.sh "Brief description of what changed"
 
 set -e
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="${REPO_ROOT:-${SCRIPT_DIR}}"
 LIVE_URL="https://gridnode.network/"
-HANDOFF="/workspace/deliverables/GRIDNODE_HANDOFF.md"
-LOCKED="/workspace/gridnode-project/01_SOURCE_TRUTH_LOCKED/gridnode-v1.3_post-phase-D_baseline.html"
+HANDOFF="${REPO_ROOT}/GRIDNODE_HANDOFF.md"
+LOCKED="${REPO_ROOT}/01_SOURCE_TRUTH_LOCKED/gridnode-v1.3_post-phase-D_baseline.html"
 CHANGELOG="${1:-No description provided}"
 
 echo "🔄 GRID//NODE handoff sync"
@@ -103,16 +108,10 @@ print(f"✅ Updated {handoff}")
 PYEOF
 
 # Git commit + push
-git add "$HANDOFF" 2>/dev/null || true
-git add /workspace/gridnode-project/01_SOURCE_TRUTH_LOCKED/ 2>/dev/null || true
-git commit -m "auto: handoff sync - $CHANGELOG
-
-Live: $LIVE_SHA
-Local: $LOCAL_SHA
-Size: $LIVE_SIZE bytes" 2>&1 | tail -3
-
-git push origin main 2>&1 | tail -3
-
+# Note: Git commit and push have been REMOVED from handoff-update.sh.
+# Deployment scripts must NOT autonomously push to main or any branch.
+# Handoff metadata is logged locally only — commit/push is a separate manual step.
 echo ""
-echo "✅ Handoff updated and pushed to GitHub"
+echo "✅ Handoff metadata logged locally (no git push)"
 echo "📋 Session log appended to $HANDOFF.log"
+echo "⚠️  Git commit/push is a manual step — this script no longer auto-pushes"

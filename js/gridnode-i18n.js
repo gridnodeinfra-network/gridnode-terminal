@@ -19,6 +19,28 @@
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored && SUPPORTED.includes(stored)) return stored;
     } catch (_) { /* localStorage may be unavailable in private mode */ }
+    /* v0.15.32 — fallback 1: sessionStorage */
+    try {
+      const s = sessionStorage.getItem(STORAGE_KEY);
+      if (s && SUPPORTED.includes(s)) return s;
+    } catch (_) {}
+    /* v0.15.32 — fallback 2: cookie (works in private mode on Android Chrome
+       where localStorage is per-tab). */
+    try {
+      const m = document.cookie && document.cookie.match(new RegExp('(?:^|;\\s*)' + STORAGE_KEY + '=([^;]+)'));
+      if (m) {
+        const c = decodeURIComponent(m[1]);
+        if (SUPPORTED.includes(c)) return c;
+      }
+    } catch (_) {}
+    /* v0.15.32 — fallback 3: already-set <html lang>. Critical when the
+       bundle wrote document.documentElement.lang = lang synchronously
+       before catalog load completed (prevents an init race that reset to
+       navigator.language). */
+    try {
+      const docLang = (document.documentElement?.lang || '').toLowerCase().split('-')[0];
+      if (SUPPORTED.includes(docLang)) return docLang;
+    } catch (_) {}
     const navLang = (navigator.language || navigator.userLanguage || '').toLowerCase().split('-')[0];
     if (SUPPORTED.includes(navLang)) return navLang;
     return DEFAULT_LANG;
@@ -27,7 +49,8 @@
   async function loadCatalog(lang) {
     if (catalogs[lang]) return catalogs[lang];
     try {
-      const res = await fetch(`./i18n/${lang}.json`, { cache: 'force-cache' });
+      const file = lang == 'es' ? 'es-419.json' : `${lang}.json`;
+      const res = await fetch(`./i18n/${file}`, { cache: 'no-cache' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       catalogs[lang] = data;
@@ -61,6 +84,11 @@
     }
     if (typeof value === 'object') value = value[0] || '';
     return interpolate(value, vars);
+  }
+
+  function text(key, fallback, vars) {
+    const value = t(key, vars);
+    return value === key ? (fallback || key) : value;
   }
 
   function plural(key, count, vars) {
@@ -116,7 +144,13 @@
       const key = el.getAttribute('data-i18n-html');
       if (key) el.innerHTML = t(key);
     });
-    doc.documentElement.setAttribute('lang', currentLang);
+    const html = doc.documentElement || document.documentElement;
+    if (html) html.setAttribute('lang', currentLang);
+    doc.querySelectorAll('[data-lang-choice]').forEach(button => {
+      const selected = button.getAttribute('data-lang-choice') === currentLang;
+      button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+      button.classList.toggle('active', selected);
+    });
   }
 
   async function setLang(lang) {
@@ -124,6 +158,13 @@
     await loadCatalog(lang);
     currentLang = lang;
     try { localStorage.setItem(STORAGE_KEY, lang); } catch (_) {}
+    /* v0.15.32 — write to sessionStorage AND document.cookie for cross-reload
+       reliability. On Android Chrome, localStorage in private/incognito
+       tabs CAN be wiped (memory pressure, tab discard). Writing to multiple
+       stores ensures the lang choice survives an OS-level reload. The
+       detectInitialLang path reads them in priority order. */
+    try { sessionStorage.setItem(STORAGE_KEY, lang); } catch (_) {}
+    try { document.cookie = `${STORAGE_KEY}=${encodeURIComponent(lang)};path=/;max-age=31536000;samesite=lax`; } catch (_) {}
     document.documentElement.setAttribute('lang', lang);
     document.body && document.body.setAttribute('data-lang', lang);
     applyTo(document);
@@ -155,5 +196,5 @@
 
   const ready = init();
 
-  window.GN_I18N = { init, ready, setLang, getLang, getSupported, t, plural, applyTo, isReady, formatDate, formatTime, formatNumber, SUPPORTED, DEFAULT_LANG };
+  window.GN_I18N = { init, ready, setLang, getLang, getSupported, t, text, plural, applyTo, isReady, formatDate, formatTime, formatNumber, SUPPORTED, DEFAULT_LANG };
 })();

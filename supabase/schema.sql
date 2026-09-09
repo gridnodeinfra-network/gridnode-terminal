@@ -23,16 +23,22 @@ create table if not exists public.shots (
   notes text,
   side_effects text[] not null default '{}',
   archived boolean not null default false,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint shots_user_id_id_key unique (user_id, id)
 );
 
 create table if not exists public.weights (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
+  shot_id uuid,
   date timestamptz not null,
   weight_kg numeric not null,
   notes text,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint weights_user_shot_fkey foreign key (user_id, shot_id)
+    references public.shots(user_id, id) on delete cascade
 );
 
 create table if not exists public.workspaces (
@@ -49,9 +55,31 @@ create table if not exists public.workspaces (
 
 alter table public.profiles add column if not exists profile_data jsonb not null default '{}'::jsonb;
 alter table public.shots add column if not exists side_effects text[] not null default '{}';
+alter table public.shots add column if not exists updated_at timestamptz not null default now();
+alter table public.weights add column if not exists shot_id uuid;
+alter table public.weights add column if not exists updated_at timestamptz not null default now();
 
 create index if not exists shots_user_date_idx on public.shots(user_id, date);
+create unique index if not exists shots_user_id_id_unique_idx on public.shots(user_id, id);
 create index if not exists weights_user_date_idx on public.weights(user_id, date);
+create unique index if not exists weights_user_shot_unique_idx on public.weights(user_id, shot_id) where shot_id is not null;
+create index if not exists weights_shot_idx on public.weights(shot_id);
+
+alter table public.weights drop constraint if exists weights_shot_id_fkey;
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.weights'::regclass
+      and conname = 'weights_user_shot_fkey'
+  ) then
+    alter table public.weights
+      add constraint weights_user_shot_fkey
+      foreign key (user_id, shot_id)
+      references public.shots(user_id, id)
+      on delete cascade;
+  end if;
+end $$;
 
 alter table public.profiles enable row level security;
 alter table public.shots enable row level security;
@@ -84,4 +112,5 @@ create policy workspaces_owner_access on public.workspaces
 
 revoke all on table public.profiles, public.shots, public.weights, public.workspaces from anon;
 grant select, insert, update, delete on table public.profiles, public.shots, public.weights, public.workspaces to authenticated;
+revoke truncate, references, trigger on table public.profiles, public.shots, public.weights, public.workspaces from anon, authenticated;
 

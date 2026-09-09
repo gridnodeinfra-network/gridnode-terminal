@@ -1,0 +1,367 @@
+/* GRID//NODE product completion layer.
+ * Keeps the protected .36 bundle intact while adding focused, local-first UI
+ * behavior that can be reviewed and removed independently.
+ */
+(function productCompletion() {
+  'use strict';
+
+  const $ = id => document.getElementById(id);
+  const q = (selector, root = document) => [...root.querySelectorAll(selector)];
+  const safe = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+  const tx = (key, fallback, vars) => window.GN_I18N?.text?.(key, fallback, vars) || fallback;
+  const dayMs = 86400000;
+  const weekMs = 7 * dayMs;
+
+  function store() { return window.GN?.S; }
+  function records(key) { const value = store()?.get?.(key, []); return Array.isArray(value) ? value : []; }
+  function activeShots() {
+    const now = Date.now();
+    return records('shots').filter(item => {
+      const timestamp = new Date(item?.date).getTime();
+      return !item?.archived && Number.isFinite(timestamp) && timestamp <= now;
+    }).sort((a, b) => new Date(a.date) - new Date(b.date));
+  }
+  function weights() { return records('weights').filter(item => Number.isFinite(Number(item?.weight)) && Number.isFinite(new Date(item?.date).getTime())).sort((a, b) => new Date(a.date) - new Date(b.date)); }
+  function localDate(value) { const date = new Date(value); return Number.isFinite(date.getTime()) ? date : null; }
+  function importDate(value) {
+    const raw = String(value || '').trim();
+    const dateOnly = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (dateOnly) {
+      const [, year, month, day] = dateOnly.map(Number);
+      const parsed = new Date(Date.UTC(year, month - 1, day, 12));
+      if (parsed.getUTCFullYear() !== year || parsed.getUTCMonth() !== month - 1 || parsed.getUTCDate() !== day) return { date: '', timestamp: NaN };
+      return { date: parsed.toISOString(), timestamp: parsed.getTime() };
+    }
+    const timestamp = new Date(raw).getTime();
+    return Number.isFinite(timestamp) ? { date: new Date(timestamp).toISOString(), timestamp } : { date: '', timestamp: NaN };
+  }
+
+  function dateLabel(value) { const date = localDate(value); const locale = document.documentElement?.lang?.startsWith('es') ? 'es-419' : 'en-US'; return date ? date.toLocaleDateString(locale, { month: 'short', day: 'numeric' }) : '—'; }
+  function formatSince(value) {
+    const date = localDate(value); if (!date) return '—';
+    const elapsed = Math.max(0, Date.now() - date.getTime());
+    if (elapsed < dayMs) return `${Math.max(0, Math.floor(elapsed / 3600000))}h`;
+    return `${Math.floor(elapsed / dayMs)}d`;
+  }
+
+  const setNodeText = (node, value) => { if (node && node.textContent !== value) node.textContent = value; };
+
+  function renderStreak() {
+    const node = document.getElementById('streakText'); if (!node) return;
+    const shots = activeShots();
+    if (!shots.length) { setNodeText(node, tx('dashboard.noShotCadence', 'NO SHOT CADENCE YET · LOG YOUR FIRST SHOT')); return; }
+    if (shots.length === 1) { setNodeText(node, tx('dashboard.singleShotCadence', '1 SHOT LOGGED · LOG ANOTHER TO ESTABLISH CADENCE')); return; }
+    // Cadence = observed median gap between consecutive shots, in days.
+    // Honest reporting: shows the actual rhythm, not a stretched streak.
+    const gaps = [];
+    for (let index = 1; index < shots.length; index += 1) {
+      const delta = (new Date(shots[index].date).getTime() - new Date(shots[index - 1].date).getTime()) / dayMs;
+      if (Number.isFinite(delta) && delta >= 0) gaps.push(delta);
+    }
+    if (!gaps.length) {
+      setNodeText(node, tx('dashboard.cadenceTimeline', '{count} SHOTS LOGGED · KEEP A REGULAR TIMELINE', { count: shots.length }));
+      return;
+    }
+    const sorted = gaps.slice().sort((a, b) => a - b);
+    const mid = sorted.length / 2;
+    // True median: average the two middle values for even-length arrays,
+    // not the upper bound. e.g. gaps [6, 8] -> 7, not 8.
+    const medianDays = sorted.length % 2 === 0
+      ? Math.round((sorted[mid - 1] + sorted[mid]) / 2)
+      : sorted[Math.floor(mid)];
+    // 0D median means same-day shots. Describe the actual record instead.
+    setNodeText(node, medianDays === 0
+      ? tx('dashboard.cadenceSameDay', 'CADENCE · SAME-DAY · {count} LOGGED', { count: shots.length })
+      : tx('dashboard.cadenceMedian', 'CADENCE · {days}D MEDIAN GAP · {count} LOGGED', { days: medianDays, count: shots.length }));
+  }
+
+  let lastWeightChartFingerprint = '';
+  function drawWeightChart() {
+    const canvas = $('wtChart');
+    if (!canvas) return;
+    const data = weights();
+    // Skip repaint when nothing changed: the 900ms poll must not churn the canvas.
+    const fp = JSON.stringify([
+      data.map(item => [item.date, Number(item.weight)]),
+      activeShots().map(item => [item.date, Number(item.dose || 0)]),
+      Number(window.GN?.S?.get?.('profile', {})?.goalWt) || null,
+    ]);
+    if (fp === lastWeightChartFingerprint) return;
+    lastWeightChartFingerprint = fp;
+    const goal = Number(window.GN?.S?.get?.('profile', {})?.goalWt);
+    const rect = canvas.getBoundingClientRect();
+    const width = Math.max(280, Math.round(rect.width || canvas.parentElement?.clientWidth || 320));
+    const height = Math.max(180, Math.round(rect.height || 220));
+    const ratio = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+    if (canvas.width !== width * ratio || canvas.height !== height * ratio) { canvas.width = width * ratio; canvas.height = height * ratio; }
+    const context = canvas.getContext('2d'); if (!context) return;
+    context.setTransform(ratio, 0, 0, ratio, 0, 0); context.clearRect(0, 0, width, height);
+    const summary = $('weightTrendChartSummary');
+    if (!data.length) { if (summary) summary.textContent = tx('results.chartNoDataSummary', 'Log weight to build your trend.'); return; }
+    const left = 40, right = 12, top = 18, bottom = 30;
+    const plotWidth = Math.max(1, width - left - right), plotHeight = Math.max(1, height - top - bottom);
+    const values = data.map(item => Number(item.weight));
+    const minValue = Math.min(...values, Number.isFinite(goal) && goal > 0 ? goal : Infinity);
+    const maxValue = Math.max(...values, Number.isFinite(goal) && goal > 0 ? goal : -Infinity);
+    const pad = Math.max(1, (maxValue - minValue || 1) * 0.16), min = minValue - pad, max = maxValue + pad, span = max - min || 1;
+    const x = index => data.length === 1 ? left + plotWidth / 2 : left + index / (data.length - 1) * plotWidth;
+    const y = value => top + (max - Number(value)) / span * plotHeight;
+    context.font = '10px Share Tech Mono, monospace'; context.textAlign = 'left'; context.fillStyle = '#8ea5ad'; context.strokeStyle = 'rgba(255,255,255,.11)'; context.lineWidth = 1;
+    for (let index = 0; index <= 3; index += 1) { const rowY = top + plotHeight * index / 3; context.beginPath(); context.moveTo(left, rowY); context.lineTo(width - right, rowY); context.stroke(); context.fillText((max - span * index / 3).toFixed(1), 4, rowY + 3); }
+    if (Number.isFinite(goal) && goal > 0) { context.save(); context.shadowColor = 'rgba(255,215,0,.35)'; context.shadowBlur = 6; context.setLineDash([6, 5]); context.strokeStyle = 'rgba(255,215,0,.58)'; context.lineWidth = 1.8; context.beginPath(); context.moveTo(left, y(goal)); context.lineTo(width - right, y(goal)); context.stroke(); context.setLineDash([]); context.shadowBlur = 0; context.strokeStyle = 'rgba(255,215,0,.15)'; context.lineWidth = 4; context.beginPath(); context.moveTo(left, y(goal)); context.lineTo(width - right, y(goal)); context.stroke(); context.restore(); context.fillStyle = '#ffd766'; context.font = 'bold 9px Share Tech Mono, monospace'; context.fillText(tx('results.chartGoal', 'GOAL {goal}', { goal: goal.toFixed(1) }), Math.max(left, width - 78), Math.max(12, y(goal) - 5)); }
+    context.strokeStyle = '#00e6f0'; context.lineWidth = 2.5; context.shadowColor = '#00e6f0'; context.shadowBlur = 7; context.beginPath();
+    values.forEach((value, index) => { const pointX = x(index), pointY = y(value); if (index === 0) context.moveTo(pointX, pointY); else context.lineTo(pointX, pointY); }); context.stroke(); context.shadowBlur = 0;
+    context.fillStyle = '#00e6f0'; values.forEach((value, index) => { context.beginPath(); context.arc(x(index), y(value), 3.2, 0, Math.PI * 2); context.fill(); });
+    // Moving end dot — GLAPP-style glow on the most recent data point
+    if (data.length > 1) {
+      const lastIdx = data.length - 1, lastX = x(lastIdx), lastY = y(values[lastIdx]);
+      context.save();
+      context.shadowColor = '#00e6f0'; context.shadowBlur = 22;
+      context.fillStyle = '#00e6f0'; context.beginPath(); context.arc(lastX, lastY, 5.5, 0, Math.PI * 2); context.fill();
+      context.shadowBlur = 0; context.strokeStyle = 'rgba(0,230,240,.28)'; context.lineWidth = 1.8;
+      context.beginPath(); context.arc(lastX, lastY, 10, 0, Math.PI * 2); context.stroke();
+      context.beginPath(); context.arc(lastX, lastY, 18, 0, Math.PI * 2); context.stroke();
+      context.restore();
+    }
+    const shotTimes = activeShots().map(item => localDate(item.date)?.getTime()).filter(Number.isFinite);
+    shotTimes.forEach(time => { const nearest = data.reduce((best, item, index) => Math.abs(new Date(item.date).getTime() - time) < Math.abs(new Date(data[best].date).getTime() - time) ? index : best, 0); context.fillStyle = '#ff5577'; context.beginPath(); context.arc(x(nearest), y(values[nearest]), 5.5, 0, Math.PI * 2); context.fill(); });
+    // GLAPP-style date labels — show a selection of reference dates along the x-axis
+    context.font = '8px Share Tech Mono, monospace'; context.textAlign = 'center'; context.fillStyle = 'rgba(142,165,173,.55)';
+    if (data.length <= 3) {
+      // Sparse data: show every label
+      data.forEach((item, index) => { if (index === 0 || index === data.length - 1) { context.fillText(dateLabel(item.date), x(index), height - 8); } });
+    } else {
+      // Dense data: show first, last, midpoint, and quarter marks
+      const markers = [0, Math.floor(data.length * 0.25), Math.floor(data.length * 0.5), Math.floor(data.length * 0.75), data.length - 1];
+      [...new Set(markers)].forEach(idx => { context.fillText(dateLabel(data[idx].date), x(idx), height - 8); });
+    }
+    context.textAlign = 'left';
+    if (summary) summary.textContent = data.length < 2
+      ? tx('results.chartOnePointSummary', 'One data point logged. Keep tracking to see your trend.')
+      : tx(Number.isFinite(goal) && goal > 0 ? 'results.chartWeightRecordsGoalSummary' : 'results.chartWeightRecordsSummary', 'Showing {count} weight records · red markers are SHOT events', { count: data.length, goal: Number.isFinite(goal) && goal > 0 ? goal.toFixed(1) : '' });
+    const direction = $('resWeightDirection');
+    if (direction) {
+      const delta = values.at(-1) - values[0];
+      const ready = data.length >= 2 && new Date(data.at(-1).date).getTime() - new Date(data[0].date).getTime() >= dayMs * 3;
+      const directionKey = !ready ? 'runtime.directionInsufficient' : delta < -0.05 ? 'runtime.directionDown' : delta > 0.05 ? 'runtime.directionUp' : 'runtime.directionStable';
+      direction.textContent = tx(directionKey, 'Trend direction: Insufficient Data');
+      direction.className = 'results-direction ' + (ready && delta <= 0 ? 'good' : ready ? 'warn' : 'insufficient');
+    }
+  }
+
+  function renderProgressViews() {
+    const page = $('pageResults'); if (!page || !$('weightRecordsPanel')) return;
+    let section = $('gnProgressSignals');
+    if (!section) {
+      document.getElementById('weightRecordsPanel')?.insertAdjacentHTML('afterend', '<section class="results-card gn-progress-signals" id="gnProgressSignals"><div class="results-card-title" id="gnProgressSignalsTitle"></div><div class="results-card-sub" id="gnProgressSignalsSub"></div><div class="gn-progress-grid" id="gnProgressGrid"></div><div class="gn-phase-timeline" id="gnPhaseTimeline"></div></section>');
+      section = document.getElementById('gnProgressSignals');
+    }
+    const progressTitle = document.getElementById('gnProgressSignalsTitle');
+    const progressSub = document.getElementById('gnProgressSignalsSub');
+    if (progressTitle) progressTitle.textContent = tx('results.progressSignalsTitle', 'PROGRESS SIGNALS');
+    if (progressSub) progressSub.textContent = tx('results.progressSignalsSub', 'Only your own logged observations appear here.');
+    const grid = $('gnProgressGrid'); if (!grid) return;
+    const shots = activeShots(); const weightRows = weights(); const measurements = records('measurements'); const symptoms = records('symptoms');
+    const sideEffects = shots.flatMap(item => Array.isArray(item.se) ? item.se : []); const observations = records('results').concat(records('notes'));
+    const cards = [
+      [tx('results.progressWeight', 'WEIGHT'), weightRows.length ? Number(weightRows.at(-1).weight).toFixed(1) + ' lb' : tx('results.progressNoData', 'NO DATA'), weightRows.length > 1 ? tx('results.progressLoggedMeasurements', '{count} logged measurements', { count: weightRows.length }) : tx('results.progressLogAnotherValue', 'Log another value for direction')],
+      [tx('results.progressMeasurements', 'MEASUREMENTS'), measurements.length ? tx('results.progressMeasurementValues', '{count} values', { count: measurements.length }) : tx('results.progressNoData', 'NO DATA'), measurements.length ? tx('results.progressLatestMeasurements', 'Latest body measurements') : tx('results.progressAddMeasurements', 'Add measurements from PROFILE')],
+      [tx('results.progressSymptoms', 'SYMPTOMS'), symptoms.length ? tx('results.progressSymptomEntries', '{count} entries', { count: symptoms.length }) : tx('results.progressNoData', 'NO DATA'), symptoms.length ? tx('results.progressUserEnteredSymptomHistory', 'User-entered symptom history') : tx('results.progressNoSymptomRecords', 'No symptom records yet')],
+      [tx('results.progressEnergyMood', 'ENERGY / MOOD'), observations.length ? tx('results.progressObservationNotes', '{count} notes', { count: observations.length }) : tx('results.progressNoData', 'NO DATA'), observations.length ? tx('results.progressUserEnteredObservations', 'User-entered observations') : tx('results.progressNoObservations', 'No observations yet')],
+      [tx('results.progressSideEffects', 'SIDE EFFECTS'), sideEffects.length ? tx('results.progressSideEffectsLogged', '{count} logged', { count: sideEffects.length }) : tx('results.progressNoData', 'NO DATA'), sideEffects.length ? tx('results.progressAttachedToShotEvents', 'Attached to SHOT events') : tx('results.progressNoSideEffects', 'No side effects attached')],
+      [tx('results.progressTrackingActivity', 'TRACKING ACTIVITY'), tx(shots.length === 1 ? 'results.progressShotCount_one' : 'results.progressShotCount_other', '{count} SHOTS', { count: shots.length }), shots.length ? tx('results.progressLastAgo', 'Last {elapsed} ago', { elapsed: formatSince(shots.at(-1).date) }) : tx('results.progressStartWithShot', 'Start with a SHOT')]
+    ];
+    grid.innerHTML = cards.map(([label, value, note]) => '<article class="gn-progress-signal"><span>' + safe(label) + '</span><b>' + safe(value) + '</b><small>' + safe(note) + '</small></article>').join('');
+    const timeline = $('gnPhaseTimeline');
+    if (timeline) {
+      const rows = shots.slice(-6).reverse().map(item => '<div class="gn-progress-timeline-row"><i></i><span><b>' + safe(dateLabel(item.date)) + '</b><small>' + safe(item.med || tx('dashboard.shotLabel', 'SHOT')) + ' · ' + safe(item.dose ? String(item.dose) + ' mg' : tx('results.progressDoseNotEntered', 'dose not entered')) + '</small></span></div>').join('');
+      timeline.innerHTML = shots.length ? '<div class="gn-progress-timeline-label">' + tx('results.progressTimelineLabel', 'CYCLE / PHASE TIMELINE') + '</div>' + rows + '</div>' : '<div class="gn-progress-empty">' + tx('results.progressTimelineEmpty', 'No SHOT timeline yet. Your cycle appears after the first logged event.') + '</div>';
+    }
+  }
+
+  function enhanceInventory() {
+    const form = $('gnInventoryForm');
+    if (!form) return;
+    if (!$('gnInventoryRemaining')) { const units = $('gnInventoryUnits')?.closest('label'); units?.insertAdjacentHTML('afterend', '<label><span data-i18n="lab.remainingAmount">REMAINING AMOUNT</span><input id="gnInventoryRemaining" type="number" min="0" step="any" placeholder="Optional current amount" data-i18n-placeholder="lab.remainingPlaceholder"></label>'); window.GN_I18N?.applyTo?.(form); }
+    if (!form.dataset.completionBound) {
+      form.dataset.completionBound = 'true';
+      form.addEventListener('submit', () => {
+        const name = $('gnInventoryName')?.value?.trim(); const value = $('gnInventoryRemaining')?.value?.trim();
+        window.setTimeout(() => {
+          const list = records('inventory'); const item = [...list].reverse().find(record => record.name === name);
+          if (!item || value === '') return;
+          item.remaining = Number(value); item.modifiedAt = new Date().toISOString(); item.history = [...(item.history || []), { at: item.modifiedAt, action: 'REMAINING UPDATED', source: 'Manual Entry' }]; store().set('inventory', list); window.GNModules?.refreshAll?.();
+        }, 0);
+      }, { capture: true });
+    }
+    const list = $('gnInventoryList'); if (!list || list.dataset.completionBound) return;
+    list.dataset.completionBound = 'true';
+    const decorate = () => {
+      records('inventory').forEach(item => {
+        const row = list.querySelector(`[data-inventory-edit="${CSS.escape(item.id)}"]`)?.closest('.gn-record-row');
+        if (!row || row.querySelector('.gn-inventory-history')) return;
+        const history = Array.isArray(item.history) ? item.history : [];
+        const details = document.createElement('details'); details.className = 'gn-inventory-history'; details.innerHTML = `<summary>${tx("lab.historySummary", "HISTORY")}${item.expires ? ` · BUD ${safe(dateLabel(item.expires))}` : ''}${item.remaining != null ? ` · REMAINING ${safe(item.remaining)}` : ''}</summary><div>${history.length ? history.slice().reverse().map(entry => `<span>${safe(dateLabel(entry.at))} · ${safe(entry.action || 'UPDATED')} · ${safe(entry.source || 'Manual Entry')}</span>`).join('') : '<span>' + tx('lab.historyNoChanges', 'No changes recorded yet.') + '</span>'}</div>`; row.appendChild(details);
+      });
+    };
+    const observer = new MutationObserver(decorate);
+    observer.observe(list, { childList: true, subtree: true });
+    decorate();
+    list.addEventListener('click', event => {
+      const button = event.target.closest('[data-inventory-edit]'); if (!button) return;
+      const item = records('inventory').find(record => record.id === button.dataset.inventoryEdit);
+      window.setTimeout(() => { if ($('gnInventoryRemaining')) $('gnInventoryRemaining').value = item?.remaining ?? ''; }, 0);
+    }, { capture: true });
+  }
+
+  function ensurePreferences() {
+    const page = $('pageProfile'); if (!page || $('gnPreferencesCard')) return;
+    const anchor = document.querySelector('[data-gn-profile-hub]') || page.querySelector('.page-hdr'); if (!anchor) return;
+    anchor.insertAdjacentHTML('afterend', `<section class="gn-preferences-card" id="gnPreferencesCard"><div class="gn-foundation-kicker" data-i18n="vault.preferencesKicker">// PRIVATE PREFERENCES</div><h3 data-i18n="vault.preferencesTitle">YOUR TRACKING SETTINGS</h3><p class="gn-measurements-copy" data-i18n="vault.preferencesCopy">These choices stay local until you choose cloud sync.</p><div class="gn-preferences-grid"><label><span data-i18n="vault.prefTrackedProtocol">TRACKED PROTOCOL</span><input id="gnPrefProtocol" placeholder="${tx('vault.prefProtocolPlaceholder', 'e.g. weekly GLP-1')}"></label><label><span data-i18n="vault.prefFrequency">FREQUENCY (DAYS)</span><input id="gnPrefFrequency" type="number" min="1" max="90" inputmode="numeric"></label><label><span data-i18n="vault.prefStartDate">START DATE</span><input id="gnPrefStartDate" type="date"></label><label><span data-i18n="vault.prefNotifications">NOTIFICATION STYLE</span><select id="gnPrefNotifications"><option value="off" data-i18n="vault.prefNotificationOff">${tx('vault.prefNotificationOff', 'OFF')}</option><option value="local" data-i18n="vault.prefNotificationLocal">${tx('vault.prefNotificationLocal', 'LOCAL REMINDERS')}</option><option value="cloud" data-i18n="vault.prefNotificationCloud">${tx('vault.prefNotificationCloud', 'CLOUD REMINDERS')}</option></select></label><label class="gn-pref-wide"><span data-i18n="vault.prefSites">INJECTION-SITE PREFERENCES</span><input id="gnPrefSites" placeholder="${tx('vault.prefSitesPlaceholder', 'User-entered sites, separated by commas')}"></label><label class="gn-pref-wide"><input id="gnPrefPrediction" type="checkbox"> <span data-i18n="vault.prefPrediction">SHOW EDUCATIONAL PREDICTION CONTEXT</span></label><label class="gn-pref-wide"><input id="gnPrefPrivacy" type="checkbox"> <span data-i18n="vault.prefPrivacy">KEEP DATA LOCAL BY DEFAULT</span></label></div><button type="button" class="btn-full btn-primary" id="gnPreferencesSave" data-i18n="vault.prefSave">SAVE PREFERENCES</button><div class="gn-preferences-status" id="gnPreferencesStatus" data-i18n="vault.prefStatusReady">LOCAL SETTINGS READY</div></section>`);
+    window.GN_I18N?.applyTo?.(page);
+    const preferenceState = () => ({ ...records('preferences')[0], ...store().get('preferences', {}) });
+    const hydrate = () => { const pref = preferenceState(); $('gnPrefProtocol').value = pref.protocol || store().get('profile', {})?.med || ''; $('gnPrefFrequency').value = pref.frequencyDays || store().get('profile', {})?.shotFrequency || ''; $('gnPrefStartDate').value = pref.startDate || ''; $('gnPrefNotifications').value = pref.notifications || 'off'; $('gnPrefSites').value = Array.isArray(pref.injectionSites) ? pref.injectionSites.join(', ') : pref.injectionSites || ''; $('gnPrefPrediction').checked = pref.predictions !== false; $('gnPrefPrivacy').checked = pref.localOnly !== false; };
+    $('gnPreferencesSave').addEventListener('click', () => { const pref = { ...preferenceState(), protocol: $('gnPrefProtocol').value.trim(), frequencyDays: Number($('gnPrefFrequency').value) || null, startDate: $('gnPrefStartDate').value || '', notifications: $('gnPrefNotifications').value, injectionSites: $('gnPrefSites').value.split(',').map(value => value.trim()).filter(Boolean), predictions: $('gnPrefPrediction').checked, localOnly: $('gnPrefPrivacy').checked, modifiedAt: new Date().toISOString() }; store().set('preferences', pref); const profile = store().get('profile', {}); profile.shotFrequency = pref.frequencyDays; profile.protocolStartDate = pref.startDate; store().set('profile', profile); Promise.resolve(window.GN?.syncNow?.()).catch(() => null); $('gnPreferencesStatus').textContent = pref.localOnly ? tx('vault.prefSavedLocal', 'SAVED LOCALLY · CLOUD SYNC OPTIONAL') : tx('vault.prefSavedCloud', 'SAVED · SYNC FOLLOWS YOUR ACCOUNT'); });
+    hydrate();
+  }
+
+  function installSwipeNavigation() {
+    const root = document.querySelector('.app-shell') || document.body; if (!root || root.dataset.gnSwipe) return; root.dataset.gnSwipe = 'true';
+    let start = null;
+    const ignored = target => target?.closest?.('input,textarea,select,button,a,canvas,[contenteditable="true"],.modal,.overlay,.scanner,.carousel,.cp-dropdown,[data-no-swipe]');
+    root.addEventListener('touchstart', event => { if (event.touches.length !== 1 || ignored(event.target)) { start = null; return; } const touch = event.touches[0]; start = { x: touch.clientX, y: touch.clientY, time: Date.now() }; }, { passive: true });
+    root.addEventListener('touchend', event => { if (!start || event.changedTouches.length !== 1) { start = null; return; } const touch = event.changedTouches[0]; const dx = touch.clientX - start.x, dy = touch.clientY - start.y; const elapsed = Date.now() - start.time; start = null; if (elapsed > 800 || Math.abs(dx) < 72 || Math.abs(dx) < Math.abs(dy) * 1.35) return; const pages = ['Dash', 'Log', 'Results', 'Lab', 'Profile']; const active = pages.findIndex(name => $('page' + name)?.classList.contains('active')); if (active < 0) return; const next = pages[Math.max(0, Math.min(pages.length - 1, active + (dx < 0 ? 1 : -1)))]; if (next === pages[active]) return; const nav = $('nav' + ({ Dash: 'Dash', Log: 'Log', Results: 'Res', Lab: 'Lab', Profile: 'Pro' }[next])); window.GNModules?.showPage?.(next, nav); }, { passive: true });
+  }
+
+  function ensureGenericImport() {
+    const panel = document.querySelector('#gnImportOverlay .gn-import-panel');
+    if (!panel) {
+      if (!document.body.dataset.gnImportObserver) {
+        document.body.dataset.gnImportObserver = 'true';
+        new MutationObserver(() => ensureGenericImport()).observe(document.body, { childList: true });
+      }
+      return;
+    }
+    if ($('gnMappedCsvButton')) return;
+    panel.insertAdjacentHTML('beforeend', '<button type="button" class="gn-import-map-button" id="gnMappedCsvButton">MAP A GENERIC CSV</button><input type="file" id="gnMappedCsvInput" accept=".csv,text/csv" hidden>');
+    $('gnMappedCsvButton').addEventListener('click', () => $('gnMappedCsvInput').click()); $('gnMappedCsvInput').addEventListener('change', event => { const file = event.target.files?.[0]; if (file) file.text().then(text => openMapping(file.name, text)); event.target.value = ''; });
+  }
+  function openMapping(fileName, csvText) {
+    const lines = String(csvText).split(/\r?\n/).filter(Boolean);
+    if (lines.length < 2) {
+      const panel = document.querySelector('#gnImportOverlay .gn-import-panel');
+      const existing = panel?.querySelector('.gn-inline-error');
+      if (existing) existing.remove();
+      const err = document.createElement('div');
+      err.className = 'gn-inline-error';
+      err.setAttribute('role', 'alert');
+      err.textContent = tx('mapping.needHeaderRow', 'THIS CSV NEEDS A HEADER AND AT LEAST ONE ROW.');
+      if (panel) panel.appendChild(err);
+      return;
+    }
+    const parse = line => {
+      const cells = []; let value = ''; let quoted = false;
+      for (let index = 0; index < line.length; index += 1) {
+        const char = line[index];
+        if (char === '"' && line[index + 1] === '"') { value += '"'; index += 1; }
+        else if (char === '"') quoted = !quoted;
+        else if (char === ',' && !quoted) { cells.push(value.trim()); value = ''; }
+        else value += char;
+      }
+      cells.push(value.trim()); return cells;
+    };
+    const headers = parse(lines[0]); const rows = lines.slice(1).map(parse);
+    const guess = names => headers.find(header => names.some(name => header.toLowerCase().includes(name))) || '';
+    const select = (id, label, value, required) => `<label>${label}<select data-map="${id}" ${required ? 'required' : ''}><option value="">${tx('mapping.notMapped', '— NOT MAPPED —')}</option>${headers.map(header => `<option value="${safe(header)}" ${header === value ? 'selected' : ''}>${safe(header)}</option>`).join('')}</select></label>`;
+    const overlay = document.createElement('div');
+    overlay.className = 'gn-import-overlay active'; overlay.id = 'gnMappingOverlay';
+    overlay.setAttribute('role', 'dialog'); overlay.setAttribute('aria-modal', 'true'); overlay.setAttribute('aria-labelledby', 'gnMappingTitle');
+    overlay.innerHTML = `<div class="gn-import-panel"><div class="gn-import-title" id="gnMappingTitle" data-i18n="mapping.title">MAP GENERIC CSV</div><p>${safe(fileName)} · <span data-i18n="mapping.copy">fields are never guessed at commit.</span></p><div class="gn-mapping-grid">${select('type', tx('mapping.recordType', 'RECORD TYPE'), guess(['record type', 'type']), true)}${select('date', tx('mapping.date', 'DATE'), guess(['date', 'timestamp']), true)}${select('medication', tx('mapping.medication', 'MEDICATION'), guess(['medication', 'medicine', 'drug']))}${select('dose', tx('mapping.dose', 'DOSE (MG)'), guess(['dose', 'mg']))}${select('weight', tx('mapping.weight', 'WEIGHT (LB)'), guess(['weight', 'lbs']))}${select('site', tx('mapping.site', 'SITE'), guess(['site', 'location']))}${select('notes', tx('mapping.notes', 'NOTES'), guess(['note', 'comment']))}</div><div class="gn-import-summary" id="gnMappingSummary">${tx('mapping.chooseSummary', 'Choose DATE and RECORD TYPE, then preview.')}</div><div class="gn-import-actions"><button type="button" class="gn-import-close" data-map-cancel>${tx('mapping.cancel', 'CANCEL')}</button><button type="button" class="csv-import-save" data-map-preview>${tx('mapping.previewRows', 'PREVIEW MAPPED ROWS')}</button></div></div>`;
+    document.body.appendChild(overlay);
+    const close = () => overlay.remove();
+    overlay.querySelector('[data-map-cancel]').addEventListener('click', close);
+    overlay.querySelector('[data-map-preview]').addEventListener('click', () => {
+      const map = Object.fromEntries(q('[data-map]', overlay).map(field => [field.dataset.map, field.value]));
+      const summary = overlay.querySelector('#gnMappingSummary');
+      if (!map.type || !map.date) { summary.textContent = tx('mapping.required', 'Map RECORD TYPE and DATE before previewing.'); return; }
+      const index = Object.fromEntries(headers.map((header, position) => [header, position]));
+      const mapped = rows.map((cells, rowIndex) => {
+        const value = key => map[key] ? cells[index[map[key]]] || '' : '';
+        const rawType = String(value('type')).trim().toLowerCase();
+        const recordType = rawType.includes('weight') ? 'weight' : rawType.includes('shot') ? 'shot' : '';
+        const parsedDate = importDate(value('date'));
+        const dateMs = parsedDate.timestamp;
+        const date = parsedDate.date;
+        const dose = Number(value('dose'));
+        const weight = Number(value('weight'));
+        const medicationRaw = String(value('medication')).trim();
+        const medication = window.GN_MEDICATION_IDENTITY?.normalize?.(medicationRaw) || '';
+        const future = Number.isFinite(dateMs) && dateMs > Date.now();
+        let reason = '';
+        if (!recordType) reason = 'RECORD TYPE';
+        else if (!date || future) reason = future ? 'FUTURE DATE' : 'INVALID DATE';
+        else if (recordType === 'shot' && !medication) reason = 'UNKNOWN MEDICATION';
+        else if (recordType === 'shot' && (!Number.isFinite(dose) || dose <= 0)) reason = 'INVALID DOSE';
+        else if (recordType === 'weight' && (!Number.isFinite(weight) || weight <= 0)) reason = 'INVALID WEIGHT';
+        return { rowIndex: rowIndex + 2, record_type: recordType, date, medication, medicationRaw, dose_mg: Number.isFinite(dose) && dose > 0 ? dose : null, weight_lb: Number.isFinite(weight) && weight > 0 ? weight : null, location: value('site'), notes: value('notes'), side_effects: [], reason };
+      });
+      const valid = mapped.filter(item => !item.reason);
+      const existingShots = new Set(activeShots().map(item => `${new Date(item.date).toISOString()}|${window.GN_MEDICATION_IDENTITY?.normalize?.(item.med) || ''}|${Number(item.dose)}`));
+      const existingWeights = new Set(weights().map(item => `${new Date(item.date).toISOString()}|${Number(item.weight)}`));
+      const seenShots = new Set(existingShots); const seenWeights = new Set(existingWeights); const fresh = []; let duplicateCount = 0;
+      valid.forEach(item => {
+        const seen = item.record_type === 'shot' ? seenShots : seenWeights;
+        const key = item.record_type === 'shot' ? `${item.date}|${item.medication}|${item.dose_mg}` : `${item.date}|${item.weight_lb}`;
+        if (seen.has(key)) duplicateCount += 1;
+        else { seen.add(key); fresh.push(item); }
+      });
+      summary.textContent = tx('mapping.resultSummary', '{valid} recognized · {invalid} invalid · {duplicates} duplicates · {fresh} new.', { valid: valid.length, invalid: mapped.length - valid.length, duplicates: duplicateCount, fresh: fresh.length });
+      const button = overlay.querySelector('[data-map-preview]'); button.textContent = fresh.length ? tx('mapping.commitNew', 'COMMIT {count} NEW', { count: fresh.length }) : tx('common.close', 'CLOSE');
+      button.onclick = () => {
+        if (!fresh.length) { close(); return; }
+        const beforeShots = records('shots'); const beforeWeights = records('weights'); const importedAt = new Date().toISOString();
+        try {
+          const nextShots = [...beforeShots]; const nextWeights = [...beforeWeights];
+          const weightKeys = new Set(nextWeights.map(item => `${new Date(item.date).toISOString()}|${Number(item.weight)}`));
+          fresh.filter(item => item.record_type === 'shot').forEach(item => {
+            const shotId = `shot_import_${crypto.randomUUID()}`;
+            const weight = Number.isFinite(item.weight_lb) && item.weight_lb > 0 ? item.weight_lb : null;
+            nextShots.push({ id: shotId, date: item.date, med: item.medication, dose: item.dose_mg, site: item.location || '', wt: weight, se: item.side_effects, notes: item.notes || null, archived: false, source: 'Mapped CSV Import', state: 'Needs Review', importProvenance: { fileName, importedAt } });
+            const key = `${item.date}|${Number(weight)}`;
+            if (weight && !weightKeys.has(key)) {
+              weightKeys.add(key);
+              nextWeights.push({ id: `weight_import_${crypto.randomUUID()}`, shotId, date: item.date, weight, notes: 'Logged with SHOT', source: 'Mapped CSV Import', state: 'Needs Review', importProvenance: { fileName, importedAt } });
+            }
+          });
+          fresh.filter(item => item.record_type === 'weight').forEach(item => {
+            const key = `${item.date}|${Number(item.weight_lb)}`;
+            if (weightKeys.has(key)) return;
+            weightKeys.add(key);
+            nextWeights.push({ id: `weight_import_${crypto.randomUUID()}`, date: item.date, weight: item.weight_lb, source: 'Mapped CSV Import', state: 'Needs Review', importProvenance: { fileName, importedAt } });
+          });
+          if (!store()?.multiWrite?.([{ key: 'shots', value: nextShots }, { key: 'weights', value: nextWeights }])) throw new Error('LOCAL_STORAGE_REJECTED');
+          window.GNModules?.refreshAll?.(); close();
+        } catch (error) { summary.textContent = tx('mapping.rolledBack', 'IMPORT ROLLED BACK · {err}', { err: error.message }); }
+      };
+    });
+  }
+
+  async function boot() {
+    if (!store()) { window.setTimeout(boot, 150); return; }
+    if (window.GN_I18N?.ready) await window.GN_I18N.ready;
+    renderStreak(); drawWeightChart(); renderProgressViews(); enhanceInventory(); ensurePreferences(); ensureGenericImport(); installSwipeNavigation();
+    // Repaint the enhanced chart after bundle-driven re-renders so the last
+    // writer is always this layer (no style alternation with the bundle).
+    // NOTE: window.GNModules is a frozen ES module namespace — wrapping its
+    // refreshAll by property assignment throws "object is not extensible"
+    // (regression fixed 2026-08-02, release .7). The 900 ms poller below
+    // repaints this layer; invalidate the fingerprint on theme/lang
+    // re-renders so the enhanced chart repaints right after the bundle.
+    document.addEventListener('gn:themechange', () => { lastWeightChartFingerprint = ''; });
+    document.addEventListener('gn:langchange', () => { lastWeightChartFingerprint = ''; });
+    window.setInterval(() => { renderStreak(); drawWeightChart(); renderProgressViews(); enhanceInventory(); ensurePreferences(); ensureGenericImport(); }, 900);
+    document.addEventListener('gn:langchange', () => { renderStreak(); drawWeightChart(); renderProgressViews(); });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) { renderStreak(); drawWeightChart(); } });
+  }
+  document.addEventListener('DOMContentLoaded', boot, { once: true });
+}());
