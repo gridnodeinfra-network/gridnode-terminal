@@ -729,10 +729,11 @@ button.sec-act{display:inline-flex;align-items:center;min-height:44px;padding:0;
   font-family:var(--font-m);
   font-size:0.56rem;
   letter-spacing:2.4px;
-  padding:9px 8px;
+  padding:12px 8px;
+  min-height:44px;
   border-radius:var(--r);
   cursor:pointer;
-  transition:all .18s ease;
+  transition:border-color .18s ease,background .18s ease,color .18s ease,box-shadow .18s ease;
 }
 .shot-history-toggle.active{
   color:var(--cyan);
@@ -1267,19 +1268,35 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
   background:rgba(0,0,0,.26);
   color:var(--text-mid);
   border-radius:var(--r);
-  padding:9px 6px;
+  padding:12px 6px;
+  min-height:44px;
   font-family:var(--font-m);
   font-size:.58rem;
   letter-spacing:1.6px;
   cursor:pointer;
-  transition:all .2s ease;
+  transition:border-color .2s ease,background .2s ease,color .2s ease,box-shadow .2s ease;
 }
+.scanner-mode-btn:hover{border-color:rgba(0,212,255,.45);color:#d9f6ff}
 .scanner-mode-btn.active{
-  color:#FF3B3B;
-  border-color:rgba(255,59,59,.55);
-  background:rgba(255,59,59,.08);
-  box-shadow:0 0 18px rgba(255,59,59,.18), inset 0 0 14px rgba(255,59,59,.06);
-  text-shadow:0 0 6px rgba(255,59,59,.4);
+  color:#031318;
+  border-color:rgba(0,212,255,.9);
+  background:linear-gradient(180deg,rgba(0,212,255,.95),rgba(0,180,220,.85));
+  box-shadow:0 0 18px rgba(0,212,255,.35), inset 0 1px 0 rgba(255,255,255,.25);
+  text-shadow:none;
+  font-weight:700;
+}
+/* stage entry: soft crossfade + settle on every mode switch */
+@keyframes biotechStageIn{
+  from{opacity:0;transform:scale(.985)}
+  to{opacity:1;transform:scale(1)}
+}
+.biotech-stage.active .biotech-stage-frame{animation:biotechStageIn .28s ease-out}
+.scanner-mode-btn:focus-visible{
+  outline:2px solid rgba(0,212,255,.8);
+  outline-offset:2px;
+}
+@media (prefers-reduced-motion:reduce){
+  .biotech-stage.active .biotech-stage-frame{animation:none}
 }
 
 /* === v0.15.15 SCANNER UX POLISH === */
@@ -1981,7 +1998,9 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
   font-size:.56rem;
   letter-spacing:.9px;
   color:#a7bdca;
-  line-height:1.45;
+  line-height:1.6;
+  overflow-wrap:break-word;
+  text-wrap:pretty;
 }
 .scanner-status-helper b{color:var(--cyan);font-weight:400}
 .scanner-keepout-legend{display:flex;align-items:center;justify-content:center;gap:7px;margin:8px 0 0;color:#d9a4aa;font:600 .5rem/1.35 var(--font-m);letter-spacing:.85px;text-align:center;text-transform:uppercase}
@@ -1989,12 +2008,13 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 .scanner-keepout-symbol{width:17px;height:17px;flex:0 0 17px;border:2px dashed rgba(234,9,23,.78);border-radius:50%}
 .scanner-selected-panel{
   display:grid;
-  gap:5px;
-  margin-top:10px;
+  gap:8px;
+  margin-top:12px;
   border:1px solid rgba(0,212,255,.18);
+  border-left:3px solid rgba(0,212,255,.65);
   background:linear-gradient(135deg,rgba(0,212,255,.08),rgba(0,0,0,.22));
   border-radius:13px;
-  padding:10px 11px;
+  padding:12px 13px;
 }
 .scanner-selected-panel small{
   font-family:var(--font-m);
