@@ -26,7 +26,7 @@ const state = {
 const SESSION_KEY = 'gn_session_v2';
 const LOCAL_CLOUD_OWNER_KEY = 'gn_local_cloud_owner_v1';
 const LEGACY_ACCOUNT_KEYS = ['0', 'local'];
-const WORKSPACE_KEYS = ['profile', 'shots', 'weights', 'measurements', 'results', 'notes', 'symptoms', 'labs', 'preferences', 'settings', 'arsenal', 'researchRecords', 'devices', 'inventory', 'loadouts', 'eventLedger', 'importQueue', 'selectedLocation', 'cloudDeletes'];
+const WORKSPACE_KEYS = ['profile', 'shots', 'weights', 'measurements', 'results', 'notes', 'symptoms', 'labs', 'labTests', 'preferences', 'settings', 'arsenal', 'researchRecords', 'devices', 'inventory', 'loadouts', 'eventLedger', 'importQueue', 'selectedLocation', 'cloudDeletes'];
 
 function jsonParse(raw, fallback) {
   if (raw == null) return fallback;
@@ -310,6 +310,62 @@ function getProfileForEvidence() { return getProfile(); }
 function getShots() { return S.get('shots', []).filter(record => !record.archived).map(normalizeShotRecord); }
 function getAllShots() { return S.get('shots', []).map(normalizeShotRecord); }
 function getWeights() { return S.get('weights', []); }
+
+/* ── ASSAY: third-party lab test log (one record per tested batch) ── */
+const LAB_TEST_METHODS = Object.freeze(['hplc', 'ms', 'hplc_ms', 'coa', 'other']);
+const LAB_TEST_ENDOTOXIN = Object.freeze(['pass', 'fail', 'untested']);
+
+function normalizeLabTest(record) {
+  if (!record || typeof record !== 'object') return null;
+  const num = value => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  };
+  const method = LAB_TEST_METHODS.includes(record.method) ? record.method : null;
+  const endotoxin = LAB_TEST_ENDOTOXIN.includes(record.endotoxin) ? record.endotoxin : 'untested';
+  return {
+    id: String(record.id || createId('labtest')),
+    peptide: normalizeMedicationId(record.peptide) || String(record.peptide || ''),
+    vendor: normalizeLegacyText(record.vendor),
+    batch: normalizeLegacyText(record.batch),
+    testDate: String(record.testDate || ''),
+    lab: normalizeLegacyText(record.lab),
+    method,
+    purityPct: num(record.purityPct),
+    labelClaimMg: num(record.labelClaimMg),
+    measuredMg: num(record.measuredMg),
+    endotoxin,
+    notes: normalizeLegacyText(record.notes),
+    archived: Boolean(record.archived),
+    archivedAt: record.archivedAt || null,
+    createdAt: record.createdAt || null,
+    modifiedAt: record.modifiedAt || null
+  };
+}
+
+function getLabTests() { return S.get('labTests', []).filter(record => !record.archived).map(normalizeLabTest).filter(Boolean); }
+function getAllLabTests() { return S.get('labTests', []).map(normalizeLabTest).filter(Boolean); }
+function setLabTests(list) { return S.set('labTests', Array.isArray(list) ? list : []); }
+
+/* Derived variance: (measured − claim) / claim, as a fraction. Null when inputs are missing. */
+function labTestVariance(record) {
+  const m = record?.measuredMg;
+  const c = record?.labelClaimMg;
+  if (m == null || m === '' || c == null || c === '') return null;
+  const measured = Number(m);
+  const claim = Number(c);
+  if (!Number.isFinite(measured) || !Number.isFinite(claim) || claim <= 0) return null;
+  return (measured - claim) / claim;
+}
+
+/* Variance band: green within ±5%, amber within ±10%, red beyond. */
+function labTestVarianceBand(fraction) {
+  if (!Number.isFinite(fraction)) return null;
+  const abs = Math.abs(fraction);
+  if (abs <= 0.05) return 'green';
+  if (abs <= 0.10) return 'amber';
+  return 'red';
+}
 
 function readAccountValue(accountKey, key, fallback) {
   try { return jsonParse(localStorage.getItem(`gn_${accountKey}_${key}`), fallback); } catch { return fallback; }
@@ -3963,7 +4019,7 @@ function openLabTool(tool) {
   if (!overlay || !host || !page) return;
   moduleState.labToolLauncher = document.activeElement?.closest?.('[data-lab-focus]') || document.querySelector(`[data-lab-focus="${tool}"]`);
   const toolNodes = {
-    calculators: ['labSegTabs', 'labSeg-draw', 'labSeg-recon', 'labSeg-supply', 'gnDoseProjection'].map($),
+    calculators: ['labSegTabs', 'labSeg-draw', 'labSeg-recon', 'labSeg-supply', 'labSeg-assay', 'gnDoseProjection'].map($),
     research: [$('gnResearchSection')],
     inventory: [$('gnSupplySection')],
     devices: [document.querySelector('.gn-device-vault')],
@@ -5104,7 +5160,7 @@ function initModules() {
 document.addEventListener("DOMContentLoaded", () => { installScannerPointerHandlers(); installScannerDebugMode(); });
 window.addEventListener("load", () => { installScannerPointerHandlers(); installScannerDebugMode(); });
 
-window.GNModules=Object.freeze({getProfile:getProfile,getProfileForEvidence:getProfileForEvidence,selectState:selectState,moduleState:moduleState,refreshNodeHeader:refreshNodeHeader,showScreen:showScreen,showPage:showPage,refreshAll:refreshAll,loadApp:loadApp,computeTotalChange:computeTotalChange,saveProfileMed:saveProfileMed,saveProfileMetrics:saveProfileMetrics,calcAndShowBMI:calcAndShowBMI,toggleSelect:toggleSelect,selectOpt:selectOpt,showPhasesModal:showPhasesModal,closePhases:closePhases,renderShots:renderShots,setShotHistoryView:setShotHistoryView,scannerSkinTone:scannerSkinTone,setScannerSkinTone:setScannerSkinTone,setScannerMode:setScannerMode,selectScannerLocation:selectScannerLocation,renderScanner:renderScanner,openLogModal:openLogModal,closeLog:closeLog,editShot:editShot,openArchiveConfirm:openArchiveConfirm,cancelArchiveShot:cancelArchiveShot,confirmArchiveShot:confirmArchiveShot,restoreArchivedShot:restoreArchivedShot,openPermanentDeleteConfirm:openPermanentDeleteConfirm,cancelPermanentDeleteShot:cancelPermanentDeleteShot,confirmPermanentDeleteShot:confirmPermanentDeleteShot,saveShot:saveShot,openFutureTimestampConfirm:openFutureTimestampConfirm,closeFutureTimestampConfirm:closeFutureTimestampConfirm,cancelFutureTimestampSave:cancelFutureTimestampSave,confirmFutureTimestampSave:confirmFutureTimestampSave,handleShotFab:handleShotFab,goToScannerForLocationFromLog:goToScannerForLocationFromLog,openWeightModal:openWeightModal,closeWt:closeWt,setWeightUnit:setWeightUnit,saveWt:saveWt,renderResults:renderResults,setRange:setRange,setWtRange:setWtRange,showLabSeg:showLabSeg,showYouSeg:showYouSeg,openLabTool:openLabTool,closeLabTool:closeLabTool,exportInventory:exportInventory,updateDoseProjection:updateDoseProjection,saveCalculatorReference:saveCalculatorReference,renderLab:renderLab,updateSyr:updateSyr,updateRecon:updateRecon,updateSupply:updateSupply,setMeasurementUnit:setMeasurementUnit,saveMeasurements:saveMeasurements,openDeleteLocalData:openDeleteLocalData,closeDeleteLocalData:closeDeleteLocalData,updateDeleteLocalButton:updateDeleteLocalButton,confirmDeleteLocalData:confirmDeleteLocalData,openDeleteCloudAccount:openDeleteCloudAccount,closeDeleteCloudAccount:closeDeleteCloudAccount,confirmDeleteCloudAccount:confirmDeleteCloudAccount,renderProfile:renderProfile,dismissSystemUpdate:dismissSystemUpdate,openSystemUpdate:openSystemUpdate,exportCSV:exportCSV,exportBackup:exportBackup,prepareCSVImport:prepareCSVImport,handleCSVImportFile:handleCSVImportFile,openImportDialog:openImportDialog,closeImportDialog:closeImportDialog,handleUnifiedCsvSelection:handleUnifiedCsvSelection,handleBackupImportFile:handleBackupImportFile,confirmBackupImport:confirmBackupImport,cancelCSVImport:cancelCSVImport,confirmCSVImport:confirmCSVImport,previewCSVImportForTesting:previewCSVImportForTesting,renderCalendar:renderCalendar,calPrev:calPrev,calNext:calNext,calDayClick:calDayClick,openArsenalMod:openArsenalMod,closeArs:closeArs,saveArs:saveArs,requestLoadoutRemove:requestLoadoutRemove,cancelLoadoutRemove:cancelLoadoutRemove,confirmLoadoutRemove:confirmLoadoutRemove,formatTime24:formatTime24,formatTime12:formatTime12,gnSetShotMeridiem:gnSetShotMeridiem,gnShotClockLiveFormat:gnShotClockLiveFormat,gnNormalizeShotClockField:gnNormalizeShotClockField,gnWeightDateInput:gnWeightDateInput,gnWeightTimeInput:gnWeightTimeInput,gnOpenShotDatePicker:gnOpenShotDatePicker,gnCloseShotDatePicker:gnCloseShotDatePicker,gnDatePickerMove:gnDatePickerMove,gnSelectPickerDate:gnSelectPickerDate,gnSetShotDateFromPicker:gnSetShotDateFromPicker,gnSetShotDateValue:gnSetShotDateValue,gnSetShotTimeValue:gnSetShotTimeValue,gnMedRevealGroup:gnMedRevealGroup,updatePills:updatePills,selPill:selPill,initModules:initModules});
+window.GNModules=Object.freeze({getProfile:getProfile,getProfileForEvidence:getProfileForEvidence,selectState:selectState,moduleState:moduleState,refreshNodeHeader:refreshNodeHeader,showScreen:showScreen,showPage:showPage,refreshAll:refreshAll,loadApp:loadApp,computeTotalChange:computeTotalChange,saveProfileMed:saveProfileMed,saveProfileMetrics:saveProfileMetrics,calcAndShowBMI:calcAndShowBMI,toggleSelect:toggleSelect,selectOpt:selectOpt,showPhasesModal:showPhasesModal,closePhases:closePhases,renderShots:renderShots,setShotHistoryView:setShotHistoryView,scannerSkinTone:scannerSkinTone,setScannerSkinTone:setScannerSkinTone,setScannerMode:setScannerMode,selectScannerLocation:selectScannerLocation,renderScanner:renderScanner,openLogModal:openLogModal,closeLog:closeLog,editShot:editShot,openArchiveConfirm:openArchiveConfirm,cancelArchiveShot:cancelArchiveShot,confirmArchiveShot:confirmArchiveShot,restoreArchivedShot:restoreArchivedShot,openPermanentDeleteConfirm:openPermanentDeleteConfirm,cancelPermanentDeleteShot:cancelPermanentDeleteShot,confirmPermanentDeleteShot:confirmPermanentDeleteShot,saveShot:saveShot,openFutureTimestampConfirm:openFutureTimestampConfirm,closeFutureTimestampConfirm:closeFutureTimestampConfirm,cancelFutureTimestampSave:cancelFutureTimestampSave,confirmFutureTimestampSave:confirmFutureTimestampSave,handleShotFab:handleShotFab,goToScannerForLocationFromLog:goToScannerForLocationFromLog,openWeightModal:openWeightModal,closeWt:closeWt,setWeightUnit:setWeightUnit,saveWt:saveWt,renderResults:renderResults,setRange:setRange,setWtRange:setWtRange,showLabSeg:showLabSeg,showYouSeg:showYouSeg,openLabTool:openLabTool,closeLabTool:closeLabTool,exportInventory:exportInventory,updateDoseProjection:updateDoseProjection,saveCalculatorReference:saveCalculatorReference,renderLab:renderLab,updateSyr:updateSyr,updateRecon:updateRecon,updateSupply:updateSupply,setMeasurementUnit:setMeasurementUnit,saveMeasurements:saveMeasurements,openDeleteLocalData:openDeleteLocalData,closeDeleteLocalData:closeDeleteLocalData,updateDeleteLocalButton:updateDeleteLocalButton,confirmDeleteLocalData:confirmDeleteLocalData,openDeleteCloudAccount:openDeleteCloudAccount,closeDeleteCloudAccount:closeDeleteCloudAccount,confirmDeleteCloudAccount:confirmDeleteCloudAccount,renderProfile:renderProfile,dismissSystemUpdate:dismissSystemUpdate,openSystemUpdate:openSystemUpdate,exportCSV:exportCSV,exportBackup:exportBackup,prepareCSVImport:prepareCSVImport,handleCSVImportFile:handleCSVImportFile,openImportDialog:openImportDialog,closeImportDialog:closeImportDialog,handleUnifiedCsvSelection:handleUnifiedCsvSelection,handleBackupImportFile:handleBackupImportFile,confirmBackupImport:confirmBackupImport,cancelCSVImport:cancelCSVImport,confirmCSVImport:confirmCSVImport,previewCSVImportForTesting:previewCSVImportForTesting,renderCalendar:renderCalendar,calPrev:calPrev,calNext:calNext,calDayClick:calDayClick,openArsenalMod:openArsenalMod,closeArs:closeArs,saveArs:saveArs,requestLoadoutRemove:requestLoadoutRemove,cancelLoadoutRemove:cancelLoadoutRemove,confirmLoadoutRemove:confirmLoadoutRemove,formatTime24:formatTime24,formatTime12:formatTime12,gnSetShotMeridiem:gnSetShotMeridiem,gnShotClockLiveFormat:gnShotClockLiveFormat,gnNormalizeShotClockField:gnNormalizeShotClockField,gnWeightDateInput:gnWeightDateInput,gnWeightTimeInput:gnWeightTimeInput,gnOpenShotDatePicker:gnOpenShotDatePicker,gnCloseShotDatePicker:gnCloseShotDatePicker,gnDatePickerMove:gnDatePickerMove,gnSelectPickerDate:gnSelectPickerDate,gnSetShotDateFromPicker:gnSetShotDateFromPicker,gnSetShotDateValue:gnSetShotDateValue,gnSetShotTimeValue:gnSetShotTimeValue,gnMedRevealGroup:gnMedRevealGroup,updatePills:updatePills,selPill:selPill,initModules:initModules,getLabTests:getLabTests,getAllLabTests:getAllLabTests,setLabTests:setLabTests,normalizeLabTest:normalizeLabTest,labTestVariance:labTestVariance,labTestVarianceBand:labTestVarianceBand});
 
 const modules=window.GNModules;
 

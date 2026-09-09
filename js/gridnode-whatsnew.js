@@ -22,13 +22,14 @@
   const LEGACY_ACK_KEY = 'gn_whatsnew_acknowledged_release_v2';
   const ORDER = ['NEW', 'IMPROVED', 'FIXED', 'ACCESSIBILITY', 'MOBILE', 'COMPATIBILITY', 'SECURITY'];
   const NOTES = Object.freeze({
-    '__CURRENT_BUILD__': {
+    '20260909.c49065d': {
       version: '0.15.33', title: 'DOSE REMINDERS + CHANGELOG POPUP RESTORED', date: '2026-09-09',
       en: {
         NEW: [
           'Dose reminders are real now: set LOCAL REMINDERS in your VAULT preferences and the app schedules a notification for your next dose, plus an in-app due banner that catches anything missed while you were away. CLOUD REMINDERS run on the same local scheduling until the NODE backend ships.',
           'Install GRID//NODE like a real app: the app now invites you to add it to your home screen (Android gets a one-tap install, iPhone gets guided Share-menu steps), and the Log Shot / Log Weight home-screen shortcuts actually open their screens.',
-          'iPhone launch screens: installing the app now boots with a proper GRID//NODE splash instead of a blank flash.'
+          'iPhone launch screens: installing the app now boots with a proper GRID//NODE splash instead of a blank flash.',
+          'New LAB segment ASSAY: log third-party lab test results per batch (peptide, vendor, lot, lab, method, purity, label claim vs measured, endotoxin). Variance from the label claim is computed automatically and color-coded. Filter by peptide or vendor, archive old tests.'
         ],
         FIXED: [
           'Update notes are back: every new release now opens a changelog popup on first launch, so you always know what changed. Past notes stay reopenable from your profile.',
@@ -45,7 +46,8 @@
         NEW: [
           'Los recordatorios de dosis ya funcionan: activa RECORDATORIOS LOCALES en tus preferencias del VAULT y la app programa una notificación para tu próxima dosis, además de un aviso en la app que detecta dosis pendientes al abrirla. RECORDATORIOS EN LA NUBE usa el mismo sistema local hasta que llegue el backend de NODE.',
           'Instala GRID//NODE como una app de verdad: ahora la app te invita a añadirla a tu pantalla de inicio (instalación con un toque en Android, pasos guiados en iPhone), y los accesos directos de pantalla de inicio para registrar dosis y peso ahora abren sus pantallas.',
-          'Pantallas de inicio en iPhone: al instalar la app verás un splash de GRID//NODE en lugar de un destello en blanco.'
+          'Pantallas de inicio en iPhone: al instalar la app verás un splash de GRID//NODE en lugar de un destello en blanco.',
+          'Nuevo segmento de LAB: ENSAYO. Registra resultados de análisis de terceros por lote (péptido, proveedor, lote, laboratorio, método, pureza, declarado vs medido, endotoxina). La varianza frente a lo declarado se calcula sola y se muestra con colores. Filtra por péptido o proveedor, archiva análisis antiguos.'
         ],
         FIXED: [
           'Las notas de actualización están de vuelta: cada nueva versión ahora muestra un aviso con los cambios al abrirla por primera vez. Las notas anteriores siguen disponibles desde tu perfil.',
@@ -59,6 +61,20 @@
         ]
       }
     },
+    '__CURRENT_BUILD__': {
+      version: '0.15.34', title: 'BATCH ASSAY LAB TEST LOG', date: '2026-09-09',
+      en: {
+        NEW: [
+          'New LAB segment ASSAY: log third-party lab test results per batch (peptide, vendor, lot, lab, method, purity, label claim vs measured, endotoxin). Variance from the label claim is computed automatically and color-coded. Filter by peptide or vendor, archive old tests.'
+        ]
+      },
+      es: {
+        NEW: [
+          'Nuevo segmento de LAB: ENSAYO. Registra resultados de análisis de terceros por lote (péptido, proveedor, lote, laboratorio, método, pureza, declarado vs medido, endotoxina). La varianza frente a lo declarado se calcula sola y se muestra con colores. Filtra por péptido o proveedor, archiva análisis antiguos.'
+        ]
+      }
+    },
+
     '20260907.1': {
       version: '0.15.33', title: 'RELEASE INTEGRITY + DATA SAFETY', date: '2026-09-07',
       en: {

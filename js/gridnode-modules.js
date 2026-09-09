@@ -2863,7 +2863,7 @@ export function openLabTool(tool) {
   if (!overlay || !host || !page) return;
   moduleState.labToolLauncher = document.activeElement?.closest?.('[data-lab-focus]') || document.querySelector(`[data-lab-focus="${tool}"]`);
   const toolNodes = {
-    calculators: ['labSegTabs', 'labSeg-draw', 'labSeg-recon', 'labSeg-supply', 'gnDoseProjection'].map($),
+    calculators: ['labSegTabs', 'labSeg-draw', 'labSeg-recon', 'labSeg-supply', 'labSeg-assay', 'gnDoseProjection'].map($),
     research: [$('gnResearchSection')],
     inventory: [$('gnSupplySection')],
     devices: [document.querySelector('.gn-device-vault')],

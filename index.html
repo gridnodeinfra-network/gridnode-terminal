@@ -4786,6 +4786,7 @@ function continueLocallyFromWelcome() {
         <button class="time-tab active" data-labseg="draw" onclick="showLabSeg('draw',this)" data-i18n="lab.draw">DRAW</button>
         <button class="time-tab" data-labseg="recon" onclick="showLabSeg('recon',this)" data-i18n="lab.mix">MIX</button>
         <button class="time-tab" data-labseg="supply" onclick="showLabSeg('supply',this)" data-i18n="lab.stock">STOCK</button>
+        <button class="time-tab" data-labseg="assay" onclick="showLabSeg('assay',this)" data-i18n="lab.assay">ASSAY</button>
       </div>
 
       <div id="labSeg-draw" data-labseg-block="draw">
@@ -4901,6 +4902,25 @@ function continueLocallyFromWelcome() {
         </div>
         <div class="form-group"><label class="form-label" for="sDose2" data-i18n="lab.weeklyAmount">USER-ENTERED WEEKLY AMOUNT (mg)</label><input class="form-input" type="number" id="sDose2" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="decimal" placeholder="e.g. 2.5" oninput="updateSupply()"></div>
         <div id="supRes" style="display:none"><div class="divider"></div><div id="supOut" style="background:var(--bg2);border:1px solid var(--border2);border-left:3px solid var(--yellow);padding:14px;font-family:var(--font-b);font-size:0.95rem;color:var(--text-mid);line-height:2.2;border-radius:0 var(--r) var(--r) 0"></div></div>
+      </div>
+      </div>
+
+      <div id="labSeg-assay" data-labseg-block="assay" style="display:none">
+      <div class="sec-hdr"><div class="sec-title"><span class="a" data-i18n="assay.title">// BATCH ASSAY // LAB TEST LOG</span></div></div>
+      <div class="card">
+        <p class="gn-assay-sub" data-i18n="assay.sub">Third-party test results per batch, in your VAULT. Personal organization only, not medical advice.</p>
+        <button class="btn-full btn-primary" type="button" id="gnAssayLogBtn" data-i18n="assay.logTest">LOG TEST</button>
+        <div class="gn-assay-filters" id="gnAssayFilters" style="display:none">
+          <div class="form-row">
+            <div class="form-group"><label class="form-label" for="gnAssayFilterPeptide" data-i18n="assay.filterPeptide">PEPTIDE</label><select class="form-input" id="gnAssayFilterPeptide"><option value="" data-i18n="assay.allPeptides">ALL</option></select></div>
+            <div class="form-group"><label class="form-label" for="gnAssayFilterVendor" data-i18n="assay.filterVendor">VENDOR</label><select class="form-input" id="gnAssayFilterVendor"><option value="" data-i18n="assay.allVendors">ALL</option></select></div>
+          </div>
+          <div class="gn-assay-viewrow">
+            <button type="button" class="time-tab active" data-assay-view="active" data-i18n="assay.active">ACTIVE</button>
+            <button type="button" class="time-tab" data-assay-view="archived" data-i18n="assay.archived">ARCHIVED</button>
+          </div>
+        </div>
+        <div id="gnAssayList"></div>
       </div>
       </div>
     </div>
@@ -10080,7 +10100,7 @@ html[data-theme="light"] #shotsRegionScanner .gn-zone-path.selected {
   </div>
 </div>
 
-<script src="./js/gridnode-version.js?v=20260907.1" defer></script><script src="./js/gridnode-i18n.js?v=20260907.1" defer></script><script src="./js/gridnode-bundle.js?v=20260907.1" defer></script><script src="./js/gridnode-phase-sphere.js?v=20260907.1" defer></script><script src="./js/gridnode-product-completion.js?v=20260907.1" defer></script><script src="./js/gridnode-peptide-pk.js?v=20260907.1" defer></script><script src="./js/gridnode-peptide-viz.js?v=20260907.1" defer></script><script src="./js/gridnode-motivation.js?v=20260907.1" defer></script><script src="./js/gridnode-telemetry.js?v=20260907.1" defer></script><script src="./js/gridnode-native.js?v=20260907.1" defer></script><script src="./js/gridnode-i18n-overlay.js?v=20260907.1" defer></script><script src="./js/gridnode-whatsnew.js?v=20260907.1" defer></script><script src="./js/gridnode-reminders.js?v=20260907.1" defer></script><script src="./js/gridnode-pwa-install.js?v=20260907.1" defer></script><script src="./js/gridnode-onboarding.js?v=20260907.1" defer></script>
+<script src="./js/gridnode-version.js?v=20260907.1" defer></script><script src="./js/gridnode-i18n.js?v=20260907.1" defer></script><script src="./js/gridnode-bundle.js?v=20260907.1" defer></script><script src="./js/gridnode-phase-sphere.js?v=20260907.1" defer></script><script src="./js/gridnode-product-completion.js?v=20260907.1" defer></script><script src="./js/gridnode-peptide-pk.js?v=20260907.1" defer></script><script src="./js/gridnode-peptide-viz.js?v=20260907.1" defer></script><script src="./js/gridnode-motivation.js?v=20260907.1" defer></script><script src="./js/gridnode-telemetry.js?v=20260907.1" defer></script><script src="./js/gridnode-native.js?v=20260907.1" defer></script><script src="./js/gridnode-i18n-overlay.js?v=20260907.1" defer></script><script src="./js/gridnode-whatsnew.js?v=20260907.1" defer></script><script src="./js/gridnode-reminders.js?v=20260907.1" defer></script><script src="./js/gridnode-lab-tests.js?v=20260907.1" defer></script><script src="./js/gridnode-pwa-install.js?v=20260907.1" defer></script><script src="./js/gridnode-onboarding.js?v=20260907.1" defer></script>
 <script>
 (function() {
   try {

@@ -4826,3 +4826,40 @@ html[data-theme="light"] .s6-card, html[data-theme="light"] .gn-wanda-card {
 .gn-profile-row:hover, .gn-profile-section button:hover {
   filter: brightness(1.08);
 }
+
+/* ── ASSAY: batch lab-test log (fourth LAB segment) ── */
+#gnAssayModalOv{z-index:2147483002}
+.gn-assay-sub{font-size:.78rem;color:var(--text-dim,#8a93a0);line-height:1.5;margin:0 0 14px}
+#gnAssayLogBtn{margin-bottom:14px;min-height:48px}
+.gn-assay-filters{margin-bottom:12px}
+.gn-assay-viewrow{display:flex;gap:8px;margin-top:10px}
+.gn-assay-entry{cursor:pointer}
+.gn-assay-row{display:flex;align-items:flex-start;gap:12px}
+.gn-assay-main{flex:1;min-width:0}
+.gn-assay-main b{display:block;font-size:.95rem;letter-spacing:.5px;color:var(--text,#e8ecf1)}
+.gn-assay-meta{display:block;font-size:.72rem;color:var(--text-dim,#8a93a0);letter-spacing:.5px;margin-top:3px}
+.gn-assay-chips{display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0}
+.gn-assay-chip{font-family:var(--font-b,system-ui);font-size:.72rem;font-weight:700;letter-spacing:1px;padding:4px 10px;border-radius:20px;border:1px solid var(--border2,rgba(255,255,255,.12));color:var(--text-mid,#aab4c0);white-space:nowrap}
+.gn-assay-chip.green{color:#3dff8e;border-color:rgba(61,255,142,.5);background:rgba(61,255,142,.08)}
+.gn-assay-chip.amber{color:#ffc857;border-color:rgba(255,200,87,.5);background:rgba(255,200,87,.08)}
+.gn-assay-chip.red{color:#ff5d5d;border-color:rgba(255,93,93,.5);background:rgba(255,93,93,.08)}
+.gn-assay-chip.cyan{color:#00e5ff;border-color:rgba(0,229,255,.5);background:rgba(0,229,255,.08)}
+.gn-assay-detail{margin-top:12px;padding-top:12px;border-top:1px solid var(--border2,rgba(255,255,255,.08))}
+.gn-assay-drow{display:flex;justify-content:space-between;gap:12px;padding:5px 0;font-size:.8rem}
+.gn-assay-drow .k{color:var(--text-dim,#8a93a0);letter-spacing:1.5px;font-size:.68rem}
+.gn-assay-drow .v{color:var(--text,#e8ecf1);font-weight:600;text-align:right}
+.gn-assay-drow .v.green{color:#3dff8e}
+.gn-assay-drow .v.red{color:#ff5d5d}
+.gn-assay-notes{margin:10px 0;padding:10px 12px;background:var(--bg2,rgba(255,255,255,.03));border-left:3px solid var(--cyan,#00e5ff);font-size:.8rem;line-height:1.6;color:var(--text-mid,#aab4c0);border-radius:0 8px 8px 0}
+.gn-assay-actions{display:flex;gap:8px;margin-top:12px}
+.gn-assay-act{margin:0;min-height:44px;font-size:.75rem}
+.gn-assay-act.confirming{border-color:var(--red,#ff3b3b);color:#ff5d5d;animation:gnAssayPulse 1s ease-in-out infinite}
+@keyframes gnAssayPulse{0%,100%{opacity:1}50%{opacity:.55}}
+.gn-assay-pills{display:flex;flex-wrap:wrap;gap:8px}
+.gn-assay-varpreview{display:flex;align-items:center;min-height:48px;padding:0 14px;border:1px solid var(--border2,rgba(255,255,255,.12));border-radius:8px;font-family:var(--font-b,system-ui);font-weight:700;letter-spacing:1px;font-size:.9rem;color:var(--text-dim,#8a93a0)}
+.gn-assay-varpreview.green{color:#3dff8e;border-color:rgba(61,255,142,.5)}
+.gn-assay-varpreview.amber{color:#ffc857;border-color:rgba(255,200,87,.5)}
+.gn-assay-varpreview.red{color:#ff5d5d;border-color:rgba(255,93,93,.5)}
+.gn-assay-err{margin:0 0 12px;padding:10px 12px;border:1px solid rgba(255,93,93,.5);border-radius:8px;color:#ff5d5d;font-size:.8rem;letter-spacing:.5px}
+.gn-assay-empty-sub{display:block;margin-top:8px;font-size:.78rem;color:var(--text-dim,#8a93a0);line-height:1.5}
+@media (prefers-reduced-motion:reduce){.gn-assay-act.confirming{animation:none}}

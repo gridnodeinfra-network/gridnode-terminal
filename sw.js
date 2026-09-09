@@ -30,6 +30,7 @@ const SHELL = [
   '/js/gridnode-i18n-overlay.js' + V,
   '/js/gridnode-whatsnew.js' + V,
   '/js/gridnode-reminders.js' + V,
+  '/js/gridnode-lab-tests.js' + V,
   '/js/gridnode-pwa-install.js' + V,
   '/js/gridnode-onboarding.js' + V,
   '/i18n/en.json',
