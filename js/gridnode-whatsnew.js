@@ -1,6 +1,18 @@
 /* GRID//NODE release history — authoritative user-facing update system.
  * Notes are bundled with the offline shell, localized, acknowledged once per
  * release, and reopenable from NODE / Profile.
+ *
+ * RELEASE WORKFLOW (the popup broke in Sept 2026 because the runtime release
+ * went stale — this is the contract that prevents a repeat):
+ *   1. Write the new release's notes under the __CURRENT_BUILD__ key below.
+ *   2. `npm run build` stamps that key with the real BUILD_ID and FAILS if
+ *      the placeholder entry is missing — no update can ship without a popup.
+ *      It also stamps js/gridnode-version.js so window.GN_VERSION.release
+ *      always matches the deployed build.
+ *   3. Before writing the NEXT release's notes, archive this entry: copy it
+ *      under its shipped BUILD_ID as a literal key (read it from the last
+ *      deployed ?v= stamp), then rewrite the placeholder entry with the new
+ *      notes. History mode lists every literal key ever shipped.
  */
 (function () {
   'use strict';
@@ -10,6 +22,31 @@
   const LEGACY_ACK_KEY = 'gn_whatsnew_acknowledged_release_v2';
   const ORDER = ['NEW', 'IMPROVED', 'FIXED', 'ACCESSIBILITY', 'MOBILE', 'COMPATIBILITY', 'SECURITY'];
   const NOTES = Object.freeze({
+    '__CURRENT_BUILD__': {
+      version: '0.15.33', title: 'CHANGELOG POPUP RESTORED + SHOTS POLISH', date: '2026-09-09',
+      en: {
+        FIXED: [
+          'Update notes are back: every new release now opens a changelog popup on first launch, so you always know what changed. Past notes stay reopenable from your profile.',
+          'Scanner: the navel keep-out warning now appears only on the CORE view, where it applies.',
+          'ARMS scanner zones were retraced to follow the actual pad grooves, with the left and right arms exactly mirrored.'
+        ],
+        IMPROVED: [
+          'Log Shot flow: larger touch targets, a clearer dose picker with glow feedback, roomier side-effect rows, and a sharper next-shot card.',
+          'Scanner mode buttons now use cyan for the active state, reserving red for warnings.'
+        ]
+      },
+      es: {
+        FIXED: [
+          'Las notas de actualización están de vuelta: cada nueva versión ahora muestra un aviso con los cambios al abrirla por primera vez. Las notas anteriores siguen disponibles desde tu perfil.',
+          'Escáner: la advertencia de la zona del ombligo ahora aparece solo en la vista CORE, donde aplica.',
+          'Las zonas del escáner de BRAZOS se redibujaron siguiendo los surcos reales de la almohadilla, con ambos brazos exactamente simétricos.'
+        ],
+        IMPROVED: [
+          'Flujo de registro de dosis: objetivos táctiles más grandes, selector de dosis más claro con retroalimentación luminosa, filas de efectos secundarios más amplias y una tarjeta de próxima dosis más nítida.',
+          'Los botones de modo del escáner ahora usan cian para el estado activo, reservando el rojo para las advertencias.'
+        ]
+      }
+    },
     '20260907.1': {
       version: '0.15.33', title: 'RELEASE INTEGRITY + DATA SAFETY', date: '2026-09-07',
       en: {

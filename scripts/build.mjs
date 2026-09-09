@@ -5,7 +5,13 @@
  *   1. Computes a single BUILD_ID (date + git short SHA).
  *   2. Stamps every ?v= query in index.html with the BUILD_ID.
  *   3. Stamps sw.js (RELEASE + CACHE_NAME derived from BUILD_ID).
- *   4. Copies index.html, sw.js, _headers, manifest.json, js/, css/,
+ *   4. Stamps js/gridnode-version.js (APP_BUILD + release) so the runtime
+ *      window.GN_VERSION.release always matches the deployed build — the
+ *      whatsnew changelog popup keys off this value.
+ *   5. Stamps the __CURRENT_BUILD__ placeholder key in
+ *      js/gridnode-whatsnew.js with the BUILD_ID, and FAILS if no
+ *      placeholder entry exists: every update must ship changelog notes.
+ *   6. Copies index.html, sw.js, _headers, manifest.json, js/, css/,
  *      assets/, i18n/ into dist/ preserving paths.
  *
  * Why not `vite build` here? Vite's default pipeline bundles CSS into a
@@ -78,5 +84,28 @@ for (const d of dirs) {
   if (!existsSync(src)) throw new Error(`missing required dir: ${d}/`);
   cpSync(src, join(DIST, d), { recursive: true });
 }
+
+// 4. js/gridnode-version.js — stamp APP_BUILD + release with BUILD_ID (dist
+// copy only; the source stays a template). Without this the runtime release
+// goes stale and the whatsnew popup never fires (Sept 2026 regression).
+const versionSrc = readFileSync(join(ROOT, 'js', 'gridnode-version.js'), 'utf8');
+if (!/APP_BUILD:\s*'[^']*'/.test(versionSrc)) throw new Error('gridnode-version.js APP_BUILD pattern not found');
+if (!/(^|[\s{,])release:\s*'[^']*'/.test(versionSrc)) throw new Error('gridnode-version.js release pattern not found');
+const versionStamped = versionSrc
+  .replace(/(APP_BUILD:\s*')[^']*(')/, `$1${BUILD_ID}$2`)
+  .replace(/((?:^|[\s{,])release:\s*')[^']*(')/, `$1${BUILD_ID}$2`);
+writeFileSync(join(DIST, 'js', 'gridnode-version.js'), versionStamped);
+console.log(`gridnode-version.js: APP_BUILD/release -> ${BUILD_ID}`);
+
+// 5. js/gridnode-whatsnew.js — stamp the __CURRENT_BUILD__ placeholder key
+// with the real BUILD_ID (dist copy only). FAILS when no placeholder entry
+// exists: every update must ship changelog notes with its popup.
+const wnDistPath = join(DIST, 'js', 'gridnode-whatsnew.js');
+let wn = readFileSync(wnDistPath, 'utf8');
+if (!wn.includes("'__CURRENT_BUILD__'")) throw new Error('gridnode-whatsnew.js has no __CURRENT_BUILD__ changelog entry — every release must ship changelog notes');
+wn = wn.split("'__CURRENT_BUILD__'").join(`'${BUILD_ID}'`);
+writeFileSync(wnDistPath, wn);
+console.log(`gridnode-whatsnew.js: __CURRENT_BUILD__ -> '${BUILD_ID}'`);
+
 console.log(`dist/: index.html, sw.js, ${copies.join(', ')}, ${dirs.map(d => d + '/').join(', ')}`);
 console.log('BUILD OK');

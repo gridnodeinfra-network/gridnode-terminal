@@ -52,6 +52,14 @@ console.log('gate 2: sw.js identical except RELEASE/CACHE_NAME');
 
 console.log('gate 3: copied assets byte-identical');
 {
+  // js/gridnode-version.js and js/gridnode-whatsnew.js are stamped by the
+  // build (BUILD_ID + changelog placeholder key), so they are compared with
+  // the build identity normalized out instead of byte-for-byte.
+  const normBuildStamped = (s) => s
+    .replace(/(APP_BUILD:\s*')[^']*(')/g, '$1BUILD$2')
+    .replace(/((?:^|[\s{,])release:\s*')[^']*(')/g, '$1BUILD$2')
+    .replace(/'__CURRENT_BUILD__'/g, "'BUILD'")
+    .replace(/'\d{8}\.[\da-z-]+'(?=\s*:\s*\{)/g, "'BUILD'");
   let checked = 0, bad = 0;
   for (const d of ['js', 'css', 'assets', 'i18n']) {
     for (const p of walk(join(ROOT, d))) {
@@ -59,6 +67,11 @@ console.log('gate 3: copied assets byte-identical');
       const dp = join(DIST, d, rel);
       checked++;
       if (!existsSync(dp)) { bad++; fail(`missing in dist: ${d}/${rel}`); }
+      else if (d === 'js' && (rel === 'gridnode-version.js' || rel === 'gridnode-whatsnew.js')) {
+        const srcN = normBuildStamped(readFileSync(p, 'utf8'));
+        const dstN = normBuildStamped(readFileSync(dp, 'utf8'));
+        if (srcN !== dstN) { bad++; fail(`changed in dist beyond build stamps: ${d}/${rel}`); }
+      }
       else if (sha(p) !== sha(dp)) { bad++; fail(`changed in dist: ${d}/${rel}`); }
     }
   }
