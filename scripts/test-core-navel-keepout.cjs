@@ -27,6 +27,26 @@ assert.match(
   'scanner legend must explain the red ring without making it look selectable'
 );
 
+assert.match(
+  html,
+  /\.scanner-keepout-legend\[hidden\]\{display:none\}/,
+  'keep-out legend must honor the hidden attribute (its display:flex would otherwise override it)'
+);
+
+const modulesJs = fs.readFileSync(path.join(root, 'js/gridnode-modules.js'), 'utf8');
+assert.match(
+  modulesJs,
+  /qa\('\.scanner-keepout-legend'\)\.forEach\(legend => \{\s*legend\.hidden = moduleState\.scannerMode !== 'core';/,
+  'setScannerMode must hide the navel keep-out legend on LEGS and ARMS views (CORE-only)'
+);
+
+const bundleJs = fs.readFileSync(path.join(root, 'js/gridnode-bundle.js'), 'utf8');
+assert.match(
+  bundleJs,
+  /legend\.hidden = moduleState\.scannerMode !== 'core'/,
+  'served bundle must carry the CORE-only keep-out legend gating'
+);
+
 assert.ok(
   fs.existsSync(path.join(root, 'assets/scanner/core/core-cinematic-no-navel.webp')),
   'clean CORE substrate must ship with the preview'

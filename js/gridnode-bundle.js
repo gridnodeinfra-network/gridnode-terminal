@@ -2400,6 +2400,10 @@ function setScannerMode(mode, button) {
       }
     }
   });
+  /* navel keep-out legend is CORE-only: hide it on LEGS and ARMS views */
+  qa('.scanner-keepout-legend').forEach(legend => {
+    legend.hidden = moduleState.scannerMode !== 'core';
+  });
   setText('scannerModeLabel', tx('shots.trackableZones', 'TRACKABLE {zone} ZONES', { zone: scannerModeLabel(moduleState.scannerMode) }));
   const helper = document.querySelector('#shotsRegionScanner .asset-helper');
   if (helper) {
