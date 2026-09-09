@@ -3763,7 +3763,7 @@ html[data-theme="light"] #login .gn-auth-title {
   }
 }
 
-   WHAT'S NEW header — subtle CRT glitch (2026-08-08)
+/* WHAT'S NEW header — subtle CRT glitch (2026-08-08)
    "// SYSTEM UPDATE" + "WHAT'S NEW": faint RGB drift at rest, a brief
    low-key displacement burst every 9s. Same restraint as the auth
    title — header stays legible. Both themes. Reduced-motion off.
