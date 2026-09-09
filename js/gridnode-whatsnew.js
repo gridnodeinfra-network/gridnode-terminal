@@ -23,10 +23,14 @@
   const ORDER = ['NEW', 'IMPROVED', 'FIXED', 'ACCESSIBILITY', 'MOBILE', 'COMPATIBILITY', 'SECURITY'];
   const NOTES = Object.freeze({
     '__CURRENT_BUILD__': {
-      version: '0.15.33', title: 'CHANGELOG POPUP RESTORED + SHOTS POLISH', date: '2026-09-09',
+      version: '0.15.33', title: 'DOSE REMINDERS + CHANGELOG POPUP RESTORED', date: '2026-09-09',
       en: {
+        NEW: [
+          'Dose reminders are real now: set LOCAL REMINDERS in your VAULT preferences and the app schedules a notification for your next dose, plus an in-app due banner that catches anything missed while you were away. CLOUD REMINDERS run on the same local scheduling until the NODE backend ships.'
+        ],
         FIXED: [
           'Update notes are back: every new release now opens a changelog popup on first launch, so you always know what changed. Past notes stay reopenable from your profile.',
+          'The update-available banner now shows the correct release tag again (it was truncating the new build-id format).',
           'Scanner: the navel keep-out warning now appears only on the CORE view, where it applies.',
           'ARMS scanner zones were retraced to follow the actual pad grooves, with the left and right arms exactly mirrored.'
         ],
@@ -36,8 +40,12 @@
         ]
       },
       es: {
+        NEW: [
+          'Los recordatorios de dosis ya funcionan: activa RECORDATORIOS LOCALES en tus preferencias del VAULT y la app programa una notificación para tu próxima dosis, además de un aviso en la app que detecta dosis pendientes al abrirla. RECORDATORIOS EN LA NUBE usa el mismo sistema local hasta que llegue el backend de NODE.'
+        ],
         FIXED: [
           'Las notas de actualización están de vuelta: cada nueva versión ahora muestra un aviso con los cambios al abrirla por primera vez. Las notas anteriores siguen disponibles desde tu perfil.',
+          'El aviso de actualización disponible vuelve a mostrar la etiqueta de versión correcta (estaba truncando el nuevo formato de build-id).',
           'Escáner: la advertencia de la zona del ombligo ahora aparece solo en la vista CORE, donde aplica.',
           'Las zonas del escáner de BRAZOS se redibujaron siguiendo los surcos reales de la almohadilla, con ambos brazos exactamente simétricos.'
         ],

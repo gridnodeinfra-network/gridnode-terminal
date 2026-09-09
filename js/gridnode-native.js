@@ -506,9 +506,11 @@
             }
           } catch (_) {}
           this.announced = worker;
-          // Release number comes from the SW script URL (?v=20260808.22) —
-          // free, and it turns the banner into a truthful statement.
-          const rel = (worker.scriptURL || '').match(/v=([0-9.]+)/);
+          // Release number comes from the SW script URL (?v=... build stamp)
+          // — free, and it turns the banner into a truthful statement.
+          // The [?&]v= form survives build-id format changes (2026-09-09:
+          // the old [0-9.]+ pattern truncated ids like 20260909.e32ad87).
+          const rel = (worker.scriptURL || '').match(/[?&]v=([^&]+)/);
           const releaseTag = rel ? ' · ' + rel[1] : '';
           showStatus('update', copy('UPDATE AVAILABLE · APPLY WHEN READY', 'ACTUALIZACIÓN DISPONIBLE · APLICA CUANDO ESTÉS LISTO') + releaseTag, { label: copy('UPDATE', 'ACTUALIZAR'), run: () => this.apply() });
         };
@@ -582,10 +584,24 @@
     wireNavigationStack();
   }
 
+  function wireReminderDue() {
+    // Dose reminders (2026-09-09): the reminders module dispatches
+    // gn:reminder-due when a dose is due and unlogged. Surface it on the
+    // shared runtime banner; tapping opens the log modal.
+    window.addEventListener('gn:reminder-due', event => {
+      const detail = (event && event.detail) || {};
+      showStatus('reminder', detail.message || copy('DOSE DUE', 'DOSIS PROGRAMADA'), {
+        label: detail.actionLabel || copy('LOG SHOT', 'REGISTRAR'),
+        run: () => { try { window.openLogModal ? window.openLogModal() : null; } catch (_) {} }
+      });
+    });
+  }
+
   function boot() {
     injectCss();
     watchViewportAndKeyboard();
     wireConnectivity();
+    wireReminderDue();
     wireShotDraft();
     wireNavigationStack();
     wireLayerHistory();

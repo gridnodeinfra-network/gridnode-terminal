@@ -29,6 +29,7 @@ const SHELL = [
   '/js/gridnode-native.js' + V,
   '/js/gridnode-i18n-overlay.js' + V,
   '/js/gridnode-whatsnew.js' + V,
+  '/js/gridnode-reminders.js' + V,
   '/js/gridnode-onboarding.js' + V,
   '/i18n/en.json',
   '/i18n/es-419.json',
@@ -71,6 +72,38 @@ self.addEventListener('install', event => {
 self.addEventListener('message', event => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
   if (event.data?.type === 'GET_VERSION') event.source?.postMessage?.({ type: 'VERSION', release: RELEASE });
+});
+
+// Dose reminders (2026-09-09): system notifications scheduled by
+// js/gridnode-reminders.js via TimestampTrigger land here on tap.
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const data = event.notification.data || {};
+  event.waitUntil((async () => {
+    const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const w of wins) {
+      if ('focus' in w) {
+        await w.focus();
+        if (data.action === 'log') w.postMessage({ type: 'GN_OPEN_LOG' });
+        return;
+      }
+    }
+    if (self.clients.openWindow) await self.clients.openWindow(data.url || '/');
+  })());
+});
+
+// Forward-compatible push handler: no push server ships yet. If one ever
+// does, payloads shaped {title, body, url} render directly.
+self.addEventListener('push', event => {
+  let data = {};
+  try { data = event.data?.json() || {}; } catch (_) {}
+  if (!data.title) return;
+  event.waitUntil(self.registration.showNotification(data.title, {
+    body: data.body || '',
+    tag: 'gn-push',
+    renotify: true,
+    data: { url: data.url || '/', action: data.action || 'log' }
+  }));
 });
 
 self.addEventListener('activate', event => {

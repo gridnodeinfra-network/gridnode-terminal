@@ -2352,6 +2352,10 @@ html[data-theme="light"] :is(.page-sub,.form-label,.form-helper,.gn-shot-date-he
 .gn-runtime-action { min-height: 32px !important; padding: 0 10px; border: 1px solid currentColor; border-radius: 999px; background: transparent; color: #7ff5ff; font: 800 11px var(--font-m, monospace); letter-spacing: .6px; }
 .gn-runtime-banner[data-kind="offline"] { border-color: rgba(255,209,102,.56); }
 .gn-runtime-banner[data-kind="offline"] .gn-runtime-dot { color: #ffd166; background: #ffd166; }
+.gn-runtime-banner[data-kind="reminder"] { border-color: rgba(255,209,102,.66); }
+.gn-runtime-banner[data-kind="reminder"] .gn-runtime-dot { color: #ffd166; background: #ffd166; animation: gn-runtime-pulse 1.6s ease-in-out infinite; }
+@keyframes gn-runtime-pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .gn-runtime-banner[data-kind="reminder"] .gn-runtime-dot { animation: none; } }
 .gn-runtime-banner[data-kind="synced"] .gn-runtime-dot { color: #00ff88; background: #00ff88; }
 .gn-runtime-banner[data-kind="update"] { border-color: rgba(0,212,255,.62); }
 html[data-theme="light"] .gn-runtime-banner { background: #fffdf8; color: var(--text-primary); border-color: rgba(0,95,115,.45); box-shadow: 0 12px 34px rgba(43,58,62,.18); }
