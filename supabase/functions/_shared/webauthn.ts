@@ -107,14 +107,16 @@ export function clientInfo(req: Request): ClientInfo {
 
 export async function storeChallenge(admin: any, token: string, userId: string | null, op: string): Promise<void> {
   const tokenHash = await sha256Hex(token);
-  try {
-    await admin.from("webauthn_challenges").insert({ token_hash: tokenHash, user_id: userId, op });
-  } catch (error) {
-    console.warn("[webauthn] storeChallenge", error);
-  }
+  // NOTE (2026-09-10): supabase-js never throws for PostgREST errors; insert()
+  // resolves to { data, error }. Swallowing the error here mints a challenge
+  // token that can never verify, which surfaces later as the misleading
+  // "challenge already used". Fail loudly so the real cause is visible.
+  const { error } = await admin.from("webauthn_challenges").insert({ token_hash: tokenHash, user_id: userId, op });
+  if (error) throw new Error(`challenge_store_failed: ${error.message ?? String(error)}`);
 }
 
 // Atomically claims a challenge (single-use). Returns false on replay/unknown.
+// Throws on database errors so infra failures are never misreported as replays.
 export async function consumeChallenge(admin: any, token: string): Promise<boolean> {
   const tokenHash = await sha256Hex(token);
   const { data, error } = await admin.from("webauthn_challenges")
@@ -123,10 +125,7 @@ export async function consumeChallenge(admin: any, token: string): Promise<boole
     .is("used_at", null)
     .select("token_hash")
     .maybeSingle();
-  if (error) {
-    console.warn("[webauthn] consumeChallenge", error);
-    return false;
-  }
+  if (error) throw new Error(`challenge_consume_failed: ${error.message ?? String(error)}`);
   return Boolean(data);
 }
 

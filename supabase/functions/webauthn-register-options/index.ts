@@ -41,7 +41,13 @@ async function handle(req: Request): Promise<Response> {
     attestationType: "none",
   });
   const challengeToken = await signChallenge(options.challenge, user.id, "register");
-  await storeChallenge(admin, challengeToken, user.id, "register");
+  try {
+    await storeChallenge(admin, challengeToken, user.id, "register");
+  } catch (e) {
+    const msg = (e as Error).message;
+    await recordAudit(admin, { user_id: user.id, event: "register_options", success: false, error: msg.slice(0, 200), ip, user_agent: userAgent });
+    return text(`challenge store failed: ${msg}`, 500);
+  }
   await recordAudit(admin, { user_id: user.id, event: "register_options", success: true, ip, user_agent: userAgent });
   const userId = typeof options.user.id === "string" ? options.user.id : toBase64Url(options.user.id);
   return json({

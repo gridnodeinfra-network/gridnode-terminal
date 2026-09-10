@@ -46,7 +46,13 @@ async function handle(req: Request): Promise<Response> {
     userVerification: "preferred",
   });
   const challengeToken = await signChallenge(options.challenge, user.id, "authenticate");
-  await storeChallenge(admin, challengeToken, user.id, "authenticate");
+  try {
+    await storeChallenge(admin, challengeToken, user.id, "authenticate");
+  } catch (e) {
+    const msg = (e as Error).message;
+    await recordAudit(admin, { user_id: user.id, event: "authenticate_options", success: false, error: msg.slice(0, 200), ip, user_agent: userAgent });
+    return text(`challenge store failed: ${msg}`, 500);
+  }
   await recordAudit(admin, { user_id: user.id, event: "authenticate_options", success: true, ip, user_agent: userAgent });
   return json({ ...options, challengeToken });
 }

@@ -152,7 +152,15 @@ async function handle(req: Request): Promise<Response> {
     await recordAudit(admin, { event: "authenticate_verify", success: false, error: "rate_limited", ip, user_agent: userAgent });
     return text("rate limited", 429);
   }
-  if (!(await consumeChallenge(admin, String(body.challengeToken || "")))) {
+  let consumed: boolean;
+  try {
+    consumed = await consumeChallenge(admin, String(body.challengeToken || ""));
+  } catch (e) {
+    const msg = (e as Error).message;
+    await recordAudit(admin, { event: "authenticate_verify", success: false, error: msg.slice(0, 200), ip, user_agent: userAgent });
+    return text(`challenge consume failed: ${msg}`, 500);
+  }
+  if (!consumed) {
     await recordAudit(admin, { event: "authenticate_verify", success: false, error: "challenge_replay", ip, user_agent: userAgent });
     return text("challenge already used", 400);
   }
