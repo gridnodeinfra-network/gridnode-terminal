@@ -13,6 +13,7 @@
     "test:core-keepout": "node scripts/test-core-navel-keepout.cjs",
     "test:reminders": "node scripts/test-reminders-contract.cjs",
     "test:mobile": "node scripts/test-mobile-shell.cjs",
+    "test:firstcontact": "node scripts/test-firstcontact-contract.cjs",
     "audit:themes": "node scripts/audit-served-day-ops.cjs",
     "visual:capture": "node scripts/visual-regression-guard.cjs capture",
     "visual:compare": "node scripts/visual-regression-guard.cjs compare"

@@ -300,7 +300,7 @@
   function wireLayerHistory() {
     const observer = new MutationObserver(records => records.forEach(record => {
       const layer = record.target;
-      // The onboarding tour overlay is only present in the DOM while open
+      // The FIRST CONTACT overlay is only present in the DOM while open
       // (dismiss() removes it), so presence === active. Without this it gets
       // aria-hidden="true" forever — a visible dialog invisible to AT.
       const active = layerIsOpen(layer);

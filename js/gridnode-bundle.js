@@ -1964,9 +1964,9 @@ function renderDashboard() {
       const heroMarkup = '<section id="gnEmptyHero" class="gn-empty-hero" aria-label="' + safeText(tx('dashboard.emptyTitle', 'Get started')) + '">'
         + '<h2 data-i18n="dashboard.emptyTitle">' + tx('dashboard.emptyTitle', 'Empieza con tu primera dosis') + '</h2>'
         + '<p data-i18n="dashboard.emptyBody">' + tx('dashboard.emptyBody', 'Una dosis desbloquea el Motor de Fases, RESULTADOS y tu tablero completo.') + '</p>'
-        + '<button class="btn-full btn-primary gn-empty-cta" type="button" data-onboard="empty-cta" onclick="openLogModal()" data-i18n="dashboard.emptyCta">' + tx('dashboard.emptyCta', 'REGISTRAR MI PRIMERA DOSIS') + '</button>'
+        + '<button class="btn-full btn-primary gn-empty-cta" type="button" onclick="openLogModal()" data-i18n="dashboard.emptyCta">' + tx('dashboard.emptyCta', 'REGISTRAR MI PRIMERA DOSIS') + '</button>'
         + '<div class="gn-empty-ghosts">'
-        + '<button class="gn-empty-ghost" type="button" data-onboard="log-weight" onclick="openWeightModal()" data-i18n="dashboard.emptyWeight">' + tx('dashboard.emptyWeight', 'Registrar peso') + '</button>'
+        + '<button class="gn-empty-ghost" type="button" onclick="openWeightModal()" data-i18n="dashboard.emptyWeight">' + tx('dashboard.emptyWeight', 'Registrar peso') + '</button>'
         + '<button class="gn-empty-ghost" type="button" onclick="showPage(\'Log\',document.getElementById(\'navLog\'))" data-i18n="dashboard.emptyScan">' + tx('dashboard.emptyScan', 'Escanear zona') + '</button>'
         + '<button class="gn-empty-ghost" type="button" onclick="showPage(\'Lab\',document.getElementById(\'navLab\'))" data-i18n="dashboard.emptyLab">' + tx('dashboard.emptyLab', 'Ver LAB') + '</button>'
         + '</div>'
@@ -2030,7 +2030,7 @@ function ensureWandaDashboard() {
   const header = document.getElementById('pageDash')?.querySelector('.page-hdr');
   if (!header || document.getElementById('gnWandaDashboard')) return;
   const markup = '<section id="gnWandaDashboard" aria-label="' + safeText(tx('dashboard.currentProtocolSignals', 'Current protocol signals')) + '">'
-    + '<section class="gn-dashboard-mission" id="gnFirstShotMission" aria-labelledby="gnFirstShotMissionTitle"><span class="gn-dashboard-mission-kicker" data-i18n="dashboard.firstShotKicker">START HERE</span><h2 id="gnFirstShotMissionTitle" data-i18n="shots.activateYourGrid">LOG YOUR FIRST SHOT TO ACTIVATE YOUR GRID</h2><p data-i18n="shots.firstShotSub">One shot unlocks the Phase Engine, RESULTS, and your full dashboard.</p><button type="button" data-onboard="empty-cta" onclick="openLogModal()" data-i18n="shots.logYourFirst">LOG YOUR FIRST SHOT</button></section>'
+    + '<section class="gn-dashboard-mission" id="gnFirstShotMission" aria-labelledby="gnFirstShotMissionTitle"><span class="gn-dashboard-mission-kicker" data-i18n="dashboard.firstShotKicker">START HERE</span><h2 id="gnFirstShotMissionTitle" data-i18n="shots.activateYourGrid">LOG YOUR FIRST SHOT TO ACTIVATE YOUR GRID</h2><p data-i18n="shots.firstShotSub">One shot unlocks the Phase Engine, RESULTS, and your full dashboard.</p><button type="button" onclick="openLogModal()" data-i18n="shots.logYourFirst">LOG YOUR FIRST SHOT</button></section>'
     + '<div class="gn-wanda-grid">'
     + '<button class="gn-wanda-card" id="gnWandaNext" type="button" onclick="openLogModal()"><span class="gn-wanda-label" data-i18n="dashboard.nextShotLabel">NEXT SHOT</span><b class="gn-wanda-value" id="gnWandaNextValue">' + tx('runtime.logShot', 'LOG SHOT') + '</b><small class="gn-wanda-note" id="gnWandaNextNote" data-i18n="dashboard.logShotStartTimeline">Log a shot to start your timeline</small></button>'
     + '<button class="gn-wanda-card" id="gnWandaPhase" type="button" onclick="showPhasesModal()"><span class="gn-wanda-label" data-i18n="dashboard.currentPhase">CURRENT PHASE</span><b class="gn-wanda-value" id="gnWandaPhaseValue">' + tx('dashboard.startWithShot', 'START WITH A SHOT') + '</b><small class="gn-wanda-note" data-i18n="phase.educationalEstimate">EDUCATIONAL ESTIMATE</small></button>'
@@ -3069,6 +3069,7 @@ function saveShot(allowFuture = false) {
     $('futureTimestampConfirm')?.classList.remove('active');
     closeLog(true);
     refreshAll();
+    try { document.dispatchEvent(new CustomEvent('gn:shot-saved', { detail: { record: record, isNew: !existing } })); } catch (_) {}
     const shotTimeLabel = formatTime12(new Date(record.date));
     const shotDetail = `${record.dose}mg ${medicationLabel(normalizeMedicationId(record.med))} · ${zoneLabel(record.site)}`;
     showToast(`${tx('toast.shotLogged', 'Dosis registrada')} · ${shotTimeLabel}`, false, () => undoShot(record.id), shotDetail);

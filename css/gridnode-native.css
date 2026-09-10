@@ -35,34 +35,27 @@ html.gn-keyboard-open #signOutOverlay {
 /* One purposeful page transition (NEXUS: precise, brief, no bounce). */
 .page.active {
   animation: gnPageIn 0.22s cubic-bezier(0.2, 0.7, 0.3, 1);
-}
-@keyframes gnPageIn {
+}@keyframes gnPageIn{
   from { opacity: 0.35; transform: translateY(6px); }
-  to   { opacity: 1; transform: none; }
-}
+  to   { opacity: 1; transform: none; }}
 
 /* Bottom sheets slide up like native sheets. */
 #logOv.active, #wtOv.active, #signOutOverlay.active {
   animation: gnSheetIn 0.24s cubic-bezier(0.2, 0.7, 0.3, 1);
-}
-@keyframes gnSheetIn {
+}@keyframes gnSheetIn{
   from { opacity: 0; transform: translateY(28px); }
-  to   { opacity: 1; transform: none; }
-}
+  to   { opacity: 1; transform: none; }}
 
 /* Press feedback on primary controls. */
 .nav-item:active, .fab:active {
   transform: scale(0.96);
-}
-
-@media (prefers-reduced-motion: reduce) {
+}@media (prefers-reduced-motion: reduce){
   .page.active, #logOv.active, #wtOv.active, #signOutOverlay.active {
     animation: none !important;
   }
   .nav-item:active, .fab:active {
     transform: none;
-  }
-}
+  }}
 
 /* ── DAY OPS semantic type system ─────────────────────────────────────
    This is the final cascade layer for functional copy. Legacy component
@@ -81,27 +74,13 @@ html[data-theme="light"] {
   --red-hi: #FF5B5B;
   --red-lo: #D12424;
   --red: var(--text-error);
-}
-
-html[data-theme="light"] :is(#login, #app, .overlay, .gn-delete-overlay, .gn-lab-tool-overlay, .gn-whatsnew-overlay, .gn-onb-overlay) {
+}html[data-theme="light"] :is(#login, #app, .overlay, .gn-delete-overlay, .gn-lab-tool-overlay, .gn-whatsnew-overlay) {
   color: var(--text-primary);
-}
-
-html[data-theme="light"] :is(
-  .page-title, .card-title, .modal-title, .gn-auth-title,
-  .gn-foundation-head h2, .gn-lab-tool-head h2, .gn-profile-row b,
-  .gn-whatsnew-title, .gn-whatsnew-version, .gn-onb-title,
-  .gn-empty-state b, .results-title, .phase-name, .syr-result-big
-) { color: var(--text-primary) !important; opacity: 1 !important; font-weight: 700 !important; }
-
-html[data-theme="light"] :is(
-  .card p, .card-copy, .landing-copy, .gn-auth-copy, .gn-ledger-copy,
-  .gn-profile-row small, .gn-empty-state span, .gn-onb-copy,
-  .gn-whatsnew-body, .gn-whatsnew-body li, .mixing-text,
-  .phase-transparency-block p, .phase-transparency-block li,
-  .log-notes, .pib-text, .results-direction, .syr-math-helper,
-  .gn-syr-formula, .gn-syr-helper p, .gn-syr-caution
-) { color: var(--text-secondary) !important; opacity: 1 !important; font-weight: 500 !important; }
+}html[data-theme="light"] :is(
+  .page-title, .card-title, .modal-title, .gn-auth-title, .gn-foundation-head h2, .gn-lab-tool-head h2, .gn-profile-row b, .gn-whatsnew-title, .gn-whatsnew-version, .gn-empty-state b, .results-title, .phase-name, .syr-result-big
+){ color: var(--text-primary) !important; opacity: 1 !important; font-weight: 700 !important; }html[data-theme="light"] :is(
+  .card p, .card-copy, .landing-copy, .gn-auth-copy, .gn-ledger-copy, .gn-profile-row small, .gn-empty-state span, .gn-whatsnew-body, .gn-whatsnew-body li, .mixing-text, .phase-transparency-block p, .phase-transparency-block li, .log-notes, .pib-text, .results-direction, .syr-math-helper, .gn-syr-formula, .gn-syr-helper p, .gn-syr-caution
+){ color: var(--text-secondary) !important; opacity: 1 !important; font-weight: 500 !important; }
 
 html[data-theme="light"] :is(
   .page-sub, .form-helper, .gn-shot-date-helper, .gn-auth-note,
@@ -171,21 +150,10 @@ html[data-theme="light"] :is(.nav-item:not(.active) .nav-lbl, .nav-item:not(.act
 html[data-theme="light"] :is(.nav-item.active .nav-lbl, .nav-item.active .nav-ico) { color: var(--text-accent) !important; }
 html[data-theme="light"] :is(.mixing-warn, .warning, .warn, .gn-syr-safety, .syr-safety-boundary) { color: var(--text-warning) !important; opacity: 1 !important; }
 html[data-theme="light"] :is(.error, .err, .vault-date-error, .gn-delete-note, .gn-profile-danger-row b) { color: var(--text-error) !important; opacity: 1 !important; }
-html[data-theme="light"] :is(.success, .ok, .gn-cloud-dot.cloud + span) { color: var(--text-success) !important; opacity: 1 !important; }
-
-/* Functional microcopy has a 12px floor. Decorative telemetry may remain
-   smaller only when it carries no instruction, state, or required meaning. */
-html[data-theme="light"] :is(
-  .page-sub, .form-label, .form-helper, .gn-shot-date-helper,
-  .gn-auth-copy, .gn-auth-message, .gn-auth-note, .gn-auth-privacy,
-  .nav-lbl, .cp-group-label, .cp-option, .gn-select-option,
-  .gn-profile-row small, .gn-profile-section-label, .gn-ledger-copy,
-  .gn-empty-state, .gn-onb-copy, .gn-onb-instruction,
-  .gn-whatsnew-body, .gn-whatsnew-date, .gn-wanda-copy,
-  .mixing-text, .mixing-warn, .phase-transparency-block p,
-  .phase-transparency-block li, .syr-math-helper, .gn-syr-helper p,
-  .gn-syr-formula, .gn-syr-caution, .gn-syr-safety
-) {
+html[data-theme="light"] :is(.success, .ok, .gn-cloud-dot.cloud + span) { color: var(--text-success) !important; opacity: 1 !important; }html[data-theme="light"] :is(
+  .page-sub, .form-label, .form-helper, .gn-shot-date-helper, .gn-auth-copy, .gn-auth-message, .gn-auth-note, .gn-auth-privacy, .nav-lbl, .cp-group-label, .cp-option, .gn-select-option, .gn-profile-row small, .gn-profile-section-label, .gn-ledger-copy, .gn-empty-state, .gn-whatsnew-body, .gn-whatsnew-date, .gn-wanda-copy, .mixing-text, .mixing-warn, .phase-transparency-block p, .phase-transparency-block li, .syr-math-helper, .gn-syr-helper p, .gn-syr-formula, .gn-syr-caution, .gn-syr-safety
+)
+{
   font-size: max(12px, .75rem) !important;
   line-height: 1.5 !important;
   letter-spacing: min(.06em, 1px) !important;
@@ -216,13 +184,10 @@ body.gn-private-active { overflow: hidden; overscroll-behavior: none; }
 :is(button, [role="button"], .nav-item, summary, label) { -webkit-tap-highlight-color: rgba(0, 212, 255, .13); touch-action: manipulation; }
 :is(button, [role="button"], .nav-item, summary) { -webkit-user-select: none; user-select: none; }
 :is(input, textarea, [contenteditable="true"]) { -webkit-user-select: text; user-select: text; }
-html.gn-keyboard-open .bottom-nav, html.gn-keyboard-open .fab { visibility: hidden; pointer-events: none; }
-
-@media (max-width: 600px) {
+html.gn-keyboard-open .bottom-nav, html.gn-keyboard-open .fab { visibility: hidden; pointer-events: none; }@media (max-width: 600px){
   :is(button, [role="button"], input, select, textarea, summary, .cp-option, .gn-select-option) { min-height: 44px; }
   #app .page { max-width: 100%; overflow-x: hidden; }
-  .overlay .modal, .gn-delete-panel, .gn-whatsnew-card { max-height: calc(var(--gn-viewport-height, 100dvh) - env(safe-area-inset-top, 0px) - 12px); }
-}
+  .overlay .modal, .gn-delete-panel, .gn-whatsnew-card { max-height: calc(var(--gn-viewport-height, 100dvh) - env(safe-area-inset-top, 0px) - 12px); }}
 /* Visible focus in BOTH themes (dark default cyan, daylight deep teal). */
 :focus-visible {
   outline: 2px solid var(--gn-focus-ring, rgba(0, 212, 255, 0.85));
@@ -456,15 +421,11 @@ html[data-theme="light"] .gn-whatsnew-close {
 .app-wordmark-b2b { flex-shrink: 1 !important; min-width: 0 !important; }
 .app-wordmark-b2b svg { width: auto !important; max-width: 100% !important; height: 24px !important; }
 .node-pill { flex-shrink: 1 !important; min-width: 0 !important; overflow: hidden !important; white-space: nowrap !important; }
-.node-pill .node-pill-phase { overflow: hidden !important; text-overflow: ellipsis !important; }
-@media (max-width: 400px) {
+.node-pill .node-pill-phase { overflow: hidden !important; text-overflow: ellipsis !important; }@media (max-width: 400px){
   .node-pill .node-pill-state { display: none !important; }
   .app-wordmark-b2b svg { height: 22px !important; }
-  .gn-theme-toggle .gn-theme-opt { min-width: 28px !important; padding: 0 6px !important; }
-}
-@media (max-width: 340px) {
-  .node-pill { max-width: 34vw !important; }
-}
+  .gn-theme-toggle .gn-theme-opt { min-width: 28px !important; padding: 0 6px !important; }}@media (max-width: 340px){
+  .node-pill { max-width: 34vw !important; }}
 
 /* ── 4. Chart lanes: reserved label space, controls never on top ── */
 .card .chart-wrap { height: auto !important; padding-bottom: 18px !important; }
@@ -478,25 +439,17 @@ html[data-theme="light"] .gn-whatsnew-close {
   pointer-events: none; overflow: visible;
 }
 .gn-chart-overlay .gn-phase-band { opacity: .14; mix-blend-mode: screen; }
-.gn-chart-overlay .gn-live-trace { stroke-dasharray: 14 22; stroke-dashoffset: 0; }
-@media (prefers-reduced-motion: no-preference) {
+.gn-chart-overlay .gn-live-trace { stroke-dasharray: 14 22; stroke-dashoffset: 0; }@media (prefers-reduced-motion: no-preference){
   .gn-chart-overlay .gn-live-trace { animation: gn-trace-flow 1.8s linear infinite; }
   .gn-chart-overlay .gn-pulse-ring { animation: gn-pulse 2.8s ease-out infinite; transform-origin: center; transform-box: fill-box; }
-  .gn-chart-overlay .gn-pulse-core { animation: gn-pulse-core 2.8s ease-out infinite; transform-origin: center; transform-box: fill-box; }
-}
-@keyframes gn-trace-flow {
+  .gn-chart-overlay .gn-pulse-core { animation: gn-pulse-core 2.8s ease-out infinite; transform-origin: center; transform-box: fill-box; }}@keyframes gn-trace-flow{
   from { stroke-dashoffset: 300; }
-  to   { stroke-dashoffset: 0; }
-}
-@keyframes gn-pulse {
+  to   { stroke-dashoffset: 0; }}@keyframes gn-pulse{
   0%   { transform: scale(.4); opacity: .85; }
   70%  { transform: scale(2.6); opacity: 0; }
-  100% { transform: scale(2.6); opacity: 0; }
-}
-@keyframes gn-pulse-core {
+  100% { transform: scale(2.6); opacity: 0; }}@keyframes gn-pulse-core{
   0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.18); }
-}
+  50%      { transform: scale(1.18); }}
 .gn-chart-legend {
   display: flex; flex-wrap: wrap; gap: 10px 14px; margin-top: 8px;
   font: 600 .52rem/1 var(--font-m, "Share Tech Mono", monospace);
@@ -623,16 +576,14 @@ html[data-theme="light"] .gn-peptide-lane-head b { color: #0e1a22; }
 .gn-peptide-next.dim { border-color: rgba(255, 255, 255, .12); background: transparent; }
 .gn-peptide-next.dim span { color: #8295a0; }
 html[data-theme="light"] .gn-peptide-next { background: rgba(0, 150, 190, .08); border-color: rgba(0, 150, 190, .4); }
-.gn-peptide-overlay-foot { margin-top: 14px; font: 600 .5rem/1.5 var(--font-m, "Share Tech Mono", monospace); letter-spacing: .5px; color: #8295a0; text-align: center; }
-@media (max-width: 480px) {
+.gn-peptide-overlay-foot { margin-top: 14px; font: 600 .5rem/1.5 var(--font-m, "Share Tech Mono", monospace); letter-spacing: .5px; color: #8295a0; text-align: center; }@media (max-width: 480px){
   .gn-peptide-overlay { padding: 8px; }
   .gn-peptide-overlay-card { max-height: 94vh; }
   .gn-peptide-overlay-grid { grid-template-columns: 1fr; }
   .gn-peptide-ring { width: 120px; height: 120px; }
   .gn-peptide-overlay-head { flex-direction: column; }
   .gn-peptide-overlay-title { font-size: .92rem; }
-  .gn-peptide-big-wrap canvas { height: 190px; }
-}
+  .gn-peptide-big-wrap canvas { height: 190px; }}
 html[data-theme="light"] .gn-peptide-expand { color: #007a9c; border-color: rgba(0, 122, 156, .4); background: rgba(0, 122, 156, .08); }
 html[data-theme="light"] .gn-peptide-overlay-close { color: #c81e45; border-color: rgba(200, 30, 69, .45); background: rgba(200, 30, 69, .08); }
 html[data-theme="light"] .gn-peptide-dossier-head { color: #00875a; }
@@ -851,58 +802,6 @@ html[data-theme="light"] .form-label { color: #24404b !important; }
 .nav-lbl { font-size: .64rem !important; letter-spacing: 1.3px !important; }
 html[lang="es"] .nav-lbl { font-size: .6rem !important; letter-spacing: .6px !important; }
 
-/* ── Onboarding (system orientation) ── */
-.gn-onb-overlay {
-  position: fixed; inset: 0; z-index: 940;
-  background: rgba(2, 2, 8, .78);
-  display: flex; align-items: flex-end; justify-content: center;
-  padding: 18px;
-}
-.gn-onb-card {
-  width: min(100%, 420px); box-sizing: border-box;
-  padding: 18px 18px 14px;
-  border: 1px solid rgba(0, 212, 255, .45); border-top: 2px solid #00d4ff;
-  border-radius: 12px; background: var(--panel, #0e0e16);
-  color: var(--text, #eef6f8);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, .6);
-}
-.gn-onb-kicker { color: #00d4ff; font: 800 .58rem var(--font-d, monospace); letter-spacing: 2.2px; }
-.gn-onb-title { margin: 6px 0 4px; font: 700 .92rem var(--font-d, monospace); letter-spacing: 1.2px; color: var(--text, #eef6f8); }
-.gn-onb-body { margin: 0 0 10px; font: .8rem/1.55 var(--font-b, system-ui); color: var(--text-mid, #b7c7d3); }
-.gn-onb-dots { display: flex; gap: 5px; margin: 0 0 12px; }
-.gn-onb-dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255, 255, 255, .18); }
-.gn-onb-dots i.active { background: #00d4ff; box-shadow: 0 0 8px rgba(0, 212, 255, .8); }
-.gn-onb-dots i.done { background: rgba(0, 212, 255, .5); }
-.gn-onb-skip { flex: 0 0 auto; padding: 0 12px; background: transparent; border: 1px solid var(--border, rgba(255,255,255,.15)); color: var(--text-dim, #8295a0); }
-.gn-onb-back { flex: 0 0 auto; padding: 0 12px; background: transparent; border: 1px solid var(--border, rgba(255,255,255,.15)); color: var(--text-mid, #b7c7d3); }
-.gn-onb-back:disabled { opacity: .35; cursor: default; }
-.gn-onb-next {
-  flex: 1; border: 0;
-  background: radial-gradient(130% 170% at 50% 0%, var(--lava-core-hi, #FF5B5B) 0%, var(--lava-core, #FF3B3B) 46%, var(--lava-edge, #8f0f28) 100%);
-  color: #fff; box-shadow: 0 4px 18px var(--lava-glow, rgba(255,45,77,.42));
-}
-/* Spotlight ring on the target element. */
-.gn-onb-target {
-  /* never change position/transform of the spotlighted control —
-     fixed elements (nav, fab) must stay put so the click-through hole works */
-  box-shadow: 0 0 0 2px #00d4ff, 0 0 24px rgba(0, 212, 255, .5) !important;
-  border-radius: 8px;
-  transition: box-shadow .18s ease;
-}
-/* Reduced motion: no glow pulses, instant transitions. */
-@media (prefers-reduced-motion: reduce) {
-  .gn-onb-target { box-shadow: 0 0 0 2px #fff, 0 0 0 6px #ffd166, 0 0 24px rgba(255, 209, 102, .8) !important; }
-  .gn-onb-card { animation: none !important; }
-}
-html[data-theme="light"] .gn-onb-overlay { background: rgba(240, 236, 226, .74); }
-html[data-theme="light"] .gn-onb-card { background: var(--surface, #f4f1e9); color: var(--text-primary, #1c2b31); border-color: rgba(0, 111, 130, .4); }
-html[data-theme="light"] .gn-onb-title { color: var(--text-primary, #1c2b31); }
-html[data-theme="light"] .gn-onb-body { color: #2e424b; }
-html[data-theme="light"] .gn-onb-skip { color: #4d6b75; border-color: rgba(20, 60, 70, .3); }
-html[data-theme="light"] .gn-onb-back { color: #2e424b; border-color: rgba(20, 60, 70, .3); }
-/* Profile replay row. */
-.gn-onb-replay { width: 100%; text-align: left; }
-
 /* ═══ P2: hologram progressive enhancement (CSS-only, safe) ═══ */
 /* Framing + depth: instrument bezel around the scan stage. */
 .site-scanner {
@@ -918,19 +817,15 @@ html[data-theme="light"] .gn-onb-back { color: #2e424b; border-color: rgba(20, 6
   pointer-events: none;
   z-index: 2;
   animation: gnScanSweep 5.2s linear infinite;
-}
-@keyframes gnScanSweep {
+}@keyframes gnScanSweep{
   0% { transform: translateY(-100%); }
-  100% { transform: translateY(100%); }
-}
+  100% { transform: translateY(100%); }}
 /* Selected-zone energy pulse (contained, no layout impact). */
 .zone-overlay[data-selected="true"], .zone-overlay.selected {
   animation: gnZonePulse 2.4s ease-in-out infinite;
-}
-@keyframes gnZonePulse {
+}@keyframes gnZonePulse{
   0%, 100% { filter: drop-shadow(0 0 2px rgba(0, 212, 255, .5)); }
-  50% { filter: drop-shadow(0 0 10px rgba(0, 212, 255, .85)); }
-}
+  50% { filter: drop-shadow(0 0 10px rgba(0, 212, 255, .85)); }}
 /* Zone hotspot hit areas + visible focus. */
 .gn-stable-zone-btn {
   min-height: 44px !important;
@@ -955,16 +850,12 @@ html[data-theme="light"] .asset-scan-stage::after {
 }
 html[data-theme="light"] .zone-overlay[data-selected="true"], html[data-theme="light"] .zone-overlay.selected {
   animation: gnZonePulseLight 2.4s ease-in-out infinite;
-}
-@keyframes gnZonePulseLight {
+}@keyframes gnZonePulseLight{
   0%, 100% { filter: drop-shadow(0 0 2px rgba(0, 111, 130, .4)); }
-  50% { filter: drop-shadow(0 0 8px rgba(0, 111, 130, .7)); }
-}
-/* Reduced motion: static hologram, instant states. */
-@media (prefers-reduced-motion: reduce) {
+  50% { filter: drop-shadow(0 0 8px rgba(0, 111, 130, .7)); }}/* Reduced motion: static hologram, instant states. */
+@media (prefers-reduced-motion: reduce){
   .asset-scan-stage::after { animation: none !important; opacity: .35 !important; }
-  .zone-overlay[data-selected="true"], .zone-overlay.selected { animation: none !important; }
-}
+  .zone-overlay[data-selected="true"], .zone-overlay.selected { animation: none !important; }}
 
 /* ═══ P3: shared state components (empty / loading / error / offline) ═══ */
 .gn-empty-state, .gn-loading-state, .gn-error-state {
@@ -985,8 +876,7 @@ html[data-theme="light"] .zone-overlay[data-selected="true"], html[data-theme="l
   border-radius: var(--radius-card, 12px);
 }
 .gn-error-state b { color: #FF5B5B !important; }
-.gn-loading-state .gn-state-ico { animation: gnLoadSpin 1.1s linear infinite; }
-@keyframes gnLoadSpin { to { transform: rotate(360deg); } }
+.gn-loading-state .gn-state-ico { animation: gnLoadSpin 1.1s linear infinite; }@keyframes gnLoadSpin{ to { transform: rotate(360deg); }}
 html[data-theme="light"] .gn-empty-state b,
 html[data-theme="light"] .gn-loading-state b { color: var(--text-primary, #1c2b31) !important; }
 html[data-theme="light"] .gn-empty-state, html[data-theme="light"] .gn-loading-state { color: #3c5660 !important; }
@@ -999,8 +889,7 @@ html[data-theme="light"] .gn-empty-state, html[data-theme="light"] .gn-loading-s
   border-bottom: 1px solid rgba(255, 209, 102, .4);
 }
 html.gn-offline .gn-offline-banner { display: flex; }
-html[data-theme="light"] .gn-offline-banner { background: #f6e9c8; color: #6b5210; }
-@media (prefers-reduced-motion: reduce) { .gn-loading-state .gn-state-ico { animation: none !important; } }
+html[data-theme="light"] .gn-offline-banner { background: #f6e9c8; color: #6b5210; }@media (prefers-reduced-motion: reduce){ .gn-loading-state .gn-state-ico { animation: none !important; }}
 
 /* ═══ Design-lens fix batch ═══ */
 /* F8: 44px touch targets on controls (all widths). */
@@ -1008,19 +897,13 @@ html[data-theme="light"] .gn-offline-banner { background: #f6e9c8; color: #6b521
 /* F9: lava button label contrast: deeper mid stop + stronger shadow. */
 .btn-primary, .gn-auth-primary, .future-confirm-save, .gn-whatsnew-close {
   text-shadow: 0 1px 3px rgba(60, 0, 12, .65) !important;
-}
-/* F12: press feedback extended to controls. */
-.topbar-btn:active, .modal-btn:active, .btn-primary:active, .btn-full:active,
-.dose-pill:active, .time-tab:active, .gn-stable-zone-btn:active, .cp-option:active,
-.gn-theme-opt:active, .gn-onb-next:active {
+}.topbar-btn:active, .modal-btn:active, .btn-primary:active, .btn-full:active, .dose-pill:active, .time-tab:active, .gn-stable-zone-btn:active, .cp-option:active, .gn-theme-opt:active{
   transform: scale(.96);
   transition: transform .1s ease;
-}
-/* F14: global reduced-motion for legacy motion sources. */
-@media (prefers-reduced-motion: reduce) {
+}/* F14: global reduced-motion for legacy motion sources. */
+@media (prefers-reduced-motion: reduce){
   .scan-sweep, .screen.active, .ticker, .glitch, .neon-flicker,
-  .boot-ring, [class*="boot-"] { animation: none !important; }
-}
+  .boot-ring, [class*="boot-"] { animation: none !important; }}
 /* Art direction: instrument-well depth on data cards. */
 .stat-card, .s6-card, .gn-wanda-card, .card {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .045), inset 0 0 0 1px rgba(0, 212, 255, .035) !important;
@@ -1041,8 +924,7 @@ html[data-theme="light"] .card-title::before, html[data-theme="light"] .card-tit
   border-color: rgba(0, 111, 130, .5);
 }
 /* Whatsnew: single close spec + focus ring. */
-.gn-whatsnew-close { min-height: 46px !important; }
-.gn-whatsnew-close:focus-visible, .gn-onb-next:focus-visible, .gn-onb-skip:focus-visible {
+.gn-whatsnew-close { min-height: 46px !important; }.gn-whatsnew-close:focus-visible{
   outline: 2px solid rgba(0, 212, 255, .9) !important; outline-offset: 2px !important;
 }
 
@@ -1062,8 +944,7 @@ html[data-theme="light"] .card-title::before, html[data-theme="light"] .card-tit
   top: max(10px, env(safe-area-inset-top, 0px));
   right: 0;
   z-index: 6;
-}
-@media (max-width: 480px) {
+}@media (max-width: 480px){
   #landing .landing-hero {
     padding-top: calc(env(safe-area-inset-top, 0px) + 58px) !important;
   }
@@ -1073,8 +954,7 @@ html[data-theme="light"] .card-title::before, html[data-theme="light"] .card-tit
   }
   .landing-language-control button {
     min-height: 38px !important;
-  }
-}
+  }}
 
 /* ═══ Shared destructive/critical action — red-lava (no flat raspberry) ═══ */
 .gn-confirm-danger,
@@ -1121,10 +1001,8 @@ html[data-theme="light"] .future-confirm-save {
   color: var(--text-mid, #b7c7d3) !important;
   box-shadow: none !important;
   text-shadow: none !important;
-}
-@media (prefers-reduced-motion: reduce) {
-  .gn-confirm-danger:active, .archive-confirm-panel.danger .btn-primary:active { transform: none !important; }
-}
+}@media (prefers-reduced-motion: reduce){
+  .gn-confirm-danger:active, .archive-confirm-panel.danger .btn-primary:active { transform: none !important; }}
 
 /* iOS/Android install hint: secondary "later" stays neutral. */
 .gn-pwa-ios-later {
@@ -1247,20 +1125,15 @@ html[data-theme="light"] .gn-pwa-ios-later {
 
 .gn-lab-tool-head { padding: 14px 16px !important; }
 #gnLabToolHost .gn-foundation-panel { margin: 0; }
-#gnLabToolHost .gn-foundation-grid { gap: 10px; margin-bottom: 16px; }
-
-/* Small screens: one column, stacked controls. */
-@media (max-width: 480px) {
+#gnLabToolHost .gn-foundation-grid { gap: 10px; margin-bottom: 16px; }/* Small screens: one column, stacked controls. */
+@media (max-width: 480px){
   #gnResearchForm .gn-form-grid { grid-template-columns: 1fr; }
   .gn-research-group > div button { flex: 1 1 calc(50% - 4px); }
   .gn-record-row { grid-template-columns: 1fr; }
-  .gn-record-row > div:last-child { justify-content: flex-end; display: flex; }
-}
-/* Desktop/tablet: spacious modal + two-column library. */
-@media (min-width: 768px) {
+  .gn-record-row > div:last-child { justify-content: flex-end; display: flex; }}/* Desktop/tablet: spacious modal + two-column library. */
+@media (min-width: 768px){
   .gn-research-library { grid-template-columns: 1fr 1fr; }
-  #gnResearchForm .gn-form-grid { grid-template-columns: 1fr 1fr 1fr; }
-}
+  #gnResearchForm .gn-form-grid { grid-template-columns: 1fr 1fr 1fr; }}
 
 /* ── DAY OPS research overrides ── */
 html[data-theme="light"] .gn-research-group { background: var(--surface, #f4f1e9) !important; border-color: rgba(20,60,70,.22) !important; }
@@ -1388,13 +1261,11 @@ html[data-theme="light"] #boot { background: #0b0f16 !important; }
 #boot .gn-b2b-wordmark tspan { fill: #00e6f0 !important; }
 #boot .gn-b2b-wordmark tspan:nth-child(2) { fill: #FF3B3B !important; }
 #boot .gn-b2b-symbol circle { fill: #FF3B3B !important; }
-#boot .gn-b2b-symbol path { fill: #00e6f0 !important; }
-
-/* ============================================================
+#boot .gn-b2b-symbol path { fill: #00e6f0 !important; }/* ============================================================
    MOBILE LAYOUT FIXES — corrective pass 2026-08-03
    History-card actions: no overlap, ≥44px targets, room to breathe.
    ============================================================ */
-@media (max-width: 430px) {
+@media (max-width: 430px){
   .gn-record-row, .gn-ledger-row, .gn-shot-card, .gn-history-card {
     gap: 8px !important;
     padding: 12px 10px !important;
@@ -1417,8 +1288,7 @@ html[data-theme="light"] #boot { background: #0b0f16 !important; }
     font-size: 16px !important;   /* iOS zoom prevention */
     min-height: 46px !important;
   }
-  .gn-tab, .scanner-mode-btn { min-height: 44px !important; font-size: .76rem !important; }
-}
+  .gn-tab, .scanner-mode-btn { min-height: 44px !important; font-size: .76rem !important; }}
 
 /* Served readability inventory closure. These are the remaining functional
    roles found by the rendered DAY OPS audit; all inherit the semantic colors
@@ -1464,109 +1334,12 @@ html[data-theme="light"] #pageDash[data-activation="pending"] > :not(.page-hdr):
 html[data-theme="light"] #pageDash[data-activation="pending"] #gnWandaDashboard > :not(#gnFirstShotMission) {
   opacity: .76 !important;
   filter: saturate(.35) contrast(.96) !important;
-}
-
-@media (max-width: 430px) {
-  html[data-theme="light"] :is(.gn-topbar-language-control button,.landing-language-control button) { min-width: 42px !important; }
-}
-
-/* ============================================================
-   INTERACTIVE ONBOARDING — v0.15.3 redesign
-   Coach-mark tour: spotlight hole + cyan ring + anchored card
-   with a pointer arrow aimed at the highlighted control.
-   ============================================================ */
-.gn-onb-overlay {
-  position: fixed; inset: 0; z-index: 9000;
-  pointer-events: none;
-}
-.gn-onb-dim {
-  position: fixed; z-index: 9000;
-  background: rgba(2, 5, 9, .82);
-  pointer-events: auto;
-  transition: top .18s ease, left .18s ease, width .18s ease, height .18s ease;
-}
-.gn-onb-arrow {
-  position: fixed; z-index: 9002;
-  width: 20px; height: 20px;
-  transform: rotate(45deg);
-  background: #ffd166;
-  border-left: 2px solid #fff;
-  border-bottom: 2px solid #fff;
-  box-shadow: 0 0 18px rgba(255, 209, 102, .95);
-  pointer-events: none;
-  transition: top .18s ease, left .18s ease;
-  animation: gnOnbArrowGlow .8s ease-in-out infinite;
-}
-@keyframes gnOnbArrowGlow {
+}@media (max-width: 430px){
+  html[data-theme="light"] :is(.gn-topbar-language-control button,.landing-language-control button) { min-width: 42px !important; }}@keyframes gnOnbArrowGlow{
   0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.45); }
-}
-.gn-onb-card {
-  position: fixed; z-index: 9001;
-  left: 50%; transform: translateX(-50%);
-  width: min(92vw, 380px);
-  background: #0b1018 !important;
-  border: 1px solid rgba(0, 212, 255, .5);
-  border-top: 2px solid #00d4ff;
-  border-radius: 14px;
-  padding: 18px 18px 16px;
-  color: #eef6f8;
-  box-shadow: 0 26px 70px rgba(0, 0, 0, .68), 0 0 24px rgba(0, 212, 255, .08);
-  pointer-events: auto;
-  animation: gnOnbCardIn .28s cubic-bezier(.16, 1, .3, 1);
-}
-@keyframes gnOnbCardIn { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
-.gn-onb-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
-.gn-onb-kicker { font: 800 .6rem var(--font-d, monospace); letter-spacing: 2.4px; color: #00d4ff !important; text-transform: uppercase; }
-.gn-onb-step { font: 700 .6rem var(--font-d, monospace); letter-spacing: 1.6px; color: #5d7a86 !important; white-space: nowrap; }
-.gn-onb-title { font: 800 1.02rem var(--font-d, monospace); letter-spacing: .02em; color: #eef6f8 !important; margin: 0 0 8px; }
-.gn-onb-body { font: 500 .82rem/1.55 var(--font-b, system-ui); color: #c9d8dd !important; margin: 0 0 10px; }
-.gn-onb-hint { font: 700 .72rem var(--font-m, monospace); letter-spacing: .06em; color: #ffd9a0 !important; margin: 0 0 12px; }
-.gn-onb-progress { height: 3px; border-radius: 2px; background: rgba(255, 255, 255, .12); overflow: hidden; margin: 0 0 14px; }
-.gn-onb-progress span { display: block; height: 100%; background: linear-gradient(90deg, #00d4ff, #FF3B3B); transition: width .3s ease; }
-.gn-onb-actions { display: flex; gap: 8px; }
-.gn-onb-actions button {
-  flex: 1; min-height: 46px; border-radius: 8px; font-size: .74rem !important;
-  font-weight: 800 !important; letter-spacing: .1em;
-  border: 1px solid rgba(0, 212, 255, .35); background: rgba(0, 212, 255, .08);
-  color: #9fe8f2 !important; cursor: pointer;
-}
-.gn-onb-actions .gn-onb-next {
-  background: linear-gradient(135deg, #FF3B3B, #D12424) !important;
-  border-color: rgba(255, 59, 59, .5) !important; color: #fff !important;
-}
-.gn-onb-actions button:disabled { opacity: .35; }
-#app .gn-onb-target, .gn-onb-overlay .gn-onb-target {
-  /* Unmissable spotlight: white keyline + gold ring + big pulsing glow.
-     Gold was chosen over cyan so the target screams against the dark UI. */
-  box-shadow: 0 0 0 2px #fff, 0 0 0 6px #ffd166, 0 0 24px 6px rgba(255, 209, 102, .85), 0 0 70px 16px rgba(255, 209, 102, .35) !important;
-  border-radius: 12px;
-  animation: gnOnbPulse 1.1s ease-in-out infinite;
-  transition: box-shadow .18s ease;
-  filter: none;
-}
-#app .gn-onb-target:not(.fab), .gn-onb-overlay .gn-onb-target:not(.fab) {
-  /* Lift the target (and its glow) above the dim panels (z 9000) so the
-     glow is not clipped by them. Static targets only: fixed controls like
-     .fab must keep their own positioning or the click-through hole breaks. */
-  position: relative;
-  z-index: 9001;
-}
-@keyframes gnOnbPulse {
+  50% { filter: brightness(1.45); }}@keyframes gnOnbCardIn{ from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); }}@keyframes gnOnbPulse{
   0%, 100% { box-shadow: 0 0 0 2px #fff, 0 0 0 6px #ffd166, 0 0 24px 6px rgba(255, 209, 102, .85), 0 0 70px 16px rgba(255, 209, 102, .35); }
-  50% { box-shadow: 0 0 0 3px #fff, 0 0 0 9px #ffd166, 0 0 40px 12px rgba(255, 209, 102, 1), 0 0 110px 26px rgba(255, 209, 102, .5); }
-}
-html[data-theme="light"] .gn-onb-dim { background: rgba(22, 28, 32, .78) !important; }
-html[data-theme="light"] .gn-onb-card { background: #f8f5ed !important; color: #1a2328 !important; border-color: rgba(0, 111, 130, .55); border-top-color: #00718a; }
-html[data-theme="light"] .gn-onb-arrow { background: #ffd166; border-color: #fff; }
-html[data-theme="light"] .gn-onb-title { color: #1a2328 !important; }
-html[data-theme="light"] .gn-onb-body { color: #2c3f47 !important; }
-html[data-theme="light"] .gn-onb-hint { color: #8b5b08 !important; }
-html[data-theme="light"] .gn-onb-step { color: #5d7a86 !important; }
-html[data-theme="light"] .gn-onb-progress { background: rgba(26, 35, 40, .15); }
-@media (prefers-reduced-motion: reduce) {
-  .gn-onb-overlay, .gn-onb-card, .gn-onb-target { transition: none !important; }
-}
+  50% { box-shadow: 0 0 0 3px #fff, 0 0 0 9px #ffd166, 0 0 40px 12px rgba(255, 209, 102, 1), 0 0 110px 26px rgba(255, 209, 102, .5); }}
 
 /* ============================================================
    FIRST-FIVE-MINUTES PASS — 2026-08-03
@@ -1687,24 +1460,6 @@ html[data-theme="light"] .gn-lab-tool-head { background: var(--surface-elevated,
   --gn-motion-fast: 140ms;
   --gn-motion-base: 220ms;
 }
-
-/* Four-stage coach marks: preserve context while keeping the target obvious. */
-.gn-onb-dim { background: rgba(3, 6, 10, .42) !important; }
-html[data-theme="light"] .gn-onb-dim { background: rgba(24, 31, 35, .36) !important; }
-.gn-onb-target {
-  /* Box-shadow rings are owned by the #app .gn-onb-target rule above;
-     this keeps only the brightness lift so the target pops from the dim. */
-  filter: brightness(1.16) saturate(1.08);
-}
-#app .bottom-nav .nav-item.gn-onb-target {
-  outline: 2px solid #00e6f0 !important;
-  outline-offset: -2px !important;
-  box-shadow: 0 0 0 3px rgba(0, 230, 240, .3), 0 0 30px rgba(0, 230, 240, .9) !important;
-  background: rgba(0, 230, 240, .16) !important;
-  filter: brightness(1.24) saturate(1.12) drop-shadow(0 0 12px rgba(0, 230, 240, .92)) !important;
-}
-.gn-onb-actions .gn-onb-skip { flex: 0 0 auto; opacity: .78; }
-.gn-onb-actions .gn-onb-back { flex: 0 0 auto; }
 
 /* First-run dashboard: one mission dominates until the first valid SHOT. */
 .gn-dashboard-mission[hidden] { display: none !important; }
@@ -1878,8 +1633,7 @@ body.gn-lab-tool-open .fab,
 body.gn-fab-hidden-context .fab { visibility: hidden !important; pointer-events: none !important; }
 html[data-theme="light"] #gnLabToolHost :is(h2, h3, b, label, summary span, .gn-record-state) { color: #1b2a30 !important; }
 html[data-theme="light"] #gnLabToolHost :is(p, small, em, .gn-ledger-copy, .gn-research-context, .gn-research-disclaimer) { color: #344a52 !important; }
-.gn-lab-tool-overlay.active .gn-lab-tool-shell { animation: gn-tool-arrive var(--gn-motion-base) cubic-bezier(.2,.75,.25,1) both; }
-@keyframes gn-tool-arrive { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.gn-lab-tool-overlay.active .gn-lab-tool-shell { animation: gn-tool-arrive var(--gn-motion-base) cubic-bezier(.2,.75,.25,1) both; }@keyframes gn-tool-arrive{ from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; }}
 
 /* The SHOT picker has a high-specificity HUD layout in the shell. DAY OPS
    keeps that placement but supplies a complete light modal/menu treatment. */
@@ -2128,17 +1882,10 @@ html[data-theme="light"] #landing .landing-preview-caption { color: #49616a; }
   border-color: rgba(0, 212, 255, .72);
   background: rgba(0, 212, 255, .11);
   box-shadow: inset 0 0 24px rgba(0, 212, 255, .055), 0 0 18px rgba(0, 212, 255, .08);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  #landing .landing-preview-dot:first-child { animation: gnLandingLive 2.8s ease-in-out infinite; }
-}
-@keyframes gnLandingLive {
+}@media (prefers-reduced-motion: no-preference){
+  #landing .landing-preview-dot:first-child { animation: gnLandingLive 2.8s ease-in-out infinite; }}@keyframes gnLandingLive{
   0%, 100% { opacity: .72; box-shadow: 0 0 6px rgba(0, 212, 255, .52); }
-  50% { opacity: 1; box-shadow: 0 0 14px rgba(0, 212, 255, .9); }
-}
-
-@media (max-width: 960px) {
+  50% { opacity: 1; box-shadow: 0 0 14px rgba(0, 212, 255, .9); }}@media (max-width: 960px){
   #landing .landing-hero {
     grid-template-columns: 1fr !important;
     grid-template-rows: repeat(7, auto) !important;
@@ -2154,10 +1901,7 @@ html[data-theme="light"] #landing .landing-preview-caption { color: #49616a; }
   #landing .landing-trust,
   #landing .landing-product-preview { grid-column: 1 !important; }
   #landing .landing-product-preview { grid-row: 7 !important; margin-top: 18px; }
-  #landing .landing-product-preview::before { inset: -14px 0 24px; }
-}
-
-@media (max-width: 480px) {
+  #landing .landing-product-preview::before { inset: -14px 0 24px; }}@media (max-width: 480px){
   #landing .landing-hero {
     padding-top: calc(env(safe-area-inset-top, 0px) + 58px) !important;
     padding-bottom: 38px !important;
@@ -2208,8 +1952,7 @@ html[data-theme="light"] #landing .landing-preview-caption { color: #49616a; }
     align-items: center;
     min-height: 44px;
     padding: 5px 0;
-  }
-}
+  }}
 
 /* Compact header controls retain compact graphics inside full-size targets. */
 #app .app-wordmark-b2b {
@@ -2250,35 +1993,26 @@ html:not([data-theme="light"]) .gn-wanda-actions > button:last-child {
   -webkit-text-fill-color: #00d4ff !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04) !important;
 }
-.gn-wanda-actions button:active { transform: scale(.97); }
-
-/* At the two narrowest phone widths, keep all four segmented choices and the
+.gn-wanda-actions button:active { transform: scale(.97); }/* At the two narrowest phone widths, keep all four segmented choices and the
    profile target at a true 44px hit area. The live NODE rail directly below
    retains product identity while the full wordmark yields the scarce row. */
-@media (max-width: 360px) {
+@media (max-width: 360px){
   #app .app-wordmark-b2b { display: none !important; }
-  #app .topbar-actions { width: 100%; justify-content: flex-end; }
-}
+  #app .topbar-actions { width: 100%; justify-content: flex-end; }}
 
 /* One focus treatment across navigation, forms, menu options and utilities. */
 :is(button, [role="button"], input, select, textarea, summary):focus-visible {
   outline: 2px solid var(--focus-ring, #00d4ff) !important;
   outline-offset: 2px !important;
-}
-
-@media (max-width: 430px) {
+}@media (max-width: 430px){
   .gn-dashboard-mission { padding: 18px 16px; }
   .gn-dashboard-mission button { min-height: 52px; }
   .gn-lab-tool-head { align-items: center !important; }
   .gn-lab-tool-head .gn-foundation-signal { display: none; }
-  .gn-lab-back { flex: 0 0 auto; }
-}
-
-@media (prefers-reduced-motion: reduce) {
+  .gn-lab-back { flex: 0 0 auto; }}@media (prefers-reduced-motion: reduce){
   .gn-lab-tool-overlay.active .gn-lab-tool-shell,
   #pageDash[data-activation] > *,
-  #pageDash[data-activation] #gnWandaDashboard > * { animation: none !important; transition: none !important; }
-}
+  #pageDash[data-activation] #gnWandaDashboard > * { animation: none !important; transition: none !important; }}
 
 /* FINAL DAY OPS BINDING — intentionally last. The legacy stylesheet is long
    and contains later component literals, so every functional role terminates
@@ -2304,11 +2038,9 @@ html[data-theme="light"] {
   --green: var(--text-success);
   --yellow: var(--text-warning);
   --red: var(--text-error);
-}
-html[data-theme="light"] :is(.page-title,.card-title,.modal-title,.gn-auth-title,.gn-foundation-head h2,.gn-lab-tool-head h2,.gn-profile-row b,.gn-whatsnew-title,.gn-whatsnew-version,.gn-onb-title,.gn-empty-state b,.results-title,.phase-name,.gn-record-row b) {
+}html[data-theme="light"] :is(.page-title, .card-title, .modal-title, .gn-auth-title, .gn-foundation-head h2, .gn-lab-tool-head h2, .gn-profile-row b, .gn-whatsnew-title, .gn-whatsnew-version, .gn-empty-state b, .results-title, .phase-name, .gn-record-row b){
   color: var(--text-primary) !important; opacity: 1 !important;
-}
-html[data-theme="light"] :is(.card p,.card-copy,.gn-auth-copy,.gn-ledger-copy,.gn-profile-row small,.gn-empty-state span,.gn-onb-copy,.gn-whatsnew-body,.gn-whatsnew-body li,.mixing-text,.phase-transparency-block p,.phase-transparency-block li,.log-notes,.pib-text,.results-direction,.syr-math-helper,.gn-syr-formula,.gn-syr-helper p,.gn-syr-caution,.gn-record-row small) {
+}html[data-theme="light"] :is(.card p, .card-copy, .gn-auth-copy, .gn-ledger-copy, .gn-profile-row small, .gn-empty-state span, .gn-whatsnew-body, .gn-whatsnew-body li, .mixing-text, .phase-transparency-block p, .phase-transparency-block li, .log-notes, .pib-text, .results-direction, .syr-math-helper, .gn-syr-formula, .gn-syr-helper p, .gn-syr-caution, .gn-record-row small){
   color: var(--text-secondary) !important; opacity: 1 !important; font-weight: 500 !important;
 }
 html[data-theme="light"] :is(.page-sub,.form-helper,.gn-shot-date-helper,.gn-auth-note,.gn-research-context,.gn-cloud-status,.gn-date-dow,.gn-calendar-detail,.gn-wanda-copy,.gn-dashboard-support,.phase-sphere-status,.gn-syr-meta,.syr-result-sub,.syr-scale-lbl,.gn-syr-forensic) {
@@ -2332,8 +2064,7 @@ html[data-theme="light"] :is(.nav-item:not(.active) .nav-lbl,.nav-item:not(.acti
 html[data-theme="light"] :is(.nav-item.active .nav-lbl,.nav-item.active .nav-ico,.page-title .a,.sec-title .a,.gn-profile-chevron,.gn-utility-chevron,.gn-lab-back,.gn-record-state) { color: var(--text-accent) !important; opacity: 1 !important; }
 html[data-theme="light"] :is(.mixing-warn,.warning,.warn,.gn-syr-safety,.syr-safety-boundary) { color: var(--text-warning) !important; opacity: 1 !important; }
 html[data-theme="light"] :is(.error,.err,.vault-date-error,.gn-delete-note,.gn-profile-danger-row b) { color: var(--text-error) !important; opacity: 1 !important; }
-html[data-theme="light"] :is(.success,.ok) { color: var(--text-success) !important; opacity: 1 !important; }
-html[data-theme="light"] :is(.page-sub,.form-label,.form-helper,.gn-shot-date-helper,.gn-auth-copy,.gn-auth-message,.gn-auth-note,.gn-auth-privacy,.nav-lbl,.cp-group-label,.cp-option,.gn-select-option,.gn-profile-row small,.gn-profile-section-label,.gn-ledger-copy,.gn-empty-state,.gn-onb-copy,.gn-onb-instruction,.gn-whatsnew-body,.gn-whatsnew-date,.gn-wanda-copy,.mixing-text,.mixing-warn,.phase-transparency-block p,.phase-transparency-block li,.syr-math-helper,.gn-syr-helper p,.gn-syr-formula,.gn-syr-caution,.gn-syr-safety) {
+html[data-theme="light"] :is(.success,.ok) { color: var(--text-success) !important; opacity: 1 !important; }html[data-theme="light"] :is(.page-sub, .form-label, .form-helper, .gn-shot-date-helper, .gn-auth-copy, .gn-auth-message, .gn-auth-note, .gn-auth-privacy, .nav-lbl, .cp-group-label, .cp-option, .gn-select-option, .gn-profile-row small, .gn-profile-section-label, .gn-ledger-copy, .gn-empty-state, .gn-whatsnew-body, .gn-whatsnew-date, .gn-wanda-copy, .mixing-text, .mixing-warn, .phase-transparency-block p, .phase-transparency-block li, .syr-math-helper, .gn-syr-helper p, .gn-syr-formula, .gn-syr-caution, .gn-syr-safety){
   font-size: max(12px,.75rem) !important; line-height: 1.5 !important; letter-spacing: min(.06em,1px) !important;
 }
 
@@ -2367,9 +2098,7 @@ html[data-theme="light"] :is(.page-sub,.form-label,.form-helper,.gn-shot-date-he
 .gn-runtime-banner[data-kind="offline"] { border-color: rgba(255,209,102,.56); }
 .gn-runtime-banner[data-kind="offline"] .gn-runtime-dot { color: #ffd166; background: #ffd166; }
 .gn-runtime-banner[data-kind="reminder"] { border-color: rgba(255,209,102,.66); }
-.gn-runtime-banner[data-kind="reminder"] .gn-runtime-dot { color: #ffd166; background: #ffd166; animation: gn-runtime-pulse 1.6s ease-in-out infinite; }
-@keyframes gn-runtime-pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
-@media (prefers-reduced-motion: reduce) { .gn-runtime-banner[data-kind="reminder"] .gn-runtime-dot { animation: none; } }
+.gn-runtime-banner[data-kind="reminder"] .gn-runtime-dot { color: #ffd166; background: #ffd166; animation: gn-runtime-pulse 1.6s ease-in-out infinite; }@keyframes gn-runtime-pulse{ 0%,100% { opacity: 1; } 50% { opacity: .35; }}@media (prefers-reduced-motion: reduce){ .gn-runtime-banner[data-kind="reminder"] .gn-runtime-dot { animation: none; }}
 .gn-runtime-banner[data-kind="synced"] .gn-runtime-dot { color: #00ff88; background: #00ff88; }
 .gn-runtime-banner[data-kind="update"] { border-color: rgba(0,212,255,.62); }
 html[data-theme="light"] .gn-runtime-banner { background: #fffdf8; color: var(--text-primary); border-color: rgba(0,95,115,.45); box-shadow: 0 12px 34px rgba(43,58,62,.18); }
@@ -2391,16 +2120,10 @@ html[data-theme="light"] .gn-whatsnew-card > h2 { color: var(--text-primary) !im
 html[data-theme="light"] .gn-wn-release { border-color: rgba(32,61,71,.18); }
 html[data-theme="light"] .gn-wn-release.current { border-color: rgba(0,95,115,.3); background: rgba(0,95,115,.045); }
 html[data-theme="light"] .gn-whatsnew-actions { background: linear-gradient(transparent,#f4f1e9 30%); }
-html[data-theme="light"] .gn-whatsnew-history { color: var(--text-accent); border-color: rgba(0,95,115,.42); }
-
-@media (max-width: 430px) {
+html[data-theme="light"] .gn-whatsnew-history { color: var(--text-accent); border-color: rgba(0,95,115,.42); }@media (max-width: 430px){
   .gn-whatsnew-overlay { place-items: end center; padding: env(safe-area-inset-top, 0px) 0 0; }
   .gn-whatsnew-card { width: 100%; max-height: 80vh; border-radius: 16px 16px 0 0; padding: 18px 16px calc(16px + env(safe-area-inset-bottom, 0px)); }
-  .gn-whatsnew-actions { bottom: calc(-16px - env(safe-area-inset-bottom, 0px)); padding-bottom: calc(2px + env(safe-area-inset-bottom, 0px)); }
-}
-
-/* Final served-audit type floor. */
-html[data-theme="light"] :is(#app,.overlay,.gn-delete-overlay,.gn-lab-tool-overlay,.gn-whatsnew-overlay,.gn-onb-overlay) {
+  .gn-whatsnew-actions { bottom: calc(-16px - env(safe-area-inset-bottom, 0px)); padding-bottom: calc(2px + env(safe-area-inset-bottom, 0px)); }}html[data-theme="light"] :is(#app, .overlay, .gn-delete-overlay, .gn-lab-tool-overlay, .gn-whatsnew-overlay) {
   --bg: #e8e4da;
   --bg2: #eeeae1;
   --panel: #f8f5ed;
@@ -2544,11 +2267,9 @@ html[data-theme="light"] :is(
   -webkit-text-fill-color: var(--text-label-light) !important;
   opacity: 1 !important;
   font-weight: 700 !important;
-}
-
-/* The browser screenshots are the acceptance floor: real instructions and
+}/* The browser screenshots are the acceptance floor: real instructions and
    values use mobile app sizing, not decorative terminal microtype. */
-@media (max-width: 600px) {
+@media (max-width: 600px){
   html[data-theme="light"] :is(
     #app,.overlay,.gn-lab-tool-overlay,.gn-delete-overlay,.gn-whatsnew-overlay
   ) :is(input,textarea,select,.form-input,.form-textarea,.cp-select-trigger,
@@ -2603,8 +2324,7 @@ html[data-theme="light"] :is(
   ) {
     font-size: 15px !important;
     line-height: 1.4 !important;
-  }
-}
+  }}
 
 /* Native-feeling select family. The runtime bundle injects NIGHT GRID rules
    later, so these theme-scoped declarations intentionally carry !important. */
@@ -2651,8 +2371,7 @@ html[data-theme="light"] .gn-custom-picker-option:disabled {
   color: var(--text-disabled-light) !important;
   -webkit-text-fill-color: var(--text-disabled-light) !important;
   text-decoration: line-through;
-}
-@media (max-width: 600px) {
+}@media (max-width: 600px){
   html[data-theme="light"] .gn-custom-picker-menu,
   html[data-theme="light"] .gn-custom-date-popover {
     position: fixed !important;
@@ -2670,8 +2389,7 @@ html[data-theme="light"] .gn-custom-picker-option:disabled {
   }
   html[data-theme="light"] .gn-custom-date-day,
   html[data-theme="light"] .gn-custom-date-head button,
-  html[data-theme="light"] .gn-custom-date-foot button { min-height: 44px !important; }
-}
+  html[data-theme="light"] .gn-custom-date-foot button { min-height: 44px !important; }}
 
 /* Active, inactive and disabled must be distinguishable without color guessing. */
 html[data-theme="light"] :is(.gn-ampm-btn,.time-tab,.scanner-mode-btn,.shot-history-toggle,.results-weight-unit):not(.active):not(:disabled) {
@@ -2769,9 +2487,7 @@ html:not([data-theme="light"]) .gn-custom-picker-option:is(:hover,:focus-visible
   color: #7ff5ff !important;
   -webkit-text-fill-color: #7ff5ff !important;
   box-shadow: inset 3px 0 #00d4ff !important;
-}
-
-@media (max-width: 600px) {
+}@media (max-width: 600px){
   html:not([data-theme="light"]) .gn-custom-picker-menu,
   html:not([data-theme="light"]) .gn-custom-date-popover {
     position: fixed !important;
@@ -2810,39 +2526,15 @@ html:not([data-theme="light"]) .gn-custom-picker-option:is(:hover,:focus-visible
     line-height: 1.35 !important;
     letter-spacing: .035em !important;
     opacity: 1 !important;
-  }
-}
-
-/* FUNCTIONAL TYPOGRAPHY ACCEPTANCE GATE
-   GRID//NODE may use terminal microtype for decoration. Required meaning,
-   instructions and controls never inherit that decorative scale. This block
-   is intentionally last because the runtime enhancement sheet is injected
-   after the legacy bundle styles. */
-:is(#landing,#login,#app,.overlay,.gn-lab-tool-overlay,.gn-whatsnew-overlay,.gn-onb-overlay) :is(
-  .landing-copy span,.landing-note>span,
-  .gn-auth-subtitle,.gn-auth-copy,.gn-auth-privacy span,.gn-auth-message,.gn-auth-note,
-  .gn-dashboard-mission p,.gn-wanda-note,.asset-helper,.scanner-status-helper,
-  .shots-safety-note,.gn-shot-date-helper,.gn-shot-time-helper,
-  .results-signal-note span,#resultRange,#gnWeeklyCopy,.gn-weekly-report p,
-  .gn-reference-pending span,.gn-foundation-tile small,.gn-research-notice span,
-  .gn-research-context,.gn-research-disclaimer,.gn-dose-disclaimer,
-  .gn-measurements-copy,.gn-preferences-grid label:has(input[type="checkbox"]),
-  .gn-profile-signout small,.gn-ledger-copy,.gn-whatsnew-body li
-) {
+  }}:is(#landing, #login, #app, .overlay, .gn-lab-tool-overlay, .gn-whatsnew-overlay, .landing-note>span, .gn-auth-subtitle, .gn-auth-copy, .gn-auth-privacy span, .gn-auth-message, .gn-auth-note, .gn-dashboard-mission p, .gn-wanda-note, .asset-helper, .scanner-status-helper, .shots-safety-note, .gn-shot-date-helper, .gn-shot-time-helper, .results-signal-note span, #resultRange, #gnWeeklyCopy, .gn-weekly-report p, .gn-reference-pending span, .gn-foundation-tile small, .gn-research-notice span, .gn-research-context, .gn-research-disclaimer, .gn-dose-disclaimer, .gn-measurements-copy, .gn-preferences-grid label:has(input[type="checkbox"]), .gn-profile-signout small, .gn-ledger-copy, .gn-whatsnew-body li
+){
   font-size: 15px !important;
   line-height: 1.5 !important;
   font-weight: 500 !important;
   letter-spacing: 0 !important;
   opacity: 1 !important;
-}
-
-:is(#landing,#login,#app,.overlay,.gn-lab-tool-overlay,.gn-whatsnew-overlay,.gn-onb-overlay) :is(
-  button,.form-label,.gn-form-grid label>span,.gn-record-form label>span,
-  .gn-dose-grid label>span,.gn-measurements-grid label>span,
-  .gn-profile-section-label,.gn-auth-primary-label,.gn-wanda-label,.nav-lbl,
-  .cp-group-minimized-label,.gn-research-group>span,.gn-whatsnew-title,
-  .gn-whatsnew-history,.gn-whatsnew-close,.gn-profile-signout b
-) {
+}:is(#landing, #login, #app, .overlay, .gn-lab-tool-overlay, .gn-whatsnew-overlay, .form-label, .gn-form-grid label>span, .gn-record-form label>span, .gn-dose-grid label>span, .gn-measurements-grid label>span, .gn-profile-section-label, .gn-auth-primary-label, .gn-wanda-label, .nav-lbl, .cp-group-minimized-label, .gn-research-group>span, .gn-whatsnew-title, .gn-whatsnew-history, .gn-whatsnew-close, .gn-profile-signout b
+){
   font-size: 14px !important;
   line-height: 1.35 !important;
   font-weight: 650 !important;
@@ -3013,8 +2705,7 @@ html:not([data-theme="light"]) .gn-auth-note {
 .gn-404-screen .gn-404-title{font-size:22px;font-weight:700}
 .gn-404-screen .gn-404-body{opacity:.72;font-size:14px;max-width:320px}
 .gn-404-screen .gn-404-btn{margin-top:8px;padding:12px 22px;border-radius:10px;border:1px solid #41e0c7;background:transparent;color:#41e0c7;font-weight:600;cursor:pointer;letter-spacing:.08em}
-.gn-404-screen .gn-404-btn:focus-visible{outline:2px solid #41e0c7;outline-offset:3px}
-@media (prefers-reduced-motion: reduce){.gn-404-screen{transition:none}}
+.gn-404-screen .gn-404-btn:focus-visible{outline:2px solid #41e0c7;outline-offset:3px}@media (prefers-reduced-motion: reduce){.gn-404-screen{transition:none}}
 
 .gn-hub-close{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;padding:0 8px;margin-left:8px;border:1px solid rgba(0,230,240,.35);border-radius:8px;background:rgba(0,230,240,.08);color:#9ceff4;font:700 .62rem var(--font-d);letter-spacing:1.2px;cursor:pointer;transition:border-color .18s ease,background .18s ease,color .18s ease}
 .gn-hub-close:hover{border-color:rgba(0,230,240,.65);background:rgba(0,230,240,.16);color:#e8fcff}
@@ -3057,16 +2748,13 @@ body.gn-dashboard-empty .fab { display: none !important; }
 .toast.undoable .gn-toast-detail { font: .72rem var(--font-b); color: #9ab3bc; margin-top: 2px; }
 .toast.undoable .gn-toast-undo { flex-shrink: 0; border: 1px solid rgba(65, 224, 199, .55); border-radius: 8px; background: rgba(65, 224, 199, .1); color: #41e0c7; font: 700 .62rem var(--font-d); letter-spacing: 1.6px; padding: 8px 12px; cursor: pointer; transition: background .16s ease, border-color .16s ease; }
 .toast.undoable .gn-toast-undo:hover, .toast.undoable .gn-toast-undo:focus-visible { background: rgba(65, 224, 199, .2); border-color: #41e0c7; outline: none; }
-.toast.undoable .gn-toast-bar { height: 4px; background: rgba(65, 224, 199, .9); transform-origin: left center; animation: gnToastBar 5s linear forwards; }
-@keyframes gnToastBar { from { transform: scaleX(1); } to { transform: scaleX(0); } }
-@media (prefers-reduced-motion: reduce) { .toast.undoable .gn-toast-bar { animation-duration: 5s; } }
+.toast.undoable .gn-toast-bar { height: 4px; background: rgba(65, 224, 199, .9); transform-origin: left center; animation: gnToastBar 5s linear forwards; }@keyframes gnToastBar{ from { transform: scaleX(1); } to { transform: scaleX(0); }}@media (prefers-reduced-motion: reduce){ .toast.undoable .gn-toast-bar { animation-duration: 5s; }}
 
 /* ── Batch D: HUB danger + scanner hint + peptide custom distinction ── */
 .gn-profile-danger-row { border-left: 3px solid rgba(255, 51, 85, .55) !important; background: rgba(255, 51, 85, .05) !important; }
 .gn-profile-danger-row:hover, .gn-profile-danger-row:focus-visible { background: rgba(255, 51, 85, .12) !important; }
 .gn-profile-danger-row b { color: #FF5B5B !important; }
-.gn-zone-hint { animation: gnPulseHint 1.5s ease-in-out 3; }
-@keyframes gnPulseHint { 0%, 100% { box-shadow: 0 0 0 0 rgba(65, 224, 199, .55); } 50% { box-shadow: 0 0 0 10px rgba(65, 224, 199, 0); } }
+.gn-zone-hint { animation: gnPulseHint 1.5s ease-in-out 3; }@keyframes gnPulseHint{ 0%, 100% { box-shadow: 0 0 0 0 rgba(65, 224, 199, .55); } 50% { box-shadow: 0 0 0 10px rgba(65, 224, 199, 0); }}
 .gn-zone-hint-caption { text-align: center; font: 700 .6rem var(--font-d); letter-spacing: 2px; color: #41e0c7; margin: 8px 0 2px; animation: gnPulseHint 1.5s ease-in-out 3; }
 .gn-research-custom-group { border: 1px solid rgba(255, 176, 32, .4) !important; background: rgba(255, 176, 32, .05) !important; border-radius: 10px; }
 .gn-research-custom-group > span { color: #ffb020 !important; }
@@ -3083,9 +2771,7 @@ body.gn-dashboard-empty .fab { display: none !important; }
 .gn-research-back:hover, .gn-research-back:focus-visible { color: #e8fcff; outline: none; }
 
 .gn-research-custom-link { display: block; margin-top: 6px; border: 0; background: transparent; color: #9ceff4 !important; font: 700 .58rem var(--font-d); letter-spacing: 1px; cursor: pointer; text-align: left; padding: 4px 0; }
-.gn-research-custom-link:hover, .gn-research-custom-link:focus-visible { color: #e8fcff; outline: none; }
-
-@media (max-width: 359px) { .topbar-hub-label { display: none !important; } }
+.gn-research-custom-link:hover, .gn-research-custom-link:focus-visible { color: #e8fcff; outline: none; }@media (max-width: 359px){ .topbar-hub-label { display: none !important; }}
 
 /* ── v0.15.1 R2/R2.1: compact topbar + custom brand toggles ─────────── */
 #app .topbar { min-height: 56px; max-height: 64px; padding-top: calc(6px + var(--safe-top)); padding-bottom: 6px; }
@@ -3140,13 +2826,10 @@ html[data-theme="light"] #app .gn-lang-dropdown button:hover, html[data-theme="l
 #app .topbar-hub-label { display: none; }
 
 /* Wordmark: never smaller than toggles */
-#app .app-wordmark-b2b svg { height: 24px; width: auto; }
-
-/* Mobile 360: keep everything fitting (hit areas stay 44px; visuals shrink) */
-@media (max-width: 380px) {
+#app .app-wordmark-b2b svg { height: 24px; width: auto; }/* Mobile 360: keep everything fitting (hit areas stay 44px; visuals shrink) */
+@media (max-width: 380px){
   #app .topbar-actions { gap: 4px; }
-  #app .gn-theme-opt, #app .gn-lang-globe { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
-}
+  #app .gn-theme-opt, #app .gn-lang-globe { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }}
 
 /* Landing globe mount: keep it in the hero top-right area like the old pill.
    Hit area is 44px; the visible circle stays 32px (drawn on ::before).
@@ -3345,24 +3028,18 @@ html:not([data-theme="light"]) #gnPasskeyBtn {
   box-shadow: 0 0 6px rgba(0, 212, 255, .35), 0 5px 8px rgba(0, 212, 255, .16), 0 -5px 8px rgba(0, 212, 255, .12);
   will-change: translate;
   animation: gnCrtRoll 8s cubic-bezier(.55, .12, .6, .9) infinite, gnCrtJitter 30s steps(1) infinite;
-}
-@keyframes gnCrtRoll {
+}@keyframes gnCrtRoll{
   0% { translate: 0 -3vh; }
   55% { translate: 0 97vh; }
-  100% { translate: 0 97vh; }
-}
-/* B13 rev: random 1-2px horizontal jitter every ~30s (30s cycle,
+  100% { translate: 0 97vh; }}/* B13 rev: random 1-2px horizontal jitter every ~30s (30s cycle,
    steps() = hard snap, never smooth drift) */
-@keyframes gnCrtJitter {
+@keyframes gnCrtJitter{
   0%, 96% { transform: translateX(0); }
   96.5% { transform: translateX(1px); }
   97% { transform: translateX(-2px); }
   97.5% { transform: translateX(1px); }
-  98%, 100% { transform: translateX(0); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .gn-crt-scanline { display: none !important; }
-}
+  98%, 100% { transform: translateX(0); }}@media (prefers-reduced-motion: reduce){
+  .gn-crt-scanline { display: none !important; }}
 html[data-theme="light"] .gn-crt-scanline::before {
   background: rgba(0, 111, 130, .28);
   box-shadow: 0 0 6px rgba(0, 111, 130, .25), 0 4px 8px rgba(0, 111, 130, .12), 0 -4px 8px rgba(0, 111, 130, .09);
@@ -3375,15 +3052,11 @@ html[data-theme="light"] .gn-crt-scanline::before {
    ───────────────────────────────────────────────────────────────────── */
 .nav-item.gn-punch, .fab.gn-punch {
   animation: gnPunch .1s ease-out;
-}
-@keyframes gnPunch {
+}@keyframes gnPunch{
   0% { transform: scale(1); }
   50% { transform: scale(.92); }
-  100% { transform: scale(1); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .nav-item.gn-punch, .fab.gn-punch { animation: none !important; }
-}
+  100% { transform: scale(1); }}@media (prefers-reduced-motion: reduce){
+  .nav-item.gn-punch, .fab.gn-punch { animation: none !important; }}
 
 /* ─────────────────────────────────────────────────────────────────────
    B15 — number ticker flash (2026-08-08)
@@ -3393,10 +3066,8 @@ html[data-theme="light"] .gn-crt-scanline::before {
 .gn-ticker-flash {
   color: #FF5B5B !important;
   transition: color .2s ease-out !important;
-}
-@media (prefers-reduced-motion: reduce) {
-  .gn-ticker-flash { transition: none !important; }
-}
+}@media (prefers-reduced-motion: reduce){
+  .gn-ticker-flash { transition: none !important; }}
 
 /* ─────────────────────────────────────────────────────────────────────
    B11 — layout fixes (2026-08-08)
@@ -3543,9 +3214,7 @@ html[data-theme="light"] .gn-empty-ghost:focus-visible {
 :is(#app,#login,#landing) .gn-theme-toggle button.gn-theme-opt.active { color: #00d4ff; opacity: 1 !important; }
 html[data-theme="light"] :is(#app,#login,#landing) .gn-theme-toggle button.gn-theme-opt { color: #4d6b75; opacity: .4 !important; }
 html[data-theme="light"] :is(#app,#login,#landing) .gn-theme-toggle button.gn-theme-opt.active { color: #006f82; opacity: 1 !important; }
-.gn-onb-dim { background: rgba(1, 3, 6, .9); }
-/* (Removed 2026-09-10: duplicate .gn-onb-target override. The #app
-   .gn-onb-target gold spotlight rule above is now the single owner.) */
+
 
 /* ─────────────────────────────────────────────────────────────────────
    R2.2 rev 2 (2026-08-08): kanji = THE language control.
@@ -3598,8 +3267,7 @@ html[data-theme="light"] #landing .landing-kicker {
   text-shadow:
     1px 0 rgba(255, 59, 59, 0.38),
     -1px 0 rgba(0, 111, 130, 0.38);
-}
-@keyframes gnKickerGlitch {
+}@keyframes gnKickerGlitch{
   0%, 91% {
     transform: translate(0, 0);
     clip-path: none;
@@ -3641,10 +3309,8 @@ html[data-theme="light"] #landing .landing-kicker {
       0 0 14px rgba(0, 212, 255, 0.35),
       1px 0 rgba(255, 59, 59, 0.28),
       -1px 0 rgba(0, 212, 255, 0.28);
-  }
-}
-/* Light-theme glitch uses the DAY OPS cyan (readable on light bg). */
-@keyframes gnKickerGlitchLight {
+  }}/* Light-theme glitch uses the DAY OPS cyan (readable on light bg). */
+@keyframes gnKickerGlitchLight{
   0%, 91% {
     transform: translate(0, 0);
     clip-path: none;
@@ -3683,13 +3349,10 @@ html[data-theme="light"] #landing .landing-kicker {
     text-shadow:
       1px 0 rgba(255, 59, 59, 0.38),
       -1px 0 rgba(0, 111, 130, 0.38);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
+  }}@media (prefers-reduced-motion: reduce){
   #landing .landing-kicker {
     animation: none !important;
-  }
-}
+  }}
 
 
 /* ─────────────────────────────────────────────────────────────────────
@@ -3713,8 +3376,7 @@ html[data-theme="light"] #login .gn-auth-title {
   text-shadow:
     1px 0 rgba(255, 59, 59, 0.25),
     -1px 0 rgba(0, 111, 130, 0.25);
-}
-@keyframes gnTitleGlitch {
+}@keyframes gnTitleGlitch{
   0%, 93% {
     transform: translate(0, 0);
     clip-path: none;
@@ -3742,9 +3404,7 @@ html[data-theme="light"] #login .gn-auth-title {
     text-shadow:
       1px 0 rgba(255, 59, 59, 0.22),
       -1px 0 rgba(0, 212, 255, 0.22);
-  }
-}
-@keyframes gnTitleGlitchLight {
+  }}@keyframes gnTitleGlitchLight{
   0%, 93% {
     transform: translate(0, 0);
     clip-path: none;
@@ -3772,13 +3432,10 @@ html[data-theme="light"] #login .gn-auth-title {
     text-shadow:
       1px 0 rgba(255, 59, 59, 0.25),
       -1px 0 rgba(0, 111, 130, 0.25);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
+  }}@media (prefers-reduced-motion: reduce){
   #login .gn-auth-title {
     animation: none !important;
-  }
-}
+  }}
 
 /* WHAT'S NEW header — subtle CRT glitch (2026-08-08)
    "// SYSTEM UPDATE" + "WHAT'S NEW": faint RGB drift at rest, a brief
@@ -3802,8 +3459,7 @@ html[data-theme="light"] .gn-whatsnew-card h2#gnWhatsNewHeading {
   text-shadow:
     1px 0 rgba(255, 59, 59, 0.22),
     -1px 0 rgba(0, 111, 130, 0.22);
-}
-@keyframes gnWnGlitch {
+}@keyframes gnWnGlitch{
   0%, 93% {
     transform: translate(0, 0);
     clip-path: none;
@@ -3831,9 +3487,7 @@ html[data-theme="light"] .gn-whatsnew-card h2#gnWhatsNewHeading {
     text-shadow:
       1px 0 rgba(255, 59, 59, 0.2),
       -1px 0 rgba(0, 212, 255, 0.2);
-  }
-}
-@keyframes gnWnGlitchLight {
+  }}@keyframes gnWnGlitchLight{
   0%, 93% {
     transform: translate(0, 0);
     clip-path: none;
@@ -3861,14 +3515,11 @@ html[data-theme="light"] .gn-whatsnew-card h2#gnWhatsNewHeading {
     text-shadow:
       1px 0 rgba(255, 59, 59, 0.22),
       -1px 0 rgba(0, 111, 130, 0.22);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
+  }}@media (prefers-reduced-motion: reduce){
   .gn-whatsnew-card .gn-whatsnew-kicker,
   .gn-whatsnew-card h2#gnWhatsNewHeading {
     animation: none !important;
-  }
-}
+  }}
 
 /* ─────────────────────────────────────────────────────────────────────
    B17 — Boot sequence: live terminal (2026-08-09)
@@ -3891,25 +3542,18 @@ html[data-theme="light"] .gn-whatsnew-card h2#gnWhatsNewHeading {
   margin-left: 2px; background: var(--cyan, #00e6f0);
   box-shadow: 0 0 8px var(--cyan, #00e6f0);
   animation: bootCursorBlink 1s steps(1) infinite;
-}
-@keyframes bootCursorBlink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+}@keyframes bootCursorBlink{ 0%,49% { opacity: 1; } 50%,100% { opacity: 0; }}
 .boot-complete-pulse { animation: bootCompletePulse .7s ease; }
-.boot-complete-pulse path { animation: bootCompleteFill .7s ease; }
-@keyframes bootCompletePulse {
+.boot-complete-pulse path { animation: bootCompleteFill .7s ease; }@keyframes bootCompletePulse{
   0% { filter: drop-shadow(0 0 4px rgba(0,230,240,.4)); }
   25% { filter: drop-shadow(0 0 26px #FF3B3B) drop-shadow(0 0 12px #FF3B3B); }
-  100% { filter: drop-shadow(0 0 6px rgba(0,230,240,.4)); }
-}
-@keyframes bootCompleteFill {
+  100% { filter: drop-shadow(0 0 6px rgba(0,230,240,.4)); }}@keyframes bootCompleteFill{
   0%, 100% { fill: #00E6F0; }
   25% { fill: #FF3B3B; }
-  60% { fill: #00E6F0; }
-}
-@media (prefers-reduced-motion: reduce) {
+  60% { fill: #00E6F0; }}@media (prefers-reduced-motion: reduce){
   .boot-cursor { display: none; }
   .boot-complete-pulse { animation: none; }
-  .boot-complete-pulse path { animation: none; }
-}
+  .boot-complete-pulse path { animation: none; }}
 
 /* DAY OPS evidence colors: keep every phase/evidence state distinct while
    translating neon-on-dark colors to AA-safe ink on warm paper. */
@@ -4062,8 +3706,7 @@ html[data-theme="light"] .gn-wanda-card,
 html[data-theme="light"] .card {
   box-shadow: var(--gn-elev-day-1) !important;
   border-color: rgba(0, 111, 130, 0.12) !important;
-}
-@media (hover: hover) and (pointer: fine) {
+}@media (hover: hover) and (pointer: fine){
   .card:hover, .gn-wanda-card:hover, .s6-card:hover, .stat-card:hover {
     transform: translateY(-1px);
   }
@@ -4080,8 +3723,7 @@ html[data-theme="light"] .card {
   html[data-theme="light"] .stat-card:hover {
     box-shadow: var(--gn-elev-day-2) !important;
     border-color: rgba(0, 111, 130, 0.22) !important;
-  }
-}
+  }}
 
 /* FAB: denser lava core, quieter idle pulse, sharper press. */
 .fab {
@@ -4241,15 +3883,12 @@ html[data-theme="light"] #pageDash .gn-empty-hero {
   box-shadow: var(--gn-elev-day-1);
 }
 html[data-theme="light"] #pageDash .gn-empty-hero p { color: var(--text-secondary); }
-html[data-theme="light"] #pageDash .gn-tip-card { background: rgba(0, 111, 130, .06); }
-
-@media (max-width: 430px) {
+html[data-theme="light"] #pageDash .gn-tip-card { background: rgba(0, 111, 130, .06); }@media (max-width: 430px){
   #app .topbar { min-height: 58px; max-height: none; padding-bottom: 5px !important; }
   #app .node-header-wrap { padding-top: 6px; padding-bottom: 7px; }
   #pageDash .gn-empty-hero { padding: 18px 15px 15px; }
   #pageDash .gn-empty-ghosts { gap: 7px; }
-  #pageDash .gn-empty-ghost { padding-inline: 6px; font-size: max(10px, .6rem); letter-spacing: .8px; }
-}
+  #pageDash .gn-empty-ghost { padding-inline: 6px; font-size: max(10px, .6rem); letter-spacing: .8px; }}
 
 /* Functional target floor: preserve compact visuals inside reliable hit areas. */
 #landing .landing-footer a { display: inline-flex; align-items: center; min-height: 44px; }
@@ -4286,10 +3925,8 @@ html[data-theme="light"] .landing-btn.secondary {
 #scrollBody, .scroll-body {
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
-}
-
-/* Reduced motion: kill polish motion, keep structure. */
-@media (prefers-reduced-motion: reduce) {
+}/* Reduced motion: kill polish motion, keep structure. */
+@media (prefers-reduced-motion: reduce){
   .card, .gn-wanda-card, .s6-card, .stat-card,
   .nav-item, .fab, .btn-primary, .landing-btn,
   .form-input, input, textarea, select {
@@ -4299,21 +3936,14 @@ html[data-theme="light"] .landing-btn.secondary {
   .fab:hover, .fab:focus-visible {
     transform: none !important;
   }
-  #scrollBody, .scroll-body { scroll-behavior: auto; }
-}
-
-/* Desktop density: more air, same instrument identity. */
-@media (min-width: 1024px) {
+  #scrollBody, .scroll-body { scroll-behavior: auto; }}/* Desktop density: more air, same instrument identity. */
+@media (min-width: 1024px){
   #app .topbar { padding-left: 18px !important; padding-right: 18px !important; }
   .card, .gn-wanda-card, .s6-card, .stat-card { border-radius: 16px !important; }
-  .page-title { font-size: 1.28rem !important; }
-}
-
-/* Very small phones: protect hierarchy without shrinking targets. */
-@media (max-width: 360px) {
+  .page-title { font-size: 1.28rem !important; }}/* Very small phones: protect hierarchy without shrinking targets. */
+@media (max-width: 360px){
   .page-title { letter-spacing: 1.6px !important; }
-  .fab { right: 14px !important; }
-}
+  .fab { right: 14px !important; }}
 
 /* ═══ PREMIUM SCANNER 20260811 ═══════════════════════════════════════════
    Diagnostic mannequin framing + anatomically clear zone language.
@@ -4672,11 +4302,9 @@ html[data-theme="light"] .gn-crt-scanline::before {
 }
 html[data-theme="light"] .scanlines { opacity: .28 !important; }
 html[data-theme="light"] .scan-sweep { opacity: .12 !important; }
-.scan-sweep { opacity: .4 !important; }
-@media (prefers-reduced-motion: reduce) {
+.scan-sweep { opacity: .4 !important; }@media (prefers-reduced-motion: reduce){
   .gn-crt-scanline, .scan-sweep { display: none !important; }
-  .scan-asset, .scanner-mode-btn, .track12-zone, .gn-stable-zone-btn { transition: none !important; }
-}
+  .scan-asset, .scanner-mode-btn, .track12-zone, .gn-stable-zone-btn { transition: none !important; }}
 
 /* Shared shell density polish */
 .bottom-nav .nav-item { border-radius: 12px; }
@@ -4695,10 +4323,7 @@ html[data-theme="light"] .scan-sweep { opacity: .12 !important; }
 html[data-theme="light"] .gn-form-error { color: #8a0f2a !important; }
 .gn-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 input[aria-invalid="true"], textarea[aria-invalid="true"], select[aria-invalid="true"] { box-shadow: 0 0 0 1px #ff5a6e inset !important; }
-html[data-theme="light"] input[aria-invalid="true"], html[data-theme="light"] textarea[aria-invalid="true"], html[data-theme="light"] select[aria-invalid="true"] { box-shadow: 0 0 0 1px #d32349 inset !important; }
-
-
-/* ──────────────────────────────────────────────────────────────────────────
+html[data-theme="light"] input[aria-invalid="true"], html[data-theme="light"] textarea[aria-invalid="true"], html[data-theme="light"] select[aria-invalid="true"] { box-shadow: 0 0 0 1px #d32349 inset !important; }/* ──────────────────────────────────────────────────────────────────────────
    v0.15.30 — premium polish + tactile feedback (ADDITIVE)
    Every rule below is additive: no removals, no destructive overrides.
    Reduced-motion users get the static end state immediately.
@@ -4706,7 +4331,7 @@ html[data-theme="light"] input[aria-invalid="true"], html[data-theme="light"] te
 
 /* Lift the most-touched interactive controls slightly on hover. Stacks with
    existing :active scale feedback and respects reduced-motion (no transition). */
-@media (prefers-reduced-motion: no-preference) {
+@media (prefers-reduced-motion: no-preference){
   .btn-primary, .btn-full.btn-primary, .gn-auth-primary, .gn-whatsnew-close,
   .future-confirm-save, .landing-btn.primary, .gn-foundation-tile,
   .nav-item, .gn-chip, .gn-mode-tab, .cp-option, .modal-btn, .topbar-btn,
@@ -4715,8 +4340,7 @@ html[data-theme="light"] input[aria-invalid="true"], html[data-theme="light"] te
                 box-shadow 180ms ease,
                 background-position 320ms ease,
                 filter 180ms ease;
-  }
-}
+  }}
 .btn-primary:hover, .btn-full.btn-primary:hover, .gn-auth-primary:hover,
 .gn-whatsnew-close:hover, .future-confirm-save:hover {
   transform: translateY(-1px);
@@ -4778,22 +4402,17 @@ html[data-theme="light"] .bottom-nav .nav-item.active {
 html[data-theme="light"] .stat-card, html[data-theme="light"] .card,
 html[data-theme="light"] .s6-card, html[data-theme="light"] .gn-wanda-card {
   border-top-color: rgba(0, 111, 130, .45) !important;
-}
-
-/* Heading rhythm: technical headings get a tightened letter-spacing + a one-shot
+}/* Heading rhythm: technical headings get a tightened letter-spacing + a one-shot
    breath on first paint, so the page feels like it woke up.
    Reduced-motion users see the static end state immediately. */
-@media (prefers-reduced-motion: no-preference) {
-  @keyframes gn-heading-breath {
+@media (prefers-reduced-motion: no-preference){@keyframes gn-heading-breath{
     0%   { letter-spacing: 0.04em; opacity: 0.86; }
     60%  { letter-spacing: 0.08em; opacity: 1; }
-    100% { letter-spacing: 0.04em; opacity: 1; }
-  }
+    100% { letter-spacing: 0.04em; opacity: 1; }}
   .page-hdr h1, h1.landing-headline, .gn-tool-title, .gn-hub-title,
   .gn-foundation-head h2, .gn-lab-tool-head h2 {
     animation: gn-heading-breath 520ms cubic-bezier(.2,.75,.25,1) both;
-  }
-}
+  }}
 
 /* Subtle ambient edge glow under the topbar (a faint instrument glow). */
 #app .topbar::after {
@@ -4811,25 +4430,18 @@ html[data-theme="light"] .s6-card, html[data-theme="light"] .gn-wanda-card {
    tactile rather than decorative. Existing toast content is unchanged. */
 .toast {
   transition: transform 220ms cubic-bezier(.34, 1.56, .64, 1), opacity 180ms ease;
-}
-@media (prefers-reduced-motion: reduce) {
-  .toast { transition: none !important; }
-}
-
-/* Save buttons that successfully capture: 1-frame lava-glow halo. Already
+}@media (prefers-reduced-motion: reduce){
+  .toast { transition: none !important; }}/* Save buttons that successfully capture: 1-frame lava-glow halo. Already
    added by actionFeedback's existing class swap, but a tighter pulse feels
    right at this release. */
-@keyframes gn-capture-pulse {
+@keyframes gn-capture-pulse{
   0%   { box-shadow: 0 0 0 0 rgba(255, 90, 110, .55), 0 0 12px rgba(255, 45, 77, .35); }
-  100% { box-shadow: 0 0 0 14px rgba(255, 90, 110, 0), 0 0 12px rgba(255, 45, 77, 0); }
-}
-@media (prefers-reduced-motion: no-preference) {
+  100% { box-shadow: 0 0 0 14px rgba(255, 90, 110, 0), 0 0 12px rgba(255, 45, 77, 0); }}@media (prefers-reduced-motion: no-preference){
   .btn-primary.gn-capture-pulse,
   .btn-full.btn-primary.gn-capture-pulse,
   .gn-auth-primary.gn-capture-pulse {
     animation: gn-capture-pulse 520ms cubic-bezier(.2,.75,.25,1) both;
-  }
-}
+  }}
 
 /* Touch target floor for legacy controls (guarded, not over-riding existing
    44px rules; only additive for any control that might otherwise be too thin). */
@@ -4866,13 +4478,145 @@ html[data-theme="light"] .s6-card, html[data-theme="light"] .gn-wanda-card {
 .gn-assay-notes{margin:10px 0;padding:10px 12px;background:var(--bg2,rgba(255,255,255,.03));border-left:3px solid var(--cyan,#00e5ff);font-size:.8rem;line-height:1.6;color:var(--text-mid,#aab4c0);border-radius:0 8px 8px 0}
 .gn-assay-actions{display:flex;gap:8px;margin-top:12px}
 .gn-assay-act{margin:0;min-height:44px;font-size:.75rem}
-.gn-assay-act.confirming{border-color:var(--red,#ff3b3b);color:#ff5d5d;animation:gnAssayPulse 1s ease-in-out infinite}
-@keyframes gnAssayPulse{0%,100%{opacity:1}50%{opacity:.55}}
+.gn-assay-act.confirming{border-color:var(--red,#ff3b3b);color:#ff5d5d;animation:gnAssayPulse 1s ease-in-out infinite}@keyframes gnAssayPulse{0%,100%{opacity:1}50%{opacity:.55}}
 .gn-assay-pills{display:flex;flex-wrap:wrap;gap:8px}
 .gn-assay-varpreview{display:flex;align-items:center;min-height:48px;padding:0 14px;border:1px solid var(--border2,rgba(255,255,255,.12));border-radius:8px;font-family:var(--font-b,system-ui);font-weight:700;letter-spacing:1px;font-size:.9rem;color:var(--text-dim,#8a93a0)}
 .gn-assay-varpreview.green{color:#3dff8e;border-color:rgba(61,255,142,.5)}
 .gn-assay-varpreview.amber{color:#ffc857;border-color:rgba(255,200,87,.5)}
 .gn-assay-varpreview.red{color:#ff5d5d;border-color:rgba(255,93,93,.5)}
 .gn-assay-err{margin:0 0 12px;padding:10px 12px;border:1px solid rgba(255,93,93,.5);border-radius:8px;color:#ff5d5d;font-size:.8rem;letter-spacing:.5px}
-.gn-assay-empty-sub{display:block;margin-top:8px;font-size:.78rem;color:var(--text-dim,#8a93a0);line-height:1.5}
-@media (prefers-reduced-motion:reduce){.gn-assay-act.confirming{animation:none}}
+.gn-assay-empty-sub{display:block;margin-top:8px;font-size:.78rem;color:var(--text-dim,#8a93a0);line-height:1.5}@media (prefers-reduced-motion:reduce){.gn-assay-act.confirming{animation:none}}
+/* ============================================================
+   FIRST CONTACT onboarding — built from zero 2026-09-10
+   6-beat boot sequence: SIGNAL / THE GRID / FIRST DOSE /
+   THE CURVE / MAKE IT YOURS / ONLINE. Gold spotlight language
+   carried over: the target must scream, never whisper.
+   ============================================================ */
+.gn-fc-overlay {
+  position: fixed; inset: 0; z-index: 9000;
+  pointer-events: none;
+}
+.gn-fc-overlay.mode-screen { display: flex; align-items: center; justify-content: center; padding: 20px; }
+.gn-fc-veil {
+  position: absolute; inset: 0;
+  background: rgba(1, 3, 6, .88);
+  pointer-events: auto;
+  display: none;
+}
+.gn-fc-overlay.mode-screen .gn-fc-veil { display: block; }
+.gn-fc-dim {
+  position: absolute;
+  background: rgba(1, 3, 6, .88);
+  pointer-events: auto;
+  display: none;
+}
+.gn-fc-overlay.mode-spot .gn-fc-dim { display: block; }
+.gn-fc-card {
+  position: absolute;
+  pointer-events: auto;
+  background: linear-gradient(180deg, rgba(10, 16, 22, .98), rgba(5, 8, 12, .98));
+  border: 1px solid rgba(0, 212, 255, .35);
+  border-top: 3px solid #00d4ff;
+  border-radius: 14px;
+  padding: 18px 18px 16px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, .6), 0 0 32px rgba(0, 212, 255, .12);
+  color: #eef6f8;
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+}
+.gn-fc-overlay.mode-screen .gn-fc-card { position: relative; left: auto !important; transform: none !important; top: auto !important; bottom: auto !important; width: min(92vw, 400px); }
+.gn-fc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.gn-fc-kicker { color: #00d4ff; font: 800 .6rem var(--font-d, monospace); letter-spacing: 2.4px; }
+.gn-fc-step { color: #5d7a86; font: 700 .62rem var(--font-d, monospace); letter-spacing: 1.4px; white-space: nowrap; }
+.gn-fc-title { margin: 0 0 8px; font: 700 1.02rem/1.3 var(--font-d, monospace); letter-spacing: .4px; color: #fff; }
+.gn-fc-body { margin: 0 0 12px; font: .82rem/1.6 var(--font-b, system-ui); color: #b7c7d3; }
+.gn-fc-hint { margin: 0 0 12px; font: 800 .62rem var(--font-d, monospace); letter-spacing: 1.8px; color: #ffd166; }
+.gn-fc-zones { display: grid; gap: 8px; margin: 0 0 14px; }
+.gn-fc-zone { display: grid; grid-template-columns: 76px 1fr; gap: 10px; align-items: baseline; padding: 9px 11px; border: 1px solid rgba(0, 212, 255, .22); border-radius: 9px; background: rgba(0, 212, 255, .05); }
+.gn-fc-zone b { font: 800 .68rem var(--font-d, monospace); letter-spacing: 1.6px; color: #00d4ff; }
+.gn-fc-zone span { font: .76rem/1.5 var(--font-b, system-ui); color: #b7c7d3; }
+.gn-fc-actions { display: flex; align-items: center; gap: 8px; }
+.gn-fc-skip { margin-right: auto; background: none; border: none; padding: 10px 4px; color: #8295a0; font: 700 .68rem var(--font-d, monospace); letter-spacing: 1.2px; cursor: pointer; }
+.gn-fc-back { flex: 0 0 auto; padding: 10px 14px; background: transparent; border: 1px solid rgba(255, 255, 255, .2); border-radius: 9px; color: #b7c7d3; font: 700 .7rem var(--font-d, monospace); letter-spacing: 1.2px; cursor: pointer; min-height: 44px; }
+.gn-fc-next { flex: 1 1 auto; padding: 10px 14px; background: linear-gradient(135deg, #FF3B3B, #D12424); border: 1px solid rgba(255, 59, 59, .5); border-radius: 9px; color: #fff; font: 800 .72rem var(--font-d, monospace); letter-spacing: 1.4px; cursor: pointer; min-height: 44px; }
+.gn-fc-next:active { transform: scale(.97); }
+.gn-fc-ghost { display: block; width: 100%; margin: 0 0 12px; padding: 12px; background: rgba(255, 209, 102, .08); border: 1px solid rgba(255, 209, 102, .45); border-radius: 9px; color: #ffd166; font: 800 .7rem var(--font-d, monospace); letter-spacing: 1.2px; cursor: pointer; min-height: 44px; }
+.gn-fc-arrow {
+  position: absolute; width: 14px; height: 14px; z-index: 9002;
+  background: #ffd166; border: 2px solid #fff;
+  box-shadow: 0 0 18px rgba(255, 209, 102, .9);
+  pointer-events: none;
+}
+/* Gold spotlight: white keyline + gold ring + big pulsing glow. */
+.gn-fc-target {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 6px #ffd166, 0 0 24px 6px rgba(255, 209, 102, .85), 0 0 70px 16px rgba(255, 209, 102, .35) !important;
+  border-radius: 12px;
+  animation: gnFcPulse 1.1s ease-in-out infinite;
+}
+#app .gn-fc-target:not(.fab), .gn-fc-overlay .gn-fc-target:not(.fab) {
+  position: relative; z-index: 9001;
+}
+@keyframes gnFcPulse {
+  0%, 100% { box-shadow: 0 0 0 2px #fff, 0 0 0 6px #ffd166, 0 0 24px 6px rgba(255, 209, 102, .85), 0 0 70px 16px rgba(255, 209, 102, .35); }
+  50% { box-shadow: 0 0 0 3px #fff, 0 0 0 9px #ffd166, 0 0 40px 12px rgba(255, 209, 102, 1), 0 0 110px 26px rgba(255, 209, 102, .5); }
+}
+/* Inside-modal coach: bottom sheet above #logOv (z 200). */
+.gn-fc-coach {
+  position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom));
+  z-index: 9500; max-width: 430px; margin: 0 auto;
+  background: linear-gradient(180deg, rgba(12, 18, 25, .99), rgba(6, 9, 13, .99));
+  border: 1px solid rgba(255, 209, 102, .5); border-top: 3px solid #ffd166;
+  border-radius: 14px; padding: 14px 16px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, .65), 0 0 28px rgba(255, 209, 102, .18);
+  animation: gnFcSheetIn .28s cubic-bezier(.2, .7, .3, 1);
+}
+@keyframes gnFcSheetIn { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+.gn-fc-coach-kicker { color: #ffd166; font: 800 .58rem var(--font-d, monospace); letter-spacing: 2.4px; margin-bottom: 4px; }
+.gn-fc-coach-title { font: 700 .9rem var(--font-d, monospace); color: #fff; margin-bottom: 10px; }
+.gn-fc-steps { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 7px; }
+.gn-fc-steps li { display: flex; align-items: center; gap: 10px; font: .8rem var(--font-b, system-ui); color: #b7c7d3; }
+.gn-fc-steps li i { width: 20px; height: 20px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .3); flex: 0 0 auto; display: grid; place-items: center; font-style: normal; }
+.gn-fc-steps li.done { color: #fff; }
+.gn-fc-steps li.done i { border-color: #ffd166; background: #ffd166; box-shadow: 0 0 12px rgba(255, 209, 102, .8); }
+.gn-fc-steps li.done i::after { content: ""; width: 8px; height: 5px; border-left: 2.5px solid #1a1206; border-bottom: 2.5px solid #1a1206; transform: rotate(-45deg) translateY(-1px); }
+.gn-fc-coach-then { font: 700 .74rem var(--font-d, monospace); letter-spacing: 1px; color: #ffd166; margin: 2px 0 10px; }
+.gn-fc-coach-skip { background: none; border: none; padding: 8px 0; color: #8295a0; font: 700 .66rem var(--font-d, monospace); letter-spacing: 1.2px; cursor: pointer; }
+.gn-fc-coach-saved { font: .86rem/1.6 var(--font-b, system-ui); color: #fff; padding: 6px 0 2px; }
+/* Pulsing SAVE cue once the three fields are filled. */
+.gn-fc-pulse { animation: gnFcPulse 1.1s ease-in-out infinite; border-radius: 10px; }
+/* Comfort beat segmented controls. */
+.gn-fc-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 10px; }
+.gn-fc-seg button { padding: 12px; min-height: 48px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, .18); background: rgba(255, 255, 255, .04); color: #8295a0; font: 800 .7rem var(--font-d, monospace); letter-spacing: 1.6px; cursor: pointer; }
+.gn-fc-seg button.active { border-color: #00d4ff; color: #00d4ff; background: rgba(0, 212, 255, .1); box-shadow: 0 0 14px rgba(0, 212, 255, .25); }
+/* VAULT replay row. */
+.gn-fc-replay { width: 100%; text-align: left; }
+/* Compact card variant (comfort beat). */
+.gn-fc-card.gn-fc-compact { border-top-color: #ffd166; }
+/* Light theme. */
+html[data-theme="light"] .gn-fc-veil, html[data-theme="light"] .gn-fc-dim { background: rgba(22, 28, 32, .78); }
+html[data-theme="light"] .gn-fc-card { background: #f8f5ed; color: #1a2328; border-color: rgba(0, 111, 130, .55); border-top-color: #00718a; }
+html[data-theme="light"] .gn-fc-card.gn-fc-compact { border-top-color: #8b5b08; }
+html[data-theme="light"] .gn-fc-title { color: #1a2328; }
+html[data-theme="light"] .gn-fc-body { color: #2c3f47; }
+html[data-theme="light"] .gn-fc-hint { color: #8b5b08; }
+html[data-theme="light"] .gn-fc-step { color: #5d7a86; }
+html[data-theme="light"] .gn-fc-zone { background: rgba(0, 111, 130, .07); border-color: rgba(0, 111, 130, .3); }
+html[data-theme="light"] .gn-fc-zone b { color: #00677f; }
+html[data-theme="light"] .gn-fc-zone span { color: #2c3f47; }
+html[data-theme="light"] .gn-fc-back { color: #2e424b; border-color: rgba(20, 60, 70, .3); }
+html[data-theme="light"] .gn-fc-skip { color: #4d6b75; }
+html[data-theme="light"] .gn-fc-arrow { background: #ffd166; border-color: #fff; }
+html[data-theme="light"] .gn-fc-coach { background: #f8f5ed; border-color: rgba(139, 91, 8, .6); border-top-color: #8b5b08; }
+html[data-theme="light"] .gn-fc-coach-title { color: #1a2328; }
+html[data-theme="light"] .gn-fc-coach-kicker, html[data-theme="light"] .gn-fc-coach-then { color: #8b5b08; }
+html[data-theme="light"] .gn-fc-steps li { color: #2c3f47; }
+html[data-theme="light"] .gn-fc-steps li.done { color: #1a2328; }
+html[data-theme="light"] .gn-fc-coach-saved { color: #1a2328; }
+html[data-theme="light"] .gn-fc-seg button { color: #4d6b75; border-color: rgba(20, 60, 70, .3); background: rgba(255, 255, 255, .5); }
+html[data-theme="light"] .gn-fc-seg button.active { color: #00677f; border-color: #00677f; background: rgba(0, 111, 130, .1); box-shadow: none; }
+/* Reduced motion: no pulses, instant sheets. */
+@media (prefers-reduced-motion: reduce) {
+  .gn-fc-target, .gn-fc-pulse { animation: none !important; }
+  .gn-fc-coach { animation: none !important; }
+  .gn-fc-next:active { transform: none !important; }
+}

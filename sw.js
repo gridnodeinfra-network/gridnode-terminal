@@ -33,7 +33,7 @@ const SHELL = [
   '/js/gridnode-reminders.js' + V,
   '/js/gridnode-lab-tests.js' + V,
   '/js/gridnode-pwa-install.js' + V,
-  '/js/gridnode-onboarding.js' + V,
+  '/js/gridnode-firstcontact.js' + V,
   '/i18n/en.json',
   '/i18n/es-419.json',
   // Locked GRID//NODE v2 brand shell assets (icons + UI derivatives + masters).

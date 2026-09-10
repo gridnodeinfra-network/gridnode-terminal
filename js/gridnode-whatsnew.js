@@ -75,8 +75,8 @@
         ]
       }
     },
-    '__CURRENT_BUILD__': {
-      version: '0.15.35', title: 'BRING YOUR HISTORY', date: '2026-09-09',
+    '20260910.f81f8a5': {
+      version: '0.15.35', title: 'BRING YOUR HISTORY', date: '2026-09-10',
       en: {
         NEW: [
           'Import your history from Shotsy: VAULT now takes the Shotsy JSON backup file directly. Shots, weights, sites, notes, and pain levels map automatically, with a full preview before anything is saved. Duplicates are flagged and can be force-included per row. Your file never leaves this device.',
@@ -93,6 +93,25 @@
         ],
         IMPROVED: [
           'La importación CSV de Shotsy ahora lee la hora, asigna bien el nivel de dolor y ya no confunde Calorías, Proteína, Agua ni Notas del día con efectos secundarios.'
+        ]
+      }
+    },
+    '__CURRENT_BUILD__': {
+      version: '0.15.36', title: 'FIRST CONTACT ONBOARDING', date: '2026-09-10',
+      en: {
+        NEW: [
+          'FIRST CONTACT: the onboarding tour was rebuilt from zero. Six beats: why GRID//NODE exists, the four zones of the loop, one real first dose logged inside the tour itself, the Phase Engine payoff on your curve, theme and language comfort, and a clean exit. Every beat is skippable, and the tour resumes where you left off. Replay it anytime from VAULT.'
+        ],
+        IMPROVED: [
+          'The old settings tour is gone: no more theme and language steps standing in for a product tour that never showed the loop or the payoff.'
+        ]
+      },
+      es: {
+        NEW: [
+          'PRIMER CONTACTO: el tour inicial se reconstruyó desde cero. Seis pasos: por qué existe GRID//NODE, las cuatro zonas del ciclo, una primera dosis real registrada dentro del propio tour, el Motor de Fases sobre tu curva, tema e idioma a tu manera, y una salida limpia. Cada paso se puede omitir y el tour continúa donde lo dejaste. Repítelo cuando quieras desde VAULT.'
+        ],
+        IMPROVED: [
+          'El tour anterior de ajustes desapareció: ya no hay pasos de tema e idioma fingiendo ser un tour que nunca mostraba el ciclo ni el resultado.'
         ]
       }
     },
