@@ -1,4 +1,5 @@
-/* GRID//NODE — single authoritative user-facing version source. */
+/* GRID//NODE — single authoritative user-facing version source.
+ * asset-store refresh 20260910: force new content hash after poisoned upload. */
 (function () {
   'use strict';
   window.GN_VERSION = Object.freeze({

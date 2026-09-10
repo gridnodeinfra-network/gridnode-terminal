@@ -1,4 +1,5 @@
 /* GRID//NODE offline shell and deliberate update activation.
+ * asset-store refresh 20260910: force new content hash after poisoned upload.
  * A newly installed worker waits until the user applies it; active SHOT drafts
  * are therefore never replaced underneath an in-progress session.
  */

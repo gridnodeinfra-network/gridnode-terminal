@@ -1,4 +1,5 @@
 /* GRID//NODE release history — authoritative user-facing update system.
+ * asset-store refresh 20260910: force new content hash after poisoned upload.
  * Notes are bundled with the offline shell, localized, acknowledged once per
  * release, and reopenable from NODE / Profile.
  *

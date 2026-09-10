@@ -1,4 +1,5 @@
 /* GRID//NODE stable core
+ * asset-store refresh 20260910: force new content hash after poisoned upload.
  * State, local persistence, session handling, and optional Supabase sync.
  * No UI code belongs in this file.
  */
