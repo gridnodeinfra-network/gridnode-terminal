@@ -35,10 +35,6 @@ export async function onRequest(context: { request: Request; env: DeleteAccountE
 
   const serviceRoleKey = String(context.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
   const supabaseUrl = String(context.env.SUPABASE_URL || '').replace(/\/+$/, '');
-  // This branch is exclusively for the isolated QA backend.
-  if (supabaseUrl !== 'https://aqzhtxeehdurpdqplhvt.supabase.co') {
-    return json({ error: 'QA backend configuration required' }, 503);
-  }
   if (!serviceRoleKey || !supabaseUrl) return json({ error: 'Account deletion is not configured' }, 503);
 
   const authHeader = context.request.headers.get('Authorization') || '';

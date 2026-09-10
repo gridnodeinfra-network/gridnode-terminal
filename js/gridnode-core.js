@@ -8,8 +8,8 @@ export const APP_VERSION = (typeof window !== 'undefined' && window.GN_VERSION &
 export const GOOGLE_OAUTH_CLIENT_ID = '305099332421-u752btn6p8cbaq8opapvdkfau9gnd9a3.apps.googleusercontent.com';
 
 export const CLOUD_CONFIG = Object.freeze({
-  url: 'https://aqzhtxeehdurpdqplhvt.supabase.co',
-  anonKey: 'sb_publishable_Mq03ljPcJXTmSVBzirpHaA_WrtWZyHc'
+  url: 'https://quwbmhxgteyykujydvii.supabase.co',
+  anonKey: 'sb_publishable_rWPuL8wGfe2zok4cYNENng_L6n2Qttu'
 });
 
 export const state = {
