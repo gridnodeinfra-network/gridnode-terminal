@@ -47,7 +47,7 @@ const sw = read('sw.js');
 check('sw.js precaches gridnode-firstcontact.js', sw.includes('js/gridnode-firstcontact.js'));
 
 // --- Real-save event contract -------------------------------------------
-const modules = read('js/gridnode-modules.js');
+const modules = require('./read-modules-source.cjs');
 const fc = read('js/gridnode-firstcontact.js');
 check('saveShot dispatches gn:shot-saved', modules.includes("dispatchEvent(new CustomEvent('gn:shot-saved'"));
 const saves = modules.match(/function saveShot\(\)[\s\S]*?\n}/);

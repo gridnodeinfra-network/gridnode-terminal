@@ -7,6 +7,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 export REPO_ROOT
 
 python3 <<'PY'
+import json
 import os
 import re
 from pathlib import Path
@@ -15,17 +16,28 @@ repo = Path(os.environ["REPO_ROOT"])
 js_root = repo / "js"
 
 core_path = js_root / "gridnode-core.js"
-modules_path = js_root / "gridnode-modules.js"
+modules_dir = js_root / "modules"
 app_path = js_root / "gridnode-app.js"
 bundle_path = js_root / "gridnode-bundle.js"
 temp_path = js_root / "gridnode-bundle.js.tmp"
 
-for path in (core_path, modules_path, app_path):
+# Pinned concatenation order for js/modules/ (single source of truth:
+# js/modules/order.json). The split is contiguous and order-preserving:
+# "".join of these files == the old gridnode-modules.js.
+order_path = js_root / "modules" / "order.json"
+MODULE_FILES = json.loads(order_path.read_text(encoding="utf-8"))
+
+for path in (core_path, app_path):
     if not path.is_file():
         raise SystemExit(f"ERROR: Missing source file: {path}")
+for name in MODULE_FILES:
+    if not (modules_dir / name).is_file():
+        raise SystemExit(f"ERROR: Missing module file: {modules_dir / name}")
 
 core = core_path.read_text(encoding="utf-8-sig")
-modules_source = modules_path.read_text(encoding="utf-8-sig")
+modules_source = "".join(
+    (modules_dir / name).read_text(encoding="utf-8-sig") for name in MODULE_FILES
+)
 app = app_path.read_text(encoding="utf-8-sig")
 
 module_export_names = []
@@ -83,8 +95,8 @@ module_map = ",".join(f"{name}:{name}" for name in module_export_names)
 header = (
     "/* GRID//NODE stable classic delivery bundle. "
     "Source remains modular in gridnode-core.js, "
-    "gridnode-modules.js, and gridnode-app.js. "
-    "20260910 content-type repair: hash bump only, no functional change. */"
+    "js/modules/*.js, and gridnode-app.js. "
+    "Phase 1 refactor: gridnode-modules.js split into js/modules/, no functional change. */"
 )
 
 parts = [

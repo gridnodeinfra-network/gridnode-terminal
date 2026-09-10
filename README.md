@@ -13,7 +13,7 @@ The public landing, boot, and authentication states hide private navigation and 
 
 - `index.html` — preserved interface, visual system, and static shell.
 - `js/gridnode-core.js` — state, local persistence, sessions, Supabase adapter, and synchronization.
-- `js/gridnode-modules.js` — SHOTS, Phase Engine, RESULTS, LAB, NODE/VAULT surfaces, and navigation.
+- `js/modules/` — feature modules (SHOTS, scanner, log flow, Phase Engine, RESULTS, LAB, NODE/VAULT surfaces, importer, navigation), concatenated into the bundle by `scripts/build-bundle.sh` in pinned filename order.
 - `js/gridnode-app.js` — boot, authentication, compatibility bridge, and orchestration.
 - `js/gridnode-bundle.js` — generated deployable browser runtime.
 - `scripts/build-bundle.ps1` — deterministic bundle generator.

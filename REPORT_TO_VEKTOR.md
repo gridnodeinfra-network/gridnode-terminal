@@ -19,7 +19,7 @@ The unstable single-file runtime was consolidated into one source of truth:
 
 - `index.html` preserves the approved GRID//NODE interface and embedded visual system.
 - `js/gridnode-core.js` owns state, account namespaces, local persistence, authentication, Supabase access, synchronization, and tombstones.
-- `js/gridnode-modules.js` owns SHOTS, scanner/location behavior, Phase Engine, RESULTS, LAB, VAULT utilities, and navigation.
+- `js/gridnode-modules.js` (Phase 1 refactor: now split into `js/modules/*.js`, pinned order in `js/modules/order.json`) owns SHOTS, scanner/location behavior, Phase Engine, RESULTS, LAB, VAULT utilities, and navigation.
 - `js/gridnode-app.js` owns boot, public/private shell state, auth orchestration, recovery handling, and compatibility bridges.
 - `js/gridnode-bundle.js` is generated from those modules and is the only browser runtime loaded by `index.html`.
 - `supabase/schema.sql` is the idempotent schema/RLS source of truth.

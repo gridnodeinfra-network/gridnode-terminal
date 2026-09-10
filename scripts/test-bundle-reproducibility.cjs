@@ -15,13 +15,14 @@ try {
   fs.mkdirSync(path.join(temp, 'scripts'), { recursive: true });
   for (const relative of [
     'js/gridnode-core.js',
-    'js/gridnode-modules.js',
     'js/gridnode-app.js',
     'scripts/build-bundle.sh',
   ]) {
     const destination = path.join(temp, relative);
     fs.copyFileSync(path.join(repo, relative), destination);
   }
+  // js/modules/ is a directory of bundle sources (Phase 1 refactor split)
+  fs.cpSync(path.join(repo, 'js/modules'), path.join(temp, 'js/modules'), { recursive: true });
 
   const run = spawnSync('bash', [path.join(temp, 'scripts/build-bundle.sh')], {
     cwd: temp,

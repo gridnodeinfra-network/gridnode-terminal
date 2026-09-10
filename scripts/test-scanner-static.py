@@ -1,9 +1,12 @@
 from pathlib import Path
 import re
 
+import json
+
 ROOT = Path(__file__).resolve().parents[1]
 html = (ROOT / "index.html").read_text(encoding="utf-8")
-source = (ROOT / "js/gridnode-modules.js").read_text(encoding="utf-8")
+order = json.loads((ROOT / "js/modules/order.json").read_text(encoding="utf-8"))
+source = "".join((ROOT / "js/modules" / name).read_text(encoding="utf-8") for name in order)
 bundle = (ROOT / "js/gridnode-bundle.js").read_text(encoding="utf-8")
 
 EXPECTED = {

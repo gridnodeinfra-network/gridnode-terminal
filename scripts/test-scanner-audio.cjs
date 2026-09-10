@@ -391,7 +391,7 @@ async function testTask4HookOwnership(browser) {
 }
 
 function testSourceBundleParityFixture() {
-  const source = readFileSync(resolve(root, 'js', 'gridnode-modules.js'), 'utf8');
+  const source = require('./read-modules-source.cjs');
   const bundle = readFileSync(resolve(root, 'js', 'gridnode-bundle.js'), 'utf8');
   const extract = (content, label) => {
     const match = content.match(/\/\* GN_SCANNER_AUDIO_CONTROLLER_V1_START \*\/([\s\S]*?)\/\* GN_SCANNER_AUDIO_CONTROLLER_V1_END \*\//);

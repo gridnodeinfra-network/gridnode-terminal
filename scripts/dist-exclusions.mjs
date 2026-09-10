@@ -15,7 +15,7 @@ export const DIST_EXCLUDE = [
   // Bundle sources — concatenated into js/gridnode-bundle.js by build-bundle.sh
   'js/gridnode-app.js',
   'js/gridnode-core.js',
-  'js/gridnode-modules.js',
+  'js/modules/',
   // Brand design sources / proof renders — repo-only reference material
   'assets/brand/source/',
   'assets/brand/proof/',

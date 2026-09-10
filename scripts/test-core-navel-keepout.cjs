@@ -33,7 +33,7 @@ assert.match(
   'keep-out legend must honor the hidden attribute (its display:flex would otherwise override it)'
 );
 
-const modulesJs = fs.readFileSync(path.join(root, 'js/gridnode-modules.js'), 'utf8');
+const modulesJs = require('./read-modules-source.cjs');
 assert.match(
   modulesJs,
   /qa\('\.scanner-keepout-legend'\)\.forEach\(legend => \{\s*legend\.hidden = moduleState\.scannerMode !== 'core';/,
