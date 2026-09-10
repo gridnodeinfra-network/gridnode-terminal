@@ -4630,3 +4630,5 @@ html[data-theme="light"] .gn-fc-seg button.active { color: #00677f; border-color
   .gn-fc-coach { animation: none !important; }
   .gn-fc-next:active { transform: none !important; }
 }
+
+/* 20260910 content-type repair: hash bump only, no functional change. */

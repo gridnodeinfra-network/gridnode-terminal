@@ -1,4 +1,4 @@
-/* GRID//NODE stable classic delivery bundle. Source remains modular in gridnode-core.js, gridnode-modules.js, and gridnode-app.js. */
+/* GRID//NODE stable classic delivery bundle. Source remains modular in gridnode-core.js, gridnode-modules.js, and gridnode-app.js. 20260910 content-type repair: hash bump only, no functional change. */
 
 /* GRID//NODE stable core
  * asset-store refresh 20260910: force new content hash after poisoned upload.

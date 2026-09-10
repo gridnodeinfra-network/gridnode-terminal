@@ -83,7 +83,8 @@ module_map = ",".join(f"{name}:{name}" for name in module_export_names)
 header = (
     "/* GRID//NODE stable classic delivery bundle. "
     "Source remains modular in gridnode-core.js, "
-    "gridnode-modules.js, and gridnode-app.js. */"
+    "gridnode-modules.js, and gridnode-app.js. "
+    "20260910 content-type repair: hash bump only, no functional change. */"
 )
 
 parts = [

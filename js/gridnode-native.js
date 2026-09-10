@@ -617,3 +617,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
 })();
+
+/* 20260910 content-type repair: hash bump only, no functional change. */

@@ -893,3 +893,5 @@
 
   boot();
 })();
+
+/* 20260910 content-type repair: hash bump only, no functional change. */
