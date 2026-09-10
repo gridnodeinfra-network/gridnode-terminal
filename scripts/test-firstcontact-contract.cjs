@@ -120,6 +120,18 @@ check('light theme variants for tour', /data-theme="light"[\s\S]{0,200}gn-fc-/.t
   check('stylesheet has substantial rule count', topRules > 1000, 'found ' + topRules + ' closing braces');
 }
 
+// --- No trap on beat 2: fallback must offer "I'll log later" ----------------
+{
+  const laterCount = (fc.match(/data-fc-later/g) || []).length;
+  check('fallback card has the log-later escape', laterCount >= 4 && fc.includes('renderDoseFallback'),
+    'Open-the-log fallback otherwise loops back on itself (' + laterCount + ' refs)');
+}
+
+// --- Location round trip must not trigger the modal-close retreat ------------
+check('location pick suppresses the close retreat',
+  fc.includes('pickingLocation') && fc.includes('#logLocationAction') && fc.includes('90000'),
+  '1.2s grace always fires mid-pick, bouncing beat 2 back to the fallback card');
+
 // --- Stray gold arrow: screen beats must park it off-screen ----------------
 check('screen beats park the gold arrow off-screen',
   fc.includes("if (mode === 'screen')") && /querySelector\('\.gn-fc-arrow'\)[\s\S]{0,160}'-99px'/.test(fc),

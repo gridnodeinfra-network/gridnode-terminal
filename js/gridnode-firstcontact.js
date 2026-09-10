@@ -33,6 +33,9 @@
   var modalWatch = null;
   var savedTimer = null;
   var moveTimer = null;
+  var locPickHandler = null; // watches #logLocationAction taps during modal phase
+  var pickingLocation = false;
+  var pickTimer = null;
 
   /* ------------------------------------------------------------------ */
   /* Copy (EN + ES). t() prefers the live GN_I18N catalog, falls back here. */
@@ -454,10 +457,22 @@
       cardHead('fc.dose.kicker') +
       '<h2 class="gn-fc-title">' + t('fc.dose.title', '') + '</h2>' +
       '<p class="gn-fc-body">' + t('fc.dose.body', '') + '</p>' +
-      cardFoot({ cta: t('fc.dose.openLog', 'Open the log') });
+      '<div class="gn-fc-actions">' +
+        '<button type="button" class="gn-fc-skip" data-fc-skip>' + t('fc.skip', 'Skip tour') + '</button>' +
+        '<button type="button" class="gn-fc-back" data-fc-back>' + t('fc.back', 'Back') + '</button>' +
+        '<button type="button" class="gn-fc-ghost" data-fc-later>' + t('fc.dose.later', "I'll log later") + '</button>' +
+        '<button type="button" class="gn-fc-next" data-fc-next>' + t('fc.dose.openLog', 'Open the log') + '</button>' +
+      '</div>';
     wireCard(function () {
       try { if (typeof window.openLogModal === 'function') window.openLogModal(); } catch (_) {}
       setTimeout(enterModalPhase, 450);
+    });
+    // The fallback must never trap the user: same "log later" escape as the
+    // spotlight card, so Open-the-log can never loop back on itself.
+    var later = card.querySelector('[data-fc-later]');
+    if (later) later.addEventListener('click', function () {
+      skippedDose = true;
+      renderBeat(3);
     });
   }
   var doseTapHandler = null;
@@ -498,18 +513,43 @@
     renderCoachCopy();
     document.addEventListener('gn:shot-saved', onShotSaved);
     // Modal closed without saving -> back to the spotlight, with a grace
-    // window: SELECT LOGGED LOCATION closes the modal, jumps to the scanner
-    // page, and reopens it. A reopen cancels the retreat.
+    // window for an accidental close. SELECT LOGGED LOCATION also closes
+    // the modal, but the user must then pick a zone AND manually reopen
+    // LOG SHOT: that round trip always exceeds the grace window, so while
+    // a location pick is in flight the retreat waits for the reopen (or a
+    // long safety timeout) instead of yanking the user back to beat 2.
     var modal = document.getElementById('logOv');
     var closeTimer = null;
+    if (locPickHandler) document.removeEventListener('click', locPickHandler, true);
+    pickingLocation = false;
+    locPickHandler = function (e) {
+      if (e.target && e.target.closest && e.target.closest('#logLocationAction')) pickingLocation = true;
+    };
+    document.addEventListener('click', locPickHandler, true);
     if (modal && window.MutationObserver) {
       modalWatch = new MutationObserver(function () {
         if (modal.classList.contains('active')) {
           if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+          if (pickTimer) { clearTimeout(pickTimer); pickTimer = null; }
+          pickingLocation = false;
           renderCoachCopy();
           return;
         }
-        if (closeTimer || !coach || coach.dataset.saved) return;
+        if (closeTimer || pickTimer || !coach || coach.dataset.saved) return;
+        if (pickingLocation) {
+          // Location round trip in flight: the reopen above cancels this.
+          // Abandoning the pick still retreats eventually.
+          pickTimer = setTimeout(function () {
+            pickTimer = null; pickingLocation = false;
+            var m = document.getElementById('logOv');
+            if (m && !m.classList.contains('active') && coach && !coach.dataset.saved) {
+              dosePhase = 'spot';
+              exitModalPhase();
+              renderBeat(2);
+            }
+          }, 90000);
+          return;
+        }
         closeTimer = setTimeout(function () {
           closeTimer = null;
           var m = document.getElementById('logOv');
@@ -593,6 +633,9 @@
   function exitModalPhase() {
     if (coachTimer) { clearInterval(coachTimer); coachTimer = null; }
     if (modalWatch) { modalWatch.disconnect(); modalWatch = null; }
+    if (locPickHandler) { document.removeEventListener('click', locPickHandler, true); locPickHandler = null; }
+    if (pickTimer) { clearTimeout(pickTimer); pickTimer = null; }
+    pickingLocation = false;
     document.removeEventListener('gn:shot-saved', onShotSaved);
     if (coach) { coach.remove(); coach = null; }
     removeSpotlight();
