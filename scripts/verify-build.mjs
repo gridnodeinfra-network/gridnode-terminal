@@ -14,6 +14,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { isExcluded } from './dist-exclusions.mjs';
 
 const ROOT = new URL('..', import.meta.url).pathname;
 const DIST = join(ROOT, 'dist');
@@ -64,6 +65,7 @@ console.log('gate 3: copied assets byte-identical');
   for (const d of ['js', 'css', 'assets', 'i18n']) {
     for (const p of walk(join(ROOT, d))) {
       const rel = relative(join(ROOT, d), p);
+      if (isExcluded(`${d}/${rel}`)) continue; // deploy-waste prune: intentionally not shipped
       const dp = join(DIST, d, rel);
       checked++;
       if (!existsSync(dp)) { bad++; fail(`missing in dist: ${d}/${rel}`); }

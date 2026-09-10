@@ -27,9 +27,10 @@
  * Output: dist/
  */
 import { execSync } from 'node:child_process';
-import { cpSync, mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { cpSync, mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync, statSync, rmSync } from 'node:fs';
+import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isExcluded } from './dist-exclusions.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
@@ -82,8 +83,25 @@ for (const f of copies) {
 for (const d of dirs) {
   const src = join(ROOT, d);
   if (!existsSync(src)) throw new Error(`missing required dir: ${d}/`);
-  cpSync(src, join(DIST, d), { recursive: true });
+  cpSync(src, join(DIST, d), {
+    recursive: true,
+    // Deploy-waste prune: repo-only files (bundle sources, brand design
+    // sources/proofs, duplicate root assets) never ship to production.
+    filter: (p) => !isExcluded(relative(ROOT, p)),
+  });
 }
+// Remove stale excluded files left over from builds predating the prune.
+// (cpSync's filter only skips fresh copies; it never deletes dest files.)
+// dist/ mirrors the repo layout, so paths relative to DIST match the list.
+function pruneStale(dir) {
+  for (const e of readdirSync(dir)) {
+    const p = join(dir, e);
+    const rel = relative(DIST, p);
+    if (isExcluded(rel)) { rmSync(p, { recursive: true, force: true }); continue; }
+    if (statSync(p).isDirectory()) pruneStale(p);
+  }
+}
+pruneStale(DIST);
 
 // 4. js/gridnode-version.js — stamp APP_BUILD + release with BUILD_ID (dist
 // copy only; the source stays a template). Without this the runtime release
