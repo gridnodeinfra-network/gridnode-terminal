@@ -1,39 +1,26 @@
-/* GRID//NODE — premium tactile feedback (prototype).
+/* GRID//NODE — haptic wiring for HUD taps, sound toggle, dose-save (prototype).
  *
- * iPhone-style haptics via navigator.vibrate (Android only; iOS Safari does
- * not expose the API, where this is a silent no-op). Premium feel comes from
- * short, crisp patterns: a light tick on taps, a soft double-tick when the
- * SOUND switch turns on, a single tick when it turns off, and a gentle
- * success nudge when a dose is saved. Long buzzes feel cheap, so the longest
- * single pulse here is 20ms.
- *
- * On by default (like system haptics on a real phone), independent of the
- * SOUND switch. Preference gn_haptics_v1; no UI toggle in the prototype to
- * keep the topbar clean.
- *
- * Conventions follow js/modules/12-ambience.js: defensive try/catch
- * everywhere, delegated click handling, throttling, listens to the existing
- * gn:shot-saved event without touching dose-save code.
+ * Thin adapter over the canonical window.gnHaptics module (js/modules/08-lab.js,
+ * added 2026-09-06 in 6e1dcca "premium feel pass + opt-in tactile feedback").
+ * That module owns the single storage key (gn_haptics_v1, 'on'/'off'), the
+ * user-facing toggle (NODE/Profile -> Tools -> Tactile Feedback), and the
+ * guards (prefers-reduced-motion, focus-inside-field suppression, gesture
+ * window). This file only wires NEW trigger sites to it:
+ *   - light tick on HUD button taps (delegated, throttled)
+ *   - double-tick when the SOUND switch turns on, single tick when off
+ *   - success nudge on gn:shot-saved (dose-save has no actionFeedback path,
+ *     so there is no double-fire with the existing confirm vibration)
+ * Direct confirmations (toggle, dose-save) use fire() to bypass the focus
+ * gate, matching actionFeedback's established behavior.
  */
 
-const GN_HAPTICS_STORAGE_KEY = 'gn_haptics_v1';
 const GN_HAPTIC_TAP_THROTTLE_MS = 70;
-
-let gnHapticsOn = true;
-try { gnHapticsOn = localStorage.getItem(GN_HAPTICS_STORAGE_KEY) !== '0'; } catch (_) { /* private mode */ }
 
 let gnLastTapAt = 0;
 
-function gnHapticSupported() {
-  try { return gnHapticsOn && 'vibrate' in navigator && typeof navigator.vibrate === 'function'; }
-  catch (_) { return false; }
-}
-
-/* Fire a pattern. Must be called from a user gesture on some browsers;
- * all call sites below are inside click handlers or trusted events. */
-function gnBuzz(pattern) {
-  if (!gnHapticSupported()) return false;
-  try { return navigator.vibrate(pattern); } catch (_) { return false; }
+function gnHap() {
+  try { return window.gnHaptics || null; }
+  catch (_) { return null; }
 }
 
 /* Light tick for HUD taps — the "premium" micro feedback. Throttled. */
@@ -41,30 +28,21 @@ function gnHapticTick() {
   const now = Date.now();
   if (now - gnLastTapAt < GN_HAPTIC_TAP_THROTTLE_MS) return;
   gnLastTapAt = now;
-  gnBuzz(8);
-}
-
-/* Sound toggle feedback: double-tick on, single soft tick off. */
-function gnHapticToggle(on) {
-  gnBuzz(on ? [12, 40, 12] : [16]);
-}
-
-/* Dose-saved success nudge. */
-function gnHapticSuccess() {
-  gnBuzz([10, 60, 20]);
+  const h = gnHap();
+  if (h) { try { h.tap(); } catch (_) {} }
 }
 
 function gnHapticSetEnabled(on) {
-  gnHapticsOn = !!on;
-  try { localStorage.setItem(GN_HAPTICS_STORAGE_KEY, gnHapticsOn ? '1' : '0'); } catch (_) {}
+  const h = gnHap();
+  if (h) { try { h.setEnabled(!!on); } catch (_) {} }
 }
 
 window.GN_HAPTICS = {
   tick: gnHapticTick,
-  success: gnHapticSuccess,
+  success() { const h = gnHap(); if (h) { try { h.fire([10, 60, 20]); } catch (_) {} } },
   setEnabled: gnHapticSetEnabled,
-  get enabled() { return gnHapticsOn; },
-  get supported() { return gnHapticSupported(); },
+  get enabled() { try { const h = gnHap(); return !!(h && h.enabled()); } catch (_) { return false; } },
+  get supported() { try { const h = gnHap(); return !!(h && h.supported()); } catch (_) { return false; } },
 };
 
 /* Mirror the SFX tap delegation: same HUD controls, minus the sound toggle
@@ -74,15 +52,19 @@ document.addEventListener('click', (e) => {
   if (!e.isTrusted) return;
   const t = e.target && e.target.closest ? e.target : null;
   if (!t) return;
+  const h = gnHap();
+  if (!h) return;
   if (t.closest('#gnSoundToggle')) {
-    try {
-      const on = !!(window.GN_AMBIENCE && window.GN_AMBIENCE.enabled);
-      gnHapticToggle(on);
-    } catch (_) {}
+    let on = false;
+    try { on = !!(window.GN_AMBIENCE && window.GN_AMBIENCE.enabled); } catch (_) {}
+    try { h.fire(on ? [12, 40, 12] : [16]); } catch (_) {}
     return;
   }
   if (t.closest('.btn,.btn-primary,.btn-full,.sec-act,.time-tab,.topbar-btn,.scanner-mode-btn,.phase-sphere-action,.gn-peptide-expand')) gnHapticTick();
 });
 
 /* Dose-logged success nudge — listens, does not touch 05-log-shot.js. */
-document.addEventListener('gn:shot-saved', () => { gnHapticSuccess(); });
+document.addEventListener('gn:shot-saved', () => {
+  const h = gnHap();
+  if (h) { try { h.fire([10, 60, 20]); } catch (_) {} }
+});
