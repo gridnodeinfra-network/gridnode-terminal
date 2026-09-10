@@ -12,7 +12,8 @@ const sw = read('sw.js');
 const native = read('js/gridnode-native.js');
 const core = read('js/gridnode-core.js');
 const notesSource = read('js/gridnode-whatsnew.js');
-const css = read('css/daylight-nexus-pilot.css') + '\n' + read('css/gridnode-native.css');
+const nativeOrder = JSON.parse(read('css/native/order.json'));
+const css = read('css/daylight-nexus-pilot.css') + '\n' + nativeOrder.map(name => read('css/native/' + name)).join('');
 
 const indexMarkers = [...index.matchAll(/\?v=(20\d{6}\.\d+)/g)].map(match => match[1]);
 if (!indexMarkers.length || indexMarkers.some(marker => marker !== release)) fail('Index cache markers are not synchronized');

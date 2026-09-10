@@ -96,7 +96,7 @@ async function newUserFlow(browser) {
   assert(/<link\b[^>]*\bid=["']gnNativeCss["'][^>]*>/i.test(sourceHead), 'native layout CSS is declared in the document head');
   const startup = await page.evaluate(() => {
     const nav = performance.getEntriesByType('navigation')[0];
-    const nativeCss = performance.getEntriesByType('resource').find(entry => entry.name.includes('/css/gridnode-native.css'));
+    const nativeCss = performance.getEntriesByType('resource').find(entry => entry.name.includes('/css/native/00-base.css'));
     return {
       domContentLoadedMs: nav?.domContentLoadedEventEnd || 0,
       loadMs: nav?.loadEventEnd || nav?.domContentLoadedEventEnd || 0,

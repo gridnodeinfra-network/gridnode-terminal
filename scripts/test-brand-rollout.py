@@ -111,6 +111,12 @@ def read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8", errors="strict")
 
 
+def read_native_css() -> str:
+    # Phase 2 refactor: gridnode-native.css is split into css/native/ (pinned order).
+    order = json.loads((ROOT / "css/native/order.json").read_text(encoding="utf-8"))
+    return "".join((ROOT / "css/native" / name).read_text(encoding="utf-8") for name in order)
+
+
 def string_values(value: object) -> list[str]:
     if isinstance(value, str):
         return [value]
@@ -131,7 +137,7 @@ class BrandRolloutTests(unittest.TestCase):
         cls.html = read("index.html")
         cls.manifest = json.loads(read("manifest.json"))
         cls.sw = read("sw.js")
-        cls.native_css = read("css/gridnode-native.css")
+        cls.native_css = read_native_css()
         cls.day_css = read("css/daylight-nexus-pilot.css")
         cls.app_js = read("js/gridnode-app.js")
         cls.bundle_js = read("js/gridnode-bundle.js")
@@ -155,7 +161,11 @@ class BrandRolloutTests(unittest.TestCase):
             "index.html",
             "manifest.json",
             "sw.js",
-            "css/gridnode-native.css",
+            "css/native/00-base.css",
+            "css/native/01-readability-floor.css",
+            "css/native/02-first-five-minutes.css",
+            "css/native/03-premium-system.css",
+            "css/native/04-first-contact.css",
             "css/daylight-nexus-pilot.css",
             "js/gridnode-app.js",
             "js/gridnode-bundle.js",

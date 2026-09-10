@@ -31,8 +31,16 @@ console.log('firstcontact contract:');
 check('old js file deleted', !fs.existsSync(path.join(ROOT, 'js/gridnode-onboarding.js')));
 const indexHtml = read('index.html');
 check('index.html has no old script ref', !indexHtml.includes('gridnode-onboarding'));
-const nativeCss = read('css/gridnode-native.css');
+const nativeCss = require('./read-native-css.cjs').css;
 check('no gn-onb- selectors in CSS', !/gn-onb-/.test(nativeCss), 'stale v1 spotlight styles');
+// Phase 2 refactor: the injectCss() fallback list in gridnode-native.js must
+// match css/native/order.json or the fallback would load a stale file set.
+const nativeOrder = require('./read-native-css.cjs').order;
+const nativeJs = read('js/gridnode-native.js');
+const injectedFiles = [...nativeJs.matchAll(/'(\d\d-[a-z-]+\.css)'/g)].map(m => m[1]);
+check('injectCss file list matches css/native/order.json',
+  JSON.stringify(injectedFiles) === JSON.stringify(nativeOrder),
+  'fallback CSS list drifted from the pinned order');
 const bundle = read('js/gridnode-bundle.js');
 check('bundle has no data-onboard hooks', !bundle.includes('data-onboard'));
 check('bundle has no GN_ONBOARDING refs', !bundle.includes('GN_ONBOARDING'));

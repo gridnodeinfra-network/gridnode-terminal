@@ -16,6 +16,8 @@ export const DIST_EXCLUDE = [
   'js/gridnode-app.js',
   'js/gridnode-core.js',
   'js/modules/',
+  // Split-order manifests — source organization, never fetched at runtime
+  'css/native/order.json',
   // Brand design sources / proof renders — repo-only reference material
   'assets/brand/source/',
   'assets/brand/proof/',

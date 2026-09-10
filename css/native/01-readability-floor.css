@@ -1,0 +1,176 @@
+/* ============================================================
+   READABILITY FLOOR — corrective pass 2026-08-03
+   Shared overrides: meaningful text is never microtext, never
+   decorative-opacity, never thin. DAY OPS gets stronger contrast.
+   Wins over earlier rules by being later + !important where needed.
+   ============================================================ */
+:root {
+  --text-dim: #6f6f88;            /* dark-theme dim floor */
+  --type-helper: .78rem;
+  --type-label: .75rem;
+}
+html[data-theme="light"] {
+  --text-primary: #1a2328;
+  --text-secondary: #33454c;
+  --text-muted: #3f535a;
+  --text-dim: #3f535a;            /* was near-invisible gray */
+  --type-helper: .78rem;
+  --type-label: .75rem;
+}
+
+/* Microtext floor: .52–.59rem monospace labels -> .68rem, weight 600+ */
+.font-m, [class*="font-m"], .gn-kicker, .gn-micro, .gn-hud-label,
+.gn-stable-zone-title, .gn-stable-zone-btn, .gn-ledger-copy,
+.gn-empty-state span, .gn-research-context, .gn-research-disclaimer,
+.gn-record-row small, .gn-weight-record small, .gn-progress-signal small,
+.boot-deck-kicker, .boot-slogan, .boot-prog-pct, .boot-deck-footer,
+.boot-line, .form-label, .gn-helper, .gn-hint, .gn-footnote,
+.gn-tab-label, .gn-badge, .gn-chip, .gn-sec-label, .gn-caption {
+  font-size: .72rem !important;
+  letter-spacing: .02em !important;
+  font-weight: 600 !important;
+  opacity: 1 !important;
+}
+/* Real sentences/paragraphs: normal letter spacing */
+p, .gn-body, .gn-empty-state span, .gn-research-notice span,
+.gn-disclaimer, .gn-description, .gn-copy {
+  letter-spacing: .01em !important;
+  font-weight: 450 !important;
+}
+/* Buttons & controls: readable weight, no thinning */
+button, .btn, .gn-btn, .gn-stable-zone-btn, .gn-record-delete,
+.gn-tab, .gn-chip, [role="button"] {
+  font-weight: 600 !important;
+}
+/* Helper text never invisible */
+.gn-helper, .gn-hint, .gn-footnote, .gn-caption,
+.gn-empty-state span, .gn-research-disclaimer {
+  color: var(--text-mid, #8295a0) !important;
+  opacity: 1 !important;
+}
+html[data-theme="light"] .gn-helper,
+html[data-theme="light"] .gn-hint,
+html[data-theme="light"] .gn-footnote,
+html[data-theme="light"] .gn-caption,
+html[data-theme="light"] .gn-research-disclaimer {
+  color: #3a4c54 !important;   /* strong slate — WCAG-AA on light surfaces */
+}
+/* Empty states readable in both themes */
+.gn-empty-state b { font-size: .92rem !important; color: var(--text-primary, #eef6f8) !important; }
+.gn-empty-state span { font-size: .8rem !important; color: var(--text-mid, #8295a0) !important; }
+
+/* DAY OPS: strengthen all text tiers */
+html[data-theme="light"] .gn-empty-state b { color: #1a2328 !important; }
+html[data-theme="light"] .gn-empty-state span { color: #3f535a !important; }
+html[data-theme="light"] .gn-record-row small,
+html[data-theme="light"] .gn-weight-record small,
+html[data-theme="light"] .gn-progress-signal small,
+html[data-theme="light"] .gn-ledger-copy { color: #2c3f47 !important; }
+html[data-theme="light"] .gn-research-notice span { color: #4a3d20 !important; }
+html[data-theme="light"] .form-label,
+html[data-theme="light"] .gn-sec-label { color: #1a2328 !important; }
+
+/* Educational / info cards */
+.gn-info-card, .gn-educ-card, .gn-tip, .gn-phase-card, .gn-calc-card p,
+.gn-card-body { font-size: .8rem !important; line-height: 1.55 !important; color: var(--text-primary, #eef6f8) !important; }
+html[data-theme="light"] .gn-info-card,
+html[data-theme="light"] .gn-educ-card,
+html[data-theme="light"] .gn-tip,
+html[data-theme="light"] .gn-phase-card { color: #1a2328 !important; }
+
+/* Loading screen: both themes keep a dark branded deck; text must read */
+#boot { background: #05070c !important; }
+html[data-theme="light"] #boot { background: #0b0f16 !important; }
+#boot .boot-command-deck {
+  background: linear-gradient(180deg, rgba(13,20,30,.97), rgba(7,9,14,.99)) !important;
+  border-color: rgba(0,212,255,.45) !important;
+}
+#boot .boot-deck-kicker { font-size: .72rem !important; font-weight: 700 !important; color: #9fd8e4 !important; letter-spacing: .06em !important; }
+#boot .boot-deck-kicker b { color: #00e6f0 !important; }
+#boot .boot-slogan { font-size: .86rem !important; font-weight: 600 !important; color: #d7edf2 !important; letter-spacing: .03em !important; }
+#boot .boot-prog-pct { font-size: .72rem !important; font-weight: 700 !important; color: #7fd4e2 !important; }
+#boot .boot-deck-footer { font-size: .66rem !important; font-weight: 600 !important; color: #8fa8b2 !important; }
+#boot .boot-terminal { background: rgba(5,10,16,.85) !important; border-color: rgba(0,212,255,.35) !important; color: #b8e8f0 !important; }
+#boot .gn-b2b-wordmark tspan { fill: #00e6f0 !important; }
+#boot .gn-b2b-wordmark tspan:nth-child(2) { fill: #FF3B3B !important; }
+#boot .gn-b2b-symbol circle { fill: #FF3B3B !important; }
+#boot .gn-b2b-symbol path { fill: #00e6f0 !important; }/* ============================================================
+   MOBILE LAYOUT FIXES — corrective pass 2026-08-03
+   History-card actions: no overlap, ≥44px targets, room to breathe.
+   ============================================================ */
+@media (max-width: 430px){
+  .gn-record-row, .gn-ledger-row, .gn-shot-card, .gn-history-card {
+    gap: 8px !important;
+    padding: 12px 10px !important;
+  }
+  .gn-record-row > div, .gn-shot-card > div { min-width: 0; flex: 1 1 auto; }
+  .gn-record-row { grid-template-columns: minmax(0, 1fr) auto auto !important; align-items: center; }
+  .gn-record-row > div > b, .gn-record-row > div > small { word-break: break-word; overflow-wrap: anywhere; }
+  .gn-restore-edit { white-space: normal !important; line-height: 1.2 !important; text-align: center !important; font-size: .72rem !important; padding: 8px 10px !important; }
+  .gn-record-delete, .gn-record-edit, .gn-shot-actions button,
+  .gn-archive-btn, .gn-restore-edit {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    padding: 10px 12px !important;
+    margin: 0 !important;
+  }
+  .gn-record-state, .gn-shot-dose, .gn-dose-badge { font-size: .74rem !important; }
+  #logOv .gn-modal-body, .gn-modal-body { padding: 14px !important; }
+  #logOv input, #logOv select, #logOv textarea,
+  .gn-form input, .gn-form select, .gn-form textarea {
+    font-size: 16px !important;   /* iOS zoom prevention */
+    min-height: 46px !important;
+  }
+  .gn-tab, .scanner-mode-btn { min-height: 44px !important; font-size: .76rem !important; }}
+
+/* Served readability inventory closure. These are the remaining functional
+   roles found by the rendered DAY OPS audit; all inherit the semantic colors
+   above and keep a phone-readable floor without altering NIGHT GRID. */
+html[data-theme="light"] :is(#landing,#login,#app,.overlay,.gn-lab-tool-overlay,.gn-whatsnew-overlay) :is(button,label,summary,input,textarea,select,option,small,p,li,th,td) {
+  font-size: max(12px,.75rem) !important;
+  font-weight: max(400,var(--gn-role-weight,400)) !important;
+  opacity: 1 !important;
+}
+html[data-theme="light"] :is(
+  .landing-language-control span,.landing-kicker,.landing-note strong,.landing-note>span,
+  .landing-local-link,.landing-preview-tag,.landing-preview-caption,.landing-footer-label,
+  .gn-auth-kicker,.gn-auth-primary-label,.gn-auth-message,.gn-auth-note,
+  .gn-topbar-language-control button,#nodeHeaderPhase,
+  .gn-dashboard-mission-kicker,.gn-wanda-label,.gn-wanda-note,.gn-instrument-code,
+  .gn-data-quality,.gn-chart-state,.gn-target-empty,.gn-telemetry-summary,.gn-arc-empty,.gn-level-kicker,
+  .scanner-source-tag,#scannerModeLabel,.scanner-status-helper,.shots-safety-note,
+  .shot-history-toggle,#shotHistoryHelper,.gn-log-step,.gn-shot-time-helper,.gn-shot-date-helper,
+  .gn-foundation-kicker,.gn-foundation-signal,.gn-lab-breadcrumb,.gn-dose-copy,
+  .results-metric-label,.empty-subline,.s6-label,.phase-readout-label,.phase-readout-copy,
+  .gn-measurements-copy,.gn-preferences-status,.gn-record-state,.gn-data-quality,
+  .cal-day-head,#calTitle,.gn-custom-picker-trigger,.gn-custom-date-trigger,
+  .gn-stable-zone-title,.gn-stable-zone-btn,.gn-research-context,.gn-research-disclaimer,
+  .gn-dose-output,.gn-profile-section-label,#gnProfileSync,#profEmail
+) {
+  font-size: max(12px,.75rem) !important;
+  line-height: 1.45 !important;
+  letter-spacing: min(.055em,1px) !important;
+  font-weight: 500 !important;
+  opacity: 1 !important;
+}
+html[data-theme="light"] :is(.gn-foundation-kicker,.gn-foundation-signal,.gn-log-step,.scanner-source-tag,.phase-readout-label,.gn-wanda-label,.results-metric-label,.cal-day-head,.gn-profile-section-label) { font-weight: 700 !important; }
+html[data-theme="light"] :is(.gn-custom-picker-trigger,.gn-custom-date-trigger,.se-check,#cpShotMedVal,#modalSelectedLocation,#gnDoseOutput,#profNameTxt,#profEmail,#gnProfileSync,#cpMedProfVal,#cpShotDayProfVal,#cpSexProfVal) { color: var(--text-primary) !important; opacity: 1 !important; }
+html[data-theme="light"] :is(.gn-measurements-copy,.scanner-status-helper,.shots-safety-note,#shotHistoryHelper,.gn-dose-copy,.empty-subline,.phase-readout-copy,.gn-wanda-note) { color: var(--text-secondary) !important; }
+html[data-theme="light"] :is(.gn-foundation-signal,.gn-lab-breadcrumb,.scanner-source-tag,#scannerModeLabel,.gn-log-step,.results-metric-label,.cal-day-head,#calTitle) { color: var(--text-label) !important; }
+html[data-theme="light"] :is(.gn-topbar-language-control button,.landing-language-control button) { color: var(--text-muted) !important; }
+html[data-theme="light"] :is(.gn-topbar-language-control button.active,.landing-language-control button.active) { color: var(--text-accent) !important; }
+
+/* Inactive dashboard instruments stay secondary through surface/filter cues,
+   while their words remain readable. B16 (2026-08-08): empty hero is NEVER
+   dimmed — the pending wash-out applied to both themes. */
+html[data-theme="light"] #pageDash[data-activation="pending"] > :not(.page-hdr):not(#gnWandaDashboard):not(.gn-empty-hero),
+html[data-theme="light"] #pageDash[data-activation="pending"] #gnWandaDashboard > :not(#gnFirstShotMission) {
+  opacity: .76 !important;
+  filter: saturate(.35) contrast(.96) !important;
+}@media (max-width: 430px){
+  html[data-theme="light"] :is(.gn-topbar-language-control button,.landing-language-control button) { min-width: 42px !important; }}@keyframes gnOnbArrowGlow{
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.45); }}@keyframes gnOnbCardIn{ from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); }}@keyframes gnOnbPulse{
+  0%, 100% { box-shadow: 0 0 0 2px #fff, 0 0 0 6px #ffd166, 0 0 24px 6px rgba(255, 209, 102, .85), 0 0 70px 16px rgba(255, 209, 102, .35); }
+  50% { box-shadow: 0 0 0 3px #fff, 0 0 0 9px #ffd166, 0 0 40px 12px rgba(255, 209, 102, 1), 0 0 110px 26px rgba(255, 209, 102, .5); }}
+

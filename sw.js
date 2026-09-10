@@ -17,7 +17,12 @@ const SHELL = [
   // the service worker serves it for a navigation. '/' is the canonical shell.
   '/manifest.json',
   '/css/daylight-nexus-pilot.css' + V,
-  '/css/gridnode-native.css' + V,
+  // Phase 2 refactor: gridnode-native.css split into css/native/ (order.json); keep cascade order.
+  '/css/native/00-base.css' + V,
+  '/css/native/01-readability-floor.css' + V,
+  '/css/native/02-first-five-minutes.css' + V,
+  '/css/native/03-premium-system.css' + V,
+  '/css/native/04-first-contact.css' + V,
   '/js/gridnode-theme.js' + V,
   '/js/gridnode-version.js' + V,
   '/js/gridnode-i18n.js' + V,

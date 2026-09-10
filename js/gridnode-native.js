@@ -53,11 +53,22 @@
 
   function injectCss() {
     if (document.getElementById('gnNativeCss')) return;
-    const link = document.createElement('link');
-    link.id = 'gnNativeCss';
-    link.rel = 'stylesheet';
-    link.href = './css/gridnode-native.css?v=' + V;
-    document.head.appendChild(link);
+    // Phase 2 refactor: gridnode-native.css is split into css/native/*.css files.
+    // GN_NATIVE_CSS_ORDER must match css/native/order.json (checked by contract test).
+    const files = [
+      '00-base.css',
+      '01-readability-floor.css',
+      '02-first-five-minutes.css',
+      '03-premium-system.css',
+      '04-first-contact.css',
+    ];
+    files.forEach((file, index) => {
+      const link = document.createElement('link');
+      if (index === 0) link.id = 'gnNativeCss';
+      link.rel = 'stylesheet';
+      link.href = './css/native/' + file + '?v=' + V;
+      document.head.appendChild(link);
+    });
   }
 
   function syncViewport() {
