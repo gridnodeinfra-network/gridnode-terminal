@@ -278,6 +278,14 @@
     if (!overlay) return;
     overlay.classList.toggle('mode-screen', mode === 'screen');
     overlay.classList.toggle('mode-spot', mode === 'spot');
+    if (mode === 'screen') {
+      // Fullscreen beats have no spotlight target: park the gold arrow
+      // off-screen. It is absolutely positioned with auto top/left, so
+      // without this it sits at the flex-centered static position, i.e.
+      // dead center of the screen (stray yellow square on beats 0/1/4/5).
+      var arrow = overlay.querySelector('.gn-fc-arrow');
+      if (arrow) { arrow.style.top = '-99px'; arrow.style.left = '-99px'; arrow.style.transform = ''; }
+    }
   }
 
   /* ------------------------------------------------------------------ */

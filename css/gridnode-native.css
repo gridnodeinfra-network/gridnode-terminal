@@ -1551,6 +1551,12 @@ html[data-theme="light"] .gn-dashboard-mission p { color: #33484f; }
   line-height: 1.45 !important;
   letter-spacing: .035em !important;
 }
+/* Phase Engine source readout: label/value rows. (The class shipped with no
+   rules, so labels and values rendered jammed together.) */
+.phase-source-grid { display: grid; gap: 10px; margin-top: 12px; }
+.phase-source-grid > div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.phase-source-grid > div > span { font: 700 .62rem var(--font-d, monospace); letter-spacing: 1.6px; color: var(--text-label); white-space: nowrap; }
+.phase-source-grid > div > b { font: 700 .8rem var(--font-b, system-ui); color: var(--text-primary); text-align: right; }
 .cp-option,
 .gn-custom-picker-option { min-height: var(--gn-control-height) !important; padding: 11px 12px !important; }
 .form-input,

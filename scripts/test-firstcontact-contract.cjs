@@ -120,6 +120,16 @@ check('light theme variants for tour', /data-theme="light"[\s\S]{0,200}gn-fc-/.t
   check('stylesheet has substantial rule count', topRules > 1000, 'found ' + topRules + ' closing braces');
 }
 
+// --- Stray gold arrow: screen beats must park it off-screen ----------------
+check('screen beats park the gold arrow off-screen',
+  fc.includes("if (mode === 'screen')") && /querySelector\('\.gn-fc-arrow'\)[\s\S]{0,160}'-99px'/.test(fc),
+  'arrow renders dead-center on fullscreen beats');
+
+// --- Phase Engine source readout has real layout rules ----------------------
+check('phase-source-grid label/value layout exists',
+  nativeCss.includes('.phase-source-grid > div') && nativeCss.includes('justify-content: space-between'),
+  'readout renders jammed label+value text');
+
 // --- Coach watches modal close (retreat to spotlight) ----------------------
 check('modal-close observer retreats to spot', fc.includes('MutationObserver') && fc.includes("dosePhase = 'spot'"));
 
