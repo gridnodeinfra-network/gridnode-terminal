@@ -28,17 +28,35 @@
   /* Flow polish (v0.15.2): step 1 spotlights the right control for the user's
    * state — REGISTER MY FIRST DOSE on a clean grid, otherwise the LOG SHOT
    * affordance (FAB) so returning users still get a meaningful pointer.
+   * v0.15.35: visibility-aware. The FAB is display:none until private mode,
+   * so targeting it blindly produced a zero-size spotlight hole (full-dark
+   * screen, no visible control). Return a prioritized selector list and let
+   * targetEl() pick the first actually-visible match.
    */
   function firstShotTarget() {
-    var shots = 0;
-    try { shots = (JSON.parse(localStorage.getItem('gn_local_shots') || '[]') || []).length; } catch (_) {}
-    if (shots > 0) return '.fab';
-    return '[data-onboard="empty-cta"]';
+    // Visible dashboard LOG SHOT first, then the FAB, then the empty-state CTA.
+    return '.gn-wanda-actions button, .fab, [data-onboard="empty-cta"]';
+  }
+
+  /* True only when the element is actually on screen with a real size.
+   * Guards the spotlight against display:none / detached / zero-size targets.
+   */
+  function isVisibleTarget(el) {
+    if (!el || typeof el.getBoundingClientRect !== 'function') return false;
+    var r = el.getBoundingClientRect();
+    if (!r || r.width < 8 || r.height < 8) return false;
+    var cs = null;
+    try { cs = window.getComputedStyle(el); } catch (_) { return false; }
+    if (!cs) return false;
+    if (cs.display === 'none' || cs.visibility === 'hidden' || cs.visibility === 'collapse') return false;
+    var op = parseFloat(cs.opacity);
+    if (!isNaN(op) && op < 0.15) return false;
+    return true;
   }
 
   var STEPS = [
     { title: 'onb.welcome', body: 'onb.welcomeBody', selFn: firstShotTarget, action: 'tap', nav: 'Dash' },
-    { title: 'onb.weight', body: 'onb.weightBody', sel: '[data-onboard="log-weight"]', action: 'tap', nav: 'Dash' },
+    { title: 'onb.weight', body: 'onb.weightBody', sel: '[data-onboard="log-weight"], .gn-wanda-actions button:last-child', action: 'tap', nav: 'Dash' },
     { title: 'onb.theme', body: 'onb.themeBody', sel: '[data-theme-opt]', action: null },
     { title: 'onb.language', body: 'onb.languageBody', sel: '.gn-lang-globe', action: null },
     { title: 'onb.done', body: 'onb.doneBody', action: null }
@@ -100,9 +118,16 @@
   function targetEl(step) {
     var selector = typeof step.selFn === 'function' ? step.selFn() : step.sel;
     if (!selector) return null;
-    var el = null;
-    try { el = document.querySelector(selector.split(',')[0]); } catch (_) { el = null; }
-    return el;
+    // A step may list several candidate selectors: use the first one that
+    // is actually visible. (Prevents spotlighting a display:none control,
+    // which collapses the hole and dims the whole screen.)
+    var parts = String(selector).split(',');
+    for (var i = 0; i < parts.length; i++) {
+      var el = null;
+      try { el = document.querySelector(parts[i].trim()); } catch (_) { el = null; }
+      if (el && isVisibleTarget(el)) return el;
+    }
+    return null;
   }
 
   function removeSpotlight() {
@@ -135,6 +160,17 @@
     if (!box) return;
     var vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
     var vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+    // Safety net: a degenerate (zero-area) hole would dim the entire screen
+    // with no visible target. Collapse the dims instead and let the card
+    // act as a plain explainer.
+    var holeW = Math.max(0, box.right - box.left), holeH = Math.max(0, box.bottom - box.top);
+    if (holeW < 8 || holeH < 8) {
+      overlay.querySelectorAll('.gn-onb-dim').forEach(function (dim) {
+        dim.style.top = '0px'; dim.style.left = '0px';
+        dim.style.width = '0px'; dim.style.height = '0px';
+      });
+      return;
+    }
     var pad = 6;
     var dims = {
       t: { top: 0, left: 0, width: vw, height: Math.max(0, box.top - pad) },

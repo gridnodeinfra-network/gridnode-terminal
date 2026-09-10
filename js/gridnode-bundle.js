@@ -5954,6 +5954,10 @@ function showApp() {
       <button type="button" class="btn-full btn-primary" id="gnRegisterPasskeyBtn" data-i18n="auth.registerNewPasskey">+ REGISTER A NEW PASSKEY</button>
     </section>`);
     $('gnRegisterPasskeyBtn')?.addEventListener('click', async () => {
+      const btn = $('gnRegisterPasskeyBtn');
+      // Guard against double-taps: a second concurrent ceremony would race
+      // the first and can burn the single-use challenge.
+      if (btn && btn.disabled) return;
       const inline = document.querySelector('#gnPasskeysCard .gn-inline-error');
       const clearInline = () => { const e = document.querySelector('#gnPasskeysCard .gn-inline-error'); if (e) e.remove(); };
       if (!(await isWebAuthnSupported())) {
@@ -5965,6 +5969,7 @@ function showApp() {
         $('gnRegisterPasskeyBtn')?.insertAdjacentElement('afterend', err);
         return;
       }
+      if (btn) btn.disabled = true;
       try {
         clearInline();
         await registerPasskey(guessDeviceName());
@@ -5978,6 +5983,8 @@ function showApp() {
         err.setAttribute('role', 'alert');
         err.textContent = tx('auth.passkeyRegisterFailed', 'COULDN\'T REGISTER PASSKEY: {message}', { message: error.message });
         $('gnRegisterPasskeyBtn')?.insertAdjacentElement('afterend', err);
+      } finally {
+        if (btn) btn.disabled = false;
       }
     });
     await renderPasskeyList();
