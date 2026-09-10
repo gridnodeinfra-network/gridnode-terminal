@@ -11,7 +11,9 @@ The public landing, boot, and authentication states hide private navigation and 
 
 ## Source structure
 
-- `index.html` — preserved interface, visual system, and static shell.
+- `index.html` — generated at build time from `html/partials/` (see below); do not edit directly.
+- `html/partials/` — index.html source: 18 ordered partials (doctype, head, body shell, landing, boot, app, overlays, style patches, scripts) assembled by `scripts/build.mjs` in `order.json` sequence. Assembly is byte-identical; `scripts/test-html-reproducibility.cjs` guards it.
+- `css/native/` — the native stylesheet split into 5 ordered files (base, readability floor, first-five-minutes, premium system, first contact) in `order.json` cascade sequence; loaded as separate `<link>` tags by `index.html`.
 - `js/gridnode-core.js` — state, local persistence, sessions, Supabase adapter, and synchronization.
 - `js/modules/` — feature modules (SHOTS, scanner, log flow, Phase Engine, RESULTS, LAB, NODE/VAULT surfaces, importer, navigation), concatenated into the bundle by `scripts/build-bundle.sh` in pinned filename order.
 - `js/gridnode-app.js` — boot, authentication, compatibility bridge, and orchestration.

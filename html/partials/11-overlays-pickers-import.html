@@ -1,0 +1,31 @@
+<div class="gn-date-overlay" id="gnDatePickerOverlay" role="dialog" aria-modal="true" aria-labelledby="gnDatePickerTitle">
+  <div class="gn-date-panel">
+    <div class="gn-date-title" id="gnDatePickerTitle">SELECT SHOT DATE</div>
+    <div class="gn-date-month">
+      <button class="gn-date-nav" type="button" onclick="gnDatePickerMove(-1)">‹</button>
+      <div class="gn-date-month-label" id="gnDatePickerMonth">—</div>
+      <button class="gn-date-nav" type="button" onclick="gnDatePickerMove(1)">›</button>
+    </div>
+    <div class="gn-date-grid" id="gnDatePickerGrid"></div>
+    <div class="gn-date-actions">
+      <button class="gn-date-cancel" type="button" onclick="gnCloseShotDatePicker()" data-i18n="date.cancel">CANCEL</button>
+      <button class="gn-date-set" type="button" onclick="gnSetShotDateFromPicker()" data-i18n="date.set">SET</button>
+    </div>
+  </div>
+</div>
+
+<div class="csv-import-overlay" id="csvImportOverlay" role="dialog" aria-modal="true" aria-labelledby="csvImportTitle">
+  <div class="csv-import-panel">
+    <div class="csv-import-title" id="csvImportTitle" data-i18n="csv.title">CSV IMPORT PREVIEW</div>
+    <div class="csv-import-body" id="csvImportFormat" data-i18n="csv.copy">Review detected user-entered protocol records before appending them to SHOTS HISTORY.</div>
+    <div class="csv-import-summary" id="csvImportSummary" data-i18n="csv.noFile">No file selected.</div>
+    <div class="csv-import-rows" id="csvImportRows"></div>
+    <div class="csv-import-actions">
+      <button class="csv-import-cancel" type="button" onclick="cancelCSVImport()" data-i18n="csv.cancel">CANCEL</button>
+      <button class="csv-import-save" id="csvImportConfirmBtn" type="button" onclick="confirmCSVImport()" data-i18n="csv.confirm">IMPORT TO SHOTS HISTORY</button>
+    </div>
+  </div>
+</div>
+
+
+

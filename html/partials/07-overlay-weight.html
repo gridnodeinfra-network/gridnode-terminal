@@ -1,0 +1,49 @@
+<div class="overlay results-weight-overlay" id="wtOv">
+  <div class="modal results-weight-modal" role="dialog" aria-modal="true" aria-labelledby="wtModalTitle">
+    <div class="modal-hdr">
+      <div class="modal-actions"><button class="modal-btn close" type="button" onclick="closeWt()" aria-label="Close ADD WEIGHT ENTRY" data-i18n-aria-label="weight.closeAria"><span class="gn-icon"><svg><use href="#gn-close"></use></svg></span></button></div>
+      <div class="modal-title" id="wtModalTitle" data-i18n="weight.addEntry">ADD WEIGHT ENTRY</div>
+      <div class="modal-actions"><button class="modal-btn save" type="button" onclick="saveWt()" aria-label="Save weight record" data-i18n-aria-label="weight.saveAria"><span class="gn-icon"><svg><use href="#gn-check"></use></svg></span></button></div>
+    </div>
+
+    <div class="results-weight-helper" data-i18n="weight.copy">
+      Weight records are user-entered tracking data. Log anytime — daily, weekly, biweekly, or irregularly.
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="wtDate" data-i18n="weight.date">DATE</label>
+        <input class="form-input" type="text" id="wtDate" inputmode="numeric" placeholder="MM/DD/YYYY" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="next" oninput="gnWeightDateInput(this)">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="wtTime" data-i18n="weight.time">TIME</label>
+        <input class="form-input" type="text" id="wtTime" inputmode="numeric" placeholder="HH:MM" maxlength="5" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="next" oninput="gnWeightTimeInput(this)">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="wtVal" data-i18n="weight.value">WEIGHT VALUE</label>
+      <input class="form-input" type="number" id="wtVal" placeholder="e.g. 215.5" data-i18n-placeholder="shot.weightPlaceholder" step="0.1" inputmode="decimal" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done">
+    </div>
+
+    <div class="form-group">
+      <div class="form-label" id="wtUnitLabel" data-i18n="weight.unit">UNIT</div>
+      <div class="results-weight-unit-toggle" id="wtUnitToggle" role="group" aria-labelledby="wtUnitLabel">
+        <button class="results-weight-unit active" type="button" data-wt-unit="lb" onclick="setWeightUnit('lb')" data-i18n="weight.lb">LB</button>
+        <button class="results-weight-unit" type="button" data-wt-unit="kg" onclick="setWeightUnit('kg')" data-i18n="weight.kg">KG</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="wtNotes" data-i18n="weight.notes">NOTES — OPTIONAL</label>
+      <input class="form-input" id="wtNotes" placeholder="Optional context" data-i18n-placeholder="weight.notesPlaceholder" maxlength="180" autocomplete="off" autocorrect="off" autocapitalize="sentences" spellcheck="false" enterkeyhint="done">
+    </div>
+
+    <div class="results-weight-error" id="wtError" style="display:none"></div>
+
+    <button class="btn-full btn-primary" type="button" onclick="saveWt()" data-i18n="weight.save">SAVE WEIGHT RECORD</button>
+    <button class="btn-full btn-secondary" type="button" onclick="closeWt()" data-i18n="modal.cancel">CANCEL</button>
+  </div>
+</div>
+
+

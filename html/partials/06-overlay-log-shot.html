@@ -1,0 +1,116 @@
+<div class="overlay" id="logOv">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="logOvTitle">
+    <div class="modal-hdr">
+      <div class="modal-actions"><button class="modal-btn close" aria-label="Close" data-i18n-aria-label="modal.close" onclick="closeLog()"><span class="gn-icon"><svg><use href="#gn-close"></use></svg></span></button></div>
+      <div class="modal-title" id="logOvTitle" data-i18n="shot.logShot">LOG SHOT</div>
+      <div class="modal-actions"><button class="modal-btn save" aria-label="Save shot" data-i18n-aria-label="modal.saveShot" onclick="saveShot()"><span class="gn-icon"><svg><use href="#gn-check"></use></svg></span></button></div>
+    </div>
+    <div class="form-group gn-shot-datetime-group">
+      <label class="form-label" for="sDate" data-i18n="shot.date">DATE</label>
+      <input class="form-input gn-shot-date-input" type="text" id="sDate" placeholder="Jun 11, 2026" data-i18n-placeholder="shot.datePlaceholder" inputmode="none" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" readonly onclick="gnOpenShotDatePicker()" aria-label="Select SHOT date" data-i18n-aria-label="shot.dateAria">
+      <div class="gn-shot-date-helper" data-i18n="shot.dateHelp">Tap to choose date. Displayed for humans, saved in compatible SHOTS format.</div>
+      <label class="form-label gn-shot-time-label" for="sTime" data-i18n="shot.time">TIME</label>
+      <div class="gn-shot-time-control" role="group" aria-label="SHOT time control" data-i18n-aria-label="shot.timeControlAria">
+        <input class="form-input gn-shot-time-input" type="text" id="sTime" placeholder="8:30" data-i18n-placeholder="shot.timePlaceholder" inputmode="numeric" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" aria-label="Enter SHOT time as hours and minutes" data-i18n-aria-label="shot.timeAria" oninput="gnShotClockLiveFormat(this)" onblur="gnNormalizeShotClockField(this)">
+        <div class="gn-ampm-toggle" role="group" aria-label="Select AM or PM" data-i18n-aria-label="shot.ampmAria">
+          <button class="gn-ampm-btn" id="sTimeAM" type="button" onclick="gnSetShotMeridiem('AM')" data-i18n="shot.am">AM</button>
+          <button class="gn-ampm-btn" id="sTimePM" type="button" onclick="gnSetShotMeridiem('PM')" data-i18n="shot.pm">PM</button>
+        </div>
+      </div>
+      <div class="gn-shot-time-helper" data-i18n="shot.timeHelp">Enter numeric time, then choose AM or PM. Example: 8:30 + AM.</div>
+    </div>
+    <div class="form-group">
+      <div class="form-label" id="cpShotMedLabel" data-i18n="shot.medication">MEDICATION</div>
+      <div class="cp-select" id="cpShotMed">
+        <div class="cp-select-trigger" onclick="toggleSelect('cpShotMed')" aria-labelledby="cpShotMedLabel cpShotMedVal"><span class="placeholder" id="cpShotMedVal" data-i18n="shot.selectMedication">Select medication</span><span class="cp-select-arrow">▼</span></div>
+        <div class="cp-dropdown" id="cpShotMedDrop" data-gn-med-minimized>
+          <div class="cp-group-minimized" data-gn-med-group="TIRZEPATIDE" onclick="gnMedRevealGroup('cpShotMedDrop','TIRZEPATIDE')" role="button" tabindex="0"><span class="cp-group-minimized-label">TIRZEPATIDE</span><span class="cp-group-minimized-count">3</span></div>
+          <div class="cp-group-options" data-gn-med-options="TIRZEPATIDE">
+            <div class="cp-option" onclick="selectOpt('cpShotMed','zepbound_tirzepatide','Zepbound (Tirzepatide)',typeof updatePills === 'function' ? updatePills : null)">Zepbound (Tirzepatide)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','mounjaro_tirzepatide','Mounjaro (Tirzepatide)',typeof updatePills === 'function' ? updatePills : null)">Mounjaro (Tirzepatide)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','tirzepatide_compound','Tirzepatide (Compound)',typeof updatePills === 'function' ? updatePills : null)">Tirzepatide (Compound)</div>
+          </div>
+          <div class="cp-group-minimized" data-gn-med-group="SEMAGLUTIDE" onclick="gnMedRevealGroup('cpShotMedDrop','SEMAGLUTIDE')" role="button" tabindex="0"><span class="cp-group-minimized-label">SEMAGLUTIDE</span><span class="cp-group-minimized-count">3</span></div>
+          <div class="cp-group-options" data-gn-med-options="SEMAGLUTIDE">
+            <div class="cp-option" onclick="selectOpt('cpShotMed','wegovy_semaglutide','Wegovy (Semaglutide)',typeof updatePills === 'function' ? updatePills : null)">Wegovy (Semaglutide)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','ozempic_semaglutide','Ozempic (Semaglutide)',typeof updatePills === 'function' ? updatePills : null)">Ozempic (Semaglutide)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','semaglutide_compound','Semaglutide (Compound)',typeof updatePills === 'function' ? updatePills : null)">Semaglutide (Compound)</div>
+          </div>
+          <div class="cp-group-minimized" data-gn-med-group="OTHER" onclick="gnMedRevealGroup('cpShotMedDrop','OTHER')" role="button" tabindex="0"><span class="cp-group-minimized-label" data-i18n="shot.other">OTHER</span><span class="cp-group-minimized-count">2</span></div>
+          <div class="cp-group-options" data-gn-med-options="OTHER">
+            <div class="cp-option" onclick="selectOpt('cpShotMed','retatrutide','Retatrutide',typeof updatePills === 'function' ? updatePills : null)">Retatrutide</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','custom_compound','Custom Compound',typeof updatePills === 'function' ? updatePills : null)">Custom Compound</div>
+          </div>
+          <div class="cp-group-minimized" data-gn-med-group="RECOVERY" onclick="gnMedRevealGroup('cpShotMedDrop','RECOVERY')" role="button" tabindex="0"><span class="cp-group-minimized-label" data-i18n="shot.groupRecovery">RECOVERY</span><span class="cp-group-minimized-count">4</span></div>
+          <div class="cp-group-options" data-gn-med-options="RECOVERY">
+            <div class="cp-option" onclick="selectOpt('cpShotMed','bpc157','BPC-157',typeof updatePills === 'function' ? updatePills : null)">BPC-157</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','tb500','TB-500',typeof updatePills === 'function' ? updatePills : null)">TB-500</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','thymosin_beta4','Thymosin β-4 (Full)',typeof updatePills === 'function' ? updatePills : null)">Thymosin β-4 (Full)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','thymosin_alpha1','Thymosin α-1',typeof updatePills === 'function' ? updatePills : null)">Thymosin α-1</div>
+          </div>
+          <div class="cp-group-minimized" data-gn-med-group="GH AXIS" onclick="gnMedRevealGroup('cpShotMedDrop','GH AXIS')" role="button" tabindex="0"><span class="cp-group-minimized-label" data-i18n="shot.groupGhAxis">GH AXIS</span><span class="cp-group-minimized-count">5</span></div>
+          <div class="cp-group-options" data-gn-med-options="GH AXIS">
+            <div class="cp-option" onclick="selectOpt('cpShotMed','cjc1295_dac','CJC-1295 (DAC)',typeof updatePills === 'function' ? updatePills : null)">CJC-1295 (DAC)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','cjc1295_nodac','Mod GRF 1-29 (CJC no-DAC)',typeof updatePills === 'function' ? updatePills : null)">Mod GRF 1-29 (CJC no-DAC)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','ipamorelin','Ipamorelin',typeof updatePills === 'function' ? updatePills : null)">Ipamorelin</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','sermorelin','Sermorelin',typeof updatePills === 'function' ? updatePills : null)">Sermorelin</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','tesamorelin','Tesamorelin',typeof updatePills === 'function' ? updatePills : null)">Tesamorelin</div>
+          </div>
+          <div class="cp-group-minimized" data-gn-med-group="NEURO" onclick="gnMedRevealGroup('cpShotMedDrop','NEURO')" role="button" tabindex="0"><span class="cp-group-minimized-label" data-i18n="shot.groupNeuro">NEURO</span><span class="cp-group-minimized-count">2</span></div>
+          <div class="cp-group-options" data-gn-med-options="NEURO">
+            <div class="cp-option" onclick="selectOpt('cpShotMed','semax','Semax',typeof updatePills === 'function' ? updatePills : null)">Semax</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','selank','Selank',typeof updatePills === 'function' ? updatePills : null)">Selank</div>
+          </div>
+          <div class="cp-group-minimized" data-gn-med-group="SKIN" onclick="gnMedRevealGroup('cpShotMedDrop','SKIN')" role="button" tabindex="0"><span class="cp-group-minimized-label" data-i18n="shot.groupSkin">SKIN</span><span class="cp-group-minimized-count">2</span></div>
+          <div class="cp-group-options" data-gn-med-options="SKIN">
+            <div class="cp-option" onclick="selectOpt('cpShotMed','ghk_cu_topical','GHK-Cu (Topical)',typeof updatePills === 'function' ? updatePills : null)">GHK-Cu (Topical)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','ghk_cu_injectable','GHK-Cu (Injectable)',typeof updatePills === 'function' ? updatePills : null)">GHK-Cu (Injectable)</div>
+          </div>
+          <div class="cp-group-minimized" data-gn-med-group="METABOLIC" onclick="gnMedRevealGroup('cpShotMedDrop','METABOLIC')" role="button" tabindex="0"><span class="cp-group-minimized-label" data-i18n="shot.groupMetabolic">METABOLIC</span><span class="cp-group-minimized-count">4</span></div>
+          <div class="cp-group-options" data-gn-med-options="METABOLIC">
+            <div class="cp-option" onclick="selectOpt('cpShotMed','elamipretide_ss31','Elamipretide / SS-31',typeof updatePills === 'function' ? updatePills : null)">Elamipretide / SS-31</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','epitalon','Epitalon',typeof updatePills === 'function' ? updatePills : null)">Epitalon</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','mots_c','MOTS-c',typeof updatePills === 'function' ? updatePills : null)">MOTS-c</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','kpv','KPV',typeof updatePills === 'function' ? updatePills : null)">KPV</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label" for="sDose" data-i18n="shot.doseLabel">DOSE — TAP TO SELECT OR ENTER CUSTOM</label><div class="dose-pills" id="dosePills"></div><input class="form-input" type="number" id="sDose" placeholder="Custom dose (mg)" data-i18n-placeholder="shot.customDose" min="0.1" step="0.1" inputmode="decimal" style="margin-top:7px"></div>
+    <div class="form-group">
+      <div class="form-label" id="modalSelectedLocationLabel" data-i18n="shot.selectedLocationLabel">SELECTED LOCATION</div>
+      <div class="scanner-location-display" role="group" aria-labelledby="modalSelectedLocationLabel">
+        <span class="form-label" style="margin-bottom:0" data-i18n="shots.userEnteredLocation">USER-ENTERED LOCATION</span>
+        <b id="modalSelectedLocation" data-i18n="shots.noLocationSelected">No location selected</b>
+        <button type="button" class="log-location-action" id="logLocationAction" onclick="goToScannerForLocationFromLog()" data-i18n="shots.selectLoggedLocation">SELECT LOGGED LOCATION</button>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label" for="shotDeviceId" data-i18n="shot.deviceUsed">DEVICE USED — OPTIONAL</label><select class="form-input" id="shotDeviceId"><option value="" data-i18n="shot.unknownDevice">Unknown / Not applicable</option></select><div class="gn-shot-time-helper" data-i18n="shot.deviceHelper">Device identity stays separate from the SHOT event. Historical SHOTS are not rewritten when a device changes.</div></div>
+    <button type="button" class="gn-shot-advanced-trigger" data-collapse-target="gnShotAdvanced" aria-expanded="false" aria-controls="gnShotAdvanced">
+      <span data-i18n="shot.moreDetails">// MORE DETAILS</span>
+      <span class="gn-shot-advanced-chevron" aria-hidden="true">▼</span>
+    </button>
+    <div id="gnShotAdvanced" class="gn-shot-advanced-body gn-hidden">
+      <div class="form-group"><label class="form-label" for="sWt" data-i18n="shot.weightToday">WEIGHT TODAY (lbs) — OPTIONAL</label><input class="form-input" type="number" id="sWt" placeholder="e.g. 215.5" data-i18n-placeholder="shot.weightPlaceholder" min="0.1" step="0.1" inputmode="decimal"></div>
+      <div class="form-group"><div class="form-label" id="shotSideEffectsLabel" data-i18n="shot.sideEffects">SIDE EFFECTS</div>
+        <div class="se-grid" role="group" aria-labelledby="shotSideEffectsLabel">
+          <label class="se-check"><input type="checkbox" value="nausea"> <span data-i18n="shot.nausea">Nausea</span></label>
+          <label class="se-check"><input type="checkbox" value="fatigue"> <span data-i18n="shot.fatigue">Fatigue</span></label>
+          <label class="se-check"><input type="checkbox" value="headache"> <span data-i18n="shot.headache">Headache</span></label>
+          <label class="se-check"><input type="checkbox" value="diarrhea"> <span data-i18n="shot.diarrhea">Diarrhea</span></label>
+          <label class="se-check"><input type="checkbox" value="constipation"> <span data-i18n="shot.constipation">Constipation</span></label>
+          <label class="se-check"><input type="checkbox" value="vomiting"> <span data-i18n="shot.vomiting">Vomiting</span></label>
+          <label class="se-check"><input type="checkbox" value="insomnia"> <span data-i18n="shot.insomnia">Insomnia</span></label>
+          <label class="se-check"><input type="checkbox" value="bloating"> <span data-i18n="shot.bloating">Bloating</span></label>
+          <label class="se-check"><input type="checkbox" value="reflux"> <span data-i18n="shot.reflux">Reflux</span></label>
+          <label class="se-check"><input type="checkbox" value="dizziness"> <span data-i18n="shot.dizziness">Dizziness</span></label>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label" for="sNotes" data-i18n="shots.notesOptional">NOTES — OPTIONAL</label><textarea class="form-textarea" id="sNotes" placeholder="How do you feel?" data-i18n-placeholder="shot.notesPlaceholder" maxlength="500"></textarea></div>
+    </div>
+    <button class="btn-full btn-primary" onclick="saveShot()" data-i18n="shot.saveShot">SAVE SHOT</button>
+    <button class="btn-full btn-secondary log-modal-bottom-close" onclick="closeLog()" data-i18n="shot.closeReturn">CLOSE / RETURN</button>
+  </div>
+</div>
+
+

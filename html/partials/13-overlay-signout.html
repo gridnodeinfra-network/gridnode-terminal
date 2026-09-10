@@ -1,0 +1,36 @@
+<div class="overlay" id="signOutOverlay" style="display:none;align-items:center;justify-content:center">
+  <div class="gn-signout-panel" style="
+    background:#0e0e16;background:var(--panel, #0e0e16);
+    border:1px solid rgba(255,59,59,0.3);
+    border-top:2px solid #FF3B3B;
+    border-radius:8px;
+    padding:28px 24px;
+    width:calc(100% - 48px);
+    max-width:320px;
+    text-align:center;
+  ">
+    <div style="font-family:'Orbitron',monospace;font-size:1rem;font-weight:700;color:#fff;letter-spacing:3px;margin-bottom:8px" data-i18n="signout.title">
+      SIGN OUT?
+    </div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:#9898b0;letter-spacing:2px;margin-bottom:24px;line-height:1.8">
+      <span data-i18n="signout.saved">// YOUR DATA IS SAVED //</span><br><span data-i18n="signout.anytime">YOU CAN SIGN BACK IN ANYTIME</span>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button onclick="closeSignOutModal()" style="
+        flex:1;height:48px;
+        background:transparent;
+        border:1px solid rgba(255,255,255,0.1);
+        border-radius:6px;
+        color:#9898b0;
+        font-family:'Orbitron',monospace;
+        font-size:0.72rem;letter-spacing:2px;
+        cursor:pointer;
+      " data-i18n="signout.cancel">CANCEL</button>
+      <button onclick="confirmSignOut()" class="gn-confirm-danger" style="
+        flex:1;height:48px;
+      " data-i18n="signout.title">SIGN OUT</button>
+    </div>
+  </div>
+</div>
+
+

@@ -18,6 +18,8 @@ export const DIST_EXCLUDE = [
   'js/modules/',
   // Split-order manifests — source organization, never fetched at runtime
   'css/native/order.json',
+  // HTML partials — assembled into index.html by build.mjs step 0
+  'html/',
   // Brand design sources / proof renders — repo-only reference material
   'assets/brand/source/',
   'assets/brand/proof/',

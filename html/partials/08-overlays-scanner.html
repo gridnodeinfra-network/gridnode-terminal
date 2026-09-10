@@ -1,0 +1,49 @@
+<div class="overlay" id="arsOv">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-actions"><button class="modal-btn close" onclick="closeArs()"><span class="gn-icon"><svg><use href="#gn-close"></use></svg></span></button></div>
+      <div class="modal-title" id="arsTitle">ADD CONTEXT</div>
+      <div class="modal-actions"><button class="modal-btn save" onclick="saveArs()"><span class="gn-icon"><svg><use href="#gn-check"></use></svg></span></button></div>
+    </div>
+    <div class="form-group"><label class="form-label" for="aName" data-i18n="lab.arsenalName">CONTEXT NAME</label><input class="form-input" id="aName" placeholder="e.g. GLP-1 reference item" data-i18n-placeholder="lab.referenceNamePlaceholder"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label" for="aConc" data-i18n="lab.concentration">CONCENTRATION (mg/mL)</label><input class="form-input" type="number" id="aConc" placeholder="e.g. 10"></div>
+      <div class="form-group"><label class="form-label" for="aVol" data-i18n="lab.volume">VOLUME (mL)</label><input class="form-input" type="number" id="aVol" placeholder="e.g. 3"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label" for="aQty" data-i18n="lab.quantity">QUANTITY</label><input class="form-input" type="number" id="aQty" placeholder="1" value="1"></div>
+      <div class="form-group"><label class="form-label" for="aExpiry" data-i18n="lab.peerReviewDate">REVIEW DATE</label><input class="form-input" type="date" id="aExpiry"></div>
+    </div>
+    <button class="btn-full btn-primary" id="arsSaveBtn" onclick="saveArs()" data-i18n="shots.saveContext">SAVE CONTEXT</button>
+  </div>
+</div>
+
+
+
+<div class="archive-confirm-overlay" id="loadoutRemoveOverlay">
+  <div class="archive-confirm-panel danger">
+    <div class="archive-confirm-title" data-i18n="shot.removeTitle">REMOVE THIS MED?</div>
+    <div class="archive-confirm-body" data-i18n="shot.removeBody">This removes the medication record only. SHOTS history is unchanged.</div>
+    <div class="archive-confirm-system" data-i18n="shot.removeSystem">VAULT_SAFE // SHOTS UNAFFECTED</div>
+    <div class="archive-confirm-actions">
+      <button class="archive-confirm-cancel" onclick="cancelLoadoutRemove()" data-i18n="shot.removeCancel">CANCEL</button>
+      <button class="archive-confirm-delete" onclick="confirmLoadoutRemove()" data-i18n="shot.removeRecord">REMOVE RECORD</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="overlay" id="phasesOv">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-actions"><button class="modal-btn close" type="button" onclick="closePhases()" aria-label="Close" data-i18n-aria-label="common.close"><span class="gn-icon" aria-hidden="true"><svg><use href="#gn-close"></use></svg></span></button></div>
+      <div class="modal-title" data-i18n="phase.allPhases">ALL PHASES</div>
+      <div style="width:38px"></div>
+    </div>
+    <div id="allPhasesContent"></div>
+  </div>
+</div>
+
+
+
+

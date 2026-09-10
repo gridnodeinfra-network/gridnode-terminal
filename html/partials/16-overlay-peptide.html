@@ -1,0 +1,37 @@
+<!-- GRID//NODE Peptide Evidence Overlay (2026-08-10) -->
+<div class="gn-peptide-overlay" id="gnPeptideOverlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="gnPeptideTitle">
+  <div class="gn-peptide-overlay-card">
+    <div class="gn-peptide-overlay-head">
+      <div>
+        <div class="gn-peptide-overlay-kicker" data-i18n="peptide.overlayKicker">PHASE ENGINE · EVIDENCE VIEW</div>
+        <div class="gn-peptide-overlay-title" id="gnPeptideTitle">—</div>
+        <span id="gnPeptideChip" class="gn-evidence-chip" data-state="none">—</span>
+      </div>
+      <button type="button" class="gn-peptide-overlay-close" id="gnPeptideClose" onclick="window.GN_PEPTIDE_VIZ && GN_PEPTIDE_VIZ.closeOverlay()" data-i18n="peptide.close">✕ CLOSE</button>
+    </div>
+    <div class="gn-peptide-overlay-scroll">
+      <div class="gn-peptide-overlay-grid">
+        <div class="gn-peptide-big-block">
+          <div class="gn-peptide-block-label" data-i18n="peptide.curveLabel">RELATIVE MODEL CURVE</div>
+          <div class="gn-chart-stack gn-peptide-big-wrap">
+            <canvas id="gnPeptideBigChart"></canvas>
+            <svg id="gnPeptideBigOverlay" class="gn-chart-overlay" aria-hidden="true"></svg>
+            <div id="gnPeptideTip" class="gn-peptide-tip" hidden></div>
+          </div>
+          <div class="gn-peptide-overlay-copy" data-i18n="peptide.modelNote">Literature-derived relative model — not a measured level.</div>
+        </div>
+        <div class="gn-peptide-ring-block">
+          <div class="gn-peptide-block-label" data-i18n="peptide.ringLabel">CYCLE RING</div>
+          <svg id="gnPeptideRing" class="gn-peptide-ring" aria-hidden="true"></svg>
+          <div class="gn-peptide-overlay-copy" data-i18n="peptide.ringNote">Arc length = elapsed time since the last logged SHOT · not potency or effect.</div>
+        </div>
+      </div>
+      <div id="gnPeptideDossier" class="gn-peptide-dossier"></div>
+      <div id="gnPeptideAnimal" class="gn-peptide-animal"></div>
+      <div id="gnPeptideLanes" class="gn-peptide-lanes"></div>
+      <div id="gnPeptideNext" class="gn-peptide-next-block"></div>
+      <div class="gn-peptide-overlay-foot" data-i18n="peptide.evidenceFooter">Evidence View is educational research context — not a laboratory measurement, diagnosis, treatment recommendation, or dosing guide. Animal-model evidence is labeled and must not be read as human exposure.</div>
+    </div>
+  </div>
+</div>
+

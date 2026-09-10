@@ -50,8 +50,16 @@ const BUILD_ID = buildId();
 const CACHE_NAME = 'gridnode-shell-' + BUILD_ID.replace(/\./g, '-');
 console.log(`BUILD_ID=${BUILD_ID}`);
 
-// 1. index.html — stamp every ?v= query (scripts + stylesheets)
+// 0. index.html — assemble from html/partials/ (Phase 3 refactor). The
+//    committed index.html is a generated artifact; the partials are the
+//    source of truth. Assembly is byte-identical by construction.
 const htmlPath = join(ROOT, 'index.html');
+const partialOrder = JSON.parse(readFileSync(join(ROOT, 'html/partials/order.json'), 'utf8'));
+const assembledHtml = partialOrder.map(name => readFileSync(join(ROOT, 'html/partials', name), 'utf8')).join('');
+writeFileSync(htmlPath, assembledHtml);
+console.log(`index.html: assembled from ${partialOrder.length} partials`);
+
+// 1. index.html — stamp every ?v= query (scripts + stylesheets)
 let html = readFileSync(htmlPath, 'utf8');
 const stampRe = /\?v=\d{8}\.[\da-z-]+/g;
 const stamped = (html.match(stampRe) || []).length;
