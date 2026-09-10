@@ -61,7 +61,7 @@
         ]
       }
     },
-    '__CURRENT_BUILD__': {
+    '20260909.aec9fbc': {
       version: '0.15.34', title: 'BATCH ASSAY LAB TEST LOG', date: '2026-09-09',
       en: {
         NEW: [
@@ -71,6 +71,27 @@
       es: {
         NEW: [
           'Nuevo segmento de LAB: ENSAYO. Registra resultados de análisis de terceros por lote (péptido, proveedor, lote, laboratorio, método, pureza, declarado vs medido, endotoxina). La varianza frente a lo declarado se calcula sola y se muestra con colores. Filtra por péptido o proveedor, archiva análisis antiguos.'
+        ]
+      }
+    },
+    '__CURRENT_BUILD__': {
+      version: '0.15.35', title: 'BRING YOUR HISTORY', date: '2026-09-09',
+      en: {
+        NEW: [
+          'Import your history from Shotsy: VAULT now takes the Shotsy JSON backup file directly. Shots, weights, sites, notes, and pain levels map automatically, with a full preview before anything is saved. Duplicates are flagged and can be force-included per row. Your file never leaves this device.',
+          'Import preview now shows every record row by row: ready to import, already in your vault, cannot import, skipped, and a list of anything the file carried that GRID//NODE does not store.'
+        ],
+        IMPROVED: [
+          'Shotsy CSV import now reads the time column, maps pain level properly, and no longer mistakes Calories, Protein, Water, or Day Notes for side effects.'
+        ]
+      },
+      es: {
+        NEW: [
+          'Importa tu historial desde Shotsy: VAULT ahora acepta el archivo JSON de respaldo de Shotsy. Dosis, pesos, sitios, notas y niveles de dolor se asignan solos, con vista previa completa antes de guardar. Los duplicados se marcan y puedes forzarlos fila por fila. Tu archivo nunca sale de este dispositivo.',
+          'La vista previa de importación ahora muestra cada registro: listos, ya guardados, no importables, omitidos y todo lo que el archivo traía y GRID//NODE no almacena.'
+        ],
+        IMPROVED: [
+          'La importación CSV de Shotsy ahora lee la hora, asigna bien el nivel de dolor y ya no confunde Calorías, Proteína, Agua ni Notas del día con efectos secundarios.'
         ]
       }
     },

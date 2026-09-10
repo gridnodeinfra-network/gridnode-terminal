@@ -2826,9 +2826,48 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 .csv-import-summary{border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.22);padding:10px;border-radius:var(--r);font-family:var(--font-m);font-size:.60rem;line-height:1.7;color:#a9bbc7;max-height:210px;overflow:auto}
 .csv-import-summary b{color:var(--cyan)}
 .csv-import-warn{color:var(--yellow);margin-top:8px;display:block}
+.csv-import-rows{margin-top:10px;max-height:34vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px;text-align:left}
+.csv-import-rows:empty{display:none}
+.csv-import-group{display:flex;flex-direction:column;gap:6px}
+.csv-import-group-title{font-family:var(--font-m);font-size:.58rem;letter-spacing:1.8px;color:var(--text-dim)}
+.csv-import-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid rgba(0,212,255,.16);border-radius:8px;background:rgba(0,0,0,.25);font-family:var(--font-m);font-size:.62rem;line-height:1.5;color:var(--text-mid)}
+.csv-import-badge{flex:0 0 auto;font-size:.55rem;letter-spacing:1.2px;padding:2px 7px;border-radius:20px;border:1px solid}
+.csv-import-badge.ok{color:#00ff88;border-color:rgba(0,255,136,.4)}
+.csv-import-badge.dupe{color:var(--yellow);border-color:rgba(255,215,0,.4)}
+.csv-import-badge.bad{color:#ff6b6b;border-color:rgba(255,107,107,.4)}
+.csv-import-row-main{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+.csv-import-force{flex:0 0 auto;display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--text-dim);font-size:.58rem;letter-spacing:.6px;white-space:nowrap}
+.csv-import-force input{width:18px;height:18px;accent-color:var(--cyan);cursor:pointer}
+.csv-import-notimported{font-family:var(--font-m);font-size:.60rem;line-height:1.7;color:var(--text-dim);border:1px dashed rgba(255,255,255,.14);border-radius:8px;padding:8px 10px}
+html[data-theme="light"] .csv-import-row{background:rgba(255,255,255,.6);border-color:rgba(0,111,130,.2)}
+html[data-theme="light"] .csv-import-notimported{border-color:rgba(0,111,130,.25)}
 @media(max-width:380px){
   .data-transfer-actions{grid-template-columns:1fr}
   .gn-date-day{height:32px;font-size:.68rem}
+}
+@media (prefers-reduced-motion: reduce){
+  .gn-date-overlay.active,.csv-import-overlay.active{animation:none}
+}
+/* Import dialog overlay (source picker). Base layer was missing; the dialog
+   previously rendered unstyled. Matches the csv-import overlay pattern. */
+.gn-import-overlay{position:fixed;inset:0;z-index:570;background:rgba(0,0,0,.84);display:none;align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(8px)}
+.gn-import-overlay.active{display:flex;animation:fadeIn .18s ease}
+.gn-import-panel{width:min(380px,100%);max-height:86vh;overflow-y:auto;background:linear-gradient(180deg,rgba(18,18,28,.98),rgba(7,7,12,.98));border:1px solid rgba(0,212,255,.22);border-top:2px solid var(--cyan);box-shadow:0 18px 50px rgba(0,0,0,.62),0 0 28px rgba(0,212,255,.08);border-radius:var(--r);padding:16px}
+.gn-import-title{font-family:var(--font-d);font-size:.86rem;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:10px}
+.gn-import-panel p{font-family:var(--font-b);font-size:.8rem;line-height:1.5;color:var(--text-mid);margin:0 0 10px}
+.gn-import-panel label{display:block;margin-bottom:10px;font-family:var(--font-m);font-size:.6rem;letter-spacing:1.4px;color:var(--text-dim)}
+.gn-import-panel label span{display:block;margin-bottom:6px}
+.gn-import-panel select{width:100%;padding:11px 10px;font-size:.85rem}
+.gn-import-file input[type="file"]{display:block;width:100%;margin-top:2px;font-family:var(--font-m);font-size:.68rem;color:var(--text-mid)}
+.gn-import-file input[type="file"]::file-selector-button{margin-right:10px;padding:10px 14px;border:1px solid rgba(0,212,255,.45);background:rgba(0,212,255,.10);color:var(--cyan);border-radius:4px;font-family:var(--font-d);font-size:.62rem;letter-spacing:1.6px;cursor:pointer}
+.gn-import-close{display:block;width:100%;margin-top:6px;border-radius:4px;padding:11px 10px;font-family:var(--font-d);font-size:.68rem;letter-spacing:2px;cursor:pointer;text-transform:uppercase;background:transparent;color:var(--text-mid);border:1px solid var(--border2)}
+.gn-import-summary{font-family:var(--font-m);font-size:.62rem;line-height:1.6;color:var(--text-dim);margin:10px 0}
+.gn-import-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+.gn-mapping-grid{display:grid;gap:10px;margin:12px 0}
+.gn-inline-error{margin-top:10px;padding:10px;border:1px solid rgba(255,107,107,.5);border-radius:8px;color:#ff6b6b;font-family:var(--font-m);font-size:.62rem;letter-spacing:.8px}
+.gn-import-map-button{display:block;width:100%;margin-top:10px;padding:11px;border:1px dashed rgba(0,212,255,.4);background:transparent;color:var(--cyan);border-radius:4px;font-family:var(--font-d);font-size:.62rem;letter-spacing:1.6px;cursor:pointer}
+@media (prefers-reduced-motion: reduce){
+  .gn-import-overlay.active{animation:none}
 }
 
 
@@ -7277,6 +7316,7 @@ function continueLocallyFromWelcome() {
     <div class="csv-import-title" id="csvImportTitle" data-i18n="csv.title">CSV IMPORT PREVIEW</div>
     <div class="csv-import-body" id="csvImportFormat" data-i18n="csv.copy">Review detected user-entered protocol records before appending them to SHOTS HISTORY.</div>
     <div class="csv-import-summary" id="csvImportSummary" data-i18n="csv.noFile">No file selected.</div>
+    <div class="csv-import-rows" id="csvImportRows"></div>
     <div class="csv-import-actions">
       <button class="csv-import-cancel" type="button" onclick="cancelCSVImport()" data-i18n="csv.cancel">CANCEL</button>
       <button class="csv-import-save" id="csvImportConfirmBtn" type="button" onclick="confirmCSVImport()" data-i18n="csv.confirm">IMPORT TO SHOTS HISTORY</button>
