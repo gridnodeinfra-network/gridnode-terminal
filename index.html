@@ -4308,6 +4308,14 @@ function continueLocallyFromWelcome() {
     
     <div class="app-wordmark app-wordmark-b2b" role="button" tabindex="0" onclick="showPage('Dash',document.getElementById('navDash'))" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Dash',document.getElementById('navDash'));}" title="Return to DASH" aria-label="Return to DASH" data-i18n-title="nav.returnDash" data-i18n-aria-label="nav.returnDash"><img class="gn-b2b-wordmark" src="/assets/brand/ui/header-lockup.svg" alt="GRID//NODE color wordmark" width="1600" height="320" decoding="async"></div>
     <div class="topbar-actions">
+      <button class="topbar-btn gn-sound-btn" type="button" id="gnSoundToggle" role="switch" aria-checked="false" aria-label="Ambient sound" data-i18n-aria-label="sound.toggle" onclick="window.GN_AMBIENCE && window.GN_AMBIENCE.toggle()">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 5 6.5 9H3v6h3.5L11 19V5z" fill="currentColor" stroke="none"/>
+          <path class="snd-waves" d="M15 9.5a4 4 0 0 1 0 5"/>
+          <path class="snd-waves" d="M17.5 7a8 8 0 0 1 0 10"/>
+          <line class="snd-slash" x1="4" y1="4" x2="20" y2="20"/>
+        </svg>
+      </button>
       <button class="topbar-btn topbar-hub-btn" type="button" onclick="toggleProfileHub()" id="topAva" aria-label="Open NODE PROFILE HUB">
         <img src="/assets/brand/icons/pwa-192.png" alt="GRID//NODE mark" width="40" height="40" id="topAvaIcon" decoding="async">
         <span class="topbar-hub-label">HUB</span>
@@ -9655,6 +9663,14 @@ body.gn-log-shot-picker-open .fab{
   .results-record-actions{grid-template-columns:1fr;gap:7px}
   .results-record-action{min-height:36px}
 }
+/* ── Ambient sound toggle (prototype) ── */
+.gn-sound-btn{width:32px;height:32px;min-width:32px;min-height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid rgba(0,212,255,.35);background:rgba(0,212,255,.06);color:#9ceff4;cursor:pointer}
+.gn-sound-btn svg{width:18px;height:18px;flex:none}
+.gn-sound-btn .snd-waves{display:none}
+.gn-sound-btn[aria-checked="true"] .snd-waves{display:block}
+.gn-sound-btn[aria-checked="true"] .snd-slash{display:none}
+.gn-sound-btn[aria-checked="true"]{color:#00e5ff;border-color:rgba(0,229,255,.7);box-shadow:0 0 10px rgba(0,229,255,.35)}
+.gn-sound-btn:active{transform:scale(.94)}
 </style>
 
 

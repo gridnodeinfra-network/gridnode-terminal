@@ -59,7 +59,7 @@ const modules = require('./read-modules-source.cjs');
 const fc = read('js/gridnode-firstcontact.js');
 check('saveShot dispatches gn:shot-saved', modules.includes("dispatchEvent(new CustomEvent('gn:shot-saved'"));
 const saves = modules.match(/function saveShot\(\)[\s\S]*?\n}/);
-check('gn:shot-saved only inside saveShot', (modules.match(/gn:shot-saved/g) || []).length === 1,
+check('gn:shot-saved only inside saveShot', (modules.match(/dispatchEvent\(new CustomEvent\('gn:shot-saved'/g) || []).length === 1,
   'the event must fire exactly once, on the successful save path only');
 check('tour listens for gn:shot-saved', fc.includes("addEventListener('gn:shot-saved'"));
 
