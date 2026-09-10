@@ -1,6 +1,6 @@
 # DESIGN TOKENS — shared component system (release 20260802.12)
 
-Single source: `css/gridnode-native.css` (shared) + `css/daylight-nexus-pilot.css`
+Single source: `css/native/` (shared; 5 ordered files, cascade pinned in `css/native/order.json`) + `css/daylight-nexus-pilot.css`
 (DAY OPS overrides) + `:root` semantic tokens in index.html.
 
 ## Core identity tokens
