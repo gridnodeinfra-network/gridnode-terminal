@@ -159,4 +159,20 @@ if (failures) { console.error(`\nfirstcontact contract: ${failures} FAILURE(S)`)
   check('injectReplay targets the real anchor', fc.includes('#pageProfile .gn-utility-row[onclick*="reload"]'), '');
 }
 
+// --- QA 2026-09-10: coach must tick immediately on modal interaction --------
+check('coach ticks on modal input/click (no 600ms-only poll)',
+  fc.includes('coachInputHandler') && fc.includes("addEventListener('input', coachInputHandler)") && fc.includes("addEventListener('click', coachInputHandler)"),
+  'fast pill-tap then save leaves the dose step visibly unchecked');
+
+// --- QA 2026-09-10: modal action buttons must clear the coach sheet --------
+check('coaching modal pads buttons clear of coach sheet',
+  nativeCss.includes('#logOv.gn-fc-coaching .modal') && nativeCss.includes('padding-bottom: 240px') &&
+  fc.includes("classList.add('gn-fc-coaching')") && fc.includes("classList.remove('gn-fc-coaching')"),
+  'coach bottom sheet covers the SAVE SHOT button');
+
+// --- QA 2026-09-10: tour card lang buttons reflect the active language ------
+check('comfort card lang buttons toggle active immediately',
+  /data-fc-lang[\s\S]{0,400}classList\.toggle\('active'/.test(fc) && fc.includes("localStorage.setItem('gn.lang', next)"),
+  'ES button keeps pressed state after switching back to EN');
+
 console.log('\nfirstcontact contract: ALL PASS');

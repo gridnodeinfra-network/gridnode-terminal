@@ -36,6 +36,7 @@
   var locPickHandler = null; // watches #logLocationAction taps during modal phase
   var pickingLocation = false;
   var pickTimer = null;
+  var coachInputHandler = null; // immediate coachTick on modal input/click (no 600ms wait)
 
   /* ------------------------------------------------------------------ */
   /* Copy (EN + ES). t() prefers the live GN_I18N catalog, falls back here. */
@@ -511,6 +512,20 @@
     coach.setAttribute('aria-label', t('fc.coach.kicker', 'FIRST DOSE'));
     document.body.appendChild(coach);
     renderCoachCopy();
+    // QA 2026-09-10: the 600ms poll alone made fast pill-tap -> save feel
+    // unresponsive (dose step never visibly checked). Tick immediately on
+    // any interaction inside the log modal.
+    var logOvEl = document.getElementById('logOv');
+    if (logOvEl) {
+      logOvEl.classList.add('gn-fc-coaching');
+      if (coachInputHandler) {
+        logOvEl.removeEventListener('input', coachInputHandler);
+        logOvEl.removeEventListener('click', coachInputHandler);
+      }
+      coachInputHandler = function () { coachTick(); };
+      logOvEl.addEventListener('input', coachInputHandler);
+      logOvEl.addEventListener('click', coachInputHandler);
+    }
     document.addEventListener('gn:shot-saved', onShotSaved);
     // Modal closed without saving -> back to the spotlight, with a grace
     // window for an accidental close. SELECT LOGGED LOCATION also closes
@@ -635,6 +650,15 @@
     if (modalWatch) { modalWatch.disconnect(); modalWatch = null; }
     if (locPickHandler) { document.removeEventListener('click', locPickHandler, true); locPickHandler = null; }
     if (pickTimer) { clearTimeout(pickTimer); pickTimer = null; }
+    var logOvEl = document.getElementById('logOv');
+    if (logOvEl) {
+      logOvEl.classList.remove('gn-fc-coaching');
+      if (coachInputHandler) {
+        logOvEl.removeEventListener('input', coachInputHandler);
+        logOvEl.removeEventListener('click', coachInputHandler);
+      }
+    }
+    coachInputHandler = null;
     pickingLocation = false;
     document.removeEventListener('gn:shot-saved', onShotSaved);
     if (coach) { coach.remove(); coach = null; }
@@ -714,7 +738,14 @@
     });
     card.querySelectorAll('[data-fc-lang]').forEach(function (b) {
       b.addEventListener('click', function () {
-        try { if (window.GN_I18N && window.GN_I18N.setLang) window.GN_I18N.setLang(b.dataset.fcLang); } catch (_) {}
+        var next = b.dataset.fcLang;
+        // v0.15.31 pattern: persist first so the control state can't race
+        // the async catalog load, then reflect the choice immediately like
+        // the theme buttons above do.
+        try { localStorage.setItem('gn.lang', next); } catch (_) {}
+        try { if (window.GN_I18N && window.GN_I18N.setLang) window.GN_I18N.setLang(next); } catch (_) {}
+        card.querySelectorAll('[data-fc-lang]').forEach(function (x) { x.classList.toggle('active', x === b); });
+        langCache = null;
       });
     });
     wireCard(function () { renderBeat(5); });
