@@ -513,6 +513,12 @@ html[data-theme="light"] #landing .landing-preview-caption { color: #49616a; }
     padding: 5px 0;
   }}
 
+/* Narrow phones: stack the hero CTAs full-width so labels never wrap. */
+@media (max-width: 420px){
+  #landing .landing-cta-row { grid-template-columns: minmax(0, 1fr) !important; gap: 10px !important; }
+  #landing .landing-btn { white-space: nowrap; }
+}
+
 /* Compact header controls retain compact graphics inside full-size targets. */
 #app .app-wordmark-b2b {
   min-height: 44px !important;

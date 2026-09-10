@@ -805,6 +805,7 @@
     window.removeEventListener('scroll', onViewportMove, { capture: true });
     window.removeEventListener('resize', onViewportMove);
     if (complete) setState('complete');
+    try { document.dispatchEvent(new CustomEvent('gn:firstcontact-done', { detail: { complete: !!complete } })); } catch (_) {}
   }
 
   /* ------------------------------------------------------------------ */

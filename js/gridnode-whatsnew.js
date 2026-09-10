@@ -1387,10 +1387,30 @@
     return true;
   }
 
+  function tourPending() {
+    // Brand-new user: FIRST CONTACT has never completed and was never dismissed.
+    try {
+      if (localStorage.getItem('gn_onboarding_v2') === 'complete') return false;
+      if (localStorage.getItem('gn_onboarding_dismissed_v2') === '1') return false;
+      return true;
+    } catch (_) { return false; }
+  }
+
   function boot() {
     const attempt = () => {
       const app = document.getElementById('app');
       if (!app || getComputedStyle(app).display === 'none') { window.setTimeout(attempt, 900); return; }
+      if (tourPending()) {
+        if (!window.GN_FIRSTCONTACT) { window.setTimeout(attempt, 900); return; } // tour script not ready yet
+        // First run: let FIRST CONTACT breathe first. Unblock the tour, then
+        // show the changelog after the tour ends instead of over it.
+        document.dispatchEvent(new CustomEvent('gn:whatsnew-resolved', { detail: { shown: false, deferred: true } }));
+        let done = false;
+        const showDeferred = () => { if (done) return; done = true; show(); };
+        document.addEventListener('gn:firstcontact-done', showDeferred, { once: true });
+        window.setTimeout(showDeferred, 10 * 60 * 1000); // backstop: never trap the changelog
+        return;
+      }
       show();
     };
     window.setTimeout(attempt, 900);
