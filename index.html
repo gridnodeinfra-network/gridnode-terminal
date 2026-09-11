@@ -4389,7 +4389,7 @@ function continueLocallyFromWelcome() {
       <div class="chart-wrap" style="height:130px;margin-top:12px"><canvas id="dashWtChart"></canvas></div>
 
       
-      <div class="sec-hdr">
+      <div class="sec-hdr" id="phaseEngineHdr">
         <div class="sec-title" data-i18n-html="dashboard.sectionPhase">// <span class="a">PHASE ENGINE</span></div>
         <button class="sec-act" type="button" data-i18n="phase.allPhases" onclick="showPhasesModal()">ALL PHASES →</button>
       </div>
@@ -4524,8 +4524,8 @@ function continueLocallyFromWelcome() {
       </section>
 
       
-      <div class="sec-hdr"><div class="sec-title" data-i18n-html="phase.phaseCurveTitle">// <span class="a">PHASE_CURVE</span></div></div>
-      <div class="card">
+      <div class="sec-hdr" id="phaseCurveHdr"><div class="sec-title" data-i18n-html="phase.phaseCurveTitle">// <span class="a">PHASE_CURVE</span></div></div>
+      <div class="card" id="phaseCurveCard">
         <div class="card-title-row"><div class="card-title" data-i18n="phase.estimatedProtocolCurve">ESTIMATED PROTOCOL CURVE</div><button type="button" class="gn-peptide-expand" id="medExpandBtn" onclick="window.GN_PEPTIDE_VIZ && GN_PEPTIDE_VIZ.openOverlay()" hidden data-i18n="peptide.expand">EXPAND ▸</button></div>
         <div class="card-val" id="medLvlVal">—<span data-i18n="results.logToBegin">log a shot to begin</span></div>
         <div class="protocol-curve-copy" data-i18n="phase.curveCopy">Educational estimate based on logged shot timing. Not a lab measurement.<span class="curve-subline" data-i18n="phase.curveSubline">Curve shows a relative activity model: logged SHOT event → estimated rise → peak → decay.</span></div>

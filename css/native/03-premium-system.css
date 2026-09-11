@@ -1295,6 +1295,25 @@ html:not([data-theme="light"]) .gn-auth-note {
 .gn-wanda-card.info { border-left-color: #00d4ff; }
 .gn-wanda-card.info .gn-wanda-value { color: #eef6f8; }
 body.gn-dashboard-empty .fab { display: none !important; }
+/* v0.15.40 P0: progressive empty states. With zero shots logged, HOME is the
+   Get-started hero + log CTA only: the Phase Engine card, Phase Sphere, and
+   Phase Curve (all empty instruments pre-first-dose) stay hidden until the
+   first dose arrives, then reveal via renderDashboard removing the class. */
+body.gn-dashboard-empty #phaseEngineHdr,
+body.gn-dashboard-empty #phaseCard,
+body.gn-dashboard-empty #phaseSpherePanel,
+body.gn-dashboard-empty #phaseCurveHdr,
+body.gn-dashboard-empty #phaseCurveCard { display: none !important; }
+/* v0.15.40 P0: TRENDS zero-data state. With no shots and no weights, the data
+   cards collapse to the single "log to begin" state (the weekly report's own
+   empty copy + DATA TRANSFER import path stay visible). */
+body.gn-results-empty #pageResults .results-card.summary,
+body.gn-results-empty #pageResults .results-card.weight,
+body.gn-results-empty #pageResults .results-card.results-phase-source,
+body.gn-results-empty #pageResults .results-card.appetite,
+body.gn-results-empty #pageResults .results-card.energy,
+body.gn-results-empty #pageResults .results-card.effects,
+body.gn-results-empty #pageResults .results-card.continuity { display: none !important; }
 
 /* ── Batch C: drawer dose form + undoable toast ── */
 #logOv, #wtOv { align-items: flex-end !important; }

@@ -50,6 +50,10 @@ export function renderResults() {
   const profile = getProfile();
   const weightMetrics = computeTotalChange(weights, profile, 'profile');
   const latest = weightMetrics.latest;
+  /* v0.15.40 P0: zero-data TRENDS collapses to the single "log to begin"
+     state (see body.gn-results-empty CSS); any logged shot or weight
+     reveals the data cards. */
+  try { document.body.classList.toggle('gn-results-empty', shots.length === 0 && weights.length === 0); } catch (_) {}
   const first = weightMetrics.first;
   const change = weightMetrics.change;
   const spanDays = weightMetrics.spanDays;

@@ -20,6 +20,15 @@
   var DISMISSED = 'gn_onboarding_dismissed_v2';
   var V1KEY = 'gn_onboarding_v1';
   var V1DIS = 'gn_onboarding_dismissed_v1';
+  /* v0.15.40: session-scoped resume. The tour persists its beat in
+     localStorage so a mid-tour reload resumes where the user left off.
+     But stale progress (saved days ago, e.g. on a QA device) made new
+     sessions open mid-tour, skipping the explanatory beats. The session
+     flag below means: resume only if the progress was saved in THIS
+     browser session; otherwise start at beat 0. sessionStorage survives
+     reloads in the same tab, so the legit mid-tour reload case still
+     resumes. */
+  var SESSION_KEY = 'gn_fc_session_v1';
   var BEATS = 6;
 
   var overlay = null;      // .gn-fc-overlay: screens + spotlights
@@ -169,7 +178,11 @@
     return c[key] || fallback || key;
   }
   function state() { try { return localStorage.getItem(KEY) || '0'; } catch (_) { return '0'; } }
-  function setState(v) { try { localStorage.setItem(KEY, String(v)); } catch (_) {} }
+  function setState(v) {
+    try { localStorage.setItem(KEY, String(v)); } catch (_) {}
+    try { sessionStorage.setItem(SESSION_KEY, '1'); } catch (_) {}
+  }
+  function sessionAlive() { try { return sessionStorage.getItem(SESSION_KEY) === '1'; } catch (_) { return true; } }
 
   /* ------------------------------------------------------------------ */
   /* Targets */
@@ -198,7 +211,10 @@
     return null;
   }
   function doseTargetSel() {
-    return '#gnFirstShotMission button, .gn-wanda-actions button, .fab';
+    /* v0.15.40: the empty-state hero CTA (.gn-empty-cta) is the visible log
+       entry when zero shots are logged (wanda + FAB are hidden there), so it
+       must be a spotlight/tap target or beat 2 highlights nothing. */
+    return '#gnFirstShotMission button, .gn-wanda-actions button, .fab, .gn-empty-cta';
   }
   function curveTarget() {
     return visibleEl('#phaseEngineSourceReadout, #phaseEngineSourceEmpty');
@@ -907,7 +923,10 @@
   function start(resume) {
     if (overlay || coach) return;
     var startAt = 0;
-    if (resume) {
+    /* v0.15.40: only resume saved progress from this browser session.
+       Stale localStorage progress (e.g. QA devices) used to drop fresh
+       sessions mid-tour, skipping the explanatory beats. */
+    if (resume && sessionAlive()) {
       var s = parseInt(state(), 10);
       if (!isNaN(s) && s >= 0 && s < BEATS) startAt = s;
     } else {
