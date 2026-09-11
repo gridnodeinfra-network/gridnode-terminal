@@ -34,6 +34,7 @@
   var savedTimer = null;
   var moveTimer = null;
   var locPickHandler = null; // watches #logLocationAction taps during modal phase
+  var blockedFields = []; // field keys from the last gn:coach-save-blocked event
   var pickingLocation = false;
   var pickTimer = null;
   var coachInputHandler = null; // immediate coachTick on modal input/click (no 600ms wait)
@@ -71,6 +72,12 @@
       'fc.coach.stepLoc': 'Choose the site',
       'fc.coach.then': 'Then hit SAVE.',
       'fc.coach.saved': "Logged. That's the habit. Everything else builds on this.",
+      'fc.coach.blocked': 'Could not save yet. Check: {fields}.',
+      'fc.coach.field.med': 'medication',
+      'fc.coach.field.dose': 'dose',
+      'fc.coach.field.date': 'date',
+      'fc.coach.field.time': 'time',
+      'fc.coach.field.loc': 'injection site',
       'fc.curve.kicker': 'THE CURVE',
       'fc.curve.title': 'There it is. Your dose, on your curve.',
       'fc.curve.body': 'The Phase Engine reads where you are in your cycle from every logged dose, so you run your protocol with eyes open.',
@@ -121,6 +128,12 @@
       'fc.coach.stepLoc': 'Elige la zona',
       'fc.coach.then': 'Luego pulsa GUARDAR.',
       'fc.coach.saved': 'Registrado. Ese es el hábito. Todo lo demás se construye sobre esto.',
+      'fc.coach.blocked': 'No se pudo guardar todavía. Revisa: {fields}.',
+      'fc.coach.field.med': 'medicamento',
+      'fc.coach.field.dose': 'dosis',
+      'fc.coach.field.date': 'fecha',
+      'fc.coach.field.time': 'hora',
+      'fc.coach.field.loc': 'zona de inyección',
       'fc.curve.kicker': 'LA CURVA',
       'fc.curve.title': 'Ahí está. Tu dosis, en tu curva.',
       'fc.curve.body': 'El Motor de Fases lee en qué punto de tu ciclo estás con cada dosis registrada, para que lleves tu protocolo con los ojos abiertos.',
@@ -527,6 +540,12 @@
       logOvEl.addEventListener('click', coachInputHandler);
     }
     document.addEventListener('gn:shot-saved', onShotSaved);
+    // Save-blocked feedback: saveShot's error toast paints under the coach
+    // sheet, so surface the failing fields inside the coach itself.
+    document.removeEventListener('gn:coach-save-blocked', onCoachSaveBlocked);
+    document.addEventListener('gn:coach-save-blocked', onCoachSaveBlocked);
+    blockedFields = [];
+    try { document.body.classList.add('gn-fc-coaching'); } catch (_) {}
     // Modal closed without saving -> back to the spotlight, with a grace
     // window for an accidental close. SELECT LOGGED LOCATION also closes
     // the modal, but the user must then pick a zone AND manually reopen
@@ -592,6 +611,7 @@
         '<li data-fc-step="loc"><i aria-hidden="true"></i><span>' + t('fc.coach.stepLoc', '') + '</span></li>' +
       '</ul>' +
       '<div class="gn-fc-coach-then">' + t('fc.coach.then', '') + '</div>' +
+      '<div class="gn-fc-coach-err" data-fc-coach-err hidden></div>' +
       '<button type="button" class="gn-fc-coach-skip" data-fc-coach-skip>' + t('fc.dose.later', "I'll log later") + '</button>';
     coach.querySelector('[data-fc-coach-skip]').addEventListener('click', function () {
       skippedDose = true;
@@ -626,9 +646,69 @@
     document.querySelectorAll('#logOv [onclick*="saveShot"]').forEach(function (b) {
       b.classList.toggle('gn-fc-pulse', ready);
     });
+    refreshCoachError();
+  }
+  /* Save-blocked feedback: mirrors saveShot's strict validation for one field
+   * key, so the coach error clears itself the moment the user fixes the field.
+   * (The coach's own 3 step checkmarks stay as guidance; saveShot additionally
+   * requires date and time, which the coach does not coach.) */
+  function coachFieldValid(key) {
+    try {
+      if (key === 'med') {
+        var raw = (window.selectState && window.selectState.cpShotMed && window.selectState.cpShotMed.val) || '';
+        var norm = (typeof normalizeMedicationId === 'function') ? normalizeMedicationId(raw) : raw;
+        return Boolean(norm) && (typeof MEDICATIONS !== 'undefined') &&
+          Object.prototype.hasOwnProperty.call(MEDICATIONS, norm);
+      }
+      if (key === 'dose') {
+        var doseEl = document.getElementById('sDose');
+        var dose = doseEl ? Number(String(doseEl.value || '').trim()) : NaN;
+        return Number.isFinite(dose) && dose > 0;
+      }
+      if (key === 'date') {
+        var dateEl = document.getElementById('sDate');
+        var date = (typeof readHumanDateInput === 'function') ? readHumanDateInput(dateEl) : (dateEl ? dateEl.value : '');
+        return Boolean(date);
+      }
+      if (key === 'time') {
+        var timeEl = document.getElementById('sTime');
+        var timeVal = timeEl ? String(timeEl.value || '').trim() : '';
+        if (!timeVal) return false;
+        if (typeof getShotTime24 === 'function') return Boolean(getShotTime24(timeVal));
+        return true;
+      }
+      if (key === 'loc') {
+        var ms = (typeof moduleState !== 'undefined') ? moduleState : null;
+        return Boolean(ms && ms.selectedLocation);
+      }
+    } catch (_) { /* never break the coach for a validation probe */ }
+    return false;
+  }
+  function onCoachSaveBlocked(e) {
+    if (!coach || coach.dataset.saved) return;
+    var fields = (e && e.detail && Array.isArray(e.detail.fields)) ? e.detail.fields : [];
+    blockedFields = fields.filter(function (k) { return typeof k === 'string' && k; });
+    refreshCoachError(true);
+  }
+  function refreshCoachError(force) {
+    if (!coach || coach.dataset.saved) return;
+    var errEl = coach.querySelector('[data-fc-coach-err]');
+    if (!errEl) return;
+    if (blockedFields && blockedFields.length) {
+      var stillBad = blockedFields.filter(function (k) { return !coachFieldValid(k); });
+      if (!stillBad.length && !force) { blockedFields = []; errEl.hidden = true; errEl.textContent = ''; return; }
+      var names = (stillBad.length ? stillBad : blockedFields).map(function (k) { return t('fc.coach.field.' + k, k); });
+      errEl.textContent = t('fc.coach.blocked', 'Could not save yet. Check: {fields}.').replace('{fields}', names.join(', '));
+      errEl.hidden = false;
+    } else {
+      errEl.hidden = true;
+      errEl.textContent = '';
+    }
   }
   function onShotSaved() {
     document.removeEventListener('gn:shot-saved', onShotSaved);
+    document.removeEventListener('gn:coach-save-blocked', onCoachSaveBlocked);
+    blockedFields = [];
     skippedDose = false;
     if (coachTimer) { clearInterval(coachTimer); coachTimer = null; }
     if (modalWatch) { modalWatch.disconnect(); modalWatch = null; }
@@ -661,6 +741,9 @@
     coachInputHandler = null;
     pickingLocation = false;
     document.removeEventListener('gn:shot-saved', onShotSaved);
+    document.removeEventListener('gn:coach-save-blocked', onCoachSaveBlocked);
+    blockedFields = [];
+    try { document.body.classList.remove('gn-fc-coaching'); } catch (_) {}
     if (coach) { coach.remove(); coach = null; }
     removeSpotlight();
   }

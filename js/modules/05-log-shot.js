@@ -246,6 +246,27 @@ export async function confirmPermanentDeleteShot() {
   showToast(cloudDeleted ? tx('shots.deletedCloud', 'Archived record deleted.') : tx('shots.deletedLocalQueued', 'Deleted locally. Cloud deletion queued for retry.'));
 }
 
+/* FIRST CONTACT onboarding: when the dose coach is up, save-validation errors must
+ * surface inside the coach card. The global error toast (z-index 1000) and the
+ * future-timestamp confirm (z-index 540) both paint UNDER the coach sheet
+ * (z-index 9500), so without this the user taps SAVE and gets zero feedback.
+ * This maps the failing fields to stable keys and lets the coach explain. */
+function notifyCoachSaveBlocked(invalidFields) {
+  try {
+    if (!document.querySelector('.gn-fc-coach')) return;
+    const keys = [];
+    (invalidFields || []).filter(Boolean).forEach(field => {
+      const id = field.id || '';
+      if (id === 'cpShotMed') keys.push('med');
+      else if (id === 'sDose') keys.push('dose');
+      else if (id === 'sDate') keys.push('date');
+      else if (id === 'sTime') keys.push('time');
+      else if (id === 'logLocationAction') keys.push('loc');
+    });
+    document.dispatchEvent(new CustomEvent('gn:coach-save-blocked', { detail: { fields: keys } }));
+  } catch (_) { /* never break the save path for coach telemetry */ }
+}
+
 export function saveShot(allowFuture = false) {
   if (moduleState.savingShot) return;
   moduleState.savingShot = true;
@@ -268,6 +289,7 @@ export function saveShot(allowFuture = false) {
       invalidFields.filter(Boolean).forEach(field => field.setAttribute('aria-invalid', 'true'));
       invalidFields.find(Boolean)?.focus?.();
       showToast(tx('shots.requiredFields', 'Add medication, dose, date, time, and a logged location.'), true);
+      notifyCoachSaveBlocked(invalidFields);
       return;
     }
     if (weightRaw && !(Number.isFinite(weight) && weight > 0)) {
@@ -281,6 +303,7 @@ export function saveShot(allowFuture = false) {
     if (!Object.prototype.hasOwnProperty.call(MEDICATIONS, med)) {
       showToast(tx('shots.validMedicationRequired', 'Select a valid medication for this record.'), true);
       moduleState.savingShot = false;
+      notifyCoachSaveBlocked([$('cpShotMed')]);
       return;
     }
     const dateTime = new Date(`${date}T${time}`);
