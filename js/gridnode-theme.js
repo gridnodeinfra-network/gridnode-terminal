@@ -32,6 +32,17 @@
     } catch (_) {}
     return 'en';
   }
+  /* v0.15.37 — a language switch is async (catalog fetch). Persist the choice
+     to every store synchronously FIRST so currentLang()/syncLangControls()
+     read the new value immediately, and ignore further taps while the switch
+     is in flight: without the guard, an impatient second tap re-targeted
+     from stale state and flipped the language straight back. */
+  let langSwitchBusy = false;
+  function persistLangSync(lang) {
+    try { localStorage.setItem('gn.lang', lang); } catch (_) {}
+    try { sessionStorage.setItem('gn.lang', lang); } catch (_) {}
+    try { document.cookie = 'gn.lang=' + encodeURIComponent(lang) + ';path=/;max-age=31536000;samesite=lax'; } catch (_) {}
+  }
   function syncLangControls() {
     const lang = currentLang();
     document.querySelectorAll('.gn-language-control [data-lang-choice]').forEach(button => {
@@ -61,18 +72,23 @@
     globe.addEventListener('click', event => {
       event.stopPropagation();
       event.preventDefault();
+      if (langSwitchBusy) return; // tap landed mid-switch; the first tap owns it
       const next = globe.dataset.langChoice;
+      if (next !== 'en' && next !== 'es') return;
+      persistLangSync(next);
+      syncLangControls(); // immediate feedback: kanji color + labels flip now
       // Route through GN_I18N.setLang: it loads the catalog, sets
       // documentElement.lang + body data-lang, applies translations and
       // dispatches gn:langchange — the same path the old dropdown used.
       if (window.GN_I18N?.setLang) {
-        window.GN_I18N.setLang(next).catch(() => {});
+        langSwitchBusy = true;
+        const release = () => { langSwitchBusy = false; syncLangControls(); };
+        const safety = setTimeout(release, 5000); // never wedge the toggle
+        window.GN_I18N.setLang(next).catch(() => {}).finally(() => { clearTimeout(safety); release(); });
       } else {
-        try { localStorage.setItem('gn.lang', next); } catch (_) {}
         document.documentElement.lang = next;
         document.dispatchEvent(new CustomEvent('gn:langchange', { detail: { lang: next } }));
       }
-      syncLangControls();
     });
     return wrap;
   }

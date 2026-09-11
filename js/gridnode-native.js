@@ -175,11 +175,27 @@
 
   function restoreShotDraft() {
     if (window.GNModules?.moduleState?.editingShotId) return;
+    const modal = document.getElementById('logOv');
+    /* v0.15.37: the module draft just restored every field (location round
+       trip, quick-log prefill) — it is strictly fresher than this session
+       snapshot, so skip instead of clobbering it. */
+    if (modal && modal.dataset.gnModuleDraft) { delete modal.dataset.gnModuleDraft; return; }
     let draft;
     try { draft = JSON.parse(sessionStorage.getItem(SHOT_DRAFT_KEY) || 'null'); } catch (_) { return; }
     if (!draft || Date.now() - Number(draft.savedAt || 0) > 24 * 60 * 60 * 1000) return;
     const values = { sDose: draft.dose, sDate: draft.date, sTime: draft.time, sWt: draft.wt, sNotes: draft.notes };
-    Object.keys(values).forEach(id => { const input = document.getElementById(id); if (input && values[id] != null) input.value = values[id]; });
+    Object.keys(values).forEach(id => {
+      const input = document.getElementById(id);
+      if (!input || values[id] == null) return;
+      /* v0.15.37: never clobber a live non-empty field with a stale empty
+         draft. Programmatic setters (dose pills, the med custom select) fire
+         no input/change, so captureShotDraft can hold an empty value while
+         the module draft already restored the real one (e.g. the
+         injection-zone round trip). Overwriting wiped the dose and unchecked
+         the coach's dose step. */
+      if (values[id] === '' && String(input.value || '').trim() !== '') return;
+      input.value = values[id];
+    });
     if (draft.med && window.GNModules?.selectState) {
       window.GNModules.selectState.cpShotMed = { val: draft.med, label: draft.medLabel || draft.med };
       const value = document.getElementById('cpShotMedVal');

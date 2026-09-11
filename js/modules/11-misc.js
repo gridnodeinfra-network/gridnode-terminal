@@ -76,7 +76,19 @@ export function gnMedRevealGroup(dropId, group) {
   });
 }
 export function updatePills() { const med = normalizeMedicationId(selectState.cpShotMed?.val); const dose = Number(getProfile().dose); const container = $('dosePills'); if (!container) return; const values = dose ? [dose] : [0.5, 1, 2.5, 5, 7.5, 10]; container.innerHTML = values.map(value => `<button type="button" class="dose-pill" data-dose="${value}">${value} mg</button>`).join(''); setText('profMedTxt', med ? `// ${medicationLabel(med).toUpperCase()}` : tx('profile.noMedicationSet', '// NO MEDICATION SET')); }
-export function selPill(button, dose) { if ($('sDose')) $('sDose').value = dose; qa('.dose-pill').forEach(item => item.classList.toggle('active', item === button)); }
+export function selPill(button, dose) {
+  const el = $('sDose');
+  if (el) {
+    el.value = dose;
+    /* v0.15.37: dose pills set the value programmatically, which fires no
+       input/change. The native session draft (gridnode-native.js) only
+       captures on input/change, so a pill-picked dose went stale there and
+       restoreShotDraft() wiped it on the next modal reopen (e.g. the
+       injection-zone round trip), unchecking the coach's dose step. */
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  qa('.dose-pill').forEach(item => item.classList.toggle('active', item === button));
+}
 
 function wireSelectOptions() {
   const callbacks = { saveProfileMed, saveProfileMetrics, updatePills };

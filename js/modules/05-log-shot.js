@@ -1,6 +1,7 @@
 export function openLogModal(options = {}) {
   const modal = $('logOv');
   if (!modal) return;
+  delete modal.dataset.gnModuleDraft;
   let draftDeviceId = '';
   if (!modal.querySelector('[data-gn-shot-step="timing"]')) {
     modal.querySelector('.gn-shot-datetime-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="timing">' + tx('shot.timing', '01 // TIMING') + '</div>');
@@ -26,6 +27,10 @@ export function openLogModal(options = {}) {
       qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = draftSideEffects.includes(input.value); });
     }
     moduleState.shotDraft = null; // consumed once
+    /* v0.15.37: mark that the module draft restored every field, so the
+       native session restore (gridnode-native.js, setTimeout 0 on layer
+       open) skips instead of clobbering with its older snapshot. */
+    modal.dataset.gnModuleDraft = '1';
   }
   if (!preserveDraft) {
     moduleState.editingShotId = null;
