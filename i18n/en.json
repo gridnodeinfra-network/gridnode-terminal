@@ -1648,9 +1648,9 @@
   "shots.audioLabel": "AUDIO",
   "shots.soundOn": "ON",
   "shots.soundOff": "OFF",
-  "sound.toggle": "AMBIENT SOUND",
+  "sound.toggle": "SOUNDTRACK",
   "sound.label": "SOUND",
-  "sound.hint": "Procedural ambient pads + subtle UI tones. Off by default; opt in anytime.",
+  "sound.hint": "Blade Runner synthwave soundtrack, streamed from YouTube. Off by default; opt in anytime.",
   "shots.scannerAudioHint": "Optional procedural confirmation tones. Off by default; opt in to play a short tone when a zone locks.",
   "shots.deletePermanently": "DELETE PERMANENTLY",
   "shots.scannerAria": "GRID//NODE user-entered location scanner",
@@ -1757,4 +1757,3 @@
   "fc.back": "Back",
   "fc.replay": "GUIDED TOUR"
 }
-

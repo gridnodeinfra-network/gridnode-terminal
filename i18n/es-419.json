@@ -1618,9 +1618,9 @@
   "shots.audioLabel": "AUDIO",
   "shots.soundOn": "ACTIVO",
   "shots.soundOff": "APAGADO",
-  "sound.toggle": "SONIDO AMBIENTAL",
+  "sound.toggle": "BANDA SONORA",
   "sound.label": "SONIDO",
-  "sound.hint": "Pads ambientales procedurales + tonos sutiles. Apagado por defecto; actívalo cuando quieras.",
+  "sound.hint": "Banda sonora synthwave de Blade Runner, vía YouTube. Apagado por defecto; actívalo cuando quieras.",
   "shots.scannerAudioHint": "Tonos de confirmación opcionales. Apagado por defecto; actívalo para reproducir un tono breve al bloquear una zona.",
   "shots.deletePermanently": "ELIMINAR PERMANENTEMENTE",
   "shots.scannerAria": "Escáner GRID//NODE de ubicación ingresada por el usuario",
@@ -1727,4 +1727,3 @@
   "fc.back": "Atrás",
   "fc.replay": "TOUR GUIADO"
 }
-
