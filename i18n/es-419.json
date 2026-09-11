@@ -1631,7 +1631,7 @@
   "vault.hapticsHelp": "La vibración confirma guardados, bloqueos y selecciones cuando el dispositivo lo admite.",
   "vault.hapticsOn": "ACTIVA — las acciones de guardar y bloquear vibran brevemente.",
   "vault.hapticsOff": "APAGADA — confirmación silenciosa. Toca para activar.",
-  "vault.hapticsUnsupported": "No compatible con este dispositivo.",
+  "vault.hapticsUnsupported": "No compatible con este dispositivo. Toca para probar la vibración.",
   "lab.assay": "ENSAYO",
   "assay.title": "// ENSAYO DE LOTE // REGISTRO DE ANÁLISIS",
   "assay.sub": "Resultados de análisis de terceros por lote, en tu VAULT. Solo organización personal, no es consejo médico.",

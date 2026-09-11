@@ -1661,7 +1661,7 @@
   "vault.hapticsHelp": "Vibration confirms saves, locks, and selections when the device supports it.",
   "vault.hapticsOn": "ON — save and lock actions vibrate briefly.",
   "vault.hapticsOff": "OFF — silent confirmation. Tap to enable.",
-  "vault.hapticsUnsupported": "Not supported on this device.",
+  "vault.hapticsUnsupported": "Not supported on this device. Tap to run a vibration probe.",
   "lab.assay": "ASSAY",
   "assay.title": "// BATCH ASSAY // LAB TEST LOG",
   "assay.sub": "Third-party test results per batch, in your VAULT. Personal organization only, not medical advice.",

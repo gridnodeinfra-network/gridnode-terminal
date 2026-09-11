@@ -512,10 +512,34 @@ function renderGnHapticsState() {
 }
 
 function toggleGnHaptics() {
-  if (!window.gnHaptics?.supported?.()) return;
+  if (!window.gnHaptics?.supported?.()) {
+    probeGnHaptics();
+    return;
+  }
   window.gnHaptics.setEnabled(!window.gnHaptics.enabled());
   renderGnHapticsState();
   try { window.gnHaptics.tap(); } catch (_) {}
+}
+
+/* Live vibration probe: the "not supported" verdict comes from a single
+ * typeof check, which can't tell "API missing" from "API present but the
+ * device stayed silent". Tapping the row while unsupported fires a real
+ * test pulse (the tap is a user gesture) and reports exactly what this
+ * browser exposes, so we get ground truth from the device. */
+function probeGnHaptics() {
+  const helpEl = $('gnHapticsHelp');
+  let apiType = 'unknown';
+  try { apiType = typeof navigator !== 'undefined' ? typeof navigator.vibrate : 'no navigator'; } catch (_) {}
+  let callResult = 'not attempted (API missing)';
+  if (apiType === 'function') {
+    try {
+      callResult = navigator.vibrate([25, 80, 25]) ? 'accepted (true)' : 'rejected (false)';
+    } catch (err) {
+      callResult = 'threw: ' + String((err && err.message) || err);
+    }
+  }
+  try { console.info('[GRID//NODE haptics probe]', 'vibrate typeof:', apiType, '| test pulse:', callResult); } catch (_) {}
+  if (helpEl) helpEl.textContent = 'Probe: vibrate API is ' + apiType + '; test pulse ' + callResult + '.';
 }
 
 function pulseGnCapture(saveButton) {
