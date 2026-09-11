@@ -5458,10 +5458,15 @@ window.addEventListener("load", () => { installScannerPointerHandlers(); install
  * 2026-09-10 at Pipe's request). The SOUND switch in the topbar now streams
  * a real soundtrack instead of procedural pads.
  *
- * Track: "YOU CAN //NOT// FIX THAT | 1 HOUR BLADERUNNER MUSIC PLAYLIST"
- * (synthwave / retrowave), starts at 07:32 (t=452s), loops the single video.
+ * Track: "DEEP ORBIT - Royalty Free Sci-Fi Dark Synth Playlist (Copyright Safe)"
+ * by Nova Arcadia Radio, ~81 minutes of dark-synth spacewave. The channel
+ * licenses it 100% royalty free / copyright safe (credit "Nova Arcadia Radio",
+ * shown in the dock title). Chosen 2026-09-10 to replace the Blade Runner
+ * playlist upload, which carried no reuse license.
  * Playback uses the official YouTube IFrame Player API: the track streams
  * from YouTube inside their player, nothing is downloaded or re-hosted.
+ * Embeddability verified via the video's own player response
+ * ("playableInEmbed": true).
  *
  * Opt-in only: the API script is not even fetched until the user flips the
  * SOUND switch (or left it on and makes their first tap, per autoplay
@@ -5473,9 +5478,9 @@ window.addEventListener("load", () => { installScannerPointerHandlers(); install
  */
 
 const GN_SOUND_STORAGE_KEY = 'gn_sound_v1';
-const GN_TRACK_VIDEO_ID = 'KGsJHYSzAKM';
-const GN_TRACK_START_S = 452; // t=452s from Pipe's link
-const GN_TRACK_TITLE = 'BLADERUNNER SYNTHWAVE // 1HR';
+const GN_TRACK_VIDEO_ID = '-LkTs8x9DBs';
+const GN_TRACK_START_S = 0;
+const GN_TRACK_TITLE = 'DEEP ORBIT // NOVA ARCADIA RADIO';
 
 let gnSoundOn = false;
 try { gnSoundOn = localStorage.getItem(GN_SOUND_STORAGE_KEY) === '1'; } catch (_) { /* private mode */ }
