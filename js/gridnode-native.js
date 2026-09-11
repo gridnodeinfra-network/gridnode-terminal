@@ -179,9 +179,23 @@
     /* v0.15.37: the module draft just restored every field (location round
        trip, quick-log prefill) — it is strictly fresher than this session
        snapshot, so skip instead of clobbering it. */
-    if (modal && modal.dataset.gnModuleDraft) { delete modal.dataset.gnModuleDraft; return; }
-    let draft;
-    try { draft = JSON.parse(sessionStorage.getItem(SHOT_DRAFT_KEY) || 'null'); } catch (_) { return; }
+    const hadModuleDraft = !!(modal && modal.dataset.gnModuleDraft);
+    if (modal) delete modal.dataset.gnModuleDraft;
+    let draft = null;
+    try { draft = JSON.parse(sessionStorage.getItem(SHOT_DRAFT_KEY) || 'null'); } catch (_) { draft = null; }
+    if (hadModuleDraft) return;
+    /* v0.15.38: the FIRST DOSE beat opens the log modal directly (not through
+       quickLogShot, which clears the session draft). A draft saved BEFORE the
+       beat started is stale pre-coach state: restoring it resurrects old
+       values and fake-checks the coach steps (dose showed checked before the
+       user touched anything). Drop it. A draft saved during the beat is the
+       user's own in-progress work and restores normally. */
+    let doseBeatStart = 0;
+    try { doseBeatStart = Number(document.body.dataset.gnFcDoseStart || 0); } catch (_) {}
+    if (doseBeatStart && (!draft || Number(draft.savedAt || 0) < doseBeatStart)) {
+      try { sessionStorage.removeItem(SHOT_DRAFT_KEY); } catch (_) {}
+      return;
+    }
     if (!draft || Date.now() - Number(draft.savedAt || 0) > 24 * 60 * 60 * 1000) return;
     const values = { sDose: draft.dose, sDate: draft.date, sTime: draft.time, sWt: draft.wt, sNotes: draft.notes };
     Object.keys(values).forEach(id => {

@@ -1300,10 +1300,14 @@ body.gn-dashboard-empty .fab { display: none !important; }
 #logOv, #wtOv { align-items: flex-end !important; }
 #logOv .modal, #wtOv .modal {
   max-height: 75vh !important;
+  /* v0.15.38: raw vh jumps when the mobile URL bar shows/hides mid-scroll
+     (visual viewport changes); the app already tracks the live height in
+     --gn-viewport-height via visualViewport. */
+  max-height: calc(var(--gn-viewport-height, 100dvh) * 0.75) !important;
   border-radius: 18px 18px 0 0 !important;
   width: 100% !important;
 }
-#logOv .modal { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+#logOv .modal { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 .gn-drawer-handle { width: 44px; height: 4px; border-radius: 2px; background: rgba(155, 180, 188, .5); margin: 8px auto 4px; flex-shrink: 0; }
 .toast.undoable { border-color: #41e0c7 !important; border-left-color: #41e0c7 !important; background: rgba(10, 14, 20, .96) !important; color: #e8fcff !important; box-shadow: 0 6px 28px rgba(0, 0, 0, .5) !important; padding: 0 !important; overflow: hidden; }
 .toast.undoable .gn-toast-body { display: flex; align-items: center; gap: 10px; padding: 12px 14px 10px; }
@@ -1663,6 +1667,8 @@ html[data-theme="light"] .gn-crt-scanline::before {
   align-self: center !important;
   margin: auto !important;
   max-height: 90vh !important;
+  /* v0.15.38: see above — track the live visual viewport, not raw vh. */
+  max-height: calc(var(--gn-viewport-height, 100dvh) * 0.9) !important;
 }
 #logOv, #wtOv {
   align-items: center !important;

@@ -864,7 +864,15 @@
     removeSpotlight();
     if (i === 0) renderSignal();
     else if (i === 1) renderGrid();
-    else if (i === 2) renderDose();
+    else if (i === 2) {
+      /* v0.15.38: stamp when the FIRST DOSE beat starts. The native
+         session-draft restore (gridnode-native.js) uses this to tell a
+         stale pre-coach draft — which resurrects old values and fake-checks
+         the coach steps (dose showed checked before the user touched
+         anything) — from values the user entered during this beat. */
+      try { if (!document.body.dataset.gnFcDoseStart) document.body.dataset.gnFcDoseStart = String(Date.now()); } catch (_) {}
+      renderDose();
+    }
     else if (i === 3) renderCurve();
     else if (i === 4) renderComfort();
     else if (i === 5) renderOnline();
@@ -878,6 +886,8 @@
   function dismiss(complete) {
     if (!complete) { try { localStorage.setItem(DISMISSED, '1'); } catch (_) {} }
     exitModalPhase();
+    /* v0.15.38: clear the FIRST DOSE beat stamp (see renderBeat). */
+    try { delete document.body.dataset.gnFcDoseStart; } catch (_) {}
     if (doseTapHandler) { document.removeEventListener('click', doseTapHandler, true); doseTapHandler = null; }
     if (savedTimer) { clearTimeout(savedTimer); savedTimer = null; }
     if (overlay) { overlay.remove(); overlay = null; }
