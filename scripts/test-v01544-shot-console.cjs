@@ -98,6 +98,7 @@ check('i18n consoleSub en+es', en['shot.consoleSub'] === 'SHOT PROTOCOL CONSOLE'
 check('FAB is 56px', read('html/partials/01-head.html').includes('right:20px;width:56px;height:56px;'));
 check('FAB icon scaled to 56px button', read('html/partials/01-head.html').includes('.fab .gn-icon{width:26px;height:26px;'));
 check('FAB hidden only on Vault', read('js/modules/01-shell.js').includes("['Profile'].includes(name)"));
+check('FAB not hidden in zero-shot state', !read('css/native/03-premium-system.css').includes('gn-dashboard-empty .fab'));
 check('summary panel plain language', en['results.summaryTitle'] === 'Progress Summary' && en['results.shotsLogged'] === 'Shots Logged' && en['results.summarySub'] === 'Your logged shots and weight, at a glance');
 check('summary panel ES parity', es['results.summaryTitle'] === 'Resumen de progreso' && es['results.shotsLogged'] === 'Dosis registradas' && es['results.logWeightCta'] === 'REGISTRAR PESO');
 check('weight empty state is a CTA', read('js/modules/06-results.js').includes('results-weight-cta') && read('js/modules/06-results.js').includes('openWeightModal()') && read('html/partials/01-head.html').includes('.results-weight-cta{'));
