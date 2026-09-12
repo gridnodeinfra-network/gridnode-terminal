@@ -10,7 +10,7 @@
   const PAGE_KEY = 'gn_active_page_session_v1';
   const OVERLAY_SELECTOR = '.overlay, .archive-confirm-overlay, .future-confirm-overlay, .gn-date-overlay, .csv-import-overlay, .gn-import-overlay, .gn-whatsnew-overlay, .gn-peptide-overlay, .gn-onb-overlay, .gn-lab-tool-overlay';
   const OVERLAY_CLOSE_SELECTOR = '[data-dismiss], [data-modal-close], [data-lab-back], [data-onb-skip], [data-map-cancel], .modal-close, .modal-btn.close, .archive-confirm-cancel, .future-confirm-cancel, .csv-import-cancel, .gn-whatsnew-close, .gn-peptide-overlay-close, [onclick*="close"], [onclick*="cancel"]';
-  const PAGE_NAMES = { pageDash: 'Dash', pageLog: 'Log', pageResults: 'Results', pageLab: 'Lab', pageProfile: 'Profile', pageCal: 'Cal' };
+  const PAGE_NAMES = { pageDash: 'Dash', pageLog: 'Log', pageResults: 'Results', pageLab: 'Lab', pageProfile: 'Profile' };
   let keyboardVisible = false;
   let handlingPop = false;
   let consumeInternalHistoryPop = false;

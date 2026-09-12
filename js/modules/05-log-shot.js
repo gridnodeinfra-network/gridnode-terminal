@@ -4,9 +4,9 @@ export function openLogModal(options = {}) {
   delete modal.dataset.gnModuleDraft;
   let draftDeviceId = '';
   if (!modal.querySelector('[data-gn-shot-step="timing"]')) {
-    modal.querySelector('.gn-shot-datetime-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="timing">' + tx('shot.timing', '01 // TIMING') + '</div>');
-    $('cpShotMed')?.closest('.form-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="protocol">' + tx('shot.protocol', '02 // PROTOCOL') + '</div>');
-    $('modalSelectedLocation')?.closest('.form-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="location">' + tx('shot.location', '03 // LOCATION') + '</div>');
+    modal.querySelector('.gn-shot-datetime-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="timing" data-i18n="shot.timing">' + tx('shot.timing', '01 // TIMING') + '</div>');
+    $('cpShotMed')?.closest('.form-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="protocol" data-i18n="shot.protocol">' + tx('shot.protocol', '02 // PROTOCOL') + '</div>');
+    $('modalSelectedLocation')?.closest('.form-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="location" data-i18n="shot.location">' + tx('shot.location', '03 // LOCATION') + '</div>');
   }
   const preserveDraft = Boolean(options.preserve || moduleState.pendingLocationDraft || moduleState.shotDraft);
   moduleState.pendingLocationDraft = false;
@@ -103,7 +103,7 @@ function renderShotDevicePicker(selectedId = '') {
   const picker = $('shotDeviceId');
   if (!picker) return;
   const devices = S.get('devices', []).filter(device => !device.archived);
-  picker.innerHTML = `<option value="">${tx('shot.unknownDevice', 'Unknown / Not applicable')}</option>${devices.map(device => `<option value="${safeText(device.id)}">${safeText(device.name)} · ${safeText(deviceStatusLabel(device.status))}</option>`).join('')}`;
+  picker.innerHTML = `<option value="" data-i18n="shot.unknownDevice">${tx('shot.unknownDevice', 'Unknown / Not applicable')}</option>${devices.map(device => `<option value="${safeText(device.id)}">${safeText(device.name)} · ${safeText(deviceStatusLabel(device.status))}</option>`).join('')}`;
   picker.value = selectedId || '';
 }
 

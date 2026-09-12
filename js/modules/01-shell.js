@@ -15,14 +15,14 @@ export function showPage(name, navElement) {
   try { localStorage.setItem('gn_last_active_page_v1', previousPage.replace('page', '') || 'Dash'); } catch (e) {}
   const page = $(`page${name}`);
   if (!page) return;
-  document.body.classList.toggle('gn-fab-hidden-context', ['Lab', 'Profile', 'Cal'].includes(name));
+  document.body.classList.toggle('gn-fab-hidden-context', ['Lab', 'Profile'].includes(name));
   qa('.page').forEach(item => item.classList.remove('active'));
   page.classList.add('active');
   qa('.nav-item').forEach(item => {
     item.classList.remove('active');
     item.removeAttribute('aria-current');
   });
-  const nav = navElement || document.getElementById({ Dash: 'navDash', Log: 'navLog', Results: 'navRes', Lab: 'navLab', Profile: 'navPro', Cal: 'navCal' }[name]);
+  const nav = navElement || document.getElementById({ Dash: 'navDash', Log: 'navLog', Results: 'navRes', Lab: 'navLab', Profile: 'navVault' }[name]);
   if (nav) {
     nav.classList.add('active');
     nav.setAttribute('aria-current', 'page');
@@ -32,7 +32,6 @@ export function showPage(name, navElement) {
   if (name === 'Results') renderResults();
   if (name === 'Lab') renderLab();
   if (name === 'Profile') renderProfile();
-  if (name === 'Cal') renderCalendar();
   document.dispatchEvent(new CustomEvent('gn:pagechange', { detail: { name, previousPage } }));
 }
 

@@ -18,7 +18,7 @@
 (function () {
   'use strict';
 
-  const VERSION = window.GN_VERSION || { semver: '0.15.41', release: '20260907.1', title: 'V0.15.41 — LAUNCH READINESS', date: '2026-09-12' };
+  const VERSION = window.GN_VERSION || { semver: '0.15.42', release: '20260907.1', title: 'V0.15.42 — LAUNCH READINESS', date: '2026-09-12' };
   const ACK_KEY = 'gridnode.lastWhatsNewDismissedBuild';
   const LEGACY_ACK_KEY = 'gn_whatsnew_acknowledged_release_v2';
   const ORDER = ['NEW', 'IMPROVED', 'FIXED', 'ACCESSIBILITY', 'MOBILE', 'COMPATIBILITY', 'SECURITY'];
@@ -118,35 +118,59 @@
       }
     },
     '__CURRENT_BUILD__': {
-      version: '0.15.41', title: 'LAUNCH READINESS', date: '2026-09-12',
+      version: '0.15.42', title: 'LAUNCH READINESS', date: '2026-09-12',
       en: {
+        NEW: [
+          'VAULT is now a full bottom-tab: five sections, one loop — HOME, SHOTS, RESULTS, LAB, VAULT.',
+          'RESULTS has a CHARTS | CALENDAR toggle: the calendar lives inside RESULTS now, not as a separate page.',
+          'A real Privacy Policy (VAULT → YOUR DATA, and the landing footer): local-first storage, what is stored, optional cloud sync, export and delete rights — in English and Spanish.',
+          'The landing page states it plainly: GRID//NODE does not sell, source, or facilitate peptide purchases.'
+        ],
         FIXED: [
           'Vibration feedback is fully removed: the app no longer vibrates on taps, saves, or milestones, whatever your old settings said.',
           'The version shown in your profile now always matches the real release.',
-          'Tab names are consistent everywhere: HOME, SHOTS, RESULTS, TRENDS, LAB, VAULT.',
+          'Tab names are consistent everywhere: HOME, SHOTS, RESULTS, LAB, VAULT.',
           'SIGN OUT and Delete Cloud Account only appear when you actually have a cloud account.',
-          'The stray "// NODE MARK" label on the landing page is gone.'
+          'The stray "// NODE MARK" label on the landing page is gone.',
+          'Results never show raw medication codes — always the real medication name.',
+          'Body-measurement labels and the shot-form step headers now follow the language you pick, even mid-session.'
         ],
         IMPROVED: [
+          'First run is one clear door: ENTER THE GRID, then a plain choice — only on this device, or sync with Google.',
+          'Local-only entry lands you straight on HOME.',
+          'Tap anywhere during boot to skip it.',
+          'The guided tour names all five zones and can be replayed anytime from VAULT → TOOLS.',
+          'The landing page says what it is in one line: most trackers only know pharma GLPs — GRID//NODE is built for the real stack: compounded, grey market, research.',
+          'Theme lives in VAULT settings; Spanish is offered from the very first beat of the tour.',
           'Logging a shot no longer kicks you to another screen mid-form: pick your injection site right inside the log modal.',
-          'The medication picker now leads with the most common options instead of a wall of jargon.',
-          'The first-run tour speaks plain language and offers Spanish from the very first beat.',
-          'Theme choices now say DARK and LIGHT, and the app tells one clear story: your data lives on this device, cloud sync is optional.'
+          'The medication picker leads with the most common options instead of a wall of jargon.'
         ]
       },
       es: {
+        NEW: [
+          'VAULT ahora es una pestaña inferior completa: cinco secciones, un ciclo — HOME, SHOTS, RESULTS, LAB, VAULT.',
+          'RESULTS tiene un interruptor GRÁFICAS | CALENDARIO: el calendario vive dentro de RESULTS, no como página aparte.',
+          'Una Política de Privacidad real (VAULT → TUS DATOS y el pie de la página inicial): almacenamiento local primero, qué se guarda, sincronización opcional, derechos de exportar y eliminar — en inglés y español.',
+          'La página inicial lo dice claro: GRID//NODE no vende, consigue ni facilita la compra de péptidos.'
+        ],
         FIXED: [
           'La vibración de respuesta se eliminó por completo: la app ya no vibra al tocar, guardar o celebrar, sin importar tus ajustes anteriores.',
           'La versión que ves en tu perfil ahora siempre coincide con la versión real.',
-          'Los nombres de las pestañas son consistentes en todas partes: HOME, SHOTS, RESULTS, TRENDS, LAB, VAULT.',
+          'Los nombres de las pestañas son consistentes en todas partes: HOME, SHOTS, RESULTS, LAB, VAULT.',
           'Cerrar sesión y Eliminar cuenta en la nube solo aparecen si tienes una cuenta en la nube.',
-          'La etiqueta "// NODE MARK" de la página inicial desapareció.'
+          'La etiqueta "// NODE MARK" de la página inicial desapareció.',
+          'Los resultados nunca muestran códigos crudos de medicamentos, siempre el nombre real.',
+          'Las etiquetas de medidas corporales y los encabezados del formulario ahora siguen el idioma que elijas, incluso a mitad de sesión.'
         ],
         IMPROVED: [
+          'El primer arranque tiene una sola puerta clara: ENTER THE GRID, luego una elección simple — solo en este dispositivo o sincronizar con Google.',
+          'Entrar solo en local te lleva directo a HOME.',
+          'Toca en cualquier lugar durante el arranque para omitirlo.',
+          'El tour nombra las cinco zonas y puedes repetirlo cuando quieras desde VAULT → HERRAMIENTAS.',
+          'La página inicial dice lo que es en una línea: la mayoría de trackers solo conocen los GLP farmacéuticos — GRID//NODE está construido para el stack real: compuesto, grey market, investigación.',
+          'El tema vive en los ajustes de VAULT; el español se ofrece desde el primer paso del tour.',
           'Registrar una dosis ya no te saca a otra pantalla a mitad del formulario: elige tu sitio de inyección dentro del mismo modal.',
-          'El selector de medicamentos ahora empieza con las opciones más comunes en lugar de un muro de jerga.',
-          'El tour inicial habla en lenguaje claro y ofrece español desde el primer paso.',
-          'Los temas ahora dicen DARK y LIGHT, y la app cuenta una sola historia: tus datos viven en este dispositivo, la nube es opcional.'
+          'El selector de medicamentos empieza con las opciones más comunes en lugar de un muro de jerga.'
         ]
       }
     },

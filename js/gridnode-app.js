@@ -37,7 +37,8 @@ function bridge() {
     'calPrev', 'calNext', 'calDayClick', 'openArsenalMod', 'closeArs', 'saveArs',
     'requestLoadoutRemove', 'cancelLoadoutRemove', 'confirmLoadoutRemove',
     'refreshNodeHeader', 'openLabTool', 'closeLabTool',
-    'dismissSystemUpdate', 'openSystemUpdate'
+    'dismissSystemUpdate', 'openSystemUpdate', 'setResultsView',
+    'openPrivacyPolicy', 'closePrivacyPolicy', 'replayGuidedTour'
   ];
   names.forEach(name => { window[name] = modules[name]; });
   window.refreshAll = modules.refreshAll;
@@ -75,6 +76,31 @@ function injectStableStyles() {
     .gn-measurements-card,.gn-dose-projection{margin:0 0 20px;padding:16px;border:1px solid rgba(0,212,255,.2);border-top:2px solid #00d4ff;background:linear-gradient(180deg,rgba(12,18,25,.92),rgba(7,8,13,.96));box-shadow:0 10px 28px rgba(0,0,0,.2)}.gn-measurements-card h3,.gn-dose-projection h2{margin:0;color:#eef6f8;font:700 1rem var(--font-d,monospace);letter-spacing:2px}.gn-measurements-copy,.gn-dose-copy{margin:7px 0 14px;color:#8295a0;font:.62rem/1.45 var(--font-m,monospace)}.gn-measurements-tools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}.gn-measurements-grid,.gn-dose-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.gn-measurements-grid>label{display:grid;gap:5px;padding:9px;border:1px solid rgba(255,255,255,.07);background:rgba(0,0,0,.2);color:#9fc7d4;font:600 .53rem var(--font-m,monospace);letter-spacing:.7px}.gn-measurements-grid>label span{display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap}.gn-measurements-grid small{color:#8295a0;font-weight:400;letter-spacing:0;text-align:right}.gn-measurements-grid input{box-sizing:border-box;width:100%;padding:9px 8px;border:1px solid rgba(0,212,255,.18);background:#080810;color:#eef6f8;font:16px var(--font-m,monospace)}.gn-measurements-empty{margin-top:10px;color:#8295a0;font:.6rem var(--font-m,monospace)}.gn-measurement-trend-list{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-top:10px}.gn-measurement-trend-row{display:flex;justify-content:space-between;gap:8px;padding:9px;border:1px solid rgba(0,212,255,.12);color:#9fc7d4;font:.58rem var(--font-m,monospace)}.gn-measurement-trend-row span{color:#00ff88}.gn-dose-grid{grid-template-columns:repeat(4,1fr)}.gn-dose-output{margin-top:12px;padding:12px;border-left:3px solid #00d4ff;background:rgba(0,212,255,.05);color:#e8fcff;font:.7rem/1.7 var(--font-m,monospace)}.gn-dose-disclaimer{margin-top:10px;padding:11px;border:1px solid rgba(255,215,0,.45);border-left:3px solid #ffd700;background:rgba(255,215,0,.06);color:#f1d982;font:.62rem/1.5 var(--font-m,monospace)}.gn-dose-disclaimer strong{color:#ffd700}.gn-import-overlay,.gn-delete-overlay{position:fixed;inset:0;z-index:180;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.78)}.gn-import-overlay.active,.gn-delete-overlay.active{display:flex}.gn-import-panel,.gn-delete-panel{width:min(100%,480px);max-height:90vh;overflow:auto;padding:18px;border:1px solid rgba(0,212,255,.36);border-top:2px solid #00d4ff;background:#080810;box-shadow:0 18px 50px rgba(0,0,0,.6)}.gn-import-panel p,.gn-delete-panel p{color:#9fc7d4;font:.65rem/1.5 var(--font-m,monospace)}.gn-import-panel>label{display:grid;gap:6px;margin-top:12px;color:#9fc7d4;font:600 .58rem var(--font-m,monospace);letter-spacing:1px}.gn-import-panel select,.gn-import-panel input{box-sizing:border-box;width:100%;padding:10px;background:#0e0e16;border:1px solid rgba(0,212,255,.2);color:#eef6f8;font:16px var(--font-m,monospace)}.gn-import-title,.gn-delete-kicker{color:#00d4ff;font:700 .64rem var(--font-m,monospace);letter-spacing:2px}.gn-import-close{width:100%;margin-top:14px;padding:11px;border:1px solid rgba(255,255,255,.18);background:transparent;color:#9fc7d4;font:700 .6rem var(--font-m,monospace);letter-spacing:1px}.gn-delete-panel h2{margin:8px 0;color:#FF5B5B;font:700 1.05rem var(--font-d,monospace);letter-spacing:1.5px}.gn-delete-panel label{display:grid;gap:6px;color:#ffd700;font:700 .58rem var(--font-m,monospace);letter-spacing:1px}.gn-delete-panel input{padding:11px;background:#080810;border:1px solid rgba(255,59,59,.4);color:#fff;font:16px var(--font-m,monospace)}.gn-delete-note{color:#ffd982!important}.gn-delete-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.gn-delete-confirm{border-color:#FF3B3B!important;color:#FF5B5B!important}.gn-delete-confirm:disabled{cursor:not-allowed;opacity:.4}
     #boot .boot-command-deck{width:min(92vw,520px);padding:26px 22px;background:linear-gradient(180deg,rgba(10,16,23,.96),rgba(5,5,8,.98));border-color:rgba(0,212,255,.34);box-shadow:0 0 55px rgba(0,212,255,.11),inset 0 0 40px rgba(0,212,255,.025)}#boot .boot-terminal,#boot .boot-prog-wrap{max-width:100%}
     canvas{display:block;max-width:100%}
+    /* v0.15.42: RESULTS charts/calendar segmented toggle + calendar subview */
+    .results-view-toggle{display:flex;gap:0;margin:12px 0 4px;border:1px solid rgba(0,212,255,.22);border-radius:6px;overflow:hidden}
+    .results-view-btn{flex:1;padding:10px 8px;border:0;background:transparent;color:#8295a0;font:700 .6rem var(--font-d,monospace);letter-spacing:2px;cursor:pointer}
+    .results-view-btn.active{background:rgba(0,212,255,.14);color:#00d4ff}
+    .results-calendar-view{margin-top:6px}
+    .results-calendar-view .results-copy{margin-top:10px}
+    /* v0.15.42: landing single-CTA discipline — explore becomes a quiet text anchor */
+    .landing-explore-link{display:block;margin:14px auto 0;padding:8px 12px;border:0;background:transparent;color:#8295a0;font:600 .62rem var(--font-m,monospace);letter-spacing:2px;cursor:pointer;text-align:center}
+    .landing-explore-link:hover{color:#00d4ff}
+    .landing-wedge{margin:14px 0 0;padding:11px 14px;border-left:2px solid #00d4ff;background:rgba(0,212,255,.06);color:#e8fcff;font:600 .72rem/1.5 var(--font-m,monospace);letter-spacing:.3px}
+    .landing-wedge strong{color:#00d4ff}
+    /* v0.15.42: privacy policy overlay */
+    .gn-privacy-overlay{position:fixed;inset:0;z-index:970;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(2,2,8,.86);backdrop-filter:blur(10px)}
+    .gn-privacy-overlay.active{display:flex}
+    .gn-privacy-panel{width:min(100%,560px);max-height:86vh;overflow-y:auto;box-sizing:border-box;padding:22px;border:1px solid rgba(0,212,255,.4);border-top:2px solid #00d4ff;border-radius:12px;background:var(--panel,#0e0e16);color:var(--text,#eef6f8);box-shadow:0 28px 80px rgba(0,0,0,.65)}
+    .gn-privacy-panel h2{margin:6px 0 4px;color:#fff;font:800 1.05rem var(--font-d,monospace);letter-spacing:2px}
+    .gn-privacy-panel .gn-privacy-date{color:#8295a0;font:.58rem var(--font-m,monospace);letter-spacing:1px;margin-bottom:14px}
+    .gn-privacy-panel h3{margin:16px 0 6px;color:#00d4ff;font:700 .68rem var(--font-d,monospace);letter-spacing:1.6px}
+    .gn-privacy-panel p{margin:0 0 8px;color:#9fc7d4;font:.66rem/1.65 var(--font-m,monospace)}
+    .gn-privacy-panel .gn-privacy-close{width:100%;margin-top:16px;min-height:48px;border:1px solid rgba(0,212,255,.4);background:rgba(0,212,255,.07);color:#00d4ff;font:700 .68rem var(--font-d,monospace);letter-spacing:2px;border-radius:6px;cursor:pointer}
+    /* v0.15.42: boot skip hint */
+    .boot-skip-hint{margin-top:14px;text-align:center;color:#586d76;font:600 .56rem var(--font-m,monospace);letter-spacing:2.5px;animation:gnBootSkipPulse 1.6s ease-in-out infinite}
+    @keyframes gnBootSkipPulse{50%{opacity:.45}}
+    /* v0.15.42: auth choice plain-language hints */
+    .gn-auth-hint{margin:6px 0 12px;max-width:320px;text-align:center;color:#8295a0;font:400 .62rem/1.6 var(--font-m,monospace);letter-spacing:.4px}
     @media(max-width:560px){.gn-foundation-grid{grid-template-columns:1fr}.gn-form-grid{grid-template-columns:1fr}.gn-foundation-head,.gn-device-vault-head{display:block}.gn-foundation-signal{display:block;margin-top:7px;text-align:left}.gn-record-row{grid-template-columns:1fr auto auto}.gn-ledger-row{grid-template-columns:auto 1fr}.gn-ledger-row em{grid-column:2;text-align:left}}
     .gn-hub-grid>button{font:inherit;cursor:pointer}.gn-hub-grid>button:hover,.gn-hub-grid>button:focus-visible{border-color:#00d4ff;background:rgba(0,212,255,.1)}
     @media(max-width:560px){.gn-shot-filter-grid,.gn-dose-grid{grid-template-columns:1fr 1fr}.gn-measurements-grid{grid-template-columns:1fr}.gn-measurement-trend-list{grid-template-columns:1fr}}
@@ -116,7 +142,7 @@ function authShell() {
     <div class="gn-auth-kicker">// PERSONAL BIOTECH OPERATING SYSTEM //</div>
     <div class="gn-auth-title">${recovering ? 'RESET ACCESS' : 'GRID//NODE'}</div>
     <p class="gn-auth-copy">${recovering ? 'Enter a new password for this GRID//NODE cloud account.' : 'Sign in to sync your grid across devices.'}</p>
-    ${recovering ? '' : '<div class="gn-google-button-shell" id="gnGoogleButtonMount" role="group" aria-label="Continue with Google"></div><button class="gn-auth-passkey" id="gnPasskeyBtn" type="button" data-i18n-aria-label="auth.passkeyAria"><span class="gn-passkey-icon" aria-hidden="true">⌘</span><span data-i18n="auth.continueWithPasskey">CONTINUE WITH PASSKEY</span></button><div class="gn-auth-divider" aria-hidden="true"><span>or</span></div><button class="gn-auth-local" id="gnLocalBtn" type="button">CONTINUE ON THIS DEVICE ONLY</button>'}
+    ${recovering ? '' : '<p class="gn-auth-hint" data-i18n="auth.cloudHint">Sync with Google — your grid follows you on every device.</p><div class="gn-google-button-shell" id="gnGoogleButtonMount" role="group" aria-label="Continue with Google"></div><button class="gn-auth-passkey" id="gnPasskeyBtn" type="button" data-i18n-aria-label="auth.passkeyAria"><span class="gn-passkey-icon" aria-hidden="true">⌘</span><span data-i18n="auth.continueWithPasskey">CONTINUE WITH PASSKEY</span></button><div class="gn-auth-divider" aria-hidden="true"><span>or</span></div><button class="gn-auth-local" id="gnLocalBtn" type="button">CONTINUE ON THIS DEVICE ONLY</button><p class="gn-auth-hint" data-i18n="auth.localHint">Only on this device — nothing leaves this phone.</p>'}
     <form id="gnAuthForm" novalidate>
       <input class="gn-auth-field" id="gnAuthEmail" type="email" autocomplete="email" placeholder="EMAIL ADDRESS" aria-label="Email address"${recovering ? ' hidden' : ''}>
       <input class="gn-auth-field" id="gnAuthPassword" type="password" autocomplete="${recovering ? 'new-password' : 'current-password'}" placeholder="${recovering ? 'NEW PASSWORD' : 'PASSWORD'}" aria-label="${recovering ? 'New password' : 'Password'}">
@@ -127,7 +153,7 @@ function authShell() {
     ${recovering ? '' : '<div class="gn-auth-policy-link"><button type="button" id="gnVaultPolicyLink" data-i18n="landing.yourDataYourRules">YOUR DATA, YOUR RULES</button></div>'}
   </div></div>`;
   login.querySelector('.gn-auth-card')?.insertAdjacentHTML('afterbegin', '<div class="gn-auth-lang-kanji" role="group" data-i18n-aria-label="lang.switcherAria"><button type="button" class="gn-lang-globe" data-lang-choice="es" aria-label="Español" title="Cambiar a Español"><svg class="gn-lang-kanji" viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><text x="12" y="17.5" text-anchor="middle" font-family="Noto Sans JP, Hiragino Sans, Yu Gothic, PingFang SC, Microsoft YaHei, sans-serif" font-size="17" stroke="currentColor" stroke-width="2" fill="none">電</text></svg></button></div>');
-  $('gnVaultPolicyLink')?.addEventListener('click', showVaultPolicy);
+  $('gnVaultPolicyLink')?.addEventListener('click', openPrivacyPolicy);
   applyAuthTranslations(recovering);
   $('gnAuthForm')?.addEventListener('submit', event => { event.preventDefault(); submitAuth(); });
   $('gnAuthModeToggle')?.addEventListener('click', toggleAuthMode);
@@ -139,20 +165,8 @@ function authShell() {
 }
 
 
-function showVaultPolicy() {
-  document.getElementById('gnVaultPolicyOverlay')?.remove();
-  const overlay = document.createElement('div');
-  overlay.id = 'gnVaultPolicyOverlay';
-  overlay.className = 'gn-auth-policy-overlay';
-  overlay.setAttribute('role', 'dialog');
-  overlay.setAttribute('aria-modal', 'true');
-  overlay.innerHTML = '<div class="gn-auth-policy-modal"><div class="gn-auth-kicker">// GRID//NODE //</div><h2>' + tx('landing.yourDataYourRules', 'YOUR DATA, YOUR RULES') + '</h2><p>' + tx('landing.vaultPolicy', '// VAULT POLICY: YOUR RECORD STAYS LOCAL UNTIL YOU CONNECT A CLOUD ACCOUNT // GRID//NODE DOES NOT PROVIDE MEDICAL ADVICE //') + '</p><button type="button" class="gn-auth-primary" id="gnVaultPolicyClose">' + tx('whatsnew.gotIt', 'GOT IT') + '</button></div>';
-  document.body.appendChild(overlay);
-  const close = () => { overlay.remove(); };
-  overlay.querySelector('#gnVaultPolicyClose').addEventListener('click', close);
-  overlay.addEventListener('click', event => { if (event.target === overlay) close(); });
-  overlay.addEventListener('keydown', event => { if (event.key === 'Escape') close(); });
-}
+/* v0.15.42: showVaultPolicy superseded by openPrivacyPolicy (full bilingual
+ * policy overlay in 09-vault.js). Removed. */
 
 function applyAuthTranslations(recovering) {
   const login = $('login');
@@ -383,6 +397,8 @@ async function completeCloudSession(session) {
 
 function showApp() {
   modules.showScreen('app');
+  /* v0.15.42: explicit entry point — every session starts on HOME. */
+  modules.showPage('Dash');
   modules.loadApp();
 }
 
@@ -705,18 +721,24 @@ async function startGridNode() {
   const kickerAt = [0, 0, 1, 1, 2, 2, 3];
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const typeCharMs = reduced ? 0 : 14;
+  /* v0.15.42: any tap during boot skips it immediately. */
+  let bootSkipped = false;
+  const bootEl = $('boot');
+  const markBootSkipped = () => { bootSkipped = true; };
+  if (bootEl) bootEl.addEventListener('pointerdown', markBootSkipped, { once: true });
 
   const setKicker = phase => {
     const k = document.querySelector('.boot-deck-kicker b');
     if (k) k.textContent = kickerStates[phase] || kickerStates[0];
   };
   const typeLine = (line, text) => new Promise(resolve => {
-    if (reduced || !term) { line.textContent = text; resolve(); return; }
+    if (bootSkipped || reduced || !term) { line.textContent = text; resolve(); return; }
     let i = 0;
     const cursor = document.createElement('span');
     cursor.className = 'boot-cursor';
     line.appendChild(cursor);
     const tick = () => {
+      if (bootSkipped) { line.textContent = text; resolve(); return; }
       if (i < text.length) {
         cursor.insertAdjacentText('beforebegin', text[i]);
         i++;
@@ -752,20 +774,22 @@ async function startGridNode() {
     }
     if (pct) pct.textContent = `${String(progress).padStart(3, '0')}% // ${status}`;
     await typeLine(text, message);
+    if (bootSkipped) break;
     if (i < messages.length - 1) {
       line.classList.remove('boot-typing');
       tag.textContent = '[ OK ] ' + status;
-      if (!reduced) await new Promise(r => window.setTimeout(r, 240));
+      if (!reduced) await new Promise(r => window.setTimeout(r, 140));
     }
   }
   // completion: kicker ONLINE + cyan->Mars Red pulse on the emblem
   setKicker(3);
   const emblem = document.querySelector('.gn-b2b-symbol');
-  if (emblem && !reduced) {
+  if (emblem && !reduced && !bootSkipped) {
     emblem.classList.add('boot-complete-pulse');
     await new Promise(r => window.setTimeout(r, 750));
     emblem.classList.remove('boot-complete-pulse');
   }
+  if (bootEl) bootEl.removeEventListener('pointerdown', markBootSkipped);
   bootRunning = false;
   authShell();
   modules.showScreen('login');

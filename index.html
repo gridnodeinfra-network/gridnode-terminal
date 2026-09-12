@@ -4086,10 +4086,6 @@ function scrollLandingTo(id) {
     behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
   });
 }
-function continueLocallyFromWelcome() {
-  if (window.GN?.localMode) window.GN.localMode();
-  else if (typeof window.startGridNode === 'function') window.startGridNode();
-}
 </script>
 
 
@@ -4097,18 +4093,18 @@ function continueLocallyFromWelcome() {
   <div class="landing-shell">
     <section class="landing-hero">
       <div class="gn-lang-wrap landing-lang-wrap" data-landing-lang></div>
-      <div class="gn-theme-toggle-host landing-theme-toggle-host" role="group" aria-label="THEME"></div>
       <div class="landing-node-mark" aria-label="GRID//NODE NODE mark"><svg aria-hidden="true"><use href="#gn-phase-ring"></use></svg></div>
       <div class="landing-logo b2b-logo-surface"><img class="gn-b2b-lockup" src="/assets/brand/ui/header-lockup.svg" alt="GRID//NODE horizontal color lockup" width="1900" height="420" decoding="async"></div>
       <div class="landing-kicker" data-i18n="landing.kicker">// PERSONAL BIOTECH SYSTEM //</div>
       <h1 class="landing-headline"><span data-i18n="landing.headlineLine1">Your biology.</span><br><span data-i18n="landing.headlineLine2">Your timeline.</span><br><span data-i18n="landing.headlineLine3">Your grid.</span></h1>
+      <p class="landing-wedge" data-i18n-html="landing.realStack"><strong>Most trackers only know pharma GLPs.</strong> GRID//NODE is built for the real stack: compounded, grey market, research.</p>
       <p class="landing-copy"><span data-i18n="landing.heroCopy">Track GLP-1 protocols, compound and research grade peptides, weight, and the personal biotech patterns that connect them.</span><br><span data-i18n="landing.localCopy">Sign in with Google to sync your grid across every device.</span></p>
       <div class="landing-phase-visual" aria-hidden="true"><div class="phase-segment-ring"></div><div class="landing-phase-core"><span data-i18n="landing.localFirst">CLOUD-FIRST</span><b data-i18n="landing.systemReady">SYSTEM READY</b></div></div>
       <div class="landing-cta-row">
         <button class="landing-btn primary" type="button" onclick="startGridNode()" data-i18n="landing.enterGrid">ENTER THE GRID</button>
-        <button class="landing-btn secondary" type="button" onclick="scrollLandingTo('howItWorks');return false" data-i18n="landing.explore">EXPLORE THE SYSTEM ↓</button>
       </div>
-      <div class="landing-note landing-trust"><strong data-i18n="landing.trustTitle">Your body. Your data. Your grid.</strong><span data-i18n="landing.trustCopy">Your grid follows you — sign in with Google to sync across devices.</span><br><button class="landing-local-link" type="button" onclick="continueLocallyFromWelcome()" data-i18n="landing.continue">CONTINUE LOCALLY →</button></div>
+      <button class="landing-explore-link" type="button" onclick="scrollLandingTo('howItWorks');return false" data-i18n="landing.explore">EXPLORE THE SYSTEM ↓</button>
+      <div class="landing-note landing-trust"><strong data-i18n="landing.trustTitle">Your body. Your data. Your grid.</strong><span data-i18n="landing.trustCopy">Your data lives on this device first. Cloud sync is optional.</span></div>
 <div class="landing-product-preview" role="group" aria-label="GRID//NODE live product preview">
   <div class="landing-preview-frame">
     <div class="landing-preview-bar"><span class="landing-preview-dot"></span><span class="landing-preview-dot"></span><span class="landing-preview-dot"></span><span class="landing-preview-tag">GRID//NODE — LIVE</span></div>
@@ -4200,7 +4196,7 @@ function continueLocallyFromWelcome() {
         <div class="landing-footer-block">
           <span class="landing-footer-label" data-i18n="landing.footerTrust">TRUST</span>
           <a href="#privacy" onclick="scrollLandingTo('privacy');return false" data-i18n="landing.footerOwnership">DATA OWNERSHIP</a>
-          <a href="#privacy" onclick="scrollLandingTo('privacy');return false" data-i18n="landing.footerPrivacy">PRIVACY</a>
+          <a href="#privacyPolicy" onclick="openPrivacyPolicy();return false" data-i18n="landing.footerPrivacy">PRIVACY</a>
           <a href="#terms" onclick="scrollLandingTo('terms');return false" data-i18n="landing.footerTerms">TERMS</a>
           <a href="mailto:support@gridnode.network" data-i18n="landing.footerSupport">SUPPORT</a>
         </div>
@@ -4211,9 +4207,10 @@ function continueLocallyFromWelcome() {
         <p data-i18n="landing.faqCopy">GRID//NODE begins with GLP-1 tracking and organizes user-entered records locally by default. Cloud recovery is optional.</p>
       </div>
       <div id="boundary" class="landing-footer-block">
-        <span class="landing-footer-label" data-i18n="landing.boundaryLabel">BOUNDARY</span>
+        <span class="landing-footer-label" data-i18n="landing.boundaryLabel">SCOPE</span>
         <p data-i18n="landing.boundaryCopy1">GRID//NODE is a tracking and educational intelligence system.</p>
         <p data-i18n="landing.boundaryCopy2">GRID//NODE is not a doctor, diagnosis system, treatment system, prescribing tool, or dosing authority.</p>
+        <p data-i18n="landing.notASource">GRID//NODE does not sell, source, or facilitate peptide purchases.</p>
       </div>
       <div id="privacy" class="landing-footer-block">
         <span class="landing-footer-label" data-i18n="landing.privacyLabel">PRIVACY + DATA OWNERSHIP</span>
@@ -4247,6 +4244,7 @@ function continueLocallyFromWelcome() {
     <div class="boot-prog-pct" id="bootPct">000% // PERSONAL BIOTECH OS</div>
   </div>
     <div class="boot-deck-footer"><span data-i18n="boot.footerLeft">LOCAL-FIRST DATA CORE</span><i></i><span data-i18n="boot.footerRight">OPERATOR SESSION</span></div>
+    <div class="boot-skip-hint" data-i18n="boot.tapToSkip">TAP TO SKIP</div>
   </div>
 </div>
 
@@ -4681,9 +4679,13 @@ function continueLocallyFromWelcome() {
         <div class="page-title" data-i18n-html="results.headingHtml">RESULTS <span class="a">// OUTCOMES</span></div>
         <div class="page-sub" id="resultRange" data-i18n="results.rangeSub">// USER-ENTERED OUTCOMES //</div>
         <div class="results-signal-note"><b data-i18n="results.protocolSignal">PROTOCOL SIGNAL</b><br><span data-i18n="results.protocolSignalCopy">Each logged SHOT contributes signal to your evolving protocol record. Additional entries may provide broader context over time.</span></div>
+        <div class="results-view-toggle" role="group" aria-label="RESULTS view" data-i18n-aria-label="results.viewAria">
+          <button class="results-view-btn active" type="button" data-results-view="charts" onclick="setResultsView('charts')" data-i18n="results.viewCharts">CHARTS</button>
+          <button class="results-view-btn" type="button" data-results-view="calendar" onclick="setResultsView('calendar')" data-i18n="results.viewCalendar">CALENDAR</button>
+        </div>
       </div>
 
-      <div class="results-ledger">
+      <div class="results-ledger" id="resultsChartsView">
         <section class="results-card summary">
           <div class="results-card-title"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-trend-signal"></use></svg></span><span data-i18n="results.summaryTitle">Outcome Summary</span></div>
           <div class="results-card-sub" data-i18n="results.summarySub">Observed changes from logged measurements and personal tracking history</div>
@@ -4813,21 +4815,17 @@ function continueLocallyFromWelcome() {
           <input type="file" id="csvImportFile" accept=".csv,text/csv" style="display:none" onchange="handleCSVImportFile(event)">
         </section>
       </div>
-    </div>
-    
-    <div class="page" id="pageCal">
-      <div class="page-hdr">
-        <div class="page-title">CALENDAR <span class="a">VIEW</span></div>
-        <div class="page-sub">// TAP ANY DAY FOR DETAILS //</div>
-      </div>
-      <div class="cal-wrap">
-        <div class="cal-header">
-          <button class="cal-nav" type="button" onclick="calPrev()" aria-label="Previous month" data-i18n-aria-label="calendar.previousMonth">‹</button>
-          <div class="cal-title" id="calTitle">MAY 2026</div>
-          <button class="cal-nav" type="button" onclick="calNext()" aria-label="Next month" data-i18n-aria-label="calendar.nextMonth">›</button>
+      <div class="results-calendar-view" id="resultsCalView" style="display:none">
+        <div class="cal-wrap">
+          <div class="cal-header">
+            <button class="cal-nav" type="button" onclick="calPrev()" aria-label="Previous month" data-i18n-aria-label="calendar.previousMonth">‹</button>
+            <div class="cal-title" id="calTitle">MAY 2026</div>
+            <button class="cal-nav" type="button" onclick="calNext()" aria-label="Next month" data-i18n-aria-label="calendar.nextMonth">›</button>
+          </div>
+          <div class="cal-grid" id="calGrid"></div>
+          <div id="calDetail"></div>
         </div>
-        <div class="cal-grid" id="calGrid"></div>
-        <div id="calDetail"></div>
+        <div class="results-copy" data-i18n="results.calendarHint">Tap any day for details. Dots mark days with logged shots or weight entries.</div>
       </div>
     </div>
 
@@ -5200,7 +5198,7 @@ function continueLocallyFromWelcome() {
     <div class="nav-item" id="navLog" role="button" tabindex="0" onclick="showPage('Log',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Log',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-protocol-event"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.shots">SHOTS</div></div>
     <div class="nav-item" id="navRes" role="button" tabindex="0" onclick="showPage('Results',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Results',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-trend-signal"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.results">RESULTS</div></div>
     <div class="nav-item" id="navLab" role="button" tabindex="0" onclick="showPage('Lab',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Lab',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-lab-vessel"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.lab">LAB</div></div>
-    <div class="nav-item gn-nav-hidden" id="navPro" role="button" tabindex="0" onclick="showPage('Profile',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Profile',this)}"></div>
+    <div class="nav-item" id="navVault" role="button" tabindex="0" onclick="showPage('Profile',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Profile',this)}" aria-label="VAULT" data-i18n-aria-label="nav.vault"><span class="nav-ico"><svg><use href="#gn-vault-core"></use></svg></span><span class="nav-lbl" data-i18n="nav.vault">VAULT</span></div>
   </div>
 
   <button class="fab" onclick="handleShotFab()" aria-label="Log a dose" data-i18n-aria-label="fab.logShot"><span class="gn-icon"><svg><use href="#gn-protocol-event"></use></svg></span></button>
@@ -5226,7 +5224,7 @@ function continueLocallyFromWelcome() {
           <button class="gn-ampm-btn" id="sTimePM" type="button" onclick="gnSetShotMeridiem('PM')" data-i18n="shot.pm">PM</button>
         </div>
       </div>
-      <div class="gn-shot-time-helper" data-i18n="shot.timeHelp">Enter numeric time, then choose AM or PM. Example: 8:30 + AM.</div>
+      <div class="gn-shot-time-helper" data-i18n="shot.timeHelp">Type the time and tap AM or PM — typing p picks PM for you. Example: 8:30 p.</div>
     </div>
     <div class="form-group">
       <div class="form-label" id="cpShotMedLabel" data-i18n="shot.medication">MEDICATION</div>
@@ -10174,6 +10172,29 @@ html[data-theme="light"] #shotsRegionScanner .gn-zone-path.selected {
   </div>
 </div>
 
+<div class="gn-privacy-overlay" id="gnPrivacyOverlay" role="dialog" aria-modal="true" aria-labelledby="gnPrivacyTitle">
+  <div class="gn-privacy-panel">
+    <div class="gn-auth-kicker">// GRID//NODE //</div>
+    <h2 id="gnPrivacyTitle" data-i18n="privacy.title">PRIVACY POLICY</h2>
+    <div class="gn-privacy-date" data-i18n="privacy.date">Effective September 12, 2026</div>
+    <p data-i18n="privacy.intro">GRID//NODE is local-first. Your data lives on this device unless you choose cloud sync. This policy explains what is stored, where it goes, and the rights you always keep.</p>
+    <h3 data-i18n="privacy.localFirstTitle">LOCAL-FIRST STORAGE</h3>
+    <p data-i18n="privacy.localFirstBody">By default, everything you enter stays in this device's local storage. Nothing is transmitted anywhere, to anyone, until you connect a cloud account.</p>
+    <h3 data-i18n="privacy.whatStoredTitle">WHAT IS STORED</h3>
+    <p data-i18n="privacy.whatStoredBody">Your shot log (medication, dose, date, time, injection site, notes), weight entries, body measurements, side-effect observations, device registry entries, and app settings. All of it is user-entered by you.</p>
+    <h3 data-i18n="privacy.cloudTitle">OPTIONAL CLOUD SYNC</h3>
+    <p data-i18n="privacy.cloudBody">If you sign in with Google or email, your workspace syncs to your private cloud account for backup and multi-device access. Cloud sync is entirely optional — GRID//NODE works fully without it, forever.</p>
+    <h3 data-i18n="privacy.exportTitle">YOUR EXPORT RIGHTS</h3>
+    <p data-i18n="privacy.exportBody">Export your records as CSV or a complete backup at any time from VAULT → YOUR DATA. Your records are yours, in readable formats, with no lock-in.</p>
+    <h3 data-i18n="privacy.deleteTitle">YOUR DELETE RIGHTS</h3>
+    <p data-i18n="privacy.deleteBody">Delete all local data from VAULT → YOUR DATA at any time. If you use cloud sync, you can also delete your cloud account and its server copy. Deletion is permanent.</p>
+    <h3 data-i18n="privacy.notASourceTitle">NOT A SOURCE</h3>
+    <p data-i18n="privacy.notASourceBody">GRID//NODE does not sell, source, or facilitate peptide purchases. It is a tracking tool only.</p>
+    <h3 data-i18n="privacy.medicalTitle">NOT MEDICAL ADVICE</h3>
+    <p data-i18n="privacy.medicalBody">GRID//NODE does not provide medical advice, diagnosis, treatment, or dosing guidance. Always consult a licensed clinician for medical decisions.</p>
+    <button type="button" class="gn-privacy-close" onclick="closePrivacyPolicy()" data-i18n="privacy.close">CLOSE</button>
+  </div>
+</div>
 <script src="./js/gridnode-version.js?v=20260907.1" defer></script><script src="./js/gridnode-i18n.js?v=20260907.1" defer></script><script src="./js/gridnode-bundle.js?v=20260907.1" defer></script><script src="./js/gridnode-phase-sphere.js?v=20260907.1" defer></script><script src="./js/gridnode-product-completion.js?v=20260907.1" defer></script><script src="./js/gridnode-peptide-pk.js?v=20260907.1" defer></script><script src="./js/gridnode-peptide-viz.js?v=20260907.1" defer></script><script src="./js/gridnode-motivation.js?v=20260907.1" defer></script><script src="./js/gridnode-telemetry.js?v=20260907.1" defer></script><script src="./js/gridnode-native.js?v=20260907.1" defer></script><script src="./js/gridnode-i18n-overlay.js?v=20260907.1" defer></script><script src="./js/gridnode-whatsnew.js?v=20260907.1" defer></script><script src="./js/gridnode-reminders.js?v=20260907.1" defer></script><script src="./js/gridnode-lab-tests.js?v=20260907.1" defer></script><script src="./js/gridnode-pwa-install.js?v=20260907.1" defer></script><script src="./js/gridnode-firstcontact.js?v=20260907.1" defer></script>
 <script>
 (function() {

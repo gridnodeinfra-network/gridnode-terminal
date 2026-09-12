@@ -1,7 +1,7 @@
 {
   "name": "gridnode-terminal-qa",
   "private": true,
-  "version": "0.15.41",
+  "version": "0.15.42",
   "description": "QA harness dependencies for GRID//NODE (mobile shell, contrast audits). No runtime deps \u2014 dev only.",
   "scripts": {
     "build": "node scripts/build.mjs",
@@ -17,7 +17,8 @@
     "audit:themes": "node scripts/audit-served-day-ops.cjs",
     "visual:capture": "node scripts/visual-regression-guard.cjs capture",
     "visual:compare": "node scripts/visual-regression-guard.cjs compare",
-    "test:v01541": "node scripts/test-v01541-launch-readiness.cjs"
+    "test:v01541": "node scripts/test-v01541-launch-readiness.cjs",
+    "test:v01542": "node scripts/test-v01542-launch-readiness.cjs"
   },
   "devDependencies": {
     "playwright": "1.62.1",

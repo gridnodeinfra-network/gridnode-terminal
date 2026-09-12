@@ -6,11 +6,11 @@
 (function () {
   'use strict';
   window.GN_VERSION = Object.freeze({
-    APP_VERSION: '0.15.41',
+    APP_VERSION: '0.15.42',
     APP_BUILD: '20260907.1',
-    semver: '0.15.41',
+    semver: '0.15.42',
     release: '20260907.1',
-    title: 'V0.15.41 — LAUNCH READINESS',
+    title: 'V0.15.42 — LAUNCH READINESS',
     date: '2026-09-12'
   });
 })();

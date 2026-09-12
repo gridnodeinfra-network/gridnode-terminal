@@ -106,3 +106,14 @@ export function exportBackup() {
   showToast(tx('vault.backupReady', 'VAULT backup prepared.'));
 }
 
+
+/* v0.15.42: dedicated bilingual privacy policy overlay, reachable from the
+ * landing footer and from VAULT → YOUR DATA. */
+export function openPrivacyPolicy() {
+  const overlay = $('gnPrivacyOverlay');
+  if (!overlay) return;
+  window.GN_I18N?.applyTo?.(overlay);
+  overlay.classList.add('active');
+  overlay.querySelector('.gn-privacy-close')?.focus();
+}
+export function closePrivacyPolicy() { $('gnPrivacyOverlay')?.classList.remove('active'); }

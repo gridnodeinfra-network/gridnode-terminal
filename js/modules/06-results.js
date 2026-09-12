@@ -93,6 +93,20 @@ export function renderResults() {
   renderPhaseSource(latestShot());
   renderTrendLists(shots);
   renderWeeklyReport(shots, weights);
+  /* v0.15.42: calendar is a RESULTS subview (CHARTS | CALENDAR toggle). */
+  setResultsView(moduleState.resultsView === 'calendar' ? 'calendar' : 'charts');
+}
+
+/* v0.15.42: RESULTS view toggle — CHARTS (default ledger) vs CALENDAR. */
+export function setResultsView(view) {
+  moduleState.resultsView = view === 'calendar' ? 'calendar' : 'charts';
+  const showCal = moduleState.resultsView === 'calendar';
+  setDisplay('resultsChartsView', !showCal);
+  setDisplay('resultsCalView', showCal);
+  qa('#pageResults .results-view-btn').forEach(button => {
+    button.classList.toggle('active', button.dataset.resultsView === moduleState.resultsView);
+  });
+  if (showCal) renderCalendar();
 }
 
 function renderWeightRecords(weights) {

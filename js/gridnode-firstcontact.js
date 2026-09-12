@@ -58,8 +58,10 @@
       'fc.signal.body': 'Most trackers only know pharma GLPs. GRID//NODE is built for the real stack: compounded, grey market, research. Your data lives on this device first; cloud sync is optional.',
       'fc.signal.cta': 'Show me',
       'fc.grid.kicker': 'THE GRID',
-      'fc.grid.title': 'Four zones. One loop.',
+      'fc.grid.title': 'Five zones. One loop.',
       'fc.grid.cta': 'Start the loop',
+      'fc.grid.home': 'HOME',
+      'fc.grid.homeBody': 'Your command deck. Status, streak, next dose at a glance.',
       'fc.grid.shots': 'SHOTS',
       'fc.grid.shotsBody': 'Your dose log. The loop starts here.',
       'fc.grid.results': 'RESULTS',
@@ -114,8 +116,10 @@
       'fc.signal.body': 'La mayoría de apps solo conocen los GLP farmacéuticos. GRID//NODE está hecho para el stack real: compuesto, grey market, investigación. Tus datos viven primero en este dispositivo; la sincronización en la nube es opcional.',
       'fc.signal.cta': 'Muéstrame',
       'fc.grid.kicker': 'EL GRID',
-      'fc.grid.title': 'Cuatro zonas. Un ciclo.',
+      'fc.grid.title': 'Cinco zonas. Un ciclo.',
       'fc.grid.cta': 'Empezar el ciclo',
+      'fc.grid.home': 'HOME',
+      'fc.grid.homeBody': 'Tu panel de mando. Estado, racha y próxima dosis de un vistazo.',
       'fc.grid.shots': 'SHOTS',
       'fc.grid.shotsBody': 'Tu registro de dosis. El ciclo empieza aquí.',
       'fc.grid.results': 'RESULTS',
@@ -445,11 +449,11 @@
   }
 
   /* ------------------------------------------------------------------ */
-  /* Beat 1 — THE GRID (fullscreen, 4 zone rows) */
+  /* Beat 1 — THE GRID (fullscreen, 5 zone rows) */
   /* ------------------------------------------------------------------ */
   function renderGrid() {
     setMode('screen');
-    var zones = ['shots', 'results', 'lab', 'vault'];
+    var zones = ['home', 'shots', 'results', 'lab', 'vault'];
     var rows = zones.map(function (z) {
       return '<div class="gn-fc-zone"><b>' + t('fc.grid.' + z, z.toUpperCase()) + '</b><span>' + t('fc.grid.' + z + 'Body', '') + '</span></div>';
     }).join('');
@@ -958,24 +962,10 @@
     document.addEventListener('gn:whatsnew-shown', whatsnewSafety);
     renderBeat(startAt);
   }
-  function injectReplay() {
-    if (document.querySelector('[data-gn-fc-replay]')) return;
-    // Anchor: the "Reload App" utility row in the profile // APP section.
-    var anchor = document.querySelector('#pageProfile .gn-utility-row[onclick*="reload"]');
-    if (!anchor || !anchor.parentNode) return;
-    var row = document.createElement('button');
-    row.type = 'button';
-    row.className = 'gn-utility-row';
-    row.setAttribute('data-gn-fc-replay', '');
-    row.innerHTML =
-      '<div style="display:flex;align-items:center;gap:12px">' +
-        '<span class="gn-icon gn-icon-sm gn-utility-icon" aria-hidden="true">◆</span>' +
-        '<span style="font-family:\'Rajdhani\',sans-serif;font-size:1rem;color:#eeeef5">' + t('fc.replay', 'GUIDED TOUR') + '</span>' +
-      '</div>' +
-      '<span class="gn-utility-chevron" aria-hidden="true">›</span>';
-    row.addEventListener('click', function () { dosePhase = 'spot'; skippedDose = false; start(false); });
-    anchor.parentNode.insertBefore(row, anchor.nextSibling);
-  }
+  /* v0.15.42: obsolete — the VAULT hub now carries an explicit REPLAY TOUR row
+     (ensureProfileHub → replayGuidedTour()). Kept as a no-op guard so any stale
+     callers do not throw, and so no duplicate control is ever injected. */
+  function injectReplay() { /* replaced by the explicit hub control */ }
   var whatsnewResolved = false;
   var whatsnewSafety = null;
   function markWhatsNewResolved() { whatsnewResolved = true; maybeAutoStart(); }
@@ -1009,8 +999,8 @@
     document.addEventListener('gn:whatsnew-dismissed', markWhatsNewResolved);
     var kick = function () {
       window.setTimeout(maybeAutoStart, 1600);
-      if (window.MutationObserver) new MutationObserver(injectReplay).observe(document.body, { childList: true, subtree: true });
-      else injectReplay();
+      /* v0.15.42: no dynamic replay injection — the VAULT hub carries the
+         explicit REPLAY TOUR control (replayGuidedTour). */
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', kick, { once: true });
     else kick();

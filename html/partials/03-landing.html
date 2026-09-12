@@ -2,18 +2,18 @@
   <div class="landing-shell">
     <section class="landing-hero">
       <div class="gn-lang-wrap landing-lang-wrap" data-landing-lang></div>
-      <div class="gn-theme-toggle-host landing-theme-toggle-host" role="group" aria-label="THEME"></div>
       <div class="landing-node-mark" aria-label="GRID//NODE NODE mark"><svg aria-hidden="true"><use href="#gn-phase-ring"></use></svg></div>
       <div class="landing-logo b2b-logo-surface"><img class="gn-b2b-lockup" src="/assets/brand/ui/header-lockup.svg" alt="GRID//NODE horizontal color lockup" width="1900" height="420" decoding="async"></div>
       <div class="landing-kicker" data-i18n="landing.kicker">// PERSONAL BIOTECH SYSTEM //</div>
       <h1 class="landing-headline"><span data-i18n="landing.headlineLine1">Your biology.</span><br><span data-i18n="landing.headlineLine2">Your timeline.</span><br><span data-i18n="landing.headlineLine3">Your grid.</span></h1>
+      <p class="landing-wedge" data-i18n-html="landing.realStack"><strong>Most trackers only know pharma GLPs.</strong> GRID//NODE is built for the real stack: compounded, grey market, research.</p>
       <p class="landing-copy"><span data-i18n="landing.heroCopy">Track GLP-1 protocols, compound and research grade peptides, weight, and the personal biotech patterns that connect them.</span><br><span data-i18n="landing.localCopy">Sign in with Google to sync your grid across every device.</span></p>
       <div class="landing-phase-visual" aria-hidden="true"><div class="phase-segment-ring"></div><div class="landing-phase-core"><span data-i18n="landing.localFirst">CLOUD-FIRST</span><b data-i18n="landing.systemReady">SYSTEM READY</b></div></div>
       <div class="landing-cta-row">
         <button class="landing-btn primary" type="button" onclick="startGridNode()" data-i18n="landing.enterGrid">ENTER THE GRID</button>
-        <button class="landing-btn secondary" type="button" onclick="scrollLandingTo('howItWorks');return false" data-i18n="landing.explore">EXPLORE THE SYSTEM ↓</button>
       </div>
-      <div class="landing-note landing-trust"><strong data-i18n="landing.trustTitle">Your body. Your data. Your grid.</strong><span data-i18n="landing.trustCopy">Your grid follows you — sign in with Google to sync across devices.</span><br><button class="landing-local-link" type="button" onclick="continueLocallyFromWelcome()" data-i18n="landing.continue">CONTINUE LOCALLY →</button></div>
+      <button class="landing-explore-link" type="button" onclick="scrollLandingTo('howItWorks');return false" data-i18n="landing.explore">EXPLORE THE SYSTEM ↓</button>
+      <div class="landing-note landing-trust"><strong data-i18n="landing.trustTitle">Your body. Your data. Your grid.</strong><span data-i18n="landing.trustCopy">Your data lives on this device first. Cloud sync is optional.</span></div>
 <div class="landing-product-preview" role="group" aria-label="GRID//NODE live product preview">
   <div class="landing-preview-frame">
     <div class="landing-preview-bar"><span class="landing-preview-dot"></span><span class="landing-preview-dot"></span><span class="landing-preview-dot"></span><span class="landing-preview-tag">GRID//NODE — LIVE</span></div>
@@ -105,7 +105,7 @@
         <div class="landing-footer-block">
           <span class="landing-footer-label" data-i18n="landing.footerTrust">TRUST</span>
           <a href="#privacy" onclick="scrollLandingTo('privacy');return false" data-i18n="landing.footerOwnership">DATA OWNERSHIP</a>
-          <a href="#privacy" onclick="scrollLandingTo('privacy');return false" data-i18n="landing.footerPrivacy">PRIVACY</a>
+          <a href="#privacyPolicy" onclick="openPrivacyPolicy();return false" data-i18n="landing.footerPrivacy">PRIVACY</a>
           <a href="#terms" onclick="scrollLandingTo('terms');return false" data-i18n="landing.footerTerms">TERMS</a>
           <a href="mailto:support@gridnode.network" data-i18n="landing.footerSupport">SUPPORT</a>
         </div>
@@ -116,9 +116,10 @@
         <p data-i18n="landing.faqCopy">GRID//NODE begins with GLP-1 tracking and organizes user-entered records locally by default. Cloud recovery is optional.</p>
       </div>
       <div id="boundary" class="landing-footer-block">
-        <span class="landing-footer-label" data-i18n="landing.boundaryLabel">BOUNDARY</span>
+        <span class="landing-footer-label" data-i18n="landing.boundaryLabel">SCOPE</span>
         <p data-i18n="landing.boundaryCopy1">GRID//NODE is a tracking and educational intelligence system.</p>
         <p data-i18n="landing.boundaryCopy2">GRID//NODE is not a doctor, diagnosis system, treatment system, prescribing tool, or dosing authority.</p>
+        <p data-i18n="landing.notASource">GRID//NODE does not sell, source, or facilitate peptide purchases.</p>
       </div>
       <div id="privacy" class="landing-footer-block">
         <span class="landing-footer-label" data-i18n="landing.privacyLabel">PRIVACY + DATA OWNERSHIP</span>

@@ -88,10 +88,6 @@ function scrollLandingTo(id) {
     behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
   });
 }
-function continueLocallyFromWelcome() {
-  if (window.GN?.localMode) window.GN.localMode();
-  else if (typeof window.startGridNode === 'function') window.startGridNode();
-}
 </script>
 
 
