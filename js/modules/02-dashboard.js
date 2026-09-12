@@ -139,72 +139,22 @@ function renderDashboard() {
   const firstShotMission = document.getElementById('gnFirstShotMission');
   if (dashboard) dashboard.dataset.activation = shots.length ? 'active' : 'pending';
   if (firstShotMission) firstShotMission.hidden = shots.length > 0;
-  // Batch B: empty state — ONE red CTA, cyan ghosts, tip card; wanda + FAB hidden.
-  let hero = document.getElementById('gnEmptyHero');
+  // Zero-shot state: the single gnFirstShotMission CTA (from ensureWandaDashboard) is the only empty state.
+  const wandaEl = document.getElementById('gnWandaDashboard');
   if (shots.length === 0) {
-    if (!hero && dashboard) {
-      const heroMarkup = '<section id="gnEmptyHero" class="gn-empty-hero" aria-label="' + safeText(tx('dashboard.emptyTitle', 'Get started')) + '">'
-        + '<h2 data-i18n="dashboard.emptyTitle">' + tx('dashboard.emptyTitle', 'Empieza con tu primera dosis') + '</h2>'
-        + '<p data-i18n="dashboard.emptyBody">' + tx('dashboard.emptyBody', 'Una dosis desbloquea el Motor de Fases, RESULTADOS y tu tablero completo.') + '</p>'
-        + '<button class="btn-full btn-primary gn-empty-cta" type="button" onclick="openLogModal()" data-i18n="dashboard.emptyCta">' + tx('dashboard.emptyCta', 'REGISTRAR MI PRIMERA DOSIS') + '</button>'
-        + '<div class="gn-empty-ghosts">'
-        + '<button class="gn-empty-ghost" type="button" onclick="openWeightModal()" data-i18n="dashboard.emptyWeight">' + tx('dashboard.emptyWeight', 'Registrar peso') + '</button>'
-        + '<button class="gn-empty-ghost" type="button" onclick="showPage(\'Log\',document.getElementById(\'navLog\'))" data-i18n="dashboard.emptyScan">' + tx('dashboard.emptyScan', 'Escanear zona') + '</button>'
-        + '<button class="gn-empty-ghost" type="button" onclick="showPage(\'Lab\',document.getElementById(\'navLab\'))" data-i18n="dashboard.emptyLab">' + tx('dashboard.emptyLab', 'Ver LAB') + '</button>'
-        + '</div>'
-        + '<div class="gn-tip-card"><span class="gn-tip-kicker" data-i18n="dashboard.tipTitle">' + tx('dashboard.tipTitle', 'TIP') + '</span><p data-i18n="dashboard.tipBody">' + tx('dashboard.tipBody', 'Choose the medication and dose, then add the date, time, and injection site.') + '</p></div>'
-        + '</section>';
-      const wanda = document.getElementById('gnWandaDashboard');
-      if (wanda) wanda.insertAdjacentHTML('beforebegin', heroMarkup);
-      else dashboard.insertAdjacentHTML('afterbegin', heroMarkup);
-      hero = document.getElementById('gnEmptyHero');
-    }
-    const wandaEl = document.getElementById('gnWandaDashboard');
     if (wandaEl) wandaEl.style.display = 'none';
     document.body.classList.add('gn-dashboard-empty');
   } else {
-    if (hero) hero.remove();
-    const wandaEl = document.getElementById('gnWandaDashboard');
     if (wandaEl) wandaEl.style.display = '';
     document.body.classList.remove('gn-dashboard-empty');
   }
   const weightMetrics = computeTotalChange(weights, profile, 'profile');
-  setNumericText('stShots', shots.length);
-  setText('stDose', lastShot?.dose ? `${lastShot.dose}mg` : '—');
-  setText('stDoseDate', lastShot ? formatDate(lastShot.date, { month: 'short', day: 'numeric' }) : tx('runtime.noData', 'NO DATA'));
   const next = nextShotDate(lastShot, profile);
-  setText('stNext', next ? formatDate(next, { month: 'short', day: 'numeric' }) : '—');
-  setText('stNextSub', next ? tx('runtime.estimatedFromProfile', 'ESTIMATED FROM PROFILE') : tx('runtime.logShot', 'LOG SHOT'));
-  const nextCard = $('nextShotStatCard');
-  if (nextCard) nextCard.classList.remove('gn-next-today', 'gn-next-tomorrow', 'gn-next-overdue');
-  if (next) {
-    const deltaDays = Math.round((parseLocalDate(next).getTime() - parseLocalDate(todayISO()).getTime()) / 86400000);
-    if (deltaDays === 0) { nextCard?.classList.add('gn-next-today'); setText('stNextSub', '// ' + tx('dashboard.today', 'TODAY')); }
-    else if (deltaDays === 1) { nextCard?.classList.add('gn-next-tomorrow'); setText('stNextSub', tx('dashboard.tomorrow', 'TOMORROW')); }
-    else if (deltaDays < 0) { nextCard?.classList.add('gn-next-overdue'); setText('stNextSub', '// ' + tx('dashboard.overdue', 'OVERDUE')); }
-  }
-  const todayShot = shots.find(record => record.date?.slice(0, 10) === todayISO());
-  const todayWeight = weights.find(record => record.date?.slice(0, 10) === todayISO());
-  setText('todayShot', todayShot ? tx('dashboard.loggedDose', '{dose}mg logged', { dose: todayShot.dose || '—' }) : tx('runtime.tapToLog', 'TAP TO LOG'));
-  setText('todayWt', todayWeight ? Number(todayWeight.weight).toFixed(1) + ' lb' : tx('runtime.tapToLog', 'TAP TO LOG'));
   const currentWeight = weightMetrics.currentWeight || 0;
-  const change = weightMetrics.change;
   const goalGap = Number(profile.goalWt) && currentWeight ? currentWeight - Number(profile.goalWt) : null;
-  setText('s6TotalLabel', tx('dashboard.resultsTotal', 'TOTAL CHANGE'));
-  setText('s6TotalBasis', weightMetrics.basis === 'from profile start weight' ? tx('dashboard.fromProfileStart', '(from profile start)') : tx('dashboard.fromFirstWeight', '(from first recorded weight)'));
-  setText('s6Total', change === null ? '—' : `${change > 0 ? '+' : ''}${change.toFixed(1)} lb`);
-  const dashboardBMI = calcBMIValue(currentWeight, profile);
-  setText('s6BMI', dashboardBMI || '');
-  setDisplay('s6BMICard', Boolean(dashboardBMI));
-  setText('s6Wt', currentWeight ? `${currentWeight.toFixed(1)} lb` : '—');
-  setText('s6Pct', weightMetrics.percentLost === null ? '—' : `${weightMetrics.percentLost.toFixed(1)}%`);
-  setText('s6Avg', weightMetrics.weeklyAverage === null ? '—' : tx('dashboard.weeklyRate', '{value} lb/wk', { value: weightMetrics.weeklyAverage.toFixed(1) }));
-  setText('s6Goal', goalGap === null ? '—' : `${Math.max(0, goalGap).toFixed(1)} lb`);
   const phase = renderPhase(lastShot, shots);
   renderProtocolCurve(shots, phase);
   refreshNodeHeader({ lastShot, next, phase, currentWeight: lastWeight?.weight });
-  setText('streakText', shots.length ? tx(shots.length === 1 ? 'dashboard.shotsInLocalRecord_one' : 'dashboard.shotsInLocalRecord_other', '{count} SHOTS IN YOUR LOCAL RECORD', { count: shots.length }) : tx('dashboard.noShotCadence', 'NO SHOT CADENCE YET · LOG YOUR FIRST SHOT'));
-  drawCanvasChart($('dashWtChart'), weights.map(item => Number(item.weight)), '#00d4ff');
   renderWandaDashboard({ shots, weights, lastShot, lastWeight, profile, next, phase, weightMetrics, goalGap });
 }
 
@@ -215,19 +165,14 @@ function ensureWandaDashboard() {
     + '<section class="gn-dashboard-mission" id="gnFirstShotMission" aria-labelledby="gnFirstShotMissionTitle"><span class="gn-dashboard-mission-kicker" data-i18n="dashboard.firstShotKicker">START HERE</span><h2 id="gnFirstShotMissionTitle" data-i18n="shots.activateYourGrid">LOG YOUR FIRST SHOT TO ACTIVATE YOUR GRID</h2><p data-i18n="shots.firstShotSub">One shot unlocks the Phase Engine, RESULTS, and your full dashboard.</p><button type="button" onclick="openLogModal()" data-i18n="shots.logYourFirst">LOG YOUR FIRST SHOT</button></section>'
     + '<div class="gn-wanda-grid">'
     + '<button class="gn-wanda-card" id="gnWandaNext" type="button" onclick="openLogModal()"><span class="gn-wanda-label" data-i18n="dashboard.nextShotLabel">NEXT SHOT</span><b class="gn-wanda-value" id="gnWandaNextValue">' + tx('runtime.logShot', 'LOG SHOT') + '</b><small class="gn-wanda-note" id="gnWandaNextNote" data-i18n="dashboard.logShotStartTimeline">Log a shot to start your timeline</small></button>'
-    + '<button class="gn-wanda-card" id="gnWandaPhase" type="button" onclick="showPhasesModal()"><span class="gn-wanda-label" data-i18n="dashboard.currentPhase">CURRENT PHASE</span><b class="gn-wanda-value" id="gnWandaPhaseValue">' + tx('dashboard.startWithShot', 'START WITH A SHOT') + '</b><small class="gn-wanda-note" data-i18n="phase.educationalEstimate">EDUCATIONAL ESTIMATE</small></button>'
+
     + '<button class="gn-wanda-card info" id="gnWandaWeight" type="button" onclick="openWeightModal()"><span class="gn-wanda-label" data-i18n="dashboard.currentWeight">CURRENT WEIGHT</span><b class="gn-wanda-value" id="gnWandaWeightValue">' + tx('dashboard.logWeight', 'LOG WEIGHT') + '</b><small class="gn-wanda-note" data-i18n="dashboard.latestRecord">Latest record</small></button>'
-    + '<button class="gn-wanda-card" id="gnWandaLevel" type="button" onclick="showPhasesModal()"><span class="gn-wanda-label" data-i18n="dashboard.relativeLevel">RELATIVE LEVEL</span><b class="gn-wanda-value" id="gnWandaLevelValue">' + tx('dashboard.startWithShot', 'START WITH A SHOT') + '</b><small class="gn-wanda-note" data-i18n="dashboard.estimatedNotMeasured">Estimated, not measured</small></button>'
+
     + '<button class="gn-wanda-card" id="gnWandaRate" type="button" onclick="showPage(\'Results\',document.getElementById(\'navRes\'))"><span class="gn-wanda-label" data-i18n="dashboard.weeklyRateLabel">WEEKLY RATE</span><b class="gn-wanda-value" id="gnWandaRateValue">' + tx('dashboard.keepLogging', 'KEEP LOGGING') + '</b><small class="gn-wanda-note" data-i18n="dashboard.keepLoggingBuilds">Keep logging — data builds over time</small></button>'
     + '<button class="gn-wanda-card info" id="gnWandaGoal" type="button" onclick="showPage(\'Profile\',document.getElementById(\'navVault\'))"><span class="gn-wanda-label" data-i18n="dashboard.toGoal">TO GOAL</span><b class="gn-wanda-value" id="gnWandaGoalValue">' + tx('dashboard.setGoal', 'SET GOAL') + '</b><small class="gn-wanda-note" data-i18n="dashboard.fromLatestWeight">From latest weight</small></button>'
     + '</div><div class="gn-wanda-actions"><button type="button" onclick="openLogModal()" data-i18n="runtime.logShot">LOG SHOT</button><button type="button" onclick="openWeightModal()" data-i18n="dashboard.logWeight">LOG WEIGHT</button></div><div class="gn-streak-card" id="gnStreakCard" hidden><b id="gnStreakValue"></b><span id="gnStreakCopy"></span></div></section>';
   header.insertAdjacentHTML('afterend', markup);
   window.GN_I18N?.applyTo?.(document.getElementById('gnWandaDashboard'));
-  ['.stat-row', '.weight-quick', '.stats-6', '#dashAdherence', '#dashWtChart'].forEach(selector => {
-    const element = document.getElementById('pageDash')?.querySelector(selector);
-    if (element) element.closest('.chart-wrap')?.style.setProperty('display', 'none') || element.style.setProperty('display', 'none');
-  });
-  Array.from(document.querySelectorAll('#pageDash > .sec-hdr')).slice(0, 2).forEach(element => element.style.display = 'none');
 }
 
 function calculateShotStreak(shots = []) {
@@ -269,14 +214,14 @@ function renderWandaDashboard({ shots, lastShot, lastWeight, next, phase, weight
   } else nextCard?.classList.add('empty');
   setText('gnWandaNextNote', nextNote);
   const localizedName = localizedPhaseName(phase);
-  setText('gnWandaPhaseValue', localizedName || tx('dashboard.startWithShot', 'START WITH A SHOT'));
+
   setText('gnWandaWeightValue', lastWeight ? Number(lastWeight.weight).toFixed(1) + ' lb' : tx('dashboard.logWeight', 'LOG WEIGHT'));
-  setText('gnWandaLevelValue', localizedName || tx('dashboard.startWithShot', 'START WITH A SHOT'));
+
   setText('gnWandaRateValue', weightMetrics.weeklyAverage === null ? tx('dashboard.keepLogging', 'KEEP LOGGING') : tx('dashboard.weeklyRate', '{value} lb/wk', { value: weightMetrics.weeklyAverage.toFixed(1) }));
   setText('gnWandaGoalValue', goalGap === null ? tx('dashboard.setGoal', 'SET GOAL') : Math.max(0, goalGap).toFixed(1) + ' lb');
-  document.getElementById('gnWandaPhase')?.classList.toggle('empty', !phase);
+
   document.getElementById('gnWandaWeight')?.classList.toggle('empty', !lastWeight);
-  document.getElementById('gnWandaLevel')?.classList.toggle('empty', !phase);
+
   document.getElementById('gnWandaRate')?.classList.toggle('empty', weightMetrics.weeklyAverage === null);
   document.getElementById('gnWandaGoal')?.classList.toggle('empty', goalGap === null);
   renderShotStreak(shots, next);

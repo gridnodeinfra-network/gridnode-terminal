@@ -62,7 +62,7 @@ const lock = JSON.parse(read('package-lock.json'));
 const verJs = read('js/gridnode-version.js');
 const appVer = (verJs.match(/APP_VERSION:\s*'([^']+)'/) || [])[1];
 const semver = (verJs.match(/semver:\s*'([^']+)'/) || [])[1];
-check('package.json version is 0.15.41', pkg.version === '0.15.41', pkg.version);
+check('package.json version is 0.15.43', pkg.version === '0.15.43', pkg.version);
 check('package-lock root version matches', lock.version === pkg.version && lock.packages[''].version === pkg.version);
 check('gridnode-version.js APP_VERSION matches package.json', appVer === pkg.version, String(appVer));
 check('gridnode-version.js semver matches package.json', semver === pkg.version, String(semver));
@@ -97,7 +97,7 @@ check('nav label key is nav.results', /data-i18n="nav\.results"/.test(appPartial
 check('RESULTS page heading', /data-i18n-html="results\.headingHtml"[^>]*>RESULTS/.test(appPartial) && enJson.includes('"results.headingHtml": "RESULTS <span'));
 check('header tooltip says HOME', /Return to HOME/.test(appPartial));
 check('profile page title is VAULT', /data-i18n="vault\.pageTitle"[^>]*>VAULT/.test(appPartial));
-check('topbar hub button says VAULT', /topbar-hub-label">VAULT</.test(appPartial));
+check('topbar VAULT button removed (bottom-nav VAULT remains)', !/topbar-hub-label">VAULT</.test(appPartial));
 check('no SIGNAL nav label remains', !/data-i18n="nav\.signal"/.test(appPartial));
 
 // --- 6. Tour plain language -------------------------------------------

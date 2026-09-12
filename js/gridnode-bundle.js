@@ -6,7 +6,7 @@
  * No UI code belongs in this file.
  */
 
-const APP_VERSION = (typeof window !== 'undefined' && window.GN_VERSION && window.GN_VERSION.semver) || '0.15.42';
+const APP_VERSION = (typeof window !== 'undefined' && window.GN_VERSION && window.GN_VERSION.semver) || '0.15.43';
 
 const GOOGLE_OAUTH_CLIENT_ID = '305099332421-u752btn6p8cbaq8opapvdkfau9gnd9a3.apps.googleusercontent.com';
 
@@ -1964,72 +1964,22 @@ function renderDashboard() {
   const firstShotMission = document.getElementById('gnFirstShotMission');
   if (dashboard) dashboard.dataset.activation = shots.length ? 'active' : 'pending';
   if (firstShotMission) firstShotMission.hidden = shots.length > 0;
-  // Batch B: empty state — ONE red CTA, cyan ghosts, tip card; wanda + FAB hidden.
-  let hero = document.getElementById('gnEmptyHero');
+  // Zero-shot state: the single gnFirstShotMission CTA (from ensureWandaDashboard) is the only empty state.
+  const wandaEl = document.getElementById('gnWandaDashboard');
   if (shots.length === 0) {
-    if (!hero && dashboard) {
-      const heroMarkup = '<section id="gnEmptyHero" class="gn-empty-hero" aria-label="' + safeText(tx('dashboard.emptyTitle', 'Get started')) + '">'
-        + '<h2 data-i18n="dashboard.emptyTitle">' + tx('dashboard.emptyTitle', 'Empieza con tu primera dosis') + '</h2>'
-        + '<p data-i18n="dashboard.emptyBody">' + tx('dashboard.emptyBody', 'Una dosis desbloquea el Motor de Fases, RESULTADOS y tu tablero completo.') + '</p>'
-        + '<button class="btn-full btn-primary gn-empty-cta" type="button" onclick="openLogModal()" data-i18n="dashboard.emptyCta">' + tx('dashboard.emptyCta', 'REGISTRAR MI PRIMERA DOSIS') + '</button>'
-        + '<div class="gn-empty-ghosts">'
-        + '<button class="gn-empty-ghost" type="button" onclick="openWeightModal()" data-i18n="dashboard.emptyWeight">' + tx('dashboard.emptyWeight', 'Registrar peso') + '</button>'
-        + '<button class="gn-empty-ghost" type="button" onclick="showPage(\'Log\',document.getElementById(\'navLog\'))" data-i18n="dashboard.emptyScan">' + tx('dashboard.emptyScan', 'Escanear zona') + '</button>'
-        + '<button class="gn-empty-ghost" type="button" onclick="showPage(\'Lab\',document.getElementById(\'navLab\'))" data-i18n="dashboard.emptyLab">' + tx('dashboard.emptyLab', 'Ver LAB') + '</button>'
-        + '</div>'
-        + '<div class="gn-tip-card"><span class="gn-tip-kicker" data-i18n="dashboard.tipTitle">' + tx('dashboard.tipTitle', 'TIP') + '</span><p data-i18n="dashboard.tipBody">' + tx('dashboard.tipBody', 'Choose the medication and dose, then add the date, time, and injection site.') + '</p></div>'
-        + '</section>';
-      const wanda = document.getElementById('gnWandaDashboard');
-      if (wanda) wanda.insertAdjacentHTML('beforebegin', heroMarkup);
-      else dashboard.insertAdjacentHTML('afterbegin', heroMarkup);
-      hero = document.getElementById('gnEmptyHero');
-    }
-    const wandaEl = document.getElementById('gnWandaDashboard');
     if (wandaEl) wandaEl.style.display = 'none';
     document.body.classList.add('gn-dashboard-empty');
   } else {
-    if (hero) hero.remove();
-    const wandaEl = document.getElementById('gnWandaDashboard');
     if (wandaEl) wandaEl.style.display = '';
     document.body.classList.remove('gn-dashboard-empty');
   }
   const weightMetrics = computeTotalChange(weights, profile, 'profile');
-  setNumericText('stShots', shots.length);
-  setText('stDose', lastShot?.dose ? `${lastShot.dose}mg` : '—');
-  setText('stDoseDate', lastShot ? formatDate(lastShot.date, { month: 'short', day: 'numeric' }) : tx('runtime.noData', 'NO DATA'));
   const next = nextShotDate(lastShot, profile);
-  setText('stNext', next ? formatDate(next, { month: 'short', day: 'numeric' }) : '—');
-  setText('stNextSub', next ? tx('runtime.estimatedFromProfile', 'ESTIMATED FROM PROFILE') : tx('runtime.logShot', 'LOG SHOT'));
-  const nextCard = $('nextShotStatCard');
-  if (nextCard) nextCard.classList.remove('gn-next-today', 'gn-next-tomorrow', 'gn-next-overdue');
-  if (next) {
-    const deltaDays = Math.round((parseLocalDate(next).getTime() - parseLocalDate(todayISO()).getTime()) / 86400000);
-    if (deltaDays === 0) { nextCard?.classList.add('gn-next-today'); setText('stNextSub', '// ' + tx('dashboard.today', 'TODAY')); }
-    else if (deltaDays === 1) { nextCard?.classList.add('gn-next-tomorrow'); setText('stNextSub', tx('dashboard.tomorrow', 'TOMORROW')); }
-    else if (deltaDays < 0) { nextCard?.classList.add('gn-next-overdue'); setText('stNextSub', '// ' + tx('dashboard.overdue', 'OVERDUE')); }
-  }
-  const todayShot = shots.find(record => record.date?.slice(0, 10) === todayISO());
-  const todayWeight = weights.find(record => record.date?.slice(0, 10) === todayISO());
-  setText('todayShot', todayShot ? tx('dashboard.loggedDose', '{dose}mg logged', { dose: todayShot.dose || '—' }) : tx('runtime.tapToLog', 'TAP TO LOG'));
-  setText('todayWt', todayWeight ? Number(todayWeight.weight).toFixed(1) + ' lb' : tx('runtime.tapToLog', 'TAP TO LOG'));
   const currentWeight = weightMetrics.currentWeight || 0;
-  const change = weightMetrics.change;
   const goalGap = Number(profile.goalWt) && currentWeight ? currentWeight - Number(profile.goalWt) : null;
-  setText('s6TotalLabel', tx('dashboard.resultsTotal', 'TOTAL CHANGE'));
-  setText('s6TotalBasis', weightMetrics.basis === 'from profile start weight' ? tx('dashboard.fromProfileStart', '(from profile start)') : tx('dashboard.fromFirstWeight', '(from first recorded weight)'));
-  setText('s6Total', change === null ? '—' : `${change > 0 ? '+' : ''}${change.toFixed(1)} lb`);
-  const dashboardBMI = calcBMIValue(currentWeight, profile);
-  setText('s6BMI', dashboardBMI || '');
-  setDisplay('s6BMICard', Boolean(dashboardBMI));
-  setText('s6Wt', currentWeight ? `${currentWeight.toFixed(1)} lb` : '—');
-  setText('s6Pct', weightMetrics.percentLost === null ? '—' : `${weightMetrics.percentLost.toFixed(1)}%`);
-  setText('s6Avg', weightMetrics.weeklyAverage === null ? '—' : tx('dashboard.weeklyRate', '{value} lb/wk', { value: weightMetrics.weeklyAverage.toFixed(1) }));
-  setText('s6Goal', goalGap === null ? '—' : `${Math.max(0, goalGap).toFixed(1)} lb`);
   const phase = renderPhase(lastShot, shots);
   renderProtocolCurve(shots, phase);
   refreshNodeHeader({ lastShot, next, phase, currentWeight: lastWeight?.weight });
-  setText('streakText', shots.length ? tx(shots.length === 1 ? 'dashboard.shotsInLocalRecord_one' : 'dashboard.shotsInLocalRecord_other', '{count} SHOTS IN YOUR LOCAL RECORD', { count: shots.length }) : tx('dashboard.noShotCadence', 'NO SHOT CADENCE YET · LOG YOUR FIRST SHOT'));
-  drawCanvasChart($('dashWtChart'), weights.map(item => Number(item.weight)), '#00d4ff');
   renderWandaDashboard({ shots, weights, lastShot, lastWeight, profile, next, phase, weightMetrics, goalGap });
 }
 
@@ -2040,19 +1990,14 @@ function ensureWandaDashboard() {
     + '<section class="gn-dashboard-mission" id="gnFirstShotMission" aria-labelledby="gnFirstShotMissionTitle"><span class="gn-dashboard-mission-kicker" data-i18n="dashboard.firstShotKicker">START HERE</span><h2 id="gnFirstShotMissionTitle" data-i18n="shots.activateYourGrid">LOG YOUR FIRST SHOT TO ACTIVATE YOUR GRID</h2><p data-i18n="shots.firstShotSub">One shot unlocks the Phase Engine, RESULTS, and your full dashboard.</p><button type="button" onclick="openLogModal()" data-i18n="shots.logYourFirst">LOG YOUR FIRST SHOT</button></section>'
     + '<div class="gn-wanda-grid">'
     + '<button class="gn-wanda-card" id="gnWandaNext" type="button" onclick="openLogModal()"><span class="gn-wanda-label" data-i18n="dashboard.nextShotLabel">NEXT SHOT</span><b class="gn-wanda-value" id="gnWandaNextValue">' + tx('runtime.logShot', 'LOG SHOT') + '</b><small class="gn-wanda-note" id="gnWandaNextNote" data-i18n="dashboard.logShotStartTimeline">Log a shot to start your timeline</small></button>'
-    + '<button class="gn-wanda-card" id="gnWandaPhase" type="button" onclick="showPhasesModal()"><span class="gn-wanda-label" data-i18n="dashboard.currentPhase">CURRENT PHASE</span><b class="gn-wanda-value" id="gnWandaPhaseValue">' + tx('dashboard.startWithShot', 'START WITH A SHOT') + '</b><small class="gn-wanda-note" data-i18n="phase.educationalEstimate">EDUCATIONAL ESTIMATE</small></button>'
+
     + '<button class="gn-wanda-card info" id="gnWandaWeight" type="button" onclick="openWeightModal()"><span class="gn-wanda-label" data-i18n="dashboard.currentWeight">CURRENT WEIGHT</span><b class="gn-wanda-value" id="gnWandaWeightValue">' + tx('dashboard.logWeight', 'LOG WEIGHT') + '</b><small class="gn-wanda-note" data-i18n="dashboard.latestRecord">Latest record</small></button>'
-    + '<button class="gn-wanda-card" id="gnWandaLevel" type="button" onclick="showPhasesModal()"><span class="gn-wanda-label" data-i18n="dashboard.relativeLevel">RELATIVE LEVEL</span><b class="gn-wanda-value" id="gnWandaLevelValue">' + tx('dashboard.startWithShot', 'START WITH A SHOT') + '</b><small class="gn-wanda-note" data-i18n="dashboard.estimatedNotMeasured">Estimated, not measured</small></button>'
+
     + '<button class="gn-wanda-card" id="gnWandaRate" type="button" onclick="showPage(\'Results\',document.getElementById(\'navRes\'))"><span class="gn-wanda-label" data-i18n="dashboard.weeklyRateLabel">WEEKLY RATE</span><b class="gn-wanda-value" id="gnWandaRateValue">' + tx('dashboard.keepLogging', 'KEEP LOGGING') + '</b><small class="gn-wanda-note" data-i18n="dashboard.keepLoggingBuilds">Keep logging — data builds over time</small></button>'
     + '<button class="gn-wanda-card info" id="gnWandaGoal" type="button" onclick="showPage(\'Profile\',document.getElementById(\'navVault\'))"><span class="gn-wanda-label" data-i18n="dashboard.toGoal">TO GOAL</span><b class="gn-wanda-value" id="gnWandaGoalValue">' + tx('dashboard.setGoal', 'SET GOAL') + '</b><small class="gn-wanda-note" data-i18n="dashboard.fromLatestWeight">From latest weight</small></button>'
     + '</div><div class="gn-wanda-actions"><button type="button" onclick="openLogModal()" data-i18n="runtime.logShot">LOG SHOT</button><button type="button" onclick="openWeightModal()" data-i18n="dashboard.logWeight">LOG WEIGHT</button></div><div class="gn-streak-card" id="gnStreakCard" hidden><b id="gnStreakValue"></b><span id="gnStreakCopy"></span></div></section>';
   header.insertAdjacentHTML('afterend', markup);
   window.GN_I18N?.applyTo?.(document.getElementById('gnWandaDashboard'));
-  ['.stat-row', '.weight-quick', '.stats-6', '#dashAdherence', '#dashWtChart'].forEach(selector => {
-    const element = document.getElementById('pageDash')?.querySelector(selector);
-    if (element) element.closest('.chart-wrap')?.style.setProperty('display', 'none') || element.style.setProperty('display', 'none');
-  });
-  Array.from(document.querySelectorAll('#pageDash > .sec-hdr')).slice(0, 2).forEach(element => element.style.display = 'none');
 }
 
 function calculateShotStreak(shots = []) {
@@ -2094,14 +2039,14 @@ function renderWandaDashboard({ shots, lastShot, lastWeight, next, phase, weight
   } else nextCard?.classList.add('empty');
   setText('gnWandaNextNote', nextNote);
   const localizedName = localizedPhaseName(phase);
-  setText('gnWandaPhaseValue', localizedName || tx('dashboard.startWithShot', 'START WITH A SHOT'));
+
   setText('gnWandaWeightValue', lastWeight ? Number(lastWeight.weight).toFixed(1) + ' lb' : tx('dashboard.logWeight', 'LOG WEIGHT'));
-  setText('gnWandaLevelValue', localizedName || tx('dashboard.startWithShot', 'START WITH A SHOT'));
+
   setText('gnWandaRateValue', weightMetrics.weeklyAverage === null ? tx('dashboard.keepLogging', 'KEEP LOGGING') : tx('dashboard.weeklyRate', '{value} lb/wk', { value: weightMetrics.weeklyAverage.toFixed(1) }));
   setText('gnWandaGoalValue', goalGap === null ? tx('dashboard.setGoal', 'SET GOAL') : Math.max(0, goalGap).toFixed(1) + ' lb');
-  document.getElementById('gnWandaPhase')?.classList.toggle('empty', !phase);
+
   document.getElementById('gnWandaWeight')?.classList.toggle('empty', !lastWeight);
-  document.getElementById('gnWandaLevel')?.classList.toggle('empty', !phase);
+
   document.getElementById('gnWandaRate')?.classList.toggle('empty', weightMetrics.weeklyAverage === null);
   document.getElementById('gnWandaGoal')?.classList.toggle('empty', goalGap === null);
   renderShotStreak(shots, next);
@@ -2279,7 +2224,8 @@ function setShotHistoryView(view) {
 
 
 /* GN_SCANNER_AUDIO_CONTROLLER_V1_START */
-const GN_SCANNER_AUDIO_STORAGE_KEY = 'gn_scanner_audio_v1';
+/* v0.15.43: unified sound — scanner audio follows the single gn_sound_v1 key (topbar SOUND toggle). */
+const GN_SCANNER_AUDIO_STORAGE_KEY = 'gn_sound_v1';
 const GN_SCANNER_AUDIO_MASTER_GAIN = 0.6;
 const GN_SCANNER_AUDIO_CONTACT_THROTTLE_MS = 45;
 const gnScannerAudioGesture = (() => {
@@ -2289,7 +2235,8 @@ const gnScannerAudioGesture = (() => {
     accepts(candidate) { return candidate === token; }
   });
 })();
-let gnScannerAudioEnabled = false;
+/* v0.15.43: scanner audio follows the unified gn_sound_v1 key live (no separate cache). */
+function gnScannerAudioEnabled() { try { return localStorage.getItem(GN_SCANNER_AUDIO_STORAGE_KEY) === '1'; } catch (_) { return false; } }
 let gnScannerAudioContext = null;
 let gnScannerAudioMaster = null;
 let gnScannerAudioLastContactAt = -Infinity;
@@ -2299,19 +2246,8 @@ function gnScannerAudioStoredPreference() {
   try { return localStorage.getItem(GN_SCANNER_AUDIO_STORAGE_KEY) === '1'; } catch (_) { return false; }
 }
 
-function gnScannerAudioRenderSwitch() {
-  const control = $('gnScannerAudioSwitch');
-  if (!control) return;
-  control.setAttribute('aria-checked', gnScannerAudioEnabled ? 'true' : 'false');
-  const label = tx('shots.scannerAudio', 'SCANNER AUDIO');
-  const state = tx(gnScannerAudioEnabled ? 'shots.soundOn' : 'shots.soundOff', gnScannerAudioEnabled ? 'ON' : 'OFF');
-  control.setAttribute('aria-label', label);
-  const stateLabel = control.querySelector('[data-scanner-sound-state]');
-  if (stateLabel) stateLabel.textContent = state;
-}
-
 function gnScannerAudioContextForGesture(gestureToken = null) {
-  if (!gnScannerAudioEnabled || !gnScannerAudioGesture.accepts(gestureToken)) return null;
+  if (!gnScannerAudioEnabled() || !gnScannerAudioGesture.accepts(gestureToken)) return null;
   try {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextClass) return null;
@@ -2398,32 +2334,23 @@ function gnScannerAudioPlayLock(gestureToken) {
 }
 
 function gnScannerAudioToggle() {
-  gnScannerAudioEnabled = !gnScannerAudioEnabled;
-  try { localStorage.setItem(GN_SCANNER_AUDIO_STORAGE_KEY, gnScannerAudioEnabled ? '1' : '0'); } catch (_) {}
-  gnScannerAudioRenderSwitch();
-  return gnScannerAudioEnabled;
+  const next = !gnScannerAudioEnabled();
+  try { localStorage.setItem(GN_SCANNER_AUDIO_STORAGE_KEY, next ? '1' : '0'); } catch (_) {}
+  return next;
 }
 
 window.GNScannerAudio = Object.freeze({
-  isEnabled: () => gnScannerAudioEnabled,
+  isEnabled: () => gnScannerAudioEnabled(),
   setEnabled: (value) => {
-    gnScannerAudioEnabled = Boolean(value);
-    try { localStorage.setItem(GN_SCANNER_AUDIO_STORAGE_KEY, gnScannerAudioEnabled ? '1' : '0'); } catch (_) {}
-    gnScannerAudioRenderSwitch();
-    return gnScannerAudioEnabled;
+    try { localStorage.setItem(GN_SCANNER_AUDIO_STORAGE_KEY, value ? '1' : '0'); } catch (_) {}
+    return gnScannerAudioEnabled();
   },
   toggle: () => gnScannerAudioToggle(),
   playContact: gnScannerAudioPlayContact,
   playLock: gnScannerAudioPlayLock,
-  syncControl: () => gnScannerAudioRenderSwitch()
 });
 
-function initScannerAudioControl() {
-  gnScannerAudioEnabled = gnScannerAudioStoredPreference();
-  gnScannerAudioRenderSwitch();
-}
 
-initScannerAudioControl();
 /* GN_SCANNER_AUDIO_CONTROLLER_V1_END */
 
 /* v0.15.19 SKIN TONE REMOVED - synthetic biotech scanner, single body per mode */
@@ -3337,13 +3264,6 @@ function renderResults() {
   const directionReady = weights.length >= 3 && spanDays >= 7;
   setText('resLatestWeight', latest ? `${latest.weight.toFixed(1)} lb` : '—');
   setText('resShotCount', String(shots.length));
-  /* v0.15.41 S12: observation metrics have no recorded values yet, so they
-     render the empty-state placeholder (see .results-metric-empty). If a
-     real observation value is ever written here, remove that class. */
-  const obsPlaceholder = tx('results.logObservations', 'LOG OBSERVATIONS');
-  setText('resLatestAppetite', obsPlaceholder);
-  setText('resLatestEnergy', obsPlaceholder);
-  ['resLatestAppetite', 'resLatestEnergy'].forEach(id => { try { $(id)?.classList.add('results-metric-empty'); } catch (_) {} });
   setText('resContinuityEvents', String(shots.length));
   setText('resContinuityRecent', latestShot() ? formatDate(latestShot().date, { month: 'short', day: 'numeric' }) : '—');
   setText('resContinuityActive', String(shots.length));
@@ -3367,7 +3287,6 @@ function renderResults() {
   drawTrendArrow($('wtChart'), filterWeightsForChart(weights), profile.goalWt);
   renderWeightRecords(weights);
   renderMeasurementTrend();
-  renderPhaseSource(latestShot());
   renderTrendLists(shots);
   renderWeeklyReport(shots, weights);
   /* v0.15.42: calendar is a RESULTS subview (CHARTS | CALENDAR toggle). */
@@ -3679,14 +3598,6 @@ function drawTrendArrow(canvas, weights, goal) {
   context.font = '700 14px Share Tech Mono, monospace';
   context.textAlign = 'left';
   context.fillText(arrow, Math.min(width - 16, xFor(values.length - 1) + 7), yFor(values.at(-1)) + 5);
-}
-
-function renderPhaseSource(shot) {
-  setDisplay('phaseEngineSourceEmpty', !shot); setDisplay('phaseEngineSourceReadout', Boolean(shot));
-  const readout = document.getElementById('phaseEngineSourceReadout');
-  if (!readout || !shot) return;
-  const elapsed = Math.max(0, (Date.now() - new Date(shot.date).getTime()) / 86400000);
-  readout.innerHTML = '<div><span>' + tx('runtime.lastShot', 'LAST SHOT') + '</span><b>' + safeText(formatDateTime(shot.date)) + '</b></div><div><span>' + tx('runtime.medication', 'MEDICATION') + '</span><b>' + safeText(medicationLabel(shot.med)) + '</b></div><div><span>' + tx('runtime.timeSince', 'TIME SINCE') + '</span><b>' + Math.floor(elapsed) + 'd</b></div><div><span>' + tx('runtime.dataSource', 'DATA SOURCE') + '</span><b>' + tx('runtime.userHistory', 'USER-ENTERED HISTORY') + '</b></div>';
 }
 
 function renderTrendLists(shots) {
@@ -4446,12 +4357,6 @@ function closeProfileHub() {
   showPage(prev === 'Profile' ? 'Dash' : prev);
 }
 
-function toggleProfileHub() {
-  const active = document.querySelector('.page.active')?.id;
-  if (active === 'pageProfile') { closeProfileHub(); return; }
-  showPage('Profile', document.getElementById('navVault'));
-}
-
 function ensureProfileHub() {
   const page = $('pageProfile');
   if (!page || page.querySelector('[data-gn-profile-hub]')) return;
@@ -4461,8 +4366,8 @@ function ensureProfileHub() {
   hero.insertAdjacentHTML('afterend', `<section class="gn-profile-hub" data-gn-profile-hub aria-labelledby="gnProfileHubTitle">
     <div class="gn-foundation-head"><div><div class="gn-foundation-kicker" data-i18n="vault.kicker">// NODE PROFILE HUB</div><h2 id="gnProfileHubTitle" data-i18n="vault.hubTitle">YOUR NODE</h2></div><span class="gn-foundation-actions"><span class="gn-foundation-signal" id="gnProfileSync">LOCAL MODE</span><button type="button" class="gn-hub-close" id="gnHubClose" onclick="closeProfileHub()" aria-label="CERRAR" data-i18n-aria-label="vault.closeHub">✕</button></span></div>
     <div class="gn-profile-sections">
-      <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.node">// YOUR NODE</div><div class="gn-profile-row"><span><b data-i18n="vault.medicationLabel">Medication</b><small id="gnProfileMedication">Not entered</small></span><span class="gn-profile-chevron">›</span></div><div class="gn-profile-row"><span><b data-i18n="vault.bodyMetrics">Body Metrics</b><small id="gnProfileBody">Not entered</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row" onclick="openSystemUpdate()"><span><b data-i18n="vault.whatsNew">What's New</b><small data-gn-whatsnew-version></small></span><span class="gn-profile-chevron">›</span></button></section>
-      <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.yourData">// YOUR DATA</div><button type="button" class="gn-profile-row" onclick="exportCSV()"><span><b data-i18n="vault.exportCsv">Export CSV</b><small data-i18n="vault.exportCsvHelp">Download readable records</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="exportBackup()"><span><b data-i18n="vault.exportBackup">Export Backup</b><small data-i18n="vault.exportBackupHelp">Save a complete local copy</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="openImportDialog()"><span><b data-i18n="vault.importData">Import Data</b><small data-i18n="vault.importDataHelp">Bring history from Shotsy or CSV</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="openPrivacyPolicy()"><span><b data-i18n="vault.privacyPolicy">Privacy Policy</b><small data-i18n="vault.privacyPolicyHelp">How your data is stored</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.dataOwnership">Data Ownership</b><small data-i18n="vault.dataOwnershipHelp">Export or delete anytime</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row gn-profile-danger-row" onclick="openDeleteLocalData()"><span><b data-i18n="vault.deleteAllData">Delete All Local Data</b><small data-i18n="vault.deleteAllDataHelp">Remove this device record</small></span><span class="gn-profile-chevron">›</span></button></section>
+      <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.node">// YOUR NODE</div><button type="button" class="gn-profile-row" onclick="document.getElementById('profMedSection')?.scrollIntoView({behavior:'smooth',block:'start'})"><span><b data-i18n="vault.medicationLabel">Medication</b><small id="gnProfileMedication">Not entered</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="document.getElementById('profBodySection')?.scrollIntoView({behavior:'smooth',block:'start'})"><span><b data-i18n="vault.bodyMetrics">Body Metrics</b><small id="gnProfileBody">Not entered</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="openSystemUpdate()"><span><b data-i18n="vault.whatsNew">What's New</b><small data-gn-whatsnew-version></small></span><span class="gn-profile-chevron">›</span></button></section>
+      <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.yourData">// YOUR DATA</div><button type="button" class="gn-profile-row" onclick="exportCSV()"><span><b data-i18n="vault.exportCsv">Export CSV</b><small data-i18n="vault.exportCsvHelp">Download readable records</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="exportBackup()"><span><b data-i18n="vault.exportBackup">Export Backup</b><small data-i18n="vault.exportBackupHelp">Save a complete local copy</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="openImportDialog()"><span><b data-i18n="vault.importData">Import Data</b><small data-i18n="vault.importDataHelp">Bring history from Shotsy or CSV</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="openPrivacyPolicy()"><span><b data-i18n="vault.privacyPolicy">Privacy Policy</b><small data-i18n="vault.privacyPolicyHelp">How your data is stored</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="openPrivacyPolicy()"><span><b data-i18n="vault.dataOwnership">Data Ownership</b><small data-i18n="vault.dataOwnershipHelp">Export or delete anytime</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row gn-profile-danger-row" onclick="openDeleteLocalData()"><span><b data-i18n="vault.deleteAllData">Delete All Local Data</b><small data-i18n="vault.deleteAllDataHelp">Remove this device record</small></span><span class="gn-profile-chevron">›</span></button></section>
       <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.tools">// TOOLS</div><button type="button" class="gn-profile-row" onclick="replayGuidedTour()"><span><b data-i18n="vault.replayTour">Replay Tour</b><small data-i18n="vault.replayTourHelp">Restart the guided tour</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.theme">Theme</b><small data-i18n="vault.themeHelp">Dark or light display</small></span><span class="gn-theme-toggle-host" role="group" aria-label="THEME"></span></div><button type="button" class="gn-profile-row" onclick="document.querySelector('.gn-device-vault')?.scrollIntoView({behavior:'smooth',block:'start'})"><span><b data-i18n="vault.deviceVaultLink">Device Vault</b><small data-i18n="vault.deviceVaultLinkHelp">Private identity registry</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.connectedAccount">Connected Account</b><small id="gnProfileAccount">Local device session</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row gn-profile-danger-row" data-gn-cloud-only onclick="openDeleteCloudAccount()"><span><b data-i18n="vault.deleteCloudAccount">Delete Cloud Account</b><small data-i18n="vault.deleteCloudAccountHelp">Requires server deletion control</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.appVersion">App Version</b><small id="gnProfileVersion"></small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row" onclick="window.location.reload()"><span><b data-i18n="vault.reloadApp">Reload App</b><small data-i18n="vault.reloadAppHelp">Refresh the current build</small></span><span class="gn-profile-chevron">›</span></button></section>
     </div>
     <button type="button" class="gn-profile-signout" data-gn-cloud-only onclick="openSignOutModal()"><span><b data-i18n="vault.signOut">SIGN OUT</b><small data-i18n="vault.localOnlyFooter">Your data stays on this device.</small></span><span class="gn-profile-chevron">›</span></button>
@@ -4815,8 +4720,6 @@ function renderProfile() {
   ensureProfileMeasurements();
   ensureDestructiveDialogs();
   syncIdentityAvatars();
-  const legacyProfile = $('pageProfile')?.querySelector('[data-gn-legacy-profile]');
-  if (legacyProfile) legacyProfile.hidden = true;
   const updateCard = $('gnSystemUpdateCard');
   if (updateCard) updateCard.hidden = S.get('settings', {}).systemUpdateDismissed === APP_VERSION;
   const profile = getProfile();
@@ -4828,6 +4731,7 @@ function renderProfile() {
   setText('gnProfileMedication', normalizeMedicationId(profile.med) ? `${medicationLabel(profile.med)}${profile.dose ? ` · ${profile.dose}mg` : ''}` : tx('vault.notEntered', 'Not entered'));
   setText('gnProfileBody', `${height}${currentWeight ? ` · ${Number(currentWeight).toFixed(1)} lb` : ''}`);
   setText('gnProfileVersion', APP_VERSION);
+  setText('gnProfileHeroVersion', 'v' + APP_VERSION);
   setText('gnProfileAccount', state.cloud ? `${state.session?.user?.app_metadata?.provider === 'google' ? tx('profile.signedInWithGoogle', 'Signed in with Google') : tx('vault.cloudConnected', 'Cloud account connected')} · ${state.session?.user?.email || sessionLabel()}` : tx('profile.localDeviceSession', 'Local device session'));
   setText('gnProfileSync', nodeSyncLabel());
   hydrateProfileFields(profile);

@@ -11,10 +11,6 @@
           <line class="snd-slash" x1="4" y1="4" x2="20" y2="20"/>
         </svg>
       </button>
-      <button class="topbar-btn topbar-hub-btn" type="button" onclick="toggleProfileHub()" id="topAva" aria-label="Open VAULT">
-        <img src="/assets/brand/icons/pwa-192.png" alt="GRID//NODE mark" width="40" height="40" id="topAvaIcon" decoding="async">
-        <span class="topbar-hub-label">VAULT</span>
-      </button>
     </div>
   </div>
 
@@ -37,53 +33,6 @@
         <div class="page-sub" id="dashSub" data-i18n="dashboard.zeroShotSub">STORED ON THIS DEVICE</div>
       </div>
 
-      
-      <div class="stat-row">
-        <div class="stat-card c"><span class="stat-lbl" data-i18n="dashboard.shots">SHOTS</span><span class="stat-val c" id="stShots">0</span><span class="stat-sub" data-i18n="dashboard.labelTotal">TOTAL</span></div>
-        <div class="stat-card y"><span class="stat-lbl" data-i18n="dashboard.lastDoseLabel">LAST DOSE</span><span class="stat-val y" id="stDose">—</span><span class="stat-sub" id="stDoseDate" data-i18n="runtime.noData">NO DATA</span></div>
-        <div class="stat-card r" id="nextShotStatCard"><span class="stat-lbl" data-i18n="dashboard.nextShotLabel">NEXT SHOT</span><span class="stat-val r" id="stNext">—</span><span class="stat-sub" id="stNextSub">LOG SHOT</span></div>
-      </div>
-
-      
-      <div class="sec-hdr">
-        <div class="sec-title" data-i18n-html="dashboard.sectionToday">// <span class="a">TODAY</span></div>
-        <div class="sec-act" id="todayDate"></div>
-      </div>
-      <div class="weight-quick">
-        <div class="wq-card" onclick="openWeightModal()">
-          <span class="wq-icon"><span class="gn-icon gn-icon-md gn-icon-hud gn-accent-g"><svg><use href="#gn-biometric-gauge"></use></svg></span></span>
-          <span class="wq-label" data-i18n="dashboard.resultsWeightLabel">WEIGHT</span>
-          <span class="wq-val" id="todayWt" data-i18n="runtime.tapToLog">TAP TO LOG</span>
-        </div>
-        <div class="wq-card" onclick="openLogModal()">
-          <span class="wq-icon"><span class="gn-icon gn-icon-md gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span>
-          <span class="wq-label" data-i18n="dashboard.shotLabel">SHOT</span>
-          <span class="wq-val" id="todayShot" data-i18n="runtime.tapToLog" style="font-size:0.85rem;color:var(--text-mid)">TAP TO LOG</span>
-        </div>
-      </div>
-
-      
-      <div class="sec-hdr">
-        <div class="sec-title" data-i18n-html="dashboard.sectionResults">// <span class="a">RESULTS</span></div>
-        <button class="sec-act" type="button" data-i18n="dashboard.seeChart" onclick="showPage('Results',document.getElementById('navRes'))">SEE CHART →</button>
-      </div>
-      <div class="stats-6">
-        <div class="s6-card"><span class="s6-icon"><span class="gn-icon gn-icon-md gn-accent-g"><svg><use href="#gn-trend-signal"></use></svg></span></span><span class="s6-label" id="s6TotalLabel" data-i18n="dashboard.resultsTotal">TOTAL CHANGE</span><small class="s6-basis" id="s6TotalBasis">(from profile start)</small><span class="s6-val g" id="s6Total">—</span></div>
-        <div class="s6-card" id="s6BMICard"><span class="s6-icon"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-biometric-gauge"></use></svg></span></span><span class="s6-label" data-i18n="dashboard.resultsBmi">CURRENT BMI</span><span class="s6-val c" id="s6BMI">—</span></div>
-        <div class="s6-card"><span class="s6-icon"><span class="gn-icon gn-icon-md gn-accent-y"><svg><use href="#gn-biometric-gauge"></use></svg></span></span><span class="s6-label" data-i18n="dashboard.resultsWeight">WEIGHT</span><span class="s6-val y" id="s6Wt">—</span></div>
-        <div class="s6-card"><span class="s6-icon"><span class="gn-icon gn-icon-md gn-accent-g"><svg><use href="#gn-percent"></use></svg></span></span><span class="s6-label" data-i18n="dashboard.resultsPct">PERCENT LOST</span><span class="s6-val g" id="s6Pct">—</span></div>
-        <div class="s6-card"><span class="s6-icon"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-trend-signal"></use></svg></span></span><span class="s6-label" data-i18n="dashboard.resultsAvg">WEEKLY AVG</span><span class="s6-val c" id="s6Avg">—</span></div>
-        <div class="s6-card"><span class="s6-icon"><span class="gn-icon gn-icon-md gn-accent-y"><svg><use href="#gn-timeline-node"></use></svg></span></span><span class="s6-label" data-i18n="dashboard.resultsGoal">TO GOAL</span><span class="s6-val o" id="s6Goal">—</span></div>
-      </div>
-
-      
-      <div class="dash-adherence" id="dashAdherence">
-        <span class="streak-dot"></span>
-        <span class="streak-text" id="streakText">—</span>
-      </div>
-      <div class="chart-wrap" style="height:130px;margin-top:12px"><canvas id="dashWtChart"></canvas></div>
-
-      
       <div class="sec-hdr" id="phaseEngineHdr">
         <div class="sec-title" data-i18n-html="dashboard.sectionPhase">// <span class="a">PHASE ENGINE</span></div>
         <button class="sec-act" type="button" data-i18n="phase.allPhases" onclick="showPhasesModal()">ALL PHASES →</button>
@@ -107,12 +56,10 @@
           <div class="phase-readout">
             <div class="phase-readout-label" data-i18n="phase.timeSinceLast">TIME SINCE LAST LOGGED SHOT</div>
             <div class="phase-readout-value" id="phaseTimeSince">—</div>
-            <div class="phase-readout-copy" data-i18n="phase.calculatedFrom">Calculated from your most recent recorded shot.</div>
           </div>
           <div class="phase-readout">
             <div class="phase-readout-label" data-i18n="phase.cyclePositionTitle">ESTIMATED CYCLE POSITION</div>
             <div class="phase-readout-value" id="phaseCyclePosition">—</div>
-            <div class="phase-readout-copy" data-i18n="phase.cyclePositionBody">Approximate position within your current protocol cycle.</div>
           </div>
         </div>
 
@@ -158,23 +105,11 @@
         <div class="phase-transparency" role="group" aria-label="Phase Engine transparency" data-i18n-aria-label="phase.transparencyAria">
           <div class="phase-transparency-block">
             <h4 data-i18n="phase.whyThisPhase">WHY THIS PHASE</h4>
-            <p data-i18n="phase.whyThisPhaseBody">This phase estimate is based on:</p>
-            <ul>
-              <li data-i18n="phase.timeSinceShot">Time since your last recorded shot</li>
-              <li data-i18n="phase.loggedProtocolTiming">Logged protocol timing</li>
-              <li data-i18n="phase.userEnteredHistory">User-entered protocol history</li>
-            </ul>
-            <p style="margin-top:7px" data-i18n="phase.estimateUpdates">The estimate updates as new protocol events are recorded.</p>
+            <p data-i18n="phase.whyThisPhaseOneLine">Based on time since your last recorded shot and your logged protocol history.</p>
           </div>
           <div class="phase-transparency-block data">
             <h4 data-i18n="phase.dataSources">DATA SOURCES</h4>
-            <p data-i18n="phase.phaseEngineExplainer">Phase Engine estimates protocol progression using user-entered tracking records. It is educational and estimate-based.</p>
-            <ul>
-              <li data-i18n="phase.recordedShots">Recorded shots</li>
-              <li data-i18n="phase.protocolTiming">Protocol timing</li>
-              <li data-i18n="phase.loggedEvents">Logged events</li>
-              <li data-i18n="phase.protocolHistory">Protocol history</li>
-            </ul>
+            <p data-i18n="phase.dataSourcesOneLine">Your logged shots, timing, and protocol events.</p>
           </div>
         </div>
 
@@ -232,7 +167,6 @@
           <button class="time-tab" data-i18n="results.rangeAll" onclick="setRange(this,'all')">ALL</button>
         </div>
         <div class="gn-peptide-evidence-row"><span id="medEvidenceChip" class="gn-evidence-chip" data-state="none">—</span><span id="medCurveSummary" class="gn-peptide-summary" aria-live="polite">—</span></div>
-        <div class="phase-edu-note"><strong data-i18n="phase.educationalInsightOnly">EDUCATIONAL INSIGHT ONLY</strong><br><span data-i18n="phase.notLabMeasurement">Phase Engine is not a laboratory measurement, diagnosis, treatment recommendation, or dosing guide.</span></div>
       </div>
     </div>
 
@@ -250,7 +184,6 @@
             <h2 data-i18n="shots.scannerTitle">// BODY SCANNER</h2>
             <p data-i18n="shots.userEnteredLocation">USER-ENTERED LOCATION TRACKING</p>
           </div>
-          <button id="gnScannerAudioSwitch" class="scanner-audio-switch" type="button" role="switch" aria-checked="false" aria-label="Scanner audio" data-i18n-aria-label="shots.scannerAudio" onclick="window.GNScannerAudio && window.GNScannerAudio.toggle()"><span class="scanner-audio-label" data-i18n="shots.audioLabel">AUDIO</span><span class="scanner-audio-track" aria-hidden="true"><span class="scanner-audio-thumb"></span></span><span class="scanner-audio-state" data-scanner-sound-state>OFF</span></button>
           <img class="gn-scanner-badge" src="/assets/brand/ui/scanner-badge.svg" alt="GRID//NODE scanner badge" width="48" height="48" decoding="async">
         </div>
         <div class="scanner-mode-tabs" role="tablist" aria-label="Body scanner mode" data-i18n-aria-label="shot.zoneModeAria">
@@ -357,9 +290,6 @@
         <div class="shots-safety-note" data-i18n="shots.scannerSafety">// SYSTEM NOTICE: USER-ENTERED LOCATION TRACKING ONLY. GRID//NODE DOES NOT PROVIDE LOCATION RECOMMENDATIONS OR MEDICAL ADVICE.</div>
       </section>
 
-      
-      <div id="nextShotCard"></div>
-
       <div class="shot-history-controls" id="shotHistoryControls" role="group" aria-label="SHOT HISTORY view controls" data-i18n-aria-label="shot.historyControlsAria">
         <button class="shot-history-toggle active" type="button" data-shot-history-view="active" data-i18n="shots.activeTab">ACTIVE</button>
         <button class="shot-history-toggle" type="button" data-shot-history-view="archived" data-i18n="shots.archivedTab">ARCHIVED</button>
@@ -392,14 +322,6 @@
             <div class="results-metric">
               <div class="results-metric-label" data-i18n="results.protocolEvents">Protocol Events</div>
               <div class="results-metric-value c" id="resShotCount">—</div>
-            </div>
-            <div class="results-metric">
-              <div class="results-metric-label" data-i18n="results.latestAppetite">Latest Appetite</div>
-              <div class="results-metric-value y results-metric-empty" id="resLatestAppetite" data-i18n="results.logObservations">LOG OBSERVATIONS</div>
-            </div>
-            <div class="results-metric">
-              <div class="results-metric-label" data-i18n="results.latestEnergy">Latest Energy</div>
-            <div class="results-metric-value c results-metric-empty" id="resLatestEnergy" data-i18n="results.logObservations">LOG OBSERVATIONS</div>
             </div>
           </div>
           <div id="resultsSummaryEmpty" class="results-empty" style="display:none;margin-top:10px" data-i18n-html="results.summaryEmptyHtml">Outcome summary will activate as logged measurements and user-entered outcomes accumulate.<span class="empty-subline">GRID//NODE becomes more informative as additional tracking data is recorded.</span></div>
@@ -445,33 +367,25 @@
           </div>
         </section>
 
-        <section class="results-card results-phase-source" id="phaseEngineSourcePanel">
-          <div class="results-card-title"><span class="gn-icon gn-icon-md gn-accent-y"><svg><use href="#gn-signal"></use></svg></span><span data-i18n="results.phaseSourceTitle">PHASE ENGINE SOURCE</span></div>
-          <div class="results-card-sub" data-i18n="results.phaseSourceSub">Why RESULTS shows this current protocol-cycle context</div>
-          <div id="phaseEngineSourceEmpty" class="results-record-empty" data-i18n="results.phaseSourceEmpty">Phase Engine source appears after an active SHOT record exists.</div>
-          <div id="phaseEngineSourceReadout" class="phase-source-grid" style="display:none"></div>
-          <div class="phase-source-note" data-i18n="results.phaseSourceNote">GRID//NODE is a personal tracking and educational tool. It does not provide medical advice, treatment guidance, or dosing recommendations. Verify protocol decisions independently.</div>
-        </section>
-
         <section class="results-card appetite">
           <div class="results-card-title"><span class="gn-icon gn-icon-md gn-accent-y"><svg><use href="#gn-signal"></use></svg></span><span data-i18n="results.appetiteTrendTitle">Appetite Trend</span></div>
           <div class="results-card-sub" data-i18n="results.userEnteredOutcomes">User-entered outcomes only</div>
           <div id="appetiteTrendLive" class="results-list"></div>
-          <div id="appetiteTrendEmpty" class="results-empty" data-i18n-html="results.noAppetiteHtml">No appetite data yet. Log observations to build your trend.<span class="empty-subline">Additional entries may provide broader context over time.</span></div>
+          <div id="appetiteTrendEmpty" class="results-empty" data-i18n-html="results.noAppetiteHtml">No entries yet. Log observations to build your trend.</div>
         </section>
 
         <section class="results-card energy">
           <div class="results-card-title"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-signal"></use></svg></span><span data-i18n="results.energyTrendTitle">Energy Trend</span></div>
           <div class="results-card-sub" data-i18n="results.userEnteredOutcomes">User-entered outcomes only</div>
           <div id="energyTrendLive" class="results-list"></div>
-          <div id="energyTrendEmpty" class="results-empty" data-i18n-html="results.noEnergyHtml">No energy data yet. Log observations to build your trend.<span class="empty-subline">Additional entries may provide broader context over time.</span></div>
+          <div id="energyTrendEmpty" class="results-empty" data-i18n-html="results.noEnergyHtml">No entries yet. Log observations to build your trend.</div>
         </section>
 
         <section class="results-card effects">
           <div class="results-card-title"><span class="gn-icon gn-icon-md gn-accent-r"><svg><use href="#gn-alert"></use></svg></span><span data-i18n="results.sideEffectTrendTitle">Side Effect Trend</span></div>
           <div class="results-card-sub" data-i18n="results.userEnteredShotObservations">User-entered observations from SHOTS records</div>
           <div id="sideEffectTrendLive" class="results-list"></div>
-          <div id="sideEffectTrendEmpty" class="results-empty" data-i18n-html="results.noSideEffectHtml">No side-effect data yet. Log observations to build your trend.<span class="empty-subline">Additional entries may provide broader context over time.</span></div>
+          <div id="sideEffectTrendEmpty" class="results-empty" data-i18n-html="results.noSideEffectHtml">No entries yet. Log observations to build your trend.</div>
         </section>
 
         <section class="results-card continuity">
@@ -491,24 +405,14 @@
               <div class="results-metric-value g" id="resContinuityActive">—</div>
             </div>
           </div>
-          <p class="results-copy" style="margin-top:10px" data-i18n="results.continuityCopy">Protocol continuity reflects logged event history, not medical compliance. Each logged SHOT contributes signal to your evolving protocol record.</p>
+          <p class="results-copy" style="margin-top:10px" data-i18n="results.continuityCopy">Protocol continuity reflects logged event history, not medical compliance.</p>
         </section>
 
         <section class="results-safety">
           <b data-i18n="results.educationalInsightTitle">EDUCATIONAL INSIGHT ONLY</b>
           <span data-i18n="results.safetyHtml">RESULTS displays logged measurements, user-entered outcomes, and personal tracking history. GRID//NODE becomes more informative as additional tracking data is recorded. GRID//NODE does not provide medical advice, treatment guidance, or dosing recommendations.</span>
         </section>
-
-        <section class="results-card data-transfer-card">
-          <div class="results-card-title"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-vault-core"></use></svg></span><span data-i18n="results.dataTransferTitle">DATA TRANSFER</span></div>
-          <div class="results-card-sub" data-i18n="results.dataTransferSub">Move your user-entered protocol history in or out of GRID//NODE.</div>
-          <div class="data-transfer-copy" data-i18n="results.dataTransferCopy">Local tools for personal tracking records. Review imported records before saving. Educational tracking only.</div>
-          <div class="data-transfer-actions">
-            <button class="btn-full btn-secondary data-transfer-btn" data-i18n="results.importData" onclick="openImportDialog()" style="margin-top:0">IMPORT DATA</button>
-            <button class="btn-full btn-secondary data-transfer-btn" data-i18n="results.exportCsv" onclick="exportCSV()" style="margin-top:0">EXPORT CSV</button>
-          </div>
-          <input type="file" id="csvImportFile" accept=".csv,text/csv" style="display:none" onchange="handleCSVImportFile(event)">
-        </section>
+        <input type="file" id="csvImportFile" accept=".csv,text/csv" style="display:none" onchange="handleCSVImportFile(event)">
       </div>
       <div class="results-calendar-view" id="resultsCalView" style="display:none">
         <div class="cal-wrap">
@@ -600,8 +504,8 @@
           </details>
           <div class="gn-syr-forensic">
             <div class="left">
-              <span><span class="k" data-i18n="lab.forensicLot">LOT</span> GRN-2087-04A</span>
-              <span><span class="k" data-i18n="lab.forensicBuild">BUILD</span> 0xA9F3…7E1C</span>
+              <span><span class="k" data-i18n="lab.forensicLot">LOT</span> GRN-2087-04A <span class="k" data-i18n="lab.decorativeTag">[DECORATIVE]</span></span>
+              <span><span class="k" data-i18n="lab.forensicBuild">BUILD</span> 0xA9F3…7E1C <span class="k" data-i18n="lab.decorativeTag">[DECORATIVE]</span></span>
             </div>
             <div class="right">
               <span data-i18n="lab.sterile">STERILE · SINGLE USE</span>
@@ -631,12 +535,7 @@
           <div style="background:var(--bg2);border:1px solid var(--border2);border-left:3px solid var(--cyan);padding:14px;margin-bottom:14px;border-radius:0 var(--r) var(--r) 0"><div id="reconOut" style="font-family:var(--font-b);font-size:0.95rem;color:var(--text-mid);line-height:2.2"></div></div>
           <div class="sec-title" style="margin-bottom:10px"><span class="a" data-i18n="lab.referenceNotes">// REFERENCE NOTES</span></div>
           <div class="mixing-warn"><span class="gn-icon gn-accent-y"><svg><use href="#gn-alert"></use></svg></span> <span data-i18n="lab.mixingWarn">Educational reference only. Follow licensed medical guidance and product instructions.</span></div>
-          <div class="mixing-step"><div class="mixing-num">1</div><div class="mixing-text" data-i18n="lab.mixing1">Record only user-entered protocol context. Do not use GRID//NODE as preparation guidance.</div></div>
-          <div class="mixing-step"><div class="mixing-num">2</div><div class="mixing-text"><span data-i18n="lab.mixing2">Reference volume:</span> <strong id="bacAmt">—</strong>.</div></div>
-          <div class="mixing-step"><div class="mixing-num">3</div><div class="mixing-text" data-i18n="lab.mixing3">Keep this as a personal reference note only; do not treat as handling instructions.</div></div>
-          <div class="mixing-step"><div class="mixing-num">4</div><div class="mixing-text" data-i18n="lab.mixing4">Use clinician/manufacturer instructions for handling. GRID//NODE does not validate preparation steps.</div></div>
-          <div class="mixing-step"><div class="mixing-num">5</div><div class="mixing-text" data-i18n="lab.mixing5">Storage and stability depend on product instructions and clinical guidance.</div></div>
-          <div class="mixing-step"><div class="mixing-num">6</div><div class="mixing-text" data-i18n="lab.mixing6">If anything appears inconsistent, pause and consult qualified guidance.</div></div>
+          <div class="mixing-step"><div class="mixing-num">1</div><div class="mixing-text"><span data-i18n="lab.mixing2">Reference volume:</span> <strong id="bacAmt">—</strong>.</div></div>
         </div>
       </div>
 
@@ -710,13 +609,13 @@
         white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
       "></div>
       <div style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);letter-spacing:2px">
-        GRID//NODE v0.15.36
+        GRID//NODE <span id="gnProfileHeroVersion"></span>
       </div>
     </div>
   </div>
 
   
-  <div style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:3px;margin-bottom:10px" data-i18n="profile.sectionMedication">// MEDICATION</div>
+  <div id="profMedSection" style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:3px;margin-bottom:10px" data-i18n="profile.sectionMedication">// MEDICATION</div>
   <div style="background:#0e0e16;background:var(--panel, #0e0e16);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:16px;margin-bottom:20px">
     <div class="form-group">
       <div class="form-label" id="cpMedProfLabel" data-i18n="shot.medication">MEDICATION</div>
@@ -787,7 +686,7 @@
   </div>
 
   
-  <div style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:3px;margin-bottom:10px" data-i18n="profile.sectionBody">// BODY METRICS</div>
+  <div id="profBodySection" style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:3px;margin-bottom:10px" data-i18n="profile.sectionBody">// BODY METRICS</div>
   <div style="background:#0e0e16;background:var(--panel, #0e0e16);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:16px;margin-bottom:20px">
     <div class="form-row">
       <div class="form-group">
@@ -838,54 +737,6 @@
   </div>
 
   
-      <div data-gn-legacy-profile>
-      <div style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:3px;margin-bottom:10px" data-i18n="profile.sectionData">// DATA</div>
-  <div style="background:#0e0e16;background:var(--panel, #0e0e16);border:1px solid rgba(255,255,255,0.07);border-radius:8px;overflow:hidden;margin-bottom:20px">
-    <button type="button" class="gn-utility-row" onclick="exportCSV()">
-      <div style="display:flex;align-items:center;gap:12px">
-        <span class="gn-icon gn-icon-sm gn-utility-icon"><svg><use href="#gn-data-packet"></use></svg></span>
-        <span style="font-family:'Rajdhani',sans-serif;font-size:1rem;color:#eeeef5" data-i18n="profile.exportCsv">Export CSV</span>
-      </div>
-      <span class="gn-utility-chevron">›</span>
-    </button>
-    <button type="button" class="gn-utility-row" onclick="exportBackup()">
-      <div style="display:flex;align-items:center;gap:12px">
-        <span class="gn-icon gn-icon-sm gn-utility-icon"><svg><use href="#gn-archive-core"></use></svg></span>
-        <span style="font-family:'Rajdhani',sans-serif;font-size:1rem;color:#eeeef5" data-i18n="profile.exportBackup">Export Backup</span>
-      </div>
-      <span class="gn-utility-chevron">›</span>
-    </button>
-  </div>
-
-  
-  <div style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:3px;margin-bottom:10px">// APP</div>
-  <div style="background:#0e0e16;background:var(--panel, #0e0e16);border:1px solid rgba(255,255,255,0.07);border-radius:8px;overflow:hidden;margin-bottom:20px">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid rgba(255,255,255,0.05)">
-      <span style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:2px" data-i18n="profile.version">VERSION</span>
-<span style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:2px">v0.12.0</span>
-    </div>
-    <button type="button" class="gn-utility-row" onclick="window.location.reload()">
-      <div style="display:flex;align-items:center;gap:12px">
-        <span class="gn-icon gn-icon-sm gn-utility-icon"><svg><use href="#gn-reboot-cycle"></use></svg></span>
-        <span style="font-family:'Rajdhani',sans-serif;font-size:1rem;color:#eeeef5" data-i18n="profile.reloadApp">Reload App</span>
-      </div>
-      <span class="gn-utility-chevron">›</span>
-    </button>
-  </div>
-
-  
-  <div style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:3px;margin-bottom:10px">// ACCOUNT</div>
-  <div style="background:#0e0e16;background:var(--panel, #0e0e16);border:1px solid rgba(255,255,255,0.07);border-radius:8px;overflow:hidden;margin-bottom:40px">
-    <button type="button" class="gn-utility-row gn-utility-row-danger" onclick="openSignOutModal()">
-      <div style="display:flex;align-items:center;gap:12px">
-        <span class="gn-icon gn-icon-sm gn-utility-icon"><svg><use href="#gn-disconnect-node"></use></svg></span>
-        <span style="font-family:'Rajdhani',sans-serif;font-size:1rem;color:#FF3B3B;font-weight:600" data-i18n="signout.title">Sign Out</span>
-      </div>
-      <span class="gn-utility-chevron">›</span>
-    </button>
-  </div>
-  </div>
-      </div>
     </div></div>
 
   <div class="bottom-nav">

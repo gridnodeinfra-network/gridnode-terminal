@@ -2,6 +2,7 @@
 'use strict';
 /**
  * v0.15.42 launch-readiness contract test (static, no browser).
+ * v0.15.43: updated for simplicity cut (3-beat tour, version 0.15.43).
  *
  * Guards the 2026-09-12 second-sweep fixes:
  *  1. Visible VAULT bottom-nav tab (five-section model: HOME, SHOTS,
@@ -21,8 +22,8 @@
  *     config, EXPLORE demoted to a quiet anchor, one plain-language
  *     local-vs-cloud choice screen.
  *  9. SCOPE replaces BOUNDARY in EN + ES.
- * 10. Tour names five zones including HOME.
- * 11. Version agreement on 0.15.42; whatsnew placeholder rewritten.
+ * 10. Tour is 3 beats (signal, dose, curve).
+ * 11. Version agreement on 0.15.43; whatsnew placeholder rewritten.
  *
  * Usage: node scripts/test-v01542-launch-readiness.cjs
  * Exit 0 = all assertions pass. Exit 1 = failures (listed on stderr).
@@ -39,7 +40,7 @@ function check(name, cond, hint) {
   console.error('  FAIL ' + name + (hint ? ' — ' + hint : ''));
 }
 
-console.log('v0.15.42 launch-readiness contract:');
+console.log('v0.15.42 launch-readiness contract (updated for 0.15.43):');
 
 const app05 = read('html/partials/05-app.html');
 const landing03 = read('html/partials/03-landing.html');
@@ -159,11 +160,9 @@ check('auth policy link opens the full privacy policy',
 check('boundaryLabel is SCOPE / ALCANCE',
   en['landing.boundaryLabel'] === 'SCOPE' && es['landing.boundaryLabel'] === 'ALCANCE');
 
-// --- 10. Tour: five zones including HOME ------------------------------------
-check('tour grid beat names five zones with HOME first',
-  /var zones = \['home', 'shots', 'results', 'lab', 'vault'\]/.test(fc));
-check('tour copy says five zones in EN + ES',
-  /'fc\.grid\.title': 'Five zones\. One loop\.'/.test(fc) && /'fc\.grid\.title': 'Cinco zonas\. Un ciclo\.'/.test(fc));
+// --- 10. Tour: 3 beats (v0.15.43 simplicity cut) ------------------------------
+check('tour is 3 beats',
+  /var BEATS = 3;/.test(fc));
 
 // --- 11. Version agreement + whatsnew --------------------------------------
 const pkg = JSON.parse(read('package.json'));
@@ -171,11 +170,11 @@ const lock = JSON.parse(read('package-lock.json'));
 const verJs = read('js/gridnode-version.js');
 const appVer = (verJs.match(/APP_VERSION:\s*'([^']+)'/) || [])[1];
 const semver = (verJs.match(/semver:\s*'([^']+)'/) || [])[1];
-check('package.json version is 0.15.42', pkg.version === '0.15.42', pkg.version);
+check('package.json version is 0.15.43', pkg.version === '0.15.43', pkg.version);
 check('package-lock root version matches', lock.version === pkg.version && lock.packages[''].version === pkg.version);
 check('gridnode-version.js APP_VERSION/semver match package.json', appVer === pkg.version && semver === pkg.version);
-check('whatsnew placeholder rewritten for 0.15.42',
-  /'__CURRENT_BUILD__': \{\s*\n?\s*version: '0\.15\.42'/.test(wn));
+check('whatsnew placeholder rewritten for 0.15.43',
+  /'__CURRENT_BUILD__': \{\s*\n?\s*version: '0\.15\.43'/.test(wn));
 check('whatsnew no longer invents a TRENDS tab',
   !/TRENDS/.test(wn));
 
@@ -191,5 +190,5 @@ check('landing wedge line translated in EN + ES',
   /real stack/.test(en['landing.realStack']) && /stack real/.test(es['landing.realStack']) &&
   /data-i18n-html="landing\.realStack"/.test(landing03));
 
-console.log(failures === 0 ? '\nALL v0.15.42 CONTRACT CHECKS PASSED' : `\n${failures} CHECK(S) FAILED`);
+console.log(failures === 0 ? '\nALL v0.15.42 CONTRACT CHECKS PASSED (0.15.43)' : `\n${failures} CHECK(S) FAILED`);
 process.exit(failures === 0 ? 0 : 1);

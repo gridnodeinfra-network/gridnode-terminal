@@ -18,7 +18,7 @@
 (function () {
   'use strict';
 
-  const VERSION = window.GN_VERSION || { semver: '0.15.42', release: '20260907.1', title: 'V0.15.42 — LAUNCH READINESS', date: '2026-09-12' };
+  const VERSION = window.GN_VERSION || { semver: '0.15.43', release: '20260907.1', title: 'V0.15.42 — LAUNCH READINESS', date: '2026-09-12' };
   const ACK_KEY = 'gridnode.lastWhatsNewDismissedBuild';
   const LEGACY_ACK_KEY = 'gn_whatsnew_acknowledged_release_v2';
   const ORDER = ['NEW', 'IMPROVED', 'FIXED', 'ACCESSIBILITY', 'MOBILE', 'COMPATIBILITY', 'SECURITY'];
@@ -118,7 +118,7 @@
       }
     },
     '__CURRENT_BUILD__': {
-      version: '0.15.42', title: 'LAUNCH READINESS', date: '2026-09-12',
+      version: '0.15.43', title: 'LAUNCH READINESS', date: '2026-09-12',
       en: {
         NEW: [
           'VAULT is now a full bottom-tab: five sections, one loop — HOME, SHOTS, RESULTS, LAB, VAULT.',
@@ -357,178 +357,7 @@
         MOBILE: ['La primera pantalla ahora incluye ambas acciones de entrada y la vista previa completa del producto sin desbordamiento horizontal.']
       }
     },
-    '20260804.1': {
-      version: '0.12.0', title: 'PRODUCTION READINESS + MEDICATION INTEGRITY', date: '2026-08-04',
-      en: {
-        IMPROVED: [
-          'Functional phone text now uses readable semantic roles across DAY OPS screens, forms, menus, focused tools, and update history.',
-          'Human-facing SHOT and weight dates follow the selected language while stored timestamps remain canonical.'
-        ],
-        FIXED: [
-          'Zepbound, Ozempic, and Semaglutide Compound now keep distinct stable identities through save, location selection, History, Edit, Phase Engine, and RESULTS; invalid new values fail closed.',
-          'The first-SHOT draft keeps medication, dose, date, time, location, and side effects while moving through the scanner.',
-          'Side effects, event sources, record states, device types, inventory types, and body zones display in the active language without storing translated labels.',
-          'LAB Back behavior now closes nested menus first, then focused tools, before returning to the previous app destination.'
-        ],
-        ACCESSIBILITY: [
-          'Functional copy uses practical 14–15px phone floors, form controls and menu options use 16px text, and touch targets remain at least 44px.',
-          'DAY OPS status, helper, selected, inactive, disabled, warning, error, and placeholder text use explicit high-contrast semantic tokens.'
-        ],
-        MOBILE: [
-          'Android and iPhone-sized navigation retains drafts, safe-area spacing, keyboard continuity, and predictable browser or system Back order.',
-          'The offline shell and deliberate update flow now use one synchronized release marker and cache asset set.'
-        ],
-        COMPATIBILITY: [
-          'No records are deleted. Recognized legacy medication and side-effect labels normalize at app boundaries; unknown legacy medication text remains available for review, and new invalid selections are rejected.'
-        ]
-      },
 
-      es: {
-        IMPROVED: [
-          'El texto funcional en teléfonos ahora usa roles semánticos legibles en pantallas, formularios, menús, herramientas enfocadas e historial de actualizaciones de DAY OPS.',
-          'Las fechas visibles de DOSIS y peso siguen el idioma seleccionado mientras las marcas de tiempo guardadas permanecen canónicas.'
-        ],
-        FIXED: [
-          'Zepbound, Ozempic y Semaglutide Compound ahora conservan identidades estables y distintas al guardar, elegir ubicación, abrir Historial, Editar, Motor de Fases y RESULTADOS; los valores nuevos no válidos se rechazan.',
-          'El borrador de la primera DOSIS conserva medicamento, cantidad, fecha, hora, ubicación y efectos secundarios al pasar por el escáner.',
-          'Efectos secundarios, orígenes de eventos, estados de registros, tipos de dispositivos, tipos de inventario y zonas corporales se muestran en el idioma activo sin guardar etiquetas traducidas.',
-          'Atrás en LAB ahora cierra primero los menús anidados, luego las herramientas enfocadas y después vuelve al destino anterior de la app.'
-        ],
-        ACCESSIBILITY: [
-          'El texto funcional usa mínimos prácticos de 14–15 px en teléfono, los controles y opciones de menú usan 16 px y los objetivos táctiles siguen midiendo al menos 44 px.',
-          'Estados, ayudas, selecciones, opciones inactivas o desactivadas, advertencias, errores y marcadores de posición usan tokens semánticos explícitos de alto contraste en DAY OPS.'
-        ],
-        MOBILE: [
-          'La navegación en tamaños Android y iPhone conserva borradores, zonas seguras, continuidad con el teclado y un orden predecible para Atrás del navegador o del sistema.',
-          'La estructura sin conexión y el flujo deliberado de actualización ahora usan un solo marcador de versión y un solo conjunto de recursos en caché.'
-        ],
-        COMPATIBILITY: [
-          'No se elimina ningún registro. Las etiquetas heredadas reconocidas de medicamentos y efectos secundarios se normalizan en los límites de la app; el texto heredado desconocido del medicamento queda disponible para revisión y las selecciones nuevas no válidas se rechazan.'
-        ]
-      }
-    },
-    '20260805.1': {
-      version: '0.12.0', title: 'V0.14 POLISH — CORAL CTA · CORNER TOGGLES · HUB CORNER', date: '2026-08-05',
-      en: {
-        NEW: [
-          'HUB moved to a floating corner button (bottom-right) with the canonical insignia — no more settings-cog confusion.',
-          'Landing theme and language switches are now compact corner circles.'
-        ],
-        IMPROVED: [
-          'Primary actions glow warm coral — crisper contrast on phone screens.',
-          'Release marker bumped to 20260805.1 for seamless cache refresh.'
-        ],
-        FIXED: [
-          'Coral CTA now applies consistently across landing and dashboard in both themes.'
-        ],
-        MOBILE: [
-          'Bottom-right HUB never overlaps the quick-log dose button.'
-        ]
-      },
-      es: {
-        NEW: [
-          'HUB movido a un botón flotante en la esquina inferior derecha con la insignia canónica — adiós a la confusión con el engranaje.',
-          'Los interruptores de tema e idioma de la portada ahora son círculos compactos en las esquinas.'
-        ],
-        IMPROVED: [
-          'Las acciones principales brillan en coral cálido — mejor contraste en pantallas de teléfono.',
-          'Marcador de versión actualizado a 20260805.1 para refresco de caché sin fricción.'
-        ],
-        FIXED: [
-          'El CTA coral ahora se aplica de forma consistente en portada y tablero en ambos temas.'
-        ],
-        MOBILE: [
-          'El HUB de la esquina inferior derecha nunca se superpone al botón de dosis rápida.'
-        ]
-      }
-    },
-    '20260803.23': {
-      version: '0.11.0', title: 'MOBILE APP SHELL + DAY OPS READABILITY', date: '2026-08-03',
-      en: {
-        IMPROVED: [
-          'DAY OPS now uses one semantic text system across screens, forms, menus, charts, dialogs, and focused tools.',
-          'The mobile shell now tracks the live browser viewport, safe areas, keyboard state, and installed-app mode.'
-        ],
-        FIXED: [
-          'Browser and system Back now dismiss temporary layers before moving between app destinations.',
-          'Partially completed SHOT entries survive navigation, backgrounding, reload, and a user-applied update.',
-          'Dropdown options, placeholders, helper text, warnings, and disabled states remain distinct in DAY OPS.'
-        ],
-        ACCESSIBILITY: [
-          'Functional microcopy has a readable size, weight, spacing, and opacity floor.',
-          'Touch controls retain 44px targets and visible keyboard focus without relying on hover.'
-        ],
-        MOBILE: [
-          'Update activation waits for the user instead of replacing an active session.',
-          'The offline shell now includes the current interface, localization, and release history.'
-        ],
-        COMPATIBILITY: ['No stored record schema changed. Existing SHOTS, settings, language, and theme data remain compatible.']
-      },
-      es: {
-        IMPROVED: [
-          'DAY OPS ahora usa un solo sistema semántico de texto en pantallas, formularios, menús, gráficas, diálogos y herramientas enfocadas.',
-          'La estructura móvil ahora sigue el área visible del navegador, las zonas seguras, el teclado y el modo de app instalada.'
-        ],
-        FIXED: [
-          'Atrás del navegador y del sistema ahora cierra las capas temporales antes de cambiar de destino.',
-          'Un registro de SHOT sin terminar sobrevive la navegación, el segundo plano, la recarga y una actualización aplicada por el usuario.',
-          'Opciones, marcadores, ayudas, advertencias y estados desactivados se distinguen claramente en DAY OPS.'
-        ],
-        ACCESSIBILITY: [
-          'El microtexto funcional tiene mínimos legibles de tamaño, peso, espaciado y opacidad.',
-          'Los controles táctiles conservan objetivos de 44 px y enfoque visible sin depender del hover.'
-        ],
-        MOBILE: [
-          'La actualización espera la acción del usuario en vez de reemplazar una sesión activa.',
-          'La estructura sin conexión ahora incluye la interfaz, la localización y el historial de versiones.'
-        ],
-        COMPATIBILITY: ['No cambió el esquema de datos. Los SHOTS, ajustes, idioma y tema existentes siguen siendo compatibles.']
-      }
-    },
-    '20260803.22': {
-      version: '0.10.0', title: 'PREMIUM PRODUCT POLISH', date: '2026-08-03',
-      en: {
-        IMPROVED: [
-          'Onboarding is four concise stages with real-target advancement for action steps.',
-          'The first SHOT mission leads the inactive dashboard; RESULTS and Phase Engine strengthen after activation.',
-          'LAB tools open as focused destinations with a reliable Back to LAB control.',
-          'The landing page shows the real GRID//NODE dashboard instead of a decorative hologram.'
-        ],
-        FIXED: [
-          'The loading terminal is a themed system-status deck instead of a white block.',
-          'Zepbound retains its canonical identity through location selection, history, Edit, Phase Engine, and RESULTS.'
-        ],
-        COMPATIBILITY: ['Side effects, height, language, and theme continue to persist with existing local records.']
-      },
-      es: {
-        IMPROVED: [
-          'La introducción tiene cuatro etapas breves y los pasos de acción avanzan solo con el objetivo real.',
-          'La misión del primer SHOT domina el panel inactivo; RESULTS y Phase Engine ganan fuerza después de activarse.',
-          'Las herramientas de LAB se abren como destinos enfocados con un control Atrás a LAB confiable.',
-          'La página inicial muestra el panel real de GRID//NODE en vez de un holograma decorativo.'
-        ],
-        FIXED: [
-          'La terminal de carga es un panel temático de estado del sistema en vez de un bloque blanco.',
-          'Zepbound conserva su identidad canónica en ubicación, historial, Editar, Phase Engine y RESULTS.'
-        ],
-        COMPATIBILITY: ['Efectos secundarios, altura, idioma y tema siguen persistiendo con los registros locales existentes.']
-      }
-    },
-    '20260802.9': {
-      version: '0.9.0', title: 'PREMIUM MOBILE REFINEMENT', date: '2026-08-02',
-      en: {
-        NEW: ['Formal GRID//NODE version history and a reopenable system-update experience.'],
-        IMPROVED: ['Red-lava primary actions and broader DAY OPS coverage.', 'Phase Curve charts reserve space for labels.'],
-        FIXED: ['Passkey prompts no longer repeat after registration.', 'Mobile header controls no longer overlap the GRID//NODE brand.'],
-        ACCESSIBILITY: ['Larger text roles and clearer focus in both themes.']
-      },
-      es: {
-        NEW: ['Historial formal de versiones de GRID//NODE y una experiencia de actualización que puede reabrirse.'],
-        IMPROVED: ['Acciones principales lava roja y mayor cobertura de DAY OPS.', 'Las gráficas Phase Curve reservan espacio para etiquetas.'],
-        FIXED: ['Las invitaciones de passkey ya no se repiten después del registro.', 'Los controles del encabezado móvil ya no cubren la marca GRID//NODE.'],
-        ACCESSIBILITY: ['Roles de texto más grandes y enfoque más claro en ambos temas.']
-      }
-    },
     '20260805.2': {
       version: '0.15.0', title: 'CLOUD-FIRST · MARS RED · JACK IN REBUILD', date: '2026-08-05',
       en: {

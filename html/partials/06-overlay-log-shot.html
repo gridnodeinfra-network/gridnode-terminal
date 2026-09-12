@@ -8,7 +8,7 @@
     <div class="form-group gn-shot-datetime-group">
       <label class="form-label" for="sDate" data-i18n="shot.date">DATE</label>
       <input class="form-input gn-shot-date-input" type="text" id="sDate" placeholder="Jun 11, 2026" data-i18n-placeholder="shot.datePlaceholder" inputmode="none" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" readonly onclick="gnOpenShotDatePicker()" aria-label="Select SHOT date" data-i18n-aria-label="shot.dateAria">
-      <div class="gn-shot-date-helper" data-i18n="shot.dateHelp">Tap to choose date. Displayed for humans, saved in compatible SHOTS format.</div>
+      <div class="gn-shot-date-helper" data-i18n="shot.dateHelp">Tap to choose date.</div>
       <label class="form-label gn-shot-time-label" for="sTime" data-i18n="shot.time">TIME</label>
       <div class="gn-shot-time-control" role="group" aria-label="SHOT time control" data-i18n-aria-label="shot.timeControlAria">
         <input class="form-input gn-shot-time-input" type="text" id="sTime" placeholder="8:30" data-i18n-placeholder="shot.timePlaceholder" inputmode="numeric" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" aria-label="Enter SHOT time as hours and minutes" data-i18n-aria-label="shot.timeAria" oninput="gnShotClockLiveFormat(this)" onblur="gnNormalizeShotClockField(this)">
@@ -94,7 +94,7 @@
         <div class="gn-modal-zone-grid" id="modalZonePicker" role="group" aria-label="Injection sites"></div>
       </div>
     </div>
-    <div class="form-group"><label class="form-label" for="shotDeviceId" data-i18n="shot.deviceUsed">DEVICE USED — OPTIONAL</label><select class="form-input" id="shotDeviceId"><option value="" data-i18n="shot.unknownDevice">Unknown / Not applicable</option></select><div class="gn-shot-time-helper" data-i18n="shot.deviceHelper">Device identity stays separate from the SHOT event. Historical SHOTS are not rewritten when a device changes.</div></div>
+    <div class="form-group"><label class="form-label" for="shotDeviceId" data-i18n="shot.deviceUsed">DEVICE USED — OPTIONAL</label><select class="form-input" id="shotDeviceId"><option value="" data-i18n="shot.unknownDevice">Unknown / Not applicable</option></select></div>
     <button type="button" class="gn-shot-advanced-trigger" data-collapse-target="gnShotAdvanced" aria-expanded="false" aria-controls="gnShotAdvanced">
       <span data-i18n="shot.moreDetails">// MORE DETAILS</span>
       <span class="gn-shot-advanced-chevron" aria-hidden="true">▼</span>
@@ -118,7 +118,6 @@
       <div class="form-group"><label class="form-label" for="sNotes" data-i18n="shots.notesOptional">NOTES — OPTIONAL</label><textarea class="form-textarea" id="sNotes" placeholder="How do you feel?" data-i18n-placeholder="shot.notesPlaceholder" maxlength="500"></textarea></div>
     </div>
     <button class="btn-full btn-primary" onclick="saveShot()" data-i18n="shot.saveShot">SAVE SHOT</button>
-    <button class="btn-full btn-secondary log-modal-bottom-close" onclick="closeLog()" data-i18n="shot.closeReturn">CLOSE / RETURN</button>
   </div>
 </div>
 

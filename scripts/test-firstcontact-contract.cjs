@@ -63,19 +63,19 @@ check('gn:shot-saved only inside saveShot', (modules.match(/dispatchEvent\(new C
   'the event must fire exactly once, on the successful save path only');
 check('tour listens for gn:shot-saved', fc.includes("addEventListener('gn:shot-saved'"));
 
-// --- Six beats ------------------------------------------------------------
-check('BEATS = 6', /var BEATS = 6;/.test(fc));
-for (const fn of ['renderSignal', 'renderGrid', 'renderDose', 'renderCurve', 'renderComfort', 'renderOnline']) {
+// --- Three beats (v0.15.43 simplicity cut) ----------------------------------
+check('BEATS = 3', /var BEATS = 3;/.test(fc));
+for (const fn of ['renderSignal', 'renderDose', 'renderCurve']) {
   check('beat renderer ' + fn + ' exists', fc.includes('function ' + fn + '('));
 }
 
 // --- State keys + migration ----------------------------------------------
 check('v2 state key', fc.includes("'gn_onboarding_v2'"));
 check('v2 dismissal key', fc.includes("'gn_onboarding_dismissed_v2'"));
-check('v1 migration guard', fc.includes("'gn_onboarding_v1'") && fc.includes('migrate()'));
+check('v1 migration removed', !fc.includes("'gn_onboarding_v1'") && !fc.includes('function migrate('));
 
 // --- Replay ---------------------------------------------------------------
-check('replay hook exists', fc.includes('injectReplay') && fc.includes('data-gn-fc-replay'));
+check('injectReplay no-op removed', !fc.includes('function injectReplay('));
 
 // --- i18n -----------------------------------------------------------------
 function fcKeys(src, langName) {

@@ -18,8 +18,6 @@
 
   var KEY = 'gn_onboarding_v2';
   var DISMISSED = 'gn_onboarding_dismissed_v2';
-  var V1KEY = 'gn_onboarding_v1';
-  var V1DIS = 'gn_onboarding_dismissed_v1';
   /* v0.15.40: session-scoped resume. The tour persists its beat in
      localStorage so a mid-tour reload resumes where the user left off.
      But stale progress (saved days ago, e.g. on a QA device) made new
@@ -29,7 +27,7 @@
      reloads in the same tab, so the legit mid-tour reload case still
      resumes. */
   var SESSION_KEY = 'gn_fc_session_v1';
-  var BEATS = 6;
+  var BEATS = 3;
 
   var overlay = null;      // .gn-fc-overlay: screens + spotlights
   var coach = null;        // .gn-fc-coach: inside-modal coach card
@@ -221,7 +219,7 @@
     return '#gnFirstShotMission button, .gn-wanda-actions button, .fab, .gn-empty-cta';
   }
   function curveTarget() {
-    return visibleEl('#phaseEngineSourceReadout, #phaseEngineSourceEmpty');
+    return visibleEl('#resultsChartsView .results-card.summary, #resultsSummaryState, #resultsSummaryEmpty');
   }
   function removeSpotlight() {
     document.querySelectorAll('.gn-fc-target').forEach(function (el) { el.classList.remove('gn-fc-target'); });
@@ -361,7 +359,7 @@
     if (moveTimer) clearTimeout(moveTimer);
     moveTimer = setTimeout(function () {
       // Re-position only; never re-render (re-render re-runs scrolls: loop).
-      var el = cur === 2 ? visibleEl(doseTargetSel()) : cur === 3 ? curveTarget() : null;
+      var el = cur === 1 ? visibleEl(doseTargetSel()) : cur === 2 ? curveTarget() : null;
       if (el) { positionHole(el); positionCard(el); }
     }, 120);
   }
@@ -398,7 +396,7 @@
       try {
         if (typeof window.showPage === 'function') window.showPage('Dash', document.getElementById('navDash'));
       } catch (_) {}
-      setTimeout(function () { renderBeat(2); }, 300);
+      setTimeout(function () { renderBeat(1); }, 300);
     });
   }
 
@@ -451,23 +449,6 @@
   /* ------------------------------------------------------------------ */
   /* Beat 1 — THE GRID (fullscreen, 5 zone rows) */
   /* ------------------------------------------------------------------ */
-  function renderGrid() {
-    setMode('screen');
-    var zones = ['home', 'shots', 'results', 'lab', 'vault'];
-    var rows = zones.map(function (z) {
-      return '<div class="gn-fc-zone"><b>' + t('fc.grid.' + z, z.toUpperCase()) + '</b><span>' + t('fc.grid.' + z + 'Body', '') + '</span></div>';
-    }).join('');
-    var card = overlay.querySelector('[data-fc-card]');
-    card.className = 'gn-fc-card gn-fc-hero';
-    card.innerHTML =
-      cardHead('fc.grid.kicker') +
-      '<h2 class="gn-fc-title">' + t('fc.grid.title', '') + '</h2>' +
-      '<div class="gn-fc-zones">' + rows + '</div>' +
-      cardFoot({ cta: t('fc.grid.cta', 'Start the loop') });
-    wireCard(function () { renderBeat(2); });
-  }
-
-  /* ------------------------------------------------------------------ */
   /* Beat 2 — FIRST DOSE. Phase A: spotlight the log button. The tap is  */
   /* real (never prevented): the app opens #logOv, then Phase B coaches  */
   /* INSIDE the modal until gn:shot-saved fires.                         */
@@ -478,7 +459,7 @@
     overlay.style.display = '';
     var el = visibleEl(doseTargetSel());
     if (!el) {
-      if (retries < 6) { retries++; setTimeout(function () { renderBeat(2); }, 500); return; }
+      if (retries < 6) { retries++; setTimeout(function () { renderBeat(1); }, 500); return; }
       retries = 0;
       renderDoseFallback();
       return;
@@ -502,10 +483,10 @@
     var skip = card.querySelector('[data-fc-skip]');
     if (skip) skip.addEventListener('click', function () { dismiss(true); });
     var back = card.querySelector('[data-fc-back]');
-    if (back) back.addEventListener('click', function () { renderBeat(1); });
+    if (back) back.addEventListener('click', function () { renderBeat(0); });
     card.querySelector('[data-fc-later]').addEventListener('click', function () {
       skippedDose = true;
-      renderBeat(3);
+      renderBeat(2);
     });
     setTimeout(function () { positionHole(el); positionCard(el); }, 60);
     setTimeout(function () { positionHole(el); positionCard(el); }, 350);
@@ -537,7 +518,7 @@
     var later = card.querySelector('[data-fc-later]');
     if (later) later.addEventListener('click', function () {
       skippedDose = true;
-      renderBeat(3);
+      renderBeat(2);
     });
   }
   var doseTapHandler = null;
@@ -554,7 +535,7 @@
       setTimeout(function () {
         var modal = document.getElementById('logOv');
         if (modal && modal.classList.contains('active')) enterModalPhase();
-        else renderBeat(2); // modal did not open; re-spot
+        else renderBeat(1); // modal did not open; re-spot
       }, 450);
     };
     document.addEventListener('click', doseTapHandler, true);
@@ -630,7 +611,7 @@
             if (m && !m.classList.contains('active') && coach && !coach.dataset.saved) {
               dosePhase = 'spot';
               exitModalPhase();
-              renderBeat(2);
+              renderBeat(1);
             }
           }, 90000);
           return;
@@ -671,7 +652,7 @@
         var m = document.getElementById('logOv');
         if (m) m.classList.remove('active');
       } catch (_) {}
-      renderBeat(3);
+      renderBeat(2);
     });
     coachTick();
   }
@@ -773,7 +754,7 @@
     if (savedTimer) clearTimeout(savedTimer);
     savedTimer = setTimeout(function () {
       exitModalPhase();
-      renderBeat(3);
+      renderBeat(2);
     }, 1500);
   }
   function exitModalPhase() {
@@ -824,7 +805,7 @@
         '<p class="gn-fc-body">' + t(bodyKey, '') + '</p>' +
         (skippedDose ? '<button type="button" class="gn-fc-ghost" data-fc-extra>' + t('fc.curve.logCta', 'Log your first dose') + '</button>' : '') +
         cardFoot({ cta: t('fc.curve.cta', 'Continue') });
-      wireCard(function () { renderBeat(4); });
+      wireCard(function () { finish(); });
       if (el) {
         el.classList.add('gn-fc-target');
         scrollTargetIntoView(el);
@@ -836,60 +817,8 @@
         });
         positionCard(null);
       }
-      setState('3');
+      setState('2');
     }, 350);
-  }
-
-  /* ------------------------------------------------------------------ */
-  /* Beat 4 — MAKE IT YOURS. Compact comfort card: theme + language,     */
-  /* wired straight into the app's own controls. Pick or skip, then Done. */
-  /* ------------------------------------------------------------------ */
-  function renderComfort() {
-    setMode('screen');
-    if (overlay) overlay.style.display = '';
-    removeSpotlight();
-    var theme = (window.GN_THEME && window.GN_THEME.get && window.GN_THEME.get()) || 'dark';
-    var card = overlay.querySelector('[data-fc-card]');
-    card.className = 'gn-fc-card gn-fc-compact';
-    card.innerHTML =
-      cardHead('fc.comfort.kicker') +
-      '<h2 class="gn-fc-title">' + t('fc.comfort.title', '') + '</h2>' +
-      '<p class="gn-fc-body">' + t('fc.comfort.body', '') + '</p>' +
-      '<div class="gn-fc-seg" role="group" aria-label="theme">' +
-        '<button type="button" class="' + (theme !== 'light' ? 'active' : '') + '" data-fc-theme="dark">' + t('fc.comfort.night', 'NIGHT') + '</button>' +
-        '<button type="button" class="' + (theme === 'light' ? 'active' : '') + '" data-fc-theme="light">' + t('fc.comfort.dusk', 'DUSK') + '</button>' +
-      '</div>' +
-      '<div class="gn-fc-seg" role="group" aria-label="language">' +
-        '<button type="button" class="' + (!isEs() ? 'active' : '') + '" data-fc-lang="en">EN</button>' +
-        '<button type="button" class="' + (isEs() ? 'active' : '') + '" data-fc-lang="es">ES</button>' +
-      '</div>' +
-      cardFoot({ cta: t('fc.comfort.done', 'Done') });
-    card.querySelectorAll('[data-fc-theme]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        try { if (window.GN_THEME && window.GN_THEME.set) window.GN_THEME.set(b.dataset.fcTheme); } catch (_) {}
-        card.querySelectorAll('[data-fc-theme]').forEach(function (x) { x.classList.toggle('active', x === b); });
-      });
-    });
-    wireFcLang(card, function () { renderBeat(4); });
-    wireCard(function () { renderBeat(5); });
-    setState('4');
-  }
-
-  /* ------------------------------------------------------------------ */
-  /* Beat 5 — ONLINE. Clean exit; the loop restated as a mantra.        */
-  /* ------------------------------------------------------------------ */
-  function renderOnline() {
-    setMode('screen');
-    removeSpotlight();
-    var card = overlay.querySelector('[data-fc-card]');
-    card.className = 'gn-fc-card gn-fc-hero';
-    card.innerHTML =
-      cardHead('fc.online.kicker') +
-      '<h2 class="gn-fc-title">' + t('fc.online.title', '') + '</h2>' +
-      '<p class="gn-fc-body">' + t('fc.online.body', '') + '</p>' +
-      cardFoot({ back: false, cta: t('fc.online.cta', 'Enter GRID//NODE') });
-    wireCard(function () { finish(); });
-    setState('5');
   }
 
   /* ------------------------------------------------------------------ */
@@ -903,8 +832,7 @@
     setState(String(i));
     removeSpotlight();
     if (i === 0) renderSignal();
-    else if (i === 1) renderGrid();
-    else if (i === 2) {
+    else if (i === 1) {
       /* v0.15.38: stamp when the FIRST DOSE beat starts. The native
          session-draft restore (gridnode-native.js) uses this to tell a
          stale pre-coach draft — which resurrects old values and fake-checks
@@ -913,9 +841,7 @@
       try { if (!document.body.dataset.gnFcDoseStart) document.body.dataset.gnFcDoseStart = String(Date.now()); } catch (_) {}
       renderDose();
     }
-    else if (i === 3) renderCurve();
-    else if (i === 4) renderComfort();
-    else if (i === 5) renderOnline();
+    else if (i === 2) renderCurve();
   }
   function finish() {
     try {
@@ -962,10 +888,6 @@
     document.addEventListener('gn:whatsnew-shown', whatsnewSafety);
     renderBeat(startAt);
   }
-  /* v0.15.42: obsolete — the VAULT hub now carries an explicit REPLAY TOUR row
-     (ensureProfileHub → replayGuidedTour()). Kept as a no-op guard so any stale
-     callers do not throw, and so no duplicate control is ever injected. */
-  function injectReplay() { /* replaced by the explicit hub control */ }
   var whatsnewResolved = false;
   var whatsnewSafety = null;
   function markWhatsNewResolved() { whatsnewResolved = true; maybeAutoStart(); }
@@ -985,16 +907,7 @@
     }
     start(true);
   }
-  function migrate() {
-    try {
-      if (localStorage.getItem(KEY)) return;
-      var v1 = localStorage.getItem(V1KEY);
-      var v1d = localStorage.getItem(V1DIS);
-      if (v1 === 'complete' || v1d === '1') localStorage.setItem(KEY, 'complete');
-    } catch (_) {}
-  }
   function boot() {
-    migrate();
     document.addEventListener('gn:whatsnew-resolved', markWhatsNewResolved);
     document.addEventListener('gn:whatsnew-dismissed', markWhatsNewResolved);
     var kick = function () {

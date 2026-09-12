@@ -1,4 +1,5 @@
-const GN_SCANNER_AUDIO_STORAGE_KEY = 'gn_scanner_audio_v1';
+/* v0.15.43: unified sound — scanner audio follows the single gn_sound_v1 key (topbar SOUND toggle). */
+const GN_SCANNER_AUDIO_STORAGE_KEY = 'gn_sound_v1';
 const GN_SCANNER_AUDIO_MASTER_GAIN = 0.6;
 const GN_SCANNER_AUDIO_CONTACT_THROTTLE_MS = 45;
 const gnScannerAudioGesture = (() => {
@@ -8,7 +9,8 @@ const gnScannerAudioGesture = (() => {
     accepts(candidate) { return candidate === token; }
   });
 })();
-let gnScannerAudioEnabled = false;
+/* v0.15.43: scanner audio follows the unified gn_sound_v1 key live (no separate cache). */
+function gnScannerAudioEnabled() { try { return localStorage.getItem(GN_SCANNER_AUDIO_STORAGE_KEY) === '1'; } catch (_) { return false; } }
 let gnScannerAudioContext = null;
 let gnScannerAudioMaster = null;
 let gnScannerAudioLastContactAt = -Infinity;
@@ -18,19 +20,8 @@ function gnScannerAudioStoredPreference() {
   try { return localStorage.getItem(GN_SCANNER_AUDIO_STORAGE_KEY) === '1'; } catch (_) { return false; }
 }
 
-function gnScannerAudioRenderSwitch() {
-  const control = $('gnScannerAudioSwitch');
-  if (!control) return;
-  control.setAttribute('aria-checked', gnScannerAudioEnabled ? 'true' : 'false');
-  const label = tx('shots.scannerAudio', 'SCANNER AUDIO');
-  const state = tx(gnScannerAudioEnabled ? 'shots.soundOn' : 'shots.soundOff', gnScannerAudioEnabled ? 'ON' : 'OFF');
-  control.setAttribute('aria-label', label);
-  const stateLabel = control.querySelector('[data-scanner-sound-state]');
-  if (stateLabel) stateLabel.textContent = state;
-}
-
 function gnScannerAudioContextForGesture(gestureToken = null) {
-  if (!gnScannerAudioEnabled || !gnScannerAudioGesture.accepts(gestureToken)) return null;
+  if (!gnScannerAudioEnabled() || !gnScannerAudioGesture.accepts(gestureToken)) return null;
   try {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextClass) return null;
@@ -117,32 +108,23 @@ function gnScannerAudioPlayLock(gestureToken) {
 }
 
 function gnScannerAudioToggle() {
-  gnScannerAudioEnabled = !gnScannerAudioEnabled;
-  try { localStorage.setItem(GN_SCANNER_AUDIO_STORAGE_KEY, gnScannerAudioEnabled ? '1' : '0'); } catch (_) {}
-  gnScannerAudioRenderSwitch();
-  return gnScannerAudioEnabled;
+  const next = !gnScannerAudioEnabled();
+  try { localStorage.setItem(GN_SCANNER_AUDIO_STORAGE_KEY, next ? '1' : '0'); } catch (_) {}
+  return next;
 }
 
 window.GNScannerAudio = Object.freeze({
-  isEnabled: () => gnScannerAudioEnabled,
+  isEnabled: () => gnScannerAudioEnabled(),
   setEnabled: (value) => {
-    gnScannerAudioEnabled = Boolean(value);
-    try { localStorage.setItem(GN_SCANNER_AUDIO_STORAGE_KEY, gnScannerAudioEnabled ? '1' : '0'); } catch (_) {}
-    gnScannerAudioRenderSwitch();
-    return gnScannerAudioEnabled;
+    try { localStorage.setItem(GN_SCANNER_AUDIO_STORAGE_KEY, value ? '1' : '0'); } catch (_) {}
+    return gnScannerAudioEnabled();
   },
   toggle: () => gnScannerAudioToggle(),
   playContact: gnScannerAudioPlayContact,
   playLock: gnScannerAudioPlayLock,
-  syncControl: () => gnScannerAudioRenderSwitch()
 });
 
-function initScannerAudioControl() {
-  gnScannerAudioEnabled = gnScannerAudioStoredPreference();
-  gnScannerAudioRenderSwitch();
-}
 
-initScannerAudioControl();
 /* GN_SCANNER_AUDIO_CONTROLLER_V1_END */
 
 /* v0.15.19 SKIN TONE REMOVED - synthetic biotech scanner, single body per mode */

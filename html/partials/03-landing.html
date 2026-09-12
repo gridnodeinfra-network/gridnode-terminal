@@ -8,7 +8,7 @@
       <h1 class="landing-headline"><span data-i18n="landing.headlineLine1">Your biology.</span><br><span data-i18n="landing.headlineLine2">Your timeline.</span><br><span data-i18n="landing.headlineLine3">Your grid.</span></h1>
       <p class="landing-wedge" data-i18n-html="landing.realStack"><strong>Most trackers only know pharma GLPs.</strong> GRID//NODE is built for the real stack: compounded, grey market, research.</p>
       <p class="landing-copy"><span data-i18n="landing.heroCopy">Track GLP-1 protocols, compound and research grade peptides, weight, and the personal biotech patterns that connect them.</span><br><span data-i18n="landing.localCopy">Sign in with Google to sync your grid across every device.</span></p>
-      <div class="landing-phase-visual" aria-hidden="true"><div class="phase-segment-ring"></div><div class="landing-phase-core"><span data-i18n="landing.localFirst">CLOUD-FIRST</span><b data-i18n="landing.systemReady">SYSTEM READY</b></div></div>
+      <div class="landing-phase-visual" aria-hidden="true"><div class="phase-segment-ring"></div><div class="landing-phase-core"><span data-i18n="landing.localFirst">LOCAL-FIRST</span><b data-i18n="landing.systemReady">SYSTEM READY</b></div></div>
       <div class="landing-cta-row">
         <button class="landing-btn primary" type="button" onclick="startGridNode()" data-i18n="landing.enterGrid">ENTER THE GRID</button>
       </div>
@@ -35,15 +35,15 @@
       <h2 data-i18n="landing.systemTitle">The System</h2>
       <div class="module-stack">
         <article class="module-card">
+          <h3 data-i18n="landing.homeTitle">HOME</h3>
+          <p><strong data-i18n="landing.homeStrong">Your Phase Engine command view.</strong></p>
+          <p style="margin-top:8px" data-i18n="landing.homeCopy">HOME shows your current phase estimate, protocol curve, and next actions, all grounded in your own logged records.</p>
+        </article>
+
+        <article class="module-card">
           <h3>SHOTS</h3>
           <p><strong data-i18n="landing.shotsStrong">Record GLP-1 protocol events in a structured SHOTS history.</strong></p>
           <p style="margin-top:8px" data-i18n="landing.shotsCopy">Log timing, locations, and notes so each user-entered SHOT adds signal to the rest of GRID//NODE.</p>
-        </article>
-
-        <article class="module-card phase">
-          <h3>Phase Engine</h3>
-          <p><strong data-i18n="landing.phaseStrong">See educational protocol cycle visibility from your SHOTS history.</strong></p>
-          <p style="margin-top:8px" data-i18n="landing.phaseCopy">Phase Engine uses user-entered tracking data to estimate protocol progression, surface timing patterns, and support educational awareness without medical guidance.</p>
         </article>
 
         <article class="module-card results">
@@ -55,28 +55,14 @@
         <article class="module-card lab">
           <h3>LAB</h3>
           <p><strong data-i18n="landing.labStrong">Biotech utility tools for organizing protocol information.</strong></p>
-          <p style="margin-top:8px" data-i18n="landing.labCopy">LAB is a restrained utility layer for calculators, unit conversions, and educational tools—not medical direction.</p>
-        </article>
-
-        <article class="module-card node">
-          <h3>NODE</h3>
-          <p><strong data-i18n="landing.nodeStrong">Data-grounded pattern awareness across your personal biotech record.</strong></p>
-          <p style="margin-top:8px" data-i18n="landing.nodeCopy">NODE connects timing, tracking, outcomes, symptoms, and notes without becoming coaching or treatment guidance.</p>
+          <p style="margin-top:8px" data-i18n="landing.labCopy">LAB is a restrained utility layer for calculators, unit conversions, and educational tools, not medical direction.</p>
         </article>
 
         <article class="module-card vault">
           <h3>VAULT</h3>
           <p><strong data-i18n="landing.vaultStrong">Your secure personal data core.</strong></p>
-          <p style="margin-top:8px" data-i18n="landing.vaultCopy">VAULT keeps identity, protocol context, settings, and data ownership language tied to: Your body. Your data. Your grid.</p>
+          <p style="margin-top:8px" data-i18n="landing.vaultCopy">VAULT keeps identity, protocol context, settings, and your data ownership controls in one protected place.</p>
         </article>
-      </div>
-      <div class="system-line" role="group" aria-label="GRID NODE system story">
-        <div data-i18n="landing.storyShots">SHOTS records.</div>
-        <div data-i18n="landing.storyPhase">Phase Engine interprets.</div>
-        <div data-i18n="landing.storyResults">RESULTS measures.</div>
-        <div data-i18n="landing.storyLab">LAB supports.</div>
-        <div data-i18n="landing.storyNode">NODE connects.</div>
-        <div data-i18n="landing.storyVault">VAULT protects.</div>
       </div>
     </section>
 
@@ -100,7 +86,6 @@
           <a href="#builtWithPurpose" onclick="scrollLandingTo('builtWithPurpose');return false" data-i18n="landing.footerAbout">ABOUT</a>
           <a href="#howItWorks" onclick="scrollLandingTo('howItWorks');return false" data-i18n="landing.footerWhat">WHAT GRID//NODE IS</a>
           <a href="#boundary" onclick="scrollLandingTo('boundary');return false" data-i18n="landing.footerNot">WHAT GRID//NODE IS NOT</a>
-          <a href="#faq" onclick="scrollLandingTo('faq');return false" data-i18n="landing.footerFaq">FAQ</a>
         </div>
         <div class="landing-footer-block">
           <span class="landing-footer-label" data-i18n="landing.footerTrust">TRUST</span>
@@ -111,10 +96,6 @@
         </div>
       </div>
       <p class="landing-footer-honesty" data-i18n="landing.honesty">Built by one person. Used by a few. That's how good things start.</p>
-      <div id="faq" class="landing-footer-block">
-        <span class="landing-footer-label" data-i18n="landing.footerFaq">FAQ</span>
-        <p data-i18n="landing.faqCopy">GRID//NODE begins with GLP-1 tracking and organizes user-entered records locally by default. Cloud recovery is optional.</p>
-      </div>
       <div id="boundary" class="landing-footer-block">
         <span class="landing-footer-label" data-i18n="landing.boundaryLabel">SCOPE</span>
         <p data-i18n="landing.boundaryCopy1">GRID//NODE is a tracking and educational intelligence system.</p>
@@ -131,7 +112,6 @@
         <p data-i18n="landing.termsCopy1">GRID//NODE provides tracking and educational intelligence for user-entered records. You remain responsible for the accuracy of entries and for medical decisions.</p>
         <p data-i18n="landing.termsCopy2">Do not use GRID//NODE as a substitute for a licensed clinician, diagnosis, treatment, prescribing, or dosing guidance.</p>
       </div>
-      <div class="landing-footer-mobile"><span data-i18n="landing.comingIos">iOS — COMING LATER</span><span data-i18n="landing.comingAndroid">Android — COMING LATER</span></div>
       <div class="oskar-dedication">For Oskar ♥</div>
     </div>
   </div>

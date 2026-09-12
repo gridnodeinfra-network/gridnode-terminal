@@ -37,8 +37,6 @@ export function renderProfile() {
   ensureProfileMeasurements();
   ensureDestructiveDialogs();
   syncIdentityAvatars();
-  const legacyProfile = $('pageProfile')?.querySelector('[data-gn-legacy-profile]');
-  if (legacyProfile) legacyProfile.hidden = true;
   const updateCard = $('gnSystemUpdateCard');
   if (updateCard) updateCard.hidden = S.get('settings', {}).systemUpdateDismissed === APP_VERSION;
   const profile = getProfile();
@@ -50,6 +48,7 @@ export function renderProfile() {
   setText('gnProfileMedication', normalizeMedicationId(profile.med) ? `${medicationLabel(profile.med)}${profile.dose ? ` · ${profile.dose}mg` : ''}` : tx('vault.notEntered', 'Not entered'));
   setText('gnProfileBody', `${height}${currentWeight ? ` · ${Number(currentWeight).toFixed(1)} lb` : ''}`);
   setText('gnProfileVersion', APP_VERSION);
+  setText('gnProfileHeroVersion', 'v' + APP_VERSION);
   setText('gnProfileAccount', state.cloud ? `${state.session?.user?.app_metadata?.provider === 'google' ? tx('profile.signedInWithGoogle', 'Signed in with Google') : tx('vault.cloudConnected', 'Cloud account connected')} · ${state.session?.user?.email || sessionLabel()}` : tx('profile.localDeviceSession', 'Local device session'));
   setText('gnProfileSync', nodeSyncLabel());
   hydrateProfileFields(profile);

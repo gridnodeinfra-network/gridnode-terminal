@@ -60,13 +60,6 @@ export function renderResults() {
   const directionReady = weights.length >= 3 && spanDays >= 7;
   setText('resLatestWeight', latest ? `${latest.weight.toFixed(1)} lb` : '—');
   setText('resShotCount', String(shots.length));
-  /* v0.15.41 S12: observation metrics have no recorded values yet, so they
-     render the empty-state placeholder (see .results-metric-empty). If a
-     real observation value is ever written here, remove that class. */
-  const obsPlaceholder = tx('results.logObservations', 'LOG OBSERVATIONS');
-  setText('resLatestAppetite', obsPlaceholder);
-  setText('resLatestEnergy', obsPlaceholder);
-  ['resLatestAppetite', 'resLatestEnergy'].forEach(id => { try { $(id)?.classList.add('results-metric-empty'); } catch (_) {} });
   setText('resContinuityEvents', String(shots.length));
   setText('resContinuityRecent', latestShot() ? formatDate(latestShot().date, { month: 'short', day: 'numeric' }) : '—');
   setText('resContinuityActive', String(shots.length));
@@ -90,7 +83,6 @@ export function renderResults() {
   drawTrendArrow($('wtChart'), filterWeightsForChart(weights), profile.goalWt);
   renderWeightRecords(weights);
   renderMeasurementTrend();
-  renderPhaseSource(latestShot());
   renderTrendLists(shots);
   renderWeeklyReport(shots, weights);
   /* v0.15.42: calendar is a RESULTS subview (CHARTS | CALENDAR toggle). */
@@ -402,14 +394,6 @@ function drawTrendArrow(canvas, weights, goal) {
   context.font = '700 14px Share Tech Mono, monospace';
   context.textAlign = 'left';
   context.fillText(arrow, Math.min(width - 16, xFor(values.length - 1) + 7), yFor(values.at(-1)) + 5);
-}
-
-function renderPhaseSource(shot) {
-  setDisplay('phaseEngineSourceEmpty', !shot); setDisplay('phaseEngineSourceReadout', Boolean(shot));
-  const readout = document.getElementById('phaseEngineSourceReadout');
-  if (!readout || !shot) return;
-  const elapsed = Math.max(0, (Date.now() - new Date(shot.date).getTime()) / 86400000);
-  readout.innerHTML = '<div><span>' + tx('runtime.lastShot', 'LAST SHOT') + '</span><b>' + safeText(formatDateTime(shot.date)) + '</b></div><div><span>' + tx('runtime.medication', 'MEDICATION') + '</span><b>' + safeText(medicationLabel(shot.med)) + '</b></div><div><span>' + tx('runtime.timeSince', 'TIME SINCE') + '</span><b>' + Math.floor(elapsed) + 'd</b></div><div><span>' + tx('runtime.dataSource', 'DATA SOURCE') + '</span><b>' + tx('runtime.userHistory', 'USER-ENTERED HISTORY') + '</b></div>';
 }
 
 function renderTrendLists(shots) {
