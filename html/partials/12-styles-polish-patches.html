@@ -2335,3 +2335,26 @@ body.gn-log-shot-picker-open .fab{
 
 
 
+<style id="gn-v01544-logov-fullsheet">
+/* v0.15.44: LOG SHOT full-width bottom sheet.
+   #logOv.active is a row-direction flex container, so the injected
+   .gn-drawer-handle (44px wide) sat BESIDE .modal and shoved the sheet
+   right, leaving a dead strip on the left ("half on the side"). Column
+   direction puts the handle on top (its own margin centers it) and the
+   sheet spans the full width, pinned to the bottom. */
+#logOv.active{
+  flex-direction:column !important;
+  justify-content:flex-end !important;
+  align-items:stretch !important;
+}
+#logOv .gn-drawer-handle{
+  margin:10px auto 6px !important;
+}
+#logOv.active .modal{
+  margin:0 !important;
+  align-self:stretch !important;
+  width:100% !important;
+  max-width:100% !important;
+  border-radius:18px 18px 0 0 !important;
+}
+</style>

@@ -104,7 +104,10 @@ function wireSelectOptions() {
 }
 
 export function initModules() {
-  initScannerAudioControl();
+  /* v0.15.43: initScannerAudioControl was removed by the simplicity cut
+     (single sound setting); its dangling call here threw a ReferenceError
+     that aborted the whole delegated click listener below, silently
+     breaking dose pills, shot actions, calendar days, etc. */
   document.addEventListener('click', event => {
     const zone = event.target.closest('[data-stable-zone]');
     if (zone) selectScannerLocation(zone.dataset.stableZone, { source: 'fallback', gestureToken: gnScannerAudioGesture.fromEvent(event) });

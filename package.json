@@ -19,7 +19,8 @@
     "visual:compare": "node scripts/visual-regression-guard.cjs compare",
     "test:v01541": "node scripts/test-v01541-launch-readiness.cjs",
     "test:v01542": "node scripts/test-v01542-launch-readiness.cjs",
-    "test:v01543": "node scripts/test-v01543-simplicity-cut.cjs"
+    "test:v01543": "node scripts/test-v01543-simplicity-cut.cjs",
+    "test:logshot-dose": "bash scripts/run-logshot-dose-tests.sh"
   },
   "devDependencies": {
     "playwright": "1.62.1",
