@@ -501,13 +501,11 @@
     // B14 (2026-08-08): 15ms haptic on pointerdown + 100ms punch animation
     // on the four bottom-nav tabs. Reduced-motion kills both; iOS falls back
     // to the visual punch only.
+    // v0.15.41 — vibration removed at founder direction. Visual punch only.
     const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
     document.addEventListener('pointerdown', event => {
       const control = event.target?.closest?.('.nav-item,.fab,[onclick*="saveShot"],[onclick*="saveWt"]');
       if (!control) return;
-      if (!reduced() && navigator.vibrate) {
-        try { navigator.vibrate(control.classList.contains('nav-item') ? 15 : 8); } catch (_) {}
-      }
       if (!reduced()) {
         control.classList.remove('gn-punch');
         // Force reflow so a rapid repeat re-triggers the animation.

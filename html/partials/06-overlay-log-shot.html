@@ -24,6 +24,15 @@
       <div class="cp-select" id="cpShotMed">
         <div class="cp-select-trigger" onclick="toggleSelect('cpShotMed')" aria-labelledby="cpShotMedLabel cpShotMedVal"><span class="placeholder" id="cpShotMedVal" data-i18n="shot.selectMedication">Select medication</span><span class="cp-select-arrow">▼</span></div>
         <div class="cp-dropdown" id="cpShotMedDrop" data-gn-med-minimized>
+          <div class="cp-group-minimized" data-gn-med-group="COMMON" onclick="gnMedRevealGroup('cpShotMedDrop','COMMON')" role="button" tabindex="0"><span class="cp-group-minimized-label" data-i18n="shot.groupMostCommon">MOST COMMON</span><span class="cp-group-minimized-count">6</span></div>
+          <div class="cp-group-options gn-revealed" data-gn-med-options="COMMON">
+            <div class="cp-option" onclick="selectOpt('cpShotMed','zepbound_tirzepatide','Zepbound (Tirzepatide)',typeof updatePills === 'function' ? updatePills : null)">Zepbound (Tirzepatide)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','mounjaro_tirzepatide','Mounjaro (Tirzepatide)',typeof updatePills === 'function' ? updatePills : null)">Mounjaro (Tirzepatide)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','wegovy_semaglutide','Wegovy (Semaglutide)',typeof updatePills === 'function' ? updatePills : null)">Wegovy (Semaglutide)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','ozempic_semaglutide','Ozempic (Semaglutide)',typeof updatePills === 'function' ? updatePills : null)">Ozempic (Semaglutide)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','tirzepatide_compound','Tirzepatide (Compound)',typeof updatePills === 'function' ? updatePills : null)">Tirzepatide (Compound)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','semaglutide_compound','Semaglutide (Compound)',typeof updatePills === 'function' ? updatePills : null)">Semaglutide (Compound)</div>
+          </div>
           <div class="cp-group-minimized" data-gn-med-group="TIRZEPATIDE" onclick="gnMedRevealGroup('cpShotMedDrop','TIRZEPATIDE')" role="button" tabindex="0"><span class="cp-group-minimized-label">TIRZEPATIDE</span><span class="cp-group-minimized-count">3</span></div>
           <div class="cp-group-options" data-gn-med-options="TIRZEPATIDE">
             <div class="cp-option" onclick="selectOpt('cpShotMed','zepbound_tirzepatide','Zepbound (Tirzepatide)',typeof updatePills === 'function' ? updatePills : null)">Zepbound (Tirzepatide)</div>
@@ -78,11 +87,11 @@
     </div>
     <div class="form-group"><label class="form-label" for="sDose" data-i18n="shot.doseLabel">DOSE — TAP TO SELECT OR ENTER CUSTOM</label><div class="dose-pills" id="dosePills"></div><input class="form-input" type="number" id="sDose" placeholder="Custom dose (mg)" data-i18n-placeholder="shot.customDose" min="0.1" step="0.1" inputmode="decimal" style="margin-top:7px"></div>
     <div class="form-group">
-      <div class="form-label" id="modalSelectedLocationLabel" data-i18n="shot.selectedLocationLabel">SELECTED LOCATION</div>
+      <div class="form-label" id="modalSelectedLocationLabel" data-i18n="shot.selectedLocationLabel">INJECTION SITE</div>
       <div class="scanner-location-display" role="group" aria-labelledby="modalSelectedLocationLabel">
-        <span class="form-label" style="margin-bottom:0" data-i18n="shots.userEnteredLocation">USER-ENTERED LOCATION</span>
-        <b id="modalSelectedLocation" data-i18n="shots.noLocationSelected">No location selected</b>
-        <button type="button" class="log-location-action" id="logLocationAction" onclick="goToScannerForLocationFromLog()" data-i18n="shots.selectLoggedLocation">SELECT LOGGED LOCATION</button>
+        <b id="modalSelectedLocation" data-i18n="shot.noInjectionSite">No injection site selected</b>
+        <div class="gn-modal-zone-modes" id="modalZoneModes" role="group" aria-label="Body region"></div>
+        <div class="gn-modal-zone-grid" id="modalZonePicker" role="group" aria-label="Injection sites"></div>
       </div>
     </div>
     <div class="form-group"><label class="form-label" for="shotDeviceId" data-i18n="shot.deviceUsed">DEVICE USED — OPTIONAL</label><select class="form-input" id="shotDeviceId"><option value="" data-i18n="shot.unknownDevice">Unknown / Not applicable</option></select><div class="gn-shot-time-helper" data-i18n="shot.deviceHelper">Device identity stays separate from the SHOT event. Historical SHOTS are not rewritten when a device changes.</div></div>

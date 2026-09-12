@@ -60,8 +60,13 @@ export function renderResults() {
   const directionReady = weights.length >= 3 && spanDays >= 7;
   setText('resLatestWeight', latest ? `${latest.weight.toFixed(1)} lb` : '—');
   setText('resShotCount', String(shots.length));
-  setText('resLatestAppetite', tx('results.logObservations', 'LOG OBSERVATIONS'));
-  setText('resLatestEnergy', tx('results.logObservations', 'LOG OBSERVATIONS'));
+  /* v0.15.41 S12: observation metrics have no recorded values yet, so they
+     render the empty-state placeholder (see .results-metric-empty). If a
+     real observation value is ever written here, remove that class. */
+  const obsPlaceholder = tx('results.logObservations', 'LOG OBSERVATIONS');
+  setText('resLatestAppetite', obsPlaceholder);
+  setText('resLatestEnergy', obsPlaceholder);
+  ['resLatestAppetite', 'resLatestEnergy'].forEach(id => { try { $(id)?.classList.add('results-metric-empty'); } catch (_) {} });
   setText('resContinuityEvents', String(shots.length));
   setText('resContinuityRecent', latestShot() ? formatDate(latestShot().date, { month: 'short', day: 'numeric' }) : '—');
   setText('resContinuityActive', String(shots.length));

@@ -50,6 +50,21 @@ const BUILD_ID = buildId();
 const CACHE_NAME = 'gridnode-shell-' + BUILD_ID.replace(/\./g, '-');
 console.log(`BUILD_ID=${BUILD_ID}`);
 
+// 0a. Version integrity — v0.15.41 systemic fix. The version users see comes
+//     from js/gridnode-version.js (APP_VERSION/semver). The build FAILS unless
+//     it matches package.json exactly, so the displayed version can never go
+//     stale again (the 0.15.36 freeze regression).
+const PKG_VERSION = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version;
+{
+  const versionSrc = readFileSync(join(ROOT, 'js', 'gridnode-version.js'), 'utf8');
+  const hasAppVersion = new RegExp(`APP_VERSION:\\s*'${PKG_VERSION.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}'`).test(versionSrc);
+  const hasSemver = new RegExp(`semver:\\s*'${PKG_VERSION.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}'`).test(versionSrc);
+  if (!hasAppVersion || !hasSemver) {
+    throw new Error(`js/gridnode-version.js is stale: APP_VERSION/semver must equal package.json version ${PKG_VERSION} (bump both together)`);
+  }
+  console.log(`version check: js/gridnode-version.js matches package.json ${PKG_VERSION}`);
+}
+
 // 0. index.html — assemble from html/partials/ (Phase 3 refactor). The
 //    committed index.html is a generated artifact; the partials are the
 //    source of truth. Assembly is byte-identical by construction.

@@ -836,6 +836,29 @@ html[lang="es"] .nav-lbl { font-size: .6rem !important; letter-spacing: .6px !im
   min-height: 44px !important;
   min-width: 44px !important;
 }
+/* v0.15.41 — inline injection-site picker inside the LOG SHOT modal. The
+   first-shot flow never leaves the form: mode tabs + zone buttons reuse the
+   scanner's zone vocabulary, rendered compactly in-modal. */
+.gn-modal-zone-modes {
+  display: flex;
+  gap: 6px;
+  margin: 10px 0 8px;
+}
+.gn-modal-zone-modes .time-tab {
+  flex: 1;
+}
+.gn-modal-zone-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.gn-modal-zone-grid .gn-stable-zone-btn {
+  flex: 1 1 30%;
+  font-size: 0.78rem;
+  padding: 8px 6px;
+  white-space: normal;
+  line-height: 1.25;
+}
 .gn-custom-picker-trigger,
 .gn-custom-date-trigger,
 .cp-select-trigger,

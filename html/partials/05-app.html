@@ -1,7 +1,7 @@
 <div class="screen" id="app" role="main">
   <div class="topbar">
     
-    <div class="app-wordmark app-wordmark-b2b" role="button" tabindex="0" onclick="showPage('Dash',document.getElementById('navDash'))" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Dash',document.getElementById('navDash'));}" title="Return to DASH" aria-label="Return to DASH" data-i18n-title="nav.returnDash" data-i18n-aria-label="nav.returnDash"><img class="gn-b2b-wordmark" src="/assets/brand/ui/header-lockup.svg" alt="GRID//NODE color wordmark" width="1600" height="320" decoding="async"></div>
+    <div class="app-wordmark app-wordmark-b2b" role="button" tabindex="0" onclick="showPage('Dash',document.getElementById('navDash'))" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Dash',document.getElementById('navDash'));}" title="Return to HOME" aria-label="Return to HOME" data-i18n-title="nav.returnDash" data-i18n-aria-label="nav.returnDash"><img class="gn-b2b-wordmark" src="/assets/brand/ui/header-lockup.svg" alt="GRID//NODE color wordmark" width="1600" height="320" decoding="async"></div>
     <div class="topbar-actions">
       <button class="topbar-btn gn-sound-btn" type="button" id="gnSoundToggle" role="switch" aria-checked="false" aria-label="Soundtrack" data-i18n-aria-label="sound.toggle" onclick="window.GN_AMBIENCE && window.GN_AMBIENCE.toggle()">
         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -11,9 +11,9 @@
           <line class="snd-slash" x1="4" y1="4" x2="20" y2="20"/>
         </svg>
       </button>
-      <button class="topbar-btn topbar-hub-btn" type="button" onclick="toggleProfileHub()" id="topAva" aria-label="Open NODE PROFILE HUB">
+      <button class="topbar-btn topbar-hub-btn" type="button" onclick="toggleProfileHub()" id="topAva" aria-label="Open VAULT">
         <img src="/assets/brand/icons/pwa-192.png" alt="GRID//NODE mark" width="40" height="40" id="topAvaIcon" decoding="async">
-        <span class="topbar-hub-label">HUB</span>
+        <span class="topbar-hub-label">VAULT</span>
       </button>
     </div>
   </div>
@@ -34,7 +34,7 @@
     <div class="page active" id="pageDash">
       <div class="page-hdr">
         <div class="page-title" data-i18n-html="dashboard.headingHtml">PROTOCOL <span class="a">DASHBOARD</span></div>
-        <div class="page-sub" id="dashSub">// NODE_USER // NODE ONLINE</div>
+        <div class="page-sub" id="dashSub" data-i18n="dashboard.zeroShotSub">STORED ON THIS DEVICE</div>
       </div>
 
       
@@ -222,7 +222,7 @@
       <div class="sec-hdr" id="phaseCurveHdr"><div class="sec-title" data-i18n-html="phase.phaseCurveTitle">// <span class="a">PHASE_CURVE</span></div></div>
       <div class="card" id="phaseCurveCard">
         <div class="card-title-row"><div class="card-title" data-i18n="phase.estimatedProtocolCurve">ESTIMATED PROTOCOL CURVE</div><button type="button" class="gn-peptide-expand" id="medExpandBtn" onclick="window.GN_PEPTIDE_VIZ && GN_PEPTIDE_VIZ.openOverlay()" hidden data-i18n="peptide.expand">EXPAND ▸</button></div>
-        <div class="card-val" id="medLvlVal">—<span data-i18n="results.logToBegin">log a shot to begin</span></div>
+        <div class="card-val" id="medLvlVal">— <span data-i18n="results.logToBegin">log a shot to begin</span></div>
         <div class="protocol-curve-copy" data-i18n="phase.curveCopy">Educational estimate based on logged shot timing. Not a lab measurement.<span class="curve-subline" data-i18n="phase.curveSubline">Curve shows a relative activity model: logged SHOT event → estimated rise → peak → decay.</span></div>
         <div class="chart-wrap gn-chart-stack" style="height:130px"><canvas id="medChart"></canvas><svg id="medChartOverlay" class="gn-chart-overlay" aria-hidden="true"></svg><div id="medChartTip" class="gn-peptide-tip" hidden></div></div>
         <div class="time-tabs">
@@ -371,7 +371,7 @@
     
     <div class="page" id="pageResults">
       <div class="page-hdr">
-        <div class="page-title" data-i18n-html="results.headingHtml">SIGNAL <span class="a">// OUTCOMES</span></div>
+        <div class="page-title" data-i18n-html="results.headingHtml">RESULTS <span class="a">// OUTCOMES</span></div>
         <div class="page-sub" id="resultRange" data-i18n="results.rangeSub">// USER-ENTERED OUTCOMES //</div>
         <div class="results-signal-note"><b data-i18n="results.protocolSignal">PROTOCOL SIGNAL</b><br><span data-i18n="results.protocolSignalCopy">Each logged SHOT contributes signal to your evolving protocol record. Additional entries may provide broader context over time.</span></div>
       </div>
@@ -391,11 +391,11 @@
             </div>
             <div class="results-metric">
               <div class="results-metric-label" data-i18n="results.latestAppetite">Latest Appetite</div>
-              <div class="results-metric-value y foundation-ready" id="resLatestAppetite">LOG OBSERVATIONS</div>
+              <div class="results-metric-value y results-metric-empty" id="resLatestAppetite" data-i18n="results.logObservations">LOG OBSERVATIONS</div>
             </div>
             <div class="results-metric">
               <div class="results-metric-label" data-i18n="results.latestEnergy">Latest Energy</div>
-            <div class="results-metric-value c foundation-ready" id="resLatestEnergy">LOG OBSERVATIONS</div>
+            <div class="results-metric-value c results-metric-empty" id="resLatestEnergy" data-i18n="results.logObservations">LOG OBSERVATIONS</div>
             </div>
           </div>
           <div id="resultsSummaryEmpty" class="results-empty" style="display:none;margin-top:10px" data-i18n-html="results.summaryEmptyHtml">Outcome summary will activate as logged measurements and user-entered outcomes accumulate.<span class="empty-subline">GRID//NODE becomes more informative as additional tracking data is recorded.</span></div>
@@ -678,8 +678,8 @@
     <div class="page" id="pageProfile">
   
   <div class="page-hdr">
-    <div class="page-title"><span class="a" data-i18n="vault.hubTitle">NODE PROFILE HUB</span></div>
-    <div class="page-sub" id="profSub" data-i18n="vault.kicker">// IDENTITY · SECURITY · VAULT //</div>
+    <div class="page-title"><span class="a" data-i18n="vault.pageTitle">VAULT</span></div>
+    <div class="page-sub" id="profSub" data-i18n="vault.pageSub">// NODE PROFILE HUB //</div>
   </div>
 
   
@@ -703,7 +703,7 @@
         font-family:'Orbitron',monospace;font-size:1rem;
         color:#eeeef5;letter-spacing:2px;margin-bottom:3px;
         white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-      ">NODE_USER</div>
+      ">PROFILE</div>
       <div id="profEmail" style="
         font-family:'Share Tech Mono',monospace;font-size:0.62rem;
         color:var(--text-dim);letter-spacing:1px;margin-bottom:3px;
@@ -891,7 +891,7 @@
   <div class="bottom-nav">
     <div class="nav-item active" id="navDash" role="button" tabindex="0" aria-current="page" onclick="showPage('Dash',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Dash',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-command-grid"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.home">HOME</div></div>
     <div class="nav-item" id="navLog" role="button" tabindex="0" onclick="showPage('Log',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Log',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-protocol-event"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.shots">SHOTS</div></div>
-    <div class="nav-item" id="navRes" role="button" tabindex="0" onclick="showPage('Results',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Results',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-trend-signal"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.trends">SIGNAL</div></div>
+    <div class="nav-item" id="navRes" role="button" tabindex="0" onclick="showPage('Results',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Results',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-trend-signal"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.results">RESULTS</div></div>
     <div class="nav-item" id="navLab" role="button" tabindex="0" onclick="showPage('Lab',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Lab',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-lab-vessel"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.lab">LAB</div></div>
     <div class="nav-item gn-nav-hidden" id="navPro" role="button" tabindex="0" onclick="showPage('Profile',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Profile',this)}"></div>
   </div>

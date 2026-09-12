@@ -18,7 +18,7 @@
 (function () {
   'use strict';
 
-  const VERSION = window.GN_VERSION || { semver: '0.12.0', release: '20260804.1', title: 'PRODUCTION READINESS + MEDICATION INTEGRITY', date: '2026-08-04' };
+  const VERSION = window.GN_VERSION || { semver: '0.15.41', release: '20260907.1', title: 'V0.15.41 — LAUNCH READINESS', date: '2026-09-12' };
   const ACK_KEY = 'gridnode.lastWhatsNewDismissedBuild';
   const LEGACY_ACK_KEY = 'gn_whatsnew_acknowledged_release_v2';
   const ORDER = ['NEW', 'IMPROVED', 'FIXED', 'ACCESSIBILITY', 'MOBILE', 'COMPATIBILITY', 'SECURITY'];
@@ -96,11 +96,12 @@
         ]
       }
     },
-    '__CURRENT_BUILD__': {
-      version: '0.15.36', title: 'FIRST CONTACT ONBOARDING', date: '2026-09-10',
+    '20260911.c774f0b': {
+      version: '0.15.40', title: 'FIRST-RUN SIMPLIFICATION', date: '2026-09-11',
       en: {
         NEW: [
-          'FIRST CONTACT: the onboarding tour was rebuilt from zero. Six beats: why GRID//NODE exists, the four zones of the loop, one real first dose logged inside the tour itself, the Phase Engine payoff on your curve, theme and language comfort, and a clean exit. Every beat is skippable, and the tour resumes where you left off. Replay it anytime from VAULT.'
+          'FIRST CONTACT: the onboarding tour was rebuilt from zero. Six beats: why GRID//NODE exists, the four zones of the loop, one real first dose logged inside the tour itself, the Phase Engine payoff on your curve, theme and language comfort, and a clean exit. Every beat is skippable, and the tour resumes where you left off. Replay it anytime from VAULT.',
+          'Progressive empty states: a fresh install now shows a calm, focused start screen instead of a dashboard full of empty panels. The full command center reveals itself after your first logged shot.'
         ],
         IMPROVED: [
           'The old settings tour is gone: no more theme and language steps standing in for a product tour that never showed the loop or the payoff.'
@@ -108,10 +109,44 @@
       },
       es: {
         NEW: [
-          'PRIMER CONTACTO: el tour inicial se reconstruyó desde cero. Seis pasos: por qué existe GRID//NODE, las cuatro zonas del ciclo, una primera dosis real registrada dentro del propio tour, el Motor de Fases sobre tu curva, tema e idioma a tu manera, y una salida limpia. Cada paso se puede omitir y el tour continúa donde lo dejaste. Repítelo cuando quieras desde VAULT.'
+          'PRIMER CONTACTO: el tour inicial se reconstruyó desde cero. Seis pasos: por qué existe GRID//NODE, las cuatro zonas del ciclo, una primera dosis real registrada dentro del propio tour, el Motor de Fases sobre tu curva, tema e idioma a tu manera, y una salida limpia. Cada paso se puede omitir y el tour continúa donde lo dejaste. Repítelo cuando quieras desde VAULT.',
+          'Estados vacíos progresivos: una instalación nueva ahora muestra una pantalla inicial tranquila en lugar de un panel lleno de secciones vacías. El centro de comando completo aparece después de tu primer registro.'
         ],
         IMPROVED: [
           'El tour anterior de ajustes desapareció: ya no hay pasos de tema e idioma fingiendo ser un tour que nunca mostraba el ciclo ni el resultado.'
+        ]
+      }
+    },
+    '__CURRENT_BUILD__': {
+      version: '0.15.41', title: 'LAUNCH READINESS', date: '2026-09-12',
+      en: {
+        FIXED: [
+          'Vibration feedback is fully removed: the app no longer vibrates on taps, saves, or milestones, whatever your old settings said.',
+          'The version shown in your profile now always matches the real release.',
+          'Tab names are consistent everywhere: HOME, SHOTS, RESULTS, TRENDS, LAB, VAULT.',
+          'SIGN OUT and Delete Cloud Account only appear when you actually have a cloud account.',
+          'The stray "// NODE MARK" label on the landing page is gone.'
+        ],
+        IMPROVED: [
+          'Logging a shot no longer kicks you to another screen mid-form: pick your injection site right inside the log modal.',
+          'The medication picker now leads with the most common options instead of a wall of jargon.',
+          'The first-run tour speaks plain language and offers Spanish from the very first beat.',
+          'Theme choices now say DARK and LIGHT, and the app tells one clear story: your data lives on this device, cloud sync is optional.'
+        ]
+      },
+      es: {
+        FIXED: [
+          'La vibración de respuesta se eliminó por completo: la app ya no vibra al tocar, guardar o celebrar, sin importar tus ajustes anteriores.',
+          'La versión que ves en tu perfil ahora siempre coincide con la versión real.',
+          'Los nombres de las pestañas son consistentes en todas partes: HOME, SHOTS, RESULTS, TRENDS, LAB, VAULT.',
+          'Cerrar sesión y Eliminar cuenta en la nube solo aparecen si tienes una cuenta en la nube.',
+          'La etiqueta "// NODE MARK" de la página inicial desapareció.'
+        ],
+        IMPROVED: [
+          'Registrar una dosis ya no te saca a otra pantalla a mitad del formulario: elige tu sitio de inyección dentro del mismo modal.',
+          'El selector de medicamentos ahora empieza con las opciones más comunes en lugar de un muro de jerga.',
+          'El tour inicial habla en lenguaje claro y ofrece español desde el primer paso.',
+          'Los temas ahora dicen DARK y LIGHT, y la app cuenta una sola historia: tus datos viven en este dispositivo, la nube es opcional.'
         ]
       }
     },

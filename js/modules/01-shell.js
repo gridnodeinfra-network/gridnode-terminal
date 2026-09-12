@@ -54,9 +54,17 @@ export function loadApp() {
   const profile = getProfile();
   moduleState.selectedLocation = normalizeLegacyText(S.get('selectedLocation', moduleState.selectedLocation || ''));
   syncIdentityAvatars();
-  setText('dashSub', tx('dashboard.nodeOnline', '// {name} // NODE ONLINE', { name: window.CU?.defaultName || profile.name || 'NODE_USER' }));
-  setText('profSub', `// ${window.CU?.defaultName || profile.name || 'NODE_USER'} //`);
-  setText('profNameTxt', window.CU?.defaultName || profile.name || tx('profile.anonFallback', 'NODE_USER'));
+  /* v0.15.41 S16: zero-shot users (no name, no shots) get plain chrome
+     instead of unexplained NODE jargon. Named or active users keep the
+     NODE-flavored identity line. */
+  const displayName = window.CU?.defaultName || profile.name || '';
+  let zeroShot = !displayName;
+  try { zeroShot = zeroShot && !(typeof sortedShots === 'function' && sortedShots().length); } catch (_) {}
+  setText('dashSub', zeroShot
+    ? tx('dashboard.zeroShotSub', 'STORED ON THIS DEVICE')
+    : tx('dashboard.nodeOnline', '// {name} // NODE ONLINE', { name: displayName || 'NODE_USER' }));
+  setText('profSub', zeroShot ? '// PROFILE //' : `// ${displayName || 'NODE_USER'} //`);
+  setText('profNameTxt', displayName || tx('profile.anonFallback', 'NODE_USER'));
   setText('profEmail', sessionLabel());
   setText('profMedTxt', normalizeMedicationId(profile.med) ? `// ${medicationLabel(profile.med).toUpperCase()}` : tx('profile.noMedicationSet', '// NO MEDICATION SET'));
   hydrateProfileFields(profile);

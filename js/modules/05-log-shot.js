@@ -44,11 +44,59 @@ export function openLogModal(options = {}) {
     if ($('sNotes')) $('sNotes').value = '';
     qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = false; });
   }
-  setText('modalSelectedLocation', zoneLabel(moduleState.selectedLocation) || tx('shots.noLocationSelected', 'No location selected'));
-  setText('logLocationAction', moduleState.selectedLocation ? tx('shots.changeLoggedLocation', 'CHANGE LOGGED LOCATION') : tx('shots.selectLoggedLocation', 'SELECT LOGGED LOCATION'));
+  setText('modalSelectedLocation', zoneLabel(moduleState.selectedLocation) || tx('shot.noInjectionSite', 'No injection site selected'));
+  installModalZonePicker();
+  renderModalZonePicker();
   renderShotDevicePicker(draftDeviceId);
   if (!modal.querySelector('.gn-drawer-handle')) modal.insertAdjacentHTML('afterbegin', '<div class="gn-drawer-handle" aria-hidden="true"></div>');
   modal.classList.add('active');
+}
+
+/* v0.15.41 — inline injection-site picker for the LOG SHOT modal. The first-shot
+ * flow never leaves the form: mode tabs (CORE/LEGS/ARMS) + the scanner's zone
+ * vocabulary, rendered compactly in-modal. Selecting a zone commits through
+ * the same selectScannerLocation path the scanner page uses, so the coach,
+ * validation, and persistence all see one source of truth. */
+const MODAL_ZONE_MODES = [
+  { id: 'core', en: 'CORE', es: 'CENTRO' },
+  { id: 'lower', en: 'LEGS', es: 'PIERNAS' },
+  { id: 'upper', en: 'ARMS', es: 'BRAZOS' }
+];
+function modalZoneMode() {
+  if (moduleState.modalZoneMode && ZONES[moduleState.modalZoneMode]) return moduleState.modalZoneMode;
+  return ZONES[moduleState.scannerMode] ? moduleState.scannerMode : 'core';
+}
+function renderModalZonePicker() {
+  const modesEl = $('modalZoneModes'), grid = $('modalZonePicker');
+  if (!modesEl || !grid) return;
+  const mode = modalZoneMode();
+  const isEs = document.documentElement && document.documentElement.lang === 'es';
+  modesEl.innerHTML = MODAL_ZONE_MODES.map(m =>
+    `<button type="button" class="time-tab${m.id === mode ? ' active' : ''}" data-modal-zone-mode="${m.id}" aria-pressed="${m.id === mode}">${isEs ? m.es : m.en}</button>`
+  ).join('');
+  grid.innerHTML = ZONES[mode].map(label =>
+    `<button type="button" class="gn-stable-zone-btn${label === moduleState.selectedLocation ? ' selected' : ''}" data-modal-zone="${safeText(label)}" aria-pressed="${label === moduleState.selectedLocation}">${safeText(zoneLabel(label))}</button>`
+  ).join('');
+}
+function installModalZonePicker() {
+  if (installModalZonePicker.done) return;
+  installModalZonePicker.done = true;
+  document.addEventListener('click', (e) => {
+    const modeBtn = e.target && e.target.closest ? e.target.closest('[data-modal-zone-mode]') : null;
+    if (modeBtn) {
+      moduleState.modalZoneMode = modeBtn.getAttribute('data-modal-zone-mode');
+      renderModalZonePicker();
+      return;
+    }
+    const zoneBtn = e.target && e.target.closest ? e.target.closest('[data-modal-zone]') : null;
+    if (zoneBtn && $('logOv') && $('logOv').classList.contains('active')) {
+      const label = zoneBtn.getAttribute('data-modal-zone');
+      try { selectScannerLocation(label, { source: 'modal' }); }
+      catch (_) { moduleState.selectedLocation = label; }
+      setText('modalSelectedLocation', zoneLabel(moduleState.selectedLocation) || tx('shot.noInjectionSite', 'No injection site selected'));
+      renderModalZonePicker();
+    }
+  });
 }
 
 function renderShotDevicePicker(selectedId = '') {
@@ -125,7 +173,7 @@ export function editShot(id) {
   // Never let a pending location-detour draft hijack an EDIT session.
   moduleState.shotDraft = null;
   moduleState.editingShotId = id;
-  setText('modalSelectedLocation', zoneLabel(record.site) || tx('shots.noLocationSelected', 'No location selected'));
+  setText('modalSelectedLocation', zoneLabel(record.site) || tx('shot.noInjectionSite', 'No injection site selected'));
   moduleState.selectedLocation = record.site || moduleState.selectedLocation;
   const recordDate = new Date(record.date);
   const safeRecordDate = Number.isNaN(recordDate.getTime()) ? new Date() : recordDate;
@@ -500,23 +548,4 @@ function researchBackToLibrary() {
   if (cw) cw.style.display = 'none';
 }
 
-export function goToScannerForLocationFromLog() {
-  moduleState.pendingLocationDraft = true;
-  // Snapshot the ENTIRE unsaved draft so reopening restores every field.
-  moduleState.shotDraft = {
-    med: selectState.cpShotMed?.val || null,
-    dose: $('sDose')?.value || '',
-    date: readHumanDateInput($('sDate')) || todayISO(),
-    time: $('sTime')?.value || '',
-    meridiem: moduleState.meridiem || null,
-    wt: $('sWt')?.value || '',
-    notes: $('sNotes')?.value || '',
-    deviceId: $('shotDeviceId')?.value || '',
-    se: qa('#logOv input[type="checkbox"]:checked').map(input => input.value)
-  };
-  $('logOv')?.classList.remove('active');
-  showPage('Log', $('navLog'));
-  document.querySelector('.gn-stable-zone-picker')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  showToast(tx('shots.selectZoneAgain', 'Select a trackable zone, then open LOG SHOT again.'));
-}
 

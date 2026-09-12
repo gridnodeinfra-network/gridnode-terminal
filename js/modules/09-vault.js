@@ -33,6 +33,7 @@ export async function confirmDeleteCloudAccount() {
 
 export function renderProfile() {
   ensureProfileHub();
+  try { if (typeof syncCloudOnlyButtons === 'function') syncCloudOnlyButtons(); } catch (_) {}
   ensureProfileMeasurements();
   ensureDestructiveDialogs();
   syncIdentityAvatars();

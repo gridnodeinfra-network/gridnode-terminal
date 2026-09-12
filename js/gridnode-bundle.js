@@ -6,7 +6,7 @@
  * No UI code belongs in this file.
  */
 
-const APP_VERSION = (typeof window !== 'undefined' && window.GN_VERSION && window.GN_VERSION.semver) || '0.15.36';
+const APP_VERSION = (typeof window !== 'undefined' && window.GN_VERSION && window.GN_VERSION.semver) || '0.15.41';
 
 const GOOGLE_OAUTH_CLIENT_ID = '305099332421-u752btn6p8cbaq8opapvdkfau9gnd9a3.apps.googleusercontent.com';
 
@@ -1752,9 +1752,17 @@ function loadApp() {
   const profile = getProfile();
   moduleState.selectedLocation = normalizeLegacyText(S.get('selectedLocation', moduleState.selectedLocation || ''));
   syncIdentityAvatars();
-  setText('dashSub', tx('dashboard.nodeOnline', '// {name} // NODE ONLINE', { name: window.CU?.defaultName || profile.name || 'NODE_USER' }));
-  setText('profSub', `// ${window.CU?.defaultName || profile.name || 'NODE_USER'} //`);
-  setText('profNameTxt', window.CU?.defaultName || profile.name || tx('profile.anonFallback', 'NODE_USER'));
+  /* v0.15.41 S16: zero-shot users (no name, no shots) get plain chrome
+     instead of unexplained NODE jargon. Named or active users keep the
+     NODE-flavored identity line. */
+  const displayName = window.CU?.defaultName || profile.name || '';
+  let zeroShot = !displayName;
+  try { zeroShot = zeroShot && !(typeof sortedShots === 'function' && sortedShots().length); } catch (_) {}
+  setText('dashSub', zeroShot
+    ? tx('dashboard.zeroShotSub', 'STORED ON THIS DEVICE')
+    : tx('dashboard.nodeOnline', '// {name} // NODE ONLINE', { name: displayName || 'NODE_USER' }));
+  setText('profSub', zeroShot ? '// PROFILE //' : `// ${displayName || 'NODE_USER'} //`);
+  setText('profNameTxt', displayName || tx('profile.anonFallback', 'NODE_USER'));
   setText('profEmail', sessionLabel());
   setText('profMedTxt', normalizeMedicationId(profile.med) ? `// ${medicationLabel(profile.med).toUpperCase()}` : tx('profile.noMedicationSet', '// NO MEDICATION SET'));
   hydrateProfileFields(profile);
@@ -1970,7 +1978,7 @@ function renderDashboard() {
         + '<button class="gn-empty-ghost" type="button" onclick="showPage(\'Log\',document.getElementById(\'navLog\'))" data-i18n="dashboard.emptyScan">' + tx('dashboard.emptyScan', 'Escanear zona') + '</button>'
         + '<button class="gn-empty-ghost" type="button" onclick="showPage(\'Lab\',document.getElementById(\'navLab\'))" data-i18n="dashboard.emptyLab">' + tx('dashboard.emptyLab', 'Ver LAB') + '</button>'
         + '</div>'
-        + '<div class="gn-tip-card"><span class="gn-tip-kicker" data-i18n="dashboard.tipTitle">' + tx('dashboard.tipTitle', 'TIP') + '</span><p data-i18n="dashboard.tipBody">' + tx('dashboard.tipBody', 'Choose the medication and dose, then add the date, time, and application zone.') + '</p></div>'
+        + '<div class="gn-tip-card"><span class="gn-tip-kicker" data-i18n="dashboard.tipTitle">' + tx('dashboard.tipTitle', 'TIP') + '</span><p data-i18n="dashboard.tipBody">' + tx('dashboard.tipBody', 'Choose the medication and dose, then add the date, time, and injection site.') + '</p></div>'
         + '</section>';
       const wanda = document.getElementById('gnWandaDashboard');
       if (wanda) wanda.insertAdjacentHTML('beforebegin', heroMarkup);
@@ -2763,11 +2771,59 @@ function openLogModal(options = {}) {
     if ($('sNotes')) $('sNotes').value = '';
     qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = false; });
   }
-  setText('modalSelectedLocation', zoneLabel(moduleState.selectedLocation) || tx('shots.noLocationSelected', 'No location selected'));
-  setText('logLocationAction', moduleState.selectedLocation ? tx('shots.changeLoggedLocation', 'CHANGE LOGGED LOCATION') : tx('shots.selectLoggedLocation', 'SELECT LOGGED LOCATION'));
+  setText('modalSelectedLocation', zoneLabel(moduleState.selectedLocation) || tx('shot.noInjectionSite', 'No injection site selected'));
+  installModalZonePicker();
+  renderModalZonePicker();
   renderShotDevicePicker(draftDeviceId);
   if (!modal.querySelector('.gn-drawer-handle')) modal.insertAdjacentHTML('afterbegin', '<div class="gn-drawer-handle" aria-hidden="true"></div>');
   modal.classList.add('active');
+}
+
+/* v0.15.41 — inline injection-site picker for the LOG SHOT modal. The first-shot
+ * flow never leaves the form: mode tabs (CORE/LEGS/ARMS) + the scanner's zone
+ * vocabulary, rendered compactly in-modal. Selecting a zone commits through
+ * the same selectScannerLocation path the scanner page uses, so the coach,
+ * validation, and persistence all see one source of truth. */
+const MODAL_ZONE_MODES = [
+  { id: 'core', en: 'CORE', es: 'CENTRO' },
+  { id: 'lower', en: 'LEGS', es: 'PIERNAS' },
+  { id: 'upper', en: 'ARMS', es: 'BRAZOS' }
+];
+function modalZoneMode() {
+  if (moduleState.modalZoneMode && ZONES[moduleState.modalZoneMode]) return moduleState.modalZoneMode;
+  return ZONES[moduleState.scannerMode] ? moduleState.scannerMode : 'core';
+}
+function renderModalZonePicker() {
+  const modesEl = $('modalZoneModes'), grid = $('modalZonePicker');
+  if (!modesEl || !grid) return;
+  const mode = modalZoneMode();
+  const isEs = document.documentElement && document.documentElement.lang === 'es';
+  modesEl.innerHTML = MODAL_ZONE_MODES.map(m =>
+    `<button type="button" class="time-tab${m.id === mode ? ' active' : ''}" data-modal-zone-mode="${m.id}" aria-pressed="${m.id === mode}">${isEs ? m.es : m.en}</button>`
+  ).join('');
+  grid.innerHTML = ZONES[mode].map(label =>
+    `<button type="button" class="gn-stable-zone-btn${label === moduleState.selectedLocation ? ' selected' : ''}" data-modal-zone="${safeText(label)}" aria-pressed="${label === moduleState.selectedLocation}">${safeText(zoneLabel(label))}</button>`
+  ).join('');
+}
+function installModalZonePicker() {
+  if (installModalZonePicker.done) return;
+  installModalZonePicker.done = true;
+  document.addEventListener('click', (e) => {
+    const modeBtn = e.target && e.target.closest ? e.target.closest('[data-modal-zone-mode]') : null;
+    if (modeBtn) {
+      moduleState.modalZoneMode = modeBtn.getAttribute('data-modal-zone-mode');
+      renderModalZonePicker();
+      return;
+    }
+    const zoneBtn = e.target && e.target.closest ? e.target.closest('[data-modal-zone]') : null;
+    if (zoneBtn && $('logOv') && $('logOv').classList.contains('active')) {
+      const label = zoneBtn.getAttribute('data-modal-zone');
+      try { selectScannerLocation(label, { source: 'modal' }); }
+      catch (_) { moduleState.selectedLocation = label; }
+      setText('modalSelectedLocation', zoneLabel(moduleState.selectedLocation) || tx('shot.noInjectionSite', 'No injection site selected'));
+      renderModalZonePicker();
+    }
+  });
 }
 
 function renderShotDevicePicker(selectedId = '') {
@@ -2844,7 +2900,7 @@ function editShot(id) {
   // Never let a pending location-detour draft hijack an EDIT session.
   moduleState.shotDraft = null;
   moduleState.editingShotId = id;
-  setText('modalSelectedLocation', zoneLabel(record.site) || tx('shots.noLocationSelected', 'No location selected'));
+  setText('modalSelectedLocation', zoneLabel(record.site) || tx('shot.noInjectionSite', 'No injection site selected'));
   moduleState.selectedLocation = record.site || moduleState.selectedLocation;
   const recordDate = new Date(record.date);
   const safeRecordDate = Number.isNaN(recordDate.getTime()) ? new Date() : recordDate;
@@ -3219,25 +3275,6 @@ function researchBackToLibrary() {
   if (cw) cw.style.display = 'none';
 }
 
-function goToScannerForLocationFromLog() {
-  moduleState.pendingLocationDraft = true;
-  // Snapshot the ENTIRE unsaved draft so reopening restores every field.
-  moduleState.shotDraft = {
-    med: selectState.cpShotMed?.val || null,
-    dose: $('sDose')?.value || '',
-    date: readHumanDateInput($('sDate')) || todayISO(),
-    time: $('sTime')?.value || '',
-    meridiem: moduleState.meridiem || null,
-    wt: $('sWt')?.value || '',
-    notes: $('sNotes')?.value || '',
-    deviceId: $('shotDeviceId')?.value || '',
-    se: qa('#logOv input[type="checkbox"]:checked').map(input => input.value)
-  };
-  $('logOv')?.classList.remove('active');
-  showPage('Log', $('navLog'));
-  document.querySelector('.gn-stable-zone-picker')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  showToast(tx('shots.selectZoneAgain', 'Select a trackable zone, then open LOG SHOT again.'));
-}
 
 function openWeightModal() {
   const wtOvEl = $('wtOv');
@@ -3301,8 +3338,13 @@ function renderResults() {
   const directionReady = weights.length >= 3 && spanDays >= 7;
   setText('resLatestWeight', latest ? `${latest.weight.toFixed(1)} lb` : '—');
   setText('resShotCount', String(shots.length));
-  setText('resLatestAppetite', tx('results.logObservations', 'LOG OBSERVATIONS'));
-  setText('resLatestEnergy', tx('results.logObservations', 'LOG OBSERVATIONS'));
+  /* v0.15.41 S12: observation metrics have no recorded values yet, so they
+     render the empty-state placeholder (see .results-metric-empty). If a
+     real observation value is ever written here, remove that class. */
+  const obsPlaceholder = tx('results.logObservations', 'LOG OBSERVATIONS');
+  setText('resLatestAppetite', obsPlaceholder);
+  setText('resLatestEnergy', obsPlaceholder);
+  ['resLatestAppetite', 'resLatestEnergy'].forEach(id => { try { $(id)?.classList.add('results-metric-empty'); } catch (_) {} });
   setText('resContinuityEvents', String(shots.length));
   setText('resContinuityRecent', latestShot() ? formatDate(latestShot().date, { month: 'short', day: 'numeric' }) : '—');
   setText('resContinuityActive', String(shots.length));
@@ -4066,7 +4108,7 @@ function openLabTool(tool) {
   page.classList.add('gn-tool-focus');
   toolNodes.forEach(node => host.appendChild(node));
   [$('gnResearchSection'), $('gnLedgerSection'), $('gnSupplySection')].forEach(section => { if (section) section.open = section.id === (tool === 'research' ? 'gnResearchSection' : tool === 'inventory' ? 'gnSupplySection' : 'gnLedgerSection'); });
-  const titles = { calculators: tx('lab.calculators', 'CALCULATORS'), research: tx('lab.researchPeptides', 'RESEARCH PEPTIDES'), inventory: tx('lab.inventory', 'INVENTORY'), devices: tx('lab.deviceVault', 'DEVICE VAULT'), ledger: tx('lab.eventLedger', 'EVENT LEDGER') };
+  const titles = { calculators: tx('lab.calculators', 'CALCULATORS'), research: tx('lab.researchPeptides', 'RESEARCH PEPTIDES'), inventory: tx('lab.inventory', 'INVENTORY'), devices: tx('lab.deviceVault', 'DEVICE REGISTRY'), ledger: tx('lab.eventLedger', 'EVENT LEDGER') };
   setText('gnLabToolTitle', titles[tool] || 'LAB SYSTEM');
   qa('[data-lab-focus]').forEach(tile => tile.classList.toggle('active', tile.dataset.labFocus === tool));
   page.classList.add('gn-lab-tool-open');
@@ -4155,7 +4197,11 @@ function announceLabToolStatus(label, detail) {
 }
 
 /* v0.15.30 — premium vibration feedback (additive). Gated by user pref + reduced-motion
-   + input focus (unless the focus belongs to the element that just dispatched the action). */
+   + input focus (unless the focus belongs to the element that just dispatched the action).
+   v0.15.41 — VIBRATION REMOVED at founder direction (2026-09-12). The module is
+   now a hard no-op for vibration: play() returns immediately, so NO vibration
+   fires regardless of the stored gn_haptics_v1 preference ('on' or missing).
+   The API surface is kept intact so existing call sites don't break. */
 const gnHaptics = (() => {
   const KEY = 'gn_haptics_v1';
   let enabled = (() => {
@@ -4198,23 +4244,10 @@ const gnHaptics = (() => {
     return true;
   };
   const play = (pattern, opts = {}) => {
-    if (!enabled) return;
-    if (reduceMotion()) return;
-    const skipFocus = opts && opts.skipFocus;
-    if (!skipFocus && shouldSuppressForFocus()) return;
-    if (!supported()) return;
-    /* v0.15.32 — wrap in try/catch but DO NOT silently swallow: log a
-       single warning for diagnostics. Android Chrome WebView occasionally
-       throws "vibrate() must be called from a user gesture" — that's fine
-       to swallow, but any other error is unexpected and we want to see it. */
-    try {
-      navigator.vibrate(pattern);
-    } catch (err) {
-      const msg = String(err && err.message || err);
-      if (!/user gesture|secure context|not allowed|gestureactivation/i.test(msg)) {
-        try { console.warn('[GRID//NODE gnHaptics]', msg); } catch (_) {}
-      }
-    }
+    /* v0.15.41 — vibration removed at founder direction. Hard no-op:
+       nothing vibrates, whatever the stored preference says. The old
+       gate/probe machinery was deleted; this stub keeps call sites working. */
+    return;
   };
   const setEnabled = (next) => {
     enabled = !!next;
@@ -4417,9 +4450,9 @@ function ensureProfileHub() {
     <div class="gn-profile-sections">
       <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.node">// YOUR NODE</div><div class="gn-profile-row"><span><b data-i18n="vault.medicationLabel">Medication</b><small id="gnProfileMedication">Not entered</small></span><span class="gn-profile-chevron">›</span></div><div class="gn-profile-row"><span><b data-i18n="vault.bodyMetrics">Body Metrics</b><small id="gnProfileBody">Not entered</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row" onclick="openSystemUpdate()"><span><b data-i18n="vault.whatsNew">What's New</b><small data-gn-whatsnew-version></small></span><span class="gn-profile-chevron">›</span></button></section>
       <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.yourData">// YOUR DATA</div><button type="button" class="gn-profile-row" onclick="exportCSV()"><span><b data-i18n="vault.exportCsv">Export CSV</b><small data-i18n="vault.exportCsvHelp">Download readable records</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="exportBackup()"><span><b data-i18n="vault.exportBackup">Export Backup</b><small data-i18n="vault.exportBackupHelp">Save a complete local copy</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="openImportDialog()"><span><b data-i18n="vault.importData">Import Data</b><small data-i18n="vault.importDataHelp">Bring history from Shotsy or CSV</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.dataOwnership">Data Ownership</b><small data-i18n="vault.dataOwnershipHelp">Export or delete anytime</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row gn-profile-danger-row" onclick="openDeleteLocalData()"><span><b data-i18n="vault.deleteAllData">Delete All Local Data</b><small data-i18n="vault.deleteAllDataHelp">Remove this device record</small></span><span class="gn-profile-chevron">›</span></button></section>
-      <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.tools">// TOOLS</div><button type="button" class="gn-profile-row" onclick="document.querySelector('.gn-device-vault')?.scrollIntoView({behavior:'smooth',block:'start'})"><span><b data-i18n="vault.deviceVaultLink">Device Vault</b><small data-i18n="vault.deviceVaultLinkHelp">Private identity registry</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.connectedAccount">Connected Account</b><small id="gnProfileAccount">Local device session</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row gn-profile-danger-row" onclick="openDeleteCloudAccount()"><span><b data-i18n="vault.deleteCloudAccount">Delete Cloud Account</b><small data-i18n="vault.deleteCloudAccountHelp">Requires server deletion control</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.appVersion">App Version</b><small id="gnProfileVersion">0.12.0</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row" onclick="window.location.reload()"><span><b data-i18n="vault.reloadApp">Reload App</b><small data-i18n="vault.reloadAppHelp">Refresh the current build</small></span><span class="gn-profile-chevron">›</span></button></section>
+      <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.tools">// TOOLS</div><button type="button" class="gn-profile-row" onclick="document.querySelector('.gn-device-vault')?.scrollIntoView({behavior:'smooth',block:'start'})"><span><b data-i18n="vault.deviceVaultLink">Device Vault</b><small data-i18n="vault.deviceVaultLinkHelp">Private identity registry</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.connectedAccount">Connected Account</b><small id="gnProfileAccount">Local device session</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row gn-profile-danger-row" data-gn-cloud-only onclick="openDeleteCloudAccount()"><span><b data-i18n="vault.deleteCloudAccount">Delete Cloud Account</b><small data-i18n="vault.deleteCloudAccountHelp">Requires server deletion control</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.appVersion">App Version</b><small id="gnProfileVersion"></small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row" onclick="window.location.reload()"><span><b data-i18n="vault.reloadApp">Reload App</b><small data-i18n="vault.reloadAppHelp">Refresh the current build</small></span><span class="gn-profile-chevron">›</span></button></section>
     </div>
-    <button type="button" class="gn-profile-signout" onclick="openSignOutModal()"><span><b data-i18n="vault.signOut">SIGN OUT</b><small data-i18n="vault.localOnlyFooter">Your data stays on this device.</small></span><span class="gn-profile-chevron">›</span></button>
+    <button type="button" class="gn-profile-signout" data-gn-cloud-only onclick="openSignOutModal()"><span><b data-i18n="vault.signOut">SIGN OUT</b><small data-i18n="vault.localOnlyFooter">Your data stays on this device.</small></span><span class="gn-profile-chevron">›</span></button>
     <div class="gn-device-vault"><div class="gn-device-vault-head"><div><div class="gn-foundation-kicker" data-i18n="vault.deviceVaultKicker">// DEVICE VAULT</div><h3 data-i18n="vault.deviceVaultSubhead">PHYSICAL OBJECT IDENTITY</h3></div><span class="gn-record-state" data-i18n="vault.deviceVaultPrivate">PRIVATE REGISTRY</span></div><p class="gn-ledger-copy" data-i18n="vault.deviceVaultPhilosophy">The device is not the cartridge. The cartridge is not the dose. The dose is not the plan. Device identity, inventory, SHOT events, and LOADOUT remain separate records.</p><form class="gn-record-form" id="gnDeviceForm"><div class="gn-form-grid"><label><span data-i18n="vault.deviceName">DEVICE NAME</span><input id="gnDeviceName" required placeholder="e.g. Home pen A" data-i18n-placeholder="vault.deviceNamePlaceholder"></label><label><span data-i18n="vault.deviceType">DEVICE TYPE</span><select id="gnDeviceType"><option value="REUSABLE" data-i18n="vault.deviceTypeReusable">Reusable pen</option><option value="DISPOSABLE" data-i18n="vault.deviceTypeDisposable">Disposable pen</option><option value="AUTOINJECTOR" data-i18n="vault.deviceTypeAutoinjector">Autoinjector</option><option value="OTHER" data-i18n="vault.deviceTypeOther">Other device</option></select></label><label><span data-i18n="vault.deviceStatus">STATUS</span><select id="gnDeviceStatus">${DEVICE_STATUSES.map(status => { const key = 'vault.status' + status.replace(/\s+/g, ''); return `<option value="${status}" data-i18n="${key}">${tx(key, status)}</option>`; }).join('')}</select></label></div><label><span data-i18n="vault.deviceLabelNotes">LABEL / NOTES</span><textarea id="gnDeviceNotes" rows="2" placeholder="User-entered identity notes" data-i18n-placeholder="vault.deviceNotesPlaceholder"></textarea></label><button class="btn-full btn-secondary" type="submit" data-i18n="vault.deviceRegister">REGISTER DEVICE IDENTITY</button></form><div class="gn-device-list" id="gnDeviceList"></div></div>
   </section>`);
   installCustomPickers(hero.parentElement || page);
@@ -4433,7 +4466,7 @@ function ensureProfileHub() {
   const deviceVault = hero.parentElement?.querySelector('.gn-device-vault');
   const deviceKicker = deviceVault?.querySelector('.gn-foundation-kicker');
   const deviceSignal = deviceVault?.querySelector('.gn-record-state');
-  if (deviceKicker) deviceKicker.textContent = tx('vault.deviceVaultKicker', '// DEVICE VAULT');
+  if (deviceKicker) deviceKicker.textContent = tx('vault.deviceVaultKicker', '// DEVICE REGISTRY');
   if (deviceSignal) deviceSignal.textContent = tx('vault.deviceVaultPrivate', 'PRIVATE REGISTRY');
   $('gnSystemUpdateDismiss')?.addEventListener('click', dismissSystemUpdate);
   document.querySelector('[data-system-update-open]')?.addEventListener('click', openSystemUpdate);
@@ -4442,6 +4475,17 @@ function ensureProfileHub() {
   renderDeviceVault();
   ensurePasskeySection();
   renderGnHapticsState();
+  syncCloudOnlyButtons();
+}
+
+/* v0.15.41 — SIGN OUT and Delete Cloud Account are cloud-only controls. A
+ * local-only user must never be offered to sign out of nothing or delete a
+ * cloud account that doesn't exist. The hub template is built once, so this
+ * re-syncs visibility on every profile render (called from 09-vault). */
+function syncCloudOnlyButtons() {
+  let hasCloud = false;
+  try { hasCloud = !!(typeof state !== 'undefined' && state && state.cloud); } catch (_) {}
+  document.querySelectorAll('[data-gn-cloud-only]').forEach((el) => { el.hidden = !hasCloud; });
 }
 
 function renderDeviceVault() {
@@ -4449,7 +4493,7 @@ function renderDeviceVault() {
   if (!list) return;
   const devices = S.get('devices', []);
   const active = devices.filter(device => !device.archived), archived = devices.filter(device => device.archived);
-  list.innerHTML = devices.length ? `${active.slice().reverse().map(device => `<article class="gn-record-row"><div><b>${safeText(device.name)}</b><small>${safeText(deviceTypeLabel(device.type))} · ${tx('vault.privateId', 'PRIVATE ID')} ${safeText(device.qrIdentity || tx('vault.devicePending', 'PENDING'))}</small></div><span class="gn-record-state">${safeText(deviceStatusLabel(device.status))}</span><div style="display:flex;gap:4px"><button type="button" class="gn-record-delete" data-device-edit="${safeText(device.id)}" aria-label="${tx('vault.editDevice', 'Edit device')}">✎</button><button type="button" class="gn-record-delete" data-device-retire="${safeText(device.id)}" aria-label="${tx('vault.retireDevice', 'Retire device')}">×</button></div></article>`).join('')}${archived.length ? `<div class="gn-ledger-copy" style="margin-top:10px">${tx('vault.deviceArchived', 'RETIRED / ARCHIVED DEVICES')}</div>${archived.slice().reverse().map(device => `<article class="gn-record-row"><div><b>${safeText(device.name)}</b><small>${safeText(deviceTypeLabel(device.type))} · ${tx('vault.privateIdentityPreserved', 'Private identity preserved')}</small></div><span class="gn-record-state">${safeText(deviceStatusLabel(device.status || 'RETIRED'))}</span><button type="button" class="gn-record-delete" data-device-restore="${safeText(device.id)}" aria-label="${tx('vault.restoreDevice', 'Restore device')}">↺</button></article>`).join('')}` : ''}` : `<div class="gn-empty-state"><span class="gn-icon gn-icon-md gn-accent-y"><svg><use href="#gn-vault-core"></use></svg></span><b>${tx('vault.deviceReadyEmpty', 'DEVICE VAULT READY')}</b><span>${tx('vault.deviceReadyEmptyHelp', 'Register a physical object when you want its identity and lifecycle preserved.')}</span></div>`;
+  list.innerHTML = devices.length ? `${active.slice().reverse().map(device => `<article class="gn-record-row"><div><b>${safeText(device.name)}</b><small>${safeText(deviceTypeLabel(device.type))} · ${tx('vault.privateId', 'PRIVATE ID')} ${safeText(device.qrIdentity || tx('vault.devicePending', 'PENDING'))}</small></div><span class="gn-record-state">${safeText(deviceStatusLabel(device.status))}</span><div style="display:flex;gap:4px"><button type="button" class="gn-record-delete" data-device-edit="${safeText(device.id)}" aria-label="${tx('vault.editDevice', 'Edit device')}">✎</button><button type="button" class="gn-record-delete" data-device-retire="${safeText(device.id)}" aria-label="${tx('vault.retireDevice', 'Retire device')}">×</button></div></article>`).join('')}${archived.length ? `<div class="gn-ledger-copy" style="margin-top:10px">${tx('vault.deviceArchived', 'RETIRED / ARCHIVED DEVICES')}</div>${archived.slice().reverse().map(device => `<article class="gn-record-row"><div><b>${safeText(device.name)}</b><small>${safeText(deviceTypeLabel(device.type))} · ${tx('vault.privateIdentityPreserved', 'Private identity preserved')}</small></div><span class="gn-record-state">${safeText(deviceStatusLabel(device.status || 'RETIRED'))}</span><button type="button" class="gn-record-delete" data-device-restore="${safeText(device.id)}" aria-label="${tx('vault.restoreDevice', 'Restore device')}">↺</button></article>`).join('')}` : ''}` : `<div class="gn-empty-state"><span class="gn-icon gn-icon-md gn-accent-y"><svg><use href="#gn-vault-core"></use></svg></span><b>${tx('vault.deviceReadyEmpty', 'DEVICE REGISTRY READY')}</b><span>${tx('vault.deviceReadyEmptyHelp', 'Register a physical object when you want its identity and lifecycle preserved.')}</span></div>`;
 }
 
 function renderGnHapticsState() {
@@ -4477,25 +4521,16 @@ function toggleGnHaptics() {
   try { window.gnHaptics.tap(); } catch (_) {}
 }
 
-/* Live vibration probe: the "not supported" verdict comes from a single
- * typeof check, which can't tell "API missing" from "API present but the
- * device stayed silent". Tapping the row while unsupported fires a real
- * test pulse (the tap is a user gesture) and reports exactly what this
- * browser exposes, so we get ground truth from the device. */
+/* Live vibration probe — v0.15.41: vibration removed at founder direction, so the
+ * probe no longer fires a test pulse. It only reports API presence for
+ * diagnostics; the verdict can never re-enable vibration. */
 function probeGnHaptics() {
   const helpEl = $('gnHapticsHelp');
   let apiType = 'unknown';
   try { apiType = typeof navigator !== 'undefined' ? typeof navigator.vibrate : 'no navigator'; } catch (_) {}
-  let callResult = 'not attempted (API missing)';
-  if (apiType === 'function') {
-    try {
-      callResult = navigator.vibrate([25, 80, 25]) ? 'accepted (true)' : 'rejected (false)';
-    } catch (err) {
-      callResult = 'threw: ' + String((err && err.message) || err);
-    }
-  }
+  const callResult = 'not attempted (vibration disabled in v0.15.41)';
   try { console.info('[GRID//NODE haptics probe]', 'vibrate typeof:', apiType, '| test pulse:', callResult); } catch (_) {}
-  if (helpEl) helpEl.textContent = 'Probe: vibrate API is ' + apiType + '; test pulse ' + callResult + '.';
+  if (helpEl) helpEl.textContent = 'Probe: vibrate API is ' + apiType + '; ' + callResult + '.';
 }
 
 function pulseGnCapture(saveButton) {
@@ -4512,7 +4547,7 @@ function saveDeviceRecord() {
   const devices = S.get('devices', []), now = new Date().toISOString(), id = moduleState.deviceEditId || createId('device'), existing = devices.find(item => item.id === id);
   const device = { ...(existing || {}), id, name, type: normalizeDeviceType($('gnDeviceType')?.value), status: $('gnDeviceStatus')?.value || 'NEEDS CHECKING', notes: $('gnDeviceNotes')?.value?.trim() || '', qrIdentity: existing?.qrIdentity || `GN-${Math.random().toString(36).slice(2, 10).toUpperCase()}`, source: existing?.source || 'manual', state: existing?.state || 'confirmed', archived: existing?.archived || false, createdAt: existing?.createdAt || now, modifiedAt: now };
   const index = devices.findIndex(item => item.id === id); if (index >= 0) devices[index] = device; else devices.push(device);
-  S.set('devices', devices); appendEventLedger({ type: 'DEVICE', recordId: device.id, label: existing ? 'DEVICE IDENTITY UPDATED' : 'DEVICE IDENTITY REGISTERED' }); queueCloudSync('workspace'); moduleState.deviceEditId = null; $('gnDeviceForm')?.reset(); renderDeviceVault(); actionFeedback(existing ? 'DEVICE IDENTITY UPDATED' : 'DEVICE IDENTITY REGISTERED', 'DEVICE VAULT UPDATED // HISTORY PRESERVED');
+  S.set('devices', devices); appendEventLedger({ type: 'DEVICE', recordId: device.id, label: existing ? 'DEVICE IDENTITY UPDATED' : 'DEVICE IDENTITY REGISTERED' }); queueCloudSync('workspace'); moduleState.deviceEditId = null; $('gnDeviceForm')?.reset(); renderDeviceVault(); actionFeedback(existing ? 'DEVICE IDENTITY UPDATED' : 'DEVICE IDENTITY REGISTERED', 'DEVICE REGISTRY UPDATED // HISTORY PRESERVED');
 }
 
 function handleDeviceAction(event) {
@@ -4752,6 +4787,7 @@ async function confirmDeleteCloudAccount() {
 
 function renderProfile() {
   ensureProfileHub();
+  try { if (typeof syncCloudOnlyButtons === 'function') syncCloudOnlyButtons(); } catch (_) {}
   ensureProfileMeasurements();
   ensureDestructiveDialogs();
   syncIdentityAvatars();
@@ -5660,16 +5696,16 @@ gnSoundArmBoot();
  *
  * Thin adapter over the canonical window.gnHaptics module (js/modules/08-lab.js,
  * added 2026-09-06 in 6e1dcca "premium feel pass + opt-in tactile feedback").
- * That module owns the single storage key (gn_haptics_v1, 'on'/'off'), the
- * user-facing toggle (NODE/Profile -> Tools -> Tactile Feedback), and the
- * guards (prefers-reduced-motion, focus-inside-field suppression, gesture
- * window). This file only wires NEW trigger sites to it:
+ * v0.15.41 — VIBRATION REMOVED at founder direction (2026-09-12). The canonical
+ * module is now a hard no-op for vibration, so every trigger wired below is
+ * silently inert. This file is kept so the wiring (throttle, event listeners)
+ * stays intact if vibration ever returns under a new directive; no vibration
+ * fires from it today, regardless of stored preferences.
+ * Original wiring notes (pre-removal):
  *   - light tick on HUD button taps (delegated, throttled)
  *   - double-tick when the SOUND switch turns on, single tick when off
  *   - success nudge on gn:shot-saved (dose-save has no actionFeedback path,
  *     so there is no double-fire with the existing confirm vibration)
- * Direct confirmations (toggle, dose-save) use fire() to bypass the focus
- * gate, matching actionFeedback's established behavior.
  */
 
 const GN_HAPTIC_TAP_THROTTLE_MS = 70;
@@ -5727,7 +5763,7 @@ document.addEventListener('gn:shot-saved', () => {
   if (h) { try { h.fire([10, 60, 20]); } catch (_) {} }
 });
 
-window.GNModules=Object.freeze({getProfile:getProfile,getProfileForEvidence:getProfileForEvidence,selectState:selectState,moduleState:moduleState,refreshNodeHeader:refreshNodeHeader,showScreen:showScreen,showPage:showPage,refreshAll:refreshAll,loadApp:loadApp,computeTotalChange:computeTotalChange,saveProfileMed:saveProfileMed,saveProfileMetrics:saveProfileMetrics,calcAndShowBMI:calcAndShowBMI,toggleSelect:toggleSelect,selectOpt:selectOpt,showPhasesModal:showPhasesModal,closePhases:closePhases,renderShots:renderShots,setShotHistoryView:setShotHistoryView,scannerSkinTone:scannerSkinTone,setScannerSkinTone:setScannerSkinTone,setScannerMode:setScannerMode,selectScannerLocation:selectScannerLocation,renderScanner:renderScanner,openLogModal:openLogModal,closeLog:closeLog,editShot:editShot,openArchiveConfirm:openArchiveConfirm,cancelArchiveShot:cancelArchiveShot,confirmArchiveShot:confirmArchiveShot,restoreArchivedShot:restoreArchivedShot,openPermanentDeleteConfirm:openPermanentDeleteConfirm,cancelPermanentDeleteShot:cancelPermanentDeleteShot,confirmPermanentDeleteShot:confirmPermanentDeleteShot,saveShot:saveShot,openFutureTimestampConfirm:openFutureTimestampConfirm,closeFutureTimestampConfirm:closeFutureTimestampConfirm,cancelFutureTimestampSave:cancelFutureTimestampSave,confirmFutureTimestampSave:confirmFutureTimestampSave,handleShotFab:handleShotFab,goToScannerForLocationFromLog:goToScannerForLocationFromLog,openWeightModal:openWeightModal,closeWt:closeWt,setWeightUnit:setWeightUnit,saveWt:saveWt,renderResults:renderResults,setRange:setRange,setWtRange:setWtRange,showLabSeg:showLabSeg,showYouSeg:showYouSeg,openLabTool:openLabTool,closeLabTool:closeLabTool,exportInventory:exportInventory,updateDoseProjection:updateDoseProjection,saveCalculatorReference:saveCalculatorReference,renderLab:renderLab,updateSyr:updateSyr,updateRecon:updateRecon,updateSupply:updateSupply,setMeasurementUnit:setMeasurementUnit,saveMeasurements:saveMeasurements,openDeleteLocalData:openDeleteLocalData,closeDeleteLocalData:closeDeleteLocalData,updateDeleteLocalButton:updateDeleteLocalButton,confirmDeleteLocalData:confirmDeleteLocalData,openDeleteCloudAccount:openDeleteCloudAccount,closeDeleteCloudAccount:closeDeleteCloudAccount,confirmDeleteCloudAccount:confirmDeleteCloudAccount,renderProfile:renderProfile,dismissSystemUpdate:dismissSystemUpdate,openSystemUpdate:openSystemUpdate,exportCSV:exportCSV,exportBackup:exportBackup,prepareCSVImport:prepareCSVImport,handleCSVImportFile:handleCSVImportFile,openImportDialog:openImportDialog,closeImportDialog:closeImportDialog,handleUnifiedCsvSelection:handleUnifiedCsvSelection,handleBackupImportFile:handleBackupImportFile,confirmBackupImport:confirmBackupImport,cancelCSVImport:cancelCSVImport,confirmCSVImport:confirmCSVImport,parseShotsyJSON:parseShotsyJSON,handleShotsyJSONFile:handleShotsyJSONFile,toggleImportForce:toggleImportForce,previewCSVImportForTesting:previewCSVImportForTesting,renderCalendar:renderCalendar,calPrev:calPrev,calNext:calNext,calDayClick:calDayClick,openArsenalMod:openArsenalMod,closeArs:closeArs,saveArs:saveArs,requestLoadoutRemove:requestLoadoutRemove,cancelLoadoutRemove:cancelLoadoutRemove,confirmLoadoutRemove:confirmLoadoutRemove,formatTime24:formatTime24,formatTime12:formatTime12,gnSetShotMeridiem:gnSetShotMeridiem,gnShotClockLiveFormat:gnShotClockLiveFormat,gnNormalizeShotClockField:gnNormalizeShotClockField,gnWeightDateInput:gnWeightDateInput,gnWeightTimeInput:gnWeightTimeInput,gnOpenShotDatePicker:gnOpenShotDatePicker,gnCloseShotDatePicker:gnCloseShotDatePicker,gnDatePickerMove:gnDatePickerMove,gnSelectPickerDate:gnSelectPickerDate,gnSetShotDateFromPicker:gnSetShotDateFromPicker,gnSetShotDateValue:gnSetShotDateValue,gnSetShotTimeValue:gnSetShotTimeValue,gnMedRevealGroup:gnMedRevealGroup,updatePills:updatePills,selPill:selPill,initModules:initModules});
+window.GNModules=Object.freeze({getProfile:getProfile,getProfileForEvidence:getProfileForEvidence,selectState:selectState,moduleState:moduleState,refreshNodeHeader:refreshNodeHeader,showScreen:showScreen,showPage:showPage,refreshAll:refreshAll,loadApp:loadApp,computeTotalChange:computeTotalChange,saveProfileMed:saveProfileMed,saveProfileMetrics:saveProfileMetrics,calcAndShowBMI:calcAndShowBMI,toggleSelect:toggleSelect,selectOpt:selectOpt,showPhasesModal:showPhasesModal,closePhases:closePhases,renderShots:renderShots,setShotHistoryView:setShotHistoryView,scannerSkinTone:scannerSkinTone,setScannerSkinTone:setScannerSkinTone,setScannerMode:setScannerMode,selectScannerLocation:selectScannerLocation,renderScanner:renderScanner,openLogModal:openLogModal,closeLog:closeLog,editShot:editShot,openArchiveConfirm:openArchiveConfirm,cancelArchiveShot:cancelArchiveShot,confirmArchiveShot:confirmArchiveShot,restoreArchivedShot:restoreArchivedShot,openPermanentDeleteConfirm:openPermanentDeleteConfirm,cancelPermanentDeleteShot:cancelPermanentDeleteShot,confirmPermanentDeleteShot:confirmPermanentDeleteShot,saveShot:saveShot,openFutureTimestampConfirm:openFutureTimestampConfirm,closeFutureTimestampConfirm:closeFutureTimestampConfirm,cancelFutureTimestampSave:cancelFutureTimestampSave,confirmFutureTimestampSave:confirmFutureTimestampSave,handleShotFab:handleShotFab,openWeightModal:openWeightModal,closeWt:closeWt,setWeightUnit:setWeightUnit,saveWt:saveWt,renderResults:renderResults,setRange:setRange,setWtRange:setWtRange,showLabSeg:showLabSeg,showYouSeg:showYouSeg,openLabTool:openLabTool,closeLabTool:closeLabTool,exportInventory:exportInventory,updateDoseProjection:updateDoseProjection,saveCalculatorReference:saveCalculatorReference,renderLab:renderLab,updateSyr:updateSyr,updateRecon:updateRecon,updateSupply:updateSupply,setMeasurementUnit:setMeasurementUnit,saveMeasurements:saveMeasurements,openDeleteLocalData:openDeleteLocalData,closeDeleteLocalData:closeDeleteLocalData,updateDeleteLocalButton:updateDeleteLocalButton,confirmDeleteLocalData:confirmDeleteLocalData,openDeleteCloudAccount:openDeleteCloudAccount,closeDeleteCloudAccount:closeDeleteCloudAccount,confirmDeleteCloudAccount:confirmDeleteCloudAccount,renderProfile:renderProfile,dismissSystemUpdate:dismissSystemUpdate,openSystemUpdate:openSystemUpdate,exportCSV:exportCSV,exportBackup:exportBackup,prepareCSVImport:prepareCSVImport,handleCSVImportFile:handleCSVImportFile,openImportDialog:openImportDialog,closeImportDialog:closeImportDialog,handleUnifiedCsvSelection:handleUnifiedCsvSelection,handleBackupImportFile:handleBackupImportFile,confirmBackupImport:confirmBackupImport,cancelCSVImport:cancelCSVImport,confirmCSVImport:confirmCSVImport,parseShotsyJSON:parseShotsyJSON,handleShotsyJSONFile:handleShotsyJSONFile,toggleImportForce:toggleImportForce,previewCSVImportForTesting:previewCSVImportForTesting,renderCalendar:renderCalendar,calPrev:calPrev,calNext:calNext,calDayClick:calDayClick,openArsenalMod:openArsenalMod,closeArs:closeArs,saveArs:saveArs,requestLoadoutRemove:requestLoadoutRemove,cancelLoadoutRemove:cancelLoadoutRemove,confirmLoadoutRemove:confirmLoadoutRemove,formatTime24:formatTime24,formatTime12:formatTime12,gnSetShotMeridiem:gnSetShotMeridiem,gnShotClockLiveFormat:gnShotClockLiveFormat,gnNormalizeShotClockField:gnNormalizeShotClockField,gnWeightDateInput:gnWeightDateInput,gnWeightTimeInput:gnWeightTimeInput,gnOpenShotDatePicker:gnOpenShotDatePicker,gnCloseShotDatePicker:gnCloseShotDatePicker,gnDatePickerMove:gnDatePickerMove,gnSelectPickerDate:gnSelectPickerDate,gnSetShotDateFromPicker:gnSetShotDateFromPicker,gnSetShotDateValue:gnSetShotDateValue,gnSetShotTimeValue:gnSetShotTimeValue,gnMedRevealGroup:gnMedRevealGroup,updatePills:updatePills,selPill:selPill,initModules:initModules});
 
 const modules=window.GNModules;
 
@@ -5748,7 +5784,7 @@ function bridge() {
     'openArchiveConfirm', 'cancelArchiveShot', 'confirmArchiveShot', 'restoreArchivedShot',
     'openPermanentDeleteConfirm', 'cancelPermanentDeleteShot', 'confirmPermanentDeleteShot',
     'openFutureTimestampConfirm', 'closeFutureTimestampConfirm', 'cancelFutureTimestampSave',
-    'confirmFutureTimestampSave', 'goToScannerForLocationFromLog', 'setScannerMode',
+    'confirmFutureTimestampSave', 'setScannerMode',
     'selectScannerLocation', 'renderScanner', 'openWeightModal', 'closeWt', 'saveWt',
     'setWeightUnit', 'setRange', 'setWtRange', 'showLabSeg', 'showYouSeg', 'toggleSelect',
     'selectOpt', 'saveProfileMed', 'saveProfileMetrics', 'calcAndShowBMI', 'updatePills',

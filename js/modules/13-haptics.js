@@ -2,16 +2,16 @@
  *
  * Thin adapter over the canonical window.gnHaptics module (js/modules/08-lab.js,
  * added 2026-09-06 in 6e1dcca "premium feel pass + opt-in tactile feedback").
- * That module owns the single storage key (gn_haptics_v1, 'on'/'off'), the
- * user-facing toggle (NODE/Profile -> Tools -> Tactile Feedback), and the
- * guards (prefers-reduced-motion, focus-inside-field suppression, gesture
- * window). This file only wires NEW trigger sites to it:
+ * v0.15.41 — VIBRATION REMOVED at founder direction (2026-09-12). The canonical
+ * module is now a hard no-op for vibration, so every trigger wired below is
+ * silently inert. This file is kept so the wiring (throttle, event listeners)
+ * stays intact if vibration ever returns under a new directive; no vibration
+ * fires from it today, regardless of stored preferences.
+ * Original wiring notes (pre-removal):
  *   - light tick on HUD button taps (delegated, throttled)
  *   - double-tick when the SOUND switch turns on, single tick when off
  *   - success nudge on gn:shot-saved (dose-save has no actionFeedback path,
  *     so there is no double-fire with the existing confirm vibration)
- * Direct confirmations (toggle, dose-save) use fire() to bypass the focus
- * gate, matching actionFeedback's established behavior.
  */
 
 const GN_HAPTIC_TAP_THROTTLE_MS = 70;

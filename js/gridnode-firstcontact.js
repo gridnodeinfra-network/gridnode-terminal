@@ -55,7 +55,7 @@
     en: {
       'fc.signal.kicker': 'FIRST CONTACT',
       'fc.signal.title': 'Built for your actual protocol.',
-      'fc.signal.body': 'Most trackers only know pharma GLPs. GRID//NODE is built for the real stack: compounded, grey market, research. Your data stays on this device.',
+      'fc.signal.body': 'Most trackers only know pharma GLPs. GRID//NODE is built for the real stack: compounded, grey market, research. Your data lives on this device first; cloud sync is optional.',
       'fc.signal.cta': 'Show me',
       'fc.grid.kicker': 'THE GRID',
       'fc.grid.title': 'Four zones. One loop.',
@@ -63,22 +63,22 @@
       'fc.grid.shots': 'SHOTS',
       'fc.grid.shotsBody': 'Your dose log. The loop starts here.',
       'fc.grid.results': 'RESULTS',
-      'fc.grid.resultsBody': 'Your curve. The Phase Engine reads your cycle.',
+      'fc.grid.resultsBody': 'Your shots, weight, and notes become simple charts here.',
       'fc.grid.lab': 'LAB',
-      'fc.grid.labBody': 'Biotech tools. Draw, mix, stock, assay.',
+      'fc.grid.labBody': 'Dose math helpers: how much to draw, how to mix, what is in stock.',
       'fc.grid.vault': 'VAULT',
       'fc.grid.vaultBody': 'Your data. Local-first. Exports and settings.',
-      'fc.dose.kicker': 'FIRST DOSE',
+      'fc.dose.kicker': 'FIRST SHOT',
       'fc.dose.title': 'This is the whole app in one tap.',
-      'fc.dose.body': 'Tap the highlighted button and log a real dose. It takes about 20 seconds.',
+      'fc.dose.body': 'Tap the highlighted button and log a real shot. It takes about 20 seconds.',
       'fc.dose.hint': 'TAP THE HIGHLIGHTED CONTROL TO CONTINUE',
       'fc.dose.later': "I'll log later",
       'fc.dose.openLog': 'Open the log',
-      'fc.coach.kicker': 'FIRST DOSE',
+      'fc.coach.kicker': 'FIRST SHOT',
       'fc.coach.title': 'Log it for real.',
       'fc.coach.stepMed': 'Pick your peptide',
       'fc.coach.stepDose': 'Set your dose',
-      'fc.coach.stepLoc': 'Choose the site',
+      'fc.coach.stepLoc': 'Choose the injection site',
       'fc.coach.then': 'Then hit SAVE.',
       'fc.coach.saved': "Logged. That's the habit. Everything else builds on this.",
       'fc.coach.blocked': 'Could not save yet. Check: {fields}.',
@@ -91,17 +91,17 @@
       'fc.curve.title': 'There it is. Your dose, on your curve.',
       'fc.curve.body': 'The Phase Engine reads where you are in your cycle from every logged dose, so you run your protocol with eyes open.',
       'fc.curve.emptyTitle': 'Your curve is waiting.',
-      'fc.curve.emptyBody': 'Log your first dose and the Phase Engine starts reading your cycle.',
-      'fc.curve.logCta': 'Log your first dose',
+      'fc.curve.emptyBody': 'Log your first shot and the Phase Engine starts reading your cycle.',
+      'fc.curve.logCta': 'Log your first shot',
       'fc.curve.cta': 'Continue',
       'fc.comfort.kicker': 'MAKE IT YOURS',
       'fc.comfort.title': 'Set your comfort.',
       'fc.comfort.body': 'Pick a theme and a language. The whole app follows.',
-      'fc.comfort.night': 'NIGHT',
-      'fc.comfort.dusk': 'DUSK',
+      'fc.comfort.night': 'DARK',
+      'fc.comfort.dusk': 'LIGHT',
       'fc.comfort.done': 'Done',
       'fc.online.kicker': 'SYSTEM ONLINE',
-      'fc.online.title': 'Log the dose. Read the curve. Run your protocol.',
+      'fc.online.title': 'Log the shot. Read the curve. Run your protocol.',
       'fc.online.body': 'Welcome to GRID//NODE.',
       'fc.online.cta': 'Enter GRID//NODE',
       'fc.skip': 'Skip tour',
@@ -111,7 +111,7 @@
     es: {
       'fc.signal.kicker': 'PRIMER CONTACTO',
       'fc.signal.title': 'Hecho para tu protocolo real.',
-      'fc.signal.body': 'La mayoría de apps solo conocen los GLP farmacéuticos. GRID//NODE está hecho para el stack real: compuesto, grey market, investigación. Tus datos se quedan en este dispositivo.',
+      'fc.signal.body': 'La mayoría de apps solo conocen los GLP farmacéuticos. GRID//NODE está hecho para el stack real: compuesto, grey market, investigación. Tus datos viven primero en este dispositivo; la sincronización en la nube es opcional.',
       'fc.signal.cta': 'Muéstrame',
       'fc.grid.kicker': 'EL GRID',
       'fc.grid.title': 'Cuatro zonas. Un ciclo.',
@@ -119,22 +119,22 @@
       'fc.grid.shots': 'SHOTS',
       'fc.grid.shotsBody': 'Tu registro de dosis. El ciclo empieza aquí.',
       'fc.grid.results': 'RESULTS',
-      'fc.grid.resultsBody': 'Tu curva. El Motor de Fases lee tu ciclo.',
+      'fc.grid.resultsBody': 'Tus inyecciones, tu peso y tus notas se convierten aquí en gráficas simples.',
       'fc.grid.lab': 'LAB',
-      'fc.grid.labBody': 'Herramientas biotech. Dibuja, mezcla, inventario, análisis.',
+      'fc.grid.labBody': 'Ayudas para el cálculo de dosis: cuánto extraer, cómo mezclar, qué tienes en existencia.',
       'fc.grid.vault': 'VAULT',
       'fc.grid.vaultBody': 'Tus datos. Local primero. Exportar y ajustes.',
-      'fc.dose.kicker': 'PRIMERA DOSIS',
+      'fc.dose.kicker': 'PRIMERA INYECCIÓN',
       'fc.dose.title': 'Toda la app en un toque.',
-      'fc.dose.body': 'Toca el botón resaltado y registra una dosis real. Toma unos 20 segundos.',
+      'fc.dose.body': 'Toca el botón resaltado y registra una inyección real. Toma unos 20 segundos.',
       'fc.dose.hint': 'TOCA EL CONTROL RESALTADO PARA CONTINUAR',
       'fc.dose.later': 'Lo registro después',
       'fc.dose.openLog': 'Abrir el registro',
-      'fc.coach.kicker': 'PRIMERA DOSIS',
+      'fc.coach.kicker': 'PRIMERA INYECCIÓN',
       'fc.coach.title': 'Regístrala de verdad.',
       'fc.coach.stepMed': 'Elige tu péptido',
       'fc.coach.stepDose': 'Pon tu dosis',
-      'fc.coach.stepLoc': 'Elige la zona',
+      'fc.coach.stepLoc': 'Elige el sitio de inyección',
       'fc.coach.then': 'Luego pulsa GUARDAR.',
       'fc.coach.saved': 'Registrado. Ese es el hábito. Todo lo demás se construye sobre esto.',
       'fc.coach.blocked': 'No se pudo guardar todavía. Revisa: {fields}.',
@@ -142,22 +142,22 @@
       'fc.coach.field.dose': 'dosis',
       'fc.coach.field.date': 'fecha',
       'fc.coach.field.time': 'hora',
-      'fc.coach.field.loc': 'zona de inyección',
+      'fc.coach.field.loc': 'sitio de inyección',
       'fc.curve.kicker': 'LA CURVA',
       'fc.curve.title': 'Ahí está. Tu dosis, en tu curva.',
       'fc.curve.body': 'El Motor de Fases lee en qué punto de tu ciclo estás con cada dosis registrada, para que lleves tu protocolo con los ojos abiertos.',
       'fc.curve.emptyTitle': 'Tu curva te espera.',
-      'fc.curve.emptyBody': 'Registra tu primera dosis y el Motor de Fases empezará a leer tu ciclo.',
-      'fc.curve.logCta': 'Registrar mi primera dosis',
+      'fc.curve.emptyBody': 'Registra tu primera inyección y el Motor de Fases empezará a leer tu ciclo.',
+      'fc.curve.logCta': 'Registrar mi primera inyección',
       'fc.curve.cta': 'Continuar',
       'fc.comfort.kicker': 'A TU MANERA',
       'fc.comfort.title': 'Ajusta tu comodidad.',
       'fc.comfort.body': 'Elige tema e idioma. Toda la app te sigue.',
-      'fc.comfort.night': 'NIGHT',
-      'fc.comfort.dusk': 'DUSK',
+      'fc.comfort.night': 'DARK',
+      'fc.comfort.dusk': 'LIGHT',
       'fc.comfort.done': 'Listo',
       'fc.online.kicker': 'SISTEMA EN LÍNEA',
-      'fc.online.title': 'Registra la dosis. Lee la curva. Lleva tu protocolo.',
+      'fc.online.title': 'Registra la inyección. Lee la curva. Lleva tu protocolo.',
       'fc.online.body': 'Bienvenido a GRID//NODE.',
       'fc.online.cta': 'Entrar a GRID//NODE',
       'fc.skip': 'Omitir tour',
@@ -401,6 +401,32 @@
   /* ------------------------------------------------------------------ */
   /* Beat 0 — SIGNAL (fullscreen) */
   /* ------------------------------------------------------------------ */
+  /* v0.15.41: shared language-toggle wiring for the tour. New users get
+     EN/ES at beat 0 (FIRST CONTACT), before any English-only beat. A tap
+     persists the choice through the app's own catalog, then re-renders the
+     current beat so the new language shows immediately. */
+  function wireFcLang(card, onSwitch) {
+    card.querySelectorAll('[data-fc-lang]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var next = b.dataset.fcLang;
+        // v0.15.31 pattern: persist first so the control state can't race
+        // the async catalog load.
+        try { localStorage.setItem('gn.lang', next); } catch (_) {}
+        var pr = null;
+        try { pr = window.GN_I18N && window.GN_I18N.setLang(next); } catch (_) {}
+        langCache = null;
+        var done = function () {
+          card.querySelectorAll('[data-fc-lang]').forEach(function (x) {
+            x.classList.toggle('active', x.dataset.fcLang === next);
+          });
+          if (typeof onSwitch === 'function') onSwitch();
+        };
+        if (pr && typeof pr.then === 'function') pr.then(done, done);
+        else done();
+      });
+    });
+  }
+
   function renderSignal() {
     setMode('screen');
     var card = overlay.querySelector('[data-fc-card]');
@@ -409,7 +435,12 @@
       cardHead('fc.signal.kicker') +
       '<h2 class="gn-fc-title">' + t('fc.signal.title', '') + '</h2>' +
       '<p class="gn-fc-body">' + t('fc.signal.body', '') + '</p>' +
+      '<div class="gn-fc-seg" role="group" aria-label="language">' +
+        '<button type="button" class="' + (!isEs() ? 'active' : '') + '" data-fc-lang="en">EN</button>' +
+        '<button type="button" class="' + (isEs() ? 'active' : '') + '" data-fc-lang="es">ES</button>' +
+      '</div>' +
       cardFoot({ back: false, cta: t('fc.signal.cta', 'Show me') });
+    wireFcLang(card, function () { renderBeat(cur); });
     wireCard(function () { renderBeat(1); });
   }
 
@@ -648,7 +679,7 @@
     var dose = Boolean(doseEl && String(doseEl.value || '').trim().length);
     var locEl = document.getElementById('modalSelectedLocation');
     var locTxt = locEl ? (locEl.textContent || '').trim() : '';
-    var loc = Boolean(locTxt) && !/no location|sin ubic/i.test(locTxt);
+    var loc = Boolean(locTxt) && !/no (location|injection site)|sin (ubic|siti)/i.test(locTxt);
     return { med: med, dose: dose, loc: loc };
   }
   function coachTick() {
@@ -835,18 +866,7 @@
         card.querySelectorAll('[data-fc-theme]').forEach(function (x) { x.classList.toggle('active', x === b); });
       });
     });
-    card.querySelectorAll('[data-fc-lang]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var next = b.dataset.fcLang;
-        // v0.15.31 pattern: persist first so the control state can't race
-        // the async catalog load, then reflect the choice immediately like
-        // the theme buttons above do.
-        try { localStorage.setItem('gn.lang', next); } catch (_) {}
-        try { if (window.GN_I18N && window.GN_I18N.setLang) window.GN_I18N.setLang(next); } catch (_) {}
-        card.querySelectorAll('[data-fc-lang]').forEach(function (x) { x.classList.toggle('active', x === b); });
-        langCache = null;
-      });
-    });
+    wireFcLang(card, function () { renderBeat(4); });
     wireCard(function () { renderBeat(5); });
     setState('4');
   }

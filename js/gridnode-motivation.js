@@ -96,7 +96,7 @@
     }
     node.innerHTML = `<span class="gn-motiv-toast-glyph" aria-hidden="true">◆</span><span class="gn-motiv-toast-msg">${safe(message)}</span>`;
     node.className = `gn-motiv-toast active${tone === 'level' ? ' level' : ''}`;
-    if (navigator.vibrate && !reducedMotion()) { try { navigator.vibrate(tone === 'level' ? [40, 60, 40] : 60); } catch (_) {} }
+    /* v0.15.41 — vibration removed at founder direction (toast milestone nudge). */
     clearTimeout(node._timer);
     node._timer = setTimeout(() => node.classList.remove('active'), 3600);
   }

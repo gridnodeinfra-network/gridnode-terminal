@@ -2226,6 +2226,8 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 .results-metric-label{font-family:var(--font-m);font-size:.49rem;line-height:1.2;letter-spacing:1.3px;color:var(--text-dim);text-transform:uppercase;margin-bottom:5px}
 .results-metric-value{font-family:var(--font-d);font-size:.98rem;line-height:1.05;font-weight:900;color:var(--cyan);letter-spacing:.8px}
 .results-metric-value.g{color:var(--green)}.results-metric-value.y{color:var(--yellow)}.results-metric-value.r{color:var(--red)}.results-metric-value.m{color:var(--magenta)}
+/* v0.15.41 S12: OUTCOME SUMMARY "LOG OBSERVATIONS" is an empty state, not a recorded value. */
+.results-metric-value.results-metric-empty{font-family:var(--font-b);font-size:.72rem;font-weight:400;letter-spacing:1.4px;color:var(--text-mid);border:1px dashed rgba(140,170,190,.45);border-radius:8px;padding:9px 10px;background:transparent;box-shadow:none;text-shadow:none}
 .results-copy{font-family:var(--font-b);font-size:.94rem;line-height:1.45;color:var(--text-mid)}
 .results-empty{font-family:var(--font-b);font-size:.94rem;line-height:1.45;color:var(--text-mid);border:1px dashed rgba(0,212,255,.18);background:rgba(0,212,255,.04);border-radius:var(--r);padding:11px 12px}
 .results-list{display:grid;gap:7px;margin-top:10px}
@@ -4096,7 +4098,7 @@ function continueLocallyFromWelcome() {
     <section class="landing-hero">
       <div class="gn-lang-wrap landing-lang-wrap" data-landing-lang></div>
       <div class="gn-theme-toggle-host landing-theme-toggle-host" role="group" aria-label="THEME"></div>
-      <div class="landing-node-mark" aria-label="GRID//NODE NODE mark"><svg aria-hidden="true"><use href="#gn-phase-ring"></use></svg><span>// NODE MARK</span></div>
+      <div class="landing-node-mark" aria-label="GRID//NODE NODE mark"><svg aria-hidden="true"><use href="#gn-phase-ring"></use></svg></div>
       <div class="landing-logo b2b-logo-surface"><img class="gn-b2b-lockup" src="/assets/brand/ui/header-lockup.svg" alt="GRID//NODE horizontal color lockup" width="1900" height="420" decoding="async"></div>
       <div class="landing-kicker" data-i18n="landing.kicker">// PERSONAL BIOTECH SYSTEM //</div>
       <h1 class="landing-headline"><span data-i18n="landing.headlineLine1">Your biology.</span><br><span data-i18n="landing.headlineLine2">Your timeline.</span><br><span data-i18n="landing.headlineLine3">Your grid.</span></h1>
@@ -4306,7 +4308,7 @@ function continueLocallyFromWelcome() {
 <div class="screen" id="app" role="main">
   <div class="topbar">
     
-    <div class="app-wordmark app-wordmark-b2b" role="button" tabindex="0" onclick="showPage('Dash',document.getElementById('navDash'))" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Dash',document.getElementById('navDash'));}" title="Return to DASH" aria-label="Return to DASH" data-i18n-title="nav.returnDash" data-i18n-aria-label="nav.returnDash"><img class="gn-b2b-wordmark" src="/assets/brand/ui/header-lockup.svg" alt="GRID//NODE color wordmark" width="1600" height="320" decoding="async"></div>
+    <div class="app-wordmark app-wordmark-b2b" role="button" tabindex="0" onclick="showPage('Dash',document.getElementById('navDash'))" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Dash',document.getElementById('navDash'));}" title="Return to HOME" aria-label="Return to HOME" data-i18n-title="nav.returnDash" data-i18n-aria-label="nav.returnDash"><img class="gn-b2b-wordmark" src="/assets/brand/ui/header-lockup.svg" alt="GRID//NODE color wordmark" width="1600" height="320" decoding="async"></div>
     <div class="topbar-actions">
       <button class="topbar-btn gn-sound-btn" type="button" id="gnSoundToggle" role="switch" aria-checked="false" aria-label="Soundtrack" data-i18n-aria-label="sound.toggle" onclick="window.GN_AMBIENCE && window.GN_AMBIENCE.toggle()">
         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -4316,9 +4318,9 @@ function continueLocallyFromWelcome() {
           <line class="snd-slash" x1="4" y1="4" x2="20" y2="20"/>
         </svg>
       </button>
-      <button class="topbar-btn topbar-hub-btn" type="button" onclick="toggleProfileHub()" id="topAva" aria-label="Open NODE PROFILE HUB">
+      <button class="topbar-btn topbar-hub-btn" type="button" onclick="toggleProfileHub()" id="topAva" aria-label="Open VAULT">
         <img src="/assets/brand/icons/pwa-192.png" alt="GRID//NODE mark" width="40" height="40" id="topAvaIcon" decoding="async">
-        <span class="topbar-hub-label">HUB</span>
+        <span class="topbar-hub-label">VAULT</span>
       </button>
     </div>
   </div>
@@ -4339,7 +4341,7 @@ function continueLocallyFromWelcome() {
     <div class="page active" id="pageDash">
       <div class="page-hdr">
         <div class="page-title" data-i18n-html="dashboard.headingHtml">PROTOCOL <span class="a">DASHBOARD</span></div>
-        <div class="page-sub" id="dashSub">// NODE_USER // NODE ONLINE</div>
+        <div class="page-sub" id="dashSub" data-i18n="dashboard.zeroShotSub">STORED ON THIS DEVICE</div>
       </div>
 
       
@@ -4527,7 +4529,7 @@ function continueLocallyFromWelcome() {
       <div class="sec-hdr" id="phaseCurveHdr"><div class="sec-title" data-i18n-html="phase.phaseCurveTitle">// <span class="a">PHASE_CURVE</span></div></div>
       <div class="card" id="phaseCurveCard">
         <div class="card-title-row"><div class="card-title" data-i18n="phase.estimatedProtocolCurve">ESTIMATED PROTOCOL CURVE</div><button type="button" class="gn-peptide-expand" id="medExpandBtn" onclick="window.GN_PEPTIDE_VIZ && GN_PEPTIDE_VIZ.openOverlay()" hidden data-i18n="peptide.expand">EXPAND ▸</button></div>
-        <div class="card-val" id="medLvlVal">—<span data-i18n="results.logToBegin">log a shot to begin</span></div>
+        <div class="card-val" id="medLvlVal">— <span data-i18n="results.logToBegin">log a shot to begin</span></div>
         <div class="protocol-curve-copy" data-i18n="phase.curveCopy">Educational estimate based on logged shot timing. Not a lab measurement.<span class="curve-subline" data-i18n="phase.curveSubline">Curve shows a relative activity model: logged SHOT event → estimated rise → peak → decay.</span></div>
         <div class="chart-wrap gn-chart-stack" style="height:130px"><canvas id="medChart"></canvas><svg id="medChartOverlay" class="gn-chart-overlay" aria-hidden="true"></svg><div id="medChartTip" class="gn-peptide-tip" hidden></div></div>
         <div class="time-tabs">
@@ -4676,7 +4678,7 @@ function continueLocallyFromWelcome() {
     
     <div class="page" id="pageResults">
       <div class="page-hdr">
-        <div class="page-title" data-i18n-html="results.headingHtml">SIGNAL <span class="a">// OUTCOMES</span></div>
+        <div class="page-title" data-i18n-html="results.headingHtml">RESULTS <span class="a">// OUTCOMES</span></div>
         <div class="page-sub" id="resultRange" data-i18n="results.rangeSub">// USER-ENTERED OUTCOMES //</div>
         <div class="results-signal-note"><b data-i18n="results.protocolSignal">PROTOCOL SIGNAL</b><br><span data-i18n="results.protocolSignalCopy">Each logged SHOT contributes signal to your evolving protocol record. Additional entries may provide broader context over time.</span></div>
       </div>
@@ -4696,11 +4698,11 @@ function continueLocallyFromWelcome() {
             </div>
             <div class="results-metric">
               <div class="results-metric-label" data-i18n="results.latestAppetite">Latest Appetite</div>
-              <div class="results-metric-value y foundation-ready" id="resLatestAppetite">LOG OBSERVATIONS</div>
+              <div class="results-metric-value y results-metric-empty" id="resLatestAppetite" data-i18n="results.logObservations">LOG OBSERVATIONS</div>
             </div>
             <div class="results-metric">
               <div class="results-metric-label" data-i18n="results.latestEnergy">Latest Energy</div>
-            <div class="results-metric-value c foundation-ready" id="resLatestEnergy">LOG OBSERVATIONS</div>
+            <div class="results-metric-value c results-metric-empty" id="resLatestEnergy" data-i18n="results.logObservations">LOG OBSERVATIONS</div>
             </div>
           </div>
           <div id="resultsSummaryEmpty" class="results-empty" style="display:none;margin-top:10px" data-i18n-html="results.summaryEmptyHtml">Outcome summary will activate as logged measurements and user-entered outcomes accumulate.<span class="empty-subline">GRID//NODE becomes more informative as additional tracking data is recorded.</span></div>
@@ -4983,8 +4985,8 @@ function continueLocallyFromWelcome() {
     <div class="page" id="pageProfile">
   
   <div class="page-hdr">
-    <div class="page-title"><span class="a" data-i18n="vault.hubTitle">NODE PROFILE HUB</span></div>
-    <div class="page-sub" id="profSub" data-i18n="vault.kicker">// IDENTITY · SECURITY · VAULT //</div>
+    <div class="page-title"><span class="a" data-i18n="vault.pageTitle">VAULT</span></div>
+    <div class="page-sub" id="profSub" data-i18n="vault.pageSub">// NODE PROFILE HUB //</div>
   </div>
 
   
@@ -5008,7 +5010,7 @@ function continueLocallyFromWelcome() {
         font-family:'Orbitron',monospace;font-size:1rem;
         color:#eeeef5;letter-spacing:2px;margin-bottom:3px;
         white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-      ">NODE_USER</div>
+      ">PROFILE</div>
       <div id="profEmail" style="
         font-family:'Share Tech Mono',monospace;font-size:0.62rem;
         color:var(--text-dim);letter-spacing:1px;margin-bottom:3px;
@@ -5196,7 +5198,7 @@ function continueLocallyFromWelcome() {
   <div class="bottom-nav">
     <div class="nav-item active" id="navDash" role="button" tabindex="0" aria-current="page" onclick="showPage('Dash',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Dash',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-command-grid"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.home">HOME</div></div>
     <div class="nav-item" id="navLog" role="button" tabindex="0" onclick="showPage('Log',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Log',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-protocol-event"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.shots">SHOTS</div></div>
-    <div class="nav-item" id="navRes" role="button" tabindex="0" onclick="showPage('Results',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Results',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-trend-signal"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.trends">SIGNAL</div></div>
+    <div class="nav-item" id="navRes" role="button" tabindex="0" onclick="showPage('Results',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Results',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-trend-signal"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.results">RESULTS</div></div>
     <div class="nav-item" id="navLab" role="button" tabindex="0" onclick="showPage('Lab',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Lab',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-lab-vessel"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.lab">LAB</div></div>
     <div class="nav-item gn-nav-hidden" id="navPro" role="button" tabindex="0" onclick="showPage('Profile',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Profile',this)}"></div>
   </div>
@@ -5231,6 +5233,15 @@ function continueLocallyFromWelcome() {
       <div class="cp-select" id="cpShotMed">
         <div class="cp-select-trigger" onclick="toggleSelect('cpShotMed')" aria-labelledby="cpShotMedLabel cpShotMedVal"><span class="placeholder" id="cpShotMedVal" data-i18n="shot.selectMedication">Select medication</span><span class="cp-select-arrow">▼</span></div>
         <div class="cp-dropdown" id="cpShotMedDrop" data-gn-med-minimized>
+          <div class="cp-group-minimized" data-gn-med-group="COMMON" onclick="gnMedRevealGroup('cpShotMedDrop','COMMON')" role="button" tabindex="0"><span class="cp-group-minimized-label" data-i18n="shot.groupMostCommon">MOST COMMON</span><span class="cp-group-minimized-count">6</span></div>
+          <div class="cp-group-options gn-revealed" data-gn-med-options="COMMON">
+            <div class="cp-option" onclick="selectOpt('cpShotMed','zepbound_tirzepatide','Zepbound (Tirzepatide)',typeof updatePills === 'function' ? updatePills : null)">Zepbound (Tirzepatide)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','mounjaro_tirzepatide','Mounjaro (Tirzepatide)',typeof updatePills === 'function' ? updatePills : null)">Mounjaro (Tirzepatide)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','wegovy_semaglutide','Wegovy (Semaglutide)',typeof updatePills === 'function' ? updatePills : null)">Wegovy (Semaglutide)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','ozempic_semaglutide','Ozempic (Semaglutide)',typeof updatePills === 'function' ? updatePills : null)">Ozempic (Semaglutide)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','tirzepatide_compound','Tirzepatide (Compound)',typeof updatePills === 'function' ? updatePills : null)">Tirzepatide (Compound)</div>
+            <div class="cp-option" onclick="selectOpt('cpShotMed','semaglutide_compound','Semaglutide (Compound)',typeof updatePills === 'function' ? updatePills : null)">Semaglutide (Compound)</div>
+          </div>
           <div class="cp-group-minimized" data-gn-med-group="TIRZEPATIDE" onclick="gnMedRevealGroup('cpShotMedDrop','TIRZEPATIDE')" role="button" tabindex="0"><span class="cp-group-minimized-label">TIRZEPATIDE</span><span class="cp-group-minimized-count">3</span></div>
           <div class="cp-group-options" data-gn-med-options="TIRZEPATIDE">
             <div class="cp-option" onclick="selectOpt('cpShotMed','zepbound_tirzepatide','Zepbound (Tirzepatide)',typeof updatePills === 'function' ? updatePills : null)">Zepbound (Tirzepatide)</div>
@@ -5285,11 +5296,11 @@ function continueLocallyFromWelcome() {
     </div>
     <div class="form-group"><label class="form-label" for="sDose" data-i18n="shot.doseLabel">DOSE — TAP TO SELECT OR ENTER CUSTOM</label><div class="dose-pills" id="dosePills"></div><input class="form-input" type="number" id="sDose" placeholder="Custom dose (mg)" data-i18n-placeholder="shot.customDose" min="0.1" step="0.1" inputmode="decimal" style="margin-top:7px"></div>
     <div class="form-group">
-      <div class="form-label" id="modalSelectedLocationLabel" data-i18n="shot.selectedLocationLabel">SELECTED LOCATION</div>
+      <div class="form-label" id="modalSelectedLocationLabel" data-i18n="shot.selectedLocationLabel">INJECTION SITE</div>
       <div class="scanner-location-display" role="group" aria-labelledby="modalSelectedLocationLabel">
-        <span class="form-label" style="margin-bottom:0" data-i18n="shots.userEnteredLocation">USER-ENTERED LOCATION</span>
-        <b id="modalSelectedLocation" data-i18n="shots.noLocationSelected">No location selected</b>
-        <button type="button" class="log-location-action" id="logLocationAction" onclick="goToScannerForLocationFromLog()" data-i18n="shots.selectLoggedLocation">SELECT LOGGED LOCATION</button>
+        <b id="modalSelectedLocation" data-i18n="shot.noInjectionSite">No injection site selected</b>
+        <div class="gn-modal-zone-modes" id="modalZoneModes" role="group" aria-label="Body region"></div>
+        <div class="gn-modal-zone-grid" id="modalZonePicker" role="group" aria-label="Injection sites"></div>
       </div>
     </div>
     <div class="form-group"><label class="form-label" for="shotDeviceId" data-i18n="shot.deviceUsed">DEVICE USED — OPTIONAL</label><select class="form-input" id="shotDeviceId"><option value="" data-i18n="shot.unknownDevice">Unknown / Not applicable</option></select><div class="gn-shot-time-helper" data-i18n="shot.deviceHelper">Device identity stays separate from the SHOT event. Historical SHOTS are not rewritten when a device changes.</div></div>
