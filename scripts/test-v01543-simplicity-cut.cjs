@@ -63,11 +63,13 @@ check('no COMING LATER', !landing03.includes('COMING LATER'));
 // 5. WHAT'S NEW trimmed
 check('no pre-0.15 whatsnew', !wn.includes("version: '0.14.") && !wn.includes("version: '0.12.") && !wn.includes("version: '0.11."));
 
-// 6. Oskar memorial unchanged
-const oskarEn = (en['landing.oskarDedication'] || '') + (en['app.oskarLine'] || '');
-const oskarEs = (es['landing.oskarDedication'] || '') + (es['app.oskarLine'] || '');
-check('Oskar dedication in HTML', landing03.includes('For Oskar ♥'));
-check('Oskar strings present', (oskarEn + oskarEs + app05).includes('For Oskar') || landing03.includes('For Oskar'));
+// 6. Oskar memorial: footer dedication + VAULT row, green paw beside his name
+const overlay10 = read('html/partials/10-overlays-confirm.html');
+check('landing dedication keeps Oskar', landing03.includes('For <span class="oskar-name">Oskar</span>'));
+check('VAULT memorial row present', lab08.includes('vault.oskarMemorialPre') && lab08.includes('vault.oskarName') && lab08.includes('vault.oskarMemorialPost'));
+check('paw CSS present', overlay10.includes('.oskar-name::after') && overlay10.includes('#a6ff00'));
+check('oskar i18n keys', en['vault.oskarName'] === 'Oskar' && es['vault.oskarMemorialPre'] === 'En memoria de');
+check('DRAW memorial line intact', app05.includes('FOR O.'));
 
 // 7. No vibration calls (feature detection typeof checks are fine)
 const allJs = dash02 + lab08 + vault09 + fc + scanner04 + read('js/modules/13-haptics.js');

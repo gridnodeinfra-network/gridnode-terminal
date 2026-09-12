@@ -216,6 +216,20 @@
   content:"// ";
   color:rgba(0,212,255,.28);
 }
+/* Memorial paw: subtle Cyberpunk 2077 acid-green print beside Oskar's name. */
+.oskar-name{white-space:nowrap;}
+.oskar-name::after{
+  content:"";
+  display:inline-block;
+  width:.66em;
+  height:.66em;
+  margin-left:.32em;
+  vertical-align:-.05em;
+  background-color:#a6ff00;
+  opacity:.5;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cellipse cx='50' cy='68' rx='24' ry='18'/%3E%3Cellipse cx='24' cy='40' rx='10' ry='13'/%3E%3Cellipse cx='42' cy='26' rx='10' ry='13'/%3E%3Cellipse cx='58' cy='26' rx='10' ry='13'/%3E%3Cellipse cx='76' cy='40' rx='10' ry='13'/%3E%3C/svg%3E") no-repeat center/contain;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cellipse cx='50' cy='68' rx='24' ry='18'/%3E%3Cellipse cx='24' cy='40' rx='10' ry='13'/%3E%3Cellipse cx='42' cy='26' rx='10' ry='13'/%3E%3Cellipse cx='58' cy='26' rx='10' ry='13'/%3E%3Cellipse cx='76' cy='40' rx='10' ry='13'/%3E%3C/svg%3E") no-repeat center/contain;
+}
 .future-confirm-overlay{
   position:fixed;
   inset:0;
