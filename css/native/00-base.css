@@ -984,11 +984,12 @@ html[data-theme="light"] .card-title::before, html[data-theme="light"] .card-tit
     min-height: 38px !important;
   }}
 
-/* ═══ Shared destructive/critical action — red-lava (no flat raspberry) ═══ */
+/* ═══ Shared destructive/critical action — red-lava (no flat raspberry) ═══
+   v0.15.44: .fab removed from this list — the shot FAB is now a targeting
+   reticle owned by html/partials/01-head.html, not a lava button. */
 .gn-confirm-danger,
 .archive-confirm-panel.danger .btn-primary,
 .btn-primary,
-.fab,
 .landing-btn.primary,
 .gn-pwa-ios-hint-card button:not(.gn-pwa-ios-later),
 .future-confirm-save {

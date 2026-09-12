@@ -170,7 +170,7 @@ const lock = JSON.parse(read('package-lock.json'));
 const verJs = read('js/gridnode-version.js');
 const appVer = (verJs.match(/APP_VERSION:\s*'([^']+)'/) || [])[1];
 const semver = (verJs.match(/semver:\s*'([^']+)'/) || [])[1];
-check('package.json version is 0.15.43', pkg.version === '0.15.43', pkg.version);
+check('package.json version is 0.15.44', pkg.version === '0.15.44', pkg.version);
 check('package-lock root version matches', lock.version === pkg.version && lock.packages[''].version === pkg.version);
 check('gridnode-version.js APP_VERSION/semver match package.json', appVer === pkg.version && semver === pkg.version);
 check('whatsnew placeholder rewritten for 0.15.43',
@@ -190,5 +190,5 @@ check('landing wedge line translated in EN + ES',
   /real stack/.test(en['landing.realStack']) && /stack real/.test(es['landing.realStack']) &&
   /data-i18n-html="landing\.realStack"/.test(landing03));
 
-console.log(failures === 0 ? '\nALL v0.15.42 CONTRACT CHECKS PASSED (0.15.43)' : `\n${failures} CHECK(S) FAILED`);
+console.log(failures === 0 ? '\nALL v0.15.42 CONTRACT CHECKS PASSED (0.15.44)' : `\n${failures} CHECK(S) FAILED`);
 process.exit(failures === 0 ? 0 : 1);

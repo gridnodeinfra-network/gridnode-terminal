@@ -1805,5 +1805,7 @@
   "landing.homeTitle": "HOME",
   "landing.homeStrong": "Your Phase Engine command view.",
   "landing.homeCopy": "HOME shows your current phase estimate, protocol curve, and next actions, all grounded in your own logged records.",
-  "lab.decorativeTag": "[DECORATIVE]"
+  "lab.decorativeTag": "[DECORATIVE]",
+  "shot.stepGear": "04 // GEAR",
+  "shot.consoleSub": "SHOT PROTOCOL CONSOLE"
 }

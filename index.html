@@ -289,9 +289,14 @@ body:not(.gn-private-active) .fab{display:none!important;visibility:hidden;point
 .nav-ico{font-size:1.2rem;color:var(--text-dim);transition:all 0.2s}
 .nav-lbl{font-family:var(--font-m);font-size:0.55rem;color:#8a8aa0;letter-spacing:2px}
 
-/* FAB */
-.fab{position:fixed;bottom:calc(78px + var(--safe-bottom));right:18px;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--red),#D12424);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:#fff;z-index:60;box-shadow:0 4px 20px rgba(255,59,59,0.5);animation:pulse 4s ease infinite;transition:all 0.2s}
-.fab:hover,.fab:active{transform:scale(1.08);box-shadow:0 6px 28px rgba(255,59,59,0.7)}
+/* FAB — v0.15.44 shot-console redesign: targeting-reticle log button, floats clear of the tab bar */
+.fab{position:fixed;bottom:calc(106px + var(--safe-bottom));right:20px;width:64px;height:64px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#263449,#0a0e14 72%);border:2px solid rgba(255,77,77,.95);cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;z-index:60;box-shadow:0 0 18px rgba(255,60,60,.55),0 0 46px rgba(255,60,60,.22),inset 0 0 14px rgba(255,60,60,.28);transition:transform .18s ease}
+.fab::before{content:"";position:absolute;inset:-10px;border-radius:50%;border:2px dashed rgba(0,229,255,.5);animation:fab-reticle 16s linear infinite;pointer-events:none}
+.fab::after{content:"";position:absolute;inset:-10px;border-radius:50%;background:conic-gradient(from 0deg,transparent 0deg,rgba(0,229,255,.14) 24deg,transparent 48deg);animation:fab-reticle 16s linear infinite;pointer-events:none}
+.fab:hover{transform:scale(1.06)}
+.fab:active{transform:scale(.9)}
+.fab .gn-icon{width:30px;height:30px;color:#ff7a7a;filter:drop-shadow(0 0 7px rgba(255,90,90,.9))}
+@keyframes fab-reticle{to{transform:rotate(360deg)}}
 
 /* PAGES */
 .page{display:none;padding:18px 16px}
@@ -1213,7 +1218,7 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 .app-wordmark span{color:var(--red);letter-spacing:.7px;margin:0 .08em;text-shadow:0 0 12px rgba(255,59,59,.42)}
 .nav-ico,.wq-icon,.s6-icon,.empty-ico,.cal-detail-icon,.arsenal-icon{display:flex;align-items:center;justify-content:center;color:var(--cyan)}
 .nav-item.active .gn-icon{filter:drop-shadow(0 0 7px rgba(0,212,255,.55))}
-.fab .gn-icon{width:28px;height:28px;color:#fff;filter:drop-shadow(0 0 8px rgba(255,255,255,.3))}
+.fab .gn-icon{width:30px;height:30px;color:#ff7a7a;filter:drop-shadow(0 0 7px rgba(255,90,90,.9))} /* v0.15.44: canonical FAB icon spec lives with the .fab block above; this line kept for cascade compatibility */
 .log-chip .gn-icon{width:14px;height:14px;margin-right:4px;vertical-align:-2px}
 .log-action-btn .gn-icon,.modal-btn .gn-icon{width:18px;height:18px}
 
@@ -4007,6 +4012,9 @@ html[data-theme="light"] #shotsRegionScanner .scanner-audio-switch[aria-checked=
     <symbol id="gn-protocol-event" viewBox="0 0 24 24">
       <circle cx="12" cy="12" r="7.2"></circle><path d="M12 5v3M12 16v3M5 12h3M16 12h3"></path><path d="M8.8 8.8l6.4 6.4M15.2 8.8l-6.4 6.4"></path><circle cx="12" cy="12" r="2.1"></circle>
     </symbol>
+    <symbol id="gn-syringe" viewBox="0 0 24 24">
+      <path d="M3.5 20.5l4.2-4.2"></path><path d="M7 13.9L13.9 7l3.1 3.1-6.9 6.9z"></path><path d="M15.4 8.6L19 5"></path><path d="M17.9 6.1l2.2-2.2"></path><path d="M12.5 5.6l5.8 5.8"></path>
+    </symbol>
     <symbol id="gn-phase-ring" viewBox="0 0 24 24">
       <circle cx="12" cy="12" r="8.5"></circle><path d="M12 3.5a8.5 8.5 0 0 1 7.6 4.7"></path><path d="M3.8 14.5A8.5 8.5 0 0 0 12 20.5"></path><circle cx="18.3" cy="7.2" r="1.6"></circle><circle cx="6.1" cy="15.2" r="1.6"></circle>
     </symbol>
@@ -5029,20 +5037,24 @@ function scrollLandingTo(id) {
     <div class="nav-item" id="navLog" role="button" tabindex="0" onclick="showPage('Log',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Log',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-protocol-event"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.shots">SHOTS</div></div>
     <div class="nav-item" id="navRes" role="button" tabindex="0" onclick="showPage('Results',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Results',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-trend-signal"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.results">RESULTS</div></div>
     <div class="nav-item" id="navLab" role="button" tabindex="0" onclick="showPage('Lab',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Lab',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-lab-vessel"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.lab">LAB</div></div>
-    <div class="nav-item" id="navVault" role="button" tabindex="0" onclick="showPage('Profile',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Profile',this)}" aria-label="VAULT" data-i18n-aria-label="nav.vault"><span class="nav-ico"><svg><use href="#gn-vault-core"></use></svg></span><span class="nav-lbl" data-i18n="nav.vault">VAULT</span></div>
+    <div class="nav-item" id="navVault" role="button" tabindex="0" onclick="showPage('Profile',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Profile',this)}" aria-label="VAULT" data-i18n-aria-label="nav.vault"><span class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-vault-core"></use></svg></span></span><span class="nav-lbl" data-i18n="nav.vault">VAULT</span></div>
   </div>
 
-  <button class="fab" onclick="handleShotFab()" aria-label="Log a dose" data-i18n-aria-label="fab.logShot"><span class="gn-icon"><svg><use href="#gn-protocol-event"></use></svg></span></button>
+  <button class="fab" onclick="handleShotFab()" aria-label="Log a dose" data-i18n-aria-label="fab.logShot"><span class="gn-icon"><svg><use href="#gn-syringe"></use></svg></span></button>
 </div>
 
 
 <div class="overlay" id="logOv">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="logOvTitle">
-    <div class="modal-hdr">
+  <div class="modal gn-shot-console" role="dialog" aria-modal="true" aria-labelledby="logOvTitle">
+    <div class="modal-hdr gn-console-hdr">
       <div class="modal-actions"><button class="modal-btn close" aria-label="Close" data-i18n-aria-label="modal.close" onclick="closeLog()"><span class="gn-icon"><svg><use href="#gn-close"></use></svg></span></button></div>
-      <div class="modal-title" id="logOvTitle" data-i18n="shot.logShot">LOG SHOT</div>
+      <div class="gn-console-titleblock">
+        <div class="modal-title" id="logOvTitle" data-i18n="shot.logShot">LOG SHOT</div>
+        <div class="gn-console-sub" data-i18n="shot.consoleSub">SHOT PROTOCOL CONSOLE</div>
+      </div>
       <div class="modal-actions"><button class="modal-btn save" aria-label="Save shot" data-i18n-aria-label="modal.saveShot" onclick="saveShot()"><span class="gn-icon"><svg><use href="#gn-check"></use></svg></span></button></div>
     </div>
+    <div class="gn-shot-scroll">
     <div class="form-group gn-shot-datetime-group">
       <label class="form-label" for="sDate" data-i18n="shot.date">DATE</label>
       <input class="form-input gn-shot-date-input" type="text" id="sDate" placeholder="Jun 11, 2026" data-i18n-placeholder="shot.datePlaceholder" inputmode="none" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" readonly onclick="gnOpenShotDatePicker()" aria-label="Select SHOT date" data-i18n-aria-label="shot.dateAria">
@@ -5132,6 +5144,7 @@ function scrollLandingTo(id) {
         <div class="gn-modal-zone-grid" id="modalZonePicker" role="group" aria-label="Injection sites"></div>
       </div>
     </div>
+    <div class="gn-log-step" data-gn-shot-step="gear" data-i18n="shot.stepGear">04 // GEAR</div>
     <div class="form-group"><label class="form-label" for="shotDeviceId" data-i18n="shot.deviceUsed">DEVICE USED — OPTIONAL</label><select class="form-input" id="shotDeviceId"><option value="" data-i18n="shot.unknownDevice">Unknown / Not applicable</option></select></div>
     <button type="button" class="gn-shot-advanced-trigger" data-collapse-target="gnShotAdvanced" aria-expanded="false" aria-controls="gnShotAdvanced">
       <span data-i18n="shot.moreDetails">// MORE DETAILS</span>
@@ -5155,7 +5168,11 @@ function scrollLandingTo(id) {
       </div>
       <div class="form-group"><label class="form-label" for="sNotes" data-i18n="shots.notesOptional">NOTES — OPTIONAL</label><textarea class="form-textarea" id="sNotes" placeholder="How do you feel?" data-i18n-placeholder="shot.notesPlaceholder" maxlength="500"></textarea></div>
     </div>
-    <button class="btn-full btn-primary" onclick="saveShot()" data-i18n="shot.saveShot">SAVE SHOT</button>
+    </div><!-- /gn-shot-scroll -->
+    <div class="gn-shot-actionbar">
+      <div class="gn-shot-summary" aria-live="polite"><span class="gn-shot-summary-item" id="gnShotSummaryMed">&mdash;</span><span class="gn-shot-summary-sep">//</span><span class="gn-shot-summary-item" id="gnShotSummaryDose">&mdash;</span><span class="gn-shot-summary-sep">//</span><span class="gn-shot-summary-item" id="gnShotSummarySite">&mdash;</span></div>
+      <button class="btn-full btn-primary gn-shot-fire" onclick="saveShot()" data-i18n="shot.logShot">LOG SHOT</button>
+    </div>
   </div>
 </div>
 
@@ -8842,9 +8859,10 @@ body.gn-vault-picker-open #pageProfile .gn-vault-hud-select.open .gn-vault-hud-o
   #pageLog #logList .empty{
     padding-right:58px;
   }
+  /* v0.15.44 SHOT CONSOLE: reticle FAB keeps its geometry on small phones too. */
   .fab{
-    right:14px;
-    bottom:calc(86px + var(--safe-bottom));
+    right:20px;
+    bottom:calc(106px + var(--safe-bottom));
   }
 }
 
@@ -9549,6 +9567,179 @@ body.gn-log-shot-picker-open .fab{
   width:100% !important;
   max-width:100% !important;
   border-radius:18px 18px 0 0 !important;
+}
+</style>
+
+<style id="gn-shot-console-redesign-v01544-style">
+/* v0.15.44 — SHOT CONSOLE redesign: the LOG SHOT sheet becomes a protocol
+   console. Console chrome (header / scroll / sticky action bar), HUD section
+   headers, unmissable dose chips, target-grid zone picker. All hooks and IDs
+   unchanged; pure presentation layer. */
+#logOv .modal.gn-shot-console{
+  display:flex !important;
+  flex-direction:column !important;
+  padding:0 !important;
+  overflow:hidden !important;
+  max-height:94vh !important;
+  background:
+    radial-gradient(120% 90% at 50% -10%, rgba(0,229,255,.07), transparent 60%),
+    linear-gradient(180deg, #101623 0%, #0a0d15 100%) !important;
+  border-top:2px solid rgba(0,229,255,.65) !important;
+  box-shadow:0 -12px 60px rgba(0,229,255,.12) !important;
+}
+/* Console header */
+#logOv .gn-console-hdr{
+  flex:0 0 auto;
+  display:flex;align-items:center;gap:10px;
+  padding:14px 14px 12px !important;
+  background:linear-gradient(180deg, rgba(0,229,255,.08), transparent);
+  border-bottom:1px solid rgba(0,229,255,.22);
+  position:relative;
+}
+#logOv .gn-console-hdr::after{
+  content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;
+  background:repeating-linear-gradient(90deg, rgba(0,229,255,.5) 0 8px, transparent 8px 16px);
+  opacity:.5;pointer-events:none;
+}
+#logOv .gn-console-titleblock{flex:1 1 auto;min-width:0;text-align:center}
+#logOv .gn-console-hdr .modal-title{
+  font-size:1.02rem !important;letter-spacing:3px !important;
+  color:#fff;text-shadow:0 0 14px rgba(0,229,255,.5);
+}
+#logOv .gn-console-sub{
+  font-family:var(--font-m);font-size:.58rem;letter-spacing:2.5px;
+  color:rgba(0,229,255,.65);margin-top:3px;
+}
+/* Scroll region */
+#logOv .gn-shot-scroll{
+  flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;
+  padding:14px 16px 18px;
+  scrollbar-width:thin;scrollbar-color:rgba(0,229,255,.35) transparent;
+}
+/* Section headers — restyles the .gn-log-step divs injected by openLogModal */
+#logOv .gn-log-step{
+  display:flex;align-items:center;gap:8px;
+  font-family:var(--font-m);font-size:.68rem;font-weight:700;letter-spacing:2.5px;
+  color:var(--cyan);text-shadow:0 0 10px rgba(0,229,255,.4);
+  margin:18px 0 10px;padding:8px 12px;
+  background:linear-gradient(90deg, rgba(0,229,255,.1), rgba(0,229,255,.02));
+  border:1px solid rgba(0,229,255,.28);border-radius:8px;
+  position:relative;
+}
+#logOv .gn-log-step:first-child{margin-top:2px}
+#logOv .gn-log-step::before{content:"▸";color:var(--red);text-shadow:0 0 8px rgba(255,60,60,.7)}
+#logOv .gn-log-step::after{
+  content:"";position:absolute;top:6px;right:8px;bottom:6px;width:22px;
+  background:repeating-linear-gradient(180deg, rgba(0,229,255,.35) 0 2px, transparent 2px 5px);
+  opacity:.6;pointer-events:none;
+}
+/* Console panes: form groups become HUD panels */
+#logOv .gn-shot-scroll .form-group{
+  background:rgba(10,16,26,.72);
+  border:1px solid rgba(120,160,200,.16);border-radius:12px;
+  padding:14px 12px;margin-bottom:6px;
+  position:relative;
+}
+#logOv .gn-shot-scroll .form-group::before,
+#logOv .gn-shot-scroll .form-group::after{
+  content:"";position:absolute;width:14px;height:14px;pointer-events:none;
+  border:2px solid rgba(0,229,255,.55);
+}
+#logOv .gn-shot-scroll .form-group::before{top:-1px;left:-1px;border-right:none;border-bottom:none;border-radius:12px 0 0 0}
+#logOv .gn-shot-scroll .form-group::after{bottom:-1px;right:-1px;border-left:none;border-top:none;border-radius:0 0 12px 0}
+/* Dose chips — unmissable selection (OnePlus QA lesson) */
+#logOv .dose-pills{display:grid !important;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}
+#logOv .dose-pill{
+  min-height:60px !important;border-radius:12px !important;
+  background:rgba(0,229,255,.05);border:1.5px solid rgba(0,229,255,.35) !important;
+  color:#dff6ff;font-size:1rem !important;font-weight:800;letter-spacing:.03em;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .12s ease, box-shadow .15s ease, background .15s ease;
+  position:relative;
+}
+#logOv .dose-pill:active{transform:scale(.94)}
+#logOv .dose-pill.active{
+  background:linear-gradient(135deg,#00e5ff,#00a9c7) !important;
+  border-color:#bffbff !important;color:#03141b !important;
+  box-shadow:0 0 20px rgba(0,229,255,.75), inset 0 0 10px rgba(255,255,255,.35) !important;
+  text-shadow:none;
+}
+#logOv .dose-pill.active::after{
+  content:"✓";position:absolute;top:4px;right:8px;font-size:.8rem;font-weight:900;color:#03141b;
+}
+/* Compound selector trigger as console readout */
+#logOv .cp-select-trigger{
+  background:rgba(0,229,255,.05) !important;border:1.5px solid rgba(0,229,255,.35) !important;
+  border-radius:12px !important;padding:14px 12px !important;font-size:.92rem !important;
+}
+/* Zone picker as target grid */
+#logOv .gn-modal-zone-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+#logOv .gn-stable-zone-btn{
+  min-height:52px;border-radius:10px;
+  background:rgba(255,77,77,.05);border:1.5px solid rgba(255,77,77,.3);
+  color:#ffd9d9;font-size:.82rem;font-weight:700;letter-spacing:.04em;
+  transition:all .14s ease;
+}
+#logOv .gn-stable-zone-btn:active{transform:scale(.95)}
+#logOv .gn-stable-zone-btn.selected{
+  background:linear-gradient(135deg, rgba(255,77,77,.9), rgba(200,30,30,.9)) !important;
+  border-color:#ffb3b3 !important;color:#fff !important;
+  box-shadow:0 0 18px rgba(255,60,60,.6) !important;
+}
+#logOv .gn-modal-zone-modes{display:flex;gap:8px;margin-bottom:10px}
+#logOv .gn-modal-zone-modes .time-tab{
+  flex:1;min-height:44px;border-radius:10px;
+  background:transparent;border:1px solid rgba(120,160,200,.3);
+  color:var(--text-mid);font-family:var(--font-m);font-size:.68rem;letter-spacing:2px;
+}
+#logOv .gn-modal-zone-modes .time-tab.active{
+  background:rgba(0,229,255,.14);border-color:var(--cyan);color:var(--cyan);
+  box-shadow:0 0 12px rgba(0,229,255,.3);
+}
+#logOv #modalSelectedLocation{
+  display:block;text-align:center;font-size:.95rem;letter-spacing:1px;
+  color:#fff;margin-bottom:10px;text-shadow:0 0 10px rgba(0,229,255,.35);
+}
+/* Sticky action bar with live summary */
+#logOv .gn-shot-actionbar{
+  flex:0 0 auto;
+  padding:10px 16px calc(14px + var(--safe-bottom));
+  background:linear-gradient(180deg, rgba(8,12,20,.4), rgba(8,12,20,.96) 30%);
+  border-top:1px solid rgba(0,229,255,.28);
+  position:relative;z-index:2;
+}
+#logOv .gn-shot-summary{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  font-family:var(--font-m);font-size:.66rem;letter-spacing:1.5px;
+  color:rgba(220,245,255,.85);margin-bottom:10px;
+  min-height:1.2em;text-align:center;
+}
+#logOv .gn-shot-summary-item{
+  flex:1 1 0;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+#logOv .gn-shot-summary-item:first-child{flex:1.5 1 0;color:var(--cyan);font-weight:700}
+#logOv .gn-shot-summary-sep{flex:0 0 auto;color:rgba(0,229,255,.4)}
+#logOv .gn-shot-fire{
+  border:none;border-radius:14px !important;
+  min-height:58px !important;font-size:1rem !important;font-weight:900 !important;letter-spacing:3px !important;
+  background:linear-gradient(135deg,#ff5252,#c41e1e) !important;color:#fff !important;
+  box-shadow:0 0 24px rgba(255,60,60,.5), inset 0 1px 0 rgba(255,255,255,.25) !important;
+  text-shadow:0 1px 3px rgba(0,0,0,.5);
+  position:relative;overflow:hidden;
+}
+#logOv .gn-shot-fire::before{
+  content:"";position:absolute;top:0;bottom:0;left:-60%;width:45%;
+  background:linear-gradient(100deg, transparent, rgba(255,255,255,.35), transparent);
+  animation:gn-fire-sheen 3.2s ease-in-out infinite;pointer-events:none;
+}
+#logOv .gn-shot-fire:active{transform:scale(.97)}
+@keyframes gn-fire-sheen{0%,55%{left:-60%}90%,100%{left:130%}}
+/* Advanced trigger inside console */
+#logOv .gn-shot-advanced-trigger{
+  width:100%;margin:14px 0 4px;min-height:48px;border-radius:10px;
+  background:transparent;border:1px dashed rgba(120,160,200,.35);
+  color:var(--text-mid);font-family:var(--font-m);font-size:.66rem;letter-spacing:2px;
 }
 </style>
 <div class="overlay" id="signOutOverlay" style="display:none;align-items:center;justify-content:center">

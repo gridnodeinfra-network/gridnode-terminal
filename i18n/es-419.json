@@ -1777,5 +1777,7 @@
   "landing.homeTitle": "INICIO",
   "landing.homeStrong": "Tu vista de comando del Motor de Fases.",
   "landing.homeCopy": "INICIO muestra tu estimación de fase actual, curva de protocolo y próximas acciones, todo basado en tus propios registros.",
-  "lab.decorativeTag": "[DECORATIVO]"
+  "lab.decorativeTag": "[DECORATIVO]",
+  "shot.stepGear": "04 // EQUIPO",
+  "shot.consoleSub": "CONSOLA DE PROTOCOLO"
 }

@@ -1,10 +1,14 @@
 <div class="overlay" id="logOv">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="logOvTitle">
-    <div class="modal-hdr">
+  <div class="modal gn-shot-console" role="dialog" aria-modal="true" aria-labelledby="logOvTitle">
+    <div class="modal-hdr gn-console-hdr">
       <div class="modal-actions"><button class="modal-btn close" aria-label="Close" data-i18n-aria-label="modal.close" onclick="closeLog()"><span class="gn-icon"><svg><use href="#gn-close"></use></svg></span></button></div>
-      <div class="modal-title" id="logOvTitle" data-i18n="shot.logShot">LOG SHOT</div>
+      <div class="gn-console-titleblock">
+        <div class="modal-title" id="logOvTitle" data-i18n="shot.logShot">LOG SHOT</div>
+        <div class="gn-console-sub" data-i18n="shot.consoleSub">SHOT PROTOCOL CONSOLE</div>
+      </div>
       <div class="modal-actions"><button class="modal-btn save" aria-label="Save shot" data-i18n-aria-label="modal.saveShot" onclick="saveShot()"><span class="gn-icon"><svg><use href="#gn-check"></use></svg></span></button></div>
     </div>
+    <div class="gn-shot-scroll">
     <div class="form-group gn-shot-datetime-group">
       <label class="form-label" for="sDate" data-i18n="shot.date">DATE</label>
       <input class="form-input gn-shot-date-input" type="text" id="sDate" placeholder="Jun 11, 2026" data-i18n-placeholder="shot.datePlaceholder" inputmode="none" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" readonly onclick="gnOpenShotDatePicker()" aria-label="Select SHOT date" data-i18n-aria-label="shot.dateAria">
@@ -94,6 +98,7 @@
         <div class="gn-modal-zone-grid" id="modalZonePicker" role="group" aria-label="Injection sites"></div>
       </div>
     </div>
+    <div class="gn-log-step" data-gn-shot-step="gear" data-i18n="shot.stepGear">04 // GEAR</div>
     <div class="form-group"><label class="form-label" for="shotDeviceId" data-i18n="shot.deviceUsed">DEVICE USED — OPTIONAL</label><select class="form-input" id="shotDeviceId"><option value="" data-i18n="shot.unknownDevice">Unknown / Not applicable</option></select></div>
     <button type="button" class="gn-shot-advanced-trigger" data-collapse-target="gnShotAdvanced" aria-expanded="false" aria-controls="gnShotAdvanced">
       <span data-i18n="shot.moreDetails">// MORE DETAILS</span>
@@ -117,7 +122,11 @@
       </div>
       <div class="form-group"><label class="form-label" for="sNotes" data-i18n="shots.notesOptional">NOTES — OPTIONAL</label><textarea class="form-textarea" id="sNotes" placeholder="How do you feel?" data-i18n-placeholder="shot.notesPlaceholder" maxlength="500"></textarea></div>
     </div>
-    <button class="btn-full btn-primary" onclick="saveShot()" data-i18n="shot.saveShot">SAVE SHOT</button>
+    </div><!-- /gn-shot-scroll -->
+    <div class="gn-shot-actionbar">
+      <div class="gn-shot-summary" aria-live="polite"><span class="gn-shot-summary-item" id="gnShotSummaryMed">&mdash;</span><span class="gn-shot-summary-sep">//</span><span class="gn-shot-summary-item" id="gnShotSummaryDose">&mdash;</span><span class="gn-shot-summary-sep">//</span><span class="gn-shot-summary-item" id="gnShotSummarySite">&mdash;</span></div>
+      <button class="btn-full btn-primary gn-shot-fire" onclick="saveShot()" data-i18n="shot.logShot">LOG SHOT</button>
+    </div>
   </div>
 </div>
 

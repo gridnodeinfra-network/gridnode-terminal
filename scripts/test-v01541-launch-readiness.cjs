@@ -62,7 +62,7 @@ const lock = JSON.parse(read('package-lock.json'));
 const verJs = read('js/gridnode-version.js');
 const appVer = (verJs.match(/APP_VERSION:\s*'([^']+)'/) || [])[1];
 const semver = (verJs.match(/semver:\s*'([^']+)'/) || [])[1];
-check('package.json version is 0.15.43', pkg.version === '0.15.43', pkg.version);
+check('package.json version is 0.15.44', pkg.version === '0.15.44', pkg.version);
 check('package-lock root version matches', lock.version === pkg.version && lock.packages[''].version === pkg.version);
 check('gridnode-version.js APP_VERSION matches package.json', appVer === pkg.version, String(appVer));
 check('gridnode-version.js semver matches package.json', semver === pkg.version, String(semver));

@@ -1,7 +1,7 @@
 {
   "name": "gridnode-terminal-qa",
   "private": true,
-  "version": "0.15.43",
+  "version": "0.15.44",
   "description": "QA harness dependencies for GRID//NODE (mobile shell, contrast audits). No runtime deps \u2014 dev only.",
   "scripts": {
     "build": "node scripts/build.mjs",
@@ -19,8 +19,8 @@
     "visual:compare": "node scripts/visual-regression-guard.cjs compare",
     "test:v01541": "node scripts/test-v01541-launch-readiness.cjs",
     "test:v01542": "node scripts/test-v01542-launch-readiness.cjs",
-    "test:v01543": "node scripts/test-v01543-simplicity-cut.cjs",
-    "test:logshot-dose": "bash scripts/run-logshot-dose-tests.sh"
+    "test:logshot-dose": "bash scripts/run-logshot-dose-tests.sh",
+    "test:v01544": "node scripts/test-v01544-shot-console.cjs"
   },
   "devDependencies": {
     "playwright": "1.62.1",

@@ -988,10 +988,12 @@ html[data-theme="light"] :is(#app,.overlay,.gn-lab-tool-overlay) .btn-primary {
   -webkit-text-fill-color: #fff !important;
   box-shadow: inset 0 1px rgba(255,255,255,.2), 0 8px 18px rgba(0,87,106,.16) !important;
 }
+/* v0.15.44: .fab removed from the lava :is() lists below — the shot FAB is a
+   targeting reticle owned by html/partials/01-head.html, not a lava button. */
 html[data-theme="light"] :is(
   #logOv .btn-primary,#logOv .modal-btn.save,
   #wtOv .btn-primary,#wtOv .modal-btn.save,
-  #gnResearchSave,#gnPreferencesSave,.fab,
+  #gnResearchSave,#gnPreferencesSave,
   .future-confirm-save,.archive-confirm-delete,.gn-delete-confirm,
   .empty-cta,.gn-empty-cta
 ) {
@@ -1005,7 +1007,7 @@ html[data-theme="light"] :is(
 html[data-theme="light"] :is(
   #logOv .btn-primary,#logOv .modal-btn.save,
   #wtOv .btn-primary,#wtOv .modal-btn.save,
-  #gnResearchSave,#gnPreferencesSave,.fab,
+  #gnResearchSave,#gnPreferencesSave,
   .future-confirm-save,.archive-confirm-delete,.gn-delete-confirm,
   .empty-cta,.gn-empty-cta
 ):active {
@@ -1183,7 +1185,7 @@ html[data-theme="light"] #logOv #cpShotMedDrop .cp-group-minimized-label {
 :is(
   #logOv .btn-primary,#logOv .modal-btn.save,
   #wtOv .btn-primary,#wtOv .modal-btn.save,
-  #gnResearchSave,#gnPreferencesSave,.fab,
+  #gnResearchSave,#gnPreferencesSave,
   .future-confirm-save,.archive-confirm-delete,.gn-delete-confirm,
   .gn-dashboard-mission button,.gn-whatsnew-close,.landing-btn.primary
 ) {
@@ -1197,7 +1199,7 @@ html[data-theme="light"] #logOv #cpShotMedDrop .cp-group-minimized-label {
 :is(
   #logOv .btn-primary,#logOv .modal-btn.save,
   #wtOv .btn-primary,#wtOv .modal-btn.save,
-  #gnResearchSave,#gnPreferencesSave,.fab,
+  #gnResearchSave,#gnPreferencesSave,
   .future-confirm-save,.archive-confirm-delete,.gn-delete-confirm,
   .gn-dashboard-mission button,.gn-whatsnew-close,.landing-btn.primary
 ):active {
@@ -2315,25 +2317,26 @@ html[data-theme="light"] .card {
     border-color: rgba(0, 111, 130, 0.22) !important;
   }}
 
-/* FAB: denser lava core, quieter idle pulse, sharper press. */
+/* v0.15.44 SHOT CONSOLE — FAB is a targeting reticle owned by
+   html/partials/01-head.html. This layer keeps only the premium press feel. */
 .fab {
-  width: 56px !important;
-  height: 56px !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  width: 64px !important;
+  height: 64px !important;
+  border: 2px solid rgba(255,77,77,.95) !important;
   box-shadow:
-    0 8px 28px rgba(255, 45, 77, 0.42),
-    0 0 0 1px rgba(143, 15, 40, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.28) !important;
-  transition: transform 0.16s var(--gn-ease-press), box-shadow 0.2s ease !important;
+    0 0 18px rgba(255,60,60,.55),
+    0 0 46px rgba(255,60,60,.22),
+    inset 0 0 14px rgba(255,60,60,.28) !important;
+  transition: transform 0.18s ease !important;
 }
 .fab:hover, .fab:focus-visible {
-  transform: scale(1.05) !important;
+  transform: scale(1.06) !important;
   box-shadow:
-    0 12px 34px rgba(255, 45, 77, 0.55),
-    0 0 0 1px rgba(255, 91, 91, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.34) !important;
+    0 0 26px rgba(255,60,60,.75),
+    0 0 60px rgba(255,60,60,.30),
+    inset 0 0 18px rgba(255,60,60,.36) !important;
 }
-.fab:active { transform: scale(0.96) !important; }
+.fab:active { transform: scale(0.90) !important; }
 .fab:focus-visible {
   outline: 2px solid rgba(255, 120, 140, 0.95) !important;
   outline-offset: 3px !important;
@@ -2533,7 +2536,7 @@ html[data-theme="light"] .landing-btn.secondary {
   .page-title { font-size: 1.28rem !important; }}/* Very small phones: protect hierarchy without shrinking targets. */
 @media (max-width: 360px){
   .page-title { letter-spacing: 1.6px !important; }
-  .fab { right: 14px !important; }}
+  .fab { right: 20px !important; }}
 
 /* ═══ PREMIUM SCANNER 20260811 ═══════════════════════════════════════════
    Diagnostic mannequin framing + anatomically clear zone language.

@@ -2701,8 +2701,39 @@ function openLogModal(options = {}) {
   installModalZonePicker();
   renderModalZonePicker();
   renderShotDevicePicker(draftDeviceId);
+  installShotSummaryWatcher();
+  gnRenderShotSummary();
   if (!modal.querySelector('.gn-drawer-handle')) modal.insertAdjacentHTML('afterbegin', '<div class="gn-drawer-handle" aria-hidden="true"></div>');
   modal.classList.add('active');
+}
+
+/* v0.15.44 — SHOT CONSOLE live summary bar. Reads the same sources of truth
+ * the form commits (selectState.cpShotMed, #sDose, moduleState.selectedLocation)
+ * and mirrors them into the sticky action bar, so the user always sees the
+ * exact shot they are about to fire. Installed once; refreshed on any
+ * interaction inside #logOv. */
+function gnShotSummaryParts() {
+  const medVal = (typeof selectState !== 'undefined' && selectState.cpShotMed && selectState.cpShotMed.val) || '';
+  const med = medVal ? medicationLabel(normalizeMedicationId(medVal)) : tx('shot.selectMedication', 'Select medication');
+  const doseRaw = ($('sDose') && $('sDose').value || '').trim();
+  const dose = doseRaw ? (doseRaw + ' mg') : '—';
+  const site = moduleState.selectedLocation
+    ? (zoneLabel(moduleState.selectedLocation) || '—')
+    : tx('shot.noInjectionSite', 'No injection site selected');
+  return { med, dose, site };
+}
+function gnRenderShotSummary() {
+  const p = gnShotSummaryParts();
+  setText('gnShotSummaryMed', p.med);
+  setText('gnShotSummaryDose', p.dose);
+  setText('gnShotSummarySite', p.site);
+}
+function installShotSummaryWatcher() {
+  const ov = $('logOv');
+  if (!ov || ov.dataset.gnShotSummaryOn) return;
+  ov.dataset.gnShotSummaryOn = '1';
+  ov.addEventListener('click', () => { window.setTimeout(gnRenderShotSummary, 0); });
+  ov.addEventListener('input', () => { gnRenderShotSummary(); });
 }
 
 /* v0.15.41 — inline injection-site picker for the LOG SHOT modal. The first-shot
