@@ -15,7 +15,7 @@ export function showPage(name, navElement) {
   try { localStorage.setItem('gn_last_active_page_v1', previousPage.replace('page', '') || 'Dash'); } catch (e) {}
   const page = $(`page${name}`);
   if (!page) return;
-  document.body.classList.toggle('gn-fab-hidden-context', ['Lab', 'Profile'].includes(name));
+  document.body.classList.toggle('gn-fab-hidden-context', ['Profile'].includes(name));
   qa('.page').forEach(item => item.classList.remove('active'));
   page.classList.add('active');
   qa('.nav-item').forEach(item => {

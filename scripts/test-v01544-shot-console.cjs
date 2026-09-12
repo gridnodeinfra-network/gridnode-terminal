@@ -80,7 +80,7 @@ check('FAB reticle CSS present', head01.includes('@keyframes fab-reticle') && he
 check('FAB clears the tab bar', head01.includes('bottom:calc(106px + var(--safe-bottom))'));
 check('FAB small-phone rule keeps reticle geometry', read('html/partials/12-styles-polish-patches.html').includes('bottom:calc(106px + var(--safe-bottom));'));
 check('no lava background on .fab', !read('css/native/00-base.css').match(/\.fab,\n/) && !read('css/native/03-premium-system.css').includes('#gnPreferencesSave,.fab,'));
-check('premium FAB block is reticle-sized', read('css/native/03-premium-system.css').includes('width: 64px !important;'));
+check('premium layer does not pin FAB size', !read('css/native/03-premium-system.css').match(/\.fab\s*{[^}]*width:\s*64px\s*!important/));
 check('daylight FAB bottom clears tabs', read('css/daylight-nexus-pilot.css').includes('bottom: calc(106px + var(--safe-bottom, 0px)) !important;'));
 check('pill FAB scoped to label variant', read('css/daylight-nexus-pilot.css').includes('.fab:has(.fab-label)'));
 check('console sheet class', logshot06.includes('gn-shot-console'));
@@ -95,6 +95,9 @@ check('dose-pill hooks intact', logshot06.includes('id="dosePills"') && logshot0
 check('zone picker hooks intact', logshot06.includes('id="modalZonePicker"') && logshot06.includes('id="modalZoneModes"') && logshot06.includes('id="modalSelectedLocation"'));
 check('i18n stepGear en+es', en['shot.stepGear'] === '04 // GEAR' && es['shot.stepGear'] === '04 // EQUIPO');
 check('i18n consoleSub en+es', en['shot.consoleSub'] === 'SHOT PROTOCOL CONSOLE' && es['shot.consoleSub'] === 'CONSOLA DE PROTOCOLO');
+check('FAB is 56px', read('html/partials/01-head.html').includes('right:20px;width:56px;height:56px;'));
+check('FAB icon scaled to 56px button', read('html/partials/01-head.html').includes('.fab .gn-icon{width:26px;height:26px;'));
+check('FAB hidden only on Vault', read('js/modules/01-shell.js').includes("['Profile'].includes(name)"));
 
 console.log(failures === 0 ? 'ALL PASS' : `${failures} FAILURES`);
 process.exit(failures === 0 ? 0 : 1);

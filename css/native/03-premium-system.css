@@ -2320,8 +2320,6 @@ html[data-theme="light"] .card {
 /* v0.15.44 SHOT CONSOLE — FAB is a targeting reticle owned by
    html/partials/01-head.html. This layer keeps only the premium press feel. */
 .fab {
-  width: 64px !important;
-  height: 64px !important;
   border: 2px solid rgba(255,77,77,.95) !important;
   box-shadow:
     0 0 18px rgba(255,60,60,.55),
