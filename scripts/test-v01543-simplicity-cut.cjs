@@ -65,7 +65,7 @@ check('no pre-0.15 whatsnew', !wn.includes("version: '0.14.") && !wn.includes("v
 
 // 6. Oskar memorial: footer dedication + VAULT row, green paw beside his name
 const overlay10 = read('html/partials/10-overlays-confirm.html');
-check('landing dedication keeps Oskar', landing03.includes('For <span class="oskar-name">Oskar</span>'));
+check('landing dedication keeps Oskar', landing03.includes('<span class="oskar-name">Oskar</span>') && !landing03.includes('For <span class="oskar-name">Oskar</span>'));
 check('VAULT memorial row present', lab08.includes('vault.oskarMemorialPre') && lab08.includes('vault.oskarName') && lab08.includes('vault.oskarMemorialPost'));
 check('paw CSS present', overlay10.includes('.oskar-name::after') && overlay10.includes('#a6ff00'));
 check('oskar i18n keys', en['vault.oskarName'] === 'Oskar' && es['vault.oskarMemorialPre'] === 'En memoria de');
