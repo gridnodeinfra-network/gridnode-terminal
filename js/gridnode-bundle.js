@@ -3293,8 +3293,12 @@ function renderResults() {
   const change = weightMetrics.change;
   const spanDays = weightMetrics.spanDays;
   const directionReady = weights.length >= 3 && spanDays >= 7;
-  setText('resLatestWeight', latest ? `${latest.weight.toFixed(1)} lb` : '—');
   setText('resShotCount', String(shots.length));
+  const resW = $('resLatestWeight');
+  if (resW) {
+    if (latest) resW.textContent = `${latest.weight.toFixed(1)} lb`;
+    else resW.innerHTML = `<button type="button" class="results-weight-cta" onclick="openWeightModal()">${tx('results.logWeightCta', 'LOG WEIGHT')}</button>`;
+  }
   setText('resContinuityEvents', String(shots.length));
   setText('resContinuityRecent', latestShot() ? formatDate(latestShot().date, { month: 'short', day: 'numeric' }) : '—');
   setText('resContinuityActive', String(shots.length));

@@ -2233,6 +2233,7 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 .results-metric-value.g{color:var(--green)}.results-metric-value.y{color:var(--yellow)}.results-metric-value.r{color:var(--red)}.results-metric-value.m{color:var(--magenta)}
 /* v0.15.41 S12: OUTCOME SUMMARY "LOG OBSERVATIONS" is an empty state, not a recorded value. */
 .results-metric-value.results-metric-empty{font-family:var(--font-b);font-size:.72rem;font-weight:400;letter-spacing:1.4px;color:var(--text-mid);border:1px dashed rgba(140,170,190,.45);border-radius:8px;padding:9px 10px;background:transparent;box-shadow:none;text-shadow:none}
+.results-weight-cta{font-family:var(--font-m);font-size:.68rem;font-weight:700;letter-spacing:1.6px;color:var(--cyan);background:rgba(0,212,255,.07);border:1px dashed rgba(0,212,255,.45);border-radius:8px;padding:9px 10px;cursor:pointer;text-transform:uppercase;width:100%}
 .results-copy{font-family:var(--font-b);font-size:.94rem;line-height:1.45;color:var(--text-mid)}
 .results-empty{font-family:var(--font-b);font-size:.94rem;line-height:1.45;color:var(--text-mid);border:1px dashed rgba(0,212,255,.18);background:rgba(0,212,255,.04);border-radius:var(--r);padding:11px 12px}
 .results-list{display:grid;gap:7px;margin-top:10px}
@@ -4605,19 +4606,19 @@ function scrollLandingTo(id) {
 
       <div class="results-ledger" id="resultsChartsView">
         <section class="results-card summary">
-          <div class="results-card-title"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-trend-signal"></use></svg></span><span data-i18n="results.summaryTitle">Outcome Summary</span></div>
-          <div class="results-card-sub" data-i18n="results.summarySub">Observed changes from logged measurements and personal tracking history</div>
+          <div class="results-card-title"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-trend-signal"></use></svg></span><span data-i18n="results.summaryTitle">Progress Summary</span></div>
+          <div class="results-card-sub" data-i18n="results.summarySub">Your logged shots and weight, at a glance</div>
           <div id="resultsSummaryState" class="results-grid-2">
+            <div class="results-metric">
+              <div class="results-metric-label" data-i18n="results.shotsLogged">Shots Logged</div>
+              <div class="results-metric-value c" id="resShotCount">—</div>
+            </div>
             <div class="results-metric">
               <div class="results-metric-label" data-i18n="results.latestWeight">Latest Weight</div>
               <div class="results-metric-value g" id="resLatestWeight">—</div>
             </div>
-            <div class="results-metric">
-              <div class="results-metric-label" data-i18n="results.protocolEvents">Protocol Events</div>
-              <div class="results-metric-value c" id="resShotCount">—</div>
-            </div>
           </div>
-          <div id="resultsSummaryEmpty" class="results-empty" style="display:none;margin-top:10px" data-i18n-html="results.summaryEmptyHtml">Outcome summary will activate as logged measurements and user-entered outcomes accumulate.<span class="empty-subline">GRID//NODE becomes more informative as additional tracking data is recorded.</span></div>
+          <div id="resultsSummaryEmpty" class="results-empty" style="display:none;margin-top:10px" data-i18n-html="results.summaryEmptyHtml">Nothing logged yet.<span class="empty-subline">Log your first shot to start your record.</span></div>
         </section>
 
         <section class="results-card weight observed-weight">

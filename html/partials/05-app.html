@@ -312,19 +312,19 @@
 
       <div class="results-ledger" id="resultsChartsView">
         <section class="results-card summary">
-          <div class="results-card-title"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-trend-signal"></use></svg></span><span data-i18n="results.summaryTitle">Outcome Summary</span></div>
-          <div class="results-card-sub" data-i18n="results.summarySub">Observed changes from logged measurements and personal tracking history</div>
+          <div class="results-card-title"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-trend-signal"></use></svg></span><span data-i18n="results.summaryTitle">Progress Summary</span></div>
+          <div class="results-card-sub" data-i18n="results.summarySub">Your logged shots and weight, at a glance</div>
           <div id="resultsSummaryState" class="results-grid-2">
+            <div class="results-metric">
+              <div class="results-metric-label" data-i18n="results.shotsLogged">Shots Logged</div>
+              <div class="results-metric-value c" id="resShotCount">—</div>
+            </div>
             <div class="results-metric">
               <div class="results-metric-label" data-i18n="results.latestWeight">Latest Weight</div>
               <div class="results-metric-value g" id="resLatestWeight">—</div>
             </div>
-            <div class="results-metric">
-              <div class="results-metric-label" data-i18n="results.protocolEvents">Protocol Events</div>
-              <div class="results-metric-value c" id="resShotCount">—</div>
-            </div>
           </div>
-          <div id="resultsSummaryEmpty" class="results-empty" style="display:none;margin-top:10px" data-i18n-html="results.summaryEmptyHtml">Outcome summary will activate as logged measurements and user-entered outcomes accumulate.<span class="empty-subline">GRID//NODE becomes more informative as additional tracking data is recorded.</span></div>
+          <div id="resultsSummaryEmpty" class="results-empty" style="display:none;margin-top:10px" data-i18n-html="results.summaryEmptyHtml">Nothing logged yet.<span class="empty-subline">Log your first shot to start your record.</span></div>
         </section>
 
         <section class="results-card weight observed-weight">
