@@ -6,11 +6,11 @@
 (function () {
   'use strict';
   window.GN_VERSION = Object.freeze({
-    APP_VERSION: '0.15.50',
+    APP_VERSION: '0.15.51',
     APP_BUILD: '20260907.1',
-    semver: '0.15.50',
+    semver: '0.15.51',
     release: '20260907.1',
-    title: 'V0.15.50 — TOUR CARD STAYS PUT ON SCROLL',
-    date: '2026-09-12'
+    title: 'V0.15.51 — PHASE ENGINE REACTOR CORE',
+    date: '2026-09-13'
   });
 })();
