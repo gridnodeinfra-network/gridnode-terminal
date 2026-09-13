@@ -410,8 +410,12 @@
     if (moveTimer) clearTimeout(moveTimer);
     moveTimer = setTimeout(function () {
       // Re-position only; never re-render (re-render re-runs scrolls: loop).
+      // v0.15.49: only the spotlight hole follows the target on scroll. The
+      // coach card stays where the beat placed it; repositioning it on every
+      // scroll made it visibly jump/shift as the target moved through the
+      // viewport (the card flipped between above/below/top/bottom anchors).
       var el = cur === 1 ? visibleEl(doseTargetSel()) : cur === 2 ? curveTarget() : null;
-      if (el) { positionHole(el); positionCard(el); }
+      if (el) { positionHole(el); }
     }, 120);
   }
   function onLangChange() {
