@@ -24,6 +24,7 @@
 }
 .gn-fc-overlay.mode-spot .gn-fc-dim { display: block; }
 .gn-fc-card {
+  user-select: none; -webkit-user-select: none; /* v0.15.46: tour text not selectable — Android select toolbar used to cover the buttons */
   position: absolute;
   pointer-events: auto;
   background: linear-gradient(180deg, rgba(10, 16, 22, .98), rgba(5, 8, 12, .98));
@@ -74,6 +75,7 @@
 }
 /* Inside-modal coach: bottom sheet above #logOv (z 200). */
 .gn-fc-coach {
+  user-select: none; -webkit-user-select: none; /* v0.15.46: tour text not selectable — Android select toolbar used to cover the buttons */
   position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom));
   z-index: 9500; max-width: 430px; margin: 0 auto;
   background: linear-gradient(180deg, rgba(12, 18, 25, .99), rgba(6, 9, 13, .99));

@@ -6,11 +6,11 @@
 (function () {
   'use strict';
   window.GN_VERSION = Object.freeze({
-    APP_VERSION: '0.15.45',
+    APP_VERSION: '0.15.46',
     APP_BUILD: '20260907.1',
-    semver: '0.15.45',
+    semver: '0.15.46',
     release: '20260907.1',
-    title: 'V0.15.45 — ZERO-SHOT HOME + BOOT POLISH',
+    title: 'V0.15.46 — TOUR TEXT NOT SELECTABLE',
     date: '2026-09-12'
   });
 })();
