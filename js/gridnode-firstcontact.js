@@ -219,7 +219,10 @@
     return '#gnFirstShotMission button, .gn-wanda-actions button, .fab, .gn-empty-cta';
   }
   function curveTarget() {
-    return visibleEl('#resultsChartsView .results-card.summary, #resultsSummaryState, #resultsSummaryEmpty');
+    // v0.15.50: spotlight the Phase Engine card (the "curve" visualization),
+    // not the Progress Summary. The beat copy says "Your dose, on your curve"
+    // but the summary shows only numbers; the phase ring is the visual curve.
+    return visibleEl('#phaseCard');
   }
   function removeSpotlight() {
     document.querySelectorAll('.gn-fc-target').forEach(function (el) { el.classList.remove('gn-fc-target'); });
