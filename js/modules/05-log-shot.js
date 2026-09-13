@@ -51,6 +51,7 @@ export function openLogModal(options = {}) {
   installShotSummaryWatcher();
   gnRenderShotSummary();
   if (!modal.querySelector('.gn-drawer-handle')) modal.insertAdjacentHTML('afterbegin', '<div class="gn-drawer-handle" aria-hidden="true"></div>');
+  cancelLogClose();
   modal.classList.add('active');
 }
 
@@ -179,11 +180,10 @@ function cancelShotDiscard() { $('shotDiscardConfirmOv')?.classList.remove('acti
 function confirmShotDiscard() {
   $('shotDiscardConfirmOv')?.classList.remove('active');
   if ($('shotDiscardConfirmOv')) $('shotDiscardConfirmOv').style.display = 'none';
-  $('logOv')?.classList.remove('active');
-  moduleState.pendingLocationDraft = false;
-  moduleState.shotDraft = null;
-  moduleState.editingShotId = null;
+  closeLog(true);
 }
+
+let logCloseTimer = 0;
 
 export function closeLog(force = false) {
   const dirty = isShotFormDirty();
@@ -192,10 +192,25 @@ export function closeLog(force = false) {
     if (ov) { ov.style.display = 'flex'; requestAnimationFrame(() => ov.classList.add('active')); }
     return;
   }
-  $('logOv')?.classList.remove('active');
+  const ov = $('logOv');
   moduleState.pendingLocationDraft = false;
   moduleState.shotDraft = null;
   moduleState.editingShotId = null;
+  if (!ov || !ov.classList.contains('active') || ov.classList.contains('gn-closing')) return;
+  // Slide the sheet back down instead of vanishing instantly.
+  ov.classList.add('gn-closing');
+  window.clearTimeout(logCloseTimer);
+  logCloseTimer = window.setTimeout(() => {
+    ov.classList.remove('active', 'gn-closing');
+    logCloseTimer = 0;
+  }, 230);
+}
+
+// Cancel a pending close (e.g. sheet re-opened mid-animation).
+export function cancelLogClose() {
+  const ov = $('logOv');
+  if (logCloseTimer) { window.clearTimeout(logCloseTimer); logCloseTimer = 0; }
+  ov?.classList.remove('gn-closing');
 }
 
 export function editShot(id) {
