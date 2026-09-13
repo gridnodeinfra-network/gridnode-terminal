@@ -720,7 +720,7 @@ async function startGridNode() {
   // kicker phase per line index (7 lines -> 4 phases)
   const kickerAt = [0, 0, 1, 1, 2, 2, 3];
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const typeCharMs = reduced ? 0 : 14;
+  const typeCharMs = reduced ? 0 : 9; /* v0.15.45: snappier boot typing */
   /* v0.15.42: any tap during boot skips it immediately. */
   let bootSkipped = false;
   const bootEl = $('boot');
@@ -778,7 +778,7 @@ async function startGridNode() {
     if (i < messages.length - 1) {
       line.classList.remove('boot-typing');
       tag.textContent = '[ OK ] ' + status;
-      if (!reduced) await new Promise(r => window.setTimeout(r, 140));
+      if (!reduced) await new Promise(r => window.setTimeout(r, 90)); /* v0.15.45: was 140 */
     }
   }
   // completion: kicker ONLINE + cyan->Mars Red pulse on the emblem
@@ -786,7 +786,7 @@ async function startGridNode() {
   const emblem = document.querySelector('.gn-b2b-symbol');
   if (emblem && !reduced && !bootSkipped) {
     emblem.classList.add('boot-complete-pulse');
-    await new Promise(r => window.setTimeout(r, 750));
+    await new Promise(r => window.setTimeout(r, 500)); /* v0.15.45: was 750 */
     emblem.classList.remove('boot-complete-pulse');
   }
   if (bootEl) bootEl.removeEventListener('pointerdown', markBootSkipped);

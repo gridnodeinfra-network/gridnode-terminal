@@ -139,13 +139,12 @@ function renderDashboard() {
   const firstShotMission = document.getElementById('gnFirstShotMission');
   if (dashboard) dashboard.dataset.activation = shots.length ? 'active' : 'pending';
   if (firstShotMission) firstShotMission.hidden = shots.length > 0;
-  // Zero-shot state: the single gnFirstShotMission CTA (from ensureWandaDashboard) is the only empty state.
-  const wandaEl = document.getElementById('gnWandaDashboard');
+  // Zero-shot state: the gnFirstShotMission CTA stays visible as the hero;
+  // activation-state CSS dims the not-yet-live metrics behind it.
+  // (v0.15.45: removed the old wandaEl display:none that hid the mission too.)
   if (shots.length === 0) {
-    if (wandaEl) wandaEl.style.display = 'none';
     document.body.classList.add('gn-dashboard-empty');
   } else {
-    if (wandaEl) wandaEl.style.display = '';
     document.body.classList.remove('gn-dashboard-empty');
   }
   const weightMetrics = computeTotalChange(weights, profile, 'profile');
