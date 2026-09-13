@@ -104,6 +104,10 @@
 /* The future-timestamp confirm (z 540) would also hide under the coach sheet;
    lift it above while coaching so the user can answer it. */
 body.gn-fc-coaching .future-confirm-overlay.active { z-index: 9600; }
+/* v0.15.47: the save-confirmation toast (z 1000) also painted UNDER the coach
+   sheet (z 9500), so the user never saw what was just logged. Lift it above
+   while coaching. */
+body.gn-fc-coaching .toast { z-index: 9700; }
 /* QA 2026-09-10: the coach bottom sheet (z 9500) covered the modal's bottom
    SAVE SHOT button. While coaching, pad the modal so its action buttons
    scroll clear of the sheet. */

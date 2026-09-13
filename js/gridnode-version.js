@@ -6,11 +6,11 @@
 (function () {
   'use strict';
   window.GN_VERSION = Object.freeze({
-    APP_VERSION: '0.15.46',
+    APP_VERSION: '0.15.47',
     APP_BUILD: '20260907.1',
-    semver: '0.15.46',
+    semver: '0.15.47',
     release: '20260907.1',
-    title: 'V0.15.46 — TOUR TEXT NOT SELECTABLE',
+    title: 'V0.15.47 — TOUR SCROLL + KEYBOARD JANK + TOAST',
     date: '2026-09-12'
   });
 })();

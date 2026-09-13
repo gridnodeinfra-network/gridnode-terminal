@@ -85,17 +85,37 @@
     const top = vv ? vv.offsetTop : 0;
     const bottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
     const rect = active.getBoundingClientRect();
-    if (rect.bottom > bottom - 12 || rect.top < top + 12) active.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    /* v0.15.47: instant, not smooth — a smooth scroll retargets continuously
+       while the keyboard animates and the sheet visibly glides up and down. */
+    if (rect.bottom > bottom - 12 || rect.top < top + 12) active.scrollIntoView({ block: 'center', behavior: 'auto' });
   }
 
-  function syncKeyboard() {
-    syncViewport();
+  /* v0.15.47: settle-then-commit. During the Android keyboard's open/close
+     animation visualViewport fires dozens of resize events with intermediate
+     heights; committing every one made --gn-viewport-height and the sheet
+     max-heights stutter up and down. Now we wait for the viewport to hold
+     still, then commit once. Hysteresis on the threshold kills mid-animation
+     flip-flop of the gn-keyboard-open class. */
+  let viewportSettleTimer = 0;
+  function keyboardVisibleNow() {
     const vv = window.visualViewport;
-    const visible = Boolean(vv && vv.height < window.innerHeight * .82);
+    if (!vv) return false;
+    const ratio = vv.height / (window.innerHeight || 1);
+    if (keyboardVisible) return ratio < .88;
+    return ratio < .80;
+  }
+  function commitViewport() {
+    viewportSettleTimer = 0;
+    syncViewport();
+    const visible = keyboardVisibleNow();
     if (visible === keyboardVisible) return;
     keyboardVisible = visible;
     document.documentElement.classList.toggle('gn-keyboard-open', visible);
     if (visible) window.setTimeout(scrollActiveInputIntoView, 60);
+  }
+  function syncKeyboard() {
+    if (viewportSettleTimer) window.clearTimeout(viewportSettleTimer);
+    viewportSettleTimer = window.setTimeout(commitViewport, 180);
   }
 
   function watchViewportAndKeyboard() {

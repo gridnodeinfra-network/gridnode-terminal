@@ -351,9 +351,60 @@
     document.addEventListener('keydown', esc);
     window.addEventListener('scroll', onViewportMove, { passive: true, capture: true });
     window.addEventListener('resize', onViewportMove);
+    /* v0.15.47: pages scroll inside #scrollBody (#app is overflow:hidden), so
+       the spotlight must also reposition when the inner scroller moves. */
+    var sb = document.getElementById('scrollBody');
+    if (sb) sb.addEventListener('scroll', onViewportMove, { passive: true });
     document.addEventListener('gn:langchange', onLangChange);
+    installScrollProxy();
   }
   function esc(e) { if (e.key === 'Escape' && overlay) dismiss(false); }
+  /* v0.15.47: touch scroll proxy. In spot mode the dim panes sit between the
+     finger and the page, and #app is overflow:hidden with scrolling inside
+     #scrollBody — so drags starting on a dim could never scroll the page and
+     the app felt "completely stuck". Forward vertical drag deltas to the
+     page's own scroller. Taps stay blocked; the tour card scrolls natively. */
+  function pageScrollerAt(x, y) {
+    try {
+      var els = document.elementsFromPoint ? document.elementsFromPoint(x, y) : [];
+      for (var i = 0; i < els.length; i++) {
+        var el = els[i];
+        if (el.closest && el.closest('.gn-fc-overlay')) continue;
+        var n = el;
+        while (n && n !== document.documentElement) {
+          if (n.scrollHeight > n.clientHeight + 4) {
+            var oy = '';
+            try { oy = getComputedStyle(n).overflowY; } catch (_) {}
+            if (oy === 'auto' || oy === 'scroll') return n;
+          }
+          n = n.parentElement;
+        }
+      }
+    } catch (_) {}
+    return document.getElementById('scrollBody') || document.scrollingElement;
+  }
+  function installScrollProxy() {
+    if (!overlay || overlay.dataset.gnScrollProxy) return;
+    overlay.dataset.gnScrollProxy = '1';
+    var tracking = false, lastY = 0, scroller = null;
+    overlay.addEventListener('touchstart', function (e) {
+      var t = e.touches && e.touches[0];
+      if (!t || !t.target || !t.target.closest) return;
+      if (!t.target.closest('.gn-fc-dim')) return;
+      tracking = true; lastY = t.clientY;
+      scroller = pageScrollerAt(t.clientX, t.clientY);
+    }, { passive: true });
+    overlay.addEventListener('touchmove', function (e) {
+      if (!tracking) return;
+      var t = e.touches && e.touches[0];
+      if (!t) { tracking = false; return; }
+      var dy = t.clientY - lastY; lastY = t.clientY;
+      if (scroller) { try { scroller.scrollTop -= dy; } catch (_) {} }
+    }, { passive: true });
+    var end = function () { tracking = false; scroller = null; };
+    overlay.addEventListener('touchend', end, { passive: true });
+    overlay.addEventListener('touchcancel', end, { passive: true });
+  }
   function onViewportMove() {
     if (!overlay || overlay.style.display === 'none') return;
     if (moveTimer) clearTimeout(moveTimer);
@@ -863,6 +914,8 @@
     document.removeEventListener('keydown', esc);
     window.removeEventListener('scroll', onViewportMove, { capture: true });
     window.removeEventListener('resize', onViewportMove);
+    var sb2 = document.getElementById('scrollBody');
+    if (sb2) sb2.removeEventListener('scroll', onViewportMove);
     if (complete) setState('complete');
     try { document.dispatchEvent(new CustomEvent('gn:firstcontact-done', { detail: { complete: !!complete } })); } catch (_) {}
   }
