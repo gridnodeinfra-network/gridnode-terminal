@@ -83,8 +83,8 @@
               <g id="tickMarks"></g>
               <defs>
                 <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stop-color="#ffd700" id="arcStop1"/>
-                  <stop offset="100%" stop-color="#ff8c00" id="arcStop2"/>
+                  <stop offset="0%" stop-color="#d3a24a" id="arcStop1"/>
+                  <stop offset="100%" stop-color="#c08a52" id="arcStop2"/>
                 </linearGradient>
               </defs>
             </svg>
@@ -122,59 +122,6 @@
         </div>
       </div>
 
-      <section class="gn-phase" id="phaseSpherePanel" aria-labelledby="reactorTitle" data-phase="empty">
-        <div class="gn-phase-head">
-          <div class="gn-phase-title" id="reactorTitle" data-i18n="phase.reactorTitle">// PHASE ENGINE</div>
-          <button class="gn-phase-chip" id="reactorTemplateChip" type="button"></button>
-        </div>
-
-        <div class="gn-phase-hero" id="reactorSphereWrap">
-          <svg class="gn-phase-svg" id="reactorSvg" viewBox="0 0 100 100" role="img" aria-label="Phase Engine">
-            <g id="reactorArcs"></g>
-            <g id="reactorNodes"></g>
-          </svg>
-          <div class="gn-phase-center">
-            <div class="gn-phase-count" id="reactorCountdown">--</div>
-            <div class="gn-phase-count-label" id="reactorCountdownLabel"></div>
-            <div class="gn-phase-name" id="reactorPhaseName"></div>
-          </div>
-          <button class="gn-phase-ignite" id="reactorIgnite" type="button" hidden></button>
-        </div>
-
-        <div class="gn-phase-meta" id="reactorMetaLine"></div>
-
-        <div class="gn-phase-guidance" id="reactorGuidance">
-          <div class="gn-phase-tabs" role="tablist" aria-label="Phase guidance">
-            <button class="gn-phase-tab active" type="button" role="tab" data-rtab="now" data-i18n="phase.tabNow">NOW</button>
-            <button class="gn-phase-tab" type="button" role="tab" data-rtab="watch" data-i18n="phase.tabWatch">WATCH</button>
-            <button class="gn-phase-tab" type="button" role="tab" data-rtab="do" data-i18n="phase.tabDo">DO</button>
-          </div>
-          <div class="gn-phase-card" id="reactorPanel">
-            <div class="gn-phase-card-head" id="reactorPanelHead"></div>
-            <ul class="gn-phase-list" id="reactorList"></ul>
-          </div>
-          <button class="gn-phase-return" id="reactorReturn" type="button" hidden></button>
-        </div>
-
-        <div class="gn-phase-timing" role="group" aria-label="Phase timing">
-          <div class="gn-phase-cell"><span class="gn-phase-cell-label" data-i18n="phase.timeSinceShot">Time since your last recorded shot</span><span class="gn-phase-cell-val" id="reactorTimeSince">--</span></div>
-          <div class="gn-phase-cell"><span class="gn-phase-cell-label" data-i18n="phase.cyclePosition">Cycle position</span><span class="gn-phase-cell-val" id="reactorCyclePos">--</span></div>
-          <div class="gn-phase-cell"><span class="gn-phase-cell-label" data-i18n="phase.nextShotIn">Next shot in</span><span class="gn-phase-cell-val" id="reactorNextShot">--</span></div>
-        </div>
-
-        <div class="gn-phase-timeline" id="reactorTimeline" role="list" aria-label="Phase timeline"></div>
-
-        <div class="gn-phase-foot">
-          <p class="gn-phase-edu"><b data-i18n="phase.educationalEstimate">EDUCATIONAL ESTIMATE</b> <span data-i18n="phase.reactorEduNote">Phase Engine estimates protocol progression from your logged records. Not a lab measurement, diagnosis, or dosing guide.</span></p>
-          <button class="gn-phase-why" id="reactorWhyBtn" type="button" aria-expanded="false"><span data-i18n="phase.whyReading">WHY THIS READING</span><span aria-hidden="true"> &#9656;</span></button>
-          <div class="gn-phase-why-body" id="reactorWhyBody" hidden>
-            <div><b data-i18n="phase.whyPhase">WHY THIS PHASE</b><p id="reactorWhyPhase" data-i18n="phase.whyPhaseBody">Based on time since your last recorded shot and your logged protocol history.</p></div>
-            <div><b data-i18n="phase.dataSources">DATA SOURCES</b><p data-i18n="phase.dataSourcesBody">Your logged shots, timing, and protocol events. Stored on this device.</p></div>
-          </div>
-        </div>
-      </section>
-
-      
       <div class="sec-hdr" id="phaseCurveHdr"><div class="sec-title" data-i18n-html="phase.phaseCurveTitle">// <span class="a">PHASE_CURVE</span></div></div>
       <div class="card" id="phaseCurveCard">
         <div class="card-title-row"><div class="card-title" data-i18n="phase.estimatedProtocolCurve">ESTIMATED PROTOCOL CURVE</div><button type="button" class="gn-peptide-expand" id="medExpandBtn" onclick="window.GN_PEPTIDE_VIZ && GN_PEPTIDE_VIZ.openOverlay()" hidden data-i18n="peptide.expand">EXPAND ▸</button></div>
@@ -330,6 +277,58 @@
           <button class="results-view-btn" type="button" data-results-view="calendar" onclick="setResultsView('calendar')" data-i18n="results.viewCalendar">CALENDAR</button>
         </div>
       </div>
+
+      <section class="gn-phase" id="phaseSpherePanel" aria-labelledby="reactorTitle" data-phase="empty">
+        <div class="gn-phase-head">
+          <div class="gn-phase-title" id="reactorTitle" data-i18n="phase.reactorTitle">// PHASE ENGINE</div>
+          <button class="gn-phase-chip" id="reactorTemplateChip" type="button"></button>
+        </div>
+
+        <div class="gn-phase-hero" id="reactorSphereWrap">
+          <svg class="gn-phase-svg" id="reactorSvg" viewBox="0 0 100 100" role="img" aria-label="Phase Engine">
+            <g id="reactorArcs"></g>
+            <g id="reactorNodes"></g>
+          </svg>
+          <div class="gn-phase-center">
+            <div class="gn-phase-count" id="reactorCountdown">--</div>
+            <div class="gn-phase-count-label" id="reactorCountdownLabel"></div>
+            <div class="gn-phase-name" id="reactorPhaseName"></div>
+          </div>
+          <button class="gn-phase-ignite" id="reactorIgnite" type="button" hidden></button>
+        </div>
+
+        <div class="gn-phase-meta" id="reactorMetaLine"></div>
+
+        <div class="gn-phase-guidance" id="reactorGuidance">
+          <div class="gn-phase-tabs" role="tablist" aria-label="Phase guidance">
+            <button class="gn-phase-tab active" type="button" role="tab" data-rtab="now" data-i18n="phase.tabNow">NOW</button>
+            <button class="gn-phase-tab" type="button" role="tab" data-rtab="watch" data-i18n="phase.tabWatch">WATCH</button>
+            <button class="gn-phase-tab" type="button" role="tab" data-rtab="do" data-i18n="phase.tabDo">DO</button>
+          </div>
+          <div class="gn-phase-card" id="reactorPanel">
+            <div class="gn-phase-card-head" id="reactorPanelHead"></div>
+            <ul class="gn-phase-list" id="reactorList"></ul>
+          </div>
+          <button class="gn-phase-return" id="reactorReturn" type="button" hidden></button>
+        </div>
+
+        <div class="gn-phase-timing" role="group" aria-label="Phase timing">
+          <div class="gn-phase-cell"><span class="gn-phase-cell-label" data-i18n="phase.timeSinceShot">Time since your last recorded shot</span><span class="gn-phase-cell-val" id="reactorTimeSince">--</span></div>
+          <div class="gn-phase-cell"><span class="gn-phase-cell-label" data-i18n="phase.cyclePosition">Cycle position</span><span class="gn-phase-cell-val" id="reactorCyclePos">--</span></div>
+          <div class="gn-phase-cell"><span class="gn-phase-cell-label" data-i18n="phase.nextShotIn">Next shot in</span><span class="gn-phase-cell-val" id="reactorNextShot">--</span></div>
+        </div>
+
+        <div class="gn-phase-timeline" id="reactorTimeline" role="list" aria-label="Phase timeline"></div>
+
+        <div class="gn-phase-foot">
+          <p class="gn-phase-edu"><b data-i18n="phase.educationalEstimate">EDUCATIONAL ESTIMATE</b> <span data-i18n="phase.reactorEduNote">Phase Engine estimates protocol progression from your logged records. Not a lab measurement, diagnosis, or dosing guide.</span></p>
+          <button class="gn-phase-why" id="reactorWhyBtn" type="button" aria-expanded="false"><span data-i18n="phase.whyReading">WHY THIS READING</span><span aria-hidden="true"> &#9656;</span></button>
+          <div class="gn-phase-why-body" id="reactorWhyBody" hidden>
+            <div><b data-i18n="phase.whyPhase">WHY THIS PHASE</b><p id="reactorWhyPhase" data-i18n="phase.whyPhaseBody">Based on time since your last recorded shot and your logged protocol history.</p></div>
+            <div><b data-i18n="phase.dataSources">DATA SOURCES</b><p data-i18n="phase.dataSourcesBody">Your logged shots, timing, and protocol events. Stored on this device.</p></div>
+          </div>
+        </div>
+      </section>
 
       <div class="results-ledger" id="resultsChartsView">
         <section class="results-card summary">

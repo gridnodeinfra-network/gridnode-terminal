@@ -257,11 +257,11 @@ function sideEffectLabel(value) {
 }
 
 const PHASES = [
-  { name: 'ONSET', support: 'Early cycle after the latest logged SHOT. New observations begin shaping this signal.', context: 'Early cycle after the latest logged SHOT. Your own appetite, energy, symptoms, and notes may begin shaping this signal.', color: '#00d4ff', start: 0, end: 0.08 },
-  { name: 'ACTIVE', support: 'Estimated active-cycle window. Compare this point with your own earlier logged cycles.', context: 'Estimated active-cycle window. Compare this point with your own earlier logged observations.', color: '#00ff88', start: 0.08, end: 0.28 },
-  { name: 'PEAK WINDOW', support: 'Estimated highest relative level in this cycle. This is not a laboratory measurement.', context: 'Estimated highest relative level in this cycle. Individual response varies; this is not a laboratory measurement.', color: '#ffd700', start: 0.28, end: 0.52 },
-  { name: 'RESPONSE', support: 'A middle-cycle estimate built from timing and user-entered history.', context: 'A middle-cycle estimate built from timing and user-entered history.', color: '#ff8c00', start: 0.52, end: 0.76 },
-  { name: 'DECAY', support: 'Estimated level is declining toward the next expected event. Individual response varies.', context: 'Estimated level is declining toward the next expected event. Watch your own logged patterns; individual response varies.', color: '#FF5B5B', start: 0.76, end: 0.94 },
+  { name: 'ONSET', support: 'Early cycle after the latest logged SHOT. New observations begin shaping this signal.', context: 'Early cycle after the latest logged SHOT. Your own appetite, energy, symptoms, and notes may begin shaping this signal.', color: '#4fb8d8', start: 0, end: 0.08 },
+  { name: 'ACTIVE', support: 'Estimated active-cycle window. Compare this point with your own earlier logged cycles.', context: 'Estimated active-cycle window. Compare this point with your own earlier logged observations.', color: '#63b98b', start: 0.08, end: 0.28 },
+  { name: 'PEAK WINDOW', support: 'Estimated highest relative level in this cycle. This is not a laboratory measurement.', context: 'Estimated highest relative level in this cycle. Individual response varies; this is not a laboratory measurement.', color: '#d3a24a', start: 0.28, end: 0.52 },
+  { name: 'RESPONSE', support: 'A middle-cycle estimate built from timing and user-entered history.', context: 'A middle-cycle estimate built from timing and user-entered history.', color: '#4aa89b', start: 0.52, end: 0.76 },
+  { name: 'DECAY', support: 'Estimated level is declining toward the next expected event. Individual response varies.', context: 'Estimated level is declining toward the next expected event. Watch your own logged patterns; individual response varies.', color: '#c26674', start: 0.76, end: 0.94 },
   { name: 'BASELINE', support: 'Late-cycle estimate before the next expected event. Keep logging your own patterns.', context: 'Late-cycle estimate before the next expected event. Keep logging your own patterns.', color: '#9898b0', start: 0.94, end: 1 }
 ];
 

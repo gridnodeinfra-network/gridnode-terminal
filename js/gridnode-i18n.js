@@ -88,7 +88,11 @@
 
   function text(key, fallback, vars) {
     const value = t(key, vars);
-    return value === key ? (fallback || key) : value;
+    // If the key missed (catalogs not ready yet, or truly absent), the
+    // fallback may carry {var} placeholders too — interpolate them so a raw
+    // "{n}" never leaks into the UI.
+    if (value === key) return interpolate(fallback || key, vars);
+    return value;
   }
 
   function plural(key, count, vars) {
