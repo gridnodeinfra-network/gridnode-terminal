@@ -1,7 +1,7 @@
 {
   "name": "gridnode-terminal-qa",
   "private": true,
-  "version": "0.15.52",
+  "version": "0.15.53",
   "description": "QA harness dependencies for GRID//NODE (mobile shell, contrast audits). No runtime deps \u2014 dev only.",
   "scripts": {
     "build": "node scripts/build.mjs",

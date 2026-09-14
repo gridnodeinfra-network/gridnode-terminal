@@ -1835,5 +1835,7 @@
   "phase.tmpl.chipTb500": "TB-500 · CYCLE WHEEL",
   "phase.tmpl.chipGhk": "GHK-Cu · CYCLE WHEEL",
   "phase.tmpl.chipCjcIpa": "GH STACK · CYCLE WHEEL",
-  "phase.tmpl.chipGeneric": "GENERIC CYCLE"
+  "phase.tmpl.chipGeneric": "GENERIC CYCLE",
+  "shots.timeRequired": "Set the shot time and pick AM or PM.",
+  "phase.preview": "PREVIEW"
 }

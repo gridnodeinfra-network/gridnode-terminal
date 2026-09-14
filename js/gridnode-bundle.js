@@ -2703,6 +2703,13 @@ function openLogModal(options = {}) {
   installShotSummaryWatcher();
   gnRenderShotSummary();
   if (!modal.querySelector('.gn-drawer-handle')) modal.insertAdjacentHTML('afterbegin', '<div class="gn-drawer-handle" aria-hidden="true"></div>');
+  // v0.15.53: AM/PM must never open unselected. Belt and suspenders — default
+  // from the current time when the state is somehow blank, then always sync
+  // the buttons so the visual state can never disagree with moduleState.
+  if (moduleState.meridiem !== 'AM' && moduleState.meridiem !== 'PM') {
+    moduleState.meridiem = new Date().getHours() >= 12 ? 'PM' : 'AM';
+  }
+  updateMeridiemButtons();
   cancelLogClose();
   modal.classList.add('active');
 }
@@ -3039,7 +3046,12 @@ function saveShot(allowFuture = false) {
     if (invalidFields.length) {
       invalidFields.filter(Boolean).forEach(field => field.setAttribute('aria-invalid', 'true'));
       invalidFields.find(Boolean)?.focus?.();
-      showToast(tx('shots.requiredFields', 'Add medication, dose, date, time, and a logged location.'), true);
+      // v0.15.53: never fail silently — name the time problem explicitly so the
+      // user knows to pick AM/PM instead of tapping SAVE again in confusion.
+      const msg = !time
+        ? tx('shots.timeRequired', 'Set the shot time and pick AM or PM.')
+        : tx('shots.requiredFields', 'Add medication, dose, date, time, and a logged location.');
+      showToast(msg, true);
       notifyCoachSaveBlocked(invalidFields);
       return;
     }
@@ -3126,7 +3138,7 @@ function saveShot(allowFuture = false) {
     refreshAll();
     try { document.dispatchEvent(new CustomEvent('gn:shot-saved', { detail: { record: record, isNew: !existing } })); } catch (_) {}
     const shotTimeLabel = formatTime12(new Date(record.date));
-    const shotDetail = `${record.dose}mg ${medicationLabel(normalizeMedicationId(record.med))} · ${zoneLabel(record.site)}`;
+    const shotDetail = `${record.dose} mg ${medicationLabel(normalizeMedicationId(record.med))} · ${zoneLabel(record.site)}`;
     showToast(`${tx('toast.shotLogged', 'Dosis registrada')} · ${shotTimeLabel}`, false, () => undoShot(record.id), shotDetail);
     return record;
   } finally {
@@ -3718,7 +3730,8 @@ function renderProtocolCurve(shots, phase) {
   if (readout) {
     const detail = document.createElement('span');
     detail.textContent = tx('results.relativeCycleModel', 'relative cycle model · not a measured level');
-    readout.replaceChildren(document.createTextNode(localizedPhaseName(phase) || tx('results.active', 'ACTIVE')), detail);
+    const liveLabel = localizedPhaseName(phase) || tx('results.active', 'ACTIVE');
+    readout.replaceChildren(document.createTextNode(liveLabel ? liveLabel + ' ' : ''), detail);
   }
 
   const now = Date.now();
@@ -5318,7 +5331,17 @@ function formatTime24(date) { return `${String(date.getHours()).padStart(2, '0')
 function formatTime12(date) { const hour = date.getHours() % 12 || 12; return `${hour}:${String(date.getMinutes()).padStart(2, '0')}`; }
 function getShotTime24(value) { const raw = String(value || '').trim().toUpperCase(); const suffix = moduleState.meridiem; const match = raw.match(/^(\d{1,2})(?::?(\d{2}))?$/); if (!match) return ''; let hour = Number(match[1]), minute = Number(match[2] || '00'); if (suffix === 'PM' && hour < 12) hour += 12; if (suffix === 'AM' && hour === 12) hour = 0; return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59 ? `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}` : ''; }
 function gnSetShotMeridiem(value) { moduleState.meridiem = value === 'PM' ? 'PM' : 'AM'; updateMeridiemButtons(); }
-function updateMeridiemButtons() { $('sTimeAM')?.classList.toggle('active', moduleState.meridiem === 'AM'); $('sTimePM')?.classList.toggle('active', moduleState.meridiem === 'PM'); }
+function updateMeridiemButtons() {
+  const isAM = moduleState.meridiem === 'AM';
+  const isPM = moduleState.meridiem === 'PM';
+  const am = $('sTimeAM'), pm = $('sTimePM');
+  am?.classList.toggle('active', isAM);
+  pm?.classList.toggle('active', isPM);
+  // v0.15.53: expose the state to assistive tech — the visual .active class
+  // alone never reached the accessibility tree.
+  am?.setAttribute('aria-pressed', String(isAM));
+  pm?.setAttribute('aria-pressed', String(isPM));
+}
 function gnShotClockLiveFormat(input) { if (!input) return; input.value = input.value.replace(/[^0-9]/g, '').slice(0, 4).replace(/^(\d{1,2})(\d{2})$/, '$1:$2'); }
 function gnNormalizeShotClockField(input) { if (!input) return; const parsed = getShotTime24(input.value); if (parsed) { const date = new Date(`2000-01-01T${parsed}`); input.value = formatTime12(date); } }
 function gnWeightDateInput(input) {

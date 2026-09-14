@@ -1807,5 +1807,7 @@
   "phase.tmpl.chipTb500": "TB-500 · RUEDA DE CICLO",
   "phase.tmpl.chipGhk": "GHK-Cu · RUEDA DE CICLO",
   "phase.tmpl.chipCjcIpa": "STACK GH · RUEDA DE CICLO",
-  "phase.tmpl.chipGeneric": "CICLO GENÉRICO"
+  "phase.tmpl.chipGeneric": "CICLO GENÉRICO",
+  "shots.timeRequired": "Pon la hora de la dosis y elige AM o PM.",
+  "phase.preview": "VISTA PREVIA"
 }

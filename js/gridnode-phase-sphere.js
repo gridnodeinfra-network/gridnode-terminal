@@ -289,13 +289,20 @@
       if (nameEl.textContent !== name) nameEl.textContent = name;
     }
 
-    // Countdown: weekly/generic = until next shot; cycle = remaining in cycle
+    // Countdown: weekly/generic = until next shot; cycle = remaining in cycle.
+    // v0.15.53: in preview the center must reflect the previewed phase — the
+    // small label switches to PREVIEW so the live countdown value is never
+    // mistaken for the previewed phase's own timing.
     var cycleMs = s.template.cycleDays * 86400000;
     var remaining = s.cycleStart + cycleMs - Date.now();
     setText('reactorCountdown', fmtCountdown(remaining));
-    setText('reactorCountdownLabel', s.template.type === 'cycle'
-      ? tx('phase.remainingInCycle', 'REMAINING IN CYCLE')
-      : tx('phase.untilNextShot', 'UNTIL NEXT SHOT'));
+    if (state.previewIndex >= 0) {
+      setText('reactorCountdownLabel', tx('phase.preview', 'PREVIEW'));
+    } else {
+      setText('reactorCountdownLabel', s.template.type === 'cycle'
+        ? tx('phase.remainingInCycle', 'REMAINING IN CYCLE')
+        : tx('phase.untilNextShot', 'UNTIL NEXT SHOT'));
+    }
 
     // Soft color wash on the hero for the active phase — subtle, static
     var wrap = $('reactorSphereWrap');

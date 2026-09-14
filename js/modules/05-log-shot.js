@@ -51,6 +51,13 @@ export function openLogModal(options = {}) {
   installShotSummaryWatcher();
   gnRenderShotSummary();
   if (!modal.querySelector('.gn-drawer-handle')) modal.insertAdjacentHTML('afterbegin', '<div class="gn-drawer-handle" aria-hidden="true"></div>');
+  // v0.15.53: AM/PM must never open unselected. Belt and suspenders — default
+  // from the current time when the state is somehow blank, then always sync
+  // the buttons so the visual state can never disagree with moduleState.
+  if (moduleState.meridiem !== 'AM' && moduleState.meridiem !== 'PM') {
+    moduleState.meridiem = new Date().getHours() >= 12 ? 'PM' : 'AM';
+  }
+  updateMeridiemButtons();
   cancelLogClose();
   modal.classList.add('active');
 }
@@ -387,7 +394,12 @@ export function saveShot(allowFuture = false) {
     if (invalidFields.length) {
       invalidFields.filter(Boolean).forEach(field => field.setAttribute('aria-invalid', 'true'));
       invalidFields.find(Boolean)?.focus?.();
-      showToast(tx('shots.requiredFields', 'Add medication, dose, date, time, and a logged location.'), true);
+      // v0.15.53: never fail silently — name the time problem explicitly so the
+      // user knows to pick AM/PM instead of tapping SAVE again in confusion.
+      const msg = !time
+        ? tx('shots.timeRequired', 'Set the shot time and pick AM or PM.')
+        : tx('shots.requiredFields', 'Add medication, dose, date, time, and a logged location.');
+      showToast(msg, true);
       notifyCoachSaveBlocked(invalidFields);
       return;
     }
@@ -474,7 +486,7 @@ export function saveShot(allowFuture = false) {
     refreshAll();
     try { document.dispatchEvent(new CustomEvent('gn:shot-saved', { detail: { record: record, isNew: !existing } })); } catch (_) {}
     const shotTimeLabel = formatTime12(new Date(record.date));
-    const shotDetail = `${record.dose}mg ${medicationLabel(normalizeMedicationId(record.med))} · ${zoneLabel(record.site)}`;
+    const shotDetail = `${record.dose} mg ${medicationLabel(normalizeMedicationId(record.med))} · ${zoneLabel(record.site)}`;
     showToast(`${tx('toast.shotLogged', 'Dosis registrada')} · ${shotTimeLabel}`, false, () => undoShot(record.id), shotDetail);
     return record;
   } finally {

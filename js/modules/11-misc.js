@@ -26,7 +26,17 @@ export function formatTime24(date) { return `${String(date.getHours()).padStart(
 export function formatTime12(date) { const hour = date.getHours() % 12 || 12; return `${hour}:${String(date.getMinutes()).padStart(2, '0')}`; }
 function getShotTime24(value) { const raw = String(value || '').trim().toUpperCase(); const suffix = moduleState.meridiem; const match = raw.match(/^(\d{1,2})(?::?(\d{2}))?$/); if (!match) return ''; let hour = Number(match[1]), minute = Number(match[2] || '00'); if (suffix === 'PM' && hour < 12) hour += 12; if (suffix === 'AM' && hour === 12) hour = 0; return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59 ? `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}` : ''; }
 export function gnSetShotMeridiem(value) { moduleState.meridiem = value === 'PM' ? 'PM' : 'AM'; updateMeridiemButtons(); }
-function updateMeridiemButtons() { $('sTimeAM')?.classList.toggle('active', moduleState.meridiem === 'AM'); $('sTimePM')?.classList.toggle('active', moduleState.meridiem === 'PM'); }
+function updateMeridiemButtons() {
+  const isAM = moduleState.meridiem === 'AM';
+  const isPM = moduleState.meridiem === 'PM';
+  const am = $('sTimeAM'), pm = $('sTimePM');
+  am?.classList.toggle('active', isAM);
+  pm?.classList.toggle('active', isPM);
+  // v0.15.53: expose the state to assistive tech — the visual .active class
+  // alone never reached the accessibility tree.
+  am?.setAttribute('aria-pressed', String(isAM));
+  pm?.setAttribute('aria-pressed', String(isPM));
+}
 export function gnShotClockLiveFormat(input) { if (!input) return; input.value = input.value.replace(/[^0-9]/g, '').slice(0, 4).replace(/^(\d{1,2})(\d{2})$/, '$1:$2'); }
 export function gnNormalizeShotClockField(input) { if (!input) return; const parsed = getShotTime24(input.value); if (parsed) { const date = new Date(`2000-01-01T${parsed}`); input.value = formatTime12(date); } }
 export function gnWeightDateInput(input) {

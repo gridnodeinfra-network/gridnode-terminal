@@ -469,7 +469,8 @@ function renderProtocolCurve(shots, phase) {
   if (readout) {
     const detail = document.createElement('span');
     detail.textContent = tx('results.relativeCycleModel', 'relative cycle model · not a measured level');
-    readout.replaceChildren(document.createTextNode(localizedPhaseName(phase) || tx('results.active', 'ACTIVE')), detail);
+    const liveLabel = localizedPhaseName(phase) || tx('results.active', 'ACTIVE');
+    readout.replaceChildren(document.createTextNode(liveLabel ? liveLabel + ' ' : ''), detail);
   }
 
   const now = Date.now();

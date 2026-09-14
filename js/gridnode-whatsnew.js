@@ -117,8 +117,8 @@
         ]
       }
     },
-    '__CURRENT_BUILD__': {
-      version: '0.15.43', title: 'LAUNCH READINESS', date: '2026-09-12',
+    '20260914.d12411d': {
+      version: '0.15.52', title: 'PHASE ENGINE REFINED (notes as shipped)', date: '2026-09-14',
       en: {
         NEW: [
           'VAULT is now a full bottom-tab: five sections, one loop — HOME, SHOTS, RESULTS, LAB, VAULT.',
@@ -171,6 +171,36 @@
           'El tema vive en los ajustes de VAULT; el español se ofrece desde el primer paso del tour.',
           'Registrar una dosis ya no te saca a otra pantalla a mitad del formulario: elige tu sitio de inyección dentro del mismo modal.',
           'El selector de medicamentos empieza con las opciones más comunes en lugar de un muro de jerga.'
+        ]
+      }
+    },
+
+    '__CURRENT_BUILD__': {
+      version: '0.15.53', title: 'PHASE ENGINE QA FIXES', date: '2026-09-14',
+      en: {
+        IMPROVED: [
+          'The Phase Engine has a calmer, premium look: thin muted phase arcs, a quiet center readout, and breathing room everywhere. The spinning bezel and scanline noise are gone.'
+        ],
+        FIXED: [
+          'RETURN TO LIVE no longer gets stuck on screen — it only appears while you are previewing a phase.',
+          'Fixed run-together text in the protocol curve readout ("ONSETLABELED" now reads "ONSET LABELED").',
+          'The update popup now shows the real version number.',
+          'The dose toast now reads "0.5 mg" with a proper space.',
+          'LOG SHOT preselects AM/PM from the current time, and tells you plainly if the time is still incomplete when saving.',
+          'Previewing a phase now shows that phase in the ring center instead of the live one.'
+        ]
+      },
+      es: {
+        IMPROVED: [
+          'El Motor de Fases tiene un aspecto más calmado y premium: arcos finos en tonos sobrios, lectura central discreta y espacio para respirar. El bisel giratorio y el ruido de scanlines desaparecieron.'
+        ],
+        FIXED: [
+          'VOLVER EN VIVO ya no se queda pegado en pantalla: solo aparece mientras previsualizas una fase.',
+          'Texto corregido en la curva del protocolo ("ONSETLABELED" ahora se lee "ONSET LABELED").',
+          'El aviso de actualización ahora muestra el número de versión real.',
+          'El aviso de dosis ahora dice "0.5 mg" con su espacio.',
+          'REGISTRAR DOSIS preselecciona AM/PM según la hora actual, y te avisa claramente si la hora sigue incompleta al guardar.',
+          'Previsualizar una fase ahora muestra esa fase en el centro del anillo en lugar de la fase en vivo.'
         ]
       }
     },

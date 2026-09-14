@@ -319,8 +319,11 @@
 
       if (readout) {
         const detail = document.createElement('span');
-        detail.textContent = ` ${evidenceLabel(build.evidence.state)} · ${tx('peptide.modelNote', 'literature-derived relative model · not measured')}`;
-        readout.replaceChildren(document.createTextNode(phaseLabel(phaseNameResolved)), detail);
+        detail.textContent = `${evidenceLabel(build.evidence.state)} · ${tx('peptide.modelNote', 'literature-derived relative model · not measured')}`;
+        // Explicit trailing space on the phase label: never rely on leading
+        // whitespace inside the detail span (v0.15.53 fixed "ONSETLABELED").
+        const label = phaseLabel(phaseNameResolved);
+        readout.replaceChildren(document.createTextNode(label ? label + ' ' : ''), detail);
       }
       if (chip) { chip.textContent = evidenceLabel(build.evidence.state); chip.dataset.state = build.evidence.state; }
       if (summary) {
