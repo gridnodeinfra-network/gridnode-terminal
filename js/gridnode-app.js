@@ -60,16 +60,25 @@ function injectStableStyles() {
     .gn-auth-kicker{font:700 .62rem var(--font-m,monospace);letter-spacing:3px;color:#00d4ff;text-align:center}@media(max-width:480px){.gn-auth-kicker{margin-right:54px;font-size:.56rem;letter-spacing:1px}}.gn-auth-title{font:800 1.35rem var(--font-d,monospace);letter-spacing:3px;color:#fff;text-align:center;margin:14px 0 6px}.gn-auth-copy{font:.78rem/1.55 var(--font-m,monospace);color:#9fc7d4;text-align:center;margin:0 auto 22px;max-width:38ch}
     .gn-auth-field{width:100%;box-sizing:border-box;margin:0 0 10px;padding:13px 12px;border:1px solid rgba(0,212,255,.2);background:#080810;color:#eeeef5;border-radius:3px;font:16px var(--font-m,monospace);outline:none}.gn-auth-field:focus{border-color:#00d4ff;box-shadow:0 0 0 2px rgba(0,212,255,.1)}
     .gn-auth-primary,.gn-auth-passkey,.gn-auth-google{width:100%;min-height:52px;margin-top:10px;border-radius:3px;cursor:pointer;font:700 .72rem var(--font-d,monospace);letter-spacing:2px}.gn-auth-primary{border:0;background:linear-gradient(135deg,#FF3B3B,#D12424);color:#fff}.gn-auth-passkey{display:flex;align-items:center;justify-content:center;gap:10px;border:0;background:linear-gradient(135deg,#FF3B3B,#D12424);color:#fff}.gn-auth-passkey .gn-passkey-icon{font-size:1rem}.gn-auth-google{border:1px solid rgba(0,212,255,.4);background:rgba(0,212,255,.04);color:#00d4ff}.gn-auth-google:disabled{cursor:not-allowed;opacity:.55;border-color:rgba(130,149,160,.28);color:#8295a0;box-shadow:none}.gn-auth-primary-label{margin-top:4px;color:#00d4ff;font:700 .52rem var(--font-m,monospace);letter-spacing:2px;text-align:left}.gn-google-button-shell{width:100%;min-height:54px;margin-top:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;border:0;border-radius:3px}.gn-google-button-shell.loading{pointer-events:none;opacity:.55}.gn-google-button-shell>div{max-width:100%}.gn-auth-divider{display:flex;align-items:center;gap:12px;margin:18px 0 4px;color:#8295a0;font:600 .6rem var(--font-m,monospace);letter-spacing:2px;text-transform:uppercase}.gn-auth-divider::before,.gn-auth-divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.12)}.gn-auth-local{display:block;width:100%;min-height:44px;margin-top:10px;padding:8px 12px;border:0;background:transparent;color:#8295a0;font:600 .62rem var(--font-m,monospace);letter-spacing:1.4px;cursor:pointer;text-align:center}.gn-auth-local:hover{color:#00d4ff}.gn-auth-privacy{display:grid;gap:4px;margin-top:12px;padding:10px 11px;border-left:2px solid #00d4ff;background:rgba(0,212,255,.045);color:#9fc7d4;font:.58rem/1.45 var(--font-m,monospace)}.gn-auth-privacy strong{color:#e8fcff;letter-spacing:1px}.gn-auth-options{margin-top:16px;border-top:1px solid rgba(255,255,255,.07);padding-top:12px}.gn-auth-options summary{cursor:pointer;color:#8295a0;font:700 .56rem var(--font-m,monospace);letter-spacing:1.4px;list-style:none}.gn-auth-options summary::-webkit-details-marker{display:none}.gn-auth-options[open] summary{color:#00d4ff;margin-bottom:10px}.gn-auth-links{display:flex;justify-content:space-between;gap:8px;margin-top:14px}.gn-auth-link{padding:0;border:0;background:transparent;color:#8295a0;font:600 .58rem var(--font-m,monospace);letter-spacing:1px;cursor:pointer}.gn-auth-link:hover{color:#00d4ff}.gn-auth-message{min-height:22px;margin-top:14px;text-align:center;font:.62rem/1.4 var(--font-m,monospace);letter-spacing:.7px;color:#8295a0}.gn-auth-note{margin-top:18px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07);font:.56rem/1.5 var(--font-m,monospace);letter-spacing:.6px;color:#586d76;text-align:center}.gn-auth-policy-link{margin-top:16px;text-align:center}.gn-auth-policy-link button{padding:6px 10px;border:0;background:transparent;color:#586d76;font:600 .56rem var(--font-m,monospace);letter-spacing:1.2px;cursor:pointer}.gn-auth-policy-link button:hover{color:#00d4ff}
-    /* v0.15.54: 18+ age gate + terms acceptance on the auth card */
-    .gn-legal-gate{margin:14px 0 4px;padding:12px;border:1px solid rgba(0,212,255,.28);border-left:2px solid #00d4ff;background:rgba(0,212,255,.045)}
-    .gn-legal-gate-title{margin:0 0 10px;color:#00d4ff;font:700 .6rem var(--font-d,monospace);letter-spacing:2px}
-    .gn-legal-check{display:flex;gap:10px;align-items:flex-start;margin:0 0 10px;cursor:pointer;color:#9fc7d4;font:.62rem/1.5 var(--font-m,monospace)}
-    .gn-legal-check:last-of-type{margin-bottom:6px}
-    .gn-legal-check input{flex:0 0 auto;width:18px;height:18px;margin:1px 0 0;accent-color:#00d4ff;cursor:pointer}
+    /* v0.15.55: calm entry flow — two choices, legal gate moved to a modal */
+    .gn-auth-secondary{width:100%;min-height:52px;margin-top:16px;border:1px solid rgba(0,212,255,.4);background:rgba(0,212,255,.04);color:#00d4ff;border-radius:3px;cursor:pointer;font:700 .72rem var(--font-d,monospace);letter-spacing:2px}
+    .gn-auth-secondary:hover{border-color:#00d4ff;background:rgba(0,212,255,.09)}
+    .gn-auth-secondary[aria-expanded="true"]{border-color:#00d4ff;color:#fff;background:rgba(0,212,255,.1)}
+    #gnCloudArea{margin-top:4px}
+    #gnCloudArea .gn-auth-passkey{margin-top:16px}
+    .gn-legal-modal-title{margin:0 0 16px;color:#00d4ff;font:700 .66rem var(--font-d,monospace);letter-spacing:2px}
+    .gn-legal-check{display:flex;gap:12px;align-items:flex-start;margin:0 0 14px;cursor:pointer;color:#9fc7d4;font:.66rem/1.55 var(--font-m,monospace)}
+    .gn-legal-check input{flex:0 0 auto;width:20px;height:20px;margin:0;accent-color:#00d4ff;cursor:pointer}
     .gn-legal-link{padding:0;border:0;background:transparent;color:#00d4ff;font:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
     .gn-legal-link:hover{color:#fff}
-    .gn-legal-under18{display:block;margin:2px 0 0 auto;padding:6px 2px;border:0;background:transparent;color:#586d76;font:600 .56rem var(--font-m,monospace);letter-spacing:1px;cursor:pointer}
+    .gn-legal-under18{display:block;margin:0 0 0 auto;padding:8px 2px;border:0;background:transparent;color:#586d76;font:600 .58rem var(--font-m,monospace);letter-spacing:1px;cursor:pointer}
     .gn-legal-under18:hover{color:#FF5B5B}
+    .gn-legal-modal-msg{min-height:20px;margin:2px 0 10px;text-align:center;font:.62rem/1.4 var(--font-m,monospace);letter-spacing:.7px;color:#8295a0}
+    .gn-legal-modal-msg[data-tone="error"]{color:#FF5B5B}
+    .gn-legal-modal-actions{display:grid;gap:8px;margin-top:4px}
+    .gn-legal-modal-actions .gn-auth-primary{margin-top:0}
+    .gn-legal-modal-cancel{padding:12px;border:0;background:transparent;color:#8295a0;font:600 .62rem var(--font-m,monospace);letter-spacing:2px;cursor:pointer}
+    .gn-legal-modal-cancel:hover{color:#fff}
     .gn-phase-row{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.07)}.gn-phase-index{font:700 .72rem var(--font-m,monospace);color:#FF3B3B}.gn-phase-row b{font:700 .72rem var(--font-d,monospace);letter-spacing:1px}.gn-phase-row p{margin:4px 0 0;color:#8295a0;font:.66rem/1.4 var(--font-m,monospace)}
     .gn-weight-record{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.07)}.gn-weight-record b{display:block;color:#00ff88;font:700 .78rem var(--font-d,monospace)}.gn-weight-record span,.gn-weight-record small{display:block;margin-top:3px;color:#8295a0;font:.6rem var(--font-m,monospace)}.gn-calendar-detail{padding:9px 0;border-bottom:1px solid rgba(255,255,255,.07);font:.66rem var(--font-m,monospace);color:#9fc7d4}
     .gn-toast-kicker{display:none}.gn-toast-message{display:block;font:600 .68rem var(--font-d,monospace);letter-spacing:.7px;color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -152,35 +161,71 @@ function authShell() {
     <div class="gn-auth-kicker">// PERSONAL BIOTECH OPERATING SYSTEM //</div>
     <div class="gn-auth-title">${recovering ? 'RESET ACCESS' : 'GRID//NODE'}</div>
     <p class="gn-auth-copy">${recovering ? 'Enter a new password for this GRID//NODE cloud account.' : 'Sign in to sync your grid across devices.'}</p>
-    ${recovering || legalAccepted() ? '' : `<div class="gn-legal-gate" id="gnLegalGate">
-      <p class="gn-legal-gate-title" data-i18n="legal.gateTitle">BEFORE YOU ENTER</p>
-      <label class="gn-legal-check"><input type="checkbox" id="gnLegalAge"><span data-i18n="legal.ageConfirm">I confirm I am 18 years of age or older.</span></label>
-      <label class="gn-legal-check"><input type="checkbox" id="gnLegalTerms"><span><span data-i18n="legal.agreePrefix">I agree to the</span> <button type="button" class="gn-legal-link" id="gnLegalTermsLink" data-i18n="legal.termsLink">Terms of Service</button> <span data-i18n="legal.andWord">and</span> <button type="button" class="gn-legal-link" id="gnLegalPrivacyLink" data-i18n="legal.privacyLink">Privacy Policy</button><span data-i18n="legal.agreeSuffix">.</span></span></label>
-      <button type="button" class="gn-legal-under18" id="gnLegalUnder18" data-i18n="legal.under18Link">I am under 18</button>
+    ${recovering ? '' : `
+    <p class="gn-auth-copy" data-i18n="auth.entryCopy">Choose how you enter your grid.</p>
+    <button class="gn-auth-primary" id="gnLocalBtn" type="button"><span data-i18n="auth.continueOnDevice">CONTINUE ON THIS DEVICE</span></button>
+    <p class="gn-auth-hint" data-i18n="auth.deviceSubline">Nothing leaves your phone.</p>
+    <button class="gn-auth-secondary" id="gnCloudToggle" type="button" aria-expanded="false" aria-controls="gnCloudArea"><span data-i18n="auth.syncAcrossDevices">SYNC ACROSS DEVICES</span></button>
+    <div id="gnCloudArea" hidden>
+      <div class="gn-google-button-shell" id="gnGoogleButtonMount" role="group" aria-label="Continue with Google" style="display:none"></div>
+      <button class="gn-auth-passkey" id="gnPasskeyBtn" type="button" data-i18n-aria-label="auth.passkeyAria"><span class="gn-passkey-icon" aria-hidden="true">⌘</span><span data-i18n="auth.continueWithPasskey">CONTINUE WITH PASSKEY</span></button>
+      <form id="gnAuthForm" novalidate>
+        <input class="gn-auth-field" id="gnAuthEmail" type="email" autocomplete="email" placeholder="EMAIL ADDRESS" aria-label="Email address">
+        <input class="gn-auth-field" id="gnAuthPassword" type="password" autocomplete="current-password" placeholder="PASSWORD" aria-label="Password">
+        <button class="gn-auth-primary" id="gnAuthSubmit" type="submit">SIGN IN TO CLOUD</button>
+      </form>
+      <div class="gn-auth-links"><button class="gn-auth-link" id="gnAuthModeToggle" type="button">CREATE ACCOUNT</button><button class="gn-auth-link" id="gnAuthReset" type="button">RESET PASSWORD</button></div>
+    </div>
+    <div class="gn-privacy-overlay" id="gnLegalModal" role="dialog" aria-modal="true" aria-labelledby="gnLegalModalTitle">
+      <div class="gn-privacy-panel">
+        <p class="gn-legal-modal-title" id="gnLegalModalTitle" data-i18n="legal.gateTitle">BEFORE YOU ENTER</p>
+        <label class="gn-legal-check"><input type="checkbox" id="gnLegalModalAge"><span data-i18n="legal.ageConfirm">I confirm I am 18 years of age or older.</span></label>
+        <label class="gn-legal-check"><input type="checkbox" id="gnLegalModalTerms"><span><span data-i18n="legal.agreePrefix">I agree to the</span> <button type="button" class="gn-legal-link" id="gnLegalModalTermsLink" data-i18n="legal.termsLink">Terms of Service</button> <span data-i18n="legal.andWord">and</span> <button type="button" class="gn-legal-link" id="gnLegalModalPrivacyLink" data-i18n="legal.privacyLink">Privacy Policy</button><span data-i18n="legal.agreeSuffix">.</span></span></label>
+        <button type="button" class="gn-legal-under18" id="gnLegalModalUnder18" data-i18n="legal.under18Link">I am under 18</button>
+        <div class="gn-legal-modal-msg" id="gnLegalModalMsg" role="status" aria-live="polite"></div>
+        <div class="gn-legal-modal-actions">
+          <button type="button" class="gn-auth-primary" id="gnLegalModalAgree" data-i18n="legal.agreeContinue">AGREE AND CONTINUE</button>
+          <button type="button" class="gn-legal-modal-cancel" id="gnLegalModalCancel" data-i18n="legal.cancel">CANCEL</button>
+        </div>
+      </div>
     </div>`}
-    ${recovering ? '' : '<p class="gn-auth-hint" data-i18n="auth.cloudHint">Sync with Google — your grid follows you on every device.</p><div class="gn-google-button-shell" id="gnGoogleButtonMount" role="group" aria-label="Continue with Google"></div><button class="gn-auth-passkey" id="gnPasskeyBtn" type="button" data-i18n-aria-label="auth.passkeyAria"><span class="gn-passkey-icon" aria-hidden="true">⌘</span><span data-i18n="auth.continueWithPasskey">CONTINUE WITH PASSKEY</span></button><div class="gn-auth-divider" aria-hidden="true"><span>or</span></div><button class="gn-auth-local" id="gnLocalBtn" type="button">CONTINUE ON THIS DEVICE ONLY</button><p class="gn-auth-hint" data-i18n="auth.localHint">Only on this device — nothing leaves this phone.</p>'}
+    ${recovering ? `
     <form id="gnAuthForm" novalidate>
-      <input class="gn-auth-field" id="gnAuthEmail" type="email" autocomplete="email" placeholder="EMAIL ADDRESS" aria-label="Email address"${recovering ? ' hidden' : ''}>
-      <input class="gn-auth-field" id="gnAuthPassword" type="password" autocomplete="${recovering ? 'new-password' : 'current-password'}" placeholder="${recovering ? 'NEW PASSWORD' : 'PASSWORD'}" aria-label="${recovering ? 'New password' : 'Password'}">
-      <button class="gn-auth-primary" id="gnAuthSubmit" type="submit">${recovering ? 'UPDATE PASSWORD' : 'SIGN IN TO CLOUD'}</button>
+      <input class="gn-auth-field" id="gnAuthEmail" type="email" autocomplete="email" placeholder="EMAIL ADDRESS" aria-label="Email address" hidden>
+      <input class="gn-auth-field" id="gnAuthPassword" type="password" autocomplete="new-password" placeholder="NEW PASSWORD" aria-label="New password">
+      <button class="gn-auth-primary" id="gnAuthSubmit" type="submit">UPDATE PASSWORD</button>
     </form>
-    <div class="gn-auth-links"><button class="gn-auth-link" id="gnAuthModeToggle" type="button">${recovering ? 'BACK TO SIGN IN' : 'CREATE ACCOUNT'}</button>${recovering ? '' : '<button class="gn-auth-link" id="gnAuthReset" type="button">RESET PASSWORD</button>'}</div>
+    <div class="gn-auth-links"><button class="gn-auth-link" id="gnAuthModeToggle" type="button">BACK TO SIGN IN</button></div>` : ''}
     <div class="gn-auth-message" id="loginMsg" role="status" aria-live="polite"></div>
     ${recovering ? '' : '<div class="gn-auth-policy-link"><button type="button" id="gnVaultPolicyLink" data-i18n="landing.yourDataYourRules">YOUR DATA, YOUR RULES</button></div>'}
   </div></div>`;
   login.querySelector('.gn-auth-card')?.insertAdjacentHTML('afterbegin', '<div class="gn-auth-lang-kanji" role="group" data-i18n-aria-label="lang.switcherAria"><button type="button" class="gn-lang-globe" data-lang-choice="es" aria-label="Español" title="Cambiar a Español"><svg class="gn-lang-kanji" viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><text x="12" y="17.5" text-anchor="middle" font-family="Noto Sans JP, Hiragino Sans, Yu Gothic, PingFang SC, Microsoft YaHei, sans-serif" font-size="17" stroke="currentColor" stroke-width="2" fill="none">電</text></svg></button></div>');
   $('gnVaultPolicyLink')?.addEventListener('click', openPrivacyPolicy);
-  /* v0.15.54: legal gate link wiring — stopPropagation so tapping a link
+  /* v0.15.55: legal modal wiring — stopPropagation so tapping a link
    * inside the checkbox label does not toggle the checkbox. */
   const gnNoLabelToggle = e => e.stopPropagation();
-  $('gnLegalTermsLink')?.addEventListener('click', e => { gnNoLabelToggle(e); openTermsOfService(); });
-  $('gnLegalPrivacyLink')?.addEventListener('click', e => { gnNoLabelToggle(e); openPrivacyPolicy(); });
-  $('gnLegalUnder18')?.addEventListener('click', () => setAuthMessage(tx('legal.under18Blocked', '// GRID//NODE IS 18+ ONLY. YOU MUST BE 18 OR OLDER TO USE THIS APP.'), true));
+  $('gnLegalModalTermsLink')?.addEventListener('click', e => { gnNoLabelToggle(e); openTermsOfService(); });
+  $('gnLegalModalPrivacyLink')?.addEventListener('click', e => { gnNoLabelToggle(e); openPrivacyPolicy(); });
+  $('gnLegalModalUnder18')?.addEventListener('click', () => setLegalModalMessage(tx('legal.under18Blocked', '// GRID//NODE IS 18+ ONLY. YOU MUST BE 18 OR OLDER TO USE THIS APP.'), true));
+  $('gnLegalModalAgree')?.addEventListener('click', confirmLegalModal);
+  $('gnLegalModalCancel')?.addEventListener('click', closeLegalModal);
+  /* v0.15.55: SYNC ACROSS DEVICES expands the cloud options inline */
+  $('gnCloudToggle')?.addEventListener('click', () => {
+    const area = $('gnCloudArea'), toggle = $('gnCloudToggle');
+    if (!area || !toggle) return;
+    if (area.hasAttribute('hidden')) {
+      area.removeAttribute('hidden');
+      toggle.setAttribute('aria-expanded', 'true');
+    } else {
+      area.setAttribute('hidden', '');
+      toggle.setAttribute('aria-expanded', 'false');
+    }
+  });
   applyAuthTranslations(recovering);
   $('gnAuthForm')?.addEventListener('submit', event => { event.preventDefault(); submitAuth(); });
   $('gnAuthModeToggle')?.addEventListener('click', toggleAuthMode);
   $('gnAuthReset')?.addEventListener('click', requestPasswordReset);
-  $('gnLocalBtn')?.addEventListener('click', () => { if (!checkLegalGate()) return; enterLocalSession(); });
+  $('gnLocalBtn')?.addEventListener('click', () => requestLegalAccept(() => enterLocalSession()));
   updateAuthMode();
   renderGoogleIdentityButton();
   wirePasskeyAuth();
@@ -196,12 +241,10 @@ function applyAuthTranslations(recovering) {
   const copy = login?.querySelector('.gn-auth-copy');
   const note = login?.querySelector('.gn-auth-note');
   if (title) title.setAttribute('data-i18n', recovering ? 'auth.resetAccess' : 'auth.enterGrid');
-  if (copy) copy.setAttribute('data-i18n', recovering ? 'auth.enterNewPassword' : 'auth.signInSyncLine');
+  if (copy) copy.setAttribute('data-i18n', recovering ? 'auth.enterNewPassword' : 'auth.entryCopy');
   if (note) note.setAttribute('data-i18n', 'landing.vaultPolicy');
   const kicker = login?.querySelector('.gn-auth-kicker');
   if (kicker) kicker.setAttribute('data-i18n', 'auth.kicker');
-  const divider = login?.querySelector('.gn-auth-divider span');
-  if (divider) divider.setAttribute('data-i18n', 'auth.or');
   const policyLink = login?.querySelector('#gnVaultPolicyLink');
   if (policyLink) policyLink.setAttribute('data-i18n', 'landing.yourDataYourRules');
   const email = $('gnAuthEmail');
@@ -222,8 +265,6 @@ function applyAuthTranslations(recovering) {
   if (reset) reset.setAttribute('data-i18n', 'auth.resetAccess');
   const google = $('gnGoogleButtonMount');
   if (google) google.setAttribute('data-i18n-aria-label', 'auth.continueWithGoogle');
-  const local = $('gnLocalBtn');
-  if (local) local.setAttribute('data-i18n', 'auth.continueDeviceOnly');
   window.GN_I18N?.applyTo?.(login);
 }
 function updateAuthMode() {
@@ -240,31 +281,49 @@ function setAuthMessage(message, error = false) {
   element.style.removeProperty('color');
 }
 
-/* v0.15.54: 18+ age gate + Terms/Privacy acceptance. Enforced on every
- * explicit entry path (Google, passkey, email cloud auth, device-only).
+/* v0.15.55: 18+ age gate + Terms/Privacy acceptance via modal. Triggered on
+ * every explicit entry path (device, passkey, email cloud auth, Google).
  * Acceptance is stored under a gn_-prefixed key so Delete All Local Data
  * re-arms the gate. */
 const LEGAL_ACCEPT_KEY = 'gn_legal_accept_v1';
 function legalAccepted() { try { return !!localStorage.getItem(LEGAL_ACCEPT_KEY); } catch (err) { return false; } }
 function markLegalAccepted() { try { localStorage.setItem(LEGAL_ACCEPT_KEY, JSON.stringify({ v: 1, at: new Date().toISOString() })); } catch (err) {} }
-function checkLegalGate() {
-  if (legalAccepted()) return true;
-  const gate = $('gnLegalGate');
-  if (!gate) return true; /* gate not rendered (recovery mode) — nothing to enforce */
-  const age = $('gnLegalAge')?.checked;
-  const terms = $('gnLegalTerms')?.checked;
+let gnLegalPending = null;
+function requestLegalAccept(proceed) {
+  if (legalAccepted()) { if (typeof proceed === 'function') proceed(); return; }
+  gnLegalPending = typeof proceed === 'function' ? proceed : null;
+  const modal = $('gnLegalModal');
+  if (!modal) { const p = gnLegalPending; gnLegalPending = null; if (p) p(); return; }
+  const age = $('gnLegalModalAge'), terms = $('gnLegalModalTerms');
+  if (age) age.checked = false;
+  if (terms) terms.checked = false;
+  setLegalModalMessage('', false);
+  window.GN_I18N?.applyTo?.(modal);
+  modal.classList.add('active');
+  try { age?.focus(); } catch (err) {}
+}
+function closeLegalModal() { $('gnLegalModal')?.classList.remove('active'); gnLegalPending = null; }
+function setLegalModalMessage(message, error = false) {
+  const element = $('gnLegalModalMsg');
+  if (!element) return;
+  element.textContent = message;
+  element.dataset.tone = error ? 'error' : 'status';
+}
+function confirmLegalModal() {
+  const age = $('gnLegalModalAge')?.checked;
+  const terms = $('gnLegalModalTerms')?.checked;
   if (age && terms) {
     markLegalAccepted();
-    gate.style.display = 'none';
+    const pending = gnLegalPending; gnLegalPending = null;
+    $('gnLegalModal')?.classList.remove('active');
     setAuthMessage('', false);
-    return true;
+    if (pending) pending();
+    return;
   }
   const missing = [];
   if (!age) missing.push(tx('legal.needAge', '18+ age confirmation'));
   if (!terms) missing.push(tx('legal.needTerms', 'terms agreement'));
-  setAuthMessage(tx('legal.gateIncomplete', '// PLEASE COMPLETE: ') + missing.join(' + '), true);
-  try { gate.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (err) {}
-  return false;
+  setLegalModalMessage(tx('legal.gateIncomplete', '// PLEASE COMPLETE: ') + missing.join(' + '), true);
 }
 
 function loadGoogleIdentityLibrary() {
@@ -289,27 +348,21 @@ function loadGoogleIdentityLibrary() {
   return googleIdentityPromise;
 }
 
+/* v0.15.55: Google returns only when actually wired. While unwired the mount
+ * stays hidden — no dead "SETUP PENDING" button. */
 function renderGoogleFallback(host, message) {
   if (!host?.isConnected) return;
-  const fallback = document.createElement('button');
-  fallback.type = 'button';
-  fallback.className = 'gn-auth-google';
-  fallback.disabled = true;
-  fallback.textContent = message;
-  host.replaceChildren(fallback);
+  host.style.display = 'none';
 }
 
 async function renderGoogleIdentityButton() {
   const host = $('gnGoogleButtonMount');
   if (!host) return;
-  renderGoogleFallback(host, 'CHECKING GOOGLE...');
+  host.style.display = 'none';
   const enabled = await isCloudProviderEnabled('google');
   if (!host.isConnected) return;
-  if (!enabled) {
-    renderGoogleFallback(host, 'GOOGLE SIGN-IN SETUP PENDING');
-    setAuthMessage(tx('auth.googleNotEnabled', '// GOOGLE SIGN-IN IS NOT ENABLED YET — USE EMAIL OR CONTINUE LOCALLY'), false);
-    return;
-  }
+  if (!enabled) return;
+  host.style.removeProperty('display');
   try {
     await loadGoogleIdentityLibrary();
     if (!host.isConnected || !window.google?.accounts?.id) throw new Error('GOOGLE_LIBRARY_UNAVAILABLE');
@@ -337,14 +390,14 @@ async function renderGoogleIdentityButton() {
     });
   } catch (error) {
     console.warn('[GRID//NODE Google identity]', error);
-    renderGoogleFallback(host, 'GOOGLE SIGN-IN UNAVAILABLE');
+    host.style.display = 'none';
     setAuthMessage(tx('auth.googleCouldNotLoad', '// GOOGLE SIGN-IN COULD NOT LOAD — USE EMAIL OR CONTINUE LOCALLY'), true);
   }
 }
 
 async function handleGoogleCredential(response) {
   const host = $('gnGoogleButtonMount');
-  if (!checkLegalGate()) return;
+  if (!legalAccepted()) { requestLegalAccept(() => handleGoogleCredential(response)); return; }
   host?.classList.add('loading');
   setAuthMessage(tx('auth.verifyingGoogle', '// VERIFYING GOOGLE IDENTITY...'), false);
   try {
@@ -371,7 +424,7 @@ async function requestPasswordReset() {
 }
 
 async function submitAuth() {
-  if (!checkLegalGate()) return;
+  if (!legalAccepted()) { requestLegalAccept(() => submitAuth()); return; }
   const email = $('gnAuthEmail')?.value?.trim();
   const password = $('gnAuthPassword')?.value || '';
   if (authMode !== 'recovery' && (!email || !email.includes('@'))) { setAuthMessage(tx('auth.validEmail', '// ENTER A VALID EMAIL ADDRESS'), true); return; }
@@ -400,7 +453,7 @@ async function submitAuth() {
 }
 
 async function handleGoogleSignIn() {
-  if (!checkLegalGate()) return;
+  if (!legalAccepted()) { requestLegalAccept(() => handleGoogleSignIn()); return; }
   const button = $('loginGoogleBtn'); if (button) { button.disabled = true; button.textContent = tx('auth.connecting', 'CONNECTING...'); }
   setAuthMessage(tx('auth.openingGoogle', '// OPENING GOOGLE AUTHENTICATION...'), false);
   try {
@@ -593,7 +646,7 @@ function showApp() {
     const emailInput = $('gnAuthEmail');
     if (emailInput) emailInput.autocomplete = 'username webauthn';
     button.addEventListener('click', async () => {
-      if (!checkLegalGate()) return;
+      if (!legalAccepted()) { requestLegalAccept(() => { const b = $('gnPasskeyBtn'); if (b && !b.disabled) b.click(); }); return; }
       const email = $('gnAuthEmail')?.value?.trim();
       if (!email) {
         setAuthMessage('// ' + tx('auth.passkeyEmailFirst', 'ENTER YOUR EMAIL ADDRESS FIRST, THEN CONTINUE WITH PASSKEY.'), true);

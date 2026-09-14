@@ -6,11 +6,11 @@
 (function () {
   'use strict';
   window.GN_VERSION = Object.freeze({
-    APP_VERSION: '0.15.54',
+    APP_VERSION: '0.15.55',
     APP_BUILD: '20260907.1',
-    semver: '0.15.54',
+    semver: '0.15.55',
     release: '20260907.1',
-    title: 'V0.15.54 — 18+ AGE GATE + TERMS',
+    title: 'V0.15.55 — CALM ENTRY FLOW + LEGAL MODAL',
     date: '2026-09-14'
   });
 })();

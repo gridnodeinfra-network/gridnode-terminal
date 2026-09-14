@@ -1855,5 +1855,11 @@
   "legal.termsBody2": "Do not use GRID//NODE as a substitute for a licensed clinician, diagnosis, treatment, prescribing, or dosing guidance.",
   "legal.termsBody3": "GRID//NODE is for adults 18 years or older. GRID//NODE does not sell, source, or facilitate peptide purchases.",
   "legal.termsNote": "Full Terms of Service text coming soon.",
-  "legal.close": "CLOSE"
+  "legal.close": "CLOSE",
+  "auth.entryCopy": "Choose how you enter your grid.",
+  "auth.continueOnDevice": "CONTINUE ON THIS DEVICE",
+  "auth.deviceSubline": "Nothing leaves your phone.",
+  "auth.syncAcrossDevices": "SYNC ACROSS DEVICES",
+  "legal.agreeContinue": "AGREE AND CONTINUE",
+  "legal.cancel": "CANCEL"
 }
