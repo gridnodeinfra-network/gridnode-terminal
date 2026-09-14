@@ -5949,8 +5949,7 @@ function authShell() {
   login.innerHTML = `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px;gap:0;min-height:100%"><div class="gn-auth-card">
     <div class="gn-auth-kicker">// PERSONAL BIOTECH OPERATING SYSTEM //</div>
     <div class="gn-auth-title">${recovering ? 'RESET ACCESS' : 'GRID//NODE'}</div>
-    <p class="gn-auth-copy">${recovering ? 'Enter a new password for this GRID//NODE cloud account.' : 'Sign in to sync your grid across devices.'}</p>
-    ${recovering ? '' : `
+    ${recovering ? `<p class="gn-auth-copy">Enter a new password for this GRID//NODE cloud account.</p>` : `
     <p class="gn-auth-copy" data-i18n="auth.entryCopy">Choose how you enter your grid.</p>
     <button class="gn-auth-primary" id="gnLocalBtn" type="button"><span data-i18n="auth.continueOnDevice">CONTINUE ON THIS DEVICE</span></button>
     <p class="gn-auth-hint" data-i18n="auth.deviceSubline">Nothing leaves your phone.</p>
