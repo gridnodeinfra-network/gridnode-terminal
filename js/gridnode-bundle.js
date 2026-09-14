@@ -4752,6 +4752,7 @@ function ensureDestructiveDialogs() {
 
 function clearLocalGridNodeData() {
   Object.keys(localStorage).filter(key => key.startsWith('gn_')).forEach(key => localStorage.removeItem(key));
+  try { Object.keys(sessionStorage).filter(key => key.startsWith('gn_')).forEach(key => sessionStorage.removeItem(key)); } catch (_) {}
 }
 
 function openDeleteLocalData() { ensureDestructiveDialogs(); const input = $('gnDeleteLocalInput'); if (input) input.value = ''; $('gnDeleteLocalConfirm')?.setAttribute('disabled', ''); $('gnDeleteLocalOverlay')?.classList.add('active'); setTimeout(() => input?.focus(), 0); }
