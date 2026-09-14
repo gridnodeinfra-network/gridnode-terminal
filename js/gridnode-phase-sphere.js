@@ -1,10 +1,12 @@
-/* GRID//NODE Phase Engine Reactor Core
- * Replaces the static phase sphere with a living reactor core.
+/* GRID//NODE Phase Engine — refined hero
+ * Calm, premium phase display. Template-matched ring, quiet center readout,
+ * Now/Watch/Do guidance, phase preview, countdown. Restraint by design:
+ * no spinning bezels, no sonar pings, no scanlines, no flash animations.
  * Reads template from most recent logged shot's medication.
  * Phase clock: weekly/generic = since last shot; cycle = since first shot of template.
  * Read-only: never writes or syncs data.
  */
-(function reactorCoreModule() {
+(function phaseHeroModule() {
   'use strict';
 
   var T = function () { return window.GNPhaseTemplates || null; };
@@ -33,6 +35,7 @@
   };
 
   var SVGNS = 'http://www.w3.org/2000/svg';
+  var ARC_R = 0.42; // arc band radius, 0..1 box units
 
   /* ---------------- data ---------------- */
 
@@ -97,23 +100,6 @@
 
   /* ---------------- SVG build ---------------- */
 
-  function buildTicks() {
-    var g = $('reactorTicks');
-    if (!g || g.childElementCount) return;
-    for (var i = 0; i < 60; i++) {
-      var line = document.createElementNS(SVGNS, 'line');
-      var major = i % 5 === 0;
-      var r1 = major ? 46.5 : 47.5, r2 = 49;
-      var a = (i * 6 - 90) * Math.PI / 180;
-      line.setAttribute('x1', (50 + r1 * Math.cos(a)).toFixed(2));
-      line.setAttribute('y1', (50 + r1 * Math.sin(a)).toFixed(2));
-      line.setAttribute('x2', (50 + r2 * Math.cos(a)).toFixed(2));
-      line.setAttribute('y2', (50 + r2 * Math.sin(a)).toFixed(2));
-      if (major) line.style.strokeWidth = '0.7';
-      g.appendChild(line);
-    }
-  }
-
   function buildArcs(template) {
     var tpl = T();
     var g = $('reactorArcs');
@@ -121,11 +107,13 @@
     g.innerHTML = '';
     template.phases.forEach(function (phase, idx) {
       var path = document.createElementNS(SVGNS, 'path');
-      path.setAttribute('d', tpl.arcPath(phase, 0.42, 100));
+      path.setAttribute('d', tpl.arcPath(phase, ARC_R, 100));
       path.setAttribute('stroke', phase.color);
-      path.setAttribute('class', 'gn-reactor-arc-todo');
+      path.setAttribute('stroke-width', '5.5');
+      path.setAttribute('stroke-linecap', 'round');
+      path.setAttribute('fill', 'none');
+      path.setAttribute('class', 'gn-parc todo');
       path.dataset.phaseIdx = idx;
-      path.style.color = phase.color;
       g.appendChild(path);
     });
   }
@@ -138,37 +126,28 @@
     template.phases.forEach(function (phase, idx) {
       var pos = tpl.phaseNode(phase);
       var grp = document.createElementNS(SVGNS, 'g');
-      grp.setAttribute('class', 'gn-reactor-node todo');
+      grp.setAttribute('class', 'gn-pnode todo');
       grp.dataset.phaseIdx = idx;
       grp.setAttribute('tabindex', '0');
       grp.setAttribute('role', 'button');
       grp.setAttribute('aria-label', tpl.phaseName(phase));
 
-      var cx = (pos.x * 100).toFixed(2), cy = (pos.y * 100).toFixed(2);
-      // Position on the arc band radius (0.42 of viewBox)
       var ang = (pos.deg - 90) * Math.PI / 180;
-      cx = (50 + 42 * Math.cos(ang)).toFixed(2);
-      cy = (50 + 42 * Math.sin(ang)).toFixed(2);
+      var cx = (50 + ARC_R * 100 * Math.cos(ang)).toFixed(2);
+      var cy = (50 + ARC_R * 100 * Math.sin(ang)).toFixed(2);
 
-      var halo1 = document.createElementNS(SVGNS, 'circle');
-      halo1.setAttribute('cx', cx); halo1.setAttribute('cy', cy);
-      halo1.setAttribute('r', '3.2'); halo1.setAttribute('class', 'halo h1');
-      halo1.setAttribute('stroke', phase.color);
-      var halo2 = halo1.cloneNode();
-      halo2.setAttribute('class', 'halo h2');
-
+      // Generous invisible hit area (>=44px touch target at 280px render)
       var hit = document.createElementNS(SVGNS, 'circle');
       hit.setAttribute('cx', cx); hit.setAttribute('cy', cy);
-      hit.setAttribute('r', '7'); hit.setAttribute('fill', 'transparent');
+      hit.setAttribute('r', '8'); hit.setAttribute('fill', 'transparent');
 
       var dot = document.createElementNS(SVGNS, 'circle');
       dot.setAttribute('cx', cx); dot.setAttribute('cy', cy);
-      dot.setAttribute('r', '2.8'); dot.setAttribute('class', 'dot');
+      dot.setAttribute('r', '2.6'); dot.setAttribute('class', 'dot');
       dot.setAttribute('fill', phase.color);
-      dot.style.color = phase.color;
 
-      grp.appendChild(halo1); grp.appendChild(halo2);
-      grp.appendChild(hit); grp.appendChild(dot);
+      grp.appendChild(hit);
+      grp.appendChild(dot);
       grp.addEventListener('click', function () { enterPreview(idx); });
       grp.addEventListener('keydown', function (e) {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); enterPreview(idx); }
@@ -207,23 +186,33 @@
 
     var s = computeState();
     if (!s || s.empty) {
-      panel.dataset.reactor = 'empty';
+      panel.dataset.phase = 'empty';
       state.wasEmpty = true;
       state.template = null;
-      setText('reactorPhaseNum', tx('phase.noCycle', 'NO CYCLE'));
+      state.previewIndex = -1;
+      setText('reactorMetaLine', tx('phase.noCycle', 'NO CYCLE'));
       setText('reactorPhaseName', tx('runtime.awaitingFirstShot', 'AWAITING FIRST SHOT'));
       setText('reactorCountdown', '--');
+      setText('reactorCountdownLabel', tx('phase.untilNextShot', 'UNTIL NEXT SHOT'));
       var ignite = $('reactorIgnite');
-      if (ignite) ignite.hidden = false;
+      if (ignite) {
+        ignite.hidden = false;
+        ignite.textContent = tx('phase.logFirstShot', 'LOG FIRST SHOT');
+      }
+      var arcs = $('reactorArcs');
+      if (arcs) arcs.innerHTML = '';
+      var nodes = $('reactorNodes');
+      if (nodes) nodes.innerHTML = '';
+      var tl = $('reactorTimeline');
+      if (tl) tl.innerHTML = '';
       return;
     }
 
     var igniteBtn = $('reactorIgnite');
     if (igniteBtn) igniteBtn.hidden = true;
-    panel.dataset.reactor = 'active';
+    panel.dataset.phase = 'active';
 
     var templateChanged = !state.template || state.template.id !== s.template.id;
-    var phaseChanged = state.started && state.phaseIndex !== s.phaseIndex && !state.wasEmpty;
 
     state.template = s.template;
     state.progress = s.progress;
@@ -235,82 +224,69 @@
       buildArcs(s.template);
       buildNodes(s.template);
       buildTimeline(s.template);
+      // NOTE: #reactorTemplateChip carries no data-i18n; JS owns its text so
+      // applyTo() can never clobber it back to a stale default.
       setText('reactorTemplateChip', tpl.templateChip(s.template));
-      // Reset preview when template changes
       state.previewIndex = -1;
     }
 
     updateArcs(s);
-    updateSweep(s);
     updateCenter(s);
     updateTiming(s);
     updateGuidance(s);
+    updateTimelineStates();
 
-    if (state.wasEmpty) {
-      // Ignition: first shot logged
-      igniteSequence(s);
-      state.wasEmpty = false;
-    } else if (phaseChanged) {
-      phaseShiftSequence(s);
-    }
-
+    if (state.wasEmpty) state.wasEmpty = false;
     state.started = true;
   }
 
   function updateArcs(s) {
-    var tpl = T();
     var arcs = $('reactorArcs');
-    if (!arcs) return;
-    var paths = arcs.children;
-    for (var i = 0; i < paths.length; i++) {
-      var cls = 'gn-reactor-arc-todo';
-      if (i < s.phaseIndex) cls = 'gn-reactor-arc-done';
-      else if (i === s.phaseIndex) cls = 'gn-reactor-arc-active';
-      // In preview mode, highlight the previewed phase
-      if (state.previewIndex >= 0) {
-        cls = i === state.previewIndex ? 'gn-reactor-arc-active' : 'gn-reactor-arc-todo';
+    if (arcs) {
+      var paths = arcs.children;
+      for (var i = 0; i < paths.length; i++) {
+        var cls = 'gn-parc todo';
+        if (i < s.phaseIndex) cls = 'gn-parc done';
+        else if (i === s.phaseIndex) cls = 'gn-parc active';
+        if (state.previewIndex >= 0) {
+          cls = i === state.previewIndex ? 'gn-parc active' : 'gn-parc todo';
+        }
+        paths[i].setAttribute('class', cls);
       }
-      paths[i].setAttribute('class', cls);
     }
     var nodes = $('reactorNodes');
     if (nodes) {
       var groups = nodes.children;
       for (var j = 0; j < groups.length; j++) {
-        var ncls = 'gn-reactor-node todo';
-        if (j < s.phaseIndex) ncls = 'gn-reactor-node done';
-        else if (j === s.phaseIndex) ncls = 'gn-reactor-node active';
+        var ncls = 'gn-pnode todo';
+        if (j < s.phaseIndex) ncls = 'gn-pnode done';
+        else if (j === s.phaseIndex) ncls = 'gn-pnode active';
         if (state.previewIndex >= 0) {
-          ncls = j === state.previewIndex ? 'gn-reactor-node active' : 'gn-reactor-node todo';
+          ncls = j === state.previewIndex ? 'gn-pnode active' : 'gn-pnode todo';
         }
         groups[j].setAttribute('class', ncls);
       }
     }
   }
 
-  function updateSweep(s) {
-    var tpl = T();
-    var sweep = $('reactorSweep');
-    if (!sweep || !tpl) return;
-    var pt = tpl.progressPoint(s.progress);
-    var ang = (pt.deg - 90) * Math.PI / 180;
-    sweep.setAttribute('cx', (50 + 42 * Math.cos(ang)).toFixed(2));
-    sweep.setAttribute('cy', (50 + 42 * Math.sin(ang)).toFixed(2));
-    sweep.style.fill = s.phase.color;
-  }
-
   function updateCenter(s) {
     var tpl = T();
     var effIdx = state.previewIndex >= 0 ? state.previewIndex : s.phaseIndex;
     var phase = s.template.phases[effIdx];
-    setText('reactorPhaseNum', tx('phase.phaseN', 'PHASE {n} / {total}', {
+
+    // Quiet metadata line: PHASE 3 / 6 · PEAK EFFECT
+    var meta = tx('phase.phaseN', 'PHASE {n} / {total}', {
       n: effIdx + 1, total: s.template.phases.length
-    }));
+    }) + ' · ' + tpl.phaseName(phase);
+    if (state.previewIndex >= 0) {
+      meta = tx('phase.previewLabel', 'PREVIEW · {phase}', { phase: tpl.phaseName(phase) });
+    }
+    setText('reactorMetaLine', meta);
+
     var nameEl = $('reactorPhaseName');
-    var name = tpl.phaseName(phase);
     if (nameEl) {
+      var name = tpl.phaseName(phase);
       if (nameEl.textContent !== name) nameEl.textContent = name;
-      nameEl.style.color = phase.color;
-      nameEl.style.textShadow = '0 0 18px ' + phase.color + '55';
     }
 
     // Countdown: weekly/generic = until next shot; cycle = remaining in cycle
@@ -321,12 +297,7 @@
       ? tx('phase.remainingInCycle', 'REMAINING IN CYCLE')
       : tx('phase.untilNextShot', 'UNTIL NEXT SHOT'));
 
-    var fill = $('reactorProgressFill');
-    if (fill) {
-      fill.style.width = Math.round(s.progress * 100) + '%';
-      fill.style.background = phase.color;
-    }
-    // Color bleed on the sphere wrap
+    // Soft color wash on the hero for the active phase — subtle, static
     var wrap = $('reactorSphereWrap');
     if (wrap) wrap.style.setProperty('--phase-color', phase.color);
   }
@@ -345,10 +316,10 @@
     var lines = tpl.phaseLines(phase, state.tab);
 
     var head = $('reactorPanelHead');
-    var previewLabel = state.previewIndex >= 0
+    var headText = state.previewIndex >= 0
       ? tx('phase.previewLabel', 'PREVIEW · {phase}', { phase: tpl.phaseName(phase) })
       : tpl.phaseName(phase);
-    if (head && head.textContent !== previewLabel) head.textContent = previewLabel;
+    if (head && head.textContent !== headText) head.textContent = headText;
 
     var list = $('reactorList');
     if (list) {
@@ -359,20 +330,17 @@
       if (list.dataset.sig !== effIdx + ':' + state.tab + ':' + html.length) {
         list.innerHTML = html;
         list.dataset.sig = effIdx + ':' + state.tab + ':' + html.length;
-        var panel = $('reactorPanel');
-        if (panel) {
-          panel.classList.remove('swap');
-          void panel.offsetWidth;
-          panel.classList.add('swap');
-        }
       }
     }
 
     var ret = $('reactorReturn');
-    if (ret) ret.hidden = state.previewIndex < 0;
+    if (ret) {
+      ret.hidden = state.previewIndex < 0;
+      if (!ret.hidden) ret.textContent = tx('phase.returnToLive', 'RETURN TO LIVE');
+    }
 
     // Tabs
-    var tabs = document.querySelectorAll('.gn-reactor-tab');
+    var tabs = document.querySelectorAll('.gn-phase-tab');
     tabs.forEach(function (t) {
       t.classList.toggle('active', t.dataset.rtab === state.tab);
     });
@@ -392,9 +360,9 @@
     template.phases.forEach(function (phase, idx) {
       var chip = document.createElement('button');
       chip.type = 'button';
-      chip.className = 'gn-reactor-chip2';
+      chip.className = 'gn-phase-chip';
       chip.setAttribute('role', 'listitem');
-      chip.innerHTML = '<span class="n">' + (idx + 1) + '</span> ' + escapeHtml(tpl.phaseName(phase));
+      chip.innerHTML = '<span class="n">' + (idx + 1) + '</span><span>' + escapeHtml(tpl.phaseName(phase)) + '</span>';
       chip.addEventListener('click', function () { enterPreview(idx); });
       tl.appendChild(chip);
     });
@@ -453,49 +421,11 @@
     }
   }
 
-  function phaseShiftSequence(s) {
-    var tpl = T();
-    var banner = $('reactorBanner');
-    if (banner) {
-      banner.textContent = tx('phase.nowEntering', 'PHASE SHIFT · NOW ENTERING {phase}', {
-        phase: tpl.phaseName(s.phase)
-      });
-      banner.hidden = false;
-      clearTimeout(banner._t);
-      banner._t = setTimeout(function () { banner.hidden = true; }, 4000);
-    }
-    updateTimelineStates();
-  }
-
-  function igniteSequence(s) {
-    // Band draws itself: animate arc stroke-dashoffset from full to 0
-    var arcs = $('reactorArcs');
-    if (!arcs) return;
-    var paths = arcs.children;
-    for (var i = 0; i < paths.length; i++) {
-      (function (p, idx) {
-        try {
-          var len = p.getTotalLength();
-          p.style.strokeDasharray = len;
-          p.style.strokeDashoffset = len;
-          p.getBoundingClientRect();
-          p.style.transition = 'stroke-dashoffset .8s ease ' + (idx * 0.12) + 's';
-          p.style.strokeDashoffset = '0';
-          setTimeout(function () {
-            p.style.transition = '';
-            p.style.strokeDasharray = '';
-            p.style.strokeDashoffset = '';
-          }, 800 + idx * 120 + 100);
-        } catch (_) {}
-      })(paths[i], i);
-    }
-  }
-
   /* ---------------- wiring ---------------- */
 
   function wireEvents() {
     // Tabs
-    document.querySelectorAll('.gn-reactor-tab').forEach(function (t) {
+    document.querySelectorAll('.gn-phase-tab').forEach(function (t) {
       t.addEventListener('click', function () {
         state.tab = t.dataset.rtab || 'now';
         var s = computeState();
@@ -507,7 +437,7 @@
     var ret = $('reactorReturn');
     if (ret) ret.addEventListener('click', exitPreview);
 
-    // Template chip -> scroll timeline into view (opens all-phases view)
+    // Template chip -> scroll timeline into view
     var chip = $('reactorTemplateChip');
     if (chip) chip.addEventListener('click', function () {
       var tl = $('reactorTimeline');
@@ -538,6 +468,12 @@
       }, { passive: true });
     }
 
+    // Ignite -> open log shot sheet
+    var ignite = $('reactorIgnite');
+    if (ignite) ignite.addEventListener('click', function () {
+      try { if (window.openLogShot) window.openLogShot(); } catch (_) {}
+    });
+
     // Re-render on shot save, language change, visibility
     document.addEventListener('gn:shot-saved', function () { setTimeout(render, 300); });
     document.addEventListener('gn:langchange', function () {
@@ -547,16 +483,6 @@
     document.addEventListener('visibilitychange', function () {
       if (!document.hidden) render();
     });
-
-    // Pause ambient animation offscreen
-    var wrap = $('reactorSphereWrap');
-    if (wrap && 'IntersectionObserver' in window) {
-      new IntersectionObserver(function (entries) {
-        entries.forEach(function (en) {
-          wrap.classList.toggle('gn-paused', !en.isIntersecting);
-        });
-      }).observe(wrap);
-    }
   }
 
   function tick() {
@@ -570,7 +496,6 @@
       window.setTimeout(start, 150);
       return;
     }
-    buildTicks();
     wireEvents();
     render();
     window.setInterval(tick, 60000);

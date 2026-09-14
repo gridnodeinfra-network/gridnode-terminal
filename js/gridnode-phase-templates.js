@@ -25,7 +25,7 @@
 
   var GLP1_PHASES = [
     {
-      id: 'activation', color: '#00d4ff',
+      id: 'activation', color: '#4fb8d8',
       start: 0, end: 6 / 168,
       nameKey: 'phase.tmpl.activation', nameFb: 'ACTIVATION',
       nowKey: 'phase.tmpl.activation.now', nowFb: ['Drug absorbing, receptors engaging.', 'Gastric emptying starting to slow. Most feel little yet.'],
@@ -33,7 +33,7 @@
       doKey: 'phase.tmpl.activation.do', doFb: ['Rotate injection site weekly.', 'Eat a protein-containing meal.', 'Pre-hydrate with electrolytes.', 'Evening injection puts peak levels during sleep.']
     },
     {
-      id: 'taking-effect', color: '#00ff88',
+      id: 'taking-effect', color: '#63b98b',
       start: 6 / 168, end: 24 / 168,
       nameKey: 'phase.tmpl.takingEffect', nameFb: 'TAKING EFFECT',
       nowKey: 'phase.tmpl.takingEffect.now', nowFb: ['Levels climbing toward peak.', 'Appetite circuits engaging, food noise starting to quiet.'],
@@ -41,7 +41,7 @@
       doKey: 'phase.tmpl.takingEffect.do', doFb: ['Eat 5-6 small meals.', 'Choose lean, gentle protein.', 'Avoid high-fat, fried, spicy, carbonated foods.', 'Sip water steadily. Ginger can ease nausea.']
     },
     {
-      id: 'peak-effect', color: '#ffd700',
+      id: 'peak-effect', color: '#d3a24a',
       start: 24 / 168, end: 72 / 168,
       nameKey: 'phase.tmpl.peakEffect', nameFb: 'PEAK EFFECT',
       nowKey: 'phase.tmpl.peakEffect.now', nowFb: ['Peak drug levels. Maximum appetite suppression.', 'Quietest food noise of the cycle.'],
@@ -49,7 +49,7 @@
       doKey: 'phase.tmpl.peakEffect.do', doFb: ['Small, bland meals.', 'Keep electrolytes up.', 'Do not lie down right after eating.', 'Log side effects as they happen.']
     },
     {
-      id: 'cruise', color: '#00e6c8',
+      id: 'cruise', color: '#4aa89b',
       start: 72 / 168, end: 144 / 168,
       nameKey: 'phase.tmpl.cruise', nameFb: 'CRUISE',
       nowKey: 'phase.tmpl.cruise.now', nowFb: ['Post-peak plateau. Steady, predictable suppression.', 'GI effects easing.'],
@@ -57,7 +57,7 @@
       doKey: 'phase.tmpl.cruise.do', doFb: ['Protein at every meal to protect muscle.', 'Fiber plus water for regularity.', 'Keep consistent meal timing.', 'Best window of the week for activity.']
     },
     {
-      id: 'winding-down', color: '#ffaa00',
+      id: 'winding-down', color: '#c08a52',
       start: 144 / 168, end: 156 / 168,
       nameKey: 'phase.tmpl.windingDown', nameFb: 'WINDING DOWN',
       nowKey: 'phase.tmpl.windingDown.now', nowFb: ['Approaching trough. Appetite signals returning.', 'Gastric emptying normalizing.'],
@@ -65,7 +65,7 @@
       doKey: 'phase.tmpl.windingDown.do', doFb: ['Protein-rich snacks.', 'Keep meal structure even as hunger returns.', 'Prep for injection day.', 'Log returning hunger patterns.']
     },
     {
-      id: 'wear-off', color: '#ff5577',
+      id: 'wear-off', color: '#c26674',
       start: 156 / 168, end: 1,
       nameKey: 'phase.tmpl.wearOff', nameFb: 'WEAR-OFF WINDOW',
       nowKey: 'phase.tmpl.wearOff.now', nowFb: ['Trough levels. Least drug activity of the cycle.', 'Appetite nearest baseline.'],
@@ -76,7 +76,7 @@
 
   var BPC157_PHASES = [
     {
-      id: 'initiation', color: '#00d4ff',
+      id: 'initiation', color: '#4fb8d8',
       start: 0, end: 7 / 84,
       nameKey: 'phase.tmpl.bpc.initiation', nameFb: 'INITIATION',
       nowKey: 'phase.tmpl.bpc.initiation.now', nowFb: ['First week of the protocol.', 'Early days establish routine and baseline, not results.'],
@@ -84,7 +84,7 @@
       doKey: 'phase.tmpl.bpc.initiation.do', doFb: ['Log every dose at the same time daily.', 'Record baseline pain and function scores.', 'Note the target area so later weeks have a comparison.']
     },
     {
-      id: 'early-response', color: '#00ff88',
+      id: 'early-response', color: '#63b98b',
       start: 7 / 84, end: 28 / 84,
       nameKey: 'phase.tmpl.bpc.earlyResponse', nameFb: 'EARLY RESPONSE',
       nowKey: 'phase.tmpl.bpc.earlyResponse.now', nowFb: ['Window where first noticeable changes are most often reported.', 'Reduced discomfort, easier movement.'],
@@ -92,7 +92,7 @@
       doKey: 'phase.tmpl.bpc.earlyResponse.do', doFb: ['Keep activity and rehab consistent.', 'Do not change three variables at once.', 'Weekly check-in: pain score, range of motion, new capabilities.']
     },
     {
-      id: 'deep-protocol', color: '#ffd700',
+      id: 'deep-protocol', color: '#d3a24a',
       start: 28 / 84, end: 56 / 84,
       nameKey: 'phase.tmpl.bpc.deepProtocol', nameFb: 'DEEP PROTOCOL',
       nowKey: 'phase.tmpl.bpc.deepProtocol.now', nowFb: ['Structural window. Tendons, ligaments, and gut lining remodel slowly.', 'This phase is about staying the course.'],
@@ -100,7 +100,7 @@
       doKey: 'phase.tmpl.bpc.deepProtocol.do', doFb: ['Continue logging.', 'Note return-to-activity milestones.', 'Decide in advance what "done" looks like. Do not drift.']
     },
     {
-      id: 'off-reassess', color: '#ff5577',
+      id: 'off-reassess', color: '#c26674',
       start: 56 / 84, end: 1,
       nameKey: 'phase.tmpl.bpc.offReassess', nameFb: 'OFF / REASSESS',
       nowKey: 'phase.tmpl.bpc.offReassess.now', nowFb: ['Break period. Documented practice is time off roughly equal to time on.', 'No human washout period is established.'],
@@ -111,7 +111,7 @@
 
   var TB500_PHASES = [
     {
-      id: 'loading', color: '#00d4ff',
+      id: 'loading', color: '#4fb8d8',
       start: 0, end: 6 / 16,
       nameKey: 'phase.tmpl.tb500.loading', nameFb: 'LOADING',
       nowKey: 'phase.tmpl.tb500.loading.now', nowFb: ['Higher-frequency phase building systemic levels.', 'Effects are slower and broader than BPC-157. Expect weeks, not days.'],
@@ -119,7 +119,7 @@
       doKey: 'phase.tmpl.tb500.loading.do', doFb: ['Log both weekly doses.', 'Note mobility and function weekly.', 'Consistency matters most here. Missed loading doses are the commonest self-reported reason for poor results.']
     },
     {
-      id: 'maintenance', color: '#00ff88',
+      id: 'maintenance', color: '#63b98b',
       start: 6 / 16, end: 12 / 16,
       nameKey: 'phase.tmpl.tb500.maintenance', nameFb: 'MAINTENANCE',
       nowKey: 'phase.tmpl.tb500.maintenance.now', nowFb: ['Frequency steps down to weekly.', 'This phase answers: do gains hold on less frequent dosing?'],
@@ -127,7 +127,7 @@
       doKey: 'phase.tmpl.tb500.maintenance.do', doFb: ['Keep the weekly log going, lighter touch.', 'Compare against loading-phase notes at the same checkpoint.']
     },
     {
-      id: 'off-reassess', color: '#ff5577',
+      id: 'off-reassess', color: '#c26674',
       start: 12 / 16, end: 1,
       nameKey: 'phase.tmpl.tb500.offReassess', nameFb: 'OFF / REASSESS',
       nowKey: 'phase.tmpl.tb500.offReassess.now', nowFb: ['Break and evaluation period.'],
@@ -138,7 +138,7 @@
 
   var GHKCU_PHASES = [
     {
-      id: 'initiation', color: '#00d4ff',
+      id: 'initiation', color: '#4fb8d8',
       start: 0, end: 4 / 16,
       nameKey: 'phase.tmpl.ghk.initiation', nameFb: 'INITIATION',
       nowKey: 'phase.tmpl.ghk.initiation.now', nowFb: ['Ramp-in. Skin and connective tissue respond slowly.', 'Nothing here works overnight. Set expectations.'],
@@ -146,7 +146,7 @@
       doKey: 'phase.tmpl.ghk.initiation.do', doFb: ['Daily log.', 'Take standardized day-0 photos: same light, same angle.', 'You will not remember "before" in week 10.']
     },
     {
-      id: 'active-remodeling', color: '#00ff88',
+      id: 'active-remodeling', color: '#63b98b',
       start: 4 / 16, end: 8 / 16,
       nameKey: 'phase.tmpl.ghk.remodeling', nameFb: 'ACTIVE REMODELING',
       nowKey: 'phase.tmpl.ghk.remodeling.now', nowFb: ['Main working window.', 'Collagen and elastin remodeling underway, still subtle.'],
@@ -154,7 +154,7 @@
       doKey: 'phase.tmpl.ghk.remodeling.do', doFb: ['Stay consistent.', 'Mid-cycle photo set at week 6, identical conditions.', 'Note skin texture, firmness, wound-healing speed.']
     },
     {
-      id: 'consolidation', color: '#ffd700',
+      id: 'consolidation', color: '#d3a24a',
       start: 8 / 16, end: 12 / 16,
       nameKey: 'phase.tmpl.ghk.consolidation', nameFb: 'CONSOLIDATION',
       nowKey: 'phase.tmpl.ghk.consolidation.now', nowFb: ['Final stretch of the documented cycle.', 'Before/after comparisons are actually informative now.'],
@@ -162,7 +162,7 @@
       doKey: 'phase.tmpl.ghk.consolidation.do', doFb: ['Final photo set and written comparison vs. day 0.', 'Decide the off-period length in advance.']
     },
     {
-      id: 'copper-break', color: '#ff5577',
+      id: 'copper-break', color: '#c26674',
       start: 12 / 16, end: 1,
       nameKey: 'phase.tmpl.ghk.copperBreak', nameFb: 'COPPER BREAK',
       nowKey: 'phase.tmpl.ghk.copperBreak.now', nowFb: ['Off period. Documented practice pauses here to clear copper load.'],
@@ -173,7 +173,7 @@
 
   var CJCIPA_PHASES = [
     {
-      id: 'titration-ramp', color: '#00d4ff',
+      id: 'titration-ramp', color: '#4fb8d8',
       start: 0, end: 4 / 16,
       nameKey: 'phase.tmpl.cjcipa.titration', nameFb: 'TITRATION RAMP',
       nowKey: 'phase.tmpl.cjcipa.titration.now', nowFb: ['Gradual ramp per documented schedules.', 'Sleep is usually the first thing people report noticing.'],
@@ -181,7 +181,7 @@
       doKey: 'phase.tmpl.cjcipa.titration.do', doFb: ['Log dose time nightly. Timing consistency matters.', 'Keep the pre-bed window and empty-stomach gap consistent.', 'Track sleep subjectively.']
     },
     {
-      id: 'full-protocol', color: '#00ff88',
+      id: 'full-protocol', color: '#63b98b',
       start: 4 / 16, end: 12 / 16,
       nameKey: 'phase.tmpl.cjcipa.fullProtocol', nameFb: 'FULL PROTOCOL',
       nowKey: 'phase.tmpl.cjcipa.fullProtocol.now', nowFb: ['Steady-state window.', 'Recovery, energy, and body-composition trends are evaluated here, not in week 2.'],
@@ -189,7 +189,7 @@
       doKey: 'phase.tmpl.cjcipa.fullProtocol.do', doFb: ['Weekly check-in: sleep average, recovery rating, one body metric.', 'Keep training and diet stable so the log means something.']
     },
     {
-      id: 'washout', color: '#ff5577',
+      id: 'washout', color: '#c26674',
       start: 12 / 16, end: 1,
       nameKey: 'phase.tmpl.cjcipa.washout', nameFb: 'WASHOUT',
       nowKey: 'phase.tmpl.cjcipa.washout.now', nowFb: ['Off period. Documented purpose: receptor sensitivity reset.'],
@@ -200,7 +200,7 @@
 
   var GENERIC_PHASES = [
     {
-      id: 'onset', color: '#00d4ff',
+      id: 'onset', color: '#4fb8d8',
       start: 0, end: 0.2,
       nameKey: 'phase.tmpl.generic.onset', nameFb: 'ONSET',
       nowKey: 'phase.tmpl.generic.onset.now', nowFb: ['Early cycle after the latest logged shot.', 'New observations begin shaping this signal.'],
@@ -208,7 +208,7 @@
       doKey: 'phase.tmpl.generic.onset.do', doFb: ['Log consistently at the same time.', 'Note appetite, energy, sleep, and mood daily.']
     },
     {
-      id: 'active-window', color: '#00ff88',
+      id: 'active-window', color: '#63b98b',
       start: 0.2, end: 0.7,
       nameKey: 'phase.tmpl.generic.active', nameFb: 'ACTIVE WINDOW',
       nowKey: 'phase.tmpl.generic.active.now', nowFb: ['Estimated active-cycle window.', 'Compare this point with your own earlier logged cycles.'],
@@ -216,7 +216,7 @@
       doKey: 'phase.tmpl.generic.active.do', doFb: ['Keep the log going.', 'Weekly review: what moved, what held steady.']
     },
     {
-      id: 'wear-off', color: '#ff5577',
+      id: 'wear-off', color: '#c26674',
       start: 0.7, end: 1,
       nameKey: 'phase.tmpl.generic.wearOff', nameFb: 'WEAR-OFF',
       nowKey: 'phase.tmpl.generic.wearOff.now', nowFb: ['Late-cycle estimate before the next expected event.', 'Effects fading toward baseline.'],
@@ -350,8 +350,17 @@
   function phaseName(phase) { return tx(phase.nameKey, phase.nameFb); }
   function phaseLines(phase, kind) {
     // kind: 'now' | 'watch' | 'do'
+    // NOTE: keys like phase.tmpl.<phase>.<kind> are intentionally NOT in the
+    // locale catalogs; content lives in the English fallbacks below. GN_I18N
+    // returns the raw key for missing keys, so detect that and use fallback.
     var key = phase[kind + 'Key'], fb = phase[kind + 'Fb'] || [];
-    var out = tx(key, null);
+    var out = null;
+    try {
+      if (window.GN_I18N && window.GN_I18N.t) {
+        var v = window.GN_I18N.t(key);
+        if (v && v !== key) out = v;
+      }
+    } catch (_) {}
     if (Array.isArray(out)) return out;
     if (typeof out === 'string' && out) return [out];
     return fb;
