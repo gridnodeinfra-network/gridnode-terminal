@@ -33,11 +33,11 @@ cp "$REPO_ROOT"/css/*.css "$TEMP_DIR/css/"
 cp "$REPO_ROOT"/i18n/*.json "$TEMP_DIR/i18n/"
 
 # All assets (icons, scanner, backgrounds, splash).
-cp -a "$REPO_ROOT/assets/." "$TEMP_DIR/assets/"
+cp -r "$REPO_ROOT/assets/." "$TEMP_DIR/assets/"
 
 # Cloudflare Pages Functions (compiled by wrangler at deploy time).
 if [ -d "$REPO_ROOT/functions" ]; then
-    cp -a "$REPO_ROOT/functions" "$TEMP_DIR/functions"
+    cp -r "$REPO_ROOT/functions" "$TEMP_DIR/functions"
 fi
 
 [[ -s "$TEMP_DIR/index.html" && -s "$TEMP_DIR/js/gridnode-bundle.js" ]] || { printf '%s\n' 'ERROR: staged runtime is empty' >&2; exit 1; }
