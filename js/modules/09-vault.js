@@ -116,3 +116,14 @@ export function openPrivacyPolicy() {
   overlay.querySelector('.gn-privacy-close')?.focus();
 }
 export function closePrivacyPolicy() { $('gnPrivacyOverlay')?.classList.remove('active'); }
+
+/* v0.15.54: Terms of Service overlay. Interim text mirrors the existing
+ * landing TERMS OF USE copy; the full ToS text will be swapped in later. */
+export function openTermsOfService() {
+  const overlay = $('gnTermsOverlay');
+  if (!overlay) return;
+  window.GN_I18N?.applyTo?.(overlay);
+  overlay.classList.add('active');
+  overlay.querySelector('.gn-privacy-close')?.focus();
+}
+export function closeTermsOfService() { $('gnTermsOverlay')?.classList.remove('active'); }

@@ -38,7 +38,7 @@ function bridge() {
     'requestLoadoutRemove', 'cancelLoadoutRemove', 'confirmLoadoutRemove',
     'refreshNodeHeader', 'openLabTool', 'closeLabTool',
     'dismissSystemUpdate', 'openSystemUpdate', 'setResultsView',
-    'openPrivacyPolicy', 'closePrivacyPolicy', 'replayGuidedTour'
+    'openPrivacyPolicy', 'closePrivacyPolicy', 'openTermsOfService', 'closeTermsOfService', 'replayGuidedTour'
   ];
   names.forEach(name => { window[name] = modules[name]; });
   window.refreshAll = modules.refreshAll;
@@ -60,6 +60,16 @@ function injectStableStyles() {
     .gn-auth-kicker{font:700 .62rem var(--font-m,monospace);letter-spacing:3px;color:#00d4ff;text-align:center}@media(max-width:480px){.gn-auth-kicker{margin-right:54px;font-size:.56rem;letter-spacing:1px}}.gn-auth-title{font:800 1.35rem var(--font-d,monospace);letter-spacing:3px;color:#fff;text-align:center;margin:14px 0 6px}.gn-auth-copy{font:.78rem/1.55 var(--font-m,monospace);color:#9fc7d4;text-align:center;margin:0 auto 22px;max-width:38ch}
     .gn-auth-field{width:100%;box-sizing:border-box;margin:0 0 10px;padding:13px 12px;border:1px solid rgba(0,212,255,.2);background:#080810;color:#eeeef5;border-radius:3px;font:16px var(--font-m,monospace);outline:none}.gn-auth-field:focus{border-color:#00d4ff;box-shadow:0 0 0 2px rgba(0,212,255,.1)}
     .gn-auth-primary,.gn-auth-passkey,.gn-auth-google{width:100%;min-height:52px;margin-top:10px;border-radius:3px;cursor:pointer;font:700 .72rem var(--font-d,monospace);letter-spacing:2px}.gn-auth-primary{border:0;background:linear-gradient(135deg,#FF3B3B,#D12424);color:#fff}.gn-auth-passkey{display:flex;align-items:center;justify-content:center;gap:10px;border:0;background:linear-gradient(135deg,#FF3B3B,#D12424);color:#fff}.gn-auth-passkey .gn-passkey-icon{font-size:1rem}.gn-auth-google{border:1px solid rgba(0,212,255,.4);background:rgba(0,212,255,.04);color:#00d4ff}.gn-auth-google:disabled{cursor:not-allowed;opacity:.55;border-color:rgba(130,149,160,.28);color:#8295a0;box-shadow:none}.gn-auth-primary-label{margin-top:4px;color:#00d4ff;font:700 .52rem var(--font-m,monospace);letter-spacing:2px;text-align:left}.gn-google-button-shell{width:100%;min-height:54px;margin-top:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;border:0;border-radius:3px}.gn-google-button-shell.loading{pointer-events:none;opacity:.55}.gn-google-button-shell>div{max-width:100%}.gn-auth-divider{display:flex;align-items:center;gap:12px;margin:18px 0 4px;color:#8295a0;font:600 .6rem var(--font-m,monospace);letter-spacing:2px;text-transform:uppercase}.gn-auth-divider::before,.gn-auth-divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.12)}.gn-auth-local{display:block;width:100%;min-height:44px;margin-top:10px;padding:8px 12px;border:0;background:transparent;color:#8295a0;font:600 .62rem var(--font-m,monospace);letter-spacing:1.4px;cursor:pointer;text-align:center}.gn-auth-local:hover{color:#00d4ff}.gn-auth-privacy{display:grid;gap:4px;margin-top:12px;padding:10px 11px;border-left:2px solid #00d4ff;background:rgba(0,212,255,.045);color:#9fc7d4;font:.58rem/1.45 var(--font-m,monospace)}.gn-auth-privacy strong{color:#e8fcff;letter-spacing:1px}.gn-auth-options{margin-top:16px;border-top:1px solid rgba(255,255,255,.07);padding-top:12px}.gn-auth-options summary{cursor:pointer;color:#8295a0;font:700 .56rem var(--font-m,monospace);letter-spacing:1.4px;list-style:none}.gn-auth-options summary::-webkit-details-marker{display:none}.gn-auth-options[open] summary{color:#00d4ff;margin-bottom:10px}.gn-auth-links{display:flex;justify-content:space-between;gap:8px;margin-top:14px}.gn-auth-link{padding:0;border:0;background:transparent;color:#8295a0;font:600 .58rem var(--font-m,monospace);letter-spacing:1px;cursor:pointer}.gn-auth-link:hover{color:#00d4ff}.gn-auth-message{min-height:22px;margin-top:14px;text-align:center;font:.62rem/1.4 var(--font-m,monospace);letter-spacing:.7px;color:#8295a0}.gn-auth-note{margin-top:18px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07);font:.56rem/1.5 var(--font-m,monospace);letter-spacing:.6px;color:#586d76;text-align:center}.gn-auth-policy-link{margin-top:16px;text-align:center}.gn-auth-policy-link button{padding:6px 10px;border:0;background:transparent;color:#586d76;font:600 .56rem var(--font-m,monospace);letter-spacing:1.2px;cursor:pointer}.gn-auth-policy-link button:hover{color:#00d4ff}
+    /* v0.15.54: 18+ age gate + terms acceptance on the auth card */
+    .gn-legal-gate{margin:14px 0 4px;padding:12px;border:1px solid rgba(0,212,255,.28);border-left:2px solid #00d4ff;background:rgba(0,212,255,.045)}
+    .gn-legal-gate-title{margin:0 0 10px;color:#00d4ff;font:700 .6rem var(--font-d,monospace);letter-spacing:2px}
+    .gn-legal-check{display:flex;gap:10px;align-items:flex-start;margin:0 0 10px;cursor:pointer;color:#9fc7d4;font:.62rem/1.5 var(--font-m,monospace)}
+    .gn-legal-check:last-of-type{margin-bottom:6px}
+    .gn-legal-check input{flex:0 0 auto;width:18px;height:18px;margin:1px 0 0;accent-color:#00d4ff;cursor:pointer}
+    .gn-legal-link{padding:0;border:0;background:transparent;color:#00d4ff;font:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+    .gn-legal-link:hover{color:#fff}
+    .gn-legal-under18{display:block;margin:2px 0 0 auto;padding:6px 2px;border:0;background:transparent;color:#586d76;font:600 .56rem var(--font-m,monospace);letter-spacing:1px;cursor:pointer}
+    .gn-legal-under18:hover{color:#FF5B5B}
     .gn-phase-row{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.07)}.gn-phase-index{font:700 .72rem var(--font-m,monospace);color:#FF3B3B}.gn-phase-row b{font:700 .72rem var(--font-d,monospace);letter-spacing:1px}.gn-phase-row p{margin:4px 0 0;color:#8295a0;font:.66rem/1.4 var(--font-m,monospace)}
     .gn-weight-record{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.07)}.gn-weight-record b{display:block;color:#00ff88;font:700 .78rem var(--font-d,monospace)}.gn-weight-record span,.gn-weight-record small{display:block;margin-top:3px;color:#8295a0;font:.6rem var(--font-m,monospace)}.gn-calendar-detail{padding:9px 0;border-bottom:1px solid rgba(255,255,255,.07);font:.66rem var(--font-m,monospace);color:#9fc7d4}
     .gn-toast-kicker{display:none}.gn-toast-message{display:block;font:600 .68rem var(--font-d,monospace);letter-spacing:.7px;color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -142,6 +152,12 @@ function authShell() {
     <div class="gn-auth-kicker">// PERSONAL BIOTECH OPERATING SYSTEM //</div>
     <div class="gn-auth-title">${recovering ? 'RESET ACCESS' : 'GRID//NODE'}</div>
     <p class="gn-auth-copy">${recovering ? 'Enter a new password for this GRID//NODE cloud account.' : 'Sign in to sync your grid across devices.'}</p>
+    ${recovering || legalAccepted() ? '' : `<div class="gn-legal-gate" id="gnLegalGate">
+      <p class="gn-legal-gate-title" data-i18n="legal.gateTitle">BEFORE YOU ENTER</p>
+      <label class="gn-legal-check"><input type="checkbox" id="gnLegalAge"><span data-i18n="legal.ageConfirm">I confirm I am 18 years of age or older.</span></label>
+      <label class="gn-legal-check"><input type="checkbox" id="gnLegalTerms"><span><span data-i18n="legal.agreePrefix">I agree to the</span> <button type="button" class="gn-legal-link" id="gnLegalTermsLink" data-i18n="legal.termsLink">Terms of Service</button> <span data-i18n="legal.andWord">and</span> <button type="button" class="gn-legal-link" id="gnLegalPrivacyLink" data-i18n="legal.privacyLink">Privacy Policy</button><span data-i18n="legal.agreeSuffix">.</span></span></label>
+      <button type="button" class="gn-legal-under18" id="gnLegalUnder18" data-i18n="legal.under18Link">I am under 18</button>
+    </div>`}
     ${recovering ? '' : '<p class="gn-auth-hint" data-i18n="auth.cloudHint">Sync with Google — your grid follows you on every device.</p><div class="gn-google-button-shell" id="gnGoogleButtonMount" role="group" aria-label="Continue with Google"></div><button class="gn-auth-passkey" id="gnPasskeyBtn" type="button" data-i18n-aria-label="auth.passkeyAria"><span class="gn-passkey-icon" aria-hidden="true">⌘</span><span data-i18n="auth.continueWithPasskey">CONTINUE WITH PASSKEY</span></button><div class="gn-auth-divider" aria-hidden="true"><span>or</span></div><button class="gn-auth-local" id="gnLocalBtn" type="button">CONTINUE ON THIS DEVICE ONLY</button><p class="gn-auth-hint" data-i18n="auth.localHint">Only on this device — nothing leaves this phone.</p>'}
     <form id="gnAuthForm" novalidate>
       <input class="gn-auth-field" id="gnAuthEmail" type="email" autocomplete="email" placeholder="EMAIL ADDRESS" aria-label="Email address"${recovering ? ' hidden' : ''}>
@@ -154,11 +170,17 @@ function authShell() {
   </div></div>`;
   login.querySelector('.gn-auth-card')?.insertAdjacentHTML('afterbegin', '<div class="gn-auth-lang-kanji" role="group" data-i18n-aria-label="lang.switcherAria"><button type="button" class="gn-lang-globe" data-lang-choice="es" aria-label="Español" title="Cambiar a Español"><svg class="gn-lang-kanji" viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><text x="12" y="17.5" text-anchor="middle" font-family="Noto Sans JP, Hiragino Sans, Yu Gothic, PingFang SC, Microsoft YaHei, sans-serif" font-size="17" stroke="currentColor" stroke-width="2" fill="none">電</text></svg></button></div>');
   $('gnVaultPolicyLink')?.addEventListener('click', openPrivacyPolicy);
+  /* v0.15.54: legal gate link wiring — stopPropagation so tapping a link
+   * inside the checkbox label does not toggle the checkbox. */
+  const gnNoLabelToggle = e => e.stopPropagation();
+  $('gnLegalTermsLink')?.addEventListener('click', e => { gnNoLabelToggle(e); openTermsOfService(); });
+  $('gnLegalPrivacyLink')?.addEventListener('click', e => { gnNoLabelToggle(e); openPrivacyPolicy(); });
+  $('gnLegalUnder18')?.addEventListener('click', () => setAuthMessage(tx('legal.under18Blocked', '// GRID//NODE IS 18+ ONLY. YOU MUST BE 18 OR OLDER TO USE THIS APP.'), true));
   applyAuthTranslations(recovering);
   $('gnAuthForm')?.addEventListener('submit', event => { event.preventDefault(); submitAuth(); });
   $('gnAuthModeToggle')?.addEventListener('click', toggleAuthMode);
   $('gnAuthReset')?.addEventListener('click', requestPasswordReset);
-  $('gnLocalBtn')?.addEventListener('click', enterLocalSession);
+  $('gnLocalBtn')?.addEventListener('click', () => { if (!checkLegalGate()) return; enterLocalSession(); });
   updateAuthMode();
   renderGoogleIdentityButton();
   wirePasskeyAuth();
@@ -216,6 +238,33 @@ function setAuthMessage(message, error = false) {
   element.textContent = message;
   element.dataset.tone = error ? 'error' : 'status';
   element.style.removeProperty('color');
+}
+
+/* v0.15.54: 18+ age gate + Terms/Privacy acceptance. Enforced on every
+ * explicit entry path (Google, passkey, email cloud auth, device-only).
+ * Acceptance is stored under a gn_-prefixed key so Delete All Local Data
+ * re-arms the gate. */
+const LEGAL_ACCEPT_KEY = 'gn_legal_accept_v1';
+function legalAccepted() { try { return !!localStorage.getItem(LEGAL_ACCEPT_KEY); } catch (err) { return false; } }
+function markLegalAccepted() { try { localStorage.setItem(LEGAL_ACCEPT_KEY, JSON.stringify({ v: 1, at: new Date().toISOString() })); } catch (err) {} }
+function checkLegalGate() {
+  if (legalAccepted()) return true;
+  const gate = $('gnLegalGate');
+  if (!gate) return true; /* gate not rendered (recovery mode) — nothing to enforce */
+  const age = $('gnLegalAge')?.checked;
+  const terms = $('gnLegalTerms')?.checked;
+  if (age && terms) {
+    markLegalAccepted();
+    gate.style.display = 'none';
+    setAuthMessage('', false);
+    return true;
+  }
+  const missing = [];
+  if (!age) missing.push(tx('legal.needAge', '18+ age confirmation'));
+  if (!terms) missing.push(tx('legal.needTerms', 'terms agreement'));
+  setAuthMessage(tx('legal.gateIncomplete', '// PLEASE COMPLETE: ') + missing.join(' + '), true);
+  try { gate.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (err) {}
+  return false;
 }
 
 function loadGoogleIdentityLibrary() {
@@ -295,6 +344,7 @@ async function renderGoogleIdentityButton() {
 
 async function handleGoogleCredential(response) {
   const host = $('gnGoogleButtonMount');
+  if (!checkLegalGate()) return;
   host?.classList.add('loading');
   setAuthMessage(tx('auth.verifyingGoogle', '// VERIFYING GOOGLE IDENTITY...'), false);
   try {
@@ -321,6 +371,7 @@ async function requestPasswordReset() {
 }
 
 async function submitAuth() {
+  if (!checkLegalGate()) return;
   const email = $('gnAuthEmail')?.value?.trim();
   const password = $('gnAuthPassword')?.value || '';
   if (authMode !== 'recovery' && (!email || !email.includes('@'))) { setAuthMessage(tx('auth.validEmail', '// ENTER A VALID EMAIL ADDRESS'), true); return; }
@@ -349,6 +400,7 @@ async function submitAuth() {
 }
 
 async function handleGoogleSignIn() {
+  if (!checkLegalGate()) return;
   const button = $('loginGoogleBtn'); if (button) { button.disabled = true; button.textContent = tx('auth.connecting', 'CONNECTING...'); }
   setAuthMessage(tx('auth.openingGoogle', '// OPENING GOOGLE AUTHENTICATION...'), false);
   try {
@@ -541,6 +593,7 @@ function showApp() {
     const emailInput = $('gnAuthEmail');
     if (emailInput) emailInput.autocomplete = 'username webauthn';
     button.addEventListener('click', async () => {
+      if (!checkLegalGate()) return;
       const email = $('gnAuthEmail')?.value?.trim();
       if (!email) {
         setAuthMessage('// ' + tx('auth.passkeyEmailFirst', 'ENTER YOUR EMAIL ADDRESS FIRST, THEN CONTINUE WITH PASSKEY.'), true);

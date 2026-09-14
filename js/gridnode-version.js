@@ -6,11 +6,11 @@
 (function () {
   'use strict';
   window.GN_VERSION = Object.freeze({
-    APP_VERSION: '0.15.53',
+    APP_VERSION: '0.15.54',
     APP_BUILD: '20260907.1',
-    semver: '0.15.53',
+    semver: '0.15.54',
     release: '20260907.1',
-    title: 'V0.15.53 — PHASE ENGINE QA FIXES',
+    title: 'V0.15.54 — 18+ AGE GATE + TERMS',
     date: '2026-09-14'
   });
 })();
