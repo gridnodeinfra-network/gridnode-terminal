@@ -6429,7 +6429,11 @@ function showApp() {
     button.dataset.gnPasskeyBound = 'true';
     if (!(await isWebAuthnSupported())) {
       // keep the button visible but show a clear unsupported message on click
-      button.addEventListener('click', () => setAuthMessage('// ' + tx('auth.passkeyNotSupportedMsg', 'YOUR DEVICE DOES NOT SUPPORT PASSKEYS. USE GOOGLE SIGN-IN INSTEAD.'), true));
+      // v0.15.55: legal gate still comes first — no entry path skips it.
+      button.addEventListener('click', () => {
+        if (!legalAccepted()) { requestLegalAccept(() => { const b = $('gnPasskeyBtn'); if (b && !b.disabled) b.click(); }); return; }
+        setAuthMessage('// ' + tx('auth.passkeyNotSupportedMsg', 'YOUR DEVICE DOES NOT SUPPORT PASSKEYS. USE GOOGLE SIGN-IN INSTEAD.'), true);
+      });
       return;
     }
     const emailInput = $('gnAuthEmail');
