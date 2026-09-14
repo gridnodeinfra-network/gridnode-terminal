@@ -5856,6 +5856,10 @@ function injectStableStyles() {
     .gn-auth-secondary[aria-expanded="true"]{border-color:#00d4ff;color:#fff;background:rgba(0,212,255,.1)}
     #gnCloudArea{margin-top:4px}
     #gnCloudArea .gn-auth-passkey{margin-top:16px}
+    #gnNodeKeyPanel{margin-top:18px;padding:14px 12px;border:1px dashed rgba(0,212,255,.45);border-radius:3px;background:rgba(0,212,255,.03)}
+    #gnNodeKeyPanel .gn-nodekey-title{color:#00d4ff;font:700 .72rem var(--font-d,monospace);letter-spacing:2px;margin:0 0 8px}
+    #gnNodeKeyPanel .gn-auth-field{text-transform:uppercase;letter-spacing:1.5px}
+    #gnNodeKeyPanel .gn-auth-message{margin-top:10px}
     .gn-legal-modal-title{margin:0 0 16px;color:#00d4ff;font:700 .66rem var(--font-d,monospace);letter-spacing:2px}
     .gn-legal-check{display:flex;gap:12px;align-items:flex-start;margin:0 0 14px;cursor:pointer;color:#9fc7d4;font:.66rem/1.55 var(--font-m,monospace)}
     .gn-legal-check input{flex:0 0 auto;width:20px;height:20px;margin:0;accent-color:#00d4ff;cursor:pointer}
@@ -5964,6 +5968,14 @@ function authShell() {
         <button class="gn-auth-primary" id="gnAuthSubmit" type="submit">SIGN IN TO CLOUD</button>
       </form>
       <div class="gn-auth-links"><button class="gn-auth-link" id="gnAuthModeToggle" type="button">CREATE ACCOUNT</button><button class="gn-auth-link" id="gnAuthReset" type="button">RESET PASSWORD</button></div>
+      <div id="gnNodeKeyPanel" hidden>
+        <p class="gn-auth-copy gn-nodekey-title" data-i18n="nodekey.title">BETA ACCESS</p>
+        <p class="gn-auth-copy" data-i18n="nodekey.prompt">ENTER YOUR NODE KEY TO CREATE A CLOUD ACCOUNT</p>
+        <input class="gn-auth-field" id="gnNodeKeyInput" type="text" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="16" data-i18n-placeholder="nodekey.placeholder" placeholder="NODE-XXXXXX" aria-label="Node key">
+        <button class="gn-auth-primary" id="gnNodeKeySubmit" type="button"><span data-i18n="nodekey.validate">VALIDATE KEY</span></button>
+        <div class="gn-auth-links"><button class="gn-auth-link" id="gnNodeKeyCancel" type="button"><span data-i18n="nodekey.cancel">CANCEL</span></button></div>
+        <div class="gn-auth-message" id="gnNodeKeyMsg" role="status" aria-live="polite"></div>
+      </div>
     </div>
     <div class="gn-privacy-overlay" id="gnLegalModal" role="dialog" aria-modal="true" aria-labelledby="gnLegalModalTitle">
       <div class="gn-privacy-panel">
@@ -6014,6 +6026,11 @@ function authShell() {
   $('gnAuthForm')?.addEventListener('submit', event => { event.preventDefault(); submitAuth(); });
   $('gnAuthModeToggle')?.addEventListener('click', toggleAuthMode);
   $('gnAuthReset')?.addEventListener('click', requestPasswordReset);
+  $('gnNodeKeySubmit')?.addEventListener('click', submitNodeKey);
+  $('gnNodeKeyInput')?.addEventListener('keydown', event => {
+    if (event.key === 'Enter') { event.preventDefault(); submitNodeKey(); }
+  });
+  $('gnNodeKeyCancel')?.addEventListener('click', () => { hideNodeKeyPanel(); setAuthMessage('', false); });
   $('gnLocalBtn')?.addEventListener('click', () => requestLegalAccept(() => enterLocalSession()));
   updateAuthMode();
   renderGoogleIdentityButton();
@@ -6218,6 +6235,8 @@ async function submitAuth() {
   const password = $('gnAuthPassword')?.value || '';
   if (authMode !== 'recovery' && (!email || !email.includes('@'))) { setAuthMessage(tx('auth.validEmail', '// ENTER A VALID EMAIL ADDRESS'), true); return; }
   if (password.length < 8) { setAuthMessage(tx('auth.passwordMin', '// PASSWORD MUST BE AT LEAST 8 CHARACTERS'), true); return; }
+  /* NODE KEY beta gate: new cloud accounts need a valid key first. */
+  if (authMode === 'signup' && !getNodeKeyGrant()) { requireNodeKeyForSignup(() => submitAuth()); return; }
   const submit = $('gnAuthSubmit'); if (submit) { submit.disabled = true; submit.textContent = tx('auth.connecting', 'CONNECTING...'); }
   try {
     if (authMode === 'recovery') {
@@ -6241,6 +6260,150 @@ async function submitAuth() {
   }
 }
 
+/* NODE KEY beta gate (v0.15.56+): new cloud accounts need a single-use key.
+ * Existing accounts are grandfathered via the `status` action server-side. */
+
+const NODE_KEY_FUNCTION_URL = `${CLOUD_CONFIG.url}/functions/v1/redeem-node-key`;
+const NODE_KEY_GRANT_KEY = 'gn_nodekey_grant_v1';
+let gnNodeKeyContinuation = null;
+
+function getNodeKeyGrant() {
+  try { return localStorage.getItem(NODE_KEY_GRANT_KEY) || ''; } catch { return ''; }
+}
+
+function setNodeKeyGrant(token) {
+  try {
+    if (token) localStorage.setItem(NODE_KEY_GRANT_KEY, token);
+    else localStorage.removeItem(NODE_KEY_GRANT_KEY);
+  } catch { /* storage unavailable: gate still works, grant just isn't cached */ }
+}
+
+async function nodeKeyApi(action, payload = {}, accessToken = '') {
+  const headers = { 'Content-Type': 'application/json', apikey: CLOUD_CONFIG.anonKey };
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+  const res = await withTimeout(fetch(NODE_KEY_FUNCTION_URL, {
+    method: 'POST', headers, body: JSON.stringify({ action, ...payload }),
+  }), 15000);
+  let body = null;
+  try { body = await res.json(); } catch { /* non-JSON */ }
+  if (!res.ok && res.status !== 400 && res.status !== 429) throw new Error('NODEKEY_UNREACHABLE');
+  return body || { ok: false, reason: 'SERVER' };
+}
+
+function setNodeKeyMsg(message, isError = false) {
+  const el = $('gnNodeKeyMsg');
+  if (!el) return;
+  el.textContent = message || '';
+  el.classList.toggle('error', !!isError);
+}
+
+function hideNodeKeyPanel() {
+  const panel = $('gnNodeKeyPanel');
+  if (panel) panel.hidden = true;
+  setNodeKeyMsg('', false);
+}
+
+function showNodeKeyPanel(onSuccess) {
+  gnNodeKeyContinuation = typeof onSuccess === 'function' ? onSuccess : null;
+  const panel = $('gnNodeKeyPanel');
+  if (!panel) {
+    const cont = gnNodeKeyContinuation; gnNodeKeyContinuation = null;
+    if (cont) cont();
+    return;
+  }
+  const area = $('gnCloudArea'), toggle = $('gnCloudToggle');
+  if (area?.hasAttribute('hidden')) {
+    area.removeAttribute('hidden');
+    toggle?.setAttribute('aria-expanded', 'true');
+  }
+  setNodeKeyMsg('', false);
+  panel.hidden = false;
+  const input = $('gnNodeKeyInput');
+  if (input) {
+    input.value = '';
+    try { input.focus({ preventScroll: false }); } catch { /* older browsers */ }
+  }
+  window.GN_I18N?.applyTo?.(panel);
+}
+
+const NODE_KEY_REASON_I18N = {
+  INVALID: ['nodekey.denied', '// ACCESS DENIED // INVALID NODE KEY'],
+  USED_UP: ['nodekey.used', '// ACCESS DENIED // KEY ALREADY USED'],
+  REVOKED: ['nodekey.revoked', '// ACCESS DENIED // KEY REVOKED'],
+  EXPIRED: ['nodekey.expired', '// ACCESS DENIED // KEY EXPIRED'],
+  RATE_LIMITED: ['nodekey.rateLimited', '// TOO MANY ATTEMPTS — WAIT AND RETRY'],
+};
+
+async function submitNodeKey() {
+  const input = $('gnNodeKeyInput');
+  const code = (input?.value || '').trim();
+  if (!code) { setNodeKeyMsg(tx('nodekey.enterKey', '// ENTER YOUR NODE KEY'), true); return; }
+  const btn = $('gnNodeKeySubmit');
+  if (btn) { btn.disabled = true; btn.textContent = tx('nodekey.validating', 'VALIDATING...'); }
+  setNodeKeyMsg('', false);
+  try {
+    const res = await nodeKeyApi('validate', { code });
+    if (res?.ok && res.grant) {
+      setNodeKeyGrant(res.grant);
+      const cont = gnNodeKeyContinuation;
+      gnNodeKeyContinuation = null;
+      hideNodeKeyPanel();
+      setAuthMessage(tx('nodekey.granted', '// ACCESS GRANTED'), false);
+      if (cont) cont();
+    } else {
+      const [key, fallback] = NODE_KEY_REASON_I18N[res?.reason] || NODE_KEY_REASON_I18N.INVALID;
+      setNodeKeyMsg(tx(key, fallback), true);
+    }
+  } catch {
+    setNodeKeyMsg(tx('nodekey.error', '// KEY CHECK FAILED — TRY AGAIN'), true);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = tx('nodekey.validate', 'VALIDATE KEY'); }
+  }
+}
+
+/* Pre-gate for flows that always create a new account (email signup). */
+function requireNodeKeyForSignup(continuation) {
+  if (getNodeKeyGrant()) { continuation(); return; }
+  setAuthMessage(tx('nodekey.needed', '// A NODE KEY IS REQUIRED TO CREATE A CLOUD ACCOUNT'), false);
+  showNodeKeyPanel(continuation);
+}
+
+/* Backstop for flows where new-vs-returning is unknown until after auth
+ * (Google OAuth / GIS popup). Returns true when cloud entry is cleared. */
+async function ensureNodeKeyClearance(session) {
+  const accessToken = session?.access_token;
+  if (!accessToken) return true;
+  let needsKey = false;
+  try {
+    const status = await nodeKeyApi('status', {}, accessToken);
+    needsKey = status?.needsKey === true;
+  } catch (error) {
+    console.warn('[GRID//NODE NODE KEY] status check failed; failing open', error);
+    return true;
+  }
+  if (!needsKey) return true;
+  const pending = getNodeKeyGrant();
+  if (pending) {
+    try {
+      const res = await nodeKeyApi('consume', { grant: pending }, accessToken);
+      if (res?.ok) { setNodeKeyGrant(''); return true; }
+    } catch (error) {
+      console.warn('[GRID//NODE NODE KEY] grant consume failed', error);
+    }
+    setNodeKeyGrant('');
+  }
+  /* New account, no usable grant: park it at the gate. */
+  try { await signOutCloud(); } catch { /* already out */ }
+  clearSession();
+  authShell();
+  modules.showScreen('login');
+  setAuthMessage(tx('nodekey.needed', '// A NODE KEY IS REQUIRED TO CREATE A CLOUD ACCOUNT'), false);
+  showNodeKeyPanel(() => {
+    setAuthMessage(tx('nodekey.signinAgain', '// KEY ACCEPTED — SIGN IN TO ENTER YOUR GRID'), false);
+  });
+  return false;
+}
+
 async function handleGoogleSignIn() {
   if (!legalAccepted()) { requestLegalAccept(() => handleGoogleSignIn()); return; }
   const button = $('loginGoogleBtn'); if (button) { button.disabled = true; button.textContent = tx('auth.connecting', 'CONNECTING...'); }
@@ -6262,6 +6425,10 @@ function enterLocalSession() {
 }
 
 async function completeCloudSession(session) {
+  /* NODE KEY beta gate backstop: catches new accounts that skipped the
+   * pre-gate (e.g. Google OAuth / GIS popup, where new-vs-returning is
+   * only known after auth). Returns false when the session was parked. */
+  if (!(await ensureNodeKeyClearance(session))) return false;
   migrateLegacyLocalData();
   const targetUserId = session?.user?.id ? String(session.user.id) : '';
   const mayMigrateLocal = state.accountKey === 'local' && localWorkspaceMigrationAllowed(targetUserId);
@@ -6287,6 +6454,7 @@ async function completeCloudSession(session) {
     markLocalWorkspaceMigrated(targetUserId);
   }
   showApp();
+  return true;
 }
 
 function showApp() {

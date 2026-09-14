@@ -1861,5 +1861,21 @@
   "auth.deviceSubline": "Nothing leaves your phone.",
   "auth.syncAcrossDevices": "SYNC ACROSS DEVICES",
   "legal.agreeContinue": "AGREE AND CONTINUE",
-  "legal.cancel": "CANCEL"
+  "legal.cancel": "CANCEL",
+  "nodekey.title": "BETA ACCESS",
+  "nodekey.prompt": "ENTER YOUR NODE KEY TO CREATE A CLOUD ACCOUNT",
+  "nodekey.placeholder": "NODE-XXXXXX",
+  "nodekey.validate": "VALIDATE KEY",
+  "nodekey.cancel": "CANCEL",
+  "nodekey.enterKey": "ENTER YOUR NODE KEY",
+  "nodekey.validating": "VALIDATING...",
+  "nodekey.granted": "ACCESS GRANTED",
+  "nodekey.denied": "ACCESS DENIED // INVALID NODE KEY",
+  "nodekey.used": "ACCESS DENIED // KEY ALREADY USED",
+  "nodekey.revoked": "ACCESS DENIED // KEY REVOKED",
+  "nodekey.expired": "ACCESS DENIED // KEY EXPIRED",
+  "nodekey.rateLimited": "TOO MANY ATTEMPTS — WAIT AND RETRY",
+  "nodekey.error": "KEY CHECK FAILED — TRY AGAIN",
+  "nodekey.needed": "A NODE KEY IS REQUIRED TO CREATE A CLOUD ACCOUNT",
+  "nodekey.signinAgain": "KEY ACCEPTED — SIGN IN TO ENTER YOUR GRID"
 }

@@ -1833,5 +1833,21 @@
   "auth.deviceSubline": "Nada sale de tu teléfono.",
   "auth.syncAcrossDevices": "SINCRONIZAR EN TUS DISPOSITIVOS",
   "legal.agreeContinue": "ACEPTAR Y CONTINUAR",
-  "legal.cancel": "CANCELAR"
+  "legal.cancel": "CANCELAR",
+  "nodekey.title": "ACCESO BETA",
+  "nodekey.prompt": "INGRESA TU NODE KEY PARA CREAR UNA CUENTA EN LA NUBE",
+  "nodekey.placeholder": "NODE-XXXXXX",
+  "nodekey.validate": "VALIDAR CLAVE",
+  "nodekey.cancel": "CANCELAR",
+  "nodekey.enterKey": "INGRESA TU NODE KEY",
+  "nodekey.validating": "VALIDANDO...",
+  "nodekey.granted": "ACCESO CONCEDIDO",
+  "nodekey.denied": "ACCESO DENEGADO // NODE KEY INVALIDO",
+  "nodekey.used": "ACCESO DENEGADO // CLAVE YA UTILIZADA",
+  "nodekey.revoked": "ACCESO DENEGADO // CLAVE REVOCADA",
+  "nodekey.expired": "ACCESO DENEGADO // CLAVE EXPIRADA",
+  "nodekey.rateLimited": "DEMASIADOS INTENTOS — ESPERA E INTENTA DE NUEVO",
+  "nodekey.error": "FALLO LA VERIFICACION — INTENTA DE NUEVO",
+  "nodekey.needed": "SE REQUIERE UN NODE KEY PARA CREAR UNA CUENTA EN LA NUBE",
+  "nodekey.signinAgain": "CLAVE ACEPTADA — INICIA SESION PARA ENTRAR A TU GRID"
 }
