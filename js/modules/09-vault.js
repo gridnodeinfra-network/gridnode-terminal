@@ -27,6 +27,14 @@ export async function confirmDeleteCloudAccount() {
   closeDeleteCloudAccount();
   if (!result?.ok) { actionFeedback(tx('auth.accountNotDeleted', 'CLOUD ACCOUNT NOT DELETED'), tx('auth.deletionFailed', 'ACCOUNT DELETION FAILED // LOCAL DATA UNCHANGED'), true); return; }
   clearLocalGridNodeData();
+  // The server-side user is gone, so the Supabase session token is dead.
+  // Purge the provider session keys explicitly: they are not gn_-prefixed,
+  // and a stale token would rehydrate a phantom "connected" account on reload.
+  try {
+    for (const store of [localStorage, sessionStorage]) {
+      Object.keys(store).filter(key => /^sb-.*-auth-token$/.test(key)).forEach(key => store.removeItem(key));
+    }
+  } catch (_) {}
   await signOutCloud();
   clearSession();
   window.location.reload();
