@@ -1020,7 +1020,7 @@ export async function deleteCloudAccount() {
   const accessToken = session?.access_token;
   if (!accessToken) return { ok: false, reason: 'CLOUD_SESSION_MISSING' };
   try {
-    const response = await withTimeout(fetch('/api/delete-account', {
+    const response = await withTimeout(fetch(CLOUD_CONFIG.url + '/functions/v1/delete-account', {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' }
     }), 10000);
