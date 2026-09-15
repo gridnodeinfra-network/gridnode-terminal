@@ -1206,6 +1206,19 @@ async function wireCloudAuthEvents() {
 
 function wireGlobalEvents() {
   $('signOutOverlay')?.addEventListener('click', event => { if (event.target.id === 'signOutOverlay') closeSignOutModal(); });
+  /* Google pre-gate interceptor: the GIS-rendered button's clicks are captured
+   * by Google's SDK before our callback ever runs, so the callback wrapper
+   * alone cannot pre-gate. Intercept in the capture phase (before the event
+   * reaches the Google iframe) on unknown devices, then route through the
+   * pre-gated OAuth flow. Known devices and grant holders pass through to GIS. */
+  document.addEventListener('click', event => {
+    const mount = event.target?.closest?.('#gnGoogleButtonMount');
+    if (!mount || mount.style.display === 'none') return;
+    if (getNodeKeyGrant() || isGoogleKnownDevice()) return;
+    event.stopPropagation();
+    event.preventDefault();
+    requireNodeKeyForGoogle(() => doGoogleSignIn());
+  }, true);
   document.addEventListener('click', event => {
     const button = event.target?.closest?.('[data-lang-choice]');
     if (!button) return;
