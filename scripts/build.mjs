@@ -148,5 +148,16 @@ wn = wn.split("'__CURRENT_BUILD__'").join(`'${BUILD_ID}'`);
 writeFileSync(wnDistPath, wn);
 console.log(`gridnode-whatsnew.js: __CURRENT_BUILD__ -> '${BUILD_ID}'`);
 
+// 6. js/gridnode-native.js — stamp the runtime `const V` cache-buster with
+// the real BUILD_ID (dist copy only; the source stays a template). Without
+// this the runtime-built asset URLs (?v= on native CSS + SW registration)
+// keep a stale version forever.
+const nativeDistPath = join(DIST, 'js', 'gridnode-native.js');
+let native = readFileSync(nativeDistPath, 'utf8');
+if (!/const V = '[^']*'/.test(native)) throw new Error('gridnode-native.js const V pattern not found');
+native = native.replace(/const V = '[^']*'/, `const V = '${BUILD_ID}'`);
+writeFileSync(nativeDistPath, native);
+console.log(`gridnode-native.js: const V -> '${BUILD_ID}'`);
+
 console.log(`dist/: index.html, sw.js, ${copies.join(', ')}, ${dirs.map(d => d + '/').join(', ')}`);
 console.log('BUILD OK');
