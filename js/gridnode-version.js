@@ -6,11 +6,11 @@
 (function () {
   'use strict';
   window.GN_VERSION = Object.freeze({
-    APP_VERSION: '0.15.56',
+    APP_VERSION: '1.0.0',
     APP_BUILD: '20260907.1',
-    semver: '0.15.56',
+    semver: '1.0.0',
     release: '20260907.1',
-    title: 'V0.15.56 — NODE KEY BETA GATE',
+    title: 'V1.0.0 — OFFICIAL LAUNCH',
     date: '2026-09-14'
   });
 })();

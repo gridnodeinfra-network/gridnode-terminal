@@ -26,7 +26,20 @@ export async function confirmDeleteCloudAccount() {
   const result = await deleteCloudAccount();
   closeDeleteCloudAccount();
   if (!result?.ok) { actionFeedback(tx('auth.accountNotDeleted', 'CLOUD ACCOUNT NOT DELETED'), tx('auth.deletionFailed', 'ACCOUNT DELETION FAILED // LOCAL DATA UNCHANGED'), true); return; }
-  clearLocalGridNodeData();
+  /* v1: the dialog promises local data is not affected, so the device keeps it.
+   * Cloud workspaces live under gn_<userId>_*, local sessions read gn_local_*:
+   * migrate this account's keys into the local namespace (without overwriting
+   * existing local data) so the records stay visible after sign-out. */
+  const cloudKey = state.accountKey;
+  if (cloudKey && cloudKey !== 'local') {
+    for (const key of WORKSPACE_KEYS) {
+      try {
+        if (localStorage.getItem(`gn_local_${key}`) !== null) continue;
+        const val = localStorage.getItem(`gn_${cloudKey}_${key}`);
+        if (val !== null) localStorage.setItem(`gn_local_${key}`, val);
+      } catch (_) {}
+    }
+  }
   // The server-side user is gone, so the Supabase session token is dead.
   // Purge the provider session keys explicitly: they are not gn_-prefixed,
   // and a stale token would rehydrate a phantom "connected" account on reload.
@@ -35,6 +48,8 @@ export async function confirmDeleteCloudAccount() {
       Object.keys(store).filter(key => /^sb-.*-auth-token$/.test(key)).forEach(key => store.removeItem(key));
     }
   } catch (_) {}
+  // Drop the single-use grant: the account it was redeemed for no longer exists.
+  try { localStorage.removeItem('gn_nodekey_grant'); } catch (_) {}
   await signOutCloud();
   clearSession();
   window.location.reload();

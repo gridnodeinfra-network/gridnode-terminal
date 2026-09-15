@@ -175,7 +175,7 @@
       }
     },
 
-    '__CURRENT_BUILD__': {
+    '20260914.d650e8b': {
       version: '0.15.53', title: 'PHASE ENGINE QA FIXES', date: '2026-09-14',
       en: {
         IMPROVED: [
@@ -201,6 +201,44 @@
           'El aviso de dosis ahora dice "0.5 mg" con su espacio.',
           'REGISTRAR DOSIS preselecciona AM/PM según la hora actual, y te avisa claramente si la hora sigue incompleta al guardar.',
           'Previsualizar una fase ahora muestra esa fase en el centro del anillo en lugar de la fase en vivo.'
+        ]
+      }
+    },
+
+    '__CURRENT_BUILD__': {
+      version: '1.0.0', title: 'OFFICIAL LAUNCH', date: '2026-09-14',
+      en: {
+        NEW: [
+          'GRID//NODE v1.0 is officially launched. Everything local-first: your data lives on your device, nothing leaves your phone unless you choose the cloud.',
+          'NODE KEY beta access: new cloud accounts are created with a single-use key. Google sign-in shows your options before anything is created — use a key, or continue if you already have an account.',
+          'Deleting your cloud account now keeps your local data on the device, exactly as the dialog always promised. Your server account and synced data are fully removed.'
+        ],
+        IMPROVED: [
+          'The Phase Engine has a calmer, premium look: thin muted phase arcs, a quiet center readout, and breathing room everywhere.',
+          'Cloud sign-in is hardened end to end: keys are single-use, expire after 7 days, and every step is verified before your account is created.'
+        ],
+        FIXED: [
+          'RETURN TO LIVE no longer gets stuck on screen — it only appears while you are previewing a phase.',
+          'Fixed run-together text in the protocol curve readout and phase timers ("ONSETLABELED" now reads "ONSET LABELED", "shot1d 0h" now reads "shot 1d 0h").',
+          'The update popup now shows the real version number.',
+          'LOG SHOT preselects AM/PM from the current time, and tells you plainly if the time is still incomplete when saving.'
+        ]
+      },
+      es: {
+        NEW: [
+          'GRID//NODE v1.0 ya está oficialmente lanzado. Todo local primero: tus datos viven en tu dispositivo, nada sale de tu teléfono a menos que elijas la nube.',
+          'Acceso beta con NODE KEY: las nuevas cuentas en la nube se crean con una clave de un solo uso. El inicio con Google muestra tus opciones antes de crear nada: usa una clave o continúa si ya tienes cuenta.',
+          'Eliminar tu cuenta en la nube ahora conserva tus datos locales en el dispositivo, tal como el diálogo siempre lo prometió. Tu cuenta del servidor y tus datos sincronizados se eliminan por completo.'
+        ],
+        IMPROVED: [
+          'El Motor de Fases tiene un aspecto más calmado y premium: arcos finos en tonos sobrios, lectura central discreta y espacio para respirar.',
+          'El inicio de sesión en la nube está reforzado de punta a punta: las claves son de un solo uso, expiran a los 7 días, y cada paso se verifica antes de crear tu cuenta.'
+        ],
+        FIXED: [
+          'VOLVER EN VIVO ya no se queda pegado en pantalla: solo aparece mientras previsualizas una fase.',
+          'Texto corregido en la curva del protocolo y los temporizadores de fase ("ONSETLABELED" ahora se lee "ONSET LABELED").',
+          'El aviso de actualización ahora muestra el número de versión real.',
+          'REGISTRAR DOSIS preselecciona AM/PM según la hora actual, y te avisa claramente si la hora sigue incompleta al guardar.'
         ]
       }
     },
