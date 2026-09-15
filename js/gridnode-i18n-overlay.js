@@ -33,6 +33,23 @@
     return document.documentElement && document.documentElement.lang === 'es';
   }
 
+  function targetEl(node) {
+    if (node.querySelector && node.querySelector('input, select, textarea, button')) {
+      // Never destroy a label that wraps a form control; retarget its
+      // direct text span when present.
+      const span = node.querySelector(':scope > span');
+      if (span) return span;
+    }
+    return node;
+  }
+
+  function saveOriginal(el, kind) {
+    if (el.dataset && el.dataset.gnI18nOverlayOrig === undefined) {
+      el.dataset.gnI18nOverlayOrig = kind === 'ph' ? (el.placeholder || '') : el.textContent;
+      el.dataset.gnI18nOverlayKind = kind;
+    }
+  }
+
   function applyOverlay(root) {
     if (!isEs()) return;
     root = root || document;
@@ -41,31 +58,48 @@
       var nodes;
       try { nodes = root.querySelectorAll ? root.querySelectorAll(selector) : []; } catch (_) { return; }
       nodes.forEach(function (node) {
-        if (node.dataset && node.dataset.gnI18nOverlay === esText) return;
+        var el = targetEl(node);
+        if (el.dataset && el.dataset.gnI18nOverlay === esText) return;
         // Race guard: never clobber the scanner/location displays the main
         // renderer now localizes itself (those were removed from ES_MAP).
         if (node.id === 'scannerSelectedDisplay' || node.id === 'scannerHistoryDisplay' || node.id === 'modalSelectedLocation') {
           if (node.textContent && node.textContent.trim() && node.textContent.trim() !== esText) return;
         }
-        if (node.tagName === 'INPUT' || node.tagName === 'TEXTAREA') {
-          if (node.dataset && node.dataset.gnI18nOverlayOriginal === undefined) node.dataset.gnI18nOverlayOriginal = node.placeholder || '';
-          node.placeholder = esText;
-        } else if (node.querySelector && node.querySelector('input, select, textarea, button')) {
-          // Never destroy a label that wraps a form control; retarget its
-          // direct text span when present.
-          const span = node.querySelector(':scope > span');
-          if (span) span.textContent = esText;
+        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+          saveOriginal(el, 'ph');
+          el.placeholder = esText;
         } else {
-          node.textContent = esText;
+          saveOriginal(el, 'tx');
+          el.textContent = esText;
         }
-        if (node.dataset) node.dataset.gnI18nOverlay = esText;
+        if (el.dataset) el.dataset.gnI18nOverlay = esText;
       });
+    });
+  }
+
+  function restoreOverlay(root) {
+    root = root || document;
+    var nodes;
+    try { nodes = root.querySelectorAll ? root.querySelectorAll('[data-gn-i18n-overlay]') : []; } catch (_) { return; }
+    nodes.forEach(function (node) {
+      if (!node.dataset) return;
+      var orig = node.dataset.gnI18nOverlayOrig;
+      if (orig !== undefined) {
+        if (node.dataset.gnI18nOverlayKind === 'ph') node.placeholder = orig;
+        else node.textContent = orig;
+      }
+      delete node.dataset.gnI18nOverlay;
+      delete node.dataset.gnI18nOverlayOrig;
+      delete node.dataset.gnI18nOverlayKind;
     });
   }
 
   function boot() {
     if (isEs()) applyOverlay();
-    document.addEventListener('gn:langchange', function () { applyOverlay(); });
+    document.addEventListener('gn:langchange', function () {
+      if (isEs()) applyOverlay();
+      else restoreOverlay();
+    });
     new MutationObserver(function (mutations) {
       var relevant = mutations.some(function (m) { return m.addedNodes && m.addedNodes.length; });
       if (relevant && isEs()) applyOverlay();
