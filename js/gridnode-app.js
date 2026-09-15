@@ -579,18 +579,28 @@ function requireNodeKeyForSignup(continuation) {
 }
 
 /* Backstop for flows where new-vs-returning is unknown until after auth
- * (Google OAuth / GIS popup). Returns true when cloud entry is cleared. */
+ * (Google OAuth / GIS popup). Returns true when cloud entry is cleared.
+ *
+ * FAIL-CLOSED (v0.15.57): the status check must positively clear the user.
+ * Any network failure, non-OK response, or unexpected payload parks the
+ * session at the login screen with a retry affordance instead of letting
+ * the user in. The session is kept (not signed out): the check failed,
+ * not the credentials. */
 async function ensureNodeKeyClearance(session) {
   const accessToken = session?.access_token;
   if (!accessToken) return true;
-  let needsKey = false;
+  let status = null;
   try {
-    const status = await nodeKeyApi('status', {}, accessToken);
-    needsKey = status?.needsKey === true;
+    status = await nodeKeyApi('status', {}, accessToken);
   } catch (error) {
-    console.warn('[GRID//NODE NODE KEY] status check failed; failing open', error);
-    return true;
+    console.warn('[GRID//NODE NODE KEY] status check failed; failing closed', error);
+    return parkForKeyRetry(session);
   }
+  if (!status?.ok) {
+    console.warn('[GRID//NODE NODE KEY] status check not OK; failing closed', status?.reason);
+    return parkForKeyRetry(session);
+  }
+  const needsKey = status.needsKey === true;
   if (!needsKey) return true;
   const pending = getNodeKeyGrant();
   if (pending) {
@@ -611,6 +621,42 @@ async function ensureNodeKeyClearance(session) {
   showNodeKeyPanel(() => {
     setAuthMessage(tx('nodekey.signinAgain', '// KEY ACCEPTED — SIGN IN TO ENTER YOUR GRID'), false);
   });
+  return false;
+}
+
+/* Fail-closed parking: the key-status check could not be verified (network
+ * down, edge function error). Keep the session alive and offer one-tap
+ * retry; the user never enters cloud mode on an unverified check. */
+let gnKeyRetrySession = null;
+function parkForKeyRetry(session) {
+  gnKeyRetrySession = session || null;
+  authShell();
+  modules.showScreen('login');
+  const area = $('gnCloudArea'), toggle = $('gnCloudToggle');
+  if (area?.hasAttribute('hidden')) {
+    area.removeAttribute('hidden');
+    toggle?.setAttribute('aria-expanded', 'true');
+  }
+  setAuthMessage(tx('nodekey.verifyFailed', '// KEY VERIFICATION UNAVAILABLE — CHECK YOUR CONNECTION AND RETRY'), true);
+  const msg = $('loginMsg');
+  if (msg && !$('gnKeyRetryBtn')) {
+    const btn = document.createElement('button');
+    btn.id = 'gnKeyRetryBtn';
+    btn.type = 'button';
+    btn.className = 'gn-auth-primary';
+    btn.style.marginTop = '12px';
+    btn.textContent = tx('nodekey.retryVerify', 'RETRY VERIFICATION');
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      btn.textContent = tx('nodekey.verifying', 'VERIFYING...');
+      const s = gnKeyRetrySession;
+      gnKeyRetrySession = null;
+      try { btn.remove(); } catch { /* gone */ }
+      if (s) { await completeCloudSession(s); }
+      else { parkForKeyRetry(null); }
+    });
+    msg.after(btn);
+  }
   return false;
 }
 

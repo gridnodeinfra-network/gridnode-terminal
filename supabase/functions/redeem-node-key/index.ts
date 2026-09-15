@@ -5,9 +5,17 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
  * verify_jwt = false (public validate endpoint); all trust comes from
  * HMAC-signed single-use grant tokens + the service-role DB checks below.
  *
+ * HARDENED 2026-09-15:
+ * - The node_key_* RPCs are NOT granted to anon/authenticated. This
+ *   function's PostgREST client uses the service-role key, which is the
+ *   only path that can reach them. Direct PostgREST calls with the public
+ *   anon key are rejected.
+ * - validate and consume are each ONE atomic RPC (redeem+grant-store and
+ *   claim+redemption happen in a single transaction).
+ *
  * Actions (JSON body { action, ... }):
- *   validate { code }            -> checks + reserves one use, returns grant token
- *   consume  { grant } + user JWT -> links the key to the caller's account
+ *   validate { code }            -> checks + reserves one use + stores grant, returns grant token
+ *   consume  { grant } + user JWT -> links the key to the caller's account (atomic)
  *   status   (user JWT)          -> { needsKey } for new-account gating
  *
  * Code canonical form: uppercase, no spaces/dashes, e.g. "NODE7X4K9D".
@@ -77,11 +85,11 @@ function normalizeCode(raw: unknown): string {
 
 interface GrantPayload { h: string; exp: number; jti: string; }
 
-async function mintGrant(codeHash: string): Promise<{ token: string; jti: string }> {
+async function mintGrant(codeHash: string, jti: string): Promise<string> {
   const payload: GrantPayload = {
     h: codeHash,
     exp: Date.now() + GRANT_TTL_MS,
-    jti: crypto.randomUUID(),
+    jti,
   };
   const payloadText = JSON.stringify(payload);
   const enc = new TextEncoder();
@@ -89,7 +97,7 @@ async function mintGrant(codeHash: string): Promise<{ token: string; jti: string
   const b64 = (buf: ArrayBuffer | string) => btoa(
     typeof buf === "string" ? buf : String.fromCharCode(...new Uint8Array(buf)),
   );
-  return { token: `${b64(payloadText)}.${b64(sig)}`, jti: payload.jti };
+  return `${b64(payloadText)}.${b64(sig)}`;
 }
 
 async function verifyGrant(token: string): Promise<GrantPayload | null> {
@@ -122,7 +130,11 @@ serve(async (req: Request) => {
   }
   if (req.method !== "POST") return json(req, { ok: false, reason: "METHOD" }, 405);
 
-  const rpc = createClient(SUPABASE_URL, ANON_KEY, {
+  // Service-role PostgREST client: the ONLY path to the node_key_* RPCs.
+  // Those functions are revoked for anon/authenticated, so the public anon
+  // key cannot reach them directly. The auth client below stays on the anon
+  // key (it only verifies user JWTs via the Auth API).
+  const rpc = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const authClient = createClient(SUPABASE_URL, ANON_KEY, {
@@ -137,7 +149,7 @@ serve(async (req: Request) => {
   }
   const action = String(body.action || "");
 
-  // ---- validate: public, rate-limited, reserves one use atomically ----
+  // ---- validate: public, rate-limited, atomic check+reserve+grant-store ----
   if (action === "validate") {
     const { data: allowed } = await rpc.rpc("node_key_rate_limit_check", {
       p_bucket: `nodekey:${clientIp(req)}`, p_max: 20, p_window_ms: 10 * 60 * 1000,
@@ -149,22 +161,18 @@ serve(async (req: Request) => {
       return json(req, { ok: false, reason: "INVALID" });
     }
     const codeHash = await sha256Hex(code);
-    const { data, error } = await rpc.rpc("node_key_redeem", { p_code_hash: codeHash });
+    const jti = crypto.randomUUID();
+    const { data, error } = await rpc.rpc("node_key_validate_grant", {
+      p_code_hash: codeHash, p_jti: jti,
+    });
     if (error) {
-      console.error("[redeem-node-key] redeem rpc failed", error.message);
+      console.error("[redeem-node-key] validate_grant rpc failed", error.message);
       return json(req, { ok: false, reason: "SERVER" }, 500);
     }
     const result = data as { ok: boolean; reason: string };
     if (!result?.ok) return json(req, { ok: false, reason: result?.reason || "INVALID" });
 
-    const { token, jti } = await mintGrant(codeHash);
-    const { data: stored, error: grantErr } = await rpc.rpc("node_key_store_grant", {
-      p_jti: jti, p_code_hash: codeHash,
-    });
-    if (grantErr || stored !== true) {
-      console.error("[redeem-node-key] grant store failed", grantErr?.message);
-      return json(req, { ok: false, reason: "SERVER" }, 500);
-    }
+    const token = await mintGrant(codeHash, jti);
     return json(req, { ok: true, grant: token });
   }
 
@@ -189,27 +197,17 @@ serve(async (req: Request) => {
     return json(req, { ok: true, needsKey: needsKey === true });
   }
 
-  // ---- consume: single-use grant -> redemption row ----
+  // ---- consume: single-use grant -> redemption row, one transaction ----
   if (action === "consume") {
     const grant = await verifyGrant(String(body.grant || ""));
     if (!grant) return json(req, { ok: false, reason: "BAD_GRANT" }, 400);
 
-    const { data: claim, error: claimErr } = await rpc.rpc("node_key_claim_grant", {
-      p_jti: grant.jti, p_user_id: user.id,
+    const { data: claim, error: claimErr } = await rpc.rpc("node_key_consume_grant", {
+      p_jti: grant.jti, p_user_id: user.id, p_code_hash: grant.h,
     });
     if (claimErr || !claim?.ok) {
       if (!claimErr) return json(req, { ok: false, reason: claim.reason || "GRANT_USED" }, 400);
-      console.error("[redeem-node-key] grant claim failed", claimErr.message);
-      return json(req, { ok: false, reason: "SERVER" }, 500);
-    }
-    if (claim.code_hash !== grant.h) {
-      return json(req, { ok: false, reason: "GRANT_MISMATCH" }, 400);
-    }
-    const { error: redErr } = await rpc.rpc("node_key_redeem_grant", {
-      p_code_hash: grant.h, p_user_id: user.id,
-    });
-    if (redErr) {
-      console.error("[redeem-node-key] redemption insert failed", redErr.message);
+      console.error("[redeem-node-key] grant consume failed", claimErr.message);
       return json(req, { ok: false, reason: "SERVER" }, 500);
     }
     return json(req, { ok: true });
