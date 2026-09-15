@@ -183,7 +183,7 @@ function authShell() {
         <p class="gn-auth-copy" data-i18n="nodekey.prompt">ENTER YOUR NODE KEY TO CREATE A CLOUD ACCOUNT</p>
         <input class="gn-auth-field" id="gnNodeKeyInput" type="text" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="16" data-i18n-placeholder="nodekey.placeholder" placeholder="NODE-XXXXXX" aria-label="Node key">
         <button class="gn-auth-primary" id="gnNodeKeySubmit" type="button"><span data-i18n="nodekey.validate">VALIDATE KEY</span></button>
-        <div class="gn-auth-links"><button class="gn-auth-link" id="gnNodeKeyCancel" type="button"><span data-i18n="nodekey.cancel">CANCEL</span></button></div>
+        <div class="gn-auth-links"><button class="gn-auth-link" id="gnNodeKeyCancel" type="button"><span data-i18n="nodekey.cancel">CANCEL</span></button><button class="gn-auth-link" id="gnNodeKeySkip" type="button" hidden><span data-i18n="nodekey.skip">I ALREADY HAVE AN ACCOUNT</span></button></div>
         <div class="gn-auth-message" id="gnNodeKeyMsg" role="status" aria-live="polite"></div>
       </div>
     </div>
@@ -241,6 +241,11 @@ function authShell() {
     if (event.key === 'Enter') { event.preventDefault(); submitNodeKey(); }
   });
   $('gnNodeKeyCancel')?.addEventListener('click', () => { hideNodeKeyPanel(); setAuthMessage('', false); });
+  $('gnNodeKeySkip')?.addEventListener('click', () => {
+    const skip = gnNodeKeySkipAction;
+    gnNodeKeySkipAction = null; gnNodeKeyContinuation = null;
+    if (skip) skip();
+  });
   $('gnLocalBtn')?.addEventListener('click', () => requestLegalAccept(() => enterLocalSession()));
   updateAuthMode();
   renderGoogleIdentityButton();
@@ -414,6 +419,11 @@ async function renderGoogleIdentityButton() {
 async function handleGoogleCredential(response) {
   const host = $('gnGoogleButtonMount');
   if (!legalAccepted()) { requestLegalAccept(() => handleGoogleCredential(response)); return; }
+  requireNodeKeyForGoogle(() => doGoogleCredential(response));
+}
+
+async function doGoogleCredential(response) {
+  const host = $('gnGoogleButtonMount');
   host?.classList.add('loading');
   setAuthMessage(tx('auth.verifyingGoogle', '// VERIFYING GOOGLE IDENTITY...'), false);
   try {
@@ -476,6 +486,7 @@ async function submitAuth() {
 const NODE_KEY_FUNCTION_URL = `${CLOUD_CONFIG.url}/functions/v1/redeem-node-key`;
 const NODE_KEY_GRANT_KEY = 'gn_nodekey_grant_v1';
 let gnNodeKeyContinuation = null;
+let gnNodeKeySkipAction = null;
 
 function getNodeKeyGrant() {
   try { return localStorage.getItem(NODE_KEY_GRANT_KEY) || ''; } catch { return ''; }
@@ -513,11 +524,13 @@ function hideNodeKeyPanel() {
   setNodeKeyMsg('', false);
 }
 
-function showNodeKeyPanel(onSuccess) {
+function showNodeKeyPanel(onSuccess, opts = {}) {
   gnNodeKeyContinuation = typeof onSuccess === 'function' ? onSuccess : null;
+  gnNodeKeySkipAction = typeof opts.onSkip === 'function' ? opts.onSkip : null;
   const panel = $('gnNodeKeyPanel');
   if (!panel) {
     const cont = gnNodeKeyContinuation; gnNodeKeyContinuation = null;
+    gnNodeKeySkipAction = null;
     if (cont) cont();
     return;
   }
@@ -526,6 +539,8 @@ function showNodeKeyPanel(onSuccess) {
     area.removeAttribute('hidden');
     toggle?.setAttribute('aria-expanded', 'true');
   }
+  const skip = $('gnNodeKeySkip');
+  if (skip) skip.hidden = !opts.allowSkip;
   setNodeKeyMsg('', false);
   panel.hidden = false;
   const input = $('gnNodeKeyInput');
@@ -534,6 +549,31 @@ function showNodeKeyPanel(onSuccess) {
     try { input.focus({ preventScroll: false }); } catch { /* older browsers */ }
   }
   window.GN_I18N?.applyTo?.(panel);
+}
+
+/* Google pre-gate: stop orphan auth accounts at the source. On devices that
+ * have never completed a Google sign-in (and hold no grant), the key panel
+ * appears BEFORE the OAuth dance, with a skip link for returning users.
+ * The post-auth backstop (ensureNodeKeyClearance) remains the enforcer. */
+const GOOGLE_KNOWN_KEY = 'gn_google_known_v1';
+function isGoogleKnownDevice() {
+  try { return localStorage.getItem(GOOGLE_KNOWN_KEY) === '1'; } catch { return false; }
+}
+function markGoogleKnownDevice() {
+  try { localStorage.setItem(GOOGLE_KNOWN_KEY, '1'); } catch { /* private mode */ }
+}
+function markGoogleKnownSession(session) {
+  if (session?.user?.app_metadata?.provider === 'google') markGoogleKnownDevice();
+}
+
+function requireNodeKeyForGoogle(proceed) {
+  if (getNodeKeyGrant()) { proceed(); return; }
+  if (isGoogleKnownDevice()) { proceed(); return; }
+  setAuthMessage(tx('nodekey.googleGate', '// NEW GOOGLE ACCOUNTS NEED A NODE KEY — OR SKIP IF YOU ALREADY HAVE ONE'), false);
+  showNodeKeyPanel(proceed, {
+    allowSkip: true,
+    onSkip: () => { hideNodeKeyPanel(); setAuthMessage('', false); proceed(); },
+  });
 }
 
 const NODE_KEY_REASON_I18N = {
@@ -601,12 +641,12 @@ async function ensureNodeKeyClearance(session) {
     return parkForKeyRetry(session);
   }
   const needsKey = status.needsKey === true;
-  if (!needsKey) return true;
+  if (!needsKey) { markGoogleKnownSession(session); return true; }
   const pending = getNodeKeyGrant();
   if (pending) {
     try {
       const res = await nodeKeyApi('consume', { grant: pending }, accessToken);
-      if (res?.ok) { setNodeKeyGrant(''); return true; }
+      if (res?.ok) { setNodeKeyGrant(''); markGoogleKnownSession(session); return true; }
     } catch (error) {
       console.warn('[GRID//NODE NODE KEY] grant consume failed', error);
     }
@@ -662,6 +702,10 @@ function parkForKeyRetry(session) {
 
 async function handleGoogleSignIn() {
   if (!legalAccepted()) { requestLegalAccept(() => handleGoogleSignIn()); return; }
+  requireNodeKeyForGoogle(doGoogleSignIn);
+}
+
+async function doGoogleSignIn() {
   const button = $('loginGoogleBtn'); if (button) { button.disabled = true; button.textContent = tx('auth.connecting', 'CONNECTING...'); }
   setAuthMessage(tx('auth.openingGoogle', '// OPENING GOOGLE AUTHENTICATION...'), false);
   try {
