@@ -60,7 +60,8 @@ console.log('gate 3: copied assets byte-identical');
     .replace(/(APP_BUILD:\s*')[^']*(')/g, '$1BUILD$2')
     .replace(/((?:^|[\s{,])release:\s*')[^']*(')/g, '$1BUILD$2')
     .replace(/'__CURRENT_BUILD__'/g, "'BUILD'")
-    .replace(/'\d{8}\.[\da-z-]+'(?=\s*:\s*\{)/g, "'BUILD'");
+    .replace(/'\d{8}\.[\da-z-]+'(?=\s*:\s*\{)/g, "'BUILD'")
+    .replace(/(const V = ')[^']*(')/g, '$1BUILD$2'); // gridnode-native.js runtime cache-buster stamp
   let checked = 0, bad = 0;
   for (const d of ['js', 'css', 'assets', 'i18n']) {
     for (const p of walk(join(ROOT, d))) {
@@ -69,7 +70,7 @@ console.log('gate 3: copied assets byte-identical');
       const dp = join(DIST, d, rel);
       checked++;
       if (!existsSync(dp)) { bad++; fail(`missing in dist: ${d}/${rel}`); }
-      else if (d === 'js' && (rel === 'gridnode-version.js' || rel === 'gridnode-whatsnew.js')) {
+      else if (d === 'js' && (rel === 'gridnode-version.js' || rel === 'gridnode-whatsnew.js' || rel === 'gridnode-native.js')) {
         const srcN = normBuildStamped(readFileSync(p, 'utf8'));
         const dstN = normBuildStamped(readFileSync(dp, 'utf8'));
         if (srcN !== dstN) { bad++; fail(`changed in dist beyond build stamps: ${d}/${rel}`); }
