@@ -1854,5 +1854,9 @@
   "zone.legOuterLeft": "Muslo izquierdo — exterior",
   "zone.legOuterRight": "Muslo derecho — exterior",
   "zone.legUpperLeft": "Muslo izquierdo — superior",
-  "zone.legUpperRight": "Muslo derecho — superior"
+  "zone.legUpperRight": "Muslo derecho — superior",
+  "nodekey.haveKey": "TENGO UNA NODE KEY",
+  "nodekey.grantedNext": "// CLAVE ACEPTADA — ELIGE GOOGLE O CORREO PARA CREAR TU CUENTA EN LA NUBE",
+  "vault.connectAccount": "Conectar cuenta en la nube",
+  "vault.connectAccountHelp": "Usa una NODE KEY para sincronizar entre dispositivos"
 }

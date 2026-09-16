@@ -169,6 +169,7 @@ function authShell() {
     <button class="gn-auth-primary" id="gnLocalBtn" type="button"><span data-i18n="auth.continueOnDevice">CONTINUE ON THIS DEVICE</span></button>
     <p class="gn-auth-hint" data-i18n="auth.deviceSubline">Nothing leaves your phone.</p>
     <button class="gn-auth-secondary" id="gnCloudToggle" type="button" aria-expanded="false" aria-controls="gnCloudArea"><span data-i18n="auth.syncAcrossDevices">SYNC ACROSS DEVICES</span></button>
+    <button class="gn-auth-secondary" id="gnNodeKeyEntryBtn" type="button"><span data-i18n="nodekey.haveKey">I HAVE A NODE KEY</span></button>
     <div id="gnCloudArea" hidden>
       <div class="gn-google-button-shell" id="gnGoogleButtonMount" role="group" aria-label="Continue with Google" style="display:none"></div>
       <button class="gn-auth-passkey" id="gnPasskeyBtn" type="button" data-i18n-aria-label="auth.passkeyAria"><span class="gn-passkey-icon" aria-hidden="true">⌘</span><span data-i18n="auth.continueWithPasskey">CONTINUE WITH PASSKEY</span></button>
@@ -232,6 +233,9 @@ function authShell() {
       toggle.setAttribute('aria-expanded', 'false');
     }
   });
+  /* v0.15.63: NODE KEY front door — invite holders enter the key directly
+   * instead of discovering the panel only after attempting Google/signup. */
+  $('gnNodeKeyEntryBtn')?.addEventListener('click', openNodeKeyEntry);
   applyAuthTranslations(recovering);
   $('gnAuthForm')?.addEventListener('submit', event => { event.preventDefault(); submitAuth(); });
   $('gnAuthModeToggle')?.addEventListener('click', toggleAuthMode);
@@ -549,6 +553,25 @@ function showNodeKeyPanel(onSuccess, opts = {}) {
     try { input.focus({ preventScroll: false }); } catch { /* older browsers */ }
   }
   window.GN_I18N?.applyTo?.(panel);
+}
+
+/* NODE KEY front doors (v0.15.63). openNodeKeyEntry is the visible invite
+ * entry on the login screen; openCloudConnect is the way back for local-mode
+ * users who later receive a key. Both store the grant via the existing panel,
+ * so the Google/signup pre-gates pass through and the account creation flow
+ * is unchanged. */
+function openNodeKeyEntry() {
+  showNodeKeyPanel(() => {
+    setAuthMessage(tx('nodekey.grantedNext', '// KEY ACCEPTED — NOW CHOOSE GOOGLE OR EMAIL TO CREATE YOUR CLOUD ACCOUNT'), false);
+  });
+}
+
+function openCloudConnect() {
+  authShell();
+  modules.showScreen('login');
+  showNodeKeyPanel(() => {
+    setAuthMessage(tx('nodekey.grantedNext', '// KEY ACCEPTED — NOW CHOOSE GOOGLE OR EMAIL TO CREATE YOUR CLOUD ACCOUNT'), false);
+  }, { allowSkip: true, onSkip: () => { hideNodeKeyPanel(); setAuthMessage('', false); } });
 }
 
 /* Google pre-gate: stop orphan auth accounts at the source. On devices that

@@ -1882,5 +1882,9 @@
   "zone.legOuterLeft": "Left Thigh Outer",
   "zone.legOuterRight": "Right Thigh Outer",
   "zone.legUpperLeft": "Left Thigh Upper",
-  "zone.legUpperRight": "Right Thigh Upper"
+  "zone.legUpperRight": "Right Thigh Upper",
+  "nodekey.haveKey": "I HAVE A NODE KEY",
+  "nodekey.grantedNext": "// KEY ACCEPTED — NOW CHOOSE GOOGLE OR EMAIL TO CREATE YOUR CLOUD ACCOUNT",
+  "vault.connectAccount": "Connect Cloud Account",
+  "vault.connectAccountHelp": "Use a NODE KEY to sync across devices"
 }
