@@ -38,7 +38,7 @@ function bridge() {
     'requestLoadoutRemove', 'cancelLoadoutRemove', 'confirmLoadoutRemove',
     'refreshNodeHeader', 'openLabTool', 'closeLabTool',
     'dismissSystemUpdate', 'openSystemUpdate', 'setResultsView',
-    'openPrivacyPolicy', 'closePrivacyPolicy', 'openTermsOfService', 'closeTermsOfService', 'replayGuidedTour'
+    'openPrivacyPolicy', 'closePrivacyPolicy', 'openDataOwnership', 'openTermsOfService', 'closeTermsOfService', 'replayGuidedTour'
   ];
   names.forEach(name => { window[name] = modules[name]; });
   window.refreshAll = modules.refreshAll;
@@ -119,6 +119,9 @@ function injectStableStyles() {
     .gn-privacy-panel h3{margin:16px 0 6px;color:#00d4ff;font:700 .68rem var(--font-d,monospace);letter-spacing:1.6px}
     .gn-privacy-panel p{margin:0 0 8px;color:#9fc7d4;font:.66rem/1.65 var(--font-m,monospace)}
     .gn-privacy-panel .gn-privacy-close{width:100%;margin-top:16px;min-height:48px;border:1px solid rgba(0,212,255,.4);background:rgba(0,212,255,.07);color:#00d4ff;font:700 .68rem var(--font-d,monospace);letter-spacing:2px;border-radius:6px;cursor:pointer}
+    /* QA 2026-09-17: Data Ownership focused destination — show only the
+       export/delete-rights sections under the DATA OWNERSHIP title. */
+    .gn-privacy-overlay.gn-ownership .gn-privacy-panel>h3:not(#gnPrivacyExportRights):not(#gnPrivacyDeleteRights),.gn-privacy-overlay.gn-ownership .gn-privacy-panel>h3:not(#gnPrivacyExportRights):not(#gnPrivacyDeleteRights)+p{display:none}
     /* v0.15.42: boot skip hint */
     .boot-skip-hint{margin-top:14px;text-align:center;color:#586d76;font:600 .56rem var(--font-m,monospace);letter-spacing:2.5px;animation:gnBootSkipPulse 1.6s ease-in-out infinite}
     @keyframes gnBootSkipPulse{50%{opacity:.45}}

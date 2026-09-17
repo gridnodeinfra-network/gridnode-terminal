@@ -1089,6 +1089,10 @@ function formatDate(value, options = { month: 'short', day: 'numeric', year: 'nu
 
 function formatDateTime(value) {
   if (!value) return '—';
+  const raw = String(value).trim();
+  /* QA 2026-09-17: date-only records carry no meaningful time — render the
+   * date alone instead of a fabricated local-noon timestamp. */
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return formatDate(value);
   const date = parseLocalDate(value);
   if (Number.isNaN(date.getTime())) return '—';
   const locale = document.documentElement?.lang?.startsWith('es') ? 'es-419' : 'en-US';
@@ -1190,6 +1194,21 @@ function localizedPhaseContext(phase) {
   if (!phase) return '';
   const key = PHASE_I18N[phase.name]?.context;
   return key ? tx(key, phase.context) : phase.context;
+}
+// Template-aware phase display name. When the last shot's medication matches a
+// phase template whose phase count equals the dashboard's fixed six-phase
+// model (e.g. the GLP-1 weekly template), the dashboard card and the ALL
+// PHASES list use the template's phase names so both surfaces agree
+// ("PEAK EFFECT", not "PEAK WINDOW"). Returns null when no template applies.
+function templatePhaseName(lastShot, index) {
+  try {
+    const T = window.GNPhaseTemplates;
+    if (!T || !lastShot || index < 0) return null;
+    const tpl = T.templateForMed?.(normalizeMedicationId(lastShot.med) || '');
+    if (!tpl || !Array.isArray(tpl.phases) || tpl.phases.length !== PHASES.length) return null;
+    const tp = tpl.phases[index];
+    return tp ? T.phaseName?.(tp) || tp.nameFb || null : null;
+  } catch (_) { return null; }
 }
 const qa = selector => Array.from(document.querySelectorAll(selector));
 
@@ -1414,12 +1433,12 @@ function sideEffectLabel(value) {
 }
 
 const PHASES = [
-  { name: 'ONSET', support: 'Early cycle after the latest logged SHOT. New observations begin shaping this signal.', context: 'Early cycle after the latest logged SHOT. Your own appetite, energy, symptoms, and notes may begin shaping this signal.', color: '#4fb8d8', start: 0, end: 0.08 },
-  { name: 'ACTIVE', support: 'Estimated active-cycle window. Compare this point with your own earlier logged cycles.', context: 'Estimated active-cycle window. Compare this point with your own earlier logged observations.', color: '#63b98b', start: 0.08, end: 0.28 },
-  { name: 'PEAK WINDOW', support: 'Estimated highest relative level in this cycle. This is not a laboratory measurement.', context: 'Estimated highest relative level in this cycle. Individual response varies; this is not a laboratory measurement.', color: '#d3a24a', start: 0.28, end: 0.52 },
-  { name: 'RESPONSE', support: 'A middle-cycle estimate built from timing and user-entered history.', context: 'A middle-cycle estimate built from timing and user-entered history.', color: '#4aa89b', start: 0.52, end: 0.76 },
-  { name: 'DECAY', support: 'Estimated level is declining toward the next expected event. Individual response varies.', context: 'Estimated level is declining toward the next expected event. Watch your own logged patterns; individual response varies.', color: '#c26674', start: 0.76, end: 0.94 },
-  { name: 'BASELINE', support: 'Late-cycle estimate before the next expected event. Keep logging your own patterns.', context: 'Late-cycle estimate before the next expected event. Keep logging your own patterns.', color: '#9898b0', start: 0.94, end: 1 }
+  { name: 'ONSET', support: 'Early in the cycle. Your first observations start shaping this signal.', context: 'Early in the cycle after your latest logged shot. Appetite, energy, symptoms, and notes begin shaping this signal.', color: '#4fb8d8', start: 0, end: 0.08 },
+  { name: 'ACTIVE', support: 'Active window of the cycle. Compare with your own earlier cycles.', context: 'Active window of the cycle. Compare this point with your own earlier logged observations.', color: '#63b98b', start: 0.08, end: 0.28 },
+  { name: 'PEAK WINDOW', support: 'Estimated highest relative level this cycle. Not a laboratory measurement.', context: 'Estimated highest relative level this cycle. Individual response varies; this is not a laboratory measurement.', color: '#d3a24a', start: 0.28, end: 0.52 },
+  { name: 'RESPONSE', support: 'Mid-cycle estimate from your timing and logged history.', context: 'Mid-cycle estimate from your timing and logged history.', color: '#4aa89b', start: 0.52, end: 0.76 },
+  { name: 'DECAY', support: 'Estimated level declining toward the next shot. Individual response varies.', context: 'Estimated level declining toward the next shot. Watch your own logged patterns; individual response varies.', color: '#c26674', start: 0.76, end: 0.94 },
+  { name: 'BASELINE', support: 'Late-cycle estimate before the next shot. Keep logging your patterns.', context: 'Late-cycle estimate before the next shot. Keep logging your patterns.', color: '#9898b0', start: 0.94, end: 1 }
 ];
 
 const RESEARCH_LIBRARY = Object.freeze([
@@ -1669,9 +1688,12 @@ function nodePhaseDay(lastShot) {
     : tx('runtime.daySinceShot', 'DAY {day} · {days}d since SHOT', { day, days: Math.floor(elapsedDays) });
 }
 
-function refreshNodeHeader({ phase } = {}) {
+function refreshNodeHeader({ lastShot, phase } = {}) {
   const sync = nodeSyncLabel();
-  const phaseLabel = localizedPhaseName(phase) || tx('runtime.awaitingFirstShot', 'AWAITING FIRST SHOT');
+  const phaseIdx = phase ? PHASES.indexOf(phase) : -1;
+  // Template-aware name so the header pill agrees with the dashboard card
+  // and the RESULTS Phase Engine ("PEAK EFFECT", not "PEAK WINDOW").
+  const phaseLabel = templatePhaseName(lastShot, phaseIdx) || localizedPhaseName(phase) || tx('runtime.awaitingFirstShot', 'AWAITING FIRST SHOT');
   setText('nodeHeaderPhase', phaseLabel);
   setText('nodeHeaderState', sync);
 }
@@ -2074,7 +2096,7 @@ function renderPhase(lastShot, shots) {
     setText('phaseTimeSince', '—');
     setText('phaseCyclePosition', '—');
     setText('ringDays', '—');
-    setText('ringPct', tx('phase.firstShotCta', 'TAP FAB // LOG FIRST SHOT'));
+    setText('ringPct', tx('phase.firstShotCta', 'LOG YOUR FIRST SHOT'));
     setText('phaseContextText', tx('phase.logShotContext', 'Log a SHOT to see educational cycle context grounded in your own records.'));
     setText('phaseNext', tx('phase.initiateProtocol', '> INITIATE PROTOCOL — log first shot'));
     setText('pibBody', tx('phase.awaitingFirstRecord', 'Awaiting first logged SHOT — protocol initializes on first record.'));
@@ -2088,14 +2110,23 @@ function renderPhase(lastShot, shots) {
   const cyclePosition = Math.min(elapsedDays / 7, 0.999);
   const phase = PHASES.find(item => cyclePosition >= item.start && cyclePosition < item.end) || PHASES.at(-1);
   const since = elapsedDays < 1 ? Math.floor(elapsedDays * 24) + 'h' : Math.floor(elapsedDays) + 'd ' + Math.floor((elapsedDays % 1) * 24) + 'h';
-  const phaseName = localizedPhaseName(phase);
+  const phaseIdx = PHASES.indexOf(phase);
+  // Template-aware name: matches the RESULTS Phase Engine ("PEAK EFFECT")
+  // when a six-phase template applies to the last shot's medication.
+  const phaseName = templatePhaseName(lastShot, phaseIdx) || localizedPhaseName(phase);
   setText('phaseNameTxt', phaseName);
   setText('phaseNumTxt', tx('phase.phaseN', 'PHASE {n} / {total}', { n: PHASES.indexOf(phase) + 1, total: PHASES.length }));
   setText('phaseSupportTxt', localizedPhaseSupport(phase));
   setText('phaseContextText', localizedPhaseContext(phase));
   setText('phaseTimeSince', since);
   setText('phaseCyclePosition', tx('phase.cyclePct', '{pct}% of 7-day reference cycle', { pct: Math.round(cyclePosition * 100) }));
-  setText('ringDays', tx('phase.daysLeft', '{n}d', { n: Math.max(0, 7 - Math.floor(elapsedDays)) }));
+  const remainMs = Math.max(0, 604800000 - (Date.now() - new Date(lastShot.date).getTime()));
+  const remainD = Math.floor(remainMs / 86400000);
+  const remainH = Math.floor((remainMs % 86400000) / 3600000);
+  // Same granularity as the RESULTS engine ("4d 23h"), not rounded days.
+  setText('ringDays', remainH > 0
+    ? tx('phase.daysLeftHours', '{d}d {h}h', { d: remainD, h: remainH })
+    : tx('phase.daysLeft', '{n}d', { n: remainD }));
   setText('ringPct', tx('phase.cyclePositionRing', '{pct}% CYCLE POSITION', { pct: Math.round(cyclePosition * 100) }));
   setText('phaseNext', tx(shots.length === 1 ? 'phase.activeRecords_one' : 'phase.activeRecords_other', '> {phase} // {n} ACTIVE SHOT RECORDS', { phase: phaseName, n: shots.length }));
   setText('pibBody', tx('phase.pibBody', '{phase} visibility is estimated from {since} since the most recent user-entered SHOT.', { phase: phaseName, since }));
@@ -2119,7 +2150,12 @@ function renderPhase(lastShot, shots) {
 
 function showPhasesModal() {
   const content = $('allPhasesContent');
-  if (content) content.innerHTML = PHASES.map((phase, index) => '<div class="gn-phase-row"><span class="gn-phase-index">0' + (index + 1) + '</span><div><b style="color:' + phase.color + '">' + localizedPhaseName(phase) + '</b><p>' + safeText(localizedPhaseSupport(phase)) + '</p></div></div>').join('');
+  let lastShot = null;
+  try { lastShot = sortedShots().at(-1) || null; } catch (_) {}
+  if (content) content.innerHTML = PHASES.map((phase, index) => {
+    const name = templatePhaseName(lastShot, index) || localizedPhaseName(phase);
+    return '<div class="gn-phase-row"><span class="gn-phase-index">0' + (index + 1) + '</span><div><b style="color:' + phase.color + '">' + safeText(name) + '</b><p>' + safeText(localizedPhaseSupport(phase)) + '</p></div></div>';
+  }).join('');
   $('phasesOv')?.classList.add('active');
 }
 function closePhases() { $('phasesOv')?.classList.remove('active'); }
@@ -2199,6 +2235,13 @@ function renderShots() {
   qa('[data-shot-history-view]').forEach(button => button.classList.toggle('active', button.dataset.shotHistoryView === moduleState.shotHistoryView));
   if (!visible.length) {
     const activeFilters = Object.values(moduleState.shotFilters).some(value => value && value !== 'all');
+    /* QA 2026-09-17: an empty ARCHIVED tab with active history behind it is
+     * not a first run — show a neutral archived state, never the
+     * "log your first shot" pitch. */
+    if (!activeFilters && moduleState.shotHistoryView === 'archived' && all.some(record => !record.archived)) {
+      list.innerHTML = `<div class="empty gn-first-run-card"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${tx('shots.noArchivedShots', 'NO ARCHIVED SHOTS')}</b><span class="gn-first-run-sub">${tx('shots.noArchivedHint', 'Archived shots rest here. Archive a shot from your active history to tuck it away without deleting it.')}</span></div>`;
+      return;
+    }
     list.innerHTML = `<div class="empty${activeFilters ? '' : ' gn-first-run-card'}"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${activeFilters ? tx('shots.noFilterMatch', 'NO SHOTS MATCH THESE FILTERS.') : moduleState.shotHistoryView === 'archived' ? tx('shots.noArchivedShots', 'NO ARCHIVED SHOTS') : tx('shots.activateYourGrid', 'LOG YOUR FIRST SHOT TO ACTIVATE YOUR GRID')}</b>${activeFilters ? '<br><button class="btn-full btn-secondary empty-cta" type="button" id="gnShotFilterEmptyClear">' + tx('shots.clearFilters', 'CLEAR FILTERS') + '</button>' : '<span class="gn-first-run-sub">' + tx('shots.firstShotSub', 'One shot unlocks the Phase Engine, RESULTS, and your full dashboard.') + '</span><br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>' + tx('shots.logYourFirst', 'LOG YOUR FIRST SHOT') + '</button>'}</div>`;
     $('gnShotFilterEmptyClear')?.addEventListener('click', () => { moduleState.shotFilters = { medication: '', site: '', range: 'all', query: '' }; renderShots(); });
     return;
@@ -2686,7 +2729,6 @@ function openLogModal(options = {}) {
   }
   if (!preserveDraft) {
     moduleState.editingShotId = null;
-    document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode(tx('shot.logShot', 'LOG SHOT')));
     setTodayDefaults();
     const profile = getProfile();
     const profileMedicationId = normalizeMedicationId(profile.med);
@@ -2712,7 +2754,19 @@ function openLogModal(options = {}) {
   updateMeridiemButtons();
   cancelLogClose();
   modal.classList.add('active');
+  syncLogModalLabels();
 }
+
+/* QA 2026-09-17: the modal title and submit button are JS-managed (no
+ * data-i18n) so edit mode can show EDIT SHOT / SAVE SHOT while log mode
+ * shows LOG SHOT, in the current language. Re-synced on open and on
+ * language change so i18n re-application can never clobber the mode. */
+function syncLogModalLabels() {
+  const editing = Boolean(moduleState.editingShotId);
+  document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode(tx(editing ? 'shot.editShot' : 'shot.logShot', editing ? 'EDIT SHOT' : 'LOG SHOT')));
+  document.querySelector('#logOv .gn-shot-fire')?.replaceChildren(document.createTextNode(tx(editing ? 'shot.saveShot' : 'shot.logShot', editing ? 'SAVE SHOT' : 'LOG SHOT')));
+}
+document.addEventListener('gn:langchange', () => { if ($('logOv')?.classList.contains('active')) syncLogModalLabels(); });
 
 /* v0.15.44 — SHOT CONSOLE live summary bar. Reads the same sources of truth
  * the form commits (selectState.cpShotMed, #sDose, moduleState.selectedLocation)
@@ -2894,7 +2948,6 @@ function editShot(id) {
   renderShotDevicePicker(record.deviceId || '');
   const recordSideEffects = (record.se || []).map(normalizeSideEffectId);
   qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = recordSideEffects.includes(input.value); });
-  document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode(tx('shot.editShot', 'EDIT SHOT')));
   openLogModal({ preserve: true });
 }
 
@@ -3286,7 +3339,10 @@ function saveWt() {
     const previousWeight = sortedWeights().at(-1)?.weight;
     const milestone = weightMilestone(previousWeight, weight, getProfile());
     const now = new Date().toISOString();
-    const record = { id: createId('weight'), date: `${date}T${$('wtTime')?.value || '12:00'}`, weight, weightKg: moduleState.weightUnit === 'kg' ? raw : raw / 2.2046226218, unit: moduleState.weightUnit, notes: $('wtNotes')?.value?.trim() || null, source: 'manual', state: 'confirmed', createdAt: now, modifiedAt: now };
+    /* QA 2026-09-17: when the time field is left empty, store a date-only
+     * value instead of fabricating a noon timestamp. */
+    const wtTimeRaw = $('wtTime')?.value?.trim() || '';
+    const record = { id: createId('weight'), date: wtTimeRaw ? `${date}T${wtTimeRaw}` : date, weight, weightKg: moduleState.weightUnit === 'kg' ? raw : raw / 2.2046226218, unit: moduleState.weightUnit, notes: $('wtNotes')?.value?.trim() || null, source: 'manual', state: 'confirmed', createdAt: now, modifiedAt: now };
     if (state.cloud) ensureCloudRecordId(record);
     const weights = getWeights(); weights.push(record);
     if (!S.set('weights', weights)) { setText('wtError', tx('weight.storageUnavailable', 'STORAGE UNAVAILABLE — WEIGHT NOT SAVED')); setDisplay('wtError', true); return; }
@@ -4429,7 +4485,7 @@ function ensureProfileHub() {
     <div class="gn-foundation-head"><div><div class="gn-foundation-kicker" data-i18n="vault.kicker">// NODE PROFILE HUB</div><h2 id="gnProfileHubTitle" data-i18n="vault.hubTitle">YOUR NODE</h2></div><span class="gn-foundation-actions"><span class="gn-foundation-signal" id="gnProfileSync">LOCAL MODE</span><button type="button" class="gn-hub-close" id="gnHubClose" onclick="closeProfileHub()" aria-label="CERRAR" data-i18n-aria-label="vault.closeHub">✕</button></span></div>
     <div class="gn-profile-sections">
       <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.node">// YOUR NODE</div><button type="button" class="gn-profile-row" onclick="document.getElementById('profMedSection')?.scrollIntoView({behavior:'smooth',block:'start'})"><span><b data-i18n="vault.medicationLabel">Medication</b><small id="gnProfileMedication">Not entered</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="document.getElementById('profBodySection')?.scrollIntoView({behavior:'smooth',block:'start'})"><span><b data-i18n="vault.bodyMetrics">Body Metrics</b><small id="gnProfileBody">Not entered</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="openSystemUpdate()"><span><b data-i18n="vault.whatsNew">What's New</b><small data-gn-whatsnew-version></small></span><span class="gn-profile-chevron">›</span></button></section>
-      <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.yourData">// YOUR DATA</div><button type="button" class="gn-profile-row" onclick="exportCSV()"><span><b data-i18n="vault.exportCsv">Export CSV</b><small data-i18n="vault.exportCsvHelp">Download readable records</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="exportBackup()"><span><b data-i18n="vault.exportBackup">Export Backup</b><small data-i18n="vault.exportBackupHelp">Save a complete local copy</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="openImportDialog()"><span><b data-i18n="vault.importData">Import Data</b><small data-i18n="vault.importDataHelp">Bring history from Shotsy or CSV</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="openPrivacyPolicy()"><span><b data-i18n="vault.privacyPolicy">Privacy Policy</b><small data-i18n="vault.privacyPolicyHelp">How your data is stored</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="openPrivacyPolicy()"><span><b data-i18n="vault.dataOwnership">Data Ownership</b><small data-i18n="vault.dataOwnershipHelp">Export or delete anytime</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row gn-profile-danger-row" onclick="openDeleteLocalData()"><span><b data-i18n="vault.deleteAllData">Delete All Local Data</b><small data-i18n="vault.deleteAllDataHelp">Remove this device record</small></span><span class="gn-profile-chevron">›</span></button></section>
+      <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.yourData">// YOUR DATA</div><button type="button" class="gn-profile-row" onclick="exportCSV()"><span><b data-i18n="vault.exportCsv">Export CSV</b><small data-i18n="vault.exportCsvHelp">Download readable records</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="exportBackup()"><span><b data-i18n="vault.exportBackup">Export Backup</b><small data-i18n="vault.exportBackupHelp">Save a complete local copy</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="openImportDialog()"><span><b data-i18n="vault.importData">Import Data</b><small data-i18n="vault.importDataHelp">Bring history from Shotsy or CSV</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="openPrivacyPolicy()"><span><b data-i18n="vault.privacyPolicy">Privacy Policy</b><small data-i18n="vault.privacyPolicyHelp">How your data is stored</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="openDataOwnership()"><span><b data-i18n="vault.dataOwnership">Data Ownership</b><small data-i18n="vault.dataOwnershipHelp">Export or delete anytime</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row gn-profile-danger-row" onclick="openDeleteLocalData()"><span><b data-i18n="vault.deleteAllData">Delete All Local Data</b><small data-i18n="vault.deleteAllDataHelp">Remove this device record</small></span><span class="gn-profile-chevron">›</span></button></section>
       <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.tools">// TOOLS</div><button type="button" class="gn-profile-row" onclick="replayGuidedTour()"><span><b data-i18n="vault.replayTour">Replay Tour</b><small data-i18n="vault.replayTourHelp">Restart the guided tour</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.theme">Theme</b><small data-i18n="vault.themeHelp">Dark or light display</small></span><span class="gn-theme-toggle-host" role="group" aria-label="THEME"></span></div><button type="button" class="gn-profile-row" onclick="document.querySelector('.gn-device-vault')?.scrollIntoView({behavior:'smooth',block:'start'})"><span><b data-i18n="vault.deviceVaultLink">Device Vault</b><small data-i18n="vault.deviceVaultLinkHelp">Private identity registry</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.connectedAccount">Connected Account</b><small id="gnProfileAccount">Local device session</small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row" data-gn-local-only onclick="openCloudConnect()"><span><b data-i18n="vault.connectAccount">Connect Cloud Account</b><small data-i18n="vault.connectAccountHelp">Use a NODE KEY to sync across devices</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row gn-profile-danger-row" data-gn-cloud-only onclick="openDeleteCloudAccount()"><span><b data-i18n="vault.deleteCloudAccount">Delete Cloud Account</b><small data-i18n="vault.deleteCloudAccountHelp">Requires server deletion control</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.appVersion">App Version</b><small id="gnProfileVersion"></small></span><span class="gn-profile-chevron">›</span></div><button type="button" class="gn-profile-row" onclick="window.location.reload()"><span><b data-i18n="vault.reloadApp">Reload App</b><small data-i18n="vault.reloadAppHelp">Refresh the current build</small></span><span class="gn-profile-chevron">›</span></button></section>
     </div>
     <button type="button" class="gn-profile-signout" data-gn-cloud-only onclick="openSignOutModal()"><span><b data-i18n="vault.signOut">SIGN OUT</b><small data-i18n="vault.localOnlyFooter">Your data stays on this device.</small></span><span class="gn-profile-chevron">›</span></button><div class="oskar-dedication" style="margin:14px 0 4px"><span data-i18n="vault.oskarMemorialPre">In memory of</span> <span class="oskar-name" data-i18n="vault.oskarName">Oskar</span> <span data-i18n="vault.oskarMemorialPost">(2011–2024) ♥</span></div>
@@ -4881,11 +4937,24 @@ function exportBackup() {
 function openPrivacyPolicy() {
   const overlay = $('gnPrivacyOverlay');
   if (!overlay) return;
+  overlay.classList.remove('gn-ownership');
   window.GN_I18N?.applyTo?.(overlay);
   overlay.classList.add('active');
   overlay.querySelector('.gn-privacy-close')?.focus();
 }
-function closePrivacyPolicy() { $('gnPrivacyOverlay')?.classList.remove('active'); }
+function closePrivacyPolicy() { $('gnPrivacyOverlay')?.classList.remove('active', 'gn-ownership'); }
+
+/* QA 2026-09-17: Data Ownership is its own focused destination. It reuses
+ * the policy overlay shell but, via the gn-ownership class, shows only the
+ * export/delete-rights sections under a DATA OWNERSHIP title. */
+function openDataOwnership() {
+  const overlay = $('gnPrivacyOverlay');
+  if (!overlay) return;
+  window.GN_I18N?.applyTo?.(overlay);
+  document.querySelector('#gnPrivacyTitle')?.replaceChildren(document.createTextNode(tx('vault.dataOwnershipTitle', 'DATA OWNERSHIP')));
+  overlay.classList.add('active', 'gn-ownership');
+  overlay.querySelector('.gn-privacy-close')?.focus();
+}
 
 /* v0.15.54: Terms of Service overlay. Interim text mirrors the existing
  * landing TERMS OF USE copy; the full ToS text will be swapped in later. */
@@ -5154,7 +5223,7 @@ function parseShotsyJSON(text) {
         const kg = Number(metric.value);
         const isoDay = String(metric.date || '').slice(0, 10);
         if (Number.isFinite(kg) && kg > 0 && /^\d{4}-\d{2}-\d{2}$/.test(isoDay)) {
-          rows.push({ record_type: 'weight', date: `${isoDay}T12:00`, medication: '', dose_mg: null, location: '', weight_lb: kg * 2.2046226218, side_effects: [], notes: '', archived: false });
+          rows.push({ record_type: 'weight', date: isoDay, medication: '', dose_mg: null, location: '', weight_lb: kg * 2.2046226218, side_effects: [], notes: '', archived: false });
         } else skipped.push({ reason: 'bad-weight', detail: localDate || key });
       } else if (metric != null && metric !== '') {
         notImported.push(`"${key}" metric`);
@@ -5310,7 +5379,7 @@ function normalizeImportDate(value) {
     const [, year, month, day] = dateOnly;
     const parsed = new Date(Number(year), Number(month) - 1, Number(day), 12, 0, 0, 0);
     if (parsed.getFullYear() !== Number(year) || parsed.getMonth() !== Number(month) - 1 || parsed.getDate() !== Number(day)) return '';
-    return `${raw}T12:00`;
+    return raw;
   }
   return Number.isNaN(new Date(raw).getTime()) ? '' : raw;
 }
@@ -5813,7 +5882,7 @@ document.addEventListener('gn:shot-saved', () => {
   if (h) { try { h.fire([10, 60, 20]); } catch (_) {} }
 });
 
-window.GNModules=Object.freeze({getProfile:getProfile,getProfileForEvidence:getProfileForEvidence,selectState:selectState,moduleState:moduleState,refreshNodeHeader:refreshNodeHeader,showScreen:showScreen,showPage:showPage,refreshAll:refreshAll,loadApp:loadApp,computeTotalChange:computeTotalChange,saveProfileMed:saveProfileMed,saveProfileMetrics:saveProfileMetrics,calcAndShowBMI:calcAndShowBMI,toggleSelect:toggleSelect,selectOpt:selectOpt,showPhasesModal:showPhasesModal,closePhases:closePhases,renderShots:renderShots,setShotHistoryView:setShotHistoryView,scannerSkinTone:scannerSkinTone,setScannerSkinTone:setScannerSkinTone,setScannerMode:setScannerMode,selectScannerLocation:selectScannerLocation,renderScanner:renderScanner,openLogModal:openLogModal,closeLog:closeLog,cancelLogClose:cancelLogClose,editShot:editShot,openArchiveConfirm:openArchiveConfirm,cancelArchiveShot:cancelArchiveShot,confirmArchiveShot:confirmArchiveShot,restoreArchivedShot:restoreArchivedShot,openPermanentDeleteConfirm:openPermanentDeleteConfirm,cancelPermanentDeleteShot:cancelPermanentDeleteShot,confirmPermanentDeleteShot:confirmPermanentDeleteShot,saveShot:saveShot,openFutureTimestampConfirm:openFutureTimestampConfirm,closeFutureTimestampConfirm:closeFutureTimestampConfirm,cancelFutureTimestampSave:cancelFutureTimestampSave,confirmFutureTimestampSave:confirmFutureTimestampSave,handleShotFab:handleShotFab,openWeightModal:openWeightModal,closeWt:closeWt,setWeightUnit:setWeightUnit,saveWt:saveWt,renderResults:renderResults,setResultsView:setResultsView,setRange:setRange,setWtRange:setWtRange,showLabSeg:showLabSeg,showYouSeg:showYouSeg,openLabTool:openLabTool,closeLabTool:closeLabTool,exportInventory:exportInventory,updateDoseProjection:updateDoseProjection,saveCalculatorReference:saveCalculatorReference,renderLab:renderLab,updateSyr:updateSyr,updateRecon:updateRecon,updateSupply:updateSupply,setMeasurementUnit:setMeasurementUnit,saveMeasurements:saveMeasurements,replayGuidedTour:replayGuidedTour,openDeleteLocalData:openDeleteLocalData,closeDeleteLocalData:closeDeleteLocalData,updateDeleteLocalButton:updateDeleteLocalButton,confirmDeleteLocalData:confirmDeleteLocalData,openDeleteCloudAccount:openDeleteCloudAccount,closeDeleteCloudAccount:closeDeleteCloudAccount,confirmDeleteCloudAccount:confirmDeleteCloudAccount,renderProfile:renderProfile,dismissSystemUpdate:dismissSystemUpdate,openSystemUpdate:openSystemUpdate,exportCSV:exportCSV,exportBackup:exportBackup,openPrivacyPolicy:openPrivacyPolicy,closePrivacyPolicy:closePrivacyPolicy,openTermsOfService:openTermsOfService,closeTermsOfService:closeTermsOfService,prepareCSVImport:prepareCSVImport,handleCSVImportFile:handleCSVImportFile,openImportDialog:openImportDialog,closeImportDialog:closeImportDialog,handleUnifiedCsvSelection:handleUnifiedCsvSelection,handleBackupImportFile:handleBackupImportFile,confirmBackupImport:confirmBackupImport,cancelCSVImport:cancelCSVImport,confirmCSVImport:confirmCSVImport,parseShotsyJSON:parseShotsyJSON,handleShotsyJSONFile:handleShotsyJSONFile,toggleImportForce:toggleImportForce,previewCSVImportForTesting:previewCSVImportForTesting,renderCalendar:renderCalendar,calPrev:calPrev,calNext:calNext,calDayClick:calDayClick,openArsenalMod:openArsenalMod,closeArs:closeArs,saveArs:saveArs,requestLoadoutRemove:requestLoadoutRemove,cancelLoadoutRemove:cancelLoadoutRemove,confirmLoadoutRemove:confirmLoadoutRemove,formatTime24:formatTime24,formatTime12:formatTime12,gnSetShotMeridiem:gnSetShotMeridiem,gnShotClockLiveFormat:gnShotClockLiveFormat,gnNormalizeShotClockField:gnNormalizeShotClockField,gnWeightDateInput:gnWeightDateInput,gnWeightTimeInput:gnWeightTimeInput,gnOpenShotDatePicker:gnOpenShotDatePicker,gnCloseShotDatePicker:gnCloseShotDatePicker,gnDatePickerMove:gnDatePickerMove,gnSelectPickerDate:gnSelectPickerDate,gnSetShotDateFromPicker:gnSetShotDateFromPicker,gnSetShotDateValue:gnSetShotDateValue,gnSetShotTimeValue:gnSetShotTimeValue,gnMedRevealGroup:gnMedRevealGroup,updatePills:updatePills,selPill:selPill,initModules:initModules});
+window.GNModules=Object.freeze({getProfile:getProfile,getProfileForEvidence:getProfileForEvidence,selectState:selectState,moduleState:moduleState,refreshNodeHeader:refreshNodeHeader,showScreen:showScreen,showPage:showPage,refreshAll:refreshAll,loadApp:loadApp,computeTotalChange:computeTotalChange,saveProfileMed:saveProfileMed,saveProfileMetrics:saveProfileMetrics,calcAndShowBMI:calcAndShowBMI,toggleSelect:toggleSelect,selectOpt:selectOpt,showPhasesModal:showPhasesModal,closePhases:closePhases,renderShots:renderShots,setShotHistoryView:setShotHistoryView,scannerSkinTone:scannerSkinTone,setScannerSkinTone:setScannerSkinTone,setScannerMode:setScannerMode,selectScannerLocation:selectScannerLocation,renderScanner:renderScanner,openLogModal:openLogModal,closeLog:closeLog,cancelLogClose:cancelLogClose,editShot:editShot,openArchiveConfirm:openArchiveConfirm,cancelArchiveShot:cancelArchiveShot,confirmArchiveShot:confirmArchiveShot,restoreArchivedShot:restoreArchivedShot,openPermanentDeleteConfirm:openPermanentDeleteConfirm,cancelPermanentDeleteShot:cancelPermanentDeleteShot,confirmPermanentDeleteShot:confirmPermanentDeleteShot,saveShot:saveShot,openFutureTimestampConfirm:openFutureTimestampConfirm,closeFutureTimestampConfirm:closeFutureTimestampConfirm,cancelFutureTimestampSave:cancelFutureTimestampSave,confirmFutureTimestampSave:confirmFutureTimestampSave,handleShotFab:handleShotFab,openWeightModal:openWeightModal,closeWt:closeWt,setWeightUnit:setWeightUnit,saveWt:saveWt,renderResults:renderResults,setResultsView:setResultsView,setRange:setRange,setWtRange:setWtRange,showLabSeg:showLabSeg,showYouSeg:showYouSeg,openLabTool:openLabTool,closeLabTool:closeLabTool,exportInventory:exportInventory,updateDoseProjection:updateDoseProjection,saveCalculatorReference:saveCalculatorReference,renderLab:renderLab,updateSyr:updateSyr,updateRecon:updateRecon,updateSupply:updateSupply,setMeasurementUnit:setMeasurementUnit,saveMeasurements:saveMeasurements,replayGuidedTour:replayGuidedTour,openDeleteLocalData:openDeleteLocalData,closeDeleteLocalData:closeDeleteLocalData,updateDeleteLocalButton:updateDeleteLocalButton,confirmDeleteLocalData:confirmDeleteLocalData,openDeleteCloudAccount:openDeleteCloudAccount,closeDeleteCloudAccount:closeDeleteCloudAccount,confirmDeleteCloudAccount:confirmDeleteCloudAccount,renderProfile:renderProfile,dismissSystemUpdate:dismissSystemUpdate,openSystemUpdate:openSystemUpdate,exportCSV:exportCSV,exportBackup:exportBackup,openPrivacyPolicy:openPrivacyPolicy,closePrivacyPolicy:closePrivacyPolicy,openDataOwnership:openDataOwnership,openTermsOfService:openTermsOfService,closeTermsOfService:closeTermsOfService,prepareCSVImport:prepareCSVImport,handleCSVImportFile:handleCSVImportFile,openImportDialog:openImportDialog,closeImportDialog:closeImportDialog,handleUnifiedCsvSelection:handleUnifiedCsvSelection,handleBackupImportFile:handleBackupImportFile,confirmBackupImport:confirmBackupImport,cancelCSVImport:cancelCSVImport,confirmCSVImport:confirmCSVImport,parseShotsyJSON:parseShotsyJSON,handleShotsyJSONFile:handleShotsyJSONFile,toggleImportForce:toggleImportForce,previewCSVImportForTesting:previewCSVImportForTesting,renderCalendar:renderCalendar,calPrev:calPrev,calNext:calNext,calDayClick:calDayClick,openArsenalMod:openArsenalMod,closeArs:closeArs,saveArs:saveArs,requestLoadoutRemove:requestLoadoutRemove,cancelLoadoutRemove:cancelLoadoutRemove,confirmLoadoutRemove:confirmLoadoutRemove,formatTime24:formatTime24,formatTime12:formatTime12,gnSetShotMeridiem:gnSetShotMeridiem,gnShotClockLiveFormat:gnShotClockLiveFormat,gnNormalizeShotClockField:gnNormalizeShotClockField,gnWeightDateInput:gnWeightDateInput,gnWeightTimeInput:gnWeightTimeInput,gnOpenShotDatePicker:gnOpenShotDatePicker,gnCloseShotDatePicker:gnCloseShotDatePicker,gnDatePickerMove:gnDatePickerMove,gnSelectPickerDate:gnSelectPickerDate,gnSetShotDateFromPicker:gnSetShotDateFromPicker,gnSetShotDateValue:gnSetShotDateValue,gnSetShotTimeValue:gnSetShotTimeValue,gnMedRevealGroup:gnMedRevealGroup,updatePills:updatePills,selPill:selPill,initModules:initModules});
 
 const modules=window.GNModules;
 
@@ -5852,7 +5921,7 @@ function bridge() {
     'requestLoadoutRemove', 'cancelLoadoutRemove', 'confirmLoadoutRemove',
     'refreshNodeHeader', 'openLabTool', 'closeLabTool',
     'dismissSystemUpdate', 'openSystemUpdate', 'setResultsView',
-    'openPrivacyPolicy', 'closePrivacyPolicy', 'openTermsOfService', 'closeTermsOfService', 'replayGuidedTour'
+    'openPrivacyPolicy', 'closePrivacyPolicy', 'openDataOwnership', 'openTermsOfService', 'closeTermsOfService', 'replayGuidedTour'
   ];
   names.forEach(name => { window[name] = modules[name]; });
   window.refreshAll = modules.refreshAll;
@@ -5933,6 +6002,9 @@ function injectStableStyles() {
     .gn-privacy-panel h3{margin:16px 0 6px;color:#00d4ff;font:700 .68rem var(--font-d,monospace);letter-spacing:1.6px}
     .gn-privacy-panel p{margin:0 0 8px;color:#9fc7d4;font:.66rem/1.65 var(--font-m,monospace)}
     .gn-privacy-panel .gn-privacy-close{width:100%;margin-top:16px;min-height:48px;border:1px solid rgba(0,212,255,.4);background:rgba(0,212,255,.07);color:#00d4ff;font:700 .68rem var(--font-d,monospace);letter-spacing:2px;border-radius:6px;cursor:pointer}
+    /* QA 2026-09-17: Data Ownership focused destination — show only the
+       export/delete-rights sections under the DATA OWNERSHIP title. */
+    .gn-privacy-overlay.gn-ownership .gn-privacy-panel>h3:not(#gnPrivacyExportRights):not(#gnPrivacyDeleteRights),.gn-privacy-overlay.gn-ownership .gn-privacy-panel>h3:not(#gnPrivacyExportRights):not(#gnPrivacyDeleteRights)+p{display:none}
     /* v0.15.42: boot skip hint */
     .boot-skip-hint{margin-top:14px;text-align:center;color:#586d76;font:600 .56rem var(--font-m,monospace);letter-spacing:2.5px;animation:gnBootSkipPulse 1.6s ease-in-out infinite}
     @keyframes gnBootSkipPulse{50%{opacity:.45}}

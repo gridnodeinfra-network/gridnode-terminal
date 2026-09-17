@@ -331,7 +331,7 @@
     var list = $('reactorList');
     if (list) {
       var html = lines.map(function (line) {
-        var isFlag = /^RED FLAG/i.test(line) || /contact your provider/i.test(line);
+        var isFlag = /^(red flag|urgent)[\s:—-]+/i.test(line) || /contact your provider/i.test(line);
         return '<li class="' + (isFlag ? 'flag' : '') + '">' + escapeHtml(line) + '</li>';
       }).join('');
       if (list.dataset.sig !== effIdx + ':' + state.tab + ':' + html.length) {

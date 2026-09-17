@@ -4398,7 +4398,7 @@ function scrollLandingTo(id) {
             <div class="phase-tag" data-i18n="phase.currentPhase">CURRENT PHASE</div>
             <div class="phase-name-txt" id="phaseNameTxt">NO SHOTS RECORDED</div>
             <div class="phase-num-txt" id="phaseNumTxt">INITIATE PROTOCOL — log first shot</div>
-            <div class="phase-support" id="phaseSupportTxt" data-i18n="phase.estimatedFromHistory">Estimated from your logged protocol history.</div>
+            <div class="phase-support" id="phaseSupportTxt">Estimated from your logged protocol history.</div>
             <div class="phase-clarity-note"><b data-i18n="phase.educationalEstimate">EDUCATIONAL ESTIMATE</b><br><span data-i18n="phase.phaseEngineExplainer">Phase Engine estimates protocol progression using user-entered tracking records. It is educational and estimate-based.</span></div>
           </div>
         </div>
@@ -4445,13 +4445,13 @@ function scrollLandingTo(id) {
             <div class="ring-center">
               <div class="ring-days" id="ringDays">—</div>
               <div class="ring-until" data-i18n="phase.nextShotLabel">NEXT SHOT</div>
-              <div class="ring-pct" id="ringPct">TAP FAB // LOG FIRST SHOT</div>
+              <div class="ring-pct" id="ringPct">LOG YOUR FIRST SHOT</div>
             </div>
           </div>
         </div>
 
-        <div class="phase-context-text" id="phaseContextText" data-i18n="phase.logShotContext">Log a SHOT to see educational cycle context grounded in your own records.</div>
-        <div class="phase-next" id="phaseNext" data-i18n="phase.initiateProtocol">> INITIATE PROTOCOL — log first shot</div>
+        <div class="phase-context-text" id="phaseContextText">Log a SHOT to see educational cycle context grounded in your own records.</div>
+        <div class="phase-next" id="phaseNext">> INITIATE PROTOCOL — log first shot</div>
 
         <div class="phase-transparency" role="group" aria-label="Phase Engine transparency" data-i18n-aria-label="phase.transparencyAria">
           <div class="phase-transparency-block">
@@ -4467,9 +4467,9 @@ function scrollLandingTo(id) {
         <div class="phase-edu-note"><strong data-i18n="phase.educationalInsightOnly">EDUCATIONAL INSIGHT ONLY</strong><br><span data-i18n="phase.notLabMeasurement">Phase Engine is not a laboratory measurement, diagnosis, treatment recommendation, or dosing guide.</span></div>
 
         <div class="phase-info-grid">
-          <div class="pib body"><span class="pib-label" data-i18n="phase.whatHappeningNow">// WHAT'S HAPPENING NOW</span><div class="pib-text" id="pibBody" data-i18n="phase.awaitingFirstRecord">Awaiting first logged SHOT — protocol initializes on first record.</div></div>
-          <div class="pib se"><span class="pib-label" data-i18n="phase.possibleSideEffects">// POSSIBLE SIDE EFFECTS</span><div class="pib-text" id="pibSE" data-i18n="phase.sideEffectsVary">Side effects vary by phase and medication.</div></div>
-          <div class="pib pay"><span class="pib-label" data-i18n="phase.trackNext">// TRACK NEXT</span><div class="pib-text" id="pibPay" data-i18n="phase.appetiteSymptoms">Track appetite, symptoms, energy, side effects, and notes as your protocol history develops.</div></div>
+          <div class="pib body"><span class="pib-label" data-i18n="phase.whatHappeningNow">// WHAT'S HAPPENING NOW</span><div class="pib-text" id="pibBody">Awaiting first logged SHOT — protocol initializes on first record.</div></div>
+          <div class="pib se"><span class="pib-label" data-i18n="phase.possibleSideEffects">// POSSIBLE SIDE EFFECTS</span><div class="pib-text" id="pibSE">Side effects vary by phase and medication.</div></div>
+          <div class="pib pay"><span class="pib-label" data-i18n="phase.trackNext">// TRACK NEXT</span><div class="pib-text" id="pibPay">Track appetite, symptoms, energy, side effects, and notes as your protocol history develops.</div></div>
         </div>
       </div>
 
@@ -5127,7 +5127,7 @@ function scrollLandingTo(id) {
     <div class="modal-hdr gn-console-hdr">
       <div class="modal-actions"><button class="modal-btn close" aria-label="Close" data-i18n-aria-label="modal.close" onclick="closeLog()"><span class="gn-icon"><svg><use href="#gn-close"></use></svg></span></button></div>
       <div class="gn-console-titleblock">
-        <div class="modal-title" id="logOvTitle" data-i18n="shot.logShot">LOG SHOT</div>
+        <div class="modal-title" id="logOvTitle">LOG SHOT</div>
         <div class="gn-console-sub" data-i18n="shot.consoleSub">SHOT PROTOCOL CONSOLE</div>
       </div>
       <div class="modal-actions"><button class="modal-btn save" aria-label="Save shot" data-i18n-aria-label="modal.saveShot" onclick="saveShot()"><span class="gn-icon"><svg><use href="#gn-check"></use></svg></span></button></div>
@@ -5249,7 +5249,7 @@ function scrollLandingTo(id) {
     </div><!-- /gn-shot-scroll -->
     <div class="gn-shot-actionbar">
       <div class="gn-shot-summary" aria-live="polite"><span class="gn-shot-summary-item" id="gnShotSummaryMed">&mdash;</span><span class="gn-shot-summary-sep">//</span><span class="gn-shot-summary-item" id="gnShotSummaryDose">&mdash;</span><span class="gn-shot-summary-sep">//</span><span class="gn-shot-summary-item" id="gnShotSummarySite">&mdash;</span></div>
-      <button class="btn-full btn-primary gn-shot-fire" onclick="saveShot()" data-i18n="shot.logShot">LOG SHOT</button>
+      <button class="btn-full btn-primary gn-shot-fire" onclick="saveShot()">LOG SHOT</button>
     </div>
   </div>
 </div>
@@ -10317,9 +10317,9 @@ html[data-theme="light"] #shotsRegionScanner .gn-zone-path.selected {
     <p data-i18n="privacy.whatStoredBody">Your shot log (medication, dose, date, time, injection site, notes), weight entries, body measurements, side-effect observations, device registry entries, and app settings. All of it is user-entered by you.</p>
     <h3 data-i18n="privacy.cloudTitle">OPTIONAL CLOUD SYNC</h3>
     <p data-i18n="privacy.cloudBody">If you sign in with Google or email, your workspace syncs to your private cloud account for backup and multi-device access. Cloud sync is entirely optional — GRID//NODE works fully without it, forever.</p>
-    <h3 data-i18n="privacy.exportTitle">YOUR EXPORT RIGHTS</h3>
+    <h3 data-i18n="privacy.exportTitle" id="gnPrivacyExportRights">YOUR EXPORT RIGHTS</h3>
     <p data-i18n="privacy.exportBody">Export your records as CSV or a complete backup at any time from VAULT → YOUR DATA. Your records are yours, in readable formats, with no lock-in.</p>
-    <h3 data-i18n="privacy.deleteTitle">YOUR DELETE RIGHTS</h3>
+    <h3 data-i18n="privacy.deleteTitle" id="gnPrivacyDeleteRights">YOUR DELETE RIGHTS</h3>
     <p data-i18n="privacy.deleteBody">Delete all local data from VAULT → YOUR DATA at any time. If you use cloud sync, you can also delete your cloud account and its server copy. Deletion is permanent.</p>
     <h3 data-i18n="privacy.notASourceTitle">NOT A SOURCE</h3>
     <p data-i18n="privacy.notASourceBody">GRID//NODE does not sell, source, or facilitate peptide purchases. It is a tracking tool only.</p>

@@ -34,7 +34,6 @@ export function openLogModal(options = {}) {
   }
   if (!preserveDraft) {
     moduleState.editingShotId = null;
-    document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode(tx('shot.logShot', 'LOG SHOT')));
     setTodayDefaults();
     const profile = getProfile();
     const profileMedicationId = normalizeMedicationId(profile.med);
@@ -60,7 +59,19 @@ export function openLogModal(options = {}) {
   updateMeridiemButtons();
   cancelLogClose();
   modal.classList.add('active');
+  syncLogModalLabels();
 }
+
+/* QA 2026-09-17: the modal title and submit button are JS-managed (no
+ * data-i18n) so edit mode can show EDIT SHOT / SAVE SHOT while log mode
+ * shows LOG SHOT, in the current language. Re-synced on open and on
+ * language change so i18n re-application can never clobber the mode. */
+function syncLogModalLabels() {
+  const editing = Boolean(moduleState.editingShotId);
+  document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode(tx(editing ? 'shot.editShot' : 'shot.logShot', editing ? 'EDIT SHOT' : 'LOG SHOT')));
+  document.querySelector('#logOv .gn-shot-fire')?.replaceChildren(document.createTextNode(tx(editing ? 'shot.saveShot' : 'shot.logShot', editing ? 'SAVE SHOT' : 'LOG SHOT')));
+}
+document.addEventListener('gn:langchange', () => { if ($('logOv')?.classList.contains('active')) syncLogModalLabels(); });
 
 /* v0.15.44 — SHOT CONSOLE live summary bar. Reads the same sources of truth
  * the form commits (selectState.cpShotMed, #sDose, moduleState.selectedLocation)
@@ -242,7 +253,6 @@ export function editShot(id) {
   renderShotDevicePicker(record.deviceId || '');
   const recordSideEffects = (record.se || []).map(normalizeSideEffectId);
   qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = recordSideEffects.includes(input.value); });
-  document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode(tx('shot.editShot', 'EDIT SHOT')));
   openLogModal({ preserve: true });
 }
 

@@ -28,49 +28,49 @@
       id: 'activation', color: '#4fb8d8',
       start: 0, end: 6 / 168,
       nameKey: 'phase.tmpl.activation', nameFb: 'ACTIVATION',
-      nowKey: 'phase.tmpl.activation.now', nowFb: ['Drug absorbing, receptors engaging.', 'Gastric emptying starting to slow. Most feel little yet.'],
-      watchKey: 'phase.tmpl.activation.watch', watchFb: ['Injection-site sting or redness (6-8%).', 'Mild fatigue. Log anything notable and discuss with your clinician.'],
-      doKey: 'phase.tmpl.activation.do', doFb: ['Rotate injection site weekly.', 'Eat a protein-containing meal.', 'Pre-hydrate with electrolytes.', 'Evening injection puts peak levels during sleep.']
+      nowKey: 'phase.tmpl.activation.now', nowFb: ['Absorption begins. Receptors engaging.', 'Gastric emptying starts to slow. Most people feel little this early.'],
+      watchKey: 'phase.tmpl.activation.watch', watchFb: ['Mild sting or redness at the injection site.', 'Light fatigue. Log anything notable for your clinician.'],
+      doKey: 'phase.tmpl.activation.do', doFb: ['Rotate the injection site each week.', 'Pair the shot with a protein-containing meal.', 'Hydrate with electrolytes beforehand.']
     },
     {
       id: 'taking-effect', color: '#63b98b',
       start: 6 / 168, end: 24 / 168,
       nameKey: 'phase.tmpl.takingEffect', nameFb: 'TAKING EFFECT',
-      nowKey: 'phase.tmpl.takingEffect.now', nowFb: ['Levels climbing toward peak.', 'Appetite circuits engaging, food noise starting to quiet.'],
-      watchKey: 'phase.tmpl.takingEffect.watch', watchFb: ['Nausea onset, the most common effect (28-44%).', 'Early fullness, burping, reflux.', 'Fatigue or headache. Discuss persistent issues with your clinician.'],
-      doKey: 'phase.tmpl.takingEffect.do', doFb: ['Eat 5-6 small meals.', 'Choose lean, gentle protein.', 'Avoid high-fat, fried, spicy, carbonated foods.', 'Sip water steadily. Ginger can ease nausea.']
+      nowKey: 'phase.tmpl.takingEffect.now', nowFb: ['Levels climbing toward peak.', 'Appetite signals starting to quiet.'],
+      watchKey: 'phase.tmpl.takingEffect.watch', watchFb: ['Nausea onset, the most commonly reported effect.', 'Early fullness, burping, reflux.', 'Fatigue or headache. Flag anything persistent with your clinician.'],
+      doKey: 'phase.tmpl.takingEffect.do', doFb: ['Five or six small meals instead of three large ones.', 'Lean, gentle protein.', 'Easier without high-fat, fried, spicy, or carbonated foods.', 'Sip water steadily. Ginger can ease nausea.']
     },
     {
       id: 'peak-effect', color: '#d3a24a',
       start: 24 / 168, end: 72 / 168,
       nameKey: 'phase.tmpl.peakEffect', nameFb: 'PEAK EFFECT',
-      nowKey: 'phase.tmpl.peakEffect.now', nowFb: ['Peak drug levels. Maximum appetite suppression.', 'Quietest food noise of the cycle.'],
-      watchKey: 'phase.tmpl.peakEffect.watch', watchFb: ['Nausea peaks here. Vomiting (8-24%), diarrhea (19-30%).', 'Sulfur burps, dizziness (4-8%).', 'Dose-escalation weeks hit hardest.', 'RED FLAG: vomiting preventing fluids over 24h. Contact your provider.'],
-      doKey: 'phase.tmpl.peakEffect.do', doFb: ['Small, bland meals.', 'Keep electrolytes up.', 'Do not lie down right after eating.', 'Log side effects as they happen.']
+      nowKey: 'phase.tmpl.peakEffect.now', nowFb: ['Peak drug levels. Appetite suppression at its strongest.', 'Food noise at its quietest this cycle.'],
+      watchKey: 'phase.tmpl.peakEffect.watch', watchFb: ['Nausea peaks here. Vomiting and diarrhea are most likely in this window.', 'Sulfur burps, dizziness.', 'Dose-escalation weeks hit hardest.', 'Urgent: vomiting that keeps you from holding fluids for 24 hours. Contact your provider.'],
+      doKey: 'phase.tmpl.peakEffect.do', doFb: ['Small, bland meals.', 'Keep electrolytes up.', 'Stay upright after eating.', 'Log side effects as they happen.']
     },
     {
       id: 'cruise', color: '#4aa89b',
       start: 72 / 168, end: 144 / 168,
       nameKey: 'phase.tmpl.cruise', nameFb: 'CRUISE',
-      nowKey: 'phase.tmpl.cruise.now', nowFb: ['Post-peak plateau. Steady, predictable suppression.', 'GI effects easing.'],
-      watchKey: 'phase.tmpl.cruise.watch', watchFb: ['Lingering mild nausea.', 'Constipation has the longest tail.', 'Risk of undereating without noticing.'],
-      doKey: 'phase.tmpl.cruise.do', doFb: ['Protein at every meal to protect muscle.', 'Fiber plus water for regularity.', 'Keep consistent meal timing.', 'Best window of the week for activity.']
+      nowKey: 'phase.tmpl.cruise.now', nowFb: ['Post-peak plateau. Steady, predictable suppression.', 'GI effects usually easing.'],
+      watchKey: 'phase.tmpl.cruise.watch', watchFb: ['Lingering mild nausea.', 'Constipation can linger longest.', 'Undereating without noticing.'],
+      doKey: 'phase.tmpl.cruise.do', doFb: ['Protein at every meal to protect muscle.', 'Fiber plus water for regularity.', 'Keep meal timing consistent.', 'Best window of the week for activity.']
     },
     {
       id: 'winding-down', color: '#c08a52',
       start: 144 / 168, end: 156 / 168,
       nameKey: 'phase.tmpl.windingDown', nameFb: 'WINDING DOWN',
-      nowKey: 'phase.tmpl.windingDown.now', nowFb: ['Approaching trough. Appetite signals returning.', 'Gastric emptying normalizing.'],
+      nowKey: 'phase.tmpl.windingDown.now', nowFb: ['Approaching trough. Appetite signals returning.', 'Digestion normalizing.'],
       watchKey: 'phase.tmpl.windingDown.watch', watchFb: ['Returning hunger and food noise.', 'Carb cravings, mild irritability.', 'GI effects usually minimal by now.'],
-      doKey: 'phase.tmpl.windingDown.do', doFb: ['Protein-rich snacks.', 'Keep meal structure even as hunger returns.', 'Prep for injection day.', 'Log returning hunger patterns.']
+      doKey: 'phase.tmpl.windingDown.do', doFb: ['Protein-rich snacks.', 'Hold your meal structure as hunger returns.', 'Prep for injection day.', 'Log how hunger returns. It is useful data.']
     },
     {
       id: 'wear-off', color: '#c26674',
       start: 156 / 168, end: 1,
       nameKey: 'phase.tmpl.wearOff', nameFb: 'WEAR-OFF WINDOW',
-      nowKey: 'phase.tmpl.wearOff.now', nowFb: ['Trough levels. Least drug activity of the cycle.', 'Appetite nearest baseline.'],
-      watchKey: 'phase.tmpl.wearOff.watch', watchFb: ['Strongest hunger of the week, widely reported days 6-7.', 'Loudest food noise.', 'Thirst often misread as hunger.'],
-      doKey: 'phase.tmpl.wearOff.do', doFb: ['Mindful portions, slow eating.', 'Hydrate before assuming hunger.', 'Keep trigger foods out of reach.', 'Dose on schedule. Log the shot to restart the cycle.']
+      nowKey: 'phase.tmpl.wearOff.now', nowFb: ['Trough levels. The quietest part of the cycle.', 'Appetite nearest baseline.'],
+      watchKey: 'phase.tmpl.wearOff.watch', watchFb: ['Strongest hunger of the week, usually days 6-7.', 'Loudest food noise.', 'Thirst often misread as hunger.'],
+      doKey: 'phase.tmpl.wearOff.do', doFb: ['Smaller portions, unhurried meals.', 'Hydrate before assuming hunger.', 'Keep trigger foods out of reach.', 'Dose on schedule. Logging the shot restarts the cycle.']
     }
   ];
 
@@ -116,7 +116,7 @@
       nameKey: 'phase.tmpl.tb500.loading', nameFb: 'LOADING',
       nowKey: 'phase.tmpl.tb500.loading.now', nowFb: ['Higher-frequency phase building systemic levels.', 'Effects are slower and broader than BPC-157. Expect weeks, not days.'],
       watchKey: 'phase.tmpl.tb500.loading.watch', watchFb: ['Injection days vs. off days in your log.', 'Unusual fatigue or head pressure, occasionally reported. Discuss with your clinician.', 'Do not judge the protocol in week 2.'],
-      doKey: 'phase.tmpl.tb500.loading.do', doFb: ['Log both weekly doses.', 'Note mobility and function weekly.', 'Consistency matters most here. Missed loading doses are the commonest self-reported reason for poor results.']
+      doKey: 'phase.tmpl.tb500.loading.do', doFb: ['Log both weekly doses.', 'Note mobility and function weekly.', 'Consistency matters most here. Missed loading doses are the most common self-reported reason for weak results.']
     },
     {
       id: 'maintenance', color: '#63b98b',
@@ -351,14 +351,18 @@
   function phaseLines(phase, kind) {
     // kind: 'now' | 'watch' | 'do'
     // NOTE: keys like phase.tmpl.<phase>.<kind> are intentionally NOT in the
-    // locale catalogs; content lives in the English fallbacks below. GN_I18N
-    // returns the raw key for missing keys, so detect that and use fallback.
+    // English catalog; content lives in the English fallbacks below. The
+    // Spanish catalog MAY carry these keys as arrays (see GN_I18N.raw, which
+    // returns catalog values untouched, unlike t() which flattens arrays).
     var key = phase[kind + 'Key'], fb = phase[kind + 'Fb'] || [];
     var out = null;
     try {
-      if (window.GN_I18N && window.GN_I18N.t) {
-        var v = window.GN_I18N.t(key);
-        if (v && v !== key) out = v;
+      if (window.GN_I18N && window.GN_I18N.raw) {
+        var v = window.GN_I18N.raw(key);
+        if (v !== undefined && v !== key) out = v;
+      } else if (window.GN_I18N && window.GN_I18N.t) {
+        var v2 = window.GN_I18N.t(key);
+        if (v2 && v2 !== key) out = v2;
       }
     } catch (_) {}
     if (Array.isArray(out)) return out;

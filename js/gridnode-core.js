@@ -1087,6 +1087,10 @@ export function formatDate(value, options = { month: 'short', day: 'numeric', ye
 
 export function formatDateTime(value) {
   if (!value) return '—';
+  const raw = String(value).trim();
+  /* QA 2026-09-17: date-only records carry no meaningful time — render the
+   * date alone instead of a fabricated local-noon timestamp. */
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return formatDate(value);
   const date = parseLocalDate(value);
   if (Number.isNaN(date.getTime())) return '—';
   const locale = document.documentElement?.lang?.startsWith('es') ? 'es-419' : 'en-US';

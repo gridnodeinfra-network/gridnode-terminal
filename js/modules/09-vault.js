@@ -135,11 +135,24 @@ export function exportBackup() {
 export function openPrivacyPolicy() {
   const overlay = $('gnPrivacyOverlay');
   if (!overlay) return;
+  overlay.classList.remove('gn-ownership');
   window.GN_I18N?.applyTo?.(overlay);
   overlay.classList.add('active');
   overlay.querySelector('.gn-privacy-close')?.focus();
 }
-export function closePrivacyPolicy() { $('gnPrivacyOverlay')?.classList.remove('active'); }
+export function closePrivacyPolicy() { $('gnPrivacyOverlay')?.classList.remove('active', 'gn-ownership'); }
+
+/* QA 2026-09-17: Data Ownership is its own focused destination. It reuses
+ * the policy overlay shell but, via the gn-ownership class, shows only the
+ * export/delete-rights sections under a DATA OWNERSHIP title. */
+export function openDataOwnership() {
+  const overlay = $('gnPrivacyOverlay');
+  if (!overlay) return;
+  window.GN_I18N?.applyTo?.(overlay);
+  document.querySelector('#gnPrivacyTitle')?.replaceChildren(document.createTextNode(tx('vault.dataOwnershipTitle', 'DATA OWNERSHIP')));
+  overlay.classList.add('active', 'gn-ownership');
+  overlay.querySelector('.gn-privacy-close')?.focus();
+}
 
 /* v0.15.54: Terms of Service overlay. Interim text mirrors the existing
  * landing TERMS OF USE copy; the full ToS text will be swapped in later. */

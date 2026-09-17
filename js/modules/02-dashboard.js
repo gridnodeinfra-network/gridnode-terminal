@@ -249,7 +249,7 @@ function renderPhase(lastShot, shots) {
     setText('phaseTimeSince', '—');
     setText('phaseCyclePosition', '—');
     setText('ringDays', '—');
-    setText('ringPct', tx('phase.firstShotCta', 'TAP FAB // LOG FIRST SHOT'));
+    setText('ringPct', tx('phase.firstShotCta', 'LOG YOUR FIRST SHOT'));
     setText('phaseContextText', tx('phase.logShotContext', 'Log a SHOT to see educational cycle context grounded in your own records.'));
     setText('phaseNext', tx('phase.initiateProtocol', '> INITIATE PROTOCOL — log first shot'));
     setText('pibBody', tx('phase.awaitingFirstRecord', 'Awaiting first logged SHOT — protocol initializes on first record.'));
@@ -263,14 +263,23 @@ function renderPhase(lastShot, shots) {
   const cyclePosition = Math.min(elapsedDays / 7, 0.999);
   const phase = PHASES.find(item => cyclePosition >= item.start && cyclePosition < item.end) || PHASES.at(-1);
   const since = elapsedDays < 1 ? Math.floor(elapsedDays * 24) + 'h' : Math.floor(elapsedDays) + 'd ' + Math.floor((elapsedDays % 1) * 24) + 'h';
-  const phaseName = localizedPhaseName(phase);
+  const phaseIdx = PHASES.indexOf(phase);
+  // Template-aware name: matches the RESULTS Phase Engine ("PEAK EFFECT")
+  // when a six-phase template applies to the last shot's medication.
+  const phaseName = templatePhaseName(lastShot, phaseIdx) || localizedPhaseName(phase);
   setText('phaseNameTxt', phaseName);
   setText('phaseNumTxt', tx('phase.phaseN', 'PHASE {n} / {total}', { n: PHASES.indexOf(phase) + 1, total: PHASES.length }));
   setText('phaseSupportTxt', localizedPhaseSupport(phase));
   setText('phaseContextText', localizedPhaseContext(phase));
   setText('phaseTimeSince', since);
   setText('phaseCyclePosition', tx('phase.cyclePct', '{pct}% of 7-day reference cycle', { pct: Math.round(cyclePosition * 100) }));
-  setText('ringDays', tx('phase.daysLeft', '{n}d', { n: Math.max(0, 7 - Math.floor(elapsedDays)) }));
+  const remainMs = Math.max(0, 604800000 - (Date.now() - new Date(lastShot.date).getTime()));
+  const remainD = Math.floor(remainMs / 86400000);
+  const remainH = Math.floor((remainMs % 86400000) / 3600000);
+  // Same granularity as the RESULTS engine ("4d 23h"), not rounded days.
+  setText('ringDays', remainH > 0
+    ? tx('phase.daysLeftHours', '{d}d {h}h', { d: remainD, h: remainH })
+    : tx('phase.daysLeft', '{n}d', { n: remainD }));
   setText('ringPct', tx('phase.cyclePositionRing', '{pct}% CYCLE POSITION', { pct: Math.round(cyclePosition * 100) }));
   setText('phaseNext', tx(shots.length === 1 ? 'phase.activeRecords_one' : 'phase.activeRecords_other', '> {phase} // {n} ACTIVE SHOT RECORDS', { phase: phaseName, n: shots.length }));
   setText('pibBody', tx('phase.pibBody', '{phase} visibility is estimated from {since} since the most recent user-entered SHOT.', { phase: phaseName, since }));
@@ -294,7 +303,12 @@ function renderPhase(lastShot, shots) {
 
 export function showPhasesModal() {
   const content = $('allPhasesContent');
-  if (content) content.innerHTML = PHASES.map((phase, index) => '<div class="gn-phase-row"><span class="gn-phase-index">0' + (index + 1) + '</span><div><b style="color:' + phase.color + '">' + localizedPhaseName(phase) + '</b><p>' + safeText(localizedPhaseSupport(phase)) + '</p></div></div>').join('');
+  let lastShot = null;
+  try { lastShot = sortedShots().at(-1) || null; } catch (_) {}
+  if (content) content.innerHTML = PHASES.map((phase, index) => {
+    const name = templatePhaseName(lastShot, index) || localizedPhaseName(phase);
+    return '<div class="gn-phase-row"><span class="gn-phase-index">0' + (index + 1) + '</span><div><b style="color:' + phase.color + '">' + safeText(name) + '</b><p>' + safeText(localizedPhaseSupport(phase)) + '</p></div></div>';
+  }).join('');
   $('phasesOv')?.classList.add('active');
 }
 export function closePhases() { $('phasesOv')?.classList.remove('active'); }

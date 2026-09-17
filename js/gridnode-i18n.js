@@ -86,6 +86,20 @@
     return interpolate(value, vars);
   }
 
+  // raw(): returns the catalog value untouched (arrays stay arrays).
+  // Used by the Phase Engine template lines, which are stored as arrays of
+  // strings. Falls back to the default-language catalog, then to undefined.
+  function raw(key) {
+    if (!key) return undefined;
+    const cat = catalogs[currentLang] || {};
+    let value = cat[key];
+    if (value === undefined) {
+      const fallback = catalogs[DEFAULT_LANG] || {};
+      value = fallback[key];
+    }
+    return value;
+  }
+
   function text(key, fallback, vars) {
     const value = t(key, vars);
     // If the key missed (catalogs not ready yet, or truly absent), the
@@ -200,5 +214,5 @@
 
   const ready = init();
 
-  window.GN_I18N = { init, ready, setLang, getLang, getSupported, t, text, plural, applyTo, isReady, formatDate, formatTime, formatNumber, SUPPORTED, DEFAULT_LANG };
+  window.GN_I18N = { init, ready, setLang, getLang, getSupported, t, text, raw, plural, applyTo, isReady, formatDate, formatTime, formatNumber, SUPPORTED, DEFAULT_LANG };
 })();

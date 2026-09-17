@@ -25,7 +25,10 @@ export function saveWt() {
     const previousWeight = sortedWeights().at(-1)?.weight;
     const milestone = weightMilestone(previousWeight, weight, getProfile());
     const now = new Date().toISOString();
-    const record = { id: createId('weight'), date: `${date}T${$('wtTime')?.value || '12:00'}`, weight, weightKg: moduleState.weightUnit === 'kg' ? raw : raw / 2.2046226218, unit: moduleState.weightUnit, notes: $('wtNotes')?.value?.trim() || null, source: 'manual', state: 'confirmed', createdAt: now, modifiedAt: now };
+    /* QA 2026-09-17: when the time field is left empty, store a date-only
+     * value instead of fabricating a noon timestamp. */
+    const wtTimeRaw = $('wtTime')?.value?.trim() || '';
+    const record = { id: createId('weight'), date: wtTimeRaw ? `${date}T${wtTimeRaw}` : date, weight, weightKg: moduleState.weightUnit === 'kg' ? raw : raw / 2.2046226218, unit: moduleState.weightUnit, notes: $('wtNotes')?.value?.trim() || null, source: 'manual', state: 'confirmed', createdAt: now, modifiedAt: now };
     if (state.cloud) ensureCloudRecordId(record);
     const weights = getWeights(); weights.push(record);
     if (!S.set('weights', weights)) { setText('wtError', tx('weight.storageUnavailable', 'STORAGE UNAVAILABLE — WEIGHT NOT SAVED')); setDisplay('wtError', true); return; }

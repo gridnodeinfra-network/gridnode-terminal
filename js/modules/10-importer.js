@@ -255,7 +255,7 @@ export function parseShotsyJSON(text) {
         const kg = Number(metric.value);
         const isoDay = String(metric.date || '').slice(0, 10);
         if (Number.isFinite(kg) && kg > 0 && /^\d{4}-\d{2}-\d{2}$/.test(isoDay)) {
-          rows.push({ record_type: 'weight', date: `${isoDay}T12:00`, medication: '', dose_mg: null, location: '', weight_lb: kg * 2.2046226218, side_effects: [], notes: '', archived: false });
+          rows.push({ record_type: 'weight', date: isoDay, medication: '', dose_mg: null, location: '', weight_lb: kg * 2.2046226218, side_effects: [], notes: '', archived: false });
         } else skipped.push({ reason: 'bad-weight', detail: localDate || key });
       } else if (metric != null && metric !== '') {
         notImported.push(`"${key}" metric`);
@@ -411,7 +411,7 @@ function normalizeImportDate(value) {
     const [, year, month, day] = dateOnly;
     const parsed = new Date(Number(year), Number(month) - 1, Number(day), 12, 0, 0, 0);
     if (parsed.getFullYear() !== Number(year) || parsed.getMonth() !== Number(month) - 1 || parsed.getDate() !== Number(day)) return '';
-    return `${raw}T12:00`;
+    return raw;
   }
   return Number.isNaN(new Date(raw).getTime()) ? '' : raw;
 }
