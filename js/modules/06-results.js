@@ -140,7 +140,7 @@ function ensureResultsEnhancements() {
 
 function renderWeeklyReport(shots, weights) {
   if (!document.getElementById('gnWeeklyReport')) return;
-  if (shots.length < 2) {
+  if (shots.length === 0 && weights.length === 0) {
     setText('gnWeeklyTitle', tx('results.moreDataNeeded', 'MORE DATA NEEDED'));
     setText('gnWeeklyCopy', tx('results.weeklyEmptyCopy', 'Log a shot or log your weight to begin building your SIGNAL.'));
     const signals = document.getElementById('gnWeeklySignals');

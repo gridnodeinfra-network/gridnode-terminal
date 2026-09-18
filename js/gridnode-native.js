@@ -248,12 +248,16 @@
     if (typeof originalSave === 'function' && !originalSave.gnNativeWrapped) {
       const wrapped = function () {
         const result = originalSave.apply(this, arguments);
-        Promise.resolve(result).finally(() => {
-          window.setTimeout(() => {
-            if (!document.getElementById('logOv')?.classList.contains('active') && !document.getElementById('futureTimestampConfirm')?.classList.contains('active')) {
-              try { sessionStorage.removeItem(SHOT_DRAFT_KEY); } catch (_) {}
-            }
-          }, 0);
+        /* The draft exists to preserve unsent input. saveShot returns the
+           saved record on success and undefined on every failure path
+           (validation, future-timestamp confirm, storage full), so a truthy
+           resolution means the data is persisted and the draft is stale by
+           definition. Clear it right here instead of polling modal
+           visibility on a timer: the close animation outlasts
+           setTimeout(0), so the old check ran while the modal was still
+           open and never fired. */
+        Promise.resolve(result).then(value => {
+          if (value) { try { sessionStorage.removeItem(SHOT_DRAFT_KEY); } catch (_) {} }
         });
         return result;
       };
