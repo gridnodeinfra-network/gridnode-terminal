@@ -3461,7 +3461,7 @@ function ensureResultsEnhancements() {
 
 function renderWeeklyReport(shots, weights) {
   if (!document.getElementById('gnWeeklyReport')) return;
-  if (shots.length < 2) {
+  if (shots.length === 0 && weights.length === 0) {
     setText('gnWeeklyTitle', tx('results.moreDataNeeded', 'MORE DATA NEEDED'));
     setText('gnWeeklyCopy', tx('results.weeklyEmptyCopy', 'Log a shot or log your weight to begin building your SIGNAL.'));
     const signals = document.getElementById('gnWeeklySignals');
@@ -5489,7 +5489,7 @@ function gnOpenShotDatePicker() {
 }
 function gnCloseShotDatePicker() { const input = $('sDate'); if (input && moduleState.shotPickerOriginal !== null) { input.value = moduleState.shotPickerOriginal.value; input.dataset.isoDate = moduleState.shotPickerOriginal.isoDate; input.dataset.dateDisplay = moduleState.shotPickerOriginal.dateDisplay; } moduleState.shotPickerOriginal = null; $('gnDatePickerOverlay')?.classList.remove('active'); if (input) { input.type = 'text'; input.setAttribute('readonly', 'readonly'); } }
 function gnDatePickerMove(delta) { moduleState.shotPickerMonth.setMonth(moduleState.shotPickerMonth.getMonth() + Number(delta || 0)); renderShotDatePicker(); }
-function gnSelectPickerDate(date) { moduleState.shotPickerSelected = normalizeDateInput(date) || todayISO(); setHumanDateInput($('sDate'), moduleState.shotPickerSelected); renderShotDatePicker(); }
+function gnSelectPickerDate(date) { moduleState.shotPickerSelected = normalizeDateInput(date) || todayISO(); renderShotDatePicker(); }
 function gnSetShotDateFromPicker() { if (moduleState.shotPickerSelected) setHumanDateInput($('sDate'), moduleState.shotPickerSelected); moduleState.shotPickerOriginal = null; $('gnDatePickerOverlay')?.classList.remove('active'); }
 function gnSetShotDateValue(value) { setHumanDateInput($('sDate'), value); }
 function gnSetShotTimeValue(value) { if ($('sTime')) $('sTime').value = formatTime12(new Date(`2000-01-01T${value}`)); }
