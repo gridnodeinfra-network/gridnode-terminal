@@ -46,10 +46,16 @@ URL must be byte-identical to the staged candidate on `.pages.dev`.
 
 `node scripts/audit-deployed-assets.mjs <deployment-url> --dist <staged-dir> --expect-stamp-from <staged-index.html>`
 
-Fetches the LIVE deployment and checks EVERY asset the served
-`index.html` references — `./…`-relative AND root-relative `/…`
-(favicons, apple-touch-icons, splash screens) — plus `url(...)`
-sub-references inside served CSS:
+Fetches the LIVE deployment and checks EVERY asset the app needs —
+`index.html` references (`./…`-relative AND root-relative `/…`
+favicons, apple-touch-icons, splash screens), `url(...)`
+sub-references inside served CSS (including `../`-relative paths),
+AND assets JS fetches or assigns dynamically at runtime, discovered
+by scanning served bundle text for local asset paths: static string
+literals (`img.src = "/assets/brand/icons/pwa-192.png"`) and
+template-literal directory prefixes (`` fetch(`./i18n/${file}`) ``
+expands `./i18n/` against the staged tree, so new catalogs are
+covered with no manifest to maintain):
 
 - HTTP 200 for each asset
 - `Content-Type` matches the extension (`text/css` for `.css`, …) —
@@ -61,7 +67,10 @@ sub-references inside served CSS:
 
 Proven: FAILS loudly on the broken 2026-09-18 preview (names all five
 stylesheets served as `text/html`), PASSES on the fixed build
-(24 assets + sub-refs verified live).
+(43 assets + sub-refs verified live). Proven 2026-09-18: also FAILS
+when a JS-fetched asset is missing from the deployment — simulated
+Pages SPA fallback serving `index.html` as `/i18n/en.json` is caught
+and named (`via js/gridnode-i18n.js → ./i18n/`).
 
 Run it any time against any deployment, including production:
 `node scripts/audit-deployed-assets.mjs https://gridnode.network --dist dist`

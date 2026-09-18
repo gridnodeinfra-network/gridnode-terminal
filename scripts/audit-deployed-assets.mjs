@@ -3,7 +3,16 @@
  * GRID//NODE deployed-asset audit — the "never again" gate.
  *
  * After a Cloudflare Pages deploy, fetch the LIVE deployment URL and verify
- * EVERY local asset the served index.html references:
+ * EVERY local asset the app needs:
+ *   1. assets the served index.html references (src/href, ./… and /…),
+ *   2. url(...) sub-references inside served stylesheets (fonts, images),
+ *   3. assets JS fetches or assigns dynamically at runtime — discovered by
+ *      scanning served bundle text for local asset paths, e.g. the i18n
+ *      catalogs fetched as `./i18n/${file}` and the avatar fallback
+ *      `/assets/brand/icons/pwa-192.png`. Template-literal directory
+ *      prefixes (`./i18n/`) are expanded against the staged tree, so new
+ *      catalogs are covered with no manifest to maintain.
+ * Each asset is checked for:
  *   - HTTP 200 (no silent SPA fallback)
  *   - Content-Type matches the file extension (css must be text/css, …)
  *   - body is non-empty and NOT the index.html fallback bytes
@@ -12,7 +21,6 @@
  *     as HTML and broke every icon and panel)
  *   - served bytes are byte-identical to the staged file (catches partial
  *     uploads and slow fleet replication)
- * Also scans url(...) references inside served stylesheets (fonts, images).
  *
  * Usage:
  *   node scripts/audit-deployed-assets.mjs <deployment-url>
@@ -23,7 +31,7 @@
  *
  * Exit 0 = AUDIT PASS, 1 = AUDIT FAIL (loud, lists every bad asset).
  */
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const MIME = new Map([
@@ -64,6 +72,7 @@ if (!DEPLOY_URL.startsWith('http')) {
 let failures = 0;
 const fail = (m) => { failures++; console.log(`  FAIL  ${m}`); };
 const ok = (m) => console.log(`  ok    ${m}`);
+const warn = (m) => console.log(`  warn  ${m}`);
 
 async function get(path) {
   const url = DEPLOY_URL + path;
@@ -80,26 +89,83 @@ function extOf(path) {
   return m ? m[1].toLowerCase() : '';
 }
 
+// dist-relative path, or null when the literal is not a local asset path.
+function asLocalRef(literal) {
+  let p = literal;
+  if (p.startsWith('./')) p = p.slice(2);
+  else if (p.startsWith('/')) p = p.slice(1);
+  else return null;
+  p = p.split(/[?#]/)[0];
+  if (!p || p.includes('..')) return null;
+  return MIME.has(extOf(p)) ? p : null;
+}
+
 function refsInHtml(html) {
   const out = new Set();
-  for (const m of html.matchAll(/(?:src|href)="\.\/([^"]+)"/g)) out.add(m[1].split(/[?#]/)[0]);
+  for (const m of html.matchAll(/(?:src|href)="\.\/([^"]+)"/g)) {
+    const r = asLocalRef('./' + m[1]); if (r) out.add(r);
+  }
   // Root-relative refs (favicons, apple-touch-icons, splash screens in <head>)
   // are local assets too — the 2026-09-18 audit missed all 21 of them.
-  for (const m of html.matchAll(/(?:src|href)="\/([^"/][^"]*)"/g)) out.add(m[1].split(/[?#]/)[0]);
+  for (const m of html.matchAll(/(?:src|href)="\/([^"/][^"]*)"/g)) {
+    const r = asLocalRef('/' + m[1]); if (r) out.add(r);
+  }
   return [...out];
+}
+
+function resolveCssUrl(u, cssPath) {
+  if (/^(data:|https?:|#)/.test(u)) return null;
+  u = u.split(/[?#]/)[0];
+  let p;
+  if (u.startsWith('/')) p = u.slice(1);
+  else p = cssPath.split('/').slice(0, -1).concat(u.split('/')).join('/');
+  // Lexical normalize; reject anything escaping the dist root.
+  const parts = [];
+  for (const seg of p.split('/')) {
+    if (!seg || seg === '.') continue;
+    if (seg === '..') { if (!parts.length) return null; parts.pop(); continue; }
+    parts.push(seg);
+  }
+  p = parts.join('/');
+  return p && MIME.has(extOf(p)) ? p : null;
 }
 
 function urlRefsInCss(cssText, cssPath) {
   const out = new Set();
-  const base = cssPath.split('/').slice(0, -1).join('/');
   for (const m of cssText.matchAll(/url\(\s*['"]?([^'")\s]+)['"]?\s*\)/g)) {
-    let u = m[1];
-    if (/^(data:|https?:|#)/.test(u)) continue;
-    u = u.split(/[?#]/)[0];
-    if (u.startsWith('./')) out.add((base ? base + '/' : '') + u.slice(2));
-    else if (u.startsWith('/')) out.add(u.slice(1));
+    const r = resolveCssUrl(m[1], cssPath);
+    if (r) out.add(r);
   }
   return [...out];
+}
+
+// Local asset paths referenced inside JS bundle text:
+//   - static string literals: fetch("./x.json"), img.src = "/assets/a.png"
+//   - template literals: fetch(`./i18n/${file}`) → directory prefix "./i18n/"
+function refsInJs(jsText) {
+  const files = new Set(), dirs = new Set();
+  for (const m of jsText.matchAll(/(['"])(\.\/[^'"`]+?|\/[^'"`]+?)\1/g)) {
+    const r = asLocalRef(m[2]); if (r) files.add(r);
+  }
+  for (const m of jsText.matchAll(/`((?:\.\/|\/)[^`$]*)\$\{/g)) {
+    let p = m[1];
+    if (p.endsWith('/')) { p = p.replace(/^\.\//, '').replace(/^\//, ''); if (p) dirs.add(p); }
+    else { const r = asLocalRef(p); if (r) files.add(r); }
+  }
+  return { files: [...files], dirs: [...dirs] };
+}
+
+function filesUnder(dir) {
+  const out = [];
+  const walk = (d) => {
+    for (const e of readdirSync(join(distDir, d), { withFileTypes: true })) {
+      const rel = d + e.name;
+      if (e.isDirectory()) walk(rel + '/');
+      else if (MIME.has(extOf(e.name))) out.push(rel);
+    }
+  };
+  walk(dir);
+  return out;
 }
 
 // ── 1. fetch served index.html ────────────────────────────────────────
@@ -117,54 +183,83 @@ if (expectStampFrom) {
   else ok(`served HTML carries staged stamp ${stamp}`);
 }
 
-// ── 2. check every referenced asset ──────────────────────────────────
-const refs = refsInHtml(servedHtml);
-console.log(`  info  ${refs.length} asset reference(s) in served index.html`);
-const cssBodies = [];
-for (const ref of refs) {
+// One asset, every check. Returns { ref, ext, text } when fully clean,
+// null otherwise. `via` labels the discovery path in log lines.
+async function checkAsset(ref, via) {
   const path = '/' + ref;
   let r;
   try { r = await get(path); }
-  catch (e) { fail(`${path} → fetch error: ${e.message}`); continue; }
+  catch (e) { fail(`${path}${via} → fetch error: ${e.message}`); return null; }
   const ext = extOf(ref);
   const wantCt = MIME.get(ext);
-  const tag = `${path} → ${r.status} ${r.ct || '(no content-type)'} ${r.buf.length}B`;
-  if (r.status !== 200) { fail(`${tag} — not 200`); continue; }
+  const tag = `${path}${via} → ${r.status} ${r.ct || '(no content-type)'} ${r.buf.length}B`;
+  if (r.status !== 200) { fail(`${tag} — not 200`); return null; }
   if (wantCt && r.ct !== wantCt && !(ext === 'js' && r.ct === 'application/javascript')) {
-    fail(`${tag} — want ${wantCt}`);
-    continue;
+    fail(`${tag} — want ${wantCt}`); return null;
   }
-  if (r.ct === 'text/html' && ext !== 'html') { fail(`${tag} — SPA fallback (HTML served as ${ext})`); continue; }
-  if (r.buf.length === 0) { fail(`${tag} — empty body`); continue; }
-  if (r.buf.equals(home.buf)) { fail(`${tag} — body identical to index.html (fallback)`); continue; }
+  if (r.ct === 'text/html' && ext !== 'html') { fail(`${tag} — SPA fallback (HTML served as ${ext})`); return null; }
+  if (r.buf.length === 0) { fail(`${tag} — empty body`); return null; }
+  if (r.buf.equals(home.buf)) { fail(`${tag} — body identical to index.html (fallback)`); return null; }
   const localPath = join(distDir, ref);
   if (existsSync(localPath)) {
     const local = readFileSync(localPath);
-    if (!r.buf.equals(local)) { fail(`${tag} — differs from staged file (partial upload?)`); continue; }
-    ok(`${ref} — byte-identical to staged`);
+    if (!r.buf.equals(local)) { fail(`${tag} — differs from staged file (partial upload?)`); return null; }
+    ok(`${ref}${via} — byte-identical to staged`);
   } else {
-    ok(`${ref} — served correctly (no local copy to compare)`);
+    ok(`${ref}${via} — served correctly (no local copy to compare)`);
   }
-  if (ext === 'css') cssBodies.push({ ref, text: r.buf.toString('utf8') });
+  return { ref, ext, text: r.buf.toString('utf8') };
+}
+
+// ── 2. every asset the served HTML references ─────────────────────────
+const refs = refsInHtml(servedHtml);
+console.log(`  info  ${refs.length} asset reference(s) in served index.html`);
+const seen = new Set(refs);
+const cssBodies = [];
+const jsBodies = [];
+for (const ref of refs) {
+  const checked = await checkAsset(ref, '');
+  if (!checked) continue;
+  if (checked.ext === 'css') cssBodies.push(checked);
+  if (checked.ext === 'js' || checked.ext === 'mjs') jsBodies.push(checked);
 }
 
 // ── 3. url(...) references inside served stylesheets ─────────────────
 let subRefs = 0;
 for (const { ref, text } of cssBodies) {
   for (const sub of urlRefsInCss(text, ref)) {
+    if (seen.has(sub)) continue;
+    seen.add(sub);
     subRefs++;
-    const path = '/' + sub;
-    let r;
-    try { r = await get(path); }
-    catch (e) { fail(`${path} (via ${ref}) → fetch error: ${e.message}`); continue; }
-    if (r.status !== 200) fail(`${path} (via ${ref}) → HTTP ${r.status}`);
-    else if (r.ct === 'text/html' || r.buf.equals(home.buf)) fail(`${path} (via ${ref}) → SPA fallback`);
-    else ok(`${sub} (via ${ref})`);
+    await checkAsset(sub, ` (via ${ref})`);
   }
 }
 if (subRefs === 0) console.log('  info  no url(...) sub-references in served CSS');
 
+// ── 4. assets JS fetches/assigns dynamically at runtime ──────────────
+let jsRefs = 0;
+for (const { ref: jsRef, text } of jsBodies) {
+  const { files, dirs } = refsInJs(text);
+  for (const f of files) {
+    if (seen.has(f)) continue;
+    seen.add(f);
+    jsRefs++;
+    await checkAsset(f, ` (via ${jsRef})`);
+  }
+  for (const d of dirs) {
+    if (!existsSync(join(distDir, d))) { warn(`./${d} referenced by ${jsRef} but missing from ${distDir} — skipping`); continue; }
+    const expanded = filesUnder(d).filter((f) => !seen.has(f));
+    if (expanded.length === 0) warn(`./${d} referenced by ${jsRef} but no staged files under it`);
+    for (const f of expanded) {
+      seen.add(f);
+      jsRefs++;
+      await checkAsset(f, ` (via ${jsRef} → ./${d})`);
+    }
+  }
+}
+if (jsRefs === 0) console.log('  info  no dynamic asset references found in served JS');
+
 console.log(failures === 0
-  ? `\nAUDIT PASS — ${refs.length} assets + ${subRefs} sub-refs verified live`
+  ? `\nAUDIT PASS — ${refs.length} assets + ${subRefs} CSS sub-refs + ${jsRefs} JS-discovered verified live`
   : `\nAUDIT FAIL — ${failures} problem(s). Do not ship this deployment.`);
 process.exit(failures === 0 ? 0 : 1);
