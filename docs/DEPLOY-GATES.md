@@ -26,9 +26,11 @@ gate aborts; nothing ships broken silently.
 - The full `dist/` tree is staged: `js/`, `css/` **recursively**
   (including `css/native/`), `assets/`, `i18n/`, `sw.js`, `manifest.json`,
   `_headers`.
-- Every local asset `index.html` references (`src`/`href="./…"`) must
-  exist and be non-empty in staging. A missing file serves `index.html`
-  as fallback and silently breaks styling/scripting, so this fails loudly.
+- Every local asset `index.html` references (`src`/`href="./…"` and
+  root-relative `src`/`href="/…"` — favicons, apple-touch-icons, splash
+  screens) must exist and be non-empty in staging. A missing file serves
+  `index.html` as fallback and silently breaks styling/scripting, so this
+  fails loudly.
 
 ## Gate 3 — Local smoke (pre-deploy, hard)
 
@@ -45,7 +47,9 @@ URL must be byte-identical to the staged candidate on `.pages.dev`.
 `node scripts/audit-deployed-assets.mjs <deployment-url> --dist <staged-dir> --expect-stamp-from <staged-index.html>`
 
 Fetches the LIVE deployment and checks EVERY asset the served
-`index.html` references (plus `url(...)` sub-references inside served CSS):
+`index.html` references — `./…`-relative AND root-relative `/…`
+(favicons, apple-touch-icons, splash screens) — plus `url(...)`
+sub-references inside served CSS:
 
 - HTTP 200 for each asset
 - `Content-Type` matches the extension (`text/css` for `.css`, …) —

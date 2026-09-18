@@ -51,12 +51,14 @@ fi
 MISSING=0
 while IFS= read -r ref; do
     path="${ref%%\?*}"
+    # ./x → x, /x → x — both resolve to the staging root.
     rel="${path#./}"
+    rel="${rel#/}"
     if [[ ! -s "$TEMP_DIR/$rel" ]]; then
         printf 'ERROR: referenced asset missing from staging: %s\n' "$ref" >&2
         MISSING=1
     fi
-done < <(grep -oE '(src|href)="\./[^"]+"' "$TEMP_DIR/index.html" | sed -E 's/^(src|href)="//; s/"$//')
+done < <(grep -oE '(src|href)="(\./|/)[^"]+"' "$TEMP_DIR/index.html" | sed -E 's/^(src|href)="//; s/"$//')
 [[ "$MISSING" == "0" ]] || { printf 'ERROR: staging integrity check failed\n' >&2; exit 1; }
 
 # No unstamped placeholders may ship (the quoted key is the functional

@@ -83,6 +83,9 @@ function extOf(path) {
 function refsInHtml(html) {
   const out = new Set();
   for (const m of html.matchAll(/(?:src|href)="\.\/([^"]+)"/g)) out.add(m[1].split(/[?#]/)[0]);
+  // Root-relative refs (favicons, apple-touch-icons, splash screens in <head>)
+  // are local assets too — the 2026-09-18 audit missed all 21 of them.
+  for (const m of html.matchAll(/(?:src|href)="\/([^"/][^"]*)"/g)) out.add(m[1].split(/[?#]/)[0]);
   return [...out];
 }
 
