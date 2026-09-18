@@ -59,9 +59,10 @@ while IFS= read -r ref; do
 done < <(grep -oE '(src|href)="\./[^"]+"' "$TEMP_DIR/index.html" | sed -E 's/^(src|href)="//; s/"$//')
 [[ "$MISSING" == "0" ]] || { printf 'ERROR: staging integrity check failed\n' >&2; exit 1; }
 
-# No unstamped placeholders may ship.
-if grep -rq "__CURRENT_BUILD__" "$TEMP_DIR/js/"; then
-    printf 'ERROR: unstamped __CURRENT_BUILD__ placeholder in staged JS. Run: npm run build\n' >&2
+# No unstamped placeholders may ship (the quoted key is the functional
+# changelog entry; a bare mention in a code comment is harmless).
+if grep -rq "'__CURRENT_BUILD__'" "$TEMP_DIR/js/"; then
+    printf 'ERROR: unstamped __CURRENT_BUILD__ changelog key in staged JS. Run: npm run build\n' >&2
     exit 1
 fi
 rm -rf "$STAGING_DIR"
