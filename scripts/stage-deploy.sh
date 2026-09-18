@@ -30,6 +30,10 @@ DIST_DIR="$REPO_ROOT/dist"
 HEAD_SHORT="$(git -C "$REPO_ROOT" rev-parse --short HEAD)"
 DIST_STAMP="$(grep -oE '\?v=[0-9]{8}\.[0-9a-z-]+' "$DIST_DIR/index.html" | head -1 | cut -d= -f2)"
 [[ -n "$DIST_STAMP" ]] || { printf 'ERROR: no version stamp found in dist/index.html\n' >&2; exit 1; }
+# A trailing -dirty records tree state, not a different source: the gate's
+# intent is "dist/ was built from current HEAD". (The committed index.html
+# is itself a generated artifact, so any rebuild self-dirties the tree.)
+DIST_STAMP="${DIST_STAMP%-dirty}"
 [[ "$DIST_STAMP" == *".$HEAD_SHORT" ]] || {
     printf 'ERROR: dist/ was built from %s but HEAD is %s.\nRun: npm run build (after committing), then re-stage.\n' "$DIST_STAMP" "$HEAD_SHORT" >&2
     exit 1
