@@ -8,6 +8,10 @@ export NVM_DIR="$HOME/.nvm"
 # Does NOT rebuild from another source. Does NOT copy the old baseline.
 # Does NOT alter index.html between preview verification and production upload.
 #
+# Deploy transport: Wrangler when CLOUDFLARE_API_TOKEN is set, otherwise the
+# token-less direct-upload REST API (same fallback as deploy-gridnode.sh —
+# Wrangler cannot authenticate non-interactively without the token).
+#
 # Requires:
 #   --confirm-production flag
 #   GRIDNODE_FOUNDER_APPROVAL=YES environment variable
@@ -59,16 +63,38 @@ echo ""
 # ── Deploy to Cloudflare Pages (production) ──────────────────────────
 echo "🚀 Deploying to Cloudflare Pages (branch=$DEPLOY_BRANCH)..."
 
+# Wrangler cannot authenticate non-interactively without CLOUDFLARE_API_TOKEN
+# (this env doesn't set it) — default to the token-less direct-upload REST
+# API, mirroring deploy-gridnode.sh Gate 2/6.
+GIT_DIRTY=$(git -C "$REPO_ROOT" status --porcelain --untracked-files=no 2>/dev/null | head -1)
+[[ -n "$GIT_DIRTY" ]] && UPLOAD_DIRTY=true || UPLOAD_DIRTY=false
+
 set +e
-npx --yes wrangler@latest pages deploy "$STAGING_DIR" \
-  --project-name="$PROJECT_NAME" \
-  --branch="$DEPLOY_BRANCH" \
-  --commit-dirty=true 2>&1 | tee "$LOG_FILE"
-WRANGLER_EXIT=${PIPESTATUS[0]}
+if [[ -n "${CLOUDFLARE_API_TOKEN:-}" ]]; then
+  npx --yes wrangler@latest pages deploy "$STAGING_DIR" \
+    --project-name="$PROJECT_NAME" \
+    --branch="$DEPLOY_BRANCH" \
+    --commit-dirty="$UPLOAD_DIRTY" 2>&1 | tee "$LOG_FILE"
+  DEPLOY_EXIT=${PIPESTATUS[0]}
+else
+  UPLOAD_BIN="${PAGES_UPLOAD_BIN:-$HOME/workspace/skills/cloudflare/bin/pages-direct-upload.py}"
+  CF_ACCOUNT_ID="${CLOUDFLARE_ACCOUNT_ID:-f008e0b7e3867a6050b412d931a9abd9}"
+  if [[ ! -x "$UPLOAD_BIN" ]]; then
+    printf 'ERROR: upload binary not found: %s\n' "$UPLOAD_BIN" >&2
+    printf '%s\n' 'HINT: set PAGES_UPLOAD_BIN or CLOUDFLARE_API_TOKEN.' >&2
+    exit 1
+  fi
+  "$UPLOAD_BIN" "$CF_ACCOUNT_ID" "$PROJECT_NAME" "$STAGING_DIR" \
+    --branch="$DEPLOY_BRANCH" \
+    --commit-hash="$(git -C "$REPO_ROOT" rev-parse HEAD)" \
+    --commit-message="production deploy $(git -C "$REPO_ROOT" rev-parse --short HEAD)" \
+    --commit-dirty="$UPLOAD_DIRTY" 2>&1 | tee "$LOG_FILE"
+  DEPLOY_EXIT=${PIPESTATUS[0]}
+fi
 set -e
 
-if [[ $WRANGLER_EXIT -ne 0 ]]; then
-  printf 'ERROR: wrangler deploy failed (exit %d). Full log: %s\n' "$WRANGLER_EXIT" "$LOG_FILE" >&2
+if [[ $DEPLOY_EXIT -ne 0 ]]; then
+  printf 'ERROR: deploy failed (exit %d). Full log: %s\n' "$DEPLOY_EXIT" "$LOG_FILE" >&2
   exit 1
 fi
 
@@ -84,30 +110,44 @@ echo "   ✅ Deployed to: $DEPLOY_URL"
 # ── Verify production content ─────────────────────────────────────────
 echo ""
 echo "🔍 Verifying production content..."
-sleep 10  # Allow edge propagation
 
+# The build stamp we just deployed, derived from the staged files (never a
+# hardcoded old stamp).
+EXPECTED_STAMP=$(grep -oE '\?v=[0-9]{8}\.[a-z0-9-]+' "$STAGING_DIR/index.html" | head -1 | cut -c4-)
+if [[ -z "$EXPECTED_STAMP" ]]; then
+  printf 'ERROR: could not derive build stamp from staged index.html\n' >&2
+  exit 1
+fi
+
+# The edge can take a moment to converge on the new deployment; retry until
+# the expected stamp is actually served. A single blind fetch can catch the
+# switch mid-flight and report 0 markers on a healthy deploy (2026-09-18).
 PROD_URL="https://gridnode.network"
-REMOTE_HTML=$(curl -fsSL -H 'Cache-Control: no-cache' "${PROD_URL}?verify=$(date +%s%N)" 2>/dev/null)
-
-if [[ -z "$REMOTE_HTML" ]]; then
-  printf 'ERROR: Could not fetch production content from %s\n' "$PROD_URL" >&2
+REMOTE_HTML=""
+for _ in 1 2 3 4 5 6; do
+  REMOTE_HTML=$(curl -fsSL -H 'Cache-Control: no-cache' "${PROD_URL}?verify=$(date +%s%N)" 2>/dev/null || true)
+  if [[ "$REMOTE_HTML" == *"$EXPECTED_STAMP"* ]]; then break; fi
+  sleep 10
+done
+if [[ "$REMOTE_HTML" != *"$EXPECTED_STAMP"* ]]; then
+  printf 'ERROR: production is not serving the deployed build (stamp %s) after ~60s\n' "$EXPECTED_STAMP" >&2
   exit 1
 fi
 
 # Check unique content markers
 MARKERS_FOUND=0
-for marker in "20260814.2" "GRID//NODE" "ENTER THE GRID" "ARMS" "CORE" "LOWER" "UPPER"; do
+for marker in "$EXPECTED_STAMP" "GRID//NODE" "ENTER THE GRID" "ARMS" "CORE" "LOWER" "UPPER"; do
   if echo "$REMOTE_HTML" | grep -q "$marker" 2>/dev/null; then
     MARKERS_FOUND=$((MARKERS_FOUND + 1))
   fi
 done
-echo "   Content markers found: $MARKERS_FOUND / 7"
+echo "   Content markers found: $MARKERS_FOUND / 7 (stamp $EXPECTED_STAMP confirmed live)"
 
 # Verify asset MIME types
 echo ""
 echo "🧪 Verifying asset MIME types..."
 ASSET_OK=true
-for path in "/js/gridnode-bundle.js?v=20260814.2" "/css/gridnode-native.css?v=20260814.2" "/sw.js" "/manifest.json"; do
+for path in "/js/gridnode-bundle.js?v=$EXPECTED_STAMP" "/css/gridnode-native.css?v=$EXPECTED_STAMP" "/sw.js" "/manifest.json"; do
   MIME=$(curl -sSI -L "${PROD_URL}${path}" 2>/dev/null | grep -i 'content-type' | tr -d '\r' | awk '{print $2}')
   if [[ "$MIME" == "text/html" ]]; then
     printf '   ❌ %s → %s (should NOT be text/html)\n' "$path" "$MIME"
