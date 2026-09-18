@@ -1,0 +1,78 @@
+{
+  "tool": "forge-visual-regression-guard",
+  "version": 1,
+  "mode": "capture",
+  "url": "http://127.0.0.1:4173",
+  "release": "20260918.7c8bb35",
+  "scope": null,
+  "capturedAt": "2026-09-18T00:37:54.473Z",
+  "gitHead": "7c8bb35",
+  "viewports": [
+    {
+      "width": 360,
+      "height": 800
+    },
+    {
+      "width": 390,
+      "height": 844
+    },
+    {
+      "width": 412,
+      "height": 915
+    },
+    {
+      "width": 430,
+      "height": 932
+    },
+    {
+      "width": 1280,
+      "height": 900
+    }
+  ],
+  "themes": [
+    "dark",
+    "light"
+  ],
+  "files": {
+    "360x800_dark.png": {
+      "sha256": "0cb6a21cd4471deaf65ced1366f64b8d619e48408aff9362aef029ac75579734",
+      "bytes": 86735
+    },
+    "390x844_dark.png": {
+      "sha256": "4b5eb5ecdc005904f91a36c65ff966d765db1329d1b01bc3446dae6c3c93ce38",
+      "bytes": 90313
+    },
+    "412x915_dark.png": {
+      "sha256": "ddffd2543c2f18858d3264ca719f7b7afd7e407daf4ae880bbd06ad94b0457c8",
+      "bytes": 106291
+    },
+    "430x932_dark.png": {
+      "sha256": "2bdbefb446c90cb8c005969b5748fad8c17681c68a3f7638fcd495e36f2d44fc",
+      "bytes": 110003
+    },
+    "1280x900_dark.png": {
+      "sha256": "d74edf7a7d336bfe4b89032804f53c7f018271074372d48ba7b775840fcc1ad0",
+      "bytes": 208137
+    },
+    "360x800_light.png": {
+      "sha256": "449acd34d429455ddb09dfa6d7a1596aaf43941aa1a0c2982dd6bb24ae20a336",
+      "bytes": 198133
+    },
+    "390x844_light.png": {
+      "sha256": "ed9d684ffceda22a0896e8f4527ce7ff3cb0d7064678ffa0ea50ed70aba4f8c5",
+      "bytes": 211779
+    },
+    "412x915_light.png": {
+      "sha256": "87ab99aa600b26f2453719416949fd2b64b405897299003cd51341c5b58392bb",
+      "bytes": 248060
+    },
+    "430x932_light.png": {
+      "sha256": "6490ad9f2a0191df8b0a0d678af0a3e39b5fd9aa8cefb25e21b9cac5bdb5184c",
+      "bytes": 263758
+    },
+    "1280x900_light.png": {
+      "sha256": "8c2d8a3cc26c23c9a500991fafb0b82b4f7382382f7a89c88d94bdcc92e26a32",
+      "bytes": 558068
+    }
+  }
+}

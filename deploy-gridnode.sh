@@ -75,7 +75,7 @@ echo "TIMESTAMP:       $TIMESTAMP"
 echo ""
 
 # ── Step 2: Build clean staging directory ───────────────────────────
-echo "📦 Step 1/5: Building clean staging directory..."
+echo "📦 Step 1/6: Building clean staging directory..."
 TEMP_DIR="$REPO_ROOT/.staging/.tmp.$$"
 cleanup() { rm -rf "$TEMP_DIR"; }
 trap cleanup EXIT
@@ -149,7 +149,7 @@ du -sh "$STAGING_DIR"
 echo ""
 
 # ── Step 3: Deploy to Cloudflare Pages (preview branch) ─────────────
-echo "🚀 Step 2/5: Deploying to Cloudflare Pages (branch=$DEPLOY_BRANCH)..."
+echo "🚀 Step 2/6: Deploying to Cloudflare Pages (branch=$DEPLOY_BRANCH)..."
 
 # Capture full wrangler output — NO tail truncation
 set +e
@@ -177,7 +177,7 @@ echo "   ✅ Deployed to: $DEPLOY_URL"
 
 # ── Step 4: Verify Cloudflare created a new deployment ──────────────
 echo ""
-echo "🔍 Step 3/5: Verifying Cloudflare deployment..."
+echo "🔍 Step 3/6: Verifying Cloudflare deployment..."
 sleep 5
 
 DEPLOYMENT_JSON=$(npx --yes wrangler@latest pages deployment list \
@@ -199,7 +199,7 @@ fi
 
 # ── Step 5: Verify deployed content matches staged candidate ────────
 echo ""
-echo "🔬 Step 4/5: Content verification (not just HTTP 200)..."
+echo "🔬 Step 4/6: Content verification (not just HTTP 200)..."
 
 REMOTE_HTML=$(curl -fsSL -H 'Cache-Control: no-cache' "${DEPLOY_URL}?verify=$(date +%s%N)" 2>/dev/null)
 REMOTE_SHA=$(echo "$REMOTE_HTML" | sha256sum | awk '{print $1}')
@@ -233,24 +233,66 @@ fi
 echo "   ✅ Content verified"
 echo ""
 
-# ── Step 6: Verify asset MIME types ─────────────────────────────────
-echo "🧪 Step 5/5: Verifying asset MIME types..."
-ASSET_OK=true
-for path in "/js/gridnode-bundle.js" "/css/native/00-base.css" "/sw.js" "/manifest.json"; do
-  MIME=$(curl -sSI -L "${DEPLOY_URL}${path}" 2>/dev/null | grep -i 'content-type' | tr -d '\r' | awk '{print $2}')
-  if [[ "$MIME" == "text/html" ]]; then
-    printf '   ❌ %s → %s (should NOT be text/html)\n' "$path" "$MIME"
-    ASSET_OK=false
-  else
-    printf '   ✅ %s → %s\n' "$path" "$MIME"
-  fi
-done
-
-if [[ "$ASSET_OK" == "false" ]]; then
-  printf '%s\n' 'ERROR: Asset MIME types incorrect — assets not properly deployed' >&2
+# ── Step 6: Live asset audit — EVERY referenced asset, not a sample ───
+# The old 4-path MIME spot-check missed css/native/01..04 on 2026-09-18 and
+# the preview shipped five stylesheets as index.html fallback. This gate
+# fetches the LIVE deployment and fails the deploy unless every asset the
+# served index.html references returns 200 with the right Content-Type,
+# non-fallback bytes, and byte-identical content to what was staged.
+echo ""
+echo "🧪 Step 5/6: Live asset audit (hard gate)..."
+if ! node "$REPO_ROOT/scripts/audit-deployed-assets.mjs" "$DEPLOY_URL" \
+  --dist "$STAGING_DIR" \
+  --expect-stamp-from "$STAGING_DIR/index.html"; then
+  printf '%s\n' 'ERROR: deployed-asset audit FAILED — deployment is broken. Do not ship.' >&2
   exit 1
 fi
+echo "   ✅ Live asset audit passed"
+echo ""
 
+# ── Step 7: Visual advisory (warn-only) ──────────────────────────────
+# Pixel-diffs the STAGED tree (exactly what was uploaded) against the
+# approved baseline, served locally: headless Chromium in this sandbox
+# cannot reach public URLs, but the staged bytes are what Pages serves,
+# so a local render is a faithful visual check.
+# Advisory only: intentional redesigns change pixels legitimately, so a
+# human reviews the report. A large diff ratio on a no-design-change
+# deploy means something rendered catastrophically wrong — investigate.
+echo "🖼️  Step 6/6: Visual check (advisory)..."
+BASELINE_FILE="$REPO_ROOT/visual-baselines/current.txt"
+if [[ -f "$BASELINE_FILE" ]]; then
+  BASELINE_DIR="$REPO_ROOT/$(cat "$BASELINE_FILE")"
+  if [[ -d "$BASELINE_DIR" ]]; then
+    if [[ -z "${PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH:-}" && -x "$HOME/.cache/ms-playwright/chrome-153/chrome-linux64/chrome" ]]; then
+      export PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="$HOME/.cache/ms-playwright/chrome-153/chrome-linux64/chrome"
+    fi
+    VR_PORT=4173
+    (cd "$STAGING_DIR" && python3 -m http.server "$VR_PORT" --bind 127.0.0.1 >/dev/null 2>&1 &)
+    VR_SRV=$!
+    sleep 1
+    VR_OUT="/tmp/gridnode-vr-$(date +%s)"
+    VR_RELEASE=$(grep -oE '\?v=[0-9]{8}\.[0-9a-z-]+' "$STAGING_DIR/index.html" | head -1 | cut -d= -f2)
+    set +e
+    node "$REPO_ROOT/scripts/visual-regression-guard.cjs" compare \
+      "$BASELINE_DIR" "$VR_OUT" "http://127.0.0.1:$VR_PORT" --release "$VR_RELEASE" >/tmp/gridnode-vr.log 2>&1
+    VR_EXIT=$?
+    set -e
+    kill "$VR_SRV" 2>/dev/null || true
+    if [[ "$VR_EXIT" == "0" ]]; then
+      echo "   ✅ No out-of-scope visual diffs vs baseline"
+    elif [[ "$VR_EXIT" == "1" ]]; then
+      echo "   ⚠️  Visual diffs detected vs baseline (advisory — review before calling this good):"
+      grep -E '^(REGRESSION|IDENTICAL|IN-SCOPE)' /tmp/gridnode-vr.log | head -12 || true
+      echo "   Full report: $VR_OUT/report.json"
+    else
+      echo "   ⚠️  Visual check unavailable in this environment (infra) — skipping"
+    fi
+  else
+    echo "   ⚠️  Baseline dir missing: $BASELINE_DIR — run npm run visual:capture to refresh"
+  fi
+else
+  echo "   ⚠️  No visual baseline configured (visual-baselines/current.txt) — skipping"
+fi
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  ✅ PREVIEW DEPLOY VERIFIED"
