@@ -267,7 +267,16 @@ if [[ -f "$BASELINE_FILE" ]]; then
       export PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="$HOME/.cache/ms-playwright/chrome-153/chrome-linux64/chrome"
     fi
     VR_PORT=4173
-    (cd "$STAGING_DIR" && python3 -m http.server "$VR_PORT" --bind 127.0.0.1 >/dev/null 2>&1 &)
+    # Clear any stale visual-check server (the old subshell form leaked its
+    # http.server, which would otherwise keep holding this port).
+    # [h]ttp trick: keeps pkill from matching its own command line.
+    pkill -f "[h]ttp.server $VR_PORT" 2>/dev/null || true
+    sleep 0.5
+    # NOTE: --directory keeps the server in THIS shell so $! captures its
+    # real PID. Do NOT wrap this in ( ... & ): backgrounding inside a
+    # subshell orphans the server, $! captures nothing, kill targets the
+    # wrong PID, and the leaked server keeps serving a stale staging dir.
+    python3 -m http.server "$VR_PORT" --bind 127.0.0.1 --directory "$STAGING_DIR" >/dev/null 2>&1 &
     VR_SRV=$!
     sleep 1
     VR_OUT="/tmp/gridnode-vr-$(date +%s)"
