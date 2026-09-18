@@ -13,13 +13,13 @@ export NVM_DIR="$HOME/.nvm"
 # The candidate MUST be an explicit file path. There is NO default.
 # The 01_SOURCE_TRUTH_LOCKED baseline is rollback/reference material only.
 #
-# This script:
-#   1. Validates the candidate exists and is non-empty
-#   2. SHA-256 verifies candidate → staged copy
-#   3. Stages ALL runtime assets (js/, css/, assets/, manifest.json, sw.js, _headers)
-#   4. Deploys to Cloudflare Pages preview branch (--branch=preview)
-#   5. Verifies the new deployment was created by Cloudflare
-#   6. Verifies the deployed content matches the staged candidate
+# This script (six gates, preview branch only):
+#   1. Validates the candidate, stages the full dist/ tree (Gate 2)
+#   2. Deploys to Cloudflare Pages preview branch (--branch=preview)
+#   3. Verifies Cloudflare created the deployment (Gate 4a)
+#   4. Verifies served index.html is byte-identical to staged (Gate 4b)
+#   5. Live-audits EVERY referenced asset on the deployment (Gate 5, hard)
+#   6. Visual pixel-diff vs approved baseline (advisory, warn-only)
 #
 # For production: use scripts/deploy-production.sh after preview verification.
 
@@ -74,78 +74,31 @@ echo "DEPLOY BRANCH:   $DEPLOY_BRANCH"
 echo "TIMESTAMP:       $TIMESTAMP"
 echo ""
 
-# ── Step 2: Build clean staging directory ───────────────────────────
-echo "📦 Step 1/6: Building clean staging directory..."
-TEMP_DIR="$REPO_ROOT/.staging/.tmp.$$"
-cleanup() { rm -rf "$TEMP_DIR"; }
-trap cleanup EXIT
-
-rm -rf "$TEMP_DIR"
-mkdir -p "$TEMP_DIR/js" "$TEMP_DIR/css" "$TEMP_DIR/i18n" "$TEMP_DIR/assets"
-
-# Copy the exact candidate as index.html
-cp "$CANDIDATE" "$TEMP_DIR/index.html"
-
-# Verify staged index.html matches source
-STAGED_SHA=$(sha256sum "$TEMP_DIR/index.html" | awk '{print $1}')
-if [[ "$SOURCE_SHA" != "$STAGED_SHA" ]]; then
-  printf 'ERROR: SOURCE_SHA != STAGED_SHA\n  SOURCE:  %s\n  STAGED:  %s\nABORT.\n' "$SOURCE_SHA" "$STAGED_SHA" >&2
+# ── Step 2: Stage from dist/ — the single source of truth ─────────────
+# scripts/stage-deploy.sh is the ONE staging implementation. It copies the
+# full dist/ tree (js/, css/ recursively incl. css/native/, assets/,
+# i18n/, sw.js, manifest.json, _headers) with hard guards:
+#   - freshness: dist/ BUILD_ID stamp must match HEAD (no stale builds)
+#   - integrity: every local asset index.html references must exist
+#   - no __CURRENT_BUILD__ placeholder may ship in staged JS
+# Never re-assemble a deploy from root sources: the flat css/*.css copy
+# dropped css/native/* on 2026-09-18 and the preview served index.html as
+# CSS fallback (HTTP 200, text/html). Staging from dist/ makes that class
+# of regression structurally impossible.
+echo "📦 Step 1/6: Staging from dist/..."
+if ! "$REPO_ROOT/scripts/stage-deploy.sh"; then
+  printf '%s\n' 'ERROR: staging failed — aborting deploy.' >&2
   exit 1
 fi
-echo "   ✅ SHA-256 verified: $STAGED_SHA"
-
-# Copy ALL runtime assets required by the app
-for required in sw.js manifest.json _headers js/gridnode-bundle.js js/gridnode-i18n.js js/gridnode-native.js; do
-  if [[ ! -f "$REPO_ROOT/$required" ]]; then
-    printf 'ERROR: missing required runtime file: %s\n' "$required" >&2
-    exit 1
-  fi
-done
-
-cp "$REPO_ROOT/sw.js" "$TEMP_DIR/sw.js"
-cp "$REPO_ROOT/manifest.json" "$TEMP_DIR/manifest.json"
-cp "$REPO_ROOT/_headers" "$TEMP_DIR/_headers"
-cp "$REPO_ROOT"/js/gridnode-*.js "$TEMP_DIR/js/"
-# Overlay build-stamped JS from dist/ when present (npm run build stamps
-# BUILD_ID into gridnode-whatsnew.js / gridnode-native.js; the root copies
-# still carry the __CURRENT_BUILD__ placeholder).
-for stamped in gridnode-whatsnew.js gridnode-native.js; do
-  if [[ -f "$REPO_ROOT/dist/js/$stamped" ]] && ! grep -q "__CURRENT_BUILD__" "$REPO_ROOT/dist/js/$stamped"; then
-    cp "$REPO_ROOT/dist/js/$stamped" "$TEMP_DIR/js/$stamped"
-  fi
-done
-# Recursive: css/native/* layers must ship (flat css/*.css dropped them on
-# 2026-09-18 and the preview served index.html as CSS fallback).
-cp -r "$REPO_ROOT"/css/. "$TEMP_DIR/css/"
-
-# i18n catalogs
-if [[ -d "$REPO_ROOT/i18n" ]]; then
-  cp "$REPO_ROOT"/i18n/*.json "$TEMP_DIR/i18n/" 2>/dev/null || true
-fi
-
-# All assets (icons, scanner, backgrounds, splash)
-if [[ -d "$REPO_ROOT/assets" ]]; then
-  cp -a "$REPO_ROOT/assets/." "$TEMP_DIR/assets/"
-fi
-
-# Cloudflare Pages Functions
-if [[ -d "$REPO_ROOT/functions" ]]; then
-  cp -a "$REPO_ROOT/functions" "$TEMP_DIR/functions"
-fi
-
-# Verify staged runtime is non-empty
-[[ -s "$TEMP_DIR/index.html" && -s "$TEMP_DIR/js/gridnode-bundle.js" ]] || {
-  printf '%s\n' 'ERROR: staged runtime is empty' >&2
+# The candidate must be the dist/ build output that was just staged.
+CANDIDATE_SHA=$(sha256sum "$CANDIDATE" | awk '{print $1}')
+STAGED_SHA=$(sha256sum "$STAGING_DIR/index.html" | awk '{print $1}')
+if [[ "$CANDIDATE_SHA" != "$STAGED_SHA" ]]; then
+  printf 'ERROR: candidate %s is not the staged dist/index.html\n' "$CANDIDATE" >&2
+  printf 'HINT: pass dist/index.html from the current HEAD build.\n' >&2
   exit 1
-}
-
-# Swap into final staging location
-rm -rf "$STAGING_DIR"
-mv "$TEMP_DIR" "$STAGING_DIR"
-trap - EXIT
-
-echo "   STAGED: $STAGING_DIR"
-du -sh "$STAGING_DIR"
+fi
+echo "   ✅ Candidate matches staged dist/index.html ($STAGED_SHA)"
 echo ""
 
 # ── Step 3: Deploy to Cloudflare Pages (preview branch) ─────────────
