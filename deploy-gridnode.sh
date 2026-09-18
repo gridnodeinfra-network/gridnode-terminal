@@ -155,24 +155,22 @@ echo "   ✅ Deployed to: $DEPLOY_URL"
 # ── Step 4: Verify Cloudflare created a new deployment ──────────────
 echo ""
 echo "🔍 Step 3/6: Verifying Cloudflare deployment..."
-sleep 5
 
-DEPLOYMENT_JSON=$(npx --yes wrangler@latest pages deployment list \
-  --project-name="$PROJECT_NAME" \
-  --environment=preview \
-  --json 2>/dev/null)
-
-if [[ -z "$DEPLOYMENT_JSON" ]]; then
-  printf '%s\n' 'WARNING: Could not fetch deployment list from Cloudflare' >&2
-else
-  echo "   Cloudflare deployment list retrieved"
-  # Check that our deployment URL appears in the list
-  if echo "$DEPLOYMENT_JSON" | grep -q "$DEPLOY_URL" 2>/dev/null; then
-    echo "   ✅ Deployment confirmed in Cloudflare listing"
-  else
-    echo "   ⚠️  Deployment URL not found in listing (may need more propagation time)"
-  fi
+# Direct proof the deployment exists: the fresh deployment URL serves
+# HTTP 200. (Wrangler's `deployment list` needs CLOUDFLARE_API_TOKEN,
+# which this environment doesn't set — and a live 200 on the new URL is
+# the stronger signal anyway.) Retry briefly: Pages needs a moment.
+HTTP_CODE=""
+for attempt in 1 2 3 4; do
+  HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$DEPLOY_URL/" || true)
+  [[ "$HTTP_CODE" == "200" ]] && break
+  sleep 10
+done
+if [[ "$HTTP_CODE" != "200" ]]; then
+  printf 'ERROR: deployment URL not serving after 40s (HTTP %s): %s\n' "$HTTP_CODE" "$DEPLOY_URL" >&2
+  exit 1
 fi
+echo "   ✅ Deployment live: $DEPLOY_URL (HTTP 200)"
 
 # ── Step 5: Verify deployed content matches staged candidate ────────
 echo ""
