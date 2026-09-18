@@ -104,21 +104,45 @@ echo ""
 # ── Step 3: Deploy to Cloudflare Pages (preview branch) ─────────────
 echo "🚀 Step 2/6: Deploying to Cloudflare Pages (branch=$DEPLOY_BRANCH)..."
 
-# Capture full wrangler output — NO tail truncation
+# Capture full deploy output — NO tail truncation
 set +e
-npx --yes wrangler@latest pages deploy "$STAGING_DIR" \
-  --project-name="$PROJECT_NAME" \
-  --branch="$DEPLOY_BRANCH" \
-  --commit-dirty=true 2>&1 | tee "$LOG_FILE"
-WRANGLER_EXIT=${PIPESTATUS[0]}
+if [[ -n "${CLOUDFLARE_API_TOKEN:-}" ]]; then
+  # Wrangler path: only when an API token is present. Wrangler cannot
+  # authenticate non-interactively without one (fails hard on 2026-09-18).
+  npx --yes wrangler@latest pages deploy "$STAGING_DIR" \
+    --project-name="$PROJECT_NAME" \
+    --branch="$DEPLOY_BRANCH" \
+    --commit-dirty=true 2>&1 | tee "$LOG_FILE"
+  DEPLOY_EXIT=${PIPESTATUS[0]}
+else
+  # Direct-upload REST API path (default): token-less, uses the stored
+  # custom.cloudflare credential via the cloudflare skill uploader.
+  # Proven on 2026-09-18 (deploy 92bd495e) after wrangler failed here.
+  UPLOAD_BIN="${PAGES_UPLOAD_BIN:-$HOME/workspace/skills/cloudflare/bin/pages-direct-upload.py}"
+  CF_ACCOUNT_ID="${CLOUDFLARE_ACCOUNT_ID:-f008e0b7e3867a6050b412d931a9abd9}"
+  if [[ ! -x "$UPLOAD_BIN" ]]; then
+    printf 'ERROR: upload binary not found: %s\n' "$UPLOAD_BIN" >&2
+    printf 'HINT: set PAGES_UPLOAD_BIN or CLOUDFLARE_API_TOKEN.\n' >&2
+    exit 1
+  fi
+  # GIT_DIRTY is "dirty"/"clean" from Step 1; the uploader takes true/false.
+  [[ "$GIT_DIRTY" == "dirty" ]] && UPLOAD_DIRTY=true || UPLOAD_DIRTY=false
+  "$UPLOAD_BIN" "$CF_ACCOUNT_ID" "$PROJECT_NAME" "$STAGING_DIR" \
+    --branch="$DEPLOY_BRANCH" \
+    --commit-hash="$(git -C "$REPO_ROOT" rev-parse HEAD)" \
+    --commit-message="$CHANGELOG" \
+    --commit-dirty="$UPLOAD_DIRTY" 2>&1 | tee "$LOG_FILE"
+  DEPLOY_EXIT=${PIPESTATUS[0]}
+fi
 set -e
 
-if [[ $WRANGLER_EXIT -ne 0 ]]; then
-  printf 'ERROR: wrangler deploy failed (exit %d). Full log: %s\n' "$WRANGLER_EXIT" "$LOG_FILE" >&2
+if [[ $DEPLOY_EXIT -ne 0 ]]; then
+  printf 'ERROR: deploy failed (exit %d). Full log: %s\n' "$DEPLOY_EXIT" "$LOG_FILE" >&2
   exit 1
 fi
 
-# Extract the deployment URL from wrangler output
+# Extract the deployment URL from deploy output (wrangler prints it, the
+# direct uploader emits {"url": "https://<id>.gridnode.pages.dev", ...})
 DEPLOY_URL=$(grep -oE 'https://[a-f0-9]+\.gridnode\.pages\.dev' "$LOG_FILE" | head -1)
 if [[ -z "$DEPLOY_URL" ]]; then
   printf '%s\n' 'ERROR: Could not extract deployment URL from wrangler output' >&2
