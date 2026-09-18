@@ -29,7 +29,7 @@
     
     <div class="page active" id="pageDash">
       <div class="page-hdr">
-        <div class="page-title" data-i18n-html="dashboard.headingHtml">PROTOCOL <span class="a">DASHBOARD</span></div>
+        <div class="page-title" data-i18n-html="dashboard.headingHtml" data-i18n-aria-label="dashboard.headingAriaLabel" aria-label="PROTOCOL DASHBOARD">PROTOCOL <span class="a">DASHBOARD</span></div>
         <div class="page-sub" id="dashSub" data-i18n="dashboard.zeroShotSub">STORED ON THIS DEVICE</div>
       </div>
 
@@ -524,15 +524,14 @@
           </details>
           <div class="gn-syr-forensic">
             <div class="left">
-              <span><span class="k" data-i18n="lab.forensicLot">LOT</span> GRN-2087-04A <span class="k" data-i18n="lab.decorativeTag">[DECORATIVE]</span></span>
-              <span><span class="k" data-i18n="lab.forensicBuild">BUILD</span> 0xA9F3…7E1C <span class="k" data-i18n="lab.decorativeTag">[DECORATIVE]</span></span>
+              <span><span class="k" data-i18n="lab.forensicLot">LOT</span> GRN-2087-04A</span>
+              <span><span class="k" data-i18n="lab.forensicBuild">BUILD</span> 0xA9F3…7E1C</span>
             </div>
             <div class="right">
               <span data-i18n="lab.sterile">STERILE · SINGLE USE</span>
               <span data-i18n="lab.u100Ref">U-100 INSULIN REFERENCE</span>
             </div>
           </div>
-          <div class="gn-syr-oskar" data-i18n="lab.oskarLine">FOR O. — SEE YOU IN THE NEXT RENDER.</div>
         </div>
         <div class="form-group"><label class="form-label" for="cDose" data-i18n="lab.desiredDose">DESIRED DOSE (mg)</label><input class="form-input" type="number" id="cDose" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="decimal" placeholder="e.g. 2.5" step="0.1" oninput="updateSyr()"></div>
         <div class="form-group"><label class="form-label" for="cConc" data-i18n="lab.vialConc">VIAL CONCENTRATION (mg/mL)</label><input class="form-input" type="number" id="cConc" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="decimal" placeholder="e.g. 5" step="0.5" oninput="updateSyr()"></div>
