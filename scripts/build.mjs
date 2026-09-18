@@ -40,7 +40,9 @@ function buildId() {
   let sha = 'nogit';
   try {
     sha = execSync('git rev-parse --short HEAD', { cwd: ROOT, encoding: 'utf8' }).trim();
-    const dirty = execSync('git status --porcelain', { cwd: ROOT, encoding: 'utf8' }).trim();
+    // Untracked scratch dirs (e.g. invite-kit/) must not taint the stamp;
+    // only tracked modifications mean "built from uncommitted changes".
+    const dirty = execSync('git status --porcelain --untracked-files=no', { cwd: ROOT, encoding: 'utf8' }).trim();
     if (dirty) sha += '-dirty';
   } catch { /* not a git checkout; date-only id */ }
   return `${date}.${sha}`;
