@@ -2242,6 +2242,13 @@ function renderShots() {
       list.innerHTML = `<div class="empty gn-first-run-card"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${tx('shots.noArchivedShots', 'NO ARCHIVED SHOTS')}</b><span class="gn-first-run-sub">${tx('shots.noArchivedHint', 'Archived shots rest here. Archive a shot from your active history to tuck it away without deleting it.')}</span></div>`;
       return;
     }
+    /* QA 2026-09-18: an empty ACTIVE tab with everything archived is not a
+     * first run either — show a neutral state with a path to the archive,
+     * never the "log your first shot" pitch. */
+    if (!activeFilters && moduleState.shotHistoryView !== 'archived' && all.some(record => record.archived)) {
+      list.innerHTML = `<div class="empty gn-first-run-card"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${tx('shots.noActiveShots', 'NO ACTIVE SHOTS')}</b><span class="gn-first-run-sub">${tx('shots.noActiveHint', 'Every shot is archived. Restore one from the archive to bring it back, or log a new shot.')}</span><br><button class="btn-full btn-secondary empty-cta" type="button" data-shot-history-view="archived">${tx('shots.viewArchive', 'VIEW ARCHIVE')}</button></div>`;
+      return;
+    }
     list.innerHTML = `<div class="empty${activeFilters ? '' : ' gn-first-run-card'}"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${activeFilters ? tx('shots.noFilterMatch', 'NO SHOTS MATCH THESE FILTERS.') : moduleState.shotHistoryView === 'archived' ? tx('shots.noArchivedShots', 'NO ARCHIVED SHOTS') : tx('shots.activateYourGrid', 'LOG YOUR FIRST SHOT TO ACTIVATE YOUR GRID')}</b>${activeFilters ? '<br><button class="btn-full btn-secondary empty-cta" type="button" id="gnShotFilterEmptyClear">' + tx('shots.clearFilters', 'CLEAR FILTERS') + '</button>' : '<span class="gn-first-run-sub">' + tx('shots.firstShotSub', 'One shot unlocks the Phase Engine, RESULTS, and your full dashboard.') + '</span><br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>' + tx('shots.logYourFirst', 'LOG YOUR FIRST SHOT') + '</button>'}</div>`;
     $('gnShotFilterEmptyClear')?.addEventListener('click', () => { moduleState.shotFilters = { medication: '', site: '', range: 'all', query: '' }; renderShots(); });
     return;
