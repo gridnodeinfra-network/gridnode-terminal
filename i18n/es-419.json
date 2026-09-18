@@ -1860,5 +1860,101 @@
   "nodekey.haveKey": "TENGO UNA NODE KEY",
   "nodekey.grantedNext": "// CLAVE ACEPTADA — ELIGE GOOGLE O CORREO PARA CREAR TU CUENTA EN LA NUBE",
   "vault.connectAccount": "Conectar cuenta en la nube",
-  "vault.connectAccountHelp": "Usa una NODE KEY para sincronizar entre dispositivos"
+  "vault.connectAccountHelp": "Usa una NODE KEY para sincronizar entre dispositivos",
+  "phase.daysLeftHours": "{d}d {h}h",
+  "phase.tmpl.activation": "ACTIVACIÓN",
+  "phase.tmpl.activation.do": [
+    "Rota el sitio de inyección cada semana.",
+    "Acompaña la dosis con una comida con proteína.",
+    "Hidrátate con electrolitos de antemano."
+  ],
+  "phase.tmpl.activation.now": [
+    "La absorción comienza. Los receptores se activan.",
+    "El vaciado gástrico empieza a enlentecerse. La mayoría siente poco a esta altura."
+  ],
+  "phase.tmpl.activation.watch": [
+    "Ardor o enrojecimiento leve en el sitio de inyección.",
+    "Fatiga ligera. Registra lo notable para tu profesional de salud."
+  ],
+  "phase.tmpl.cruise": "CRUCERO",
+  "phase.tmpl.cruise.do": [
+    "Proteína en cada comida para proteger el músculo.",
+    "Fibra más agua para la regularidad.",
+    "Mantén horarios de comida consistentes.",
+    "La mejor ventana de la semana para moverte."
+  ],
+  "phase.tmpl.cruise.now": [
+    "Meseta post-pico. Supresión estable y predecible.",
+    "Los efectos gastrointestinales suelen aliviarse."
+  ],
+  "phase.tmpl.cruise.watch": [
+    "Náuseas leves persistentes.",
+    "El estreñimiento puede durar más.",
+    "Comer poco sin notarlo."
+  ],
+  "phase.tmpl.peakEffect": "PICO DE EFECTO",
+  "phase.tmpl.peakEffect.do": [
+    "Comidas pequeñas y suaves.",
+    "Mantén los electrolitos.",
+    "No te acuestes justo después de comer.",
+    "Registra los efectos secundarios cuando ocurran."
+  ],
+  "phase.tmpl.peakEffect.now": [
+    "Pico de niveles del medicamento. Supresión del apetito en su punto máximo.",
+    "El ruido de la comida en su punto más bajo del ciclo."
+  ],
+  "phase.tmpl.peakEffect.watch": [
+    "Las náuseas llegan a su pico aquí. Vómitos y diarrea son más probables en esta ventana.",
+    "Eructos con olor a azufre, mareos.",
+    "Las semanas de aumento de dosis se sienten más.",
+    "Urgente: vómitos que impiden retener líquidos por 24 horas. Contacta a tu proveedor."
+  ],
+  "phase.tmpl.takingEffect": "SURTIENDO EFECTO",
+  "phase.tmpl.takingEffect.do": [
+    "Cinco o seis comidas pequeñas en vez de tres grandes.",
+    "Proteína magra y suave.",
+    "Más fácil sin fritos, grasas, picante ni carbonatadas.",
+    "Bebe agua con constancia. El jengibre puede aliviar las náuseas."
+  ],
+  "phase.tmpl.takingEffect.now": [
+    "Niveles en ascenso hacia el pico.",
+    "Las señales de apetito empiezan a calmarse."
+  ],
+  "phase.tmpl.takingEffect.watch": [
+    "Inicio de náuseas, el efecto más reportado.",
+    "Saciedad temprana, eructos, reflujo.",
+    "Fatiga o dolor de cabeza. Consulta lo persistente con tu profesional de salud."
+  ],
+  "phase.tmpl.wearOff": "VENTANA DE DESGASTE",
+  "phase.tmpl.wearOff.do": [
+    "Porciones más pequeñas, comidas sin prisa.",
+    "Hidrátate antes de asumir que es hambre.",
+    "Mantén los alimentos tentadores fuera de alcance.",
+    "Aplica la dosis según el horario. Registrarla reinicia el ciclo."
+  ],
+  "phase.tmpl.wearOff.now": [
+    "Niveles mínimos. La parte más tranquila del ciclo.",
+    "Apetito más cercano a su base."
+  ],
+  "phase.tmpl.wearOff.watch": [
+    "El hambre más fuerte de la semana, usualmente días 6–7.",
+    "El ruido de la comida en su máximo.",
+    "La sed suele confundirse con hambre."
+  ],
+  "phase.tmpl.windingDown": "EN DESCENSO",
+  "phase.tmpl.windingDown.do": [
+    "Snacks ricos en proteína.",
+    "Mantén tu estructura de comidas aunque vuelva el hambre.",
+    "Prepárate para el día de inyección.",
+    "Registra cómo vuelve el hambre. Es información útil."
+  ],
+  "phase.tmpl.windingDown.now": [
+    "Acercándote al valle. Las señales de apetito regresan.",
+    "La digestión se normaliza."
+  ],
+  "phase.tmpl.windingDown.watch": [
+    "Hambre y ruido de la comida de regreso.",
+    "Antojos de carbohidratos, irritabilidad leve.",
+    "Efectos gastrointestinales usualmente mínimos a esta altura."
+  ]
 }
