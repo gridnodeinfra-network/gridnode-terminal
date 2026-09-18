@@ -8,9 +8,9 @@ export NVM_DIR="$HOME/.nvm"
 # Does NOT rebuild from another source. Does NOT copy the old baseline.
 # Does NOT alter index.html between preview verification and production upload.
 #
-# Deploy transport: Wrangler when CLOUDFLARE_API_TOKEN is set, otherwise the
-# token-less direct-upload REST API (same fallback as deploy-gridnode.sh —
-# Wrangler cannot authenticate non-interactively without the token).
+# Deploy transport: Wrangler (unlocked via the connected Cloudflare
+# credential's surrogate when no API token is exported), falling back to
+# the token-less direct-upload REST API when Wrangler has no credential.
 #
 # Requires:
 #   --confirm-production flag
@@ -63,9 +63,19 @@ echo ""
 # ── Deploy to Cloudflare Pages (production) ──────────────────────────
 echo "🚀 Deploying to Cloudflare Pages (branch=$DEPLOY_BRANCH)..."
 
-# Wrangler cannot authenticate non-interactively without CLOUDFLARE_API_TOKEN
-# (this env doesn't set it) — default to the token-less direct-upload REST
-# API, mirroring deploy-gridnode.sh Gate 2/6.
+# Unlock Wrangler (pre-Sept-12 setup): when no API token is exported, use
+# the connected Cloudflare credential's surrogate. It is not the raw
+# secret; Sentinel swaps it for the real token on api.cloudflare.com.
+if [[ -z "${CLOUDFLARE_API_TOKEN:-}" ]]; then
+  CF_SURROGATE=$(python3 -c "
+import sys
+sys.path.insert(0, '/opt/hatch/skills/skill-creator/bin')
+from dynamic_credentials import dynamic_credential_entry
+print(dynamic_credential_entry('custom.cloudflare')['surrogate'])
+" 2>/dev/null || true)
+  if [[ "$CF_SURROGATE" == hsurr:* ]]; then export CLOUDFLARE_API_TOKEN="$CF_SURROGATE"; fi
+fi
+
 GIT_DIRTY=$(git -C "$REPO_ROOT" status --porcelain --untracked-files=no 2>/dev/null | head -1)
 [[ -n "$GIT_DIRTY" ]] && UPLOAD_DIRTY=true || UPLOAD_DIRTY=false
 
