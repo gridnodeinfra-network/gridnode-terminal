@@ -13,34 +13,57 @@ trap cleanup EXIT
 
 mkdir -p "$STAGING_ROOT"
 rm -rf "$TEMP_DIR"
-mkdir -p "$TEMP_DIR/js" "$TEMP_DIR/css" "$TEMP_DIR/i18n" "$TEMP_DIR/assets"
 
-for required in index.html sw.js manifest.json _headers js/gridnode-bundle.js js/gridnode-i18n.js js/gridnode-native.js; do
-    [[ -f "$REPO_ROOT/$required" ]] || { printf 'ERROR: missing deploy file: %s\n' "$required" >&2; exit 1; }
-done
-cp "$REPO_ROOT/index.html" "$TEMP_DIR/index.html"
-cp "$REPO_ROOT/sw.js" "$TEMP_DIR/sw.js"
-cp "$REPO_ROOT/manifest.json" "$TEMP_DIR/manifest.json"
-cp "$REPO_ROOT/_headers" "$TEMP_DIR/_headers"
+# ── dist/ is the single source of truth for deploys ──────────────────
+# npm run build assembles index.html from html/partials/, stamps every
+# ?v= tag and the JS build placeholders with BUILD_ID=<date>.<git-sha>,
+# and copies the FULL tree: js/, css/ (including css/native/), assets/,
+# i18n/, sw.js, manifest.json, _headers.
+# Staging from dist/ — never re-assembling from root sources — is what
+# keeps native CSS layers, stamped JS, and version tags from silently
+# going missing or stale (2026-09-18: css/native/* never reached staging
+# because of a flat css/*.css copy, and served 200-as-index.html).
+DIST_DIR="$REPO_ROOT/dist"
+[[ -d "$DIST_DIR" ]] || { printf 'ERROR: %s missing. Run: npm run build\n' "$DIST_DIR" >&2; exit 1; }
 
-# Full runtime: bundle + every satellite script the shell loads.
-cp "$REPO_ROOT"/js/gridnode-*.js "$TEMP_DIR/js/"
+# Guard: dist/ must be built from the current HEAD, never a stale tree.
+HEAD_SHORT="$(git -C "$REPO_ROOT" rev-parse --short HEAD)"
+DIST_STAMP="$(grep -oE '\?v=[0-9]{8}\.[0-9a-z-]+' "$DIST_DIR/index.html" | head -1 | cut -d= -f2)"
+[[ -n "$DIST_STAMP" ]] || { printf 'ERROR: no version stamp found in dist/index.html\n' >&2; exit 1; }
+[[ "$DIST_STAMP" == *".$HEAD_SHORT" ]] || {
+    printf 'ERROR: dist/ was built from %s but HEAD is %s.\nRun: npm run build (after committing), then re-stage.\n' "$DIST_STAMP" "$HEAD_SHORT" >&2
+    exit 1
+}
 
-# Styles: theme + native-feel layers.
-cp "$REPO_ROOT"/css/*.css "$TEMP_DIR/css/"
+mkdir -p "$TEMP_DIR"
+cp -r "$DIST_DIR/." "$TEMP_DIR/"
 
-# Localization catalogs (fetched at runtime).
-cp "$REPO_ROOT"/i18n/*.json "$TEMP_DIR/i18n/"
-
-# All assets (icons, scanner, backgrounds, splash).
-cp -r "$REPO_ROOT/assets/." "$TEMP_DIR/assets/"
-
-# Cloudflare Pages Functions (compiled by wrangler at deploy time).
+# Cloudflare Pages Functions live outside dist/ (compiled at deploy time).
 if [ -d "$REPO_ROOT/functions" ]; then
     cp -r "$REPO_ROOT/functions" "$TEMP_DIR/functions"
 fi
 
 [[ -s "$TEMP_DIR/index.html" && -s "$TEMP_DIR/js/gridnode-bundle.js" ]] || { printf '%s\n' 'ERROR: staged runtime is empty' >&2; exit 1; }
+
+# ── Integrity gate: every local asset index.html references must exist ──
+# A missing file serves index.html as fallback (HTTP 200, text/html) and
+# silently breaks styling/scripting, so this gate fails the staging.
+MISSING=0
+while IFS= read -r ref; do
+    path="${ref%%\?*}"
+    rel="${path#./}"
+    if [[ ! -s "$TEMP_DIR/$rel" ]]; then
+        printf 'ERROR: referenced asset missing from staging: %s\n' "$ref" >&2
+        MISSING=1
+    fi
+done < <(grep -oE '(src|href)="\./[^"]+"' "$TEMP_DIR/index.html" | sed -E 's/^(src|href)="//; s/"$//')
+[[ "$MISSING" == "0" ]] || { printf 'ERROR: staging integrity check failed\n' >&2; exit 1; }
+
+# No unstamped placeholders may ship.
+if grep -rq "__CURRENT_BUILD__" "$TEMP_DIR/js/"; then
+    printf 'ERROR: unstamped __CURRENT_BUILD__ placeholder in staged JS. Run: npm run build\n' >&2
+    exit 1
+fi
 rm -rf "$STAGING_DIR"
 mv "$TEMP_DIR" "$STAGING_DIR"
 trap - EXIT

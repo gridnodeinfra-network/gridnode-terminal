@@ -106,7 +106,17 @@ cp "$REPO_ROOT/sw.js" "$TEMP_DIR/sw.js"
 cp "$REPO_ROOT/manifest.json" "$TEMP_DIR/manifest.json"
 cp "$REPO_ROOT/_headers" "$TEMP_DIR/_headers"
 cp "$REPO_ROOT"/js/gridnode-*.js "$TEMP_DIR/js/"
-cp "$REPO_ROOT"/css/*.css "$TEMP_DIR/css/"
+# Overlay build-stamped JS from dist/ when present (npm run build stamps
+# BUILD_ID into gridnode-whatsnew.js / gridnode-native.js; the root copies
+# still carry the __CURRENT_BUILD__ placeholder).
+for stamped in gridnode-whatsnew.js gridnode-native.js; do
+  if [[ -f "$REPO_ROOT/dist/js/$stamped" ]] && ! grep -q "__CURRENT_BUILD__" "$REPO_ROOT/dist/js/$stamped"; then
+    cp "$REPO_ROOT/dist/js/$stamped" "$TEMP_DIR/js/$stamped"
+  fi
+done
+# Recursive: css/native/* layers must ship (flat css/*.css dropped them on
+# 2026-09-18 and the preview served index.html as CSS fallback).
+cp -r "$REPO_ROOT"/css/. "$TEMP_DIR/css/"
 
 # i18n catalogs
 if [[ -d "$REPO_ROOT/i18n" ]]; then
@@ -226,7 +236,7 @@ echo ""
 # ── Step 6: Verify asset MIME types ─────────────────────────────────
 echo "🧪 Step 5/5: Verifying asset MIME types..."
 ASSET_OK=true
-for path in "/js/gridnode-bundle.js" "/css/gridnode-native.css" "/sw.js" "/manifest.json"; do
+for path in "/js/gridnode-bundle.js" "/css/native/00-base.css" "/sw.js" "/manifest.json"; do
   MIME=$(curl -sSI -L "${DEPLOY_URL}${path}" 2>/dev/null | grep -i 'content-type' | tr -d '\r' | awk '{print $2}')
   if [[ "$MIME" == "text/html" ]]; then
     printf '   ❌ %s → %s (should NOT be text/html)\n' "$path" "$MIME"
