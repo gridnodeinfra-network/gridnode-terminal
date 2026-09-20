@@ -3109,3 +3109,55 @@ html[data-theme="light"] .s6-card, html[data-theme="light"] .gn-wanda-card {
 html[data-theme="light"] .gn-st-dock{background:#f4f1e8;border-color:rgba(139,91,8,.5);border-top-color:#8b5b08}
 html[data-theme="light"] .gn-st-title{color:#5b4a12}
 html[data-theme="light"] .gn-st-min{color:#8b5b08;border-color:rgba(139,91,8,.4)}
+
+/* ─────────────────────────────────────────────────────────────────────
+   Meet PREEM band (2026-09-20) — PREEM is the face of GRID//NODE.
+   Portrait in a HUD frame beside the intro copy. Stacks on mobile.
+   ───────────────────────────────────────────────────────────────────── */
+#landing .landing-preem {
+  display: grid;
+  grid-template-columns: minmax(0, 400px) minmax(0, 1fr);
+  gap: clamp(26px, 4vw, 60px);
+  align-items: center;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: clamp(40px, 6vw, 84px) clamp(20px, 4vw, 44px);
+}
+#landing .landing-preem-frame {
+  position: relative;
+  border: 1px solid rgba(0, 212, 255, .34);
+  border-top: 2px solid #00d4ff;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #03070b;
+  box-shadow:
+    0 34px 84px rgba(0, 0, 0, .66),
+    0 0 0 1px rgba(255, 255, 255, .035),
+    0 0 42px rgba(0, 212, 255, .11),
+    inset 0 1px 0 rgba(255, 255, 255, .06);
+}
+#landing .landing-preem-shot {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+#landing .landing-preem-copy .landing-kicker { margin: 0 0 14px; }
+#landing .landing-preem-copy h2 {
+  margin: 0 0 14px;
+  font-size: clamp(1.9rem, 3.4vw, 2.7rem);
+  letter-spacing: .5px;
+  line-height: 1.05;
+}
+#landing .landing-preem-copy p { max-width: 46ch; }
+html[data-theme="light"] #landing .landing-preem-frame {
+  background: linear-gradient(180deg, #fbf9f2, #f4f1e9);
+  border-color: rgba(20, 60, 70, .28);
+  border-top-color: #006f82;
+  box-shadow: 0 34px 84px rgba(20, 60, 70, .15), 0 0 0 1px rgba(20, 60, 70, .04);
+}
+@media (max-width: 860px) {
+  #landing .landing-preem {
+    grid-template-columns: 1fr;
+    max-width: 560px;
+  }
+}
