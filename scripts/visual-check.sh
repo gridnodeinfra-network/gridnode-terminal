@@ -22,8 +22,8 @@ skip() { echo "   ⚠️  $1"; }
 BASELINE_DIR="$REPO_ROOT/$(cat "$BASELINE_FILE")"
 [[ -d "$BASELINE_DIR" ]] || { skip "baseline dir missing: $BASELINE_DIR — run npm run visual:capture"; exit 0; }
 
-if [[ -z "${PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH:-}" && -x "$HOME/.cache/ms-playwright/chrome-153/chrome-linux64/chrome" ]]; then
-  export PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="$HOME/.cache/ms-playwright/chrome-153/chrome-linux64/chrome"
+if [[ -z "${PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH:-}" && -x "$HOME/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome" ]]; then
+  export PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="$HOME/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome"
 fi
 
 VR_PORT=4173
