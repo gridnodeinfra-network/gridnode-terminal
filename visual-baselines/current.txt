@@ -1,1 +1,1 @@
-visual-baselines/good-20260918-7c8bb35
+visual-baselines/good-20260922-d54146b
