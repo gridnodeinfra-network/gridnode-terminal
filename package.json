@@ -23,7 +23,7 @@
     "test:v01544": "node scripts/test-v01544-shot-console.cjs"
   },
   "devDependencies": {
-    "playwright": "1.62.1",
+    "playwright": "1.63.0",
     "supabase": "^2.116.0",
     "vite": "^6.4.3"
   }
