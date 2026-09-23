@@ -10,7 +10,7 @@
       <p class="landing-copy"><span data-i18n="landing.heroCopy">Track GLP-1 protocols, compound and research grade peptides, weight, and the personal biotech patterns that connect them.</span><br><span data-i18n="landing.localCopy">Sign in with Google to sync your grid across every device.</span></p>
       <div class="landing-phase-visual" aria-hidden="true"><div class="phase-segment-ring"></div><div class="landing-phase-core"><span data-i18n="landing.localFirst">LOCAL-FIRST</span><b data-i18n="landing.systemReady">SYSTEM READY</b></div></div>
       <div class="landing-cta-row">
-        <button class="landing-btn primary" type="button" onclick="startGridNode()" data-i18n="landing.enterGrid">ENTER THE GRID</button>
+        <button class="landing-btn primary" type="button" onclick="startGridNode()" data-usage="enter_grid_click" data-i18n="landing.enterGrid">ENTER THE GRID</button>
       </div>
       <button class="landing-explore-link" type="button" onclick="scrollLandingTo('howItWorks');return false" data-i18n="landing.explore">EXPLORE THE SYSTEM ↓</button>
       <div class="landing-note landing-trust"><strong data-i18n="landing.trustTitle">Your body. Your data. Your grid.</strong><span data-i18n="landing.trustCopy">Your data lives on this device first. Cloud sync is optional.</span></div>
@@ -81,7 +81,7 @@
       <h2 data-i18n="landing.buildTitle">Build Your Grid</h2>
       <p data-i18n="landing.buildCopy">Your shots, your weight, your phases. Synced across every device when you sign in.</p>
       <div class="landing-cta-row" style="margin-top:16px">
-        <button class="landing-btn primary" type="button" onclick="startGridNode()" data-i18n="landing.enterGrid">ENTER THE GRID</button>
+        <button class="landing-btn primary" type="button" onclick="startGridNode()" data-usage="enter_grid_click" data-i18n="landing.enterGrid">ENTER THE GRID</button>
         <button class="landing-btn secondary" id="landingBackToTop" type="button" onclick="document.getElementById('landing').scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})" data-i18n="landing.backTop">// BACK TO TOP</button>
       </div>
     </section>
