@@ -22,3 +22,5 @@ alter table public.usage_events enable row level security;
 drop policy if exists usage_events_anon_insert on public.usage_events;
 create policy usage_events_anon_insert on public.usage_events
   for insert to anon with check (true);
+-- RLS policies are not enough on their own: the role needs the table grant.
+grant insert on public.usage_events to anon;

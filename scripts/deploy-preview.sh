@@ -24,6 +24,21 @@ command -v npx >/dev/null 2>&1 || { printf '%s\n' 'ERROR: npx is required' >&2; 
 [[ -d "$STAGING_DIR" ]] || { printf 'ERROR: staging directory missing: %s\n' "$STAGING_DIR" >&2; exit 1; }
 [[ -s "$STAGING_DIR/index.html" ]] || { printf '%s\n' 'ERROR: staged index.html is missing or empty' >&2; exit 1; }
 
+# Cloudflare auth: an explicit CLOUDFLARE_API_TOKEN wins; otherwise mint a
+# short-lived surrogate from the stored custom.cloudflare connector via authd.
+# The surrogate is transient (this process only) -- the raw token is never
+# handled, printed, or persisted.
+if [[ -z "${CLOUDFLARE_API_TOKEN:-}" ]]; then
+  CLOUDFLARE_API_TOKEN="$(python3 -c "
+import sys
+sys.path.insert(0, '/opt/hatch/skills/skill-creator/bin')
+from dynamic_credentials import dynamic_credential_entry
+print(dynamic_credential_entry('custom.cloudflare')['surrogate'].strip())
+" 2>/dev/null)"
+  export CLOUDFLARE_API_TOKEN
+fi
+[[ -n "${CLOUDFLARE_API_TOKEN:-}" ]] || { printf '%s\n' 'ERROR: no Cloudflare credential available' >&2; exit 1; }
+
 # Never allow preview to deploy to main
 if [[ "$BRANCH" == "main" ]]; then
   printf '%s\n' 'ERROR: preview deploy must NOT use --branch=main. Use --branch=preview.' >&2
