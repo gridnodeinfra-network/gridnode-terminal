@@ -1171,6 +1171,9 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 .landing-footer{display:grid;gap:16px;margin:20px 0 0;padding:20px 16px 8px;border-top:1px solid rgba(0,212,255,.2);color:var(--text-mid)}
 .landing-footer-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .landing-footer-block{display:grid;gap:7px}
+.landing-footer-block.landing-arrive-lines>p:nth-last-child(-n+2){border-radius:6px;animation:landingArriveMars 1.6s ease-out}
+@keyframes landingArriveMars{0%{box-shadow:0 0 0 1px rgba(255,59,59,.5),0 0 26px rgba(255,59,59,.22);background:rgba(255,59,59,.06)}100%{box-shadow:0 0 0 1px rgba(255,59,59,0),0 0 0 rgba(255,59,59,0);background:rgba(255,59,59,0)}}
+@media (prefers-reduced-motion:reduce){.landing-footer-block.landing-arrive-lines>p:nth-last-child(-n+2){animation:none}}
 .landing-footer-label{font:700 .6rem var(--font-d);letter-spacing:2px;color:var(--cyan)}
 .landing-footer a{color:#a9dce8;font:600 .68rem var(--font-m);letter-spacing:1px;text-decoration:none}
 .landing-footer a:hover,.landing-footer a:focus{color:#fff;text-decoration:underline}
@@ -4144,13 +4147,18 @@ html[data-theme="light"] #shotsRegionScanner .scanner-audio-switch[aria-checked=
 
 <script>
 function scrollLandingTo(id) {
-  const landing = document.getElementById('landing');
   const target = document.getElementById(id);
-  if (!landing || !target) return;
-  landing.scrollTo({
-    top: target.offsetTop,
-    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
-  });
+  if (!target) return;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  // Arrival flash: footer targets (#boundary, #privacy, #terms) sit below the
+  // nav at max page scroll, so the click often can't move the viewport. Flashing
+  // the last two lines in Mars Red guarantees visible feedback on arrival.
+  target.classList.remove('landing-arrive-lines');
+  void target.offsetWidth;
+  target.classList.add('landing-arrive-lines');
+  window.clearTimeout(target._arriveT);
+  target._arriveT = window.setTimeout(() => target.classList.remove('landing-arrive-lines'), 1600);
 }
 </script>
 
