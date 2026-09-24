@@ -209,7 +209,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 /* ══════════════════════════
    SCREEN 2 — LOGIN
 ══════════════════════════ */
-#login{align-items:center;justify-content:center;padding:24px;overflow-y:auto}
+#login{align-items:center;justify-content:center;padding:24px;overflow-y:auto;height:100vh;height:100svh}
+/* svh (not dvh): stable against Android Chrome's showing/hiding URL bar,
+   so vertical centering is computed against the VISIBLE area and the card
+   top can never hide behind browser chrome with no scrollable overflow. */
 #login>div{display:flex;flex-direction:column;align-items:center;width:100%;max-width:360px;margin:auto}
 .login-slogan{font-family:var(--font-b);font-size:1rem;color:var(--text-mid);letter-spacing:1px;margin-bottom:6px;text-align:center}
 .login-tag{font-family:var(--font-m);font-size:0.58rem;color:var(--text-dim);letter-spacing:3px;margin-bottom:36px;text-align:center}
