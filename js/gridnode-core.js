@@ -534,14 +534,38 @@ export async function signUpCloud(email, password) {
   return data || null;
 }
 
-export async function resetPasswordCloud(email) {
-  const client = await getCloudClient();
+export async function resetPasswordCloud(email) {  const client = await getCloudClient();
   if (!client) throw new Error('CLOUD_UNAVAILABLE');
   const { error } = await withTimeout(client.auth.resetPasswordForEmail(email, {
     redirectTo: `${window.location.origin}/`
   }), 8000);
   if (error) throw error;
   return true;
+}
+
+// Passwordless OTP entry (email code). createUser=false for returning users
+// (never shows a fake code-sent screen for unknown emails), true for new-user
+// account claim after NODE KEY validation.
+export async function sendSignInCode(email, createUser) {
+  const client = await getCloudClient();
+  if (!client) throw new Error('CLOUD_UNAVAILABLE');
+  const { error } = await withTimeout(
+    client.auth.signInWithOtp({ email, options: { shouldCreateUser: !!createUser } }),
+    8000
+  );
+  if (error) throw error;
+  return true;
+}
+
+export async function verifySignInCode(email, token) {
+  const client = await getCloudClient();
+  if (!client) throw new Error('CLOUD_UNAVAILABLE');
+  const { data, error } = await withTimeout(
+    client.auth.verifyOtp({ email, token, type: 'email' }),
+    8000
+  );
+  if (error) throw error;
+  return data?.session || null;
 }
 
 export async function updateCloudPassword(password) {

@@ -87,6 +87,7 @@
           // Allow only the known optional string fields; never user_id/session_id.
           if (typeof extra.path === 'string') payload.path = extra.path.slice(0, 256);
           if (typeof extra.lang === 'string') payload.lang = extra.lang.slice(0, 16);
+          if (typeof extra.auth_method === 'string') payload.auth_method = extra.auth_method.slice(0, 32);
         }
         fetch(ENDPOINT, {
           method: 'POST',

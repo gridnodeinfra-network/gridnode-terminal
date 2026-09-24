@@ -21,39 +21,53 @@ async function handle(req: Request): Promise<Response> {
     return text("rate limited", 429);
   }
 
-  // Resolve the account by email via the GoTrue admin endpoint (scoped, no global enumeration).
+  // Resolve the account by email via the GoTrue admin endpoint.
+  // Anti-oracle: unknown emails and accounts without passkeys receive an
+  // externally indistinguishable dummy challenge (null user binding, random
+  // credential ID, same 200 shape). No verification can succeed without the
+  // real private key; the verify endpoint's signature check is the real gate.
+  let boundUserId: string | null = null;
+  let allowCredentials: Array<{ id: string; type: string }> = [];
   const adminResponse = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?filter=${encodeURIComponent(email)}`, {
     headers: { "apikey": SERVICE_ROLE_KEY, "Authorization": `Bearer ${SERVICE_ROLE_KEY}` },
   });
   const adminBody = await adminResponse.json().catch(() => ({}));
   const user = Array.isArray(adminBody.users) ? adminBody.users[0] : null;
-  if (!user || String(user.email || "").toLowerCase() !== email) {
+  if (user && String(user.email || "").toLowerCase() === email) {
+    const { data: credentials } = await admin.from("webauthn_credentials")
+      .select("credential_id")
+      .eq("user_id", user.id)
+      .is("revoked_at", null);
+    if (credentials?.length) {
+      boundUserId = user.id;
+      allowCredentials = credentials.map((row: { credential_id: string }) => ({ id: row.credential_id, type: "public-key" }));
+    } else {
+      await recordAudit(admin, { user_id: user.id, event: "authenticate_options", success: false, error: "no_passkeys", ip, user_agent: userAgent });
+    }
+  } else {
     await recordAudit(admin, { event: "authenticate_options", success: false, error: "no_user", ip, user_agent: userAgent });
-    return text("no passkey registered", 404);
   }
-  const { data: credentials } = await admin.from("webauthn_credentials")
-    .select("credential_id")
-    .eq("user_id", user.id)
-    .is("revoked_at", null);
-  if (!credentials?.length) {
-    await recordAudit(admin, { user_id: user.id, event: "authenticate_options", success: false, error: "no_passkeys", ip, user_agent: userAgent });
-    return text("no passkey registered", 404);
+  if (!allowCredentials.length) {
+    // Dummy credential ID: syntactically valid, matches nothing on file.
+    const dummy = crypto.getRandomValues(new Uint8Array(32));
+    const dummyB64 = btoa(String.fromCharCode(...dummy)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    allowCredentials = [{ id: dummyB64, type: "public-key" }];
   }
 
   const options = await generateAuthenticationOptions({
     rpID: RP_ID,
-    allowCredentials: credentials.map((row: { credential_id: string }) => ({ id: row.credential_id, type: "public-key" })),
+    allowCredentials,
     userVerification: "preferred",
   });
-  const challengeToken = await signChallenge(options.challenge, user.id, "authenticate");
+  const challengeToken = await signChallenge(options.challenge, boundUserId, "authenticate");
   try {
-    await storeChallenge(admin, challengeToken, user.id, "authenticate");
+    await storeChallenge(admin, challengeToken, boundUserId, "authenticate");
   } catch (e) {
     const msg = (e as Error).message;
-    await recordAudit(admin, { user_id: user.id, event: "authenticate_options", success: false, error: msg.slice(0, 200), ip, user_agent: userAgent });
+    await recordAudit(admin, { user_id: boundUserId, event: "authenticate_options", success: false, error: msg.slice(0, 200), ip, user_agent: userAgent });
     return text(`challenge store failed: ${msg}`, 500);
   }
-  await recordAudit(admin, { user_id: user.id, event: "authenticate_options", success: true, ip, user_agent: userAgent });
+  await recordAudit(admin, { user_id: boundUserId, event: "authenticate_options", success: !!boundUserId, ip, user_agent: userAgent });
   return json({ ...options, challengeToken });
 }
 

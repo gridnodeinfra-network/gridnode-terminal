@@ -1506,13 +1506,8 @@ html[data-theme="light"] .mixing-warn span { font-size: 15px !important; }
    at 360/390/412px. Wrap is the graceful fallback. */
 .gn-empty-ghosts { grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); }
 .gn-empty-ghost { white-space: normal; padding: 10px 6px; line-height: 1.25; text-align: center; }
-/* Passkey CTA (night): measured white-on-#FF3B3B 3.53:1 (audit). Deepen to
-   the lava family so every stop is >= 4.5:1 with white text. Light theme
-   keeps its neutral surface treatment (audit-clean). */
-html:not([data-theme="light"]) #gnPasskeyBtn {
-  background: linear-gradient(135deg, #C61F3A 0%, #8F0F28 100%) !important;
-  border-color: rgba(255, 59, 59, .4) !important;
-}
+/* Passkey button is now a quiet text action in the OTP-first welcome view;
+   the old Mars Red CTA treatment was removed 2026-09-24. */
 /* es-419: Spanish sentence-length copy exceeds the audit's 34-char sentence
    threshold → 15px floor (EN equivalents pass at their HUD sizes). The
    :is(#landing,#login,...) :is(button,...) HUD rule forces 14px at
@@ -1567,13 +1562,6 @@ html[data-theme="light"] {
   --lava-edge: #D12424;
 }
 /* .btn-primary radial + hover + light variants consume the tokens above. */
-/* Mission-card CTA already used the locked Mars Red gradient; the gn-empty-cta
-   hero button now resolves through the restored tokens. Passkey CTA: restore
-   Mars Red to match the JACK IN rebuild spec (full-width Mars Red button). */
-html:not([data-theme="light"]) #gnPasskeyBtn {
-  background: linear-gradient(135deg, #FF3B3B 0%, #D12424 100%) !important;
-  border-color: rgba(255, 59, 59, .4) !important;
-}
 
 /* ─────────────────────────────────────────────────────────────────────
    R2.2 — 2077 kanji language icon (2026-08-08, rev)

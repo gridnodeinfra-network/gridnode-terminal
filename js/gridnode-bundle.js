@@ -536,14 +536,38 @@ async function signUpCloud(email, password) {
   return data || null;
 }
 
-async function resetPasswordCloud(email) {
-  const client = await getCloudClient();
+async function resetPasswordCloud(email) {  const client = await getCloudClient();
   if (!client) throw new Error('CLOUD_UNAVAILABLE');
   const { error } = await withTimeout(client.auth.resetPasswordForEmail(email, {
     redirectTo: `${window.location.origin}/`
   }), 8000);
   if (error) throw error;
   return true;
+}
+
+// Passwordless OTP entry (email code). createUser=false for returning users
+// (never shows a fake code-sent screen for unknown emails), true for new-user
+// account claim after NODE KEY validation.
+async function sendSignInCode(email, createUser) {
+  const client = await getCloudClient();
+  if (!client) throw new Error('CLOUD_UNAVAILABLE');
+  const { error } = await withTimeout(
+    client.auth.signInWithOtp({ email, options: { shouldCreateUser: !!createUser } }),
+    8000
+  );
+  if (error) throw error;
+  return true;
+}
+
+async function verifySignInCode(email, token) {
+  const client = await getCloudClient();
+  if (!client) throw new Error('CLOUD_UNAVAILABLE');
+  const { data, error } = await withTimeout(
+    client.auth.verifyOtp({ email, token, type: 'email' }),
+    8000
+  );
+  if (error) throw error;
+  return data?.session || null;
 }
 
 async function updateCloudPassword(password) {
@@ -5954,13 +5978,11 @@ function injectStableStyles() {
     .gn-auth-secondary{width:100%;min-height:52px;margin-top:16px;border:1px solid rgba(0,212,255,.4);background:rgba(0,212,255,.04);color:#00d4ff;border-radius:3px;cursor:pointer;font:700 .72rem var(--font-d,monospace);letter-spacing:2px}
     .gn-auth-secondary:hover{border-color:#00d4ff;background:rgba(0,212,255,.09)}
     .gn-auth-secondary[aria-expanded="true"]{border-color:#00d4ff;color:#fff;background:rgba(0,212,255,.1)}
-    #gnCloudArea{margin-top:4px}
-    #gnCloudArea .gn-auth-passkey{margin-top:16px}
-    #gnNodeKeyPanel{margin-top:18px;padding:14px 12px;border:1px dashed rgba(0,212,255,.45);border-radius:3px;background:rgba(0,212,255,.03)}
-    #gnNodeKeyPanel .gn-nodekey-title{color:#00d4ff;font:700 .72rem var(--font-d,monospace);letter-spacing:2px;margin:0 0 8px}
-    #gnNodeKeyPanel .gn-auth-field{text-transform:uppercase;letter-spacing:1.5px}
-    #gnNodeKeyPanel .gn-auth-message{margin-top:10px}
     .gn-legal-modal-title{margin:0 0 16px;color:#00d4ff;font:700 .66rem var(--font-d,monospace);letter-spacing:2px}
+    #login>div[hidden]{display:none!important}
+    .gn-legal-modal{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(2,2,8,.82);backdrop-filter:blur(8px)}
+    .gn-legal-modal.active{display:flex}
+    .gn-legal-modal-card{width:min(100%,440px);max-height:88vh;overflow-y:auto;box-sizing:border-box;padding:24px 20px;border:1px solid rgba(0,212,255,.35);border-top:2px solid #00d4ff;background:#0a0a12;box-shadow:0 24px 60px rgba(0,0,0,.6)}
     .gn-legal-check{display:flex;gap:12px;align-items:flex-start;margin:0 0 14px;cursor:pointer;color:#9fc7d4;font:.66rem/1.55 var(--font-m,monospace)}
     .gn-legal-check input{flex:0 0 auto;width:20px;height:20px;margin:0;accent-color:#00d4ff;cursor:pointer}
     .gn-legal-link{padding:0;border:0;background:transparent;color:#00d4ff;font:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
@@ -5988,6 +6010,31 @@ function injectStableStyles() {
     .gn-shot-filters{margin:10px 0 14px;border:1px solid rgba(0,212,255,.18);background:rgba(0,212,255,.025);padding:10px 12px}.gn-shot-filters summary{cursor:pointer;color:#9fc7d4;font:700 .6rem var(--font-m,monospace);letter-spacing:1.5px}.gn-shot-filter-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}.gn-shot-filter-grid label,.gn-measurements-tools label,.gn-dose-grid label{display:grid;gap:5px;color:#8295a0;font:600 .53rem var(--font-m,monospace);letter-spacing:1px}.gn-shot-filter-grid select,.gn-shot-filter-grid input,.gn-measurements-tools select,.gn-measurements-tools input,.gn-dose-grid input{box-sizing:border-box;width:100%;padding:9px 8px;border:1px solid rgba(0,212,255,.18);background:#080810;color:#eef6f8;font:16px var(--font-m,monospace);border-radius:2px}.gn-filter-count{color:#ffd700;margin-left:7px}.gn-shot-filter-clear{margin-top:10px;padding:8px 10px;border:1px solid rgba(255,215,0,.38);background:transparent;color:#ffd700;font:700 .55rem var(--font-m,monospace);letter-spacing:1px;cursor:pointer}.gn-next-today{border-color:#FF3B3B!important;box-shadow:0 0 18px rgba(255,59,59,.18)}.gn-next-tomorrow{border-color:#00d4ff!important}.gn-next-overdue{border-color:#FF3B3B!important;animation:gnShotOverdue 1.8s ease-in-out infinite}.gn-next-today .stat-sub,.gn-next-overdue .stat-sub{color:#FF5B5B!important}@keyframes gnShotOverdue{50%{box-shadow:0 0 20px rgba(255,59,59,.22)}}
     .gn-measurements-card,.gn-dose-projection{margin:0 0 20px;padding:16px;border:1px solid rgba(0,212,255,.2);border-top:2px solid #00d4ff;background:linear-gradient(180deg,rgba(12,18,25,.92),rgba(7,8,13,.96));box-shadow:0 10px 28px rgba(0,0,0,.2)}.gn-measurements-card h3,.gn-dose-projection h2{margin:0;color:#eef6f8;font:700 1rem var(--font-d,monospace);letter-spacing:2px}.gn-measurements-copy,.gn-dose-copy{margin:7px 0 14px;color:#8295a0;font:.62rem/1.45 var(--font-m,monospace)}.gn-measurements-tools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}.gn-measurements-grid,.gn-dose-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.gn-measurements-grid>label{display:grid;gap:5px;padding:9px;border:1px solid rgba(255,255,255,.07);background:rgba(0,0,0,.2);color:#9fc7d4;font:600 .53rem var(--font-m,monospace);letter-spacing:.7px}.gn-measurements-grid>label span{display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap}.gn-measurements-grid small{color:#8295a0;font-weight:400;letter-spacing:0;text-align:right}.gn-measurements-grid input{box-sizing:border-box;width:100%;padding:9px 8px;border:1px solid rgba(0,212,255,.18);background:#080810;color:#eef6f8;font:16px var(--font-m,monospace)}.gn-measurements-empty{margin-top:10px;color:#8295a0;font:.6rem var(--font-m,monospace)}.gn-measurement-trend-list{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-top:10px}.gn-measurement-trend-row{display:flex;justify-content:space-between;gap:8px;padding:9px;border:1px solid rgba(0,212,255,.12);color:#9fc7d4;font:.58rem var(--font-m,monospace)}.gn-measurement-trend-row span{color:#00ff88}.gn-dose-grid{grid-template-columns:repeat(4,1fr)}.gn-dose-output{margin-top:12px;padding:12px;border-left:3px solid #00d4ff;background:rgba(0,212,255,.05);color:#e8fcff;font:.7rem/1.7 var(--font-m,monospace)}.gn-dose-disclaimer{margin-top:10px;padding:11px;border:1px solid rgba(255,215,0,.45);border-left:3px solid #ffd700;background:rgba(255,215,0,.06);color:#f1d982;font:.62rem/1.5 var(--font-m,monospace)}.gn-dose-disclaimer strong{color:#ffd700}.gn-import-overlay,.gn-delete-overlay{position:fixed;inset:0;z-index:180;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.78)}.gn-import-overlay.active,.gn-delete-overlay.active{display:flex}.gn-import-panel,.gn-delete-panel{width:min(100%,480px);max-height:90vh;overflow:auto;padding:18px;border:1px solid rgba(0,212,255,.36);border-top:2px solid #00d4ff;background:#080810;box-shadow:0 18px 50px rgba(0,0,0,.6)}.gn-import-panel p,.gn-delete-panel p{color:#9fc7d4;font:.65rem/1.5 var(--font-m,monospace)}.gn-import-panel>label{display:grid;gap:6px;margin-top:12px;color:#9fc7d4;font:600 .58rem var(--font-m,monospace);letter-spacing:1px}.gn-import-panel select,.gn-import-panel input{box-sizing:border-box;width:100%;padding:10px;background:#0e0e16;border:1px solid rgba(0,212,255,.2);color:#eef6f8;font:16px var(--font-m,monospace)}.gn-import-title,.gn-delete-kicker{color:#00d4ff;font:700 .64rem var(--font-m,monospace);letter-spacing:2px}.gn-import-close{width:100%;margin-top:14px;padding:11px;border:1px solid rgba(255,255,255,.18);background:transparent;color:#9fc7d4;font:700 .6rem var(--font-m,monospace);letter-spacing:1px}.gn-delete-panel h2{margin:8px 0;color:#FF5B5B;font:700 1.05rem var(--font-d,monospace);letter-spacing:1.5px}.gn-delete-panel label{display:grid;gap:6px;color:#ffd700;font:700 .58rem var(--font-m,monospace);letter-spacing:1px}.gn-delete-panel input{padding:11px;background:#080810;border:1px solid rgba(255,59,59,.4);color:#fff;font:16px var(--font-m,monospace)}.gn-delete-note{color:#ffd982!important}.gn-delete-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.gn-delete-confirm{border-color:#FF3B3B!important;color:#FF5B5B!important}.gn-delete-confirm:disabled{cursor:not-allowed;opacity:.4}
     #boot .boot-command-deck{width:min(92vw,520px);padding:26px 22px;background:linear-gradient(180deg,rgba(10,16,23,.96),rgba(5,5,8,.98));border-color:rgba(0,212,255,.34);box-shadow:0 0 55px rgba(0,212,255,.11),inset 0 0 40px rgba(0,212,255,.025)}#boot .boot-terminal,#boot .boot-prog-wrap{max-width:100%}
+    /* Passwordless auth redesign: three views (welcome / code / new-here) */
+    .gn-auth-view-title{margin:14px 0 4px;color:#fff;font:800 1.05rem var(--font-d,monospace);letter-spacing:2.5px;text-align:center}
+    .gn-auth-view-sub{margin:0 auto 20px;max-width:36ch;color:#9fc7d4;font:.72rem/1.55 var(--font-m,monospace);text-align:center}
+    .gn-auth-view-sub b{color:#eef6f8;word-break:break-all}
+    .gn-auth-quiet{display:block;width:100%;margin-top:14px;padding:10px;border:0;background:transparent;color:#8295a0;font:600 .62rem var(--font-m,monospace);letter-spacing:1.4px;cursor:pointer;text-align:center}
+    .gn-auth-quiet:hover{color:#00d4ff}
+    .gn-auth-quiet .gn-quiet-sub{display:block;margin-top:3px;font-size:.54rem;letter-spacing:.8px;color:#586d76}
+    .gn-code-row{display:flex;gap:8px;justify-content:center;margin:6px 0 14px}
+    .gn-code-box{width:44px;height:54px;box-sizing:border-box;text-align:center;border:1px solid rgba(0,212,255,.25);background:#080810;color:#fff;border-radius:3px;font:700 1.3rem var(--font-m,monospace);outline:none;caret-color:#00d4ff}
+    .gn-code-box:focus{border-color:#00d4ff;box-shadow:0 0 0 2px rgba(0,212,255,.12)}
+    .gn-code-meta{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:2px 0 12px;color:#8295a0;font:.6rem/1.4 var(--font-m,monospace);letter-spacing:.6px}
+    .gn-code-meta b{color:#eef6f8}
+    .gn-no-account{margin:14px 0;padding:12px;border:1px solid rgba(255,59,59,.55);border-left:3px solid #FF3B3B;background:rgba(255,59,59,.05)}
+    .gn-no-account b{display:block;color:#FF5B5B;font:700 .68rem var(--font-d,monospace);letter-spacing:1.8px;margin-bottom:6px}
+    .gn-no-account p{margin:0 0 10px;color:#c9a0a6;font:.62rem/1.5 var(--font-m,monospace)}
+    .gn-no-account .gn-auth-links{margin-top:6px}
+    .gn-no-account.gn-key-ok{border-color:rgba(0,255,136,.5);border-left-color:#00ff88;background:rgba(0,255,136,.05)}
+    .gn-no-account.gn-key-ok b{color:#00ff88}
+    .gn-no-account.gn-key-ok p{color:#9fc7d4}
+    .gn-waitlist-form{display:grid;gap:8px;margin-top:10px}
+    .gn-waitlist-consent{margin:0;color:#586d76;font:.56rem/1.5 var(--font-m,monospace)}
+    .gn-auth-back{display:inline-block;margin:0 0 6px;padding:6px 2px;border:0;background:transparent;color:#8295a0;font:600 .6rem var(--font-m,monospace);letter-spacing:1.4px;cursor:pointer}
+    .gn-auth-back:hover{color:#00d4ff}
+    .gn-auth-message[data-tone="error"]{color:#FF5B5B}
+    @media(max-width:380px){.gn-code-box{width:40px;height:50px}.gn-code-row{gap:6px}}
     canvas{display:block;max-width:100%}
     /* v0.15.42: RESULTS charts/calendar segmented toggle + calendar subview */
     .results-view-toggle{display:flex;gap:0;margin:12px 0 4px;border:1px solid rgba(0,212,255,.22);border-radius:6px;overflow:hidden}
@@ -6050,109 +6097,677 @@ function injectStableStyles() {
   document.head.appendChild(style);
 }
 
+/* Passwordless auth redesign — three-view state machine.
+ * welcome: email code (primary), Google, quiet passkey, quiet device, new-here link, password fallback.
+ * code: 6-digit OTP with expiry + resend countdown.
+ * newhere: NODE KEY validate -> claim (OTP or Google) -> code; quiet No-NODE-KEY waitlist.
+ * requestLegalAccept() keeps wrapping every entry path. Password recovery card unchanged. */
+let gnAuthView = 'welcome';
+let gnOtp = null; /* { email, sentAt, createUser } */
+let gnOtpTimers = [];
+let gnVerifying = false;
+let gnConditionalAbort = null;
+let gnKeyContinuation = null;
+let gnKeySkipAction = null;
+let gnWaitLastSubmit = 0;
+let gnExpandPassword = false;
+let gnPendingCreds = null;
+let gnSkipKeyGateOnce = false;
+const OTP_EXPIRY_S = 600;
+const OTP_RESEND_S = 60;
+
 function authShell() {
   const login = $('login');
   if (!login) return;
-  const recovering = authMode === 'recovery';
-  login.innerHTML = `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px;gap:0;min-height:100%"><div class="gn-auth-card">
-    <div class="gn-auth-kicker">// PERSONAL BIOTECH OPERATING SYSTEM //</div>
-    <div class="gn-auth-title">${recovering ? 'RESET ACCESS' : 'GRID//NODE'}</div>
-    ${recovering ? `<p class="gn-auth-copy">Enter a new password for this GRID//NODE cloud account.</p>` : `
-    <p class="gn-auth-copy" data-i18n="auth.entryCopy">Choose how you enter your grid.</p>
-    <button class="gn-auth-primary" id="gnLocalBtn" type="button"><span data-i18n="auth.continueOnDevice">CONTINUE ON THIS DEVICE</span></button>
-    <p class="gn-auth-hint" data-i18n="auth.deviceSubline">Nothing leaves your phone.</p>
-    <button class="gn-auth-secondary" id="gnCloudToggle" type="button" aria-expanded="false" aria-controls="gnCloudArea"><span data-i18n="auth.syncAcrossDevices">SYNC ACROSS DEVICES</span></button>
-    <button class="gn-auth-secondary" id="gnNodeKeyEntryBtn" type="button"><span data-i18n="nodekey.haveKey">I HAVE A NODE KEY</span></button>
-    <div id="gnCloudArea" hidden>
-      <div class="gn-google-button-shell" id="gnGoogleButtonMount" role="group" aria-label="Continue with Google" style="display:none"></div>
-      <button class="gn-auth-passkey" id="gnPasskeyBtn" type="button" data-i18n-aria-label="auth.passkeyAria"><span class="gn-passkey-icon" aria-hidden="true">⌘</span><span data-i18n="auth.continueWithPasskey">CONTINUE WITH PASSKEY</span></button>
-      <form id="gnAuthForm" novalidate>
-        <input class="gn-auth-field" id="gnAuthEmail" type="email" autocomplete="email" placeholder="EMAIL ADDRESS" aria-label="Email address">
-        <input class="gn-auth-field" id="gnAuthPassword" type="password" autocomplete="current-password" placeholder="PASSWORD" aria-label="Password">
-        <button class="gn-auth-primary" id="gnAuthSubmit" type="submit">SIGN IN TO CLOUD</button>
-      </form>
-      <div class="gn-auth-links"><button class="gn-auth-link" id="gnAuthModeToggle" type="button">CREATE ACCOUNT</button><button class="gn-auth-link" id="gnAuthReset" type="button">RESET PASSWORD</button></div>
-      <div id="gnNodeKeyPanel" hidden>
-        <p class="gn-auth-copy gn-nodekey-title" data-i18n="nodekey.title">BETA ACCESS</p>
-        <p class="gn-auth-copy" data-i18n="nodekey.prompt">ENTER YOUR NODE KEY TO CREATE A CLOUD ACCOUNT</p>
-        <input class="gn-auth-field" id="gnNodeKeyInput" type="text" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="16" data-i18n-placeholder="nodekey.placeholder" placeholder="NODE-XXXXXX" aria-label="Node key">
-        <button class="gn-auth-primary" id="gnNodeKeySubmit" type="button"><span data-i18n="nodekey.validate">VALIDATE KEY</span></button>
-        <div class="gn-auth-links"><button class="gn-auth-link" id="gnNodeKeyCancel" type="button"><span data-i18n="nodekey.cancel">CANCEL</span></button><button class="gn-auth-link" id="gnNodeKeySkip" type="button" hidden><span data-i18n="nodekey.skip">I ALREADY HAVE AN ACCOUNT</span></button></div>
-        <div class="gn-auth-message" id="gnNodeKeyMsg" role="status" aria-live="polite"></div>
-      </div>
-    </div>
-    <div class="gn-privacy-overlay" id="gnLegalModal" role="dialog" aria-modal="true" aria-labelledby="gnLegalModalTitle">
-      <div class="gn-privacy-panel">
-        <p class="gn-legal-modal-title" id="gnLegalModalTitle" data-i18n="legal.gateTitle">BEFORE YOU ENTER</p>
-        <label class="gn-legal-check"><input type="checkbox" id="gnLegalModalAge"><span data-i18n="legal.ageConfirm">I confirm I am 18 years of age or older.</span></label>
-        <label class="gn-legal-check"><input type="checkbox" id="gnLegalModalTerms"><span><span data-i18n="legal.agreePrefix">I agree to the</span> <button type="button" class="gn-legal-link" id="gnLegalModalTermsLink" data-i18n="legal.termsLink">Terms of Service</button> <span data-i18n="legal.andWord">and</span> <button type="button" class="gn-legal-link" id="gnLegalModalPrivacyLink" data-i18n="legal.privacyLink">Privacy Policy</button><span data-i18n="legal.agreeSuffix">.</span></span></label>
-        <button type="button" class="gn-legal-under18" id="gnLegalModalUnder18" data-i18n="legal.under18Link">I am under 18</button>
+  if (authMode === 'recovery') {
+    /* Recovery mode: minimal card — email + new password, legal gate unchanged. */
+    login.innerHTML = `
+  <div class="gn-auth-card">
+    <div class="gn-auth-kicker" data-i18n="auth.secureConnection">SECURE CONNECTION // TERMINAL READY</div>
+    <h1 class="gn-auth-title">GRID//NODE</h1>
+    <div class="gn-auth-copy" data-i18n="auth.recoveryCopy">Set a new password for your cloud account.</div>
+    <div class="gn-legal-modal" id="gnLegalModal" hidden>
+      <div class="gn-legal-modal-card" role="dialog" aria-modal="true" aria-labelledby="gnLegalModalTitle">
+        <h2 class="gn-legal-modal-title" id="gnLegalModalTitle" data-i18n="legal.modalTitle">BEFORE YOU ENTER</h2>
+        <label class="gn-legal-check"><input type="checkbox" id="gnLegalModalTerms"><span data-i18n="legal.modalTerms">I am 18 or older and I accept the <button type="button" class="gn-legal-link" id="gnLegalModalTermsLink" data-i18n="footer.termsOfService">TERMS OF SERVICE</button> and <button type="button" class="gn-legal-link" id="gnLegalModalPrivacyLink" data-i18n="footer.privacyPolicy">PRIVACY POLICY</button>.</span></label>
+        <label class="gn-legal-check"><input type="checkbox" id="gnLegalModalResearch"><span data-i18n="legal.modalResearch">I understand GRID//NODE is a personal tracking tool, not medical advice.</span></label>
+        <button type="button" class="gn-legal-under18" id="gnLegalModalUnder18" data-i18n="legal.under18">I AM UNDER 18</button>
         <div class="gn-legal-modal-msg" id="gnLegalModalMsg" role="status" aria-live="polite"></div>
         <div class="gn-legal-modal-actions">
           <button type="button" class="gn-auth-primary" id="gnLegalModalAgree" data-i18n="legal.agreeContinue">AGREE AND CONTINUE</button>
           <button type="button" class="gn-legal-modal-cancel" id="gnLegalModalCancel" data-i18n="legal.cancel">CANCEL</button>
         </div>
       </div>
-    </div>`}
-    ${recovering ? `
+    </div>
     <form id="gnAuthForm" novalidate>
       <input class="gn-auth-field" id="gnAuthEmail" type="email" autocomplete="email" placeholder="EMAIL ADDRESS" aria-label="Email address" hidden>
       <input class="gn-auth-field" id="gnAuthPassword" type="password" autocomplete="new-password" placeholder="NEW PASSWORD" aria-label="New password">
       <button class="gn-auth-primary" id="gnAuthSubmit" type="submit">UPDATE PASSWORD</button>
     </form>
-    <div class="gn-auth-links"><button class="gn-auth-link" id="gnAuthModeToggle" type="button">BACK TO SIGN IN</button></div>` : ''}
+    <div class="gn-auth-links"><button class="gn-auth-link" id="gnAuthModeToggle" type="button">BACK TO SIGN IN</button></div>
     <div class="gn-auth-message" id="loginMsg" role="status" aria-live="polite"></div>
-    ${recovering ? '' : '<div class="gn-auth-policy-link"><button type="button" id="gnVaultPolicyLink" data-i18n="landing.yourDataYourRules">YOUR DATA, YOUR RULES</button></div>'}
-  </div></div>`;
-  login.querySelector('.gn-auth-card')?.insertAdjacentHTML('afterbegin', '<div class="gn-auth-lang-kanji" role="group" data-i18n-aria-label="lang.switcherAria"><button type="button" class="gn-lang-globe" data-lang-choice="es" aria-label="Español" title="Cambiar a Español"><svg class="gn-lang-kanji" viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><text x="12" y="17.5" text-anchor="middle" font-family="Noto Sans JP, Hiragino Sans, Yu Gothic, PingFang SC, Microsoft YaHei, sans-serif" font-size="17" stroke="currentColor" stroke-width="2" fill="none">電</text></svg></button></div>');
+  </div>`;
+    wireLegalModal();
+    $('gnAuthForm')?.addEventListener('submit', submitAuth);
+    $('gnAuthModeToggle')?.addEventListener('click', toggleAuthMode);
+    login.querySelector('.gn-auth-card')?.insertAdjacentHTML('afterbegin', '<div class="gn-auth-lang-kanji" role="group" data-i18n-aria-label="lang.switcherAria"><button type="button" class="gn-lang-globe" data-lang-choice="es" aria-label="Español" title="Cambiar a Español"><svg class="gn-lang-kanji" viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><text x="12" y="17.5" text-anchor="middle" font-family="Noto Sans JP, Hiragino Sans, Yu Gothic, PingFang SC, Microsoft YaHei, sans-serif" font-size="17" stroke="currentColor" stroke-width="2" fill="none">電</text></svg></button></div>');
+    applyAuthTranslations();
+    window.GN_I18N?.applyTo?.(login);
+    return;
+  }
+  authMode = 'signin';
+  login.innerHTML = `
+  <div class="gn-auth-card">
+    <div class="gn-auth-kicker" data-i18n="auth.secureConnection">SECURE CONNECTION // TERMINAL READY</div>
+    <h1 class="gn-auth-title">GRID//NODE</h1>
+    <div id="gnAuthViewRoot"></div>
+    <div class="gn-auth-policy-link"><button type="button" id="gnVaultPolicyLink" data-i18n="landing.yourDataYourRules">YOUR DATA, YOUR RULES</button></div>
+    <div class="gn-auth-note" data-i18n="auth.inviteBetaNote">GRID//NODE is in private beta. Cloud sync requires a NODE KEY invite.</div>
+    <div class="gn-auth-message" id="loginMsg" role="status" aria-live="polite"></div>
+  </div>
+  <div class="gn-legal-modal" id="gnLegalModal" hidden>
+    <div class="gn-legal-modal-card" role="dialog" aria-modal="true" aria-labelledby="gnLegalModalTitle">
+      <h2 class="gn-legal-modal-title" id="gnLegalModalTitle" data-i18n="legal.modalTitle">BEFORE YOU ENTER</h2>
+      <label class="gn-legal-check"><input type="checkbox" id="gnLegalModalTerms"><span data-i18n="legal.modalTerms">I am 18 or older and I accept the <button type="button" class="gn-legal-link" id="gnLegalModalTermsLink" data-i18n="footer.termsOfService">TERMS OF SERVICE</button> and <button type="button" class="gn-legal-link" id="gnLegalModalPrivacyLink" data-i18n="footer.privacyPolicy">PRIVACY POLICY</button>.</span></label>
+      <label class="gn-legal-check"><input type="checkbox" id="gnLegalModalResearch"><span data-i18n="legal.modalResearch">I understand GRID//NODE is a personal tracking tool, not medical advice.</span></label>
+      <button type="button" class="gn-legal-under18" id="gnLegalModalUnder18" data-i18n="legal.under18">I AM UNDER 18</button>
+      <div class="gn-legal-modal-msg" id="gnLegalModalMsg" role="status" aria-live="polite"></div>
+      <div class="gn-legal-modal-actions">
+        <button type="button" class="gn-auth-primary" id="gnLegalModalAgree" data-i18n="legal.agreeContinue">AGREE AND CONTINUE</button>
+        <button type="button" class="gn-legal-modal-cancel" id="gnLegalModalCancel" data-i18n="legal.cancel">CANCEL</button>
+      </div>
+    </div>
+  </div>`;
+  wireLegalModal();
   $('gnVaultPolicyLink')?.addEventListener('click', openPrivacyPolicy);
-  /* v0.15.55: legal modal wiring — stopPropagation so tapping a link
-   * inside the checkbox label does not toggle the checkbox. */
+  login.querySelector('.gn-auth-card')?.insertAdjacentHTML('afterbegin', '<div class="gn-auth-lang-kanji" role="group" data-i18n-aria-label="lang.switcherAria"><button type="button" class="gn-lang-globe" data-lang-choice="es" aria-label="Español" title="Cambiar a Español"><svg class="gn-lang-kanji" viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><text x="12" y="17.5" text-anchor="middle" font-family="Noto Sans JP, Hiragino Sans, Yu Gothic, PingFang SC, Microsoft YaHei, sans-serif" font-size="17" stroke="currentColor" stroke-width="2" fill="none">電</text></svg></button></div>');
+  applyAuthTranslations();
+  showAuthView(gnAuthView === 'code' && !gnOtp ? 'welcome' : gnAuthView);
+  window.GN_I18N?.applyTo?.(login);
+}
+
+/* Legal modal wiring — stopPropagation so tapping a link inside the
+ * checkbox label does not toggle the checkbox. */
+function wireLegalModal() {
   const gnNoLabelToggle = e => e.stopPropagation();
   $('gnLegalModalTermsLink')?.addEventListener('click', e => { gnNoLabelToggle(e); openTermsOfService(); });
   $('gnLegalModalPrivacyLink')?.addEventListener('click', e => { gnNoLabelToggle(e); openPrivacyPolicy(); });
   $('gnLegalModalUnder18')?.addEventListener('click', () => setLegalModalMessage(tx('legal.under18Blocked', '// GRID//NODE IS 18+ ONLY. YOU MUST BE 18 OR OLDER TO USE THIS APP.'), true));
   $('gnLegalModalAgree')?.addEventListener('click', confirmLegalModal);
   $('gnLegalModalCancel')?.addEventListener('click', closeLegalModal);
-  /* v0.15.55: SYNC ACROSS DEVICES expands the cloud options inline */
-  $('gnCloudToggle')?.addEventListener('click', () => {
-    const area = $('gnCloudArea'), toggle = $('gnCloudToggle');
-    if (!area || !toggle) return;
-    if (area.hasAttribute('hidden')) {
-      area.removeAttribute('hidden');
-      toggle.setAttribute('aria-expanded', 'true');
-    } else {
-      area.setAttribute('hidden', '');
-      toggle.setAttribute('aria-expanded', 'false');
-    }
-  });
-  /* v0.15.63: NODE KEY front door — invite holders enter the key directly
-   * instead of discovering the panel only after attempting Google/signup. */
-  $('gnNodeKeyEntryBtn')?.addEventListener('click', openNodeKeyEntry);
-  applyAuthTranslations(recovering);
-  $('gnAuthForm')?.addEventListener('submit', event => { event.preventDefault(); submitAuth(); });
-  $('gnAuthModeToggle')?.addEventListener('click', toggleAuthMode);
-  $('gnAuthReset')?.addEventListener('click', requestPasswordReset);
-  $('gnNodeKeySubmit')?.addEventListener('click', submitNodeKey);
-  $('gnNodeKeyInput')?.addEventListener('keydown', event => {
-    if (event.key === 'Enter') { event.preventDefault(); submitNodeKey(); }
-  });
-  $('gnNodeKeyCancel')?.addEventListener('click', () => { hideNodeKeyPanel(); setAuthMessage('', false); });
-  $('gnNodeKeySkip')?.addEventListener('click', () => {
-    const skip = gnNodeKeySkipAction;
-    gnNodeKeySkipAction = null; gnNodeKeyContinuation = null;
-    if (skip) skip();
-  });
-  $('gnLocalBtn')?.addEventListener('click', () => requestLegalAccept(() => enterLocalSession()));
-  updateAuthMode();
-  renderGoogleIdentityButton();
-  wirePasskeyAuth();
 }
 
+function showAuthView(name, opts = {}) {
+  abortConditionalMediation();
+  clearOtpTimers();
+  gnVerifying = false;
+  gnAuthView = name;
+  const root = $('gnAuthViewRoot');
+  if (!root) return;
+  if (name === 'code') root.innerHTML = renderCodeView();
+  else if (name === 'newhere') root.innerHTML = renderNewHereView({ allowSkip: !!gnKeySkipAction });
+  else root.innerHTML = renderWelcomeView();
+  wireAuthView(name);
+  window.GN_I18N?.applyTo?.(root);
+  updateAuthMode();
+}
 
-/* v0.15.42: showVaultPolicy superseded by openPrivacyPolicy (full bilingual
- * policy overlay in 09-vault.js). Removed. */
+function renderWelcomeView() {
+  const expand = gnExpandPassword;
+  gnExpandPassword = false;
+  return `
+  <h2 class="gn-auth-view-title" data-i18n="otp.welcomeBack">WELCOME BACK</h2>
+  <p class="gn-auth-view-sub" data-i18n="otp.welcomeSub">Sign in to get to your grid.</p>
+  <div id="gnOtpNoAccount"></div>
+  <input class="gn-auth-field" id="gnOtpEmail" type="email" inputmode="email" autocomplete="email" data-i18n-ph="otp.emailPlaceholder" placeholder="name@email.com" data-i18n-aria-label="auth.emailAddress" aria-label="Email">
+  <button class="gn-auth-primary" id="gnSendCodeBtn" type="button"><span data-i18n="otp.sendCode">SEND ME A SIGN-IN CODE</span></button>
+  <div class="gn-auth-divider"><span data-i18n="otp.orContinueWithEmail">or</span></div>
+  <div class="gn-google-button-shell" id="gnGoogleButtonMount" data-i18n-aria-label="auth.continueWithGoogle" aria-label="Continue with Google"></div>
+  <button class="gn-auth-quiet" id="gnPasskeyBtn" type="button" style="display:none">
+    <span data-i18n="otp.usePasskeyInstead">Use a passkey instead</span>
+    <span class="gn-quiet-sub" data-i18n="otp.passkeyHint">Have a passkey? Your device can offer it in the email field.</span>
+  </button>
+  <button class="gn-auth-quiet" id="gnDeviceBtn" type="button">
+    <span data-i18n="auth.continueOnDevice">CONTINUE ON THIS DEVICE</span>
+    <span class="gn-quiet-sub" data-i18n="otp.continueOnDeviceSub">Nothing leaves your phone.</span>
+  </button>
+  <div class="gn-auth-links" style="justify-content:center;margin-top:8px">
+    <button class="gn-auth-link" id="gnNewHereBtn" type="button"><span data-i18n="otp.newHereLink">New here? I HAVE A NODE KEY</span></button>
+  </div>
+  <div class="gn-auth-links" style="justify-content:center;margin-top:2px">
+    <button class="gn-auth-link" id="gnPasswordToggle" type="button"><span data-i18n="otp.usePasswordInstead">Use password instead</span></button>
+  </div>
+  <div id="gnPasswordBlock" ${expand ? '' : 'hidden'}>
+    <form id="gnAuthForm" novalidate>
+      <input class="gn-auth-field" id="gnAuthEmail" type="email" inputmode="email" autocomplete="email" data-i18n-ph="auth.emailPlaceholder" placeholder="EMAIL ADDRESS" data-i18n-aria-label="auth.emailAddress" aria-label="Email">
+      <input class="gn-auth-field" id="gnAuthPassword" type="password" autocomplete="current-password" data-i18n-ph="auth.passwordPlaceholder" placeholder="PASSWORD" data-i18n-aria-label="auth.password" aria-label="Password">
+      <button class="gn-auth-primary" id="gnAuthSubmit" type="submit">SIGN IN TO CLOUD</button>
+    </form>
+    <div class="gn-auth-links">
+      <button class="gn-auth-link" id="gnAuthModeToggle" type="button">CREATE ACCOUNT</button>
+      <button class="gn-auth-link" id="gnAuthReset" type="button" data-i18n="auth.resetPassword">RESET PASSWORD</button>
+    </div>
+  </div>
+  <div class="gn-auth-message" id="gnOtpMsg" role="status" aria-live="polite"></div>`;
+}
 
+function renderCodeView() {
+  const newUser = !!gnOtp?.createUser;
+  const boxes = [0, 1, 2, 3, 4, 5].map(i =>
+    `<input class="gn-code-box" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="${i === 0 ? 'one-time-code' : 'off'}" aria-label="Digit ${i + 1}">`
+  ).join('');
+  return `
+  <button class="gn-auth-back" id="gnCodeBack" type="button">&larr; <span data-i18n="otp.backToWelcome">Back</span></button>
+  <h2 class="gn-auth-view-title" data-i18n="otp.checkEmail">CHECK YOUR EMAIL</h2>
+  <p class="gn-auth-view-sub"><span data-i18n="otp.codeSentTo">We sent a 6-digit code to</span><br><b id="gnCodeEmail"></b></p>
+  <div class="gn-code-row" id="gnCodeRow" role="group" aria-label="6-digit sign-in code">${boxes}</div>
+  <button class="gn-auth-primary" id="gnVerifyBtn" type="button"><span data-i18n="${newUser ? 'otp.newUserVerify' : 'otp.verify'}">${newUser ? 'VERIFY AND CREATE MY ACCOUNT' : 'VERIFY'}</span></button>
+  <div class="gn-code-meta">
+    <span><span data-i18n="otp.codeExpiresIn">Code expires in</span> <b id="gnCodeExpiry">10:00</b></span>
+    <span id="gnResendWrap"><span data-i18n="otp.resendIn">Resend code in</span> <b id="gnResendTimer">1:00</b></span>
+    <button class="gn-auth-link" id="gnResendBtn" type="button" hidden><span data-i18n="otp.resendCode">RESEND CODE</span></button>
+  </div>
+  <div class="gn-auth-links" style="justify-content:center"><button class="gn-auth-link" id="gnChangeEmail" type="button"><span data-i18n="otp.changeEmail">Change email</span></button></div>
+  <div class="gn-auth-message" id="gnOtpMsg" role="status" aria-live="polite"></div>`;
+}
+
+function renderNewHereView(opts = {}) {
+  return `
+  <button class="gn-auth-back" id="gnNewHereBack" type="button">&larr; <span data-i18n="otp.backToWelcome">Back</span></button>
+  <h2 class="gn-auth-view-title" data-i18n="otp.newHereTitle">NEW HERE</h2>
+  <p class="gn-auth-view-sub" data-i18n="otp.newHereSub">GRID//NODE is invite-only. Enter your NODE KEY to begin.</p>
+  ${opts.allowSkip ? `<button class="gn-auth-quiet" id="gnKeySkipBtn" type="button" style="margin-top:0"><span data-i18n="otp.alreadyHaveAccount">I already have an account</span></button>` : ''}
+  <div id="gnKeyFormWrap">
+    <input class="gn-auth-field" id="gnNewKeyInput" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" data-i18n-ph="nodekey.placeholder" placeholder="NODE-XXXXXX" data-i18n-aria-label="nodekey.enterKey" aria-label="NODE KEY" style="text-transform:uppercase;letter-spacing:1.5px">
+    <div class="gn-auth-note" style="margin:2px 0 0;border:0;padding:0" data-i18n="otp.keyFormatHint">Keys look like NODE-XXXXXX.</div>
+    <button class="gn-auth-primary" id="gnValidateKeyBtn" type="button"><span data-i18n="nodekey.validate">VALIDATE KEY</span></button>
+    <div class="gn-auth-message" id="gnKeyMsg" role="status" aria-live="polite"></div>
+  </div>
+  <div id="gnClaimWrap" hidden>
+    <div class="gn-no-account gn-key-ok" role="status">
+      <b data-i18n="otp.keyAccepted">KEY ACCEPTED</b>
+      <p data-i18n="otp.claimSub">Now claim your account with email or Google.</p>
+    </div>
+    <input class="gn-auth-field" id="gnClaimEmail" type="email" inputmode="email" autocomplete="email" data-i18n-ph="otp.emailPlaceholder" placeholder="name@email.com" data-i18n-aria-label="auth.emailAddress" aria-label="Email">
+    <button class="gn-auth-primary" id="gnClaimSendBtn" type="button"><span data-i18n="otp.sendCode">SEND ME A SIGN-IN CODE</span></button>
+    <div class="gn-auth-divider"><span data-i18n="otp.orContinueWithEmail">or</span></div>
+    <div class="gn-google-button-shell" id="gnGoogleButtonMount" data-i18n-aria-label="auth.continueWithGoogle" aria-label="Continue with Google"></div>
+    <div class="gn-auth-message" id="gnClaimMsg" role="status" aria-live="polite"></div>
+  </div>
+  <details class="gn-auth-options" id="gnNoKeyDetails">
+    <summary><span data-i18n="otp.noKeyQ">No NODE KEY?</span></summary>
+    <p class="gn-auth-note" style="text-align:left;border:0;padding:0" data-i18n="otp.askInviter">GRID//NODE is invite-only right now. Ask the person who told you about it for a key. Each one looks like NODE-XXXXXX.</p>
+    <p class="gn-auth-note" style="text-align:left;border:0;padding:0" data-i18n="otp.waitlistOr">Or leave your email and we'll notify you when new keys open.</p>
+    <form class="gn-waitlist-form" id="gnWaitlistForm" novalidate>
+      <input class="gn-auth-field" id="gnWaitlistEmail" type="email" inputmode="email" autocomplete="email" data-i18n-ph="otp.emailPlaceholder" placeholder="name@email.com" data-i18n-aria-label="auth.emailAddress" aria-label="Email">
+      <input type="text" id="gnWaitlistHp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
+      <button class="gn-auth-secondary" id="gnWaitlistBtn" type="submit"><span data-i18n="otp.notifyMe">NOTIFY ME</span></button>
+      <p class="gn-waitlist-consent" data-i18n="otp.waitlistConsent">One email when keys open. No marketing, no spam. Ask us to delete your data anytime at support@gridnode.network.</p>
+      <div class="gn-auth-message" id="gnWaitlistMsg" role="status" aria-live="polite"></div>
+    </form>
+  </details>`;
+}
+
+function wireAuthView(name) {
+  if (name === 'welcome') {
+    $('gnSendCodeBtn')?.addEventListener('click', submitWelcomeEmail);
+    $('gnOtpEmail')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submitWelcomeEmail(); } });
+    $('gnDeviceBtn')?.addEventListener('click', () => { requestLegalAccept(enterLocalSession); });
+    $('gnNewHereBtn')?.addEventListener('click', () => showAuthView('newhere'));
+    $('gnPasswordToggle')?.addEventListener('click', () => {
+      const block = $('gnPasswordBlock');
+      if (!block) return;
+      if (block.hasAttribute('hidden')) {
+        const otpEmail = $('gnOtpEmail')?.value.trim();
+        if (otpEmail && !$('gnAuthEmail')?.value) $('gnAuthEmail').value = otpEmail;
+        block.removeAttribute('hidden');
+      } else {
+        block.setAttribute('hidden', '');
+      }
+    });
+    $('gnAuthForm')?.addEventListener('submit', submitAuth);
+    $('gnAuthModeToggle')?.addEventListener('click', toggleAuthMode);
+    $('gnAuthReset')?.addEventListener('click', requestPasswordReset);
+    wirePasskeyAuth();
+    renderGoogleIdentityButton();
+    armConditionalMediation();
+  } else if (name === 'code') {
+    const emailEl = $('gnCodeEmail');
+    if (emailEl && gnOtp?.email) emailEl.textContent = gnOtp.email;
+    wireCodeBoxes();
+    startOtpTimers();
+    $('gnVerifyBtn')?.addEventListener('click', verifyOtpCode);
+    $('gnChangeEmail')?.addEventListener('click', () => { gnOtp = null; showAuthView('welcome'); });
+    $('gnCodeBack')?.addEventListener('click', () => { gnOtp = null; showAuthView('welcome'); });
+    $('gnResendBtn')?.addEventListener('click', resendOtpCode);
+  } else if (name === 'newhere') {
+    $('gnValidateKeyBtn')?.addEventListener('click', submitNewHereKey);
+    $('gnNewKeyInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submitNewHereKey(); } });
+    $('gnNewHereBack')?.addEventListener('click', () => showAuthView('welcome'));
+    $('gnKeySkipBtn')?.addEventListener('click', () => {
+      const skip = gnKeySkipAction;
+      gnKeySkipAction = null; gnKeyContinuation = null;
+      if (skip) skip();
+    });
+    $('gnClaimSendBtn')?.addEventListener('click', submitClaimEmail);
+    $('gnClaimEmail')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submitClaimEmail(); } });
+    $('gnWaitlistForm')?.addEventListener('submit', submitWaitlist);
+  }
+}
+
+function setViewMsg(id, key, fallback, isError) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (!key) { el.textContent = ''; el.removeAttribute('data-tone'); return; }
+  el.textContent = tx(key, fallback);
+  if (isError) el.setAttribute('data-tone', 'error'); else el.removeAttribute('data-tone');
+}
+
+/* ---------- OTP send / verify ---------- */
+
+function submitWelcomeEmail() {
+  const email = ($('gnOtpEmail')?.value || '').trim();
+  if (!email || !email.includes('@')) {
+    setViewMsg('gnOtpMsg', 'otp.enterEmailFirst', 'Enter your email address first.', true);
+    $('gnOtpEmail')?.focus();
+    return;
+  }
+  requestLegalAccept(async () => { await sendOtpCode(email, false); });
+}
+
+function submitClaimEmail() {
+  const email = ($('gnClaimEmail')?.value || '').trim();
+  if (!email || !email.includes('@')) {
+    setViewMsg('gnClaimMsg', 'otp.enterEmailFirst', 'Enter your email address first.', true);
+    $('gnClaimEmail')?.focus();
+    return;
+  }
+  requestLegalAccept(async () => { await sendOtpCode(email, true); });
+}
+
+async function sendOtpCode(email, createUser) {
+  const btn = $('gnSendCodeBtn') || $('gnClaimSendBtn');
+  const label = btn?.querySelector('span');
+  const orig = label?.textContent;
+  if (label) label.textContent = tx('otp.sending', 'SENDING...');
+  if (btn) btn.disabled = true;
+  setViewMsg('gnOtpMsg', null);
+  setViewMsg('gnClaimMsg', null);
+  try {
+    await sendSignInCode(email, createUser);
+    /* Only reach the code view when Supabase actually accepted the send —
+     * never show a fake code-sent screen for an unknown email. */
+    gnOtp = { email, sentAt: Date.now(), createUser: !!createUser };
+    showAuthView('code');
+  } catch (err) {
+    handleOtpSendError(err, email, !!createUser);
+  } finally {
+    if (label && orig) label.textContent = orig;
+    if (btn) btn.disabled = false;
+  }
+}
+
+function handleOtpSendError(err, email, createUser) {
+  const blob = String(err?.message || err || '') + ' ' + String(err?.code || err?.error_code || '');
+  const low = blob.toLowerCase();
+  const status = err?.status;
+  if (status === 429 || /too many requests|rate limit|ratelimit|retry after/i.test(low)) {
+    setViewMsg('gnOtpMsg', 'otp.cooldown', 'Too many attempts. Wait a bit and try again.', true);
+    setViewMsg('gnClaimMsg', 'otp.cooldown', 'Too many attempts. Wait a bit and try again.', true);
+    return;
+  }
+  if (!createUser && /otp_disabled|signup_disabled|signups not allowed|user not found/i.test(low)) {
+    renderNoAccountBox();
+    return;
+  }
+  setViewMsg(createUser ? 'gnClaimMsg' : 'gnOtpMsg', 'otp.sendFailed', "Couldn't send the code. Try again.", true);
+}
+
+function renderNoAccountBox() {
+  const host = $('gnOtpNoAccount');
+  if (!host || host.dataset.done) return;
+  host.dataset.done = '1';
+  host.innerHTML = `
+    <div class="gn-no-account" role="alert">
+      <b data-i18n="otp.noAccountTitle">NO ACCOUNT FOUND</b>
+      <p data-i18n="otp.noAccountBody">There is no GRID//NODE account for this email. Check it for typos, or continue with a NODE KEY invite.</p>
+      <div class="gn-auth-links">
+        <button class="gn-auth-link" id="gnDiffEmailBtn" type="button"><span data-i18n="otp.useDifferentEmail">USE A DIFFERENT EMAIL</span></button>
+        <button class="gn-auth-link" id="gnHaveKeyBtn" type="button"><span data-i18n="otp.haveNodeKey">I HAVE A NODE KEY</span></button>
+      </div>
+    </div>`;
+  window.GN_I18N?.applyTo?.(host);
+  $('gnDiffEmailBtn')?.addEventListener('click', () => {
+    delete host.dataset.done;
+    host.innerHTML = '';
+    const em = $('gnOtpEmail');
+    em?.focus(); em?.select();
+  });
+  $('gnHaveKeyBtn')?.addEventListener('click', () => showAuthView('newhere'));
+}
+
+function wireCodeBoxes() {
+  const boxes = [...document.querySelectorAll('.gn-code-box')];
+  if (!boxes.length) return;
+  const readCode = () => boxes.map(b => b.value).join('');
+  boxes.forEach((box, i) => {
+    box.addEventListener('input', () => {
+      box.value = box.value.replace(/\D/g, '').slice(0, 1);
+      if (box.value && i < boxes.length - 1) boxes[i + 1].focus();
+      if (readCode().length === 6) verifyOtpCode();
+    });
+    box.addEventListener('keydown', e => {
+      if (e.key === 'Backspace' && !box.value && i > 0) boxes[i - 1].focus();
+      if (e.key === 'Enter' && readCode().length === 6) verifyOtpCode();
+    });
+    box.addEventListener('paste', e => {
+      e.preventDefault();
+      const digits = (e.clipboardData?.getData('text') || '').replace(/\D/g, '').slice(0, 6);
+      digits.split('').forEach((d, j) => { if (boxes[i + j]) boxes[i + j].value = d; });
+      boxes[Math.min(i + digits.length, boxes.length - 1)]?.focus();
+      if (readCode().length === 6) verifyOtpCode();
+    });
+  });
+  boxes[0]?.focus();
+}
+
+async function verifyOtpCode() {
+  if (gnVerifying || !gnOtp) return;
+  const boxes = [...document.querySelectorAll('.gn-code-box')];
+  const code = boxes.map(b => b.value).join('');
+  if (code.length !== 6) {
+    setViewMsg('gnOtpMsg', 'otp.wrongCode', "That code didn't work. Check it and try again.", true);
+    return;
+  }
+  gnVerifying = true;
+  const btn = $('gnVerifyBtn');
+  const label = btn?.querySelector('span');
+  const orig = label?.textContent;
+  if (label) label.textContent = tx('otp.verifying', 'VERIFYING...');
+  if (btn) btn.disabled = true;
+  try {
+    await verifySignInCode(gnOtp.email, code);
+    abortConditionalMediation();
+    trackLogin('otp');
+    await completeCloudSession();
+  } catch (err) {
+    gnVerifying = false;
+    if (label && orig) label.textContent = orig;
+    if (btn) btn.disabled = false;
+    const low = String(err?.message || err || '').toLowerCase();
+    const expired = /expired/i.test(low) || (Date.now() - gnOtp.sentAt) > OTP_EXPIRY_S * 1000;
+    setViewMsg('gnOtpMsg', expired ? 'otp.expiredCode' : 'otp.wrongCode',
+      expired ? 'That code expired. Request a new one below.' : "That code didn't work. Check it and try again.", true);
+    boxes.forEach(b => { b.value = ''; });
+    boxes[0]?.focus();
+  }
+}
+
+async function resendOtpCode() {
+  if (!gnOtp) return;
+  const btn = $('gnResendBtn');
+  if (btn) btn.disabled = true;
+  try {
+    await sendSignInCode(gnOtp.email, gnOtp.createUser);
+    gnOtp.sentAt = Date.now();
+    document.querySelectorAll('.gn-code-box').forEach(b => { b.value = ''; });
+    document.querySelector('.gn-code-box')?.focus();
+    startOtpTimers();
+    setViewMsg('gnOtpMsg', 'otp.codeSent', 'Code sent. Check your inbox.', false);
+  } catch (err) {
+    handleOtpSendError(err, gnOtp.email, gnOtp.createUser);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function clearOtpTimers() {
+  gnOtpTimers.forEach(clearInterval);
+  gnOtpTimers = [];
+}
+
+function fmtClock(totalSeconds) {
+  const s = Math.max(0, totalSeconds);
+  return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+}
+
+function startOtpTimers() {
+  clearOtpTimers();
+  if (!gnOtp) return;
+  const tick = () => {
+    if (!gnOtp) { clearOtpTimers(); return; }
+    const elapsed = Math.floor((Date.now() - gnOtp.sentAt) / 1000);
+    const expEl = $('gnCodeExpiry');
+    if (expEl) expEl.textContent = fmtClock(OTP_EXPIRY_S - elapsed);
+    const remain = OTP_RESEND_S - elapsed;
+    const wrap = $('gnResendWrap'), btn = $('gnResendBtn');
+    if (wrap && btn) {
+      if (remain > 0) {
+        wrap.hidden = false; btn.hidden = true;
+        const t = $('gnResendTimer');
+        if (t) t.textContent = fmtClock(remain);
+      } else {
+        wrap.hidden = true; btn.hidden = false;
+      }
+    }
+    if (elapsed >= OTP_EXPIRY_S) {
+      clearOtpTimers();
+      setViewMsg('gnOtpMsg', 'otp.expiredCode', 'That code expired. Request a new one below.', true);
+    }
+  };
+  tick();
+  gnOtpTimers.push(setInterval(tick, 1000));
+}
+
+/* ---------- New-here: NODE KEY validate, claim, waitlist ---------- */
+
+async function submitNewHereKey() {
+  const input = $('gnNewKeyInput');
+  const code = (input?.value || '').trim().toUpperCase();
+  if (!code) {
+    setViewMsg('gnKeyMsg', 'nodekey.enterKey', 'ENTER YOUR NODE KEY', true);
+    input?.focus();
+    return;
+  }
+  const btn = $('gnValidateKeyBtn');
+  const label = btn?.querySelector('span');
+  const orig = label?.textContent;
+  if (label) label.textContent = tx('nodekey.validating', 'VALIDATING...');
+  if (btn) btn.disabled = true;
+  setViewMsg('gnKeyMsg', null);
+  try {
+    const data = await nodeKeyApi('validate', { code });
+    if (data?.ok && data.grant) {
+      setNodeKeyGrant(data.grant);
+      if (gnKeyContinuation) {
+        const cont = gnKeyContinuation;
+        gnKeyContinuation = null; gnKeySkipAction = null;
+        cont();
+        return;
+      }
+      /* No pending continuation: reveal the claim UI (OTP or Google). */
+      const formWrap = $('gnKeyFormWrap'), claim = $('gnClaimWrap');
+      if (formWrap) formWrap.hidden = true;
+      if (claim) {
+        claim.hidden = false;
+        window.GN_I18N?.applyTo?.(claim);
+        /* Re-render the Google button into the claim mount. */
+        googleIdentityInitialized = false;
+        renderGoogleIdentityButton();
+      }
+    } else {
+      const [key, fallback] = NODE_KEY_REASON_I18N[data?.reason] || NODE_KEY_REASON_I18N.INVALID;
+      setViewMsg('gnKeyMsg', key, fallback, true);
+    }
+  } catch (error) {
+    setViewMsg('gnKeyMsg', 'nodekey.checkFailed', 'COULD NOT CHECK THE KEY — TRY AGAIN', true);
+  } finally {
+    if (label && orig) label.textContent = orig;
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function submitWaitlist(event) {
+  if (event?.preventDefault) event.preventDefault();
+  const email = ($('gnWaitlistEmail')?.value || '').trim().toLowerCase();
+  const honeypot = ($('gnWaitlistHp')?.value || '').trim();
+  /* Honeypot: bots get the same success message, nothing is stored. */
+  if (honeypot) {
+    setViewMsg('gnWaitlistMsg', 'otp.waitlistSuccess', "You're on the list. We'll email you once when new keys open. Nothing else, ever.", false);
+    $('gnWaitlistForm')?.reset();
+    return;
+  }
+  const now = Date.now();
+  if (now - gnWaitLastSubmit < 30000) {
+    setViewMsg('gnWaitlistMsg', 'otp.cooldown', 'Too many attempts. Wait a bit and try again.', true);
+    return;
+  }
+  if (!email || !email.includes('@')) {
+    const lang = window.GN_I18N?.getLang?.();
+    setViewMsg('gnWaitlistMsg', null);
+    const el = document.getElementById('gnWaitlistMsg');
+    if (el) el.textContent = lang === 'es-419' ? 'Escribe un correo válido.' : 'Enter a valid email address.';
+    return;
+  }
+  gnWaitLastSubmit = now;
+  const btn = $('gnWaitlistBtn');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch(`${CLOUD_CONFIG.url}/rest/v1/waitlist`, {
+      method: 'POST',
+      headers: {
+        apikey: CLOUD_CONFIG.anonKey,
+        Authorization: 'Bearer ' + CLOUD_CONFIG.anonKey,
+        'Content-Type': 'application/json',
+        /* No resolution=ignore-duplicates: upsert needs SELECT which anon
+         * must not have. Plain INSERT returns 409 on duplicate email,
+         * which we treat as success below. */
+        Prefer: 'return=minimal'
+      },
+      body: JSON.stringify({
+        email,
+        source: 'auth-no-key',
+        locale: window.GN_I18N?.getLang?.() === 'es-419' ? 'es' : 'en',
+        consented_at: new Date().toISOString()
+      })
+    });
+    /* 201 created, 200/409 duplicate — duplicates get the same success message. */
+    if (res.status === 201 || res.status === 200 || res.status === 409) {
+      setViewMsg('gnWaitlistMsg', 'otp.waitlistSuccess', "You're on the list. We'll email you once when new keys open. Nothing else, ever.", false);
+      $('gnWaitlistForm')?.reset();
+    } else {
+      throw new Error('WAITLIST_' + res.status);
+    }
+  } catch (error) {
+    setViewMsg('gnWaitlistMsg', 'otp.waitlistError', "Couldn't join the list. Try again.", true);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+/* ---------- Progressive passkey: conditional mediation ---------- */
+
+function abortConditionalMediation() {
+  try { gnConditionalAbort?.abort(); } catch (e) { /* silent */ }
+  gnConditionalAbort = null;
+}
+
+function armConditionalMediation() {
+  const emailInput = $('gnOtpEmail');
+  if (!emailInput || emailInput.dataset.cmWired) return;
+  emailInput.dataset.cmWired = '1';
+  emailInput.setAttribute('autocomplete', 'username webauthn');
+  emailInput.addEventListener('input', () => {
+    const email = emailInput.value.trim();
+    if (email.includes('@')) startConditionalGet(email);
+    else abortConditionalMediation();
+  });
+}
+
+/* Conditional mediation is progressive enhancement: current GRID//NODE
+ * credentials are non-discoverable (no residentKey at registration), so this
+ * degrades silently and never disturbs the OTP flow. Uses the same
+ * authResp/challengeToken protocol as the explicit passkey flow. */
+async function startConditionalGet(email) {
+  abortConditionalMediation();
+  try {
+    if (!window.PublicKeyCredential || typeof window.PublicKeyCredential.isConditionalMediationAvailable !== 'function') return;
+    if (!await window.PublicKeyCredential.isConditionalMediationAvailable()) return;
+    const functionsUrl = `${CLOUD_CONFIG.url}/functions/v1`;
+    const res = await fetch(`${functionsUrl}/webauthn-authenticate-options`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: CLOUD_CONFIG.anonKey },
+      body: JSON.stringify({ email })
+    });
+    if (!res.ok) return; /* silent: OTP flow continues */
+    const options = await res.json();
+    if (!options?.challenge || !options?.challengeToken) return;
+    const b64urlToBytes = (s) => {
+      const bin = atob(String(s).replace(/-/g, '+').replace(/_/g, '/'));
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return bytes.buffer;
+    };
+    const publicKey = {
+      challenge: b64urlToBytes(options.challenge),
+      rpId: options.rpId,
+      allowCredentials: (options.allowCredentials || []).map(c => ({ ...c, id: b64urlToBytes(c.id) })),
+      userVerification: options.userVerification || 'preferred',
+      timeout: options.timeout
+    };
+    gnConditionalAbort = new AbortController();
+    const credential = await navigator.credentials.get({
+      publicKey,
+      mediation: 'conditional',
+      signal: gnConditionalAbort.signal
+    });
+    if (credential) {
+      const authResp = {
+        id: credential.id,
+        rawId: credential.id,
+        type: credential.type,
+        response: {
+          authenticatorData: btoa(String.fromCharCode(...new Uint8Array(credential.response.authenticatorData))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''),
+          clientDataJSON: btoa(String.fromCharCode(...new Uint8Array(credential.response.clientDataJSON))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''),
+          signature: btoa(String.fromCharCode(...new Uint8Array(credential.response.signature))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''),
+          userHandle: credential.response.userHandle ? btoa(String.fromCharCode(...new Uint8Array(credential.response.userHandle))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') : null
+        }
+      };
+      await verifyPasskeyAssertion(authResp, options.challengeToken);
+    }
+  } catch (e) {
+    /* Silent: NotAllowedError / AbortError / unsupported — OTP flow continues. */
+  }
+}
+
+async function verifyPasskeyAssertion(authResp, challengeToken) {
+  const functionsUrl = `${CLOUD_CONFIG.url}/functions/v1`;
+  const verifyResponse = await fetch(`${functionsUrl}/webauthn-authenticate-verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: CLOUD_CONFIG.anonKey },
+    body: JSON.stringify({ authResp, challengeToken })
+  });
+  if (!verifyResponse.ok) throw new Error('AUTH_VERIFY_FAILED');
+  const { access_token, refresh_token } = await verifyResponse.json();
+  if (!access_token || !refresh_token) throw new Error('AUTH_VERIFY_FAILED');
+  const client = await getCloudClient();
+  if (!client) throw new Error('CLOUD_UNAVAILABLE');
+  const { data, error } = await client.auth.setSession({ access_token, refresh_token });
+  if (error) throw error;
+  if (!data?.session?.user?.id) {
+    setAuthMessage(tx('auth.passkeyFailed', 'PASSKEY SIGN-IN FAILED'), false);
+    return false;
+  }
+  abortConditionalMediation();
+  trackLogin('passkey');
+  await completeCloudSession(data.session);
+  return true;
+}
+
+/* Preview-only login instrumentation. */
+function trackLogin(method) {
+  try { window.GN_USAGE?.track?.('auth_success_' + method, { auth_method: method }); } catch (e) { /* silent */ }
+}
 function applyAuthTranslations(recovering) {
   const login = $('login');
   const title = login?.querySelector('.gn-auth-title');
@@ -6212,15 +6827,16 @@ function requestLegalAccept(proceed) {
   gnLegalPending = typeof proceed === 'function' ? proceed : null;
   const modal = $('gnLegalModal');
   if (!modal) { const p = gnLegalPending; gnLegalPending = null; if (p) p(); return; }
-  const age = $('gnLegalModalAge'), terms = $('gnLegalModalTerms');
-  if (age) age.checked = false;
+  const terms = $('gnLegalModalTerms'), research = $('gnLegalModalResearch');
   if (terms) terms.checked = false;
+  if (research) research.checked = false;
   setLegalModalMessage('', false);
   window.GN_I18N?.applyTo?.(modal);
+  modal.hidden = false;
   modal.classList.add('active');
-  try { age?.focus(); } catch (err) {}
+  try { terms?.focus(); } catch (err) {}
 }
-function closeLegalModal() { $('gnLegalModal')?.classList.remove('active'); gnLegalPending = null; }
+function closeLegalModal() { const m = $('gnLegalModal'); if (m) { m.classList.remove('active'); m.hidden = true; } gnLegalPending = null; }
 function setLegalModalMessage(message, error = false) {
   const element = $('gnLegalModalMsg');
   if (!element) return;
@@ -6228,19 +6844,19 @@ function setLegalModalMessage(message, error = false) {
   element.dataset.tone = error ? 'error' : 'status';
 }
 function confirmLegalModal() {
-  const age = $('gnLegalModalAge')?.checked;
   const terms = $('gnLegalModalTerms')?.checked;
-  if (age && terms) {
+  const research = $('gnLegalModalResearch')?.checked;
+  if (terms && research) {
     markLegalAccepted();
     const pending = gnLegalPending; gnLegalPending = null;
-    $('gnLegalModal')?.classList.remove('active');
+    const m = $('gnLegalModal'); if (m) { m.classList.remove('active'); m.hidden = true; }
     setAuthMessage('', false);
     if (pending) pending();
     return;
   }
   const missing = [];
-  if (!age) missing.push(tx('legal.needAge', '18+ age confirmation'));
   if (!terms) missing.push(tx('legal.needTerms', 'terms agreement'));
+  if (!research) missing.push(tx('legal.needResearch', 'research disclaimer'));
   setLegalModalMessage(tx('legal.gateIncomplete', '// PLEASE COMPLETE: ') + missing.join(' + '), true);
 }
 
@@ -6326,6 +6942,7 @@ async function doGoogleCredential(response) {
   try {
     const session = await signInWithGoogleIdToken(response?.credential);
     if (!session) throw new Error('NO_SESSION');
+    trackLogin('google');
     await completeCloudSession(session);
     maybeOfferPasskeyRegistration();
   } catch (error) {
@@ -6335,7 +6952,7 @@ async function doGoogleCredential(response) {
 }
 
 async function requestPasswordReset() {
-  const email = $('gnAuthEmail')?.value?.trim();
+  const email = $('gnAuthEmail')?.value?.trim() || $('gnOtpEmail')?.value?.trim();
   if (!email || !email.includes('@')) { setAuthMessage(tx('auth.enterEmailFirst', '// ENTER YOUR ACCOUNT EMAIL FIRST'), true); return; }
   const button = $('gnAuthReset'); if (button) button.disabled = true;
   try {
@@ -6352,8 +6969,23 @@ async function submitAuth() {
   const password = $('gnAuthPassword')?.value || '';
   if (authMode !== 'recovery' && (!email || !email.includes('@'))) { setAuthMessage(tx('auth.validEmail', '// ENTER A VALID EMAIL ADDRESS'), true); return; }
   if (password.length < 8) { setAuthMessage(tx('auth.passwordMin', '// PASSWORD MUST BE AT LEAST 8 CHARACTERS'), true); return; }
-  /* NODE KEY beta gate: new cloud accounts need a valid key first. */
-  if (authMode === 'signup' && !getNodeKeyGrant()) { requireNodeKeyForSignup(() => submitAuth()); return; }
+  /* NODE KEY beta gate: new cloud accounts need a valid key first.
+   * The newhere view replaces the login card, so stash the pending
+   * credentials and restore them after the gate passes. */
+  if (authMode === 'signup' && !getNodeKeyGrant() && !gnSkipKeyGateOnce) {
+    gnPendingCreds = { email, password };
+    requireNodeKeyForSignup(() => {
+      gnAuthView = 'welcome';
+      gnExpandPassword = true;
+      authShell();
+      const pc = gnPendingCreds; gnPendingCreds = null;
+      if (pc?.email && $('gnAuthEmail')) $('gnAuthEmail').value = pc.email;
+      if (pc?.password && $('gnAuthPassword')) $('gnAuthPassword').value = pc.password;
+      submitAuth();
+    });
+    return;
+  }
+  gnSkipKeyGateOnce = false;
   const submit = $('gnAuthSubmit'); if (submit) { submit.disabled = true; submit.textContent = tx('auth.connecting', 'CONNECTING...'); }
   try {
     if (authMode === 'recovery') {
@@ -6364,10 +6996,11 @@ async function submitAuth() {
       await completeCloudSession(session);
     } else if (authMode === 'signup') {
       const result = await signUpCloud(email, password);
-      if (result?.session) { await completeCloudSession(result.session); maybeOfferPasskeyRegistration(); } else { setAuthMessage(tx('auth.accountCreated', '// ACCOUNT CREATED — CHECK YOUR EMAIL TO CONFIRM'), false); }
+      if (result?.session) { trackLogin('password'); await completeCloudSession(result.session); maybeOfferPasskeyRegistration(); } else { setAuthMessage(tx('auth.accountCreated', '// ACCOUNT CREATED — CHECK YOUR EMAIL TO CONFIRM'), false); }
     } else {
       const session = await signInCloud(email, password);
       if (!session) throw new Error('NO_SESSION');
+      trackLogin('password');
       await completeCloudSession(session);
     }
   } catch (error) {
@@ -6382,8 +7015,6 @@ async function submitAuth() {
 
 const NODE_KEY_FUNCTION_URL = `${CLOUD_CONFIG.url}/functions/v1/redeem-node-key`;
 const NODE_KEY_GRANT_KEY = 'gn_nodekey_grant_v1';
-let gnNodeKeyContinuation = null;
-let gnNodeKeySkipAction = null;
 
 function getNodeKeyGrant() {
   try { return localStorage.getItem(NODE_KEY_GRANT_KEY) || ''; } catch { return ''; }
@@ -6408,130 +7039,71 @@ async function nodeKeyApi(action, payload = {}, accessToken = '') {
   return body || { ok: false, reason: 'SERVER' };
 }
 
-function setNodeKeyMsg(message, isError = false) {
-  const el = $('gnNodeKeyMsg');
-  if (!el) return;
-  el.textContent = message || '';
-  el.classList.toggle('error', !!isError);
-}
-
-function hideNodeKeyPanel() {
-  const panel = $('gnNodeKeyPanel');
-  if (panel) panel.hidden = true;
-  setNodeKeyMsg('', false);
-}
-
-function showNodeKeyPanel(onSuccess, opts = {}) {
-  gnNodeKeyContinuation = typeof onSuccess === 'function' ? onSuccess : null;
-  gnNodeKeySkipAction = typeof opts.onSkip === 'function' ? opts.onSkip : null;
-  const panel = $('gnNodeKeyPanel');
-  if (!panel) {
-    const cont = gnNodeKeyContinuation; gnNodeKeyContinuation = null;
-    gnNodeKeySkipAction = null;
-    if (cont) cont();
-    return;
-  }
-  const area = $('gnCloudArea'), toggle = $('gnCloudToggle');
-  if (area?.hasAttribute('hidden')) {
-    area.removeAttribute('hidden');
-    toggle?.setAttribute('aria-expanded', 'true');
-  }
-  const skip = $('gnNodeKeySkip');
-  if (skip) skip.hidden = !opts.allowSkip;
-  setNodeKeyMsg('', false);
-  panel.hidden = false;
-  const input = $('gnNodeKeyInput');
-  if (input) {
-    input.value = '';
-    try { input.focus({ preventScroll: false }); } catch { /* older browsers */ }
-  }
-  window.GN_I18N?.applyTo?.(panel);
-}
-
-/* NODE KEY front doors (v0.15.63). openNodeKeyEntry is the visible invite
- * entry on the login screen; openCloudConnect is the way back for local-mode
- * users who later receive a key. Both store the grant via the existing panel,
- * so the Google/signup pre-gates pass through and the account creation flow
- * is unchanged. */
+/* NODE KEY front doors — redesigned around the newhere auth view.
+ * openNodeKeyEntry: visible invite entry on the login screen.
+ * openCloudConnect: way back for local-mode users who later receive a key,
+ *   with an "I already have an account" skip back to the welcome view. */
 function openNodeKeyEntry() {
-  showNodeKeyPanel(() => {
-    setAuthMessage(tx('nodekey.grantedNext', '// KEY ACCEPTED — NOW CHOOSE GOOGLE OR EMAIL TO CREATE YOUR CLOUD ACCOUNT'), false);
-  });
+  gnKeyContinuation = null;
+  gnKeySkipAction = null;
+  gnAuthView = 'newhere';
+  modules.showScreen('login');
+  authShell();
 }
 
 function openCloudConnect() {
-  authShell();
+  gnKeyContinuation = null;
+  gnKeySkipAction = () => { gnKeySkipAction = null; showAuthView('welcome'); };
+  gnAuthView = 'newhere';
   modules.showScreen('login');
-  showNodeKeyPanel(() => {
-    setAuthMessage(tx('nodekey.grantedNext', '// KEY ACCEPTED — NOW CHOOSE GOOGLE OR EMAIL TO CREATE YOUR CLOUD ACCOUNT'), false);
-  }, { allowSkip: true, onSkip: () => { hideNodeKeyPanel(); setAuthMessage('', false); } });
+  authShell();
 }
 
 /* Google pre-gate: stop orphan auth accounts at the source. On devices that
- * have never completed a Google sign-in (and hold no grant), the key panel
+ * have never completed a Google sign-in (and hold no grant), the newhere view
  * appears BEFORE the OAuth dance, with a skip link for returning users.
  * The post-auth backstop (ensureNodeKeyClearance) remains the enforcer. */
-const GOOGLE_KNOWN_KEY = 'gn_google_known_v1';
-function isGoogleKnownDevice() {
-  try { return localStorage.getItem(GOOGLE_KNOWN_KEY) === '1'; } catch { return false; }
-}
-function markGoogleKnownDevice() {
-  try { localStorage.setItem(GOOGLE_KNOWN_KEY, '1'); } catch { /* private mode */ }
-}
-function markGoogleKnownSession(session) {
-  if (session?.user?.app_metadata?.provider === 'google') markGoogleKnownDevice();
-}
-
 function requireNodeKeyForGoogle(proceed) {
-  if (getNodeKeyGrant()) { proceed(); return; }
-  if (isGoogleKnownDevice()) { proceed(); return; }
-  setAuthMessage(tx('nodekey.googleGate', '// NEW GOOGLE ACCOUNTS NEED A NODE KEY — OR SKIP IF YOU ALREADY HAVE ONE'), false);
-  showNodeKeyPanel(proceed, {
-    allowSkip: true,
-    onSkip: () => { hideNodeKeyPanel(); setAuthMessage('', false); proceed(); },
-  });
+  const passThrough = () => {
+    const p = proceed;
+    gnKeyContinuation = null;
+    gnKeySkipAction = null;
+    p();
+  };
+  if (getNodeKeyGrant() || isGoogleKnownDevice()) { passThrough(); return; }
+  gnKeyContinuation = passThrough;
+  gnKeySkipAction = passThrough;
+  gnAuthView = 'newhere';
+  modules.showScreen('login');
+  authShell();
+  setAuthMessage(tx('nodekey.googleGate', '// NEW GOOGLE ACCOUNTS NEED A NODE KEY — OR CONTINUE IF YOU ALREADY HAVE ONE'), false);
 }
 
 const NODE_KEY_REASON_I18N = {
-  INVALID: ['nodekey.denied', '// ACCESS DENIED // INVALID NODE KEY'],
+  INVALID: ['nodekey.denied', 'KEY NOT RECOGNIZED — CHECK IT AND TRY AGAIN'],
   USED_UP: ['nodekey.used', '// ACCESS DENIED // KEY ALREADY USED'],
   REVOKED: ['nodekey.revoked', '// ACCESS DENIED // KEY REVOKED'],
   EXPIRED: ['nodekey.expired', '// ACCESS DENIED // KEY EXPIRED'],
   RATE_LIMITED: ['nodekey.rateLimited', '// TOO MANY ATTEMPTS — WAIT AND RETRY'],
 };
 
-async function submitNodeKey() {
-  const input = $('gnNodeKeyInput');
-  const code = (input?.value || '').trim();
-  if (!code) { setNodeKeyMsg(tx('nodekey.enterKey', '// ENTER YOUR NODE KEY'), true); return; }
-  const btn = $('gnNodeKeySubmit');
-  if (btn) { btn.disabled = true; btn.textContent = tx('nodekey.validating', 'VALIDATING...'); }
-  setNodeKeyMsg('', false);
-  try {
-    const res = await nodeKeyApi('validate', { code });
-    if (res?.ok && res.grant) {
-      setNodeKeyGrant(res.grant);
-      const cont = gnNodeKeyContinuation;
-      gnNodeKeyContinuation = null;
-      hideNodeKeyPanel();
-      setAuthMessage(tx('nodekey.granted', '// ACCESS GRANTED'), false);
-      if (cont) cont();
-    } else {
-      const [key, fallback] = NODE_KEY_REASON_I18N[res?.reason] || NODE_KEY_REASON_I18N.INVALID;
-      setNodeKeyMsg(tx(key, fallback), true);
-    }
-  } catch {
-    setNodeKeyMsg(tx('nodekey.error', '// KEY CHECK FAILED — TRY AGAIN'), true);
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = tx('nodekey.validate', 'VALIDATE KEY'); }
-  }
-}
-
-/* Pre-gate for flows that always create a new account (email signup). */
+/* Pre-gate for flows that always create a new account (email signup via the
+ * password fallback). The newhere view replaces the login card, so pending
+ * credentials are stashed and restored after the gate passes. */
 function requireNodeKeyForSignup(continuation) {
-  if (getNodeKeyGrant()) { continuation(); return; }
-  setAuthMessage(tx('nodekey.needed', '// A NODE KEY IS REQUIRED TO CREATE A CLOUD ACCOUNT'), false);
-  showNodeKeyPanel(continuation);
+  if (getNodeKeyGrant() || gnSkipKeyGateOnce) { continuation(); return; }
+  gnKeyContinuation = () => {
+    const cont = continuation;
+    gnKeyContinuation = null;
+    gnKeySkipAction = null;
+    gnSkipKeyGateOnce = true;
+    cont();
+  };
+  gnKeySkipAction = null;
+  gnAuthView = 'newhere';
+  modules.showScreen('login');
+  authShell();
+  setAuthMessage(tx('nodekey.signupNeedsKey', 'A NODE KEY IS REQUIRED TO CREATE A CLOUD ACCOUNT — VALIDATE YOURS FIRST'), false);
 }
 
 /* Backstop for flows where new-vs-returning is unknown until after auth
@@ -6568,31 +7140,29 @@ async function ensureNodeKeyClearance(session) {
     }
     setNodeKeyGrant('');
   }
-  /* New account, no usable grant: park it at the gate. */
+  /* New account, no usable grant: park it at the gate. After the key is
+   * validated the newhere view reveals the claim UI, so the user signs in
+   * again through OTP or Google and the clearance check consumes the grant. */
   try { await signOutCloud(); } catch { /* already out */ }
   clearSession();
-  authShell();
-  modules.showScreen('login');
+  parkForKeyRetry();
   setAuthMessage(tx('nodekey.needed', '// A NODE KEY IS REQUIRED TO CREATE A CLOUD ACCOUNT'), false);
-  showNodeKeyPanel(() => {
-    setAuthMessage(tx('nodekey.signinAgain', '// KEY ACCEPTED — SIGN IN TO ENTER YOUR GRID'), false);
-  });
   return false;
 }
 
 /* Fail-closed parking: the key-status check could not be verified (network
- * down, edge function error). Keep the session alive and offer one-tap
- * retry; the user never enters cloud mode on an unverified check. */
+ * down, edge function error) or the account needs a key. Park at the newhere
+ * view so the user validates a key, then signs in again; the clearance check
+ * consumes the grant on the next entry. The session is kept (not signed out):
+ * the check failed, not the credentials. */
 let gnKeyRetrySession = null;
 function parkForKeyRetry(session) {
   gnKeyRetrySession = session || null;
+  gnKeyContinuation = null;
+  gnKeySkipAction = null;
+  gnAuthView = 'newhere';
   authShell();
   modules.showScreen('login');
-  const area = $('gnCloudArea'), toggle = $('gnCloudToggle');
-  if (area?.hasAttribute('hidden')) {
-    area.removeAttribute('hidden');
-    toggle?.setAttribute('aria-expanded', 'true');
-  }
   setAuthMessage(tx('nodekey.verifyFailed', '// KEY VERIFICATION UNAVAILABLE — CHECK YOUR CONNECTION AND RETRY'), true);
   const msg = $('loginMsg');
   if (msg && !$('gnKeyRetryBtn')) {
@@ -6814,27 +7384,34 @@ function showApp() {
     if (!(await isWebAuthnSupported())) {
       // keep the button visible but show a clear unsupported message on click
       // v0.15.55: legal gate still comes first — no entry path skips it.
+      button.style.display = '';
       button.addEventListener('click', () => {
         if (!legalAccepted()) { requestLegalAccept(() => { const b = $('gnPasskeyBtn'); if (b && !b.disabled) b.click(); }); return; }
         setAuthMessage('// ' + tx('auth.passkeyNotSupportedMsg', 'YOUR DEVICE DOES NOT SUPPORT PASSKEYS. USE GOOGLE SIGN-IN INSTEAD.'), true);
       });
       return;
     }
-    const emailInput = $('gnAuthEmail');
-    if (emailInput) emailInput.autocomplete = 'username webauthn';
+    button.style.display = '';
+    const emailInput = $('gnOtpEmail');
+    if (emailInput && !emailInput.dataset.pkWired) {
+      emailInput.dataset.pkWired = '1';
+      emailInput.autocomplete = 'email webauthn';
+    }
     button.addEventListener('click', async () => {
       if (!legalAccepted()) { requestLegalAccept(() => { const b = $('gnPasskeyBtn'); if (b && !b.disabled) b.click(); }); return; }
-      const email = $('gnAuthEmail')?.value?.trim();
+      const email = $('gnOtpEmail')?.value?.trim();
       if (!email) {
         setAuthMessage('// ' + tx('auth.passkeyEmailFirst', 'ENTER YOUR EMAIL ADDRESS FIRST, THEN CONTINUE WITH PASSKEY.'), true);
-        $('gnAuthEmail')?.focus();
+        $('gnOtpEmail')?.focus();
         return;
       }
+      abortConditionalMediation();
       button.disabled = true;
       setAuthMessage('// ' + tx('auth.connecting', 'CONNECTING...'), false);
       try {
         const session = await signInWithPasskey(email);
         if (session) {
+          trackLogin('passkey');
           await completeCloudSession(session);
           setAuthMessage('// ' + tx('auth.passkeyWelcome', 'WELCOME BACK'), false);
         }
