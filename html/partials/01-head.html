@@ -1168,7 +1168,10 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 .founder-note p{max-width:54ch}
 .landing-footer{display:grid;gap:16px;margin:20px 0 0;padding:20px 16px 8px;border-top:1px solid rgba(0,212,255,.2);color:var(--text-mid)}
 .landing-footer-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.landing-footer-block{display:grid;gap:7px}
+.landing-footer-block{display:grid;gap:7px;border-radius:10px}
+.landing-footer-block.landing-arrive{animation:landingArrive 1.6s ease-out}
+@keyframes landingArrive{0%{box-shadow:0 0 0 1px rgba(0,212,255,.55),0 0 26px rgba(0,212,255,.22)}100%{box-shadow:0 0 0 1px rgba(0,212,255,0),0 0 0 rgba(0,212,255,0)}}
+@media (prefers-reduced-motion:reduce){.landing-footer-block.landing-arrive{animation:none}}
 .landing-footer-label{font:700 .6rem var(--font-d);letter-spacing:2px;color:var(--cyan)}
 .landing-footer a{color:#a9dce8;font:600 .68rem var(--font-m);letter-spacing:1px;text-decoration:none}
 .landing-footer a:hover,.landing-footer a:focus{color:#fff;text-decoration:underline}

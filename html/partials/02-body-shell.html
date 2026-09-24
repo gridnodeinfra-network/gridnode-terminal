@@ -83,13 +83,18 @@
 
 <script>
 function scrollLandingTo(id) {
-  const landing = document.getElementById('landing');
   const target = document.getElementById(id);
-  if (!landing || !target) return;
-  landing.scrollTo({
-    top: target.offsetTop,
-    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
-  });
+  if (!target) return;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  // Arrival flash: footer targets (#boundary, #privacy, #terms) sit below the
+  // nav at max page scroll, so the click often can't move the viewport. The
+  // flash guarantees visible feedback that the tap landed somewhere.
+  target.classList.remove('landing-arrive');
+  void target.offsetWidth;
+  target.classList.add('landing-arrive');
+  window.clearTimeout(target._arriveT);
+  target._arriveT = window.setTimeout(() => target.classList.remove('landing-arrive'), 1600);
 }
 </script>
 
