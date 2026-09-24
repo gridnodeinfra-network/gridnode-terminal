@@ -88,13 +88,13 @@ function scrollLandingTo(id) {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
   // Arrival flash: footer targets (#boundary, #privacy, #terms) sit below the
-  // nav at max page scroll, so the click often can't move the viewport. The
-  // flash guarantees visible feedback that the tap landed somewhere.
-  target.classList.remove('landing-arrive');
+  // nav at max page scroll, so the click often can't move the viewport. Flashing
+  // the last two lines in Mars Red guarantees visible feedback on arrival.
+  target.classList.remove('landing-arrive-lines');
   void target.offsetWidth;
-  target.classList.add('landing-arrive');
+  target.classList.add('landing-arrive-lines');
   window.clearTimeout(target._arriveT);
-  target._arriveT = window.setTimeout(() => target.classList.remove('landing-arrive'), 1600);
+  target._arriveT = window.setTimeout(() => target.classList.remove('landing-arrive-lines'), 1600);
 }
 </script>
 
