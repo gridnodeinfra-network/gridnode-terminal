@@ -6150,7 +6150,7 @@ function authShell() {
     wireLegalModal();
     $('gnAuthForm')?.addEventListener('submit', submitAuth);
     $('gnAuthModeToggle')?.addEventListener('click', toggleAuthMode);
-    login.querySelector('.gn-auth-card')?.insertAdjacentHTML('afterbegin', '<div class="gn-auth-lang-kanji" role="group" data-i18n-aria-label="lang.switcherAria"><button type="button" class="gn-lang-globe" data-lang-choice="es" aria-label="Español" title="Cambiar a Español"><svg class="gn-lang-kanji" viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><text x="12" y="17.5" text-anchor="middle" font-family="Noto Sans JP, Hiragino Sans, Yu Gothic, PingFang SC, Microsoft YaHei, sans-serif" font-size="17" stroke="currentColor" stroke-width="2" fill="none">電</text></svg></button></div>');
+    login.querySelector('.gn-auth-card')?.insertAdjacentHTML('afterbegin', '<div class="gn-auth-lang-kanji" role="group" data-i18n-aria-label="lang.switcherAria"><button type="button" class="gn-lang-globe" data-lang-choice="es" aria-label="Español" title="Cambiar a Español"><svg class="gn-lang-kanji" viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="M4.5 5.2h15M7.2 5.2v2.4c0 1.1.5 2.1 1.4 2.8l2.4 1.7-2.4 1.7c-.9.7-1.4 1.7-1.4 2.8v2.6M16.8 5.2v2.4c0 1.1-.5 2.1-1.4 2.8l-2.4 1.7 2.4 1.7c.9.7 1.4 1.7 1.4 2.8v2.6M9.2 18.8h5.6M12 12.1v6.7" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>');
     applyAuthTranslations();
     window.GN_I18N?.applyTo?.(login);
     return;
@@ -6180,7 +6180,7 @@ function authShell() {
   </div>`;
   wireLegalModal();
   $('gnVaultPolicyLink')?.addEventListener('click', openPrivacyPolicy);
-  login.querySelector('.gn-auth-card')?.insertAdjacentHTML('afterbegin', '<div class="gn-auth-lang-kanji" role="group" data-i18n-aria-label="lang.switcherAria"><button type="button" class="gn-lang-globe" data-lang-choice="es" aria-label="Español" title="Cambiar a Español"><svg class="gn-lang-kanji" viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><text x="12" y="17.5" text-anchor="middle" font-family="Noto Sans JP, Hiragino Sans, Yu Gothic, PingFang SC, Microsoft YaHei, sans-serif" font-size="17" stroke="currentColor" stroke-width="2" fill="none">電</text></svg></button></div>');
+  login.querySelector('.gn-auth-card')?.insertAdjacentHTML('afterbegin', '<div class="gn-auth-lang-kanji" role="group" data-i18n-aria-label="lang.switcherAria"><button type="button" class="gn-lang-globe" data-lang-choice="es" aria-label="Español" title="Cambiar a Español"><svg class="gn-lang-kanji" viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="M4.5 5.2h15M7.2 5.2v2.4c0 1.1.5 2.1 1.4 2.8l2.4 1.7-2.4 1.7c-.9.7-1.4 1.7-1.4 2.8v2.6M16.8 5.2v2.4c0 1.1-.5 2.1-1.4 2.8l-2.4 1.7 2.4 1.7c.9.7 1.4 1.7 1.4 2.8v2.6M9.2 18.8h5.6M12 12.1v6.7" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>');
   applyAuthTranslations();
   showAuthView(gnAuthView === 'code' && !gnOtp ? 'welcome' : gnAuthView);
   window.GN_I18N?.applyTo?.(login);
