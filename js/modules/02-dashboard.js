@@ -312,3 +312,21 @@ export function showPhasesModal() {
   $('phasesOv')?.classList.add('active');
 }
 export function closePhases() { $('phasesOv')?.classList.remove('active'); }
+
+// Once the server-side phase template arrives (warmed by templatePhaseName),
+// re-resolve the template-aware phase names on the dashboard card and header
+// pill so the first paint's generic fallback corrects itself.
+if (typeof document !== 'undefined' && !window.__gnPhaseStateListener) {
+  window.__gnPhaseStateListener = true;
+  document.addEventListener('gn:phase-state-ready', () => {
+    try {
+      const shots = sortedShots();
+      const lastShot = shots.at(-1);
+      if (!lastShot) return;
+      const dash = document.getElementById('pageDash');
+      if (dash && dash.hidden) return;
+      const phase = renderPhase(lastShot, shots);
+      refreshNodeHeader({ lastShot, phase });
+    } catch (_) { /* keep the generic fallback names */ }
+  });
+}

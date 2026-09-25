@@ -60,41 +60,30 @@
     return String((record && record.med) || '');
   }
 
-  function computeState() {
+  async function computeState() {
     var tpl = T();
-    if (!tpl) return null;
+    if (!tpl || !tpl.phaseState) return null;
     var shots = activeShots();
     if (!shots.length) return { empty: true };
 
     var last = shots[shots.length - 1];
-    var template = tpl.templateForMed(medIdOf(last));
-
-    // Cycle start depends on template type
-    var cycleStart;
-    if (template.type === 'cycle') {
-      // First shot logged with a med matching this template
-      var matching = shots.filter(function (s) {
-        return tpl.templateForMed(medIdOf(s)).id === template.id;
-      });
-      cycleStart = new Date((matching[0] || last).date).getTime();
-    } else {
-      cycleStart = new Date(last.date).getTime();
-    }
-
-    var elapsedDays = Math.max(0, (Date.now() - cycleStart) / 86400000);
-    var progress = tpl.clamp01(elapsedDays / template.cycleDays);
-    var active = tpl.activePhase(template, progress);
+    var st = null;
+    try {
+      st = await tpl.phaseState(medIdOf(last), shots, Date.now());
+    } catch (_) { st = null; }
+    if (!st) return null; // server unreachable: leave the current UI untouched
+    if (st.empty) return { empty: true };
 
     return {
       empty: false,
       shots: shots,
       last: last,
-      template: template,
-      cycleStart: cycleStart,
-      elapsedDays: elapsedDays,
-      progress: progress,
-      phaseIndex: active.index,
-      phase: active.phase
+      template: st.template,
+      cycleStart: st.cycleStart,
+      elapsedDays: st.elapsedDays,
+      progress: st.progress,
+      phaseIndex: st.phaseIndex,
+      phase: st.template.phases[st.phaseIndex] || st.template.phases[st.template.phases.length - 1]
     };
   }
 
@@ -178,14 +167,18 @@
     return tx('phase.sinceDays', '{d}d {h}h', { d: d, h: hh });
   }
 
-  function render() {
+  var renderSeq = 0;
+  async function render() {
     var tpl = T();
     if (!tpl) return;
     var panel = $('phaseSpherePanel');
     if (!panel || !window.GN || !window.GN.S) return;
 
-    var s = computeState();
-    if (!s || s.empty) {
+    var seq = ++renderSeq;
+    var s = await computeState();
+    if (seq !== renderSeq) return; // a newer render superseded this one
+    if (!s) return; // server unreachable: keep the current UI untouched
+    if (s.empty) {
       panel.dataset.phase = 'empty';
       state.wasEmpty = true;
       state.template = null;

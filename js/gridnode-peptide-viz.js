@@ -71,11 +71,11 @@
   let lastRender = null; // { shots, medId, medLabel, labelMap, range, now }
 
   /* ── phase helpers ───────────────────────────────────────────────────── */
-  function phaseFor(model, elapsedH) {
-    if (!model || model.kind !== 'curve') return null;
-    if (elapsedH <= model.riseToPeakH) return 'ONSET';
-    if (elapsedH <= model.peakWindowH[1]) return 'PEAK';
-    if (elapsedH <= model.riseToPeakH + 4 * model.tHalfH) return 'DECAY';
+  function phaseFor(dossier, elapsedH) {
+    if (!dossier || dossier.riseToPeakH == null) return null;
+    if (elapsedH <= dossier.riseToPeakH) return 'ONSET';
+    if (Array.isArray(dossier.peakWindowH) && elapsedH <= dossier.peakWindowH[1]) return 'PEAK';
+    if (dossier.tHalfH != null && elapsedH <= dossier.riseToPeakH + 4 * dossier.tHalfH) return 'DECAY';
     return 'BASELINE';
   }
   const PHASE_KEYS = {
@@ -124,8 +124,7 @@
     }
     ctx.beginPath(); ctx.moveTo(padL, padT + plotH * 0.5); ctx.lineTo(width - padR, padT + plotH * 0.5); ctx.stroke();
 
-    const model = build.model;
-    if (model.kind === 'curve' && build.points.length) {
+    if (build.modelKind === 'curve' && build.points.length) {
       // area gradient
       const grad = ctx.createLinearGradient(0, padT, 0, padT + plotH);
       grad.addColorStop(0, 'rgba(0,230,240,.34)');
@@ -153,7 +152,7 @@
     build.markers.forEach(m => {
       const x = xFor(m.t);
       if (x < padL - 8 || x > width - padR + 8) return;
-      const y = model.kind === 'curve' && build.points.length
+      const y = build.modelKind === 'curve' && build.points.length
         ? yFor(modelValueAt(build, m.t)) : padT + plotH * 0.72;
       ctx.save();
       ctx.translate(x, y);
@@ -168,11 +167,11 @@
     });
 
     // state text for timeline-only / pd (no curve)
-    if (model.kind === 'none' && build.points.length === 0 && opts.stateText !== false) {
+    if (build.modelKind === 'none' && build.points.length === 0 && opts.stateText !== false) {
       ctx.fillStyle = C.dim; ctx.font = '600 9px "Share Tech Mono", monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(tx(model.tier === 'iv' ? 'peptide.ivTimeline' : 'peptide.timelineOnlyText', 'TIMELINE ONLY'), width / 2, padT + plotH / 2);
+      ctx.fillText(tx(build.tier === 'iv' ? 'peptide.ivTimeline' : 'peptide.timelineOnlyText', 'TIMELINE ONLY'), width / 2, padT + plotH / 2);
       ctx.textAlign = 'left';
-    } else if (model.kind === 'window' && opts.stateText !== false) {
+    } else if (build.modelKind === 'window' && opts.stateText !== false) {
       ctx.fillStyle = C.response; ctx.font = '600 9px "Share Tech Mono", monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(tx('peptide.pdWindowText', 'HUMAN RESPONSE WINDOW · PD'), width / 2, padT + plotH / 2);
       ctx.textAlign = 'left';
@@ -184,13 +183,13 @@
       ctx.strokeStyle = 'rgba(0,230,240,.5)'; ctx.lineWidth = 1; ctx.setLineDash([3, 4]);
       ctx.beginPath(); ctx.moveTo(nx, padT); ctx.lineTo(nx, padT + plotH); ctx.stroke();
       ctx.setLineDash([]);
-      const ny = model.kind === 'curve' && build.points.length ? yFor(build.points[build.nowIndex]) : padT + plotH * 0.72;
+      const ny = build.modelKind === 'curve' && build.points.length ? yFor(build.points[build.nowIndex]) : padT + plotH * 0.72;
       ctx.fillStyle = C.curve; ctx.beginPath(); ctx.arc(nx, ny, 3.5, 0, Math.PI * 2); ctx.fill();
     }
   }
 
   function modelValueAt(build, t) {
-    if (build.model.kind !== 'curve') return 0;
+    if (build.modelKind !== 'curve') return 0;
     const idx = Math.round((t - build.start) / (build.end - build.start) * (build.count - 1));
     return build.points[Math.max(0, Math.min(build.count - 1, idx))];
   }
@@ -209,14 +208,14 @@
     const xFor = t => padL + (t - build.start) / (build.end - build.start) * plotW;
 
     // phase bands anchored to the most recent shot
-    const model = build.model;
+    const dossier = build.dossier || {};
     const last = build.markers.filter(m => !m.planned).at(-1);
-    if (model.kind === 'curve' && last) {
+    if (build.modelKind === 'curve' && last) {
       const bands = [
-        [model.riseToPeakH * 0.001, model.riseToPeakH, C.onset],
-        [model.peakWindowH[0], model.peakWindowH[1], C.peak],
-        [model.riseToPeakH, model.riseToPeakH + 4 * model.tHalfH, C.decay],
-        [model.riseToPeakH + 4 * model.tHalfH, Math.max(model.riseToPeakH + 5 * model.tHalfH, model.horizonDays * 24), C.baseline]
+        [dossier.riseToPeakH * 0.001, dossier.riseToPeakH, C.onset],
+        [dossier.peakWindowH[0], dossier.peakWindowH[1], C.peak],
+        [dossier.riseToPeakH, dossier.riseToPeakH + 4 * dossier.tHalfH, C.decay],
+        [dossier.riseToPeakH + 4 * dossier.tHalfH, Math.max(dossier.riseToPeakH + 5 * dossier.tHalfH, build.horizonDays * 24), C.baseline]
       ];
       bands.forEach(([a, b, color]) => {
         if (b <= a) return;
@@ -230,8 +229,8 @@
         rect.setAttribute('class', 'gn-phase-band');
         svg.appendChild(rect);
       });
-    } else if (model.kind === 'window' && last) {
-      model.windows.forEach(([a, b]) => {
+    } else if (build.modelKind === 'window' && last) {
+      (dossier.windows || []).forEach(([a, b]) => {
         const x1 = xFor(last.t + a * HOUR_MS), x2 = xFor(last.t + b * HOUR_MS);
         if (x2 < padL || x1 > width - padR) return;
         const rect = document.createElementNS(NS, 'rect');
@@ -245,7 +244,7 @@
     }
 
     // animated trace along the curve (CSS-gated; reduced motion = static)
-    if (model.kind === 'curve' && build.points.length && opts.trace !== false) {
+    if (build.modelKind === 'curve' && build.points.length && opts.trace !== false) {
       const path = document.createElementNS(NS, 'path');
       path.setAttribute('class', 'gn-live-trace');
       path.setAttribute('fill', 'none');
@@ -264,7 +263,7 @@
     if (build.nowIndex >= 0 && opts.showNow !== false) {
       const padLx = padL, plotWx = plotW;
       const nx = padLx + plotWx * build.nowIndex / (build.count - 1);
-      const ny = model.kind === 'curve' && build.points.length
+      const ny = build.modelKind === 'curve' && build.points.length
         ? padT + plotH - Math.max(0, Math.min(1.6, build.points[build.nowIndex])) / 1.6 * plotH
         : padT + plotH * 0.72;
       const ring = document.createElementNS(NS, 'circle');
@@ -282,29 +281,29 @@
 
   /* ── summary text (accessible, no color/pattern needed) ─────────────── */
   function summaryLine(medLabel, build, phaseName) {
-    const model = build.model;
-    if (model.kind === 'none') {
+    const modelKind = build.modelKind;
+    if (modelKind === 'none') {
       return `${medLabel} · ${tx('peptide.summaryTimeline', 'timeline only')} · ${evidenceLabel(build.evidence.state)}`;
     }
-    if (model.kind === 'window') {
+    if (modelKind === 'window') {
       return `${medLabel} · ${tx('peptide.summaryWindow', 'response window')} · ${evidenceLabel(build.evidence.state)}`;
     }
     const last = build.markers.filter(m => !m.planned).at(-1);
     const elapsedH = last ? (build.now - last.t) / HOUR_MS : 0;
-    const state = phaseName || phaseFor(model, elapsedH) || 'ONSET';
+    const state = phaseName || phaseFor(build.dossier, elapsedH) || 'ONSET';
     const words = { ONSET: tx('peptide.summaryRising', 'rising'), PEAK: tx('peptide.summaryPeak', 'peak window'), DECAY: tx('peptide.summaryDecline', 'decline'), BASELINE: tx('peptide.summaryBaseline', 'baseline') };
     const since = last ? `${Math.floor(elapsedH / 24)}d ${Math.floor(elapsedH % 24)}h` : '—';
     return `${medLabel} · ${since} · ${words[state] || state} · ${evidenceLabel(build.evidence.state)}`;
   }
 
   /* ── dashboard card render (called by the bundle hook) ───────────────── */
-  function render(opts) {
+  async function render(opts) {
     try {
       const { canvas, readout, shots, medId, medLabel, labelMap, range, now, phaseName } = opts;
       if (!canvas || !medId) return;
       const engine = global.GN_PEPTIDE_PK;
       if (!engine) return;
-      const build = engine.buildProtocolCurve(shots || [], medId, range || 30, now || Date.now());
+      const build = await engine.buildProtocolCurve(shots || [], medId, range || 30, now || Date.now());
       const chip = $('medEvidenceChip');
       const summary = $('medCurveSummary');
       const overlaySvg = $('medChartOverlay');
@@ -315,7 +314,7 @@
 
       const last = build.markers.filter(m => !m.planned).at(-1);
       const elapsedH = last ? (build.now - last.t) / HOUR_MS : 0;
-      const phaseNameResolved = phaseFor(build.model, elapsedH) || phaseName || 'ONSET';
+      const phaseNameResolved = phaseFor(build.dossier, elapsedH) || phaseName || 'ONSET';
 
       if (readout) {
         const detail = document.createElement('span');
@@ -338,14 +337,14 @@
   }
 
   /* ── immersive overlay ───────────────────────────────────────────────── */
-  function openOverlay() {
+  async function openOverlay() {
     try {
       if (!lastRender) return;
       const overlay = $('gnPeptideOverlay');
       if (!overlay) return;
       const { shots, medId, medLabel, labelMap, range, now } = lastRender;
       const engine = global.GN_PEPTIDE_PK;
-      const build = engine.buildProtocolCurve(shots || [], medId, range, now, 160);
+      const build = await engine.buildProtocolCurve(shots || [], medId, range, now, 160);
 
       $('gnPeptideTitle').textContent = medLabel || medId;
       const chip = $('gnPeptideChip');
@@ -358,7 +357,7 @@
       renderRing($('gnPeptideRing'), build, medLabel);
       renderDossier($('gnPeptideDossier'), build, medLabel);
       renderAnimal($('gnPeptideAnimal'), build);
-      renderLanes($('gnPeptideLanes'), shots || [], labelMap || {});
+      await renderLanes($('gnPeptideLanes'), shots || [], labelMap || {});
       renderNext($('gnPeptideNext'));
 
       overlay.classList.add('active');
@@ -385,12 +384,11 @@
   /* ── ring: focused-compound summary ─────────────────────────────────── */
   function renderRing(svg, build, medLabel) {
     if (!svg) return;
-    const model = build.model;
     const last = build.markers.filter(m => !m.planned).at(-1);
     const elapsedH = last ? (build.now - last.t) / HOUR_MS : 0;
-    const horizonH = model.horizonDays ? model.horizonDays * 24 : 24 * 7;
+    const horizonH = build.horizonDays ? build.horizonDays * 24 : 24 * 7;
     const frac = Math.min(1, Math.max(0, elapsedH / horizonH));
-    const phase = phaseFor(model, elapsedH) || (model.kind === 'none' ? 'BASELINE' : model.kind === 'window' ? 'RESPONSE' : 'ONSET');
+    const phase = phaseFor(build.dossier, elapsedH) || (build.modelKind === 'none' ? 'BASELINE' : build.modelKind === 'window' ? 'RESPONSE' : 'ONSET');
     const R = 52, cx = 60, cy = 60;
 
     svg.setAttribute('viewBox', '0 0 120 120');
@@ -435,22 +433,23 @@
   /* ── dossier: sources + notes + claim audit ─────────────────────────── */
   function renderDossier(container, build, medLabel) {
     if (!container) return;
-    const model = build.model;
+    const dossier = build.dossier || {};
+    const modelKind = build.modelKind;
     const parts = [];
     parts.push(`<div class="gn-peptide-dossier-head">${tx('peptide.dossier', 'EVIDENCE DOSSIER')} · ${safe(medLabel)}</div>`);
     parts.push(`<div class="gn-peptide-dossier-line"><b>${tx('peptide.dossierState', 'DISPLAY STATE')}</b> ${evidenceLabel(build.evidence.state)}</div>`);
-    if (model.kind === 'curve') {
-      parts.push(`<div class="gn-peptide-dossier-line"><b>${tx('peptide.dossierPeak', 'RISE TO PEAK')}</b> ${fmtH(model.riseToPeakH)}</div>`);
-      parts.push(`<div class="gn-peptide-dossier-line"><b>${tx('peptide.dossierPeakWindow', 'PEAK WINDOW')}</b> ${fmtH(model.peakWindowH[0])}–${fmtH(model.peakWindowH[1])}</div>`);
-      parts.push(`<div class="gn-peptide-dossier-line"><b>${tx('peptide.dossierHalfLife', 'MODEL HALF-LIFE')}</b> ${fmtH(model.tHalfH)}</div>`);
+    if (modelKind === 'curve') {
+      parts.push(`<div class="gn-peptide-dossier-line"><b>${tx('peptide.dossierPeak', 'RISE TO PEAK')}</b> ${fmtH(dossier.riseToPeakH)}</div>`);
+      parts.push(`<div class="gn-peptide-dossier-line"><b>${tx('peptide.dossierPeakWindow', 'PEAK WINDOW')}</b> ${fmtH(dossier.peakWindowH[0])}–${fmtH(dossier.peakWindowH[1])}</div>`);
+      parts.push(`<div class="gn-peptide-dossier-line"><b>${tx('peptide.dossierHalfLife', 'MODEL HALF-LIFE')}</b> ${fmtH(dossier.tHalfH)}</div>`);
     }
-    if ((model.notes || []).length) {
+    if ((dossier.notes || []).length) {
       parts.push(`<div class="gn-peptide-dossier-sub">${tx('peptide.dossierNotes', 'NOTES')}</div>`);
-      model.notes.forEach(n => parts.push(`<div class="gn-peptide-dossier-note">▸ ${safe(localizedNote(n))}</div>`));
+      dossier.notes.forEach(n => parts.push(`<div class="gn-peptide-dossier-note">▸ ${safe(localizedNote(n))}</div>`));
     }
-    if ((model.sources || []).length) {
+    if ((dossier.sources || []).length) {
       parts.push(`<div class="gn-peptide-dossier-sub">${tx('peptide.dossierSources', 'SOURCES')}</div>`);
-      model.sources.forEach(s => parts.push(`<a class="gn-peptide-dossier-src" href="${safe(s.url)}" target="_blank" rel="noopener noreferrer">↗ ${safe(s.label)}</a>`));
+      dossier.sources.forEach(s => parts.push(`<a class="gn-peptide-dossier-src" href="${safe(s.url)}" target="_blank" rel="noopener noreferrer">↗ ${safe(s.label)}</a>`));
     }
     container.innerHTML = parts.join('');
   }
@@ -464,7 +463,7 @@
   /* ── animal model panel (research context only) ─────────────────────── */
   function renderAnimal(container, build) {
     if (!container) return;
-    const animal = build.model.animal;
+    const animal = (build.dossier || {}).animal || null;
     container.innerHTML = '';
     if (!animal) return;
     const canvas = document.createElement('canvas');
@@ -502,7 +501,7 @@
   }
 
   /* ── stack lanes (multi-compound, aligned, separate scales) ─────────── */
-  function renderLanes(container, shots, labelMap) {
+  async function renderLanes(container, shots, labelMap) {
     if (!container) return;
     const engine = global.GN_PEPTIDE_PK;
     const active = (shots || []).filter(s => !s.archived);
@@ -513,12 +512,12 @@
     parts.push(`<div class="gn-peptide-lanes-head">${tx('peptide.stackTitle', 'STACK LANES')} · ${tx('peptide.separateScales', 'SEPARATE SCALES — CURVE HEIGHTS ARE NOT COMPARABLE')}</div>`);
 
     let modeledCount = 0;
-    const perMed = meds.map(medId => {
-      const build = engine.buildProtocolCurve(active, medId, 'all', now, 120);
-      const modelable = build.model.kind !== 'none';
+    const perMed = await Promise.all(meds.map(async medId => {
+      const build = await engine.buildProtocolCurve(active, medId, 'all', now, 120);
+      const modelable = build.modelKind !== 'none';
       if (modelable) modeledCount += 1;
       return { medId, build, modelable, label: labelMap[medId] || medId };
-    });
+    }));
 
     // overlap across modeled lanes
     let overlap = null;
@@ -534,7 +533,7 @@
           const build = p.build;
           const idx = Math.round((t - build.start) / (build.end - build.start) * (build.count - 1));
           const v = build.points[Math.max(0, Math.min(build.count - 1, idx))];
-          return build.model.kind === 'window' ? v > 0 : v > 0.15;
+          return build.modelKind === 'window' ? v > 0 : v > 0.15;
         }).length;
         if (activeLanes >= 2) hits += 1;
         total += 1;
@@ -620,14 +619,14 @@
       const level = current.points[idx];
       const last = current.markers.filter(m => !m.planned).at(-1);
       const elapsedH = last ? Math.max(0, (t - last.t) / HOUR_MS) : null;
-      const phase = phaseFor(current.model, elapsedH) || null;
+      const phase = phaseFor(current.dossier, elapsedH) || null;
       const marker = current.markers.find(m => Math.abs((m.t - current.start) / (current.end - current.start) - frac) < 0.02);
       const lines = [];
       lines.push(`${formatClock(t)}`);
       if (marker) lines.push(`${tx('peptide.tipShot', 'SHOT')} · ${marker.dose} mg${marker.planned ? ' · ' + tx('peptide.tipPlanned', 'PLANNED') : ''}`);
       if (elapsedH !== null) lines.push(`${Math.floor(elapsedH / 24)}d ${Math.floor(elapsedH % 24)}h ${tx('peptide.tipSinceShot', 'since shot')}`);
       if (phase) lines.push(phaseLabel(phase));
-      if (current.model.kind === 'curve') lines.push(`${tx('peptide.tipLevel', 'relative level')} ${Math.round(Math.max(0, Math.min(1.6, level)) / 1.6 * 100)}%`);
+      if (current.modelKind === 'curve') lines.push(`${tx('peptide.tipLevel', 'relative level')} ${Math.round(Math.max(0, Math.min(1.6, level)) / 1.6 * 100)}%`);
       tip.innerHTML = lines.map(l => `<div>${safe(l)}</div>`).join('');
       tip.hidden = false;
       tip.style.left = `${Math.max(8, Math.min(rect.width - 150, x + 12))}px`;

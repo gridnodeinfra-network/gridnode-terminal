@@ -34,19 +34,38 @@ function localizedPhaseContext(phase) {
   const key = PHASE_I18N[phase.name]?.context;
   return key ? tx(key, phase.context) : phase.context;
 }
-// Template-aware phase display name. When the last shot's medication matches a
-// phase template whose phase count equals the dashboard's fixed six-phase
-// model (e.g. the GLP-1 weekly template), the dashboard card and the ALL
-// PHASES list use the template's phase names so both surfaces agree
-// ("PEAK EFFECT", not "PEAK WINDOW"). Returns null when no template applies.
+// Template-aware phase display name. The phase template structure now lives
+// server-side (phase-state edge function); this resolves the template's phase
+// names from a cache populated by GNPhaseTemplates.phaseState(). When the
+// last shot's medication matches a template whose phase count equals the
+// dashboard's fixed six-phase model (e.g. the GLP-1 weekly template), the
+// dashboard card, header pill, and ALL PHASES list use the template's phase
+// names so both surfaces agree ("PEAK EFFECT", not "PEAK WINDOW").
+// Returns null when no template applies (or before the server state arrives;
+// a background fetch warms the cache and re-renders via gn:phase-state-ready).
 function templatePhaseName(lastShot, index) {
   try {
     const T = window.GNPhaseTemplates;
     if (!T || !lastShot || index < 0) return null;
-    const tpl = T.templateForMed?.(normalizeMedicationId(lastShot.med) || '');
-    if (!tpl || !Array.isArray(tpl.phases) || tpl.phases.length !== PHASES.length) return null;
-    const tp = tpl.phases[index];
-    return tp ? T.phaseName?.(tp) || tp.nameFb || null : null;
+    const med = normalizeMedicationId(lastShot.med) || '';
+    let cached = null;
+    try { cached = T.cachedState ? T.cachedState(med) : null; } catch (_) { cached = null; }
+    if (!cached) {
+      try {
+        const shots = typeof sortedShots === 'function' ? sortedShots() : [];
+        Promise.resolve(T.phaseState(med, shots, Date.now())).then(st => {
+          if (st && !st.empty) {
+            document.dispatchEvent(new CustomEvent('gn:phase-state-ready', { detail: { med } }));
+          }
+        }).catch(() => {});
+      } catch (_) {}
+      return null;
+    }
+    if (cached.empty) return null;
+    const phases = cached.template && cached.template.phases;
+    if (!Array.isArray(phases) || phases.length !== PHASES.length) return null;
+    const tp = phases[index];
+    return tp ? T.phaseName(tp) || null : null;
   } catch (_) { return null; }
 }
 const qa = selector => Array.from(document.querySelectorAll(selector));
