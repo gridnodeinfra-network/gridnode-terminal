@@ -7099,7 +7099,22 @@ function openCloudConnect() {
 /* Google pre-gate: stop orphan auth accounts at the source. On devices that
  * have never completed a Google sign-in (and hold no grant), the newhere view
  * appears BEFORE the OAuth dance, with a skip link for returning users.
- * The post-auth backstop (ensureNodeKeyClearance) remains the enforcer. */
+ * The post-auth backstop (ensureNodeKeyClearance) remains the enforcer.
+ *
+ * Restored 2026-10-03: these definitions were lost in the auth redesign and
+ * the dangling calls threw ReferenceError inside the GIS credential callback,
+ * silently killing Google sign-in on devices without a node key grant. */
+const GOOGLE_KNOWN_KEY = 'gn_google_known_v1';
+function isGoogleKnownDevice() {
+  try { return localStorage.getItem(GOOGLE_KNOWN_KEY) === '1'; } catch (err) { return false; }
+}
+function markGoogleKnownDevice() {
+  try { localStorage.setItem(GOOGLE_KNOWN_KEY, '1'); } catch (err) { /* private mode */ }
+}
+function markGoogleKnownSession(session) {
+  if (session?.user?.app_metadata?.provider === 'google') markGoogleKnownDevice();
+}
+
 function requireNodeKeyForGoogle(proceed) {
   const passThrough = () => {
     const p = proceed;
