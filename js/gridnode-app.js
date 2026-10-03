@@ -362,7 +362,7 @@ function renderNewHereView(opts = {}) {
   <button class="gn-auth-back" id="gnNewHereBack" type="button">&larr; <span data-i18n="otp.backToWelcome">Back</span></button>
   <h2 class="gn-auth-view-title" data-i18n="otp.newHereTitle">NEW HERE</h2>
   <p class="gn-auth-view-sub" data-i18n="otp.newHereSub">GRID//NODE is invite-only. Enter your NODE KEY to begin.</p>
-  ${opts.allowSkip ? `<button class="gn-auth-quiet" id="gnKeySkipBtn" type="button" style="margin-top:0"><span data-i18n="otp.alreadyHaveAccount">I already have an account</span></button>` : ''}
+  ${opts.allowSkip ? `<button class="gn-auth-secondary" id="gnKeySkipBtn" type="button"><span data-i18n="otp.alreadyHaveAccount">I already have an account</span></button>` : ''}
   <div id="gnKeyFormWrap">
     <input class="gn-auth-field" id="gnNewKeyInput" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" data-i18n-ph="nodekey.placeholder" placeholder="NODE-XXXXXX" data-i18n-aria-label="nodekey.enterKey" aria-label="NODE KEY" style="text-transform:uppercase;letter-spacing:1.5px">
     <div class="gn-auth-note" style="margin:2px 0 0;border:0;padding:0" data-i18n="otp.keyFormatHint">Keys look like NODE-XXXXXX.</div>
