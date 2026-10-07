@@ -2336,8 +2336,9 @@ function renderShotFilterOptions(records) {
 
 function renderShots() {
   renderScanner();
-  /* S4: HISTORY type filter — ALL / SHOTS / WEIGHT. Interim subviews; the
-   * merged TimelineEvent union is S5 work. Storage models stay untouched. */
+  /* S4/S5: HISTORY type filter — ALL / SHOTS / WEIGHT. ALL renders the
+   * presentation-level TimelineEvent union (buildTimeline); SHOTS and WEIGHT
+   * stay on their native storage models. */
   const historyType = moduleState.historyType === 'weight' ? 'weight' : moduleState.historyType === 'shots' ? 'shots' : 'all';
   qa('[data-history-type]').forEach(button => button.classList.toggle('active', button.dataset.historyType === historyType));
   /* Shot-only chrome (active/archived toggle, helper copy, shot filters)
@@ -2417,10 +2418,13 @@ function setHistoryType(type) {
 
 /* S4: weight card — display only. Weight records keep their own storage
  * model (getWeights); no TimelineEvent union is built here (S5). */
-function weightCardHtml(record) {
+function weightCardHtml(record, datePrecision) {
   const loggedWithShot = record.source === 'shot' || record.notes === 'Logged with SHOT';
+  /* S5: never invent midnight — date-only weights render as dates, not datetimes. */
+  const precision = datePrecision || (/T\d/.test(record.date || '') ? 'datetime' : 'day');
+  const dateLabel = precision === 'day' ? formatDate(record.date) : formatDateTime(record.date);
   return `<article class="log-entry gn-weight-entry">
-      <div class="log-main"><div><div class="log-date">${safeText(formatDateTime(record.date))}</div><div class="log-med">${tx('results.weight', 'WEIGHT')}</div></div>
+      <div class="log-main"><div><div class="log-date">${safeText(dateLabel)}</div><div class="log-med">${tx('results.weight', 'WEIGHT')}</div></div>
       <div class="log-dose">${safeText(Number(record.weight).toFixed(1))}lb</div></div>
       <div class="log-chips"><span class="log-chip lc-wt">${loggedWithShot ? tx('history.loggedWithShot', 'LOGGED WITH SHOT') : tx('history.manualEntry', 'MANUAL ENTRY')}</span></div>
       ${record.notes && !loggedWithShot ? `<div class="log-notes">${safeText(record.notes)}</div>` : ''}
@@ -2442,22 +2446,61 @@ function renderWeightHistory() {
   list.innerHTML = weights.map(weightCardHtml).join('');
 }
 
-/* S4: ALL subview — plain presentation interleave of active shots and
- * weights, newest first. This is display order only, not the S5 union. */
+/* S5: TimelineEvent — presentation-level union of shots and weights.
+ * Storage models stay separate (getAllShots / getWeights); this is a
+ * read-only view projection, built client-side.
+ * - id: namespaced 'shot:<id>' / 'weight:<id>' (never collides across types)
+ * - occurredAt: the record's own date string, untouched
+ * - createdAt: record creation time; null for legacy records (sorts last)
+ * - datePrecision: 'day' when the date carries no time component — the UI
+ *   must not invent midnight for these
+ * Deterministic sort: occurredAt DESC → createdAt DESC → type ASC → id ASC.
+ */
+function toTimelineEvent(record, type) {
+  const occurredAt = record.date || '';
+  const ms = Date.parse(occurredAt);
+  return {
+    id: `${type}:${record.id}`,
+    type,
+    occurredAt,
+    occurredAtMs: Number.isFinite(ms) ? ms : 0,
+    createdAt: record.createdAt || null,
+    datePrecision: /T\d/.test(occurredAt) ? 'datetime' : 'day',
+    record
+  };
+}
+
+function compareTimelineEvents(a, b) {
+  if (b.occurredAtMs !== a.occurredAtMs) return b.occurredAtMs - a.occurredAtMs;
+  const aCreated = a.createdAt ? Date.parse(a.createdAt) : -1;
+  const bCreated = b.createdAt ? Date.parse(b.createdAt) : -1;
+  if (bCreated !== aCreated) return bCreated - aCreated;
+  if (a.type !== b.type) return a.type < b.type ? -1 : 1;
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+}
+
+function buildTimeline(options = {}) {
+  const includeArchived = Boolean(options.includeArchived);
+  const shots = getAllShots().filter(record => includeArchived || !record.archived);
+  const weights = validWeights();
+  return [
+    ...shots.map(record => toTimelineEvent(record, 'shot')),
+    ...weights.map(record => toTimelineEvent(record, 'weight'))
+  ].sort(compareTimelineEvents);
+}
+
+/* S5: ALL subview — renders the TimelineEvent union, newest first. */
 function renderAllHistory() {
   const list = $('logList');
   if (!list) return;
-  const shots = getAllShots().filter(record => !record.archived);
-  const weights = validWeights();
-  if (!shots.length && !weights.length) {
+  const events = buildTimeline();
+  if (!events.length) {
     list.innerHTML = `<div class="empty gn-first-run-card"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${tx('history.allEmptyTitle', 'NOTHING LOGGED YET')}</b><span class="gn-first-run-sub">${tx('history.allEmptySub', 'Log a shot or your weight to start your timeline.')}</span><br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>${tx('runtime.logShot', 'LOG SHOT')}</button> <button class="btn-full btn-secondary empty-cta" type="button" onclick="openWeightModal()">${tx('history.logWeight', 'LOG WEIGHT')}</button></div>`;
     return;
   }
-  const items = [
-    ...shots.map(record => ({ t: new Date(record.date).getTime(), html: shotCardHtml(record, false) })),
-    ...weights.map(record => ({ t: new Date(record.date).getTime(), html: weightCardHtml(record) }))
-  ].sort((a, b) => b.t - a.t);
-  list.innerHTML = items.map(item => item.html).join('');
+  list.innerHTML = events.map(event => event.type === 'shot'
+    ? shotCardHtml(event.record, false)
+    : weightCardHtml(event.record, event.datePrecision)).join('');
 }
 
 
