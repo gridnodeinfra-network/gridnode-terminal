@@ -4394,7 +4394,7 @@ function scrollLandingTo(id) {
 <div class="screen" id="app" role="main">
   <div class="topbar">
     
-    <div class="app-wordmark app-wordmark-b2b" role="button" tabindex="0" onclick="showPage('Dash',document.getElementById('navDash'))" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Dash',document.getElementById('navDash'));}" title="Return to HOME" aria-label="Return to HOME" data-i18n-title="nav.returnDash" data-i18n-aria-label="nav.returnDash"><img class="gn-b2b-wordmark" src="/assets/brand/ui/header-lockup.svg" alt="GRID//NODE color wordmark" width="1600" height="320" decoding="async"></div>
+    <div class="app-wordmark app-wordmark-b2b" role="button" tabindex="0" onclick="showPage('Dash',document.getElementById('navDash'))" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Dash',document.getElementById('navDash'));}" title="Return to TODAY" aria-label="Return to TODAY" data-i18n-title="nav.returnDash" data-i18n-aria-label="nav.returnDash"><img class="gn-b2b-wordmark" src="/assets/brand/ui/header-lockup.svg" alt="GRID//NODE color wordmark" width="1600" height="320" decoding="async"></div>
     <div class="topbar-actions">
       <button class="topbar-btn gn-sound-btn" type="button" id="gnSoundToggle" role="switch" aria-checked="false" aria-label="Soundtrack" data-i18n-aria-label="sound.toggle" onclick="window.GN_AMBIENCE && window.GN_AMBIENCE.toggle()">
         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -4422,7 +4422,7 @@ function scrollLandingTo(id) {
     
     <div class="page active" id="pageDash">
       <div class="page-hdr">
-        <div class="page-title" data-i18n-html="dashboard.headingHtml" data-i18n-aria-label="dashboard.headingAriaLabel" aria-label="PROTOCOL DASHBOARD">PROTOCOL <span class="a">DASHBOARD</span></div>
+        <div class="page-title" data-i18n-html="dashboard.headingHtml" data-i18n-aria-label="dashboard.headingAriaLabel" aria-label="TODAY">TODAY</div>
         <div class="page-sub" id="dashSub" data-i18n="dashboard.zeroShotSub">STORED ON THIS DEVICE</div>
       </div>
 
@@ -4534,7 +4534,7 @@ function scrollLandingTo(id) {
     
     <div class="page" id="pageLog">
       <div class="page-hdr">
-        <div class="page-title" data-i18n-html="shots.historyHeadingHtml">SHOT <span class="a">LOG</span></div>
+        <div class="page-title" data-i18n-html="shots.historyHeadingHtml">HISTORY</div>
         <div class="page-sub" data-i18n="shots.allEntries">// SCANNER + ENTRIES //</div>
       </div>
       
@@ -4662,7 +4662,7 @@ function scrollLandingTo(id) {
     
     <div class="page" id="pageResults">
       <div class="page-hdr">
-        <div class="page-title" data-i18n-html="results.headingHtml">RESULTS <span class="a">// OUTCOMES</span></div>
+        <div class="page-title" data-i18n-html="results.headingHtml">PROGRESS</div>
         <div class="page-sub" id="resultRange" data-i18n="results.rangeSub">// USER-ENTERED OUTCOMES //</div>
         <div class="results-signal-note"><b data-i18n="results.protocolSignal">PROTOCOL SIGNAL</b><br><span data-i18n="results.protocolSignalCopy">Each logged SHOT contributes signal to your evolving protocol record. Additional entries may provide broader context over time.</span></div>
         <div class="results-view-toggle" role="group" aria-label="RESULTS view" data-i18n-aria-label="results.viewAria">
@@ -5152,9 +5152,9 @@ function scrollLandingTo(id) {
     </div></div>
 
   <div class="bottom-nav">
-    <div class="nav-item active" id="navDash" role="button" tabindex="0" aria-current="page" onclick="showPage('Dash',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Dash',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-command-grid"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.home">HOME</div></div>
-    <div class="nav-item" id="navLog" role="button" tabindex="0" onclick="showPage('Log',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Log',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-protocol-event"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.shots">SHOTS</div></div>
-    <div class="nav-item" id="navRes" role="button" tabindex="0" onclick="showPage('Results',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Results',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-trend-signal"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.results">RESULTS</div></div>
+    <div class="nav-item active" id="navDash" role="button" tabindex="0" aria-current="page" onclick="showPage('Dash',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Dash',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-command-grid"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.home">TODAY</div></div>
+    <div class="nav-item" id="navLog" role="button" tabindex="0" onclick="showPage('Log',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Log',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-protocol-event"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.shots">HISTORY</div></div>
+    <div class="nav-item" id="navRes" role="button" tabindex="0" onclick="showPage('Results',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Results',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-trend-signal"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.results">PROGRESS</div></div>
     <div class="nav-item" id="navLab" role="button" tabindex="0" onclick="showPage('Lab',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Lab',this)}"><div class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-lab-vessel"></use></svg></span></div><div class="nav-lbl" data-i18n="nav.lab">LAB</div></div>
     <div class="nav-item" id="navVault" role="button" tabindex="0" onclick="showPage('Profile',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('Profile',this)}" aria-label="VAULT" data-i18n-aria-label="nav.vault"><span class="nav-ico"><span class="gn-icon gn-icon-sm"><svg><use href="#gn-vault-core"></use></svg></span></span><span class="nav-lbl" data-i18n="nav.vault">VAULT</span></div>
   </div>
