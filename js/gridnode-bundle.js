@@ -1263,6 +1263,7 @@ const moduleState = {
   selectedLocation: '',
   editingShotId: null,
   shotHistoryView: 'active',
+  historyType: 'all',
   pendingArchiveId: null,
   pendingPermanentDeleteId: null,
   shotFilters: { medication: '', site: '', range: 'all', query: '' },
@@ -2335,6 +2336,19 @@ function renderShotFilterOptions(records) {
 
 function renderShots() {
   renderScanner();
+  /* S4: HISTORY type filter — ALL / SHOTS / WEIGHT. Interim subviews; the
+   * merged TimelineEvent union is S5 work. Storage models stay untouched. */
+  const historyType = moduleState.historyType === 'weight' ? 'weight' : moduleState.historyType === 'shots' ? 'shots' : 'all';
+  qa('[data-history-type]').forEach(button => button.classList.toggle('active', button.dataset.historyType === historyType));
+  /* Shot-only chrome (active/archived toggle, helper copy, shot filters)
+   * belongs to the SHOTS subview. WEIGHT and ALL render their own lists. */
+  const shotsChrome = historyType === 'shots';
+  setDisplay('shotHistoryControls', shotsChrome);
+  setDisplay('shotHistoryHelper', shotsChrome);
+  const existingFilters = $('gnShotFilters');
+  if (existingFilters) existingFilters.hidden = !shotsChrome;
+  if (historyType === 'weight') { renderWeightHistory(); return; }
+  if (historyType === 'all') { renderAllHistory(); return; }
   ensureShotHistoryFilters();
   const list = $('logList');
   if (!list) return;
@@ -2377,8 +2391,10 @@ function renderShots() {
     $('gnShotFilterEmptyClear')?.addEventListener('click', () => { moduleState.shotFilters = { medication: '', site: '', range: 'all', query: '' }; renderShots(); });
     return;
   }
-  list.innerHTML = visible.map(record => {
-    const archived = Boolean(record.archived);
+  list.innerHTML = visible.map(record => shotCardHtml(record, Boolean(record.archived))).join('');
+}
+
+function shotCardHtml(record, archived) {
     return `<article class="log-entry ${archived ? 'archived archived-record' : ''}">
       <div class="log-main"><div><div class="log-date">${archived ? tx('shots.archivedPrefix', 'ARCHIVED') + ' ' : ''}${safeText(formatDateTime(record.date))}</div><div class="log-med">${safeText(medicationLabel(record.med))}</div></div>
       <div class="log-dose">${safeText(record.dose || '—')}mg</div></div>
@@ -2387,12 +2403,61 @@ function renderShots() {
       <div class="log-actions ${archived ? 'archive-actions' : ''}">${archived ? `<button type="button" class="log-action-btn restore archived-action-btn" data-shot-action="restore-edit" data-shot-id="${safeText(record.id)}"><span class="archive-action-main">${tx('shots.restore', 'RESTORE')}</span><span class="archive-action-sub">${tx('shots.restoreToEdit', 'RESTORE TO EDIT')}</span></button><button type="button" class="log-action-btn del archived-action-btn" data-shot-action="delete" data-shot-id="${safeText(record.id)}"><span class="archive-action-main">${tx('deletePerm.confirm', 'DELETE RECORD')}</span><span class="archive-action-sub">${tx('shots.deletePermanently', 'DELETE PERMANENTLY')}</span></button>` : `<button type="button" class="log-action-btn" data-shot-action="edit" data-shot-id="${safeText(record.id)}">${tx('shots.edit', 'EDIT')}</button><button type="button" class="log-action-btn del" data-shot-action="archive" data-shot-id="${safeText(record.id)}">${tx('shots.archive', 'ARCHIVE')}</button>`}</div>
       ${archived ? `<div class="shot-history-helper">${tx('shots.archivedRestoreNote', 'Restore the record before editing.')}</div>` : ''}
     </article>`;
-  }).join('');
 }
 
 function setShotHistoryView(view) {
   moduleState.shotHistoryView = view === 'archived' ? 'archived' : 'active';
   renderShots();
+}
+
+function setHistoryType(type) {
+  moduleState.historyType = type === 'weight' ? 'weight' : type === 'shots' ? 'shots' : 'all';
+  renderShots();
+}
+
+/* S4: weight card — display only. Weight records keep their own storage
+ * model (getWeights); no TimelineEvent union is built here (S5). */
+function weightCardHtml(record) {
+  const loggedWithShot = record.source === 'shot' || record.notes === 'Logged with SHOT';
+  return `<article class="log-entry gn-weight-entry">
+      <div class="log-main"><div><div class="log-date">${safeText(formatDateTime(record.date))}</div><div class="log-med">${tx('results.weight', 'WEIGHT')}</div></div>
+      <div class="log-dose">${safeText(Number(record.weight).toFixed(1))}lb</div></div>
+      <div class="log-chips"><span class="log-chip lc-wt">${loggedWithShot ? tx('history.loggedWithShot', 'LOGGED WITH SHOT') : tx('history.manualEntry', 'MANUAL ENTRY')}</span></div>
+      ${record.notes && !loggedWithShot ? `<div class="log-notes">${safeText(record.notes)}</div>` : ''}
+    </article>`;
+}
+
+function validWeights() {
+  return getWeights().filter(record => record && Number.isFinite(Number(record.weight)));
+}
+
+function renderWeightHistory() {
+  const list = $('logList');
+  if (!list) return;
+  const weights = validWeights().sort((a, b) => new Date(b.date) - new Date(a.date));
+  if (!weights.length) {
+    list.innerHTML = `<div class="empty gn-first-run-card"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-biometric-gauge"></use></svg></span></span><b class="gn-first-run-title">${tx('history.noWeights', 'NO WEIGHT RECORDS')}</b><span class="gn-first-run-sub">${tx('history.noWeightsSub', 'Log your weight to start building your trend.')}</span><br><button class="btn-full btn-primary empty-cta" type="button" onclick="openWeightModal()">${tx('history.logWeight', 'LOG WEIGHT')}</button></div>`;
+    return;
+  }
+  list.innerHTML = weights.map(weightCardHtml).join('');
+}
+
+/* S4: ALL subview — plain presentation interleave of active shots and
+ * weights, newest first. This is display order only, not the S5 union. */
+function renderAllHistory() {
+  const list = $('logList');
+  if (!list) return;
+  const shots = getAllShots().filter(record => !record.archived);
+  const weights = validWeights();
+  if (!shots.length && !weights.length) {
+    list.innerHTML = `<div class="empty gn-first-run-card"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${tx('history.allEmptyTitle', 'NOTHING LOGGED YET')}</b><span class="gn-first-run-sub">${tx('history.allEmptySub', 'Log a shot or your weight to start your timeline.')}</span><br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>${tx('runtime.logShot', 'LOG SHOT')}</button> <button class="btn-full btn-secondary empty-cta" type="button" onclick="openWeightModal()">${tx('history.logWeight', 'LOG WEIGHT')}</button></div>`;
+    return;
+  }
+  const items = [
+    ...shots.map(record => ({ t: new Date(record.date).getTime(), html: shotCardHtml(record, false) })),
+    ...weights.map(record => ({ t: new Date(record.date).getTime(), html: weightCardHtml(record) }))
+  ].sort((a, b) => b.t - a.t);
+  list.innerHTML = items.map(item => item.html).join('');
 }
 
 
@@ -5764,6 +5829,8 @@ function initModules() {
     if (zone) selectScannerLocation(zone.dataset.stableZone, { source: 'fallback', gestureToken: gnScannerAudioGesture.fromEvent(event) });
     const historyButton = event.target.closest('[data-shot-history-view]');
     if (historyButton) setShotHistoryView(historyButton.dataset.shotHistoryView);
+    const historyTypeButton = event.target.closest('[data-history-type]');
+    if (historyTypeButton) setHistoryType(historyTypeButton.dataset.historyType);
     const shotAction = event.target.closest('[data-shot-action]');
     if (shotAction) { const action = shotAction.dataset.shotAction, id = shotAction.dataset.shotId; if (action === 'edit') editShot(id); if (action === 'archive') openArchiveConfirm(id); if (action === 'restore') restoreArchivedShot(id); if (action === 'restore-edit') restoreArchivedShotToEdit(id); if (action === 'delete') openPermanentDeleteConfirm(id); }
     if (event.target.closest('[data-empty-shot]')) handleShotFab();
@@ -6141,7 +6208,7 @@ document.addEventListener('gn:shot-saved', () => {
   if (h) { try { h.fire([10, 60, 20]); } catch (_) {} }
 });
 
-window.GNModules=Object.freeze({getProfile:getProfile,getProfileForEvidence:getProfileForEvidence,selectState:selectState,moduleState:moduleState,refreshNodeHeader:refreshNodeHeader,showScreen:showScreen,showPage:showPage,refreshAll:refreshAll,loadApp:loadApp,computeTotalChange:computeTotalChange,saveProfileMed:saveProfileMed,saveProfileMetrics:saveProfileMetrics,calcAndShowBMI:calcAndShowBMI,toggleSelect:toggleSelect,selectOpt:selectOpt,retryCloudHydration:retryCloudHydration,showPhasesModal:showPhasesModal,closePhases:closePhases,renderShots:renderShots,setShotHistoryView:setShotHistoryView,scannerSkinTone:scannerSkinTone,setScannerSkinTone:setScannerSkinTone,setScannerMode:setScannerMode,selectScannerLocation:selectScannerLocation,renderScanner:renderScanner,openLogModal:openLogModal,closeLog:closeLog,cancelLogClose:cancelLogClose,editShot:editShot,openArchiveConfirm:openArchiveConfirm,cancelArchiveShot:cancelArchiveShot,confirmArchiveShot:confirmArchiveShot,restoreArchivedShot:restoreArchivedShot,openPermanentDeleteConfirm:openPermanentDeleteConfirm,cancelPermanentDeleteShot:cancelPermanentDeleteShot,confirmPermanentDeleteShot:confirmPermanentDeleteShot,saveShot:saveShot,openFutureTimestampConfirm:openFutureTimestampConfirm,closeFutureTimestampConfirm:closeFutureTimestampConfirm,cancelFutureTimestampSave:cancelFutureTimestampSave,confirmFutureTimestampSave:confirmFutureTimestampSave,handleShotFab:handleShotFab,openQuickConfirm:openQuickConfirm,confirmQuickShot:confirmQuickShot,quickConfirmDetails:quickConfirmDetails,openWeightModal:openWeightModal,closeWt:closeWt,setWeightUnit:setWeightUnit,saveWt:saveWt,renderResults:renderResults,setResultsView:setResultsView,setRange:setRange,setWtRange:setWtRange,showLabSeg:showLabSeg,showYouSeg:showYouSeg,openLabTool:openLabTool,closeLabTool:closeLabTool,exportInventory:exportInventory,updateDoseProjection:updateDoseProjection,saveCalculatorReference:saveCalculatorReference,renderLab:renderLab,updateSyr:updateSyr,updateRecon:updateRecon,updateSupply:updateSupply,setMeasurementUnit:setMeasurementUnit,saveMeasurements:saveMeasurements,replayGuidedTour:replayGuidedTour,openDeleteLocalData:openDeleteLocalData,closeDeleteLocalData:closeDeleteLocalData,updateDeleteLocalButton:updateDeleteLocalButton,confirmDeleteLocalData:confirmDeleteLocalData,openDeleteCloudAccount:openDeleteCloudAccount,closeDeleteCloudAccount:closeDeleteCloudAccount,confirmDeleteCloudAccount:confirmDeleteCloudAccount,renderProfile:renderProfile,dismissSystemUpdate:dismissSystemUpdate,openSystemUpdate:openSystemUpdate,exportCSV:exportCSV,exportBackup:exportBackup,openPrivacyPolicy:openPrivacyPolicy,closePrivacyPolicy:closePrivacyPolicy,openDataOwnership:openDataOwnership,openTermsOfService:openTermsOfService,closeTermsOfService:closeTermsOfService,prepareCSVImport:prepareCSVImport,handleCSVImportFile:handleCSVImportFile,openImportDialog:openImportDialog,closeImportDialog:closeImportDialog,handleUnifiedCsvSelection:handleUnifiedCsvSelection,handleBackupImportFile:handleBackupImportFile,confirmBackupImport:confirmBackupImport,cancelCSVImport:cancelCSVImport,confirmCSVImport:confirmCSVImport,parseShotsyJSON:parseShotsyJSON,handleShotsyJSONFile:handleShotsyJSONFile,toggleImportForce:toggleImportForce,previewCSVImportForTesting:previewCSVImportForTesting,renderCalendar:renderCalendar,calPrev:calPrev,calNext:calNext,calDayClick:calDayClick,openArsenalMod:openArsenalMod,closeArs:closeArs,saveArs:saveArs,requestLoadoutRemove:requestLoadoutRemove,cancelLoadoutRemove:cancelLoadoutRemove,confirmLoadoutRemove:confirmLoadoutRemove,formatTime24:formatTime24,formatTime12:formatTime12,gnSetShotMeridiem:gnSetShotMeridiem,gnShotClockLiveFormat:gnShotClockLiveFormat,gnNormalizeShotClockField:gnNormalizeShotClockField,gnWeightDateInput:gnWeightDateInput,gnWeightTimeInput:gnWeightTimeInput,gnOpenShotDatePicker:gnOpenShotDatePicker,gnCloseShotDatePicker:gnCloseShotDatePicker,gnDatePickerMove:gnDatePickerMove,gnSelectPickerDate:gnSelectPickerDate,gnSetShotDateFromPicker:gnSetShotDateFromPicker,gnSetShotDateValue:gnSetShotDateValue,gnSetShotTimeValue:gnSetShotTimeValue,gnMedRevealGroup:gnMedRevealGroup,updatePills:updatePills,selPill:selPill,initModules:initModules,trustBadge:trustBadge,approxPct:approxPct,approxNum:approxNum});
+window.GNModules=Object.freeze({getProfile:getProfile,getProfileForEvidence:getProfileForEvidence,selectState:selectState,moduleState:moduleState,refreshNodeHeader:refreshNodeHeader,showScreen:showScreen,showPage:showPage,refreshAll:refreshAll,loadApp:loadApp,computeTotalChange:computeTotalChange,saveProfileMed:saveProfileMed,saveProfileMetrics:saveProfileMetrics,calcAndShowBMI:calcAndShowBMI,toggleSelect:toggleSelect,selectOpt:selectOpt,retryCloudHydration:retryCloudHydration,showPhasesModal:showPhasesModal,closePhases:closePhases,renderShots:renderShots,setShotHistoryView:setShotHistoryView,setHistoryType:setHistoryType,scannerSkinTone:scannerSkinTone,setScannerSkinTone:setScannerSkinTone,setScannerMode:setScannerMode,selectScannerLocation:selectScannerLocation,renderScanner:renderScanner,openLogModal:openLogModal,closeLog:closeLog,cancelLogClose:cancelLogClose,editShot:editShot,openArchiveConfirm:openArchiveConfirm,cancelArchiveShot:cancelArchiveShot,confirmArchiveShot:confirmArchiveShot,restoreArchivedShot:restoreArchivedShot,openPermanentDeleteConfirm:openPermanentDeleteConfirm,cancelPermanentDeleteShot:cancelPermanentDeleteShot,confirmPermanentDeleteShot:confirmPermanentDeleteShot,saveShot:saveShot,openFutureTimestampConfirm:openFutureTimestampConfirm,closeFutureTimestampConfirm:closeFutureTimestampConfirm,cancelFutureTimestampSave:cancelFutureTimestampSave,confirmFutureTimestampSave:confirmFutureTimestampSave,handleShotFab:handleShotFab,openQuickConfirm:openQuickConfirm,confirmQuickShot:confirmQuickShot,quickConfirmDetails:quickConfirmDetails,openWeightModal:openWeightModal,closeWt:closeWt,setWeightUnit:setWeightUnit,saveWt:saveWt,renderResults:renderResults,setResultsView:setResultsView,setRange:setRange,setWtRange:setWtRange,showLabSeg:showLabSeg,showYouSeg:showYouSeg,openLabTool:openLabTool,closeLabTool:closeLabTool,exportInventory:exportInventory,updateDoseProjection:updateDoseProjection,saveCalculatorReference:saveCalculatorReference,renderLab:renderLab,updateSyr:updateSyr,updateRecon:updateRecon,updateSupply:updateSupply,setMeasurementUnit:setMeasurementUnit,saveMeasurements:saveMeasurements,replayGuidedTour:replayGuidedTour,openDeleteLocalData:openDeleteLocalData,closeDeleteLocalData:closeDeleteLocalData,updateDeleteLocalButton:updateDeleteLocalButton,confirmDeleteLocalData:confirmDeleteLocalData,openDeleteCloudAccount:openDeleteCloudAccount,closeDeleteCloudAccount:closeDeleteCloudAccount,confirmDeleteCloudAccount:confirmDeleteCloudAccount,renderProfile:renderProfile,dismissSystemUpdate:dismissSystemUpdate,openSystemUpdate:openSystemUpdate,exportCSV:exportCSV,exportBackup:exportBackup,openPrivacyPolicy:openPrivacyPolicy,closePrivacyPolicy:closePrivacyPolicy,openDataOwnership:openDataOwnership,openTermsOfService:openTermsOfService,closeTermsOfService:closeTermsOfService,prepareCSVImport:prepareCSVImport,handleCSVImportFile:handleCSVImportFile,openImportDialog:openImportDialog,closeImportDialog:closeImportDialog,handleUnifiedCsvSelection:handleUnifiedCsvSelection,handleBackupImportFile:handleBackupImportFile,confirmBackupImport:confirmBackupImport,cancelCSVImport:cancelCSVImport,confirmCSVImport:confirmCSVImport,parseShotsyJSON:parseShotsyJSON,handleShotsyJSONFile:handleShotsyJSONFile,toggleImportForce:toggleImportForce,previewCSVImportForTesting:previewCSVImportForTesting,renderCalendar:renderCalendar,calPrev:calPrev,calNext:calNext,calDayClick:calDayClick,openArsenalMod:openArsenalMod,closeArs:closeArs,saveArs:saveArs,requestLoadoutRemove:requestLoadoutRemove,cancelLoadoutRemove:cancelLoadoutRemove,confirmLoadoutRemove:confirmLoadoutRemove,formatTime24:formatTime24,formatTime12:formatTime12,gnSetShotMeridiem:gnSetShotMeridiem,gnShotClockLiveFormat:gnShotClockLiveFormat,gnNormalizeShotClockField:gnNormalizeShotClockField,gnWeightDateInput:gnWeightDateInput,gnWeightTimeInput:gnWeightTimeInput,gnOpenShotDatePicker:gnOpenShotDatePicker,gnCloseShotDatePicker:gnCloseShotDatePicker,gnDatePickerMove:gnDatePickerMove,gnSelectPickerDate:gnSelectPickerDate,gnSetShotDateFromPicker:gnSetShotDateFromPicker,gnSetShotDateValue:gnSetShotDateValue,gnSetShotTimeValue:gnSetShotTimeValue,gnMedRevealGroup:gnMedRevealGroup,updatePills:updatePills,selPill:selPill,initModules:initModules,trustBadge:trustBadge,approxPct:approxPct,approxNum:approxNum});
 
 const modules=window.GNModules;
 

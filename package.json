@@ -23,7 +23,8 @@
     "test:v01544": "node scripts/test-v01544-shot-console.cjs",
     "test:s1": "node scripts/test-s1-quicksave.cjs",
     "test:s2": "node scripts/test-s2-trust.cjs",
-    "test:s3": "node scripts/test-s3-labels.cjs"
+    "test:s3": "node scripts/test-s3-labels.cjs",
+    "test:s4": "node scripts/test-s4-history.cjs"
   },
   "devDependencies": {
     "playwright": "1.63.0",

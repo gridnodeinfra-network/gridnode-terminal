@@ -123,6 +123,8 @@ export function initModules() {
     if (zone) selectScannerLocation(zone.dataset.stableZone, { source: 'fallback', gestureToken: gnScannerAudioGesture.fromEvent(event) });
     const historyButton = event.target.closest('[data-shot-history-view]');
     if (historyButton) setShotHistoryView(historyButton.dataset.shotHistoryView);
+    const historyTypeButton = event.target.closest('[data-history-type]');
+    if (historyTypeButton) setHistoryType(historyTypeButton.dataset.historyType);
     const shotAction = event.target.closest('[data-shot-action]');
     if (shotAction) { const action = shotAction.dataset.shotAction, id = shotAction.dataset.shotId; if (action === 'edit') editShot(id); if (action === 'archive') openArchiveConfirm(id); if (action === 'restore') restoreArchivedShot(id); if (action === 'restore-edit') restoreArchivedShotToEdit(id); if (action === 'delete') openPermanentDeleteConfirm(id); }
     if (event.target.closest('[data-empty-shot]')) handleShotFab();

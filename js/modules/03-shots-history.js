@@ -50,6 +50,19 @@ function renderShotFilterOptions(records) {
 
 export function renderShots() {
   renderScanner();
+  /* S4: HISTORY type filter — ALL / SHOTS / WEIGHT. Interim subviews; the
+   * merged TimelineEvent union is S5 work. Storage models stay untouched. */
+  const historyType = moduleState.historyType === 'weight' ? 'weight' : moduleState.historyType === 'shots' ? 'shots' : 'all';
+  qa('[data-history-type]').forEach(button => button.classList.toggle('active', button.dataset.historyType === historyType));
+  /* Shot-only chrome (active/archived toggle, helper copy, shot filters)
+   * belongs to the SHOTS subview. WEIGHT and ALL render their own lists. */
+  const shotsChrome = historyType === 'shots';
+  setDisplay('shotHistoryControls', shotsChrome);
+  setDisplay('shotHistoryHelper', shotsChrome);
+  const existingFilters = $('gnShotFilters');
+  if (existingFilters) existingFilters.hidden = !shotsChrome;
+  if (historyType === 'weight') { renderWeightHistory(); return; }
+  if (historyType === 'all') { renderAllHistory(); return; }
   ensureShotHistoryFilters();
   const list = $('logList');
   if (!list) return;
@@ -92,8 +105,10 @@ export function renderShots() {
     $('gnShotFilterEmptyClear')?.addEventListener('click', () => { moduleState.shotFilters = { medication: '', site: '', range: 'all', query: '' }; renderShots(); });
     return;
   }
-  list.innerHTML = visible.map(record => {
-    const archived = Boolean(record.archived);
+  list.innerHTML = visible.map(record => shotCardHtml(record, Boolean(record.archived))).join('');
+}
+
+function shotCardHtml(record, archived) {
     return `<article class="log-entry ${archived ? 'archived archived-record' : ''}">
       <div class="log-main"><div><div class="log-date">${archived ? tx('shots.archivedPrefix', 'ARCHIVED') + ' ' : ''}${safeText(formatDateTime(record.date))}</div><div class="log-med">${safeText(medicationLabel(record.med))}</div></div>
       <div class="log-dose">${safeText(record.dose || '—')}mg</div></div>
@@ -102,12 +117,61 @@ export function renderShots() {
       <div class="log-actions ${archived ? 'archive-actions' : ''}">${archived ? `<button type="button" class="log-action-btn restore archived-action-btn" data-shot-action="restore-edit" data-shot-id="${safeText(record.id)}"><span class="archive-action-main">${tx('shots.restore', 'RESTORE')}</span><span class="archive-action-sub">${tx('shots.restoreToEdit', 'RESTORE TO EDIT')}</span></button><button type="button" class="log-action-btn del archived-action-btn" data-shot-action="delete" data-shot-id="${safeText(record.id)}"><span class="archive-action-main">${tx('deletePerm.confirm', 'DELETE RECORD')}</span><span class="archive-action-sub">${tx('shots.deletePermanently', 'DELETE PERMANENTLY')}</span></button>` : `<button type="button" class="log-action-btn" data-shot-action="edit" data-shot-id="${safeText(record.id)}">${tx('shots.edit', 'EDIT')}</button><button type="button" class="log-action-btn del" data-shot-action="archive" data-shot-id="${safeText(record.id)}">${tx('shots.archive', 'ARCHIVE')}</button>`}</div>
       ${archived ? `<div class="shot-history-helper">${tx('shots.archivedRestoreNote', 'Restore the record before editing.')}</div>` : ''}
     </article>`;
-  }).join('');
 }
 
 export function setShotHistoryView(view) {
   moduleState.shotHistoryView = view === 'archived' ? 'archived' : 'active';
   renderShots();
+}
+
+export function setHistoryType(type) {
+  moduleState.historyType = type === 'weight' ? 'weight' : type === 'shots' ? 'shots' : 'all';
+  renderShots();
+}
+
+/* S4: weight card — display only. Weight records keep their own storage
+ * model (getWeights); no TimelineEvent union is built here (S5). */
+function weightCardHtml(record) {
+  const loggedWithShot = record.source === 'shot' || record.notes === 'Logged with SHOT';
+  return `<article class="log-entry gn-weight-entry">
+      <div class="log-main"><div><div class="log-date">${safeText(formatDateTime(record.date))}</div><div class="log-med">${tx('results.weight', 'WEIGHT')}</div></div>
+      <div class="log-dose">${safeText(Number(record.weight).toFixed(1))}lb</div></div>
+      <div class="log-chips"><span class="log-chip lc-wt">${loggedWithShot ? tx('history.loggedWithShot', 'LOGGED WITH SHOT') : tx('history.manualEntry', 'MANUAL ENTRY')}</span></div>
+      ${record.notes && !loggedWithShot ? `<div class="log-notes">${safeText(record.notes)}</div>` : ''}
+    </article>`;
+}
+
+function validWeights() {
+  return getWeights().filter(record => record && Number.isFinite(Number(record.weight)));
+}
+
+function renderWeightHistory() {
+  const list = $('logList');
+  if (!list) return;
+  const weights = validWeights().sort((a, b) => new Date(b.date) - new Date(a.date));
+  if (!weights.length) {
+    list.innerHTML = `<div class="empty gn-first-run-card"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-biometric-gauge"></use></svg></span></span><b class="gn-first-run-title">${tx('history.noWeights', 'NO WEIGHT RECORDS')}</b><span class="gn-first-run-sub">${tx('history.noWeightsSub', 'Log your weight to start building your trend.')}</span><br><button class="btn-full btn-primary empty-cta" type="button" onclick="openWeightModal()">${tx('history.logWeight', 'LOG WEIGHT')}</button></div>`;
+    return;
+  }
+  list.innerHTML = weights.map(weightCardHtml).join('');
+}
+
+/* S4: ALL subview — plain presentation interleave of active shots and
+ * weights, newest first. This is display order only, not the S5 union. */
+function renderAllHistory() {
+  const list = $('logList');
+  if (!list) return;
+  const shots = getAllShots().filter(record => !record.archived);
+  const weights = validWeights();
+  if (!shots.length && !weights.length) {
+    list.innerHTML = `<div class="empty gn-first-run-card"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${tx('history.allEmptyTitle', 'NOTHING LOGGED YET')}</b><span class="gn-first-run-sub">${tx('history.allEmptySub', 'Log a shot or your weight to start your timeline.')}</span><br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>${tx('runtime.logShot', 'LOG SHOT')}</button> <button class="btn-full btn-secondary empty-cta" type="button" onclick="openWeightModal()">${tx('history.logWeight', 'LOG WEIGHT')}</button></div>`;
+    return;
+  }
+  const items = [
+    ...shots.map(record => ({ t: new Date(record.date).getTime(), html: shotCardHtml(record, false) })),
+    ...weights.map(record => ({ t: new Date(record.date).getTime(), html: weightCardHtml(record) }))
+  ].sort((a, b) => b.t - a.t);
+  list.innerHTML = items.map(item => item.html).join('');
 }
 
 

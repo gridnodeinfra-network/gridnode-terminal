@@ -78,6 +78,7 @@ export const moduleState = {
   selectedLocation: '',
   editingShotId: null,
   shotHistoryView: 'active',
+  historyType: 'all',
   pendingArchiveId: null,
   pendingPermanentDeleteId: null,
   shotFilters: { medication: '', site: '', range: 'all', query: '' },
