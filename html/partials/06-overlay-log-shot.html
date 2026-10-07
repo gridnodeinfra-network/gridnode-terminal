@@ -127,6 +127,14 @@
       <div class="gn-shot-summary" aria-live="polite"><span class="gn-shot-summary-item" id="gnShotSummaryMed">&mdash;</span><span class="gn-shot-summary-sep">//</span><span class="gn-shot-summary-item" id="gnShotSummaryDose">&mdash;</span><span class="gn-shot-summary-sep">//</span><span class="gn-shot-summary-item" id="gnShotSummarySite">&mdash;</span></div>
       <button class="btn-full btn-primary gn-shot-fire" onclick="saveShot()">LOG SHOT</button>
     </div>
+    <div class="gn-quick-confirm gn-hidden" id="gnQuickConfirm" aria-live="polite">
+      <div class="gn-quick-confirm-kicker" data-i18n="shot.quickRepeatKicker">QUICK REPEAT</div>
+      <div class="gn-quick-confirm-title" data-i18n="shot.quickRepeatTitle">Same as last time?</div>
+      <div class="gn-quick-confirm-summary" id="gnQuickConfirmSummary"></div>
+      <div class="gn-quick-confirm-time" id="gnQuickConfirmTime"></div>
+      <button class="btn-full btn-primary gn-quick-confirm-fire" id="gnQuickConfirmFire" type="button" onclick="confirmQuickShot()" data-i18n="shot.logShot">LOG SHOT</button>
+      <button class="gn-auth-secondary gn-quick-confirm-details" id="gnQuickConfirmDetails" type="button" onclick="quickConfirmDetails()" data-i18n="shot.changeDetails">CHANGE DETAILS</button>
+    </div>
   </div>
 </div>
 

@@ -2040,5 +2040,15 @@
   "legal.modalTitle": "ANTES DE ENTRAR",
   "legal.modalTerms": "Tengo 18 años o más y acepto los TÉRMINOS DE SERVICIO y la POLÍTICA DE PRIVACIDAD.",
   "legal.modalResearch": "Entiendo que GRID//NODE es una herramienta personal de seguimiento, no un consejo médico.",
-  "legal.under18": "TENGO MENOS DE 18 AÑOS"
+  "legal.under18": "TENGO MENOS DE 18 AÑOS",
+  "shot.quickRepeatKicker": "REPETICIÓN RÁPIDA",
+  "shot.quickRepeatTitle": "¿Igual que la última vez?",
+  "shot.changeDetails": "CAMBIAR DETALLES",
+  "dashboard.syncingKicker": "SINCRONIZANDO",
+  "dashboard.syncingTitle": "TRAYENDO TU GRID DE LA NUBE",
+  "dashboard.syncingSub": "Tus registros están en camino. Tarda unos segundos.",
+  "dashboard.syncFailedKicker": "PROBLEMA DE CONEXIÓN",
+  "dashboard.syncFailedTitle": "NO PUDIMOS ACCEDER A TUS DATOS",
+  "dashboard.syncFailedSub": "Tus registros en la nube no se cargaron. Tus datos están a salvo — revisa tu conexión e inténtalo de nuevo.",
+  "dashboard.retrySync": "REINTENTAR SINCRONIZACIÓN"
 }

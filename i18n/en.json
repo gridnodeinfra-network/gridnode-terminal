@@ -1973,5 +1973,15 @@
   "legal.modalTitle": "BEFORE YOU ENTER",
   "legal.modalTerms": "I am 18 or older and I accept the TERMS OF SERVICE and PRIVACY POLICY.",
   "legal.modalResearch": "I understand GRID//NODE is a personal tracking tool, not medical advice.",
-  "legal.under18": "I AM UNDER 18"
+  "legal.under18": "I AM UNDER 18",
+  "shot.quickRepeatKicker": "QUICK REPEAT",
+  "shot.quickRepeatTitle": "Same as last time?",
+  "shot.changeDetails": "CHANGE DETAILS",
+  "dashboard.syncingKicker": "SYNCING",
+  "dashboard.syncingTitle": "PULLING YOUR GRID FROM THE CLOUD",
+  "dashboard.syncingSub": "Your records are on their way. This takes a few seconds.",
+  "dashboard.syncFailedKicker": "CONNECTION ISSUE",
+  "dashboard.syncFailedTitle": "COULDN'T REACH YOUR DATA",
+  "dashboard.syncFailedSub": "Your cloud records didn’t load. Your data is safe — check your connection and try again.",
+  "dashboard.retrySync": "RETRY SYNC"
 }

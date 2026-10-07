@@ -1323,7 +1323,11 @@ async function completeCloudSession(session) {
   activateSession(session, true);
   const accountWorkspace = captureWorkspace(state.accountKey);
   showApp();
+  // S1: honest empty states. Track hydration so the dashboard can tell
+  // "still syncing" / "sync failed" apart from "genuinely no data".
+  state.cloudHydration = 'pending';
   const hydration = await hydrateCloudData();
+  state.cloudHydration = hydration.ok ? 'ok' : 'failed';
   if (hydration.ok && localWorkspace && workspaceHasData(localWorkspace) && !workspaceHasData(accountWorkspace)) {
     const remote = hydration.remote || {};
     const migration = { ...localWorkspace };

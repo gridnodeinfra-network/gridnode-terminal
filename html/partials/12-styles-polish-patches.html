@@ -2531,4 +2531,33 @@ body.gn-log-shot-picker-open .fab{
   background:transparent;border:1px dashed rgba(120,160,200,.35);
   color:var(--text-mid);font-family:var(--font-m);font-size:.66rem;letter-spacing:2px;
 }
+/* S1 — QUICK REPEAT confirm view. Toggled by .gn-quick-mode on #logOv:
+   hides the full form + action bar, shows the compact confirm. */
+#logOv.gn-quick-mode .gn-shot-scroll,
+#logOv.gn-quick-mode .gn-shot-actionbar{display:none !important}
+#logOv #gnQuickConfirm{display:none}
+#logOv.gn-quick-mode #gnQuickConfirm{display:block !important}
+#logOv .gn-quick-confirm{padding:28px 22px 26px;text-align:center}
+#logOv .gn-quick-confirm-kicker{
+  font-family:var(--font-m);font-size:.62rem;letter-spacing:3px;color:var(--cyan);
+  margin-bottom:10px;
+}
+#logOv .gn-quick-confirm-title{
+  font-family:var(--font-d);font-weight:700;font-size:1.15rem;letter-spacing:1px;
+  color:#fff;margin-bottom:18px;
+}
+#logOv .gn-quick-confirm-summary{
+  display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:10px;
+}
+#logOv .gn-quick-confirm-chip{
+  font-family:var(--font-m);font-size:.72rem;letter-spacing:1px;color:#eaf6ff;
+  background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.35);
+  border-radius:8px;padding:9px 13px;
+}
+#logOv .gn-quick-confirm-time{
+  font-family:var(--font-m);font-size:.66rem;letter-spacing:2px;color:var(--text-mid);
+  margin-bottom:24px;
+}
+#logOv .gn-quick-confirm-fire{min-height:58px;font-size:.85rem}
+#logOv .gn-quick-confirm-details{margin-top:12px;background:transparent}
 </style>

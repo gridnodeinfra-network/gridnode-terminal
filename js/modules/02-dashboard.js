@@ -138,6 +138,15 @@ function renderDashboard() {
   const dashboard = document.getElementById('pageDash');
   const firstShotMission = document.getElementById('gnFirstShotMission');
   if (dashboard) dashboard.dataset.activation = shots.length ? 'active' : 'pending';
+  // S1: honest empty states. A cloud user whose records simply haven't arrived
+  // yet must never see the first-run CTA. Modes: first-shot (genuinely no data),
+  // syncing (hydration pending), sync-failed (transient cloud failure + retry).
+  const cloudUser = Boolean(state.session?.user?.id && state.cloudClient);
+  let missionMode = 'first-shot';
+  if (shots.length === 0 && cloudUser && state.cloudHydration !== 'ok') {
+    missionMode = state.cloudHydration === 'failed' ? 'sync-failed' : 'syncing';
+  }
+  renderFirstShotMission(missionMode);
   if (firstShotMission) firstShotMission.hidden = shots.length > 0;
   // Zero-shot state: the gnFirstShotMission CTA stays visible as the hero;
   // activation-state CSS dims the not-yet-live metrics behind it.
@@ -172,6 +181,41 @@ function ensureWandaDashboard() {
     + '</div><div class="gn-wanda-actions"><button type="button" onclick="openLogModal()" data-i18n="runtime.logShot">LOG SHOT</button><button type="button" onclick="openWeightModal()" data-i18n="dashboard.logWeight">LOG WEIGHT</button></div><div class="gn-streak-card" id="gnStreakCard" hidden><b id="gnStreakValue"></b><span id="gnStreakCopy"></span></div></section>';
   header.insertAdjacentHTML('afterend', markup);
   window.GN_I18N?.applyTo?.(document.getElementById('gnWandaDashboard'));
+}
+
+// S1: honest empty states. Swaps the zero-shot hero between first-run,
+// still-syncing, and sync-failed (with retry) so a transient cloud failure
+// never makes an experienced user look brand new.
+function renderFirstShotMission(mode) {
+  const mission = document.getElementById('gnFirstShotMission');
+  if (!mission) return;
+  if (mode === 'syncing') {
+    mission.innerHTML = '<span class="gn-dashboard-mission-kicker">' + safeText(tx('dashboard.syncingKicker', 'SYNCING')) + '</span>'
+      + '<h2 id="gnFirstShotMissionTitle">' + safeText(tx('dashboard.syncingTitle', 'PULLING YOUR GRID FROM THE CLOUD')) + '</h2>'
+      + '<p>' + safeText(tx('dashboard.syncingSub', 'Your records are on their way. This takes a few seconds.')) + '</p>';
+  } else if (mode === 'sync-failed') {
+    mission.innerHTML = '<span class="gn-dashboard-mission-kicker">' + safeText(tx('dashboard.syncFailedKicker', 'CONNECTION ISSUE')) + '</span>'
+      + '<h2 id="gnFirstShotMissionTitle">' + safeText(tx('dashboard.syncFailedTitle', "COULDN'T REACH YOUR DATA")) + '</h2>'
+      + '<p>' + safeText(tx('dashboard.syncFailedSub', 'Your cloud records didn\u2019t load. Your data is safe \u2014 check your connection and try again.')) + '</p>'
+      + '<button type="button" onclick="retryCloudHydration()">' + safeText(tx('dashboard.retrySync', 'RETRY SYNC')) + '</button>';
+  } else {
+    mission.innerHTML = '<span class="gn-dashboard-mission-kicker" data-i18n="dashboard.firstShotKicker">START HERE</span><h2 id="gnFirstShotMissionTitle" data-i18n="shots.activateYourGrid">LOG YOUR FIRST SHOT TO ACTIVATE YOUR GRID</h2><p data-i18n="shots.firstShotSub">One shot unlocks the Phase Engine, RESULTS, and your full dashboard.</p><button type="button" onclick="openLogModal()" data-i18n="shots.logYourFirst">LOG YOUR FIRST SHOT</button>';
+  }
+  window.GN_I18N?.applyTo?.(mission);
+}
+
+export async function retryCloudHydration() {
+  if (!state.session?.user?.id || !state.cloudClient) return;
+  state.cloudHydration = 'pending';
+  renderDashboard();
+  try {
+    const hydration = await hydrateCloudData();
+    state.cloudHydration = hydration.ok ? 'ok' : 'failed';
+  } catch (_) {
+    state.cloudHydration = 'failed';
+  }
+  if (typeof refreshAll === 'function') refreshAll();
+  else renderDashboard();
 }
 
 function calculateShotStreak(shots = []) {

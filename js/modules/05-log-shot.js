@@ -58,6 +58,7 @@ export function openLogModal(options = {}) {
   }
   updateMeridiemButtons();
   cancelLogClose();
+  closeQuickConfirm(); // S1: full console never inherits quick-repeat mode.
   modal.classList.add('active');
   syncLogModalLabels();
 }
@@ -214,6 +215,7 @@ export function closeLog(force = false) {
   moduleState.pendingLocationDraft = false;
   moduleState.shotDraft = null;
   moduleState.editingShotId = null;
+  closeQuickConfirm(); // S1: always leave quick-repeat mode on close.
   if (!ov || !ov.classList.contains('active') || ov.classList.contains('gn-closing')) return;
   // Slide the sheet back down instead of vanishing instantly.
   ov.classList.add('gn-closing');
@@ -548,15 +550,22 @@ export function confirmFutureTimestampSave() { $('futureTimestampConfirm')?.clas
 export function handleShotFab() { quickLogShot(); }
 
 function quickLogShot() {
-  // B7 (v0.15.1): NEVER auto-log. Pre-fill the bottom-sheet drawer via the app's
-  // own draft machinery (moduleState.shotDraft + openLogModal({preserve:true}))
-  // and let the user review + confirm. saveShot() fires only on the explicit
-  // SAVE tap, which already shows the undoable bottom toast and closes without
-  // any view jump.
+  // S1 (v0.15.54): five-second repeat. A complete last shot opens the compact
+  // QUICK REPEAT confirm (two taps to log); anything less falls through to the
+  // full console with the best available prefill (last shot -> protocol).
+  // B7 (v0.15.1): NEVER auto-log. saveShot() fires only on an explicit tap,
+  // which already shows the undoable bottom toast.
   const shots = getAllShots();
   const lastShot = shots.filter(s => !s.archived).sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
+  const lastMedId = lastShot?.med ? normalizeMedicationId(lastShot.med) : null;
+  const lastComplete = Boolean(lastShot)
+    && lastMedId && Object.prototype.hasOwnProperty.call(MEDICATIONS, lastMedId)
+    && Number.isFinite(Number(lastShot.dose)) && Number(lastShot.dose) > 0
+    && lastShot.site;
+  if (lastComplete) { openQuickConfirm(lastShot, lastMedId); return; }
+
   const profile = getProfile();
-  const medId = lastShot?.med ? normalizeMedicationId(lastShot.med) : normalizeMedicationId(profile.med);
+  const medId = lastMedId || normalizeMedicationId(profile.med);
   if (!medId || !Object.prototype.hasOwnProperty.call(MEDICATIONS, medId)) { openLogModal(); return; }
   const dose = lastShot?.dose ?? profile.dose ?? '';
   const site = lastShot?.site || moduleState.selectedLocation;
@@ -571,6 +580,97 @@ function quickLogShot() {
   moduleState.shotDraft = {
     med: medId,
     dose: String(dose),
+    date: todayISO(),
+    time: formatTime12(now),
+    meridiem: now.getHours() >= 12 ? 'PM' : 'AM',
+    wt: '', notes: '', se: [], deviceId: ''
+  };
+  openLogModal({ preserve: true });
+}
+
+// S1 — QUICK REPEAT confirm sheet. Shows med/dose/site from the last shot with
+// the current time; LOG SHOT commits via the standard saveShot() path,
+// CHANGE DETAILS falls through to the full console pre-filled.
+export function openQuickConfirm(lastShot, medId) {
+  moduleState.quickConfirmShot = lastShot;
+  const resolvedMedId = medId || normalizeMedicationId(lastShot.med);
+  const summary = $('gnQuickConfirmSummary');
+  if (summary) {
+    const chips = [
+      medicationLabel(resolvedMedId),
+      `${lastShot.dose} mg`,
+      (typeof zoneLabel === 'function' && zoneLabel(lastShot.site)) || lastShot.site
+    ];
+    summary.innerHTML = chips.map(() => '<span class="gn-quick-confirm-chip"></span>').join('');
+    Array.from(summary.children).forEach((el, i) => { el.textContent = chips[i]; });
+  }
+  const timeEl = $('gnQuickConfirmTime');
+  if (timeEl) timeEl.textContent = `NOW \u2014 ${formatTime12(new Date())}`;
+  const ov = $('logOv');
+  if (!ov) { openLogModal(); return; }
+  ov.classList.add('gn-quick-mode');
+  $('gnQuickConfirm')?.classList.remove('gn-hidden');
+  try { sessionStorage.removeItem('gn_shot_draft_session_v1'); } catch (_) {}
+  cancelLogClose();
+  ov.classList.add('active');
+  syncLogModalLabels();
+}
+
+function closeQuickConfirm() {
+  const ov = $('logOv');
+  if (ov) ov.classList.remove('gn-quick-mode');
+  $('gnQuickConfirm')?.classList.add('gn-hidden');
+  moduleState.quickConfirmShot = null;
+}
+
+// Quick-confirm LOG SHOT: populate the form fields from the last shot + now,
+// then run the standard saveShot() path (validation, inventory, cloud sync,
+// linked weight, undo toast). No duplicated commit logic.
+export function confirmQuickShot() {
+  const last = moduleState.quickConfirmShot;
+  if (!last) { openLogModal(); return; }
+  const now = new Date();
+  const medId = normalizeMedicationId(last.med);
+  moduleState.shotDraft = {
+    med: medId,
+    dose: last.dose,
+    date: todayISO(),
+    time: formatTime12(now),
+    meridiem: now.getHours() >= 12 ? 'PM' : 'AM',
+    wt: '',
+    notes: '',
+    se: [],
+    deviceId: ''
+  };
+  moduleState.editingShotId = null;
+  moduleState.selectedLocation = last.site;
+  setSelect('cpShotMed', medId, medicationLabel(medId));
+  if ($('sDose')) $('sDose').value = last.dose;
+  if ($('sDate')) setHumanDateInput($('sDate'), todayISO());
+  if ($('sTime')) $('sTime').value = formatTime12(now);
+  moduleState.meridiem = moduleState.shotDraft.meridiem;
+  if (typeof updateMeridiemButtons === 'function') updateMeridiemButtons();
+  if ($('sWt')) $('sWt').value = '';
+  if ($('sNotes')) $('sNotes').value = '';
+  qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = false; });
+  if (typeof renderShotDevicePicker === 'function') renderShotDevicePicker('');
+  try { sessionStorage.removeItem('gn_shot_draft_session_v1'); } catch (_) {}
+  closeQuickConfirm();
+  saveShot();
+}
+
+// Quick-confirm CHANGE DETAILS: full console with the last-shot prefill.
+export function quickConfirmDetails() {
+  const last = moduleState.quickConfirmShot;
+  closeQuickConfirm();
+  if (!last) { openLogModal(); return; }
+  const now = new Date();
+  moduleState.editingShotId = null;
+  moduleState.selectedLocation = last.site;
+  try { sessionStorage.removeItem('gn_shot_draft_session_v1'); } catch (_) {}
+  moduleState.shotDraft = {
+    med: normalizeMedicationId(last.med),
+    dose: String(last.dose),
     date: todayISO(),
     time: formatTime12(now),
     meridiem: now.getHours() >= 12 ? 'PM' : 'AM',
