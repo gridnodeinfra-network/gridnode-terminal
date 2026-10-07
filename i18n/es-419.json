@@ -924,10 +924,10 @@
   "phase.curveLogBegin": "registra una dosis para comenzar",
   "phase.curveSubline": "La curva muestra un modelo relativo de actividad: dosis registrada -> subida estimada -> pico -> descenso.",
   "phase.cycleLabel": "CICLO",
-  "phase.cyclePct": "{pct}% del ciclo de referencia de 7 días",
+  "phase.cyclePct": "~{pct}% del ciclo de referencia de 7 días",
   "phase.cyclePosition": "POSICIÓN DEL CICLO",
   "phase.cyclePositionBody": "Posición aproximada dentro de tu ciclo de protocolo actual.",
-  "phase.cyclePositionRing": "{pct}% POSICIÓN DEL CICLO",
+  "phase.cyclePositionRing": "~{pct}% POSICIÓN DEL CICLO",
   "phase.cyclePositionTitle": "POSICIÓN ESTIMADA DEL CICLO",
   "phase.dataSources": "FUENTES DE DATOS",
   "phase.dataSourcesBody": "Tus dosis registradas, tiempos y eventos. Guardado en este dispositivo.",
@@ -2050,5 +2050,8 @@
   "dashboard.syncFailedKicker": "PROBLEMA DE CONEXIÓN",
   "dashboard.syncFailedTitle": "NO PUDIMOS ACCEDER A TUS DATOS",
   "dashboard.syncFailedSub": "Tus registros en la nube no se cargaron. Tus datos están a salvo — revisa tu conexión e inténtalo de nuevo.",
-  "dashboard.retrySync": "REINTENTAR SINCRONIZACIÓN"
+  "dashboard.retrySync": "REINTENTAR SINCRONIZACIÓN",
+  "trust.recorded": "REGISTRADO",
+  "trust.estimate": "ESTIMADO",
+  "trust.plan": "PLANIFICADO"
 }

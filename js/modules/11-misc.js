@@ -201,3 +201,31 @@ export function initModules() {
 /* v0.15.19 - install pointer handlers on first user interaction with scanner */
 document.addEventListener("DOMContentLoaded", () => { installScannerPointerHandlers(); installScannerDebugMode(); });
 window.addEventListener("load", () => { installScannerPointerHandlers(); installScannerDebugMode(); });
+
+/* ── S2: TRUST GRAMMAR helpers ──────────────────────────────────────────
+   Semantics are structural (solid/dashed/outlined), never color-only.
+   trustBadge(kind) is the ONLY way to render a trust badge: the system owns
+   color, border style, and label, so semantics can't drift into decoration.
+   Copy rules: RECORDED = exact values allowed ("Logged"); ESTIMATE = "~",
+   "Estimated"/"Modeled", never "your level is"; PLAN = "Planned"/"Scheduled",
+   never "next dose" unless user-authored; STATUS = operational states. */
+const TRUST_BADGE_LABELS = { recorded: 'RECORDED', estimate: 'ESTIMATE', plan: 'PLAN' };
+export function trustBadge(kind) {
+  const key = String(kind || '').toLowerCase();
+  if (!TRUST_BADGE_LABELS[key]) return '';
+  const label = tx('trust.' + key, TRUST_BADGE_LABELS[key]);
+  return `<span class="gn-trust-badge gn-trust-${key}">${safeText(label)}</span>`;
+}
+// Approximate language for estimates: rounds to nearest 5, prefixes "~".
+// 62.73 -> "~65%", never false precision.
+export function approxPct(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '—';
+  return '~' + (Math.round(n / 5) * 5) + '%';
+}
+export function approxNum(value, unit) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '—';
+  const rounded = n >= 100 ? Math.round(n / 5) * 5 : Math.round(n * 10) / 10;
+  return '~' + rounded + (unit ? ' ' + unit : '');
+}

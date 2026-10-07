@@ -364,3 +364,37 @@ html[data-theme="light"] #shotsRegionScanner .gn-zone-path.selected {
 }
 </style>
 
+
+<style id="gn-trust-grammar-v1">
+/* S2 — TRUST GRAMMAR components. Semantics are structural, never color-only.
+   RECORDED: solid frame, cyan. ESTIMATE: dashed/segmented frame, amber.
+   PLAN: outlined frame, violet. STATUS: operational pills. */
+.gn-trust-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--font-m);font-size:.58rem;font-weight:700;letter-spacing:2.5px;
+  padding:4px 10px;border-radius:3px;white-space:nowrap;vertical-align:middle;
+}
+.gn-trust-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+.gn-trust-recorded{color:var(--trust-recorded-accent);border:1px solid var(--trust-recorded-border);background:var(--trust-recorded-bg)}
+.gn-trust-estimate{color:var(--trust-estimate-accent);border:1px dashed var(--trust-estimate-border);background:var(--trust-estimate-bg)}
+.gn-trust-plan{color:var(--trust-plan-accent);border:1px solid var(--trust-plan-border);background:transparent}
+.gn-trust-status{color:var(--trust-status-mute);border:1px solid var(--border2);background:transparent}
+.gn-trust-status.ok{color:var(--trust-status-ok)}
+.gn-trust-status.warn{color:var(--trust-status-warn)}
+.gn-trust-status.err{color:var(--trust-status-err)}
+/* Structural treatments for surfaces (not just badges) */
+.gn-trust-surface-estimate{border-style:dashed !important;border-color:var(--trust-estimate-border) !important}
+.gn-trust-surface-plan{border-style:solid !important;border-color:var(--trust-plan-border) !important;background:var(--trust-plan-bg)}
+/* Module-level inheritance: a module declares its nature once, children inherit
+   the accent without repeating the badge (ChatGPT: don't over-badge). */
+[data-trust="estimate"]{--trust-module-accent:var(--trust-estimate-accent)}
+[data-trust="recorded"]{--trust-module-accent:var(--trust-recorded-accent)}
+[data-trust="plan"]{--trust-module-accent:var(--trust-plan-accent)}
+/* Estimate ring treatment: amber dashed halo for modeled values */
+.gn-phase-ring-estimate{filter:drop-shadow(0 0 6px rgba(255,179,0,.25))}
+.gn-phase-ring-estimate{position:relative}
+.gn-phase-ring-estimate::after{
+  content:'';position:absolute;inset:-10px;border:1.5px dashed var(--trust-estimate-border);
+  border-radius:50%;pointer-events:none;
+}
+</style>

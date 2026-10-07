@@ -2191,6 +2191,10 @@ function renderPhase(lastShot, shots) {
     setText('pibPay', tx('phase.appetiteSymptoms', 'Track appetite, symptoms, energy, side effects, and notes as your protocol history develops.'));
     const emptyMarker = document.getElementById('phaseMarker');
     if (emptyMarker) emptyMarker.hidden = true;
+    // S2: nothing to estimate yet — clear any trust treatment from a prior render.
+    document.getElementById('phaseCard')?.removeAttribute('data-trust');
+    document.getElementById('phaseCard')?.querySelector('.gn-trust-badge')?.remove();
+    document.getElementById('ringWrap')?.classList.remove('gn-phase-ring-estimate');
     return null;
   }
   const elapsedDays = Math.max(0, (Date.now() - new Date(lastShot.date).getTime()) / 86400000);
@@ -2206,7 +2210,10 @@ function renderPhase(lastShot, shots) {
   setText('phaseSupportTxt', localizedPhaseSupport(phase));
   setText('phaseContextText', localizedPhaseContext(phase));
   setText('phaseTimeSince', since);
-  setText('phaseCyclePosition', tx('phase.cyclePct', '{pct}% of 7-day reference cycle', { pct: Math.round(cyclePosition * 100) }));
+  // S2 trust grammar: cycle position is a MODEL ESTIMATE. Approximate language
+  // (~65%, rounded to nearest 5) — never false precision like 62.73%.
+  const approxCycle = Math.round(cyclePosition * 20) * 5;
+  setText('phaseCyclePosition', tx('phase.cyclePct', '~{pct} of 7-day reference cycle', { pct: approxCycle }));
   const remainMs = Math.max(0, 604800000 - (Date.now() - new Date(lastShot.date).getTime()));
   const remainD = Math.floor(remainMs / 86400000);
   const remainH = Math.floor((remainMs % 86400000) / 3600000);
@@ -2214,7 +2221,7 @@ function renderPhase(lastShot, shots) {
   setText('ringDays', remainH > 0
     ? tx('phase.daysLeftHours', '{d}d {h}h', { d: remainD, h: remainH })
     : tx('phase.daysLeft', '{n}d', { n: remainD }));
-  setText('ringPct', tx('phase.cyclePositionRing', '{pct}% CYCLE POSITION', { pct: Math.round(cyclePosition * 100) }));
+  setText('ringPct', tx('phase.cyclePositionRing', '~{pct}% CYCLE POSITION', { pct: approxCycle }));
   setText('phaseNext', tx(shots.length === 1 ? 'phase.activeRecords_one' : 'phase.activeRecords_other', '> {phase} // {n} ACTIVE SHOT RECORDS', { phase: phaseName, n: shots.length }));
   setText('pibBody', tx('phase.pibBody', '{phase} visibility is estimated from {since} since the most recent user-entered SHOT.', { phase: phaseName, since }));
   setText('pibSE', lastShot.se?.length ? tx('phase.recentObservations', 'Recent logged observations: {items}.', { items: lastShot.se.map(sideEffectLabel).join(', ') }) : tx('phase.noRecentObservations', 'No side effects were attached to the most recent SHOT record.'));
@@ -2232,6 +2239,18 @@ function renderPhase(lastShot, shots) {
   }
   const icon = document.getElementById('phaseIconBox');
   if (icon) icon.innerHTML = '<span class="gn-icon gn-icon-lg gn-icon-hud" style="color:' + phase.color + '"><svg><use href="#gn-phase-ring"></use></svg></span>';
+  // S2 trust grammar: the phase hero is an ESTIMATED MODEL. The badge lives in
+  // the visual hierarchy (not as footnote), the ring gets the amber dashed halo,
+  // and the module declares data-trust so children inherit the semantics.
+  const phaseCard = document.getElementById('phaseCard');
+  if (phaseCard) {
+    phaseCard.setAttribute('data-trust', 'estimate');
+    const tag = phaseCard.querySelector('.phase-tag');
+    if (tag && !tag.querySelector('.gn-trust-badge')) {
+      tag.insertAdjacentHTML('afterend', trustBadge('estimate'));
+    }
+  }
+  document.getElementById('ringWrap')?.classList.add('gn-phase-ring-estimate');
   return phase;
 }
 
@@ -5823,6 +5842,34 @@ function initModules() {
 /* v0.15.19 - install pointer handlers on first user interaction with scanner */
 document.addEventListener("DOMContentLoaded", () => { installScannerPointerHandlers(); installScannerDebugMode(); });
 window.addEventListener("load", () => { installScannerPointerHandlers(); installScannerDebugMode(); });
+
+/* ── S2: TRUST GRAMMAR helpers ──────────────────────────────────────────
+   Semantics are structural (solid/dashed/outlined), never color-only.
+   trustBadge(kind) is the ONLY way to render a trust badge: the system owns
+   color, border style, and label, so semantics can't drift into decoration.
+   Copy rules: RECORDED = exact values allowed ("Logged"); ESTIMATE = "~",
+   "Estimated"/"Modeled", never "your level is"; PLAN = "Planned"/"Scheduled",
+   never "next dose" unless user-authored; STATUS = operational states. */
+const TRUST_BADGE_LABELS = { recorded: 'RECORDED', estimate: 'ESTIMATE', plan: 'PLAN' };
+function trustBadge(kind) {
+  const key = String(kind || '').toLowerCase();
+  if (!TRUST_BADGE_LABELS[key]) return '';
+  const label = tx('trust.' + key, TRUST_BADGE_LABELS[key]);
+  return `<span class="gn-trust-badge gn-trust-${key}">${safeText(label)}</span>`;
+}
+// Approximate language for estimates: rounds to nearest 5, prefixes "~".
+// 62.73 -> "~65%", never false precision.
+function approxPct(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '—';
+  return '~' + (Math.round(n / 5) * 5) + '%';
+}
+function approxNum(value, unit) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '—';
+  const rounded = n >= 100 ? Math.round(n / 5) * 5 : Math.round(n * 10) / 10;
+  return '~' + rounded + (unit ? ' ' + unit : '');
+}
 /* GRID//NODE — YouTube soundtrack dock.
  *
  * Replaces the generative ambience prototype (12-ambience.js, removed
@@ -6094,7 +6141,7 @@ document.addEventListener('gn:shot-saved', () => {
   if (h) { try { h.fire([10, 60, 20]); } catch (_) {} }
 });
 
-window.GNModules=Object.freeze({getProfile:getProfile,getProfileForEvidence:getProfileForEvidence,selectState:selectState,moduleState:moduleState,refreshNodeHeader:refreshNodeHeader,showScreen:showScreen,showPage:showPage,refreshAll:refreshAll,loadApp:loadApp,computeTotalChange:computeTotalChange,saveProfileMed:saveProfileMed,saveProfileMetrics:saveProfileMetrics,calcAndShowBMI:calcAndShowBMI,toggleSelect:toggleSelect,selectOpt:selectOpt,retryCloudHydration:retryCloudHydration,showPhasesModal:showPhasesModal,closePhases:closePhases,renderShots:renderShots,setShotHistoryView:setShotHistoryView,scannerSkinTone:scannerSkinTone,setScannerSkinTone:setScannerSkinTone,setScannerMode:setScannerMode,selectScannerLocation:selectScannerLocation,renderScanner:renderScanner,openLogModal:openLogModal,closeLog:closeLog,cancelLogClose:cancelLogClose,editShot:editShot,openArchiveConfirm:openArchiveConfirm,cancelArchiveShot:cancelArchiveShot,confirmArchiveShot:confirmArchiveShot,restoreArchivedShot:restoreArchivedShot,openPermanentDeleteConfirm:openPermanentDeleteConfirm,cancelPermanentDeleteShot:cancelPermanentDeleteShot,confirmPermanentDeleteShot:confirmPermanentDeleteShot,saveShot:saveShot,openFutureTimestampConfirm:openFutureTimestampConfirm,closeFutureTimestampConfirm:closeFutureTimestampConfirm,cancelFutureTimestampSave:cancelFutureTimestampSave,confirmFutureTimestampSave:confirmFutureTimestampSave,handleShotFab:handleShotFab,openQuickConfirm:openQuickConfirm,confirmQuickShot:confirmQuickShot,quickConfirmDetails:quickConfirmDetails,openWeightModal:openWeightModal,closeWt:closeWt,setWeightUnit:setWeightUnit,saveWt:saveWt,renderResults:renderResults,setResultsView:setResultsView,setRange:setRange,setWtRange:setWtRange,showLabSeg:showLabSeg,showYouSeg:showYouSeg,openLabTool:openLabTool,closeLabTool:closeLabTool,exportInventory:exportInventory,updateDoseProjection:updateDoseProjection,saveCalculatorReference:saveCalculatorReference,renderLab:renderLab,updateSyr:updateSyr,updateRecon:updateRecon,updateSupply:updateSupply,setMeasurementUnit:setMeasurementUnit,saveMeasurements:saveMeasurements,replayGuidedTour:replayGuidedTour,openDeleteLocalData:openDeleteLocalData,closeDeleteLocalData:closeDeleteLocalData,updateDeleteLocalButton:updateDeleteLocalButton,confirmDeleteLocalData:confirmDeleteLocalData,openDeleteCloudAccount:openDeleteCloudAccount,closeDeleteCloudAccount:closeDeleteCloudAccount,confirmDeleteCloudAccount:confirmDeleteCloudAccount,renderProfile:renderProfile,dismissSystemUpdate:dismissSystemUpdate,openSystemUpdate:openSystemUpdate,exportCSV:exportCSV,exportBackup:exportBackup,openPrivacyPolicy:openPrivacyPolicy,closePrivacyPolicy:closePrivacyPolicy,openDataOwnership:openDataOwnership,openTermsOfService:openTermsOfService,closeTermsOfService:closeTermsOfService,prepareCSVImport:prepareCSVImport,handleCSVImportFile:handleCSVImportFile,openImportDialog:openImportDialog,closeImportDialog:closeImportDialog,handleUnifiedCsvSelection:handleUnifiedCsvSelection,handleBackupImportFile:handleBackupImportFile,confirmBackupImport:confirmBackupImport,cancelCSVImport:cancelCSVImport,confirmCSVImport:confirmCSVImport,parseShotsyJSON:parseShotsyJSON,handleShotsyJSONFile:handleShotsyJSONFile,toggleImportForce:toggleImportForce,previewCSVImportForTesting:previewCSVImportForTesting,renderCalendar:renderCalendar,calPrev:calPrev,calNext:calNext,calDayClick:calDayClick,openArsenalMod:openArsenalMod,closeArs:closeArs,saveArs:saveArs,requestLoadoutRemove:requestLoadoutRemove,cancelLoadoutRemove:cancelLoadoutRemove,confirmLoadoutRemove:confirmLoadoutRemove,formatTime24:formatTime24,formatTime12:formatTime12,gnSetShotMeridiem:gnSetShotMeridiem,gnShotClockLiveFormat:gnShotClockLiveFormat,gnNormalizeShotClockField:gnNormalizeShotClockField,gnWeightDateInput:gnWeightDateInput,gnWeightTimeInput:gnWeightTimeInput,gnOpenShotDatePicker:gnOpenShotDatePicker,gnCloseShotDatePicker:gnCloseShotDatePicker,gnDatePickerMove:gnDatePickerMove,gnSelectPickerDate:gnSelectPickerDate,gnSetShotDateFromPicker:gnSetShotDateFromPicker,gnSetShotDateValue:gnSetShotDateValue,gnSetShotTimeValue:gnSetShotTimeValue,gnMedRevealGroup:gnMedRevealGroup,updatePills:updatePills,selPill:selPill,initModules:initModules});
+window.GNModules=Object.freeze({getProfile:getProfile,getProfileForEvidence:getProfileForEvidence,selectState:selectState,moduleState:moduleState,refreshNodeHeader:refreshNodeHeader,showScreen:showScreen,showPage:showPage,refreshAll:refreshAll,loadApp:loadApp,computeTotalChange:computeTotalChange,saveProfileMed:saveProfileMed,saveProfileMetrics:saveProfileMetrics,calcAndShowBMI:calcAndShowBMI,toggleSelect:toggleSelect,selectOpt:selectOpt,retryCloudHydration:retryCloudHydration,showPhasesModal:showPhasesModal,closePhases:closePhases,renderShots:renderShots,setShotHistoryView:setShotHistoryView,scannerSkinTone:scannerSkinTone,setScannerSkinTone:setScannerSkinTone,setScannerMode:setScannerMode,selectScannerLocation:selectScannerLocation,renderScanner:renderScanner,openLogModal:openLogModal,closeLog:closeLog,cancelLogClose:cancelLogClose,editShot:editShot,openArchiveConfirm:openArchiveConfirm,cancelArchiveShot:cancelArchiveShot,confirmArchiveShot:confirmArchiveShot,restoreArchivedShot:restoreArchivedShot,openPermanentDeleteConfirm:openPermanentDeleteConfirm,cancelPermanentDeleteShot:cancelPermanentDeleteShot,confirmPermanentDeleteShot:confirmPermanentDeleteShot,saveShot:saveShot,openFutureTimestampConfirm:openFutureTimestampConfirm,closeFutureTimestampConfirm:closeFutureTimestampConfirm,cancelFutureTimestampSave:cancelFutureTimestampSave,confirmFutureTimestampSave:confirmFutureTimestampSave,handleShotFab:handleShotFab,openQuickConfirm:openQuickConfirm,confirmQuickShot:confirmQuickShot,quickConfirmDetails:quickConfirmDetails,openWeightModal:openWeightModal,closeWt:closeWt,setWeightUnit:setWeightUnit,saveWt:saveWt,renderResults:renderResults,setResultsView:setResultsView,setRange:setRange,setWtRange:setWtRange,showLabSeg:showLabSeg,showYouSeg:showYouSeg,openLabTool:openLabTool,closeLabTool:closeLabTool,exportInventory:exportInventory,updateDoseProjection:updateDoseProjection,saveCalculatorReference:saveCalculatorReference,renderLab:renderLab,updateSyr:updateSyr,updateRecon:updateRecon,updateSupply:updateSupply,setMeasurementUnit:setMeasurementUnit,saveMeasurements:saveMeasurements,replayGuidedTour:replayGuidedTour,openDeleteLocalData:openDeleteLocalData,closeDeleteLocalData:closeDeleteLocalData,updateDeleteLocalButton:updateDeleteLocalButton,confirmDeleteLocalData:confirmDeleteLocalData,openDeleteCloudAccount:openDeleteCloudAccount,closeDeleteCloudAccount:closeDeleteCloudAccount,confirmDeleteCloudAccount:confirmDeleteCloudAccount,renderProfile:renderProfile,dismissSystemUpdate:dismissSystemUpdate,openSystemUpdate:openSystemUpdate,exportCSV:exportCSV,exportBackup:exportBackup,openPrivacyPolicy:openPrivacyPolicy,closePrivacyPolicy:closePrivacyPolicy,openDataOwnership:openDataOwnership,openTermsOfService:openTermsOfService,closeTermsOfService:closeTermsOfService,prepareCSVImport:prepareCSVImport,handleCSVImportFile:handleCSVImportFile,openImportDialog:openImportDialog,closeImportDialog:closeImportDialog,handleUnifiedCsvSelection:handleUnifiedCsvSelection,handleBackupImportFile:handleBackupImportFile,confirmBackupImport:confirmBackupImport,cancelCSVImport:cancelCSVImport,confirmCSVImport:confirmCSVImport,parseShotsyJSON:parseShotsyJSON,handleShotsyJSONFile:handleShotsyJSONFile,toggleImportForce:toggleImportForce,previewCSVImportForTesting:previewCSVImportForTesting,renderCalendar:renderCalendar,calPrev:calPrev,calNext:calNext,calDayClick:calDayClick,openArsenalMod:openArsenalMod,closeArs:closeArs,saveArs:saveArs,requestLoadoutRemove:requestLoadoutRemove,cancelLoadoutRemove:cancelLoadoutRemove,confirmLoadoutRemove:confirmLoadoutRemove,formatTime24:formatTime24,formatTime12:formatTime12,gnSetShotMeridiem:gnSetShotMeridiem,gnShotClockLiveFormat:gnShotClockLiveFormat,gnNormalizeShotClockField:gnNormalizeShotClockField,gnWeightDateInput:gnWeightDateInput,gnWeightTimeInput:gnWeightTimeInput,gnOpenShotDatePicker:gnOpenShotDatePicker,gnCloseShotDatePicker:gnCloseShotDatePicker,gnDatePickerMove:gnDatePickerMove,gnSelectPickerDate:gnSelectPickerDate,gnSetShotDateFromPicker:gnSetShotDateFromPicker,gnSetShotDateValue:gnSetShotDateValue,gnSetShotTimeValue:gnSetShotTimeValue,gnMedRevealGroup:gnMedRevealGroup,updatePills:updatePills,selPill:selPill,initModules:initModules,trustBadge:trustBadge,approxPct:approxPct,approxNum:approxNum});
 
 const modules=window.GNModules;
 

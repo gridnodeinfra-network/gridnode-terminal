@@ -954,10 +954,10 @@
   "phase.curveLogBegin": "log a shot to begin",
   "phase.curveSubline": "Curve shows a relative activity model: logged SHOT event -> estimated rise -> peak -> decay.",
   "phase.cycleLabel": "CYCLE",
-  "phase.cyclePct": "{pct}% of 7-day reference cycle",
+  "phase.cyclePct": "~{pct}% of 7-day reference cycle",
   "phase.cyclePosition": "CYCLE POSITION",
   "phase.cyclePositionBody": "Approximate position within your current protocol cycle.",
-  "phase.cyclePositionRing": "{pct}% CYCLE POSITION",
+  "phase.cyclePositionRing": "~{pct}% CYCLE POSITION",
   "phase.cyclePositionTitle": "ESTIMATED CYCLE POSITION",
   "phase.dataSources": "DATA SOURCES",
   "phase.dataSourcesBody": "Your logged shots, timing, and protocol events. Stored on this device.",
@@ -1983,5 +1983,8 @@
   "dashboard.syncFailedKicker": "CONNECTION ISSUE",
   "dashboard.syncFailedTitle": "COULDN'T REACH YOUR DATA",
   "dashboard.syncFailedSub": "Your cloud records didn’t load. Your data is safe — check your connection and try again.",
-  "dashboard.retrySync": "RETRY SYNC"
+  "dashboard.retrySync": "RETRY SYNC",
+  "trust.recorded": "RECORDED",
+  "trust.estimate": "ESTIMATE",
+  "trust.plan": "PLAN"
 }
