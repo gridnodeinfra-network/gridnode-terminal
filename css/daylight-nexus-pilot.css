@@ -1695,3 +1695,19 @@ html[data-theme="light"] .gn-today-lastshot-sub { color: #304b55 !important; }
 .gn-today-weight-link { color: var(--text-secondary); }
 html[data-theme="light"] .gn-today-weight-kicker { color: #1a343d !important; }
 html[data-theme="light"] .gn-today-weight-val { color: #1a343d !important; }
+
+/* S6 Phase A: Phase engine summary mode — compact the detailed view */
+#pageDash .phase-card .phase-clarity-note,
+#pageDash .phase-card .phase-core-readouts,
+#pageDash .phase-card .phase-ring-outer,
+#pageDash #phaseContextText,
+#pageDash #phaseNext,
+#pageDash .pib {
+  display: none;
+}
+#pageDash .phase-card {
+  padding: 12px 14px;
+}
+#pageDash .phase-hdr {
+  margin-bottom: 0;
+}
