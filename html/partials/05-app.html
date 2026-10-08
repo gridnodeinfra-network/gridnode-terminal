@@ -33,6 +33,14 @@
         <div class="page-sub" id="dashSub" data-i18n="dashboard.zeroShotSub">STORED ON THIS DEVICE</div>
       </div>
 
+      <!-- S6 Phase A: TODAY priority stack — action, fact, interpretation, progress -->
+      <button type="button" class="gn-today-logshot" id="gnTodayLogShot" onclick="handleShotFab()" data-i18n="dashboard.logShot">LOG SHOT</button>
+      <div class="gn-today-lastshot" id="gnTodayLastShot" hidden>
+        <div class="gn-today-lastshot-kicker" data-i18n="dashboard.lastShot">LAST SHOT</div>
+        <div class="gn-today-lastshot-main" id="gnTodayLastShotMain">—</div>
+        <div class="gn-today-lastshot-sub" id="gnTodayLastShotSub">—</div>
+      </div>
+
       <div class="sec-hdr" id="phaseEngineHdr">
         <div class="sec-title" data-i18n-html="dashboard.sectionPhase">// <span class="a">PHASE ENGINE</span></div>
         <button class="sec-act" type="button" data-i18n="phase.allPhases" onclick="showPhasesModal()">ALL PHASES →</button>
@@ -120,6 +128,12 @@
           <div class="pib se"><span class="pib-label" data-i18n="phase.possibleSideEffects">// POSSIBLE SIDE EFFECTS</span><div class="pib-text" id="pibSE">Side effects vary by phase and medication.</div></div>
           <div class="pib pay"><span class="pib-label" data-i18n="phase.trackNext">// TRACK NEXT</span><div class="pib-text" id="pibPay">Track appetite, symptoms, energy, side effects, and notes as your protocol history develops.</div></div>
         </div>
+      </div>
+
+      <div class="gn-today-weight" id="gnTodayWeight" hidden>
+        <span class="gn-today-weight-kicker" data-i18n="dashboard.weight">WEIGHT</span>
+        <span class="gn-today-weight-val" id="gnTodayWeightVal">—</span>
+        <span class="gn-today-weight-link" data-i18n="dashboard.viewProgress">→</span>
       </div>
 
       <div class="sec-hdr" id="phaseCurveHdr"><div class="sec-title" data-i18n-html="phase.phaseCurveTitle">// <span class="a">PHASE_CURVE</span></div></div>
