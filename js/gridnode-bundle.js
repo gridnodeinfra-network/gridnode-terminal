@@ -3175,11 +3175,20 @@ function editShot(id) {
   moduleState.editingShotId = id;
   setText('modalSelectedLocation', zoneLabel(record.site) || tx('shot.noInjectionSite', 'No injection site selected'));
   moduleState.selectedLocation = record.site || moduleState.selectedLocation;
-  const recordDate = new Date(record.date);
-  const safeRecordDate = Number.isNaN(recordDate.getTime()) ? new Date() : recordDate;
-  setHumanDateInput($('sDate'), record.date?.slice(0, 10) || todayISO());
-  if ($('sTime')) $('sTime').value = formatTime12(safeRecordDate);
-  moduleState.meridiem = safeRecordDate.getHours() >= 12 ? 'PM' : 'AM';
+  /* Timezone-safe edit loading (audit 2026-10-08): parse date/time components
+   * directly from the ISO string instead of via Date (which converts to the
+   * browser's timezone, causing -24h shifts when editing across timezones).
+   * Preserves the original recorded wall-clock time. */
+  var dateStr = String(record.date || '');
+  var dtm = dateStr.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/);
+  var editDatePart = dtm ? dtm[1] : todayISO();
+  var editHour24 = dtm ? Number(dtm[2]) : 12;
+  var editMin = dtm ? dtm[3] : '00';
+  var editHour12 = editHour24 % 12 || 12;
+  var editMeridiem = editHour24 >= 12 ? 'PM' : 'AM';
+  setHumanDateInput($('sDate'), editDatePart);
+  if ($('sTime')) $('sTime').value = editHour12 + ':' + editMin;
+  moduleState.meridiem = editMeridiem;
   updateMeridiemButtons();
   const medicationId = normalizeMedicationId(record.med);
   setSelect('cpShotMed', medicationId, medicationLabel(medicationId));
@@ -5282,7 +5291,7 @@ function csvCell(value) {
 }
 
 function exportBackup() {
-  const backup = { app: 'GRID//NODE', version: APP_VERSION, exportedAt: new Date().toISOString(), profile: getProfile(), shots: getAllShots(), weights: getWeights(), measurements: S.get('measurements', []), results: S.get('results', []), notes: S.get('notes', []), symptoms: S.get('symptoms', []), labs: S.get('labs', []), preferences: S.get('preferences', {}), settings: S.get('settings', {}), arsenal: S.get('arsenal', []), researchRecords: S.get('researchRecords', []), devices: S.get('devices', []), inventory: S.get('inventory', []), loadouts: S.get('loadouts', []), eventLedger: S.get('eventLedger', []), selectedLocation: S.get('selectedLocation', ''), importQueue: S.get('importQueue', []), cloudDeletes: S.get('cloudDeletes', []), workspaces: S.get('workspaces', {}) };
+  const backup = { app: 'GRID//NODE', version: APP_VERSION, exportedAt: new Date().toISOString(), profile: getProfile(), shots: getAllShots(), weights: getWeights(), measurements: S.get('measurements', []), results: S.get('results', []), notes: S.get('notes', []), symptoms: S.get('symptoms', []), labs: S.get('labs', []), labTests: (typeof getAllLabTests === 'function' ? getAllLabTests() : []), preferences: S.get('preferences', {}), settings: S.get('settings', {}), arsenal: S.get('arsenal', []), researchRecords: S.get('researchRecords', []), devices: S.get('devices', []), inventory: S.get('inventory', []), loadouts: S.get('loadouts', []), eventLedger: S.get('eventLedger', []), selectedLocation: S.get('selectedLocation', ''), importQueue: S.get('importQueue', []), cloudDeletes: S.get('cloudDeletes', []), workspaces: S.get('workspaces', {}) };
   downloadFile('gridnode-backup.json', JSON.stringify(backup, null, 2), 'application/json');
   showToast(tx('vault.backupReady', 'VAULT backup prepared.'));
 }
@@ -5461,7 +5470,7 @@ function confirmBackupImport() {
   }
   const ops = [];
   const merge = (key, incoming) => { if (Array.isArray(incoming)) ops.push({ key, value: mergeImportRecords(S.get(key, []), incoming) }); };
-  merge('shots', backup.shots); merge('weights', backup.weights); merge('measurements', backup.measurements); merge('results', backup.results); merge('notes', backup.notes); merge('symptoms', backup.symptoms); merge('labs', backup.labs); merge('arsenal', backup.arsenal); merge('researchRecords', backup.researchRecords); merge('devices', backup.devices); merge('inventory', backup.inventory); merge('loadouts', backup.loadouts); merge('eventLedger', backup.eventLedger);
+  merge('shots', backup.shots); merge('weights', backup.weights); merge('measurements', backup.measurements); merge('results', backup.results); merge('notes', backup.notes); merge('symptoms', backup.symptoms); merge('labs', backup.labs); merge('labTests', backup.labTests); merge('arsenal', backup.arsenal); merge('researchRecords', backup.researchRecords); merge('devices', backup.devices); merge('inventory', backup.inventory); merge('loadouts', backup.loadouts); merge('eventLedger', backup.eventLedger);
   if (backup.profile && typeof backup.profile === 'object') ops.push({ key: 'profile', value: { ...getProfile(), ...backup.profile } });
   if (backup.preferences && typeof backup.preferences === 'object') ops.push({ key: 'preferences', value: { ...S.get('preferences', {}), ...backup.preferences } });
   if (backup.settings && typeof backup.settings === 'object') ops.push({ key: 'settings', value: { ...S.get('settings', {}), ...backup.settings } });
