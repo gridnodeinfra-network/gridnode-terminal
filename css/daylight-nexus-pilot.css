@@ -1629,3 +1629,8 @@ html[data-theme="light"] .gn-chart-state { color: #33505c !important; }
 html[data-theme="light"] .form-label { color: #1a343d !important; }
 /* QUICK REPEAT details wash out in DUSK — same treatment */
 html[data-theme="light"] .gn-qr-detail, html[data-theme="light"] .gn-shot-qr-meta { color: #1a343d !important; }
+/* QUICK REPEAT hardcoded light text (audit 2026-10-08): #fff and #eaf6ff are
+   invisible on light backgrounds. Override for DUSK. */
+html[data-theme="light"] #logOv .gn-quick-confirm-title { color: #1a343d !important; }
+html[data-theme="light"] #logOv .gn-quick-confirm-chip { color: #1a343d !important; background: rgba(0, 111, 130, .08) !important; border-color: rgba(0, 111, 130, .35) !important; }
+html[data-theme="light"] #logOv .gn-quick-confirm-kicker { color: #006f82 !important; }

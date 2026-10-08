@@ -480,7 +480,20 @@
 
   function boot() {
     wire();
-    renderAssay();
+    /* Render timing (audit 2026-10-08): window.GNModules is assigned by the
+     * app bundle's bridge() during async boot, which runs AFTER this IIFE.
+     * The initial render must wait for it, otherwise allTests() returns []
+     * and the list shows "NO TESTS LOGGED" on reload despite saved records. */
+    var attempts = 0;
+    function tryRender() {
+      attempts++;
+      if ((window.GNModules && window.GNModules.getAllLabTests) || attempts > 50) {
+        renderAssay();
+      } else {
+        setTimeout(tryRender, 100);
+      }
+    }
+    tryRender();
     // The i18n catalog loads async; re-render once it lands so a non-default
     // language gets real translations instead of the English fallbacks.
     try {
