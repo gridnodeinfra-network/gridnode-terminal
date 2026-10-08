@@ -1711,3 +1711,18 @@ html[data-theme="light"] .gn-today-weight-val { color: #1a343d !important; }
 #pageDash .phase-hdr {
   margin-bottom: 0;
 }
+
+/* Body measurement inputs (Pipe screenshot 2026-10-08): dark input fields
+   persist in DUSK. Light-theme override for the measurement grid. */
+html[data-theme="light"] .gn-measurements-grid input,
+html[data-theme="light"] .gn-measurements-grid select,
+html[data-theme="light"] #gnMeasurementsForm input,
+html[data-theme="light"] #gnMeasurementsForm select {
+  background: #ffffff !important;
+  color: #1a343d !important;
+  border-color: rgba(0, 111, 130, .3) !important;
+}
+html[data-theme="light"] .gn-measurements-grid label > span b,
+html[data-theme="light"] .gn-measurements-grid label > span small {
+  color: #1a343d !important;
+}
