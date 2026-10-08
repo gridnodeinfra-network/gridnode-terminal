@@ -1624,3 +1624,8 @@ html[data-theme="light"] #gnVaultPolicyLink { color: #33505C; }
 html[data-theme="light"] #gnLocalBtn { color: #2E424B !important; }
 /* NO BODY MASS READINGS DETECTED: 4.41:1 → ~5.4:1 */
 html[data-theme="light"] .gn-chart-state { color: #33505c !important; }
+/* SHOT form labels in DUSK: measured ~1.36:1 (audit 2026-10-08) — dark-theme
+   light text was rendering on light surfaces. Force high-contrast dark. */
+html[data-theme="light"] .form-label { color: #1a343d !important; }
+/* QUICK REPEAT details wash out in DUSK — same treatment */
+html[data-theme="light"] .gn-qr-detail, html[data-theme="light"] .gn-shot-qr-meta { color: #1a343d !important; }
