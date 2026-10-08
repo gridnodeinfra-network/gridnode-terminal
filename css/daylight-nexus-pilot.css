@@ -1642,3 +1642,9 @@ html[data-theme="light"] #logOv .modal.gn-shot-console {
   border-top-color: rgba(0, 111, 130, .5) !important;
   box-shadow: 0 -12px 60px rgba(0, 111, 130, .12) !important;
 }
+/* Inner form panels (audit 2026-10-08): .form-group inside the shot modal has
+   hardcoded dark rgba(10,16,26,.72), keeping labels at 1.61:1 in DUSK. */
+html[data-theme="light"] #logOv .gn-shot-scroll .form-group {
+  background: rgba(248, 245, 237, .92) !important;
+  border-color: rgba(0, 111, 130, .25) !important;
+}
