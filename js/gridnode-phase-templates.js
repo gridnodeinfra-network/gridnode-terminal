@@ -232,6 +232,11 @@ const PHASE_TEXT = {
     if (cached && ts - cached.at < CACHE_TTL_MS) return cached.data;
     var base = functionsBase();
     if (!base) return null;
+    /* Privacy gate (audit 2026-10-08): same as PK curve — never transmit
+     * health data without an active cloud session. */
+    var cloudId = null;
+    try { cloudId = (typeof window !== 'undefined' && window.CU && window.CU.cloudId) ? String(window.CU.cloudId) : null; } catch (_) {}
+    if (!cloudId) return null;
     var cleanShots = (Array.isArray(shots) ? shots : []).slice(0, 2000).map(function (s) {
       return { date: s && s.date ? String(s.date) : '', med: String((s && s.med) || '') };
     });

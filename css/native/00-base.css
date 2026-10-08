@@ -804,14 +804,14 @@ html[data-theme="light"] .gn-lab-tool-shell {
 }
 html[data-theme="light"] #logOv .form-label,
 html[data-theme="light"] #wtOv .form-label,
-html[data-theme="light"] .gn-lab-tool-shell .form-label { color: #24404b !important; }
+html[data-theme="light"] .gn-lab-tool-shell .form-label { color: #1a343d !important; }
 html[data-theme="light"] .gn-custom-picker button,
 html[data-theme="light"] .cp-option { color: var(--text-primary, #1c2b31) !important; }
 html[data-theme="light"] .gn-custom-picker button:hover,
 html[data-theme="light"] .cp-option:hover { background: rgba(0, 111, 130, .1) !important; }
 
 /* Pass-2 audit fixes (release .11): DAY OPS label contrast + nav label size. */
-html[data-theme="light"] .form-label { color: #24404b !important; }
+html[data-theme="light"] .form-label { color: #1a343d !important; }
 .nav-lbl { font-size: .64rem !important; letter-spacing: 1.3px !important; }
 html[lang="es"] .nav-lbl { font-size: .6rem !important; letter-spacing: .6px !important; }
 
