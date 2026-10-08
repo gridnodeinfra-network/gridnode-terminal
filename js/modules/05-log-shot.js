@@ -444,12 +444,23 @@ export function saveShot(allowFuture = false) {
      * instant is unambiguous in every parser. Naive "YYYY-MM-DDTHH:mm" strings
      * caused ~7h display skew in Phase Engine. Slice(0,10) still yields the
      * local date; legacy offset-less records keep parsing as local time. */
-    const tzMin = -dateTime.getTimezoneOffset();
-    const tzSign = tzMin >= 0 ? '+' : '-';
-    const tzAbs = Math.abs(tzMin);
-    const tzSuffix = tzSign + String(Math.floor(tzAbs / 60)).padStart(2, '0') + ':' + String(tzAbs % 60).padStart(2, '0');
-    const stampedDate = `${date}T${time}:00${tzSuffix}`;
     const existing = moduleState.editingShotId ? getAllShots().find(item => item.id === moduleState.editingShotId) : null;
+    /* Offset preservation (audit 2026-10-08): on edit, keep the original
+     * record's UTC offset instead of stamping the current timezone. Replacing
+     * -04:00 with -07:00 shifts the instant by 3h even when wall-clock is
+     * unchanged. New records use the current timezone. */
+    var origOffset = null;
+    if (existing && existing.date) {
+      var om = String(existing.date).match(/([+-]\d{2}:\d{2}|Z)$/);
+      if (om) origOffset = om[1] === 'Z' ? '+00:00' : om[1];
+    }
+    const tzSuffix = origOffset || (function () {
+      const tzMin = -dateTime.getTimezoneOffset();
+      const tzSign = tzMin >= 0 ? '+' : '-';
+      const tzAbs = Math.abs(tzMin);
+      return tzSign + String(Math.floor(tzAbs / 60)).padStart(2, '0') + ':' + String(tzAbs % 60).padStart(2, '0');
+    })();
+    const stampedDate = `${date}T${time}:00${tzSuffix}`;
     const record = {
       ...(existing || {}), id: existing?.id || createId('shot'), date: stampedDate,
       med, dose, site, deviceId: $('shotDeviceId')?.value || null, wt: weight,
