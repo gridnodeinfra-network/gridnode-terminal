@@ -431,9 +431,18 @@ export function saveShot(allowFuture = false) {
     }
     const dateTime = new Date(`${date}T${time}`);
     if (!allowFuture && dateTime > new Date()) { moduleState.pendingFutureShot = true; $('futureTimestampConfirm')?.classList.add('active'); return; }
+    /* Timestamp fix (audit 2026-10-08): store with the local UTC offset so the
+     * instant is unambiguous in every parser. Naive "YYYY-MM-DDTHH:mm" strings
+     * caused ~7h display skew in Phase Engine. Slice(0,10) still yields the
+     * local date; legacy offset-less records keep parsing as local time. */
+    const tzMin = -dateTime.getTimezoneOffset();
+    const tzSign = tzMin >= 0 ? '+' : '-';
+    const tzAbs = Math.abs(tzMin);
+    const tzSuffix = tzSign + String(Math.floor(tzAbs / 60)).padStart(2, '0') + ':' + String(tzAbs % 60).padStart(2, '0');
+    const stampedDate = `${date}T${time}:00${tzSuffix}`;
     const existing = moduleState.editingShotId ? getAllShots().find(item => item.id === moduleState.editingShotId) : null;
     const record = {
-      ...(existing || {}), id: existing?.id || createId('shot'), date: `${date}T${time}`,
+      ...(existing || {}), id: existing?.id || createId('shot'), date: stampedDate,
       med, dose, site, deviceId: $('shotDeviceId')?.value || null, wt: weight,
       notes: $('sNotes')?.value?.trim() || null,
       se: qa('#logOv input[type="checkbox"]:checked').map(input => normalizeSideEffectId(input.value)),
