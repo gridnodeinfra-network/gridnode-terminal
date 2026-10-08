@@ -10,7 +10,10 @@
 (function () {
   'use strict';
 
-  var MOD = window.GNModules || {};
+  /* MOD is accessed lazily: window.GNModules is assigned by the app bundle's
+   * bridge() during async boot, which runs after this IIFE captures scope.
+   * Accessing it at call time (not load time) avoids a stale empty object. */
+  function MOD() { return window.GNModules || {}; }
   var MED = window.GN_MEDICATION_IDENTITY || { ids: [], normalize: function (v) { return v; }, label: function (v) { return v; } };
 
   function $(id) { return document.getElementById(id); }
@@ -92,10 +95,10 @@
   /* ── storage (through the bundle, so account keys + journal apply) ── */
 
   function allTests() {
-    try { return MOD.getAllLabTests ? MOD.getAllLabTests() : []; } catch (_) { return []; }
+    try { var m = MOD(); return m.getAllLabTests ? m.getAllLabTests() : []; } catch (_) { return []; }
   }
   function persist(list) {
-    try { return MOD.setLabTests ? MOD.setLabTests(list) : false; } catch (_) { return false; }
+    try { var m = MOD(); return m.setLabTests ? m.setLabTests(list) : false; } catch (_) { return false; }
   }
   function varianceOf(record) { return labTestVariance(record); }
   function bandOf(fraction) { return labTestVarianceBand(fraction); }
