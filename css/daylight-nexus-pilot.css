@@ -1648,3 +1648,50 @@ html[data-theme="light"] #logOv .gn-shot-scroll .form-group {
   background: rgba(248, 245, 237, .92) !important;
   border-color: rgba(0, 111, 130, .25) !important;
 }
+
+/* S6 Phase A: TODAY priority stack */
+.gn-today-logshot {
+  display: block; width: 100%; min-height: 64px; margin: 12px 0;
+  font-family: var(--font-d); font-weight: 700; font-size: 1.1rem; letter-spacing: 3px;
+  color: #fff; background: linear-gradient(135deg, #ff4d4d, #cc0000);
+  border: 2px solid rgba(255,77,77,.9); border-radius: 12px; cursor: pointer;
+}
+.gn-today-logshot:active { transform: scale(.98); }
+html[data-theme="light"] .gn-today-logshot { color: #fff; }
+.gn-today-lastshot {
+  background: var(--surface, #f4f1e9); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 12px;
+}
+.gn-today-lastshot-kicker {
+  font-family: var(--font-m); font-size: .58rem; letter-spacing: 3px;
+  color: var(--text-dim); margin-bottom: 6px;
+}
+.gn-today-lastshot-main {
+  font-family: var(--font-d); font-weight: 700; font-size: 1rem;
+  color: var(--text-primary); margin-bottom: 4px;
+}
+.gn-today-lastshot-sub {
+  font-family: var(--font-m); font-size: .72rem;
+  color: var(--text-secondary);
+}
+html[data-theme="light"] .gn-today-lastshot-kicker { color: #1a343d !important; }
+html[data-theme="light"] .gn-today-lastshot-main { color: #1a343d !important; }
+html[data-theme="light"] .gn-today-lastshot-sub { color: #304b55 !important; }
+
+/* S6 Phase A: TODAY weight snapshot */
+.gn-today-weight {
+  display: flex; align-items: baseline; gap: 10px;
+  background: var(--surface, #f4f1e9); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; cursor: pointer;
+}
+.gn-today-weight-kicker {
+  font-family: var(--font-m); font-size: .58rem; letter-spacing: 3px;
+  color: var(--text-dim);
+}
+.gn-today-weight-val {
+  font-family: var(--font-d); font-weight: 700; font-size: .95rem;
+  color: var(--text-primary); flex: 1;
+}
+.gn-today-weight-link { color: var(--text-secondary); }
+html[data-theme="light"] .gn-today-weight-kicker { color: #1a343d !important; }
+html[data-theme="light"] .gn-today-weight-val { color: #1a343d !important; }

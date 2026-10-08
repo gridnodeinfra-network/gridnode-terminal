@@ -160,6 +160,8 @@ function renderDashboard() {
   const next = nextShotDate(lastShot, profile);
   const currentWeight = weightMetrics.currentWeight || 0;
   const goalGap = Number(profile.goalWt) && currentWeight ? currentWeight - Number(profile.goalWt) : null;
+  renderTodayLastShot(lastShot);
+  renderTodayWeight(lastWeight);
   const phase = renderPhase(lastShot, shots);
   renderProtocolCurve(shots, phase);
   refreshNodeHeader({ lastShot, next, phase, currentWeight: lastWeight?.weight });
@@ -284,6 +286,45 @@ function nextShotDate(shot, profile) {
   const days = Number.isFinite(Number(profile.shotDay)) ? ((Number(profile.shotDay) - date.getDay() + 7) % 7 || 7) : 7;
   date.setDate(date.getDate() + days);
   return date.toISOString();
+}
+
+/* S6 Phase A: TODAY weight snapshot */
+function renderTodayWeight(lastWeight) {
+  var el = document.getElementById('gnTodayWeight');
+  if (!el) return;
+  if (!lastWeight || lastWeight.weight == null) { el.hidden = true; return; }
+  el.hidden = false;
+  var val = document.getElementById('gnTodayWeightVal');
+  if (val) {
+    try {
+      var w = Number(lastWeight.weight);
+      var unit = lastWeight.unit === 'kg' ? 'kg' : 'lb';
+      val.textContent = w.toFixed(1) + ' ' + unit;
+    } catch (_) { val.textContent = '—'; }
+  }
+  el.onclick = function() { if (window.GNModules && window.GNModules.showPage) window.GNModules.showPage('Progress'); };
+}
+
+/* S6 Phase A: TODAY priority stack — compact last-shot card */
+function renderTodayLastShot(lastShot) {
+  var card = document.getElementById('gnTodayLastShot');
+  if (!card) return;
+  if (!lastShot) { card.hidden = true; return; }
+  card.hidden = false;
+  var main = document.getElementById('gnTodayLastShotMain');
+  var sub = document.getElementById('gnTodayLastShotSub');
+  try {
+    var medLabel = (window.GN_MEDICATION_IDENTITY && window.GN_MEDICATION_IDENTITY.label) ? window.GN_MEDICATION_IDENTITY.label(lastShot.med) : String(lastShot.med || '');
+    var doseStr = lastShot.dose != null ? String(lastShot.dose) + ' mg' : '';
+    if (main) main.textContent = (medLabel + ' ' + doseStr).trim() || '—';
+    var dateStr = '';
+    try {
+      var d = new Date(lastShot.date);
+      if (!Number.isNaN(d.getTime())) dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    } catch (_) {}
+    var siteStr = lastShot.site ? String(lastShot.site) : '';
+    if (sub) sub.textContent = [dateStr, siteStr].filter(Boolean).join(' · ') || '—';
+  } catch (_) {}
 }
 
 function renderPhase(lastShot, shots) {
