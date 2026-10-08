@@ -3365,9 +3365,18 @@ function saveShot(allowFuture = false) {
     }
     const dateTime = new Date(`${date}T${time}`);
     if (!allowFuture && dateTime > new Date()) { moduleState.pendingFutureShot = true; $('futureTimestampConfirm')?.classList.add('active'); return; }
+    /* Timestamp fix (audit 2026-10-08): store with the local UTC offset so the
+     * instant is unambiguous in every parser. Naive "YYYY-MM-DDTHH:mm" strings
+     * caused ~7h display skew in Phase Engine. Slice(0,10) still yields the
+     * local date; legacy offset-less records keep parsing as local time. */
+    const tzMin = -dateTime.getTimezoneOffset();
+    const tzSign = tzMin >= 0 ? '+' : '-';
+    const tzAbs = Math.abs(tzMin);
+    const tzSuffix = tzSign + String(Math.floor(tzAbs / 60)).padStart(2, '0') + ':' + String(tzAbs % 60).padStart(2, '0');
+    const stampedDate = `${date}T${time}:00${tzSuffix}`;
     const existing = moduleState.editingShotId ? getAllShots().find(item => item.id === moduleState.editingShotId) : null;
     const record = {
-      ...(existing || {}), id: existing?.id || createId('shot'), date: `${date}T${time}`,
+      ...(existing || {}), id: existing?.id || createId('shot'), date: stampedDate,
       med, dose, site, deviceId: $('shotDeviceId')?.value || null, wt: weight,
       notes: $('sNotes')?.value?.trim() || null,
       se: qa('#logOv input[type="checkbox"]:checked').map(input => normalizeSideEffectId(input.value)),
@@ -5008,8 +5017,16 @@ function updateSyr() {
   const dose = doseField.value, concentration = concentrationField.value;
   const volume = dose / concentration, units = volume * 100;
   if (!Number.isFinite(volume) || !Number.isFinite(units) || volume > 1000 || units > 100000) { setText('syrFormula', tx('lab.outOfRange', 'INVALID INPUT · CALCULATED RESULT IS OUTSIDE THE SUPPORTED RANGE')); return; }
+  /* Safety (audit 2026-10-08): U-100 barrel holds 0–100 units. Reject
+   * over-capacity results instead of clamping the marker and reporting READY. */
+  if (units > 100 || units < 0) {
+    setText('syrFormula', tx('lab.overCapacity', 'OVER CAPACITY · RESULT EXCEEDS THE 0–100 UNIT BARREL'));
+    setDisplay('syrTarget', false);
+    $('syrFormula')?.setAttribute('data-valid', 'false');
+    return;
+  }
   setText('syrUnits', `${units.toFixed(1)}u`); setText('syrText', tx('lab.drawToUnit', 'DRAW TO THE {units} UNIT LINE', { units: units.toFixed(1) })); setText('syrML', `${volume.toFixed(3)} mL`); setText('syrConcDisplay', `${concentration} mg/mL`); setText('syrResultLine', `${dose} mg`); setText('syrVolResult', `${volume.toFixed(3)} mL`); setText('syrFormula', `${dose} mg ÷ ${concentration} mg/mL = ${volume.toFixed(3)} mL = ${units.toFixed(1)} U-100 units. ${tx('lab.educationalMathOnly', 'Educational math only.')}`); $('syrFormula')?.setAttribute('data-valid', 'true'); setDisplay('syrTarget', true);
-  const target = $('syrTarget'); if (target) target.style.left = `${Math.min(100, Math.max(0, units))}%`;
+  const target = $('syrTarget'); if (target) target.style.left = `${units}%`;
 }
 function updateRecon() {
   setDisplay('reconRes', true); setText('bacAmt', '— mL');
@@ -6294,6 +6311,12 @@ function bridge() {
   ];
   names.forEach(name => { window[name] = modules[name]; });
   window.refreshAll = modules.refreshAll;
+  /* ASSAY storage bridge (audit 2026-10-08): window.GNModules was never
+   * assigned, so the standalone lab-tests IIFE silently no-oped on save/load.
+   * Expose the lab-test storage helpers here. */
+  window.GNModules = Object.assign(Object.create(null), modules, {
+    getLabTests, getAllLabTests, setLabTests
+  });
   window.GN_NATIVE?.bridgeReady?.();
 }
 
