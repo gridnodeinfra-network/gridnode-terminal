@@ -42,6 +42,13 @@
     var ts = Number(now) || Date.now();
     var base = functionsBase();
     if (!base || !medId) return emptyBuild(medId, ts);
+    /* Privacy gate (audit 2026-10-08): never transmit health data without an
+     * active cloud session. window.CU.cloudId is set by activateSession only
+     * for authenticated cloud sessions; in local mode it is null. Without it,
+     * return the empty build — renderers already degrade gracefully. */
+    var cloudId = null;
+    try { cloudId = global.CU && global.CU.cloudId ? String(global.CU.cloudId) : null; } catch (_) {}
+    if (!cloudId) return emptyBuild(medId, ts);
     var cleanShots = (Array.isArray(shots) ? shots : []).slice(0, 2000).map(function (s) {
       return {
         date: s && s.date ? String(s.date) : '',
