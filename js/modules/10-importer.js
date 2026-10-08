@@ -137,7 +137,7 @@ export function confirmBackupImport() {
   }
   const ops = [];
   const merge = (key, incoming) => { if (Array.isArray(incoming)) ops.push({ key, value: mergeImportRecords(S.get(key, []), incoming) }); };
-  merge('shots', backup.shots); merge('weights', backup.weights); merge('measurements', backup.measurements); merge('results', backup.results); merge('notes', backup.notes); merge('symptoms', backup.symptoms); merge('labs', backup.labs); merge('arsenal', backup.arsenal); merge('researchRecords', backup.researchRecords); merge('devices', backup.devices); merge('inventory', backup.inventory); merge('loadouts', backup.loadouts); merge('eventLedger', backup.eventLedger);
+  merge('shots', backup.shots); merge('weights', backup.weights); merge('measurements', backup.measurements); merge('results', backup.results); merge('notes', backup.notes); merge('symptoms', backup.symptoms); merge('labs', backup.labs); merge('labTests', backup.labTests); merge('arsenal', backup.arsenal); merge('researchRecords', backup.researchRecords); merge('devices', backup.devices); merge('inventory', backup.inventory); merge('loadouts', backup.loadouts); merge('eventLedger', backup.eventLedger);
   if (backup.profile && typeof backup.profile === 'object') ops.push({ key: 'profile', value: { ...getProfile(), ...backup.profile } });
   if (backup.preferences && typeof backup.preferences === 'object') ops.push({ key: 'preferences', value: { ...S.get('preferences', {}), ...backup.preferences } });
   if (backup.settings && typeof backup.settings === 'object') ops.push({ key: 'settings', value: { ...S.get('settings', {}), ...backup.settings } });

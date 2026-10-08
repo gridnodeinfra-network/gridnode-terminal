@@ -374,6 +374,13 @@
       });
     } else {
       var rec = MOD.normalizeLabTest ? MOD.normalizeLabTest(draft) : draft;
+      /* Permanent ID (audit 2026-10-08): new records lacked IDs, breaking
+       * expansion after save. Generate a stable ID here. */
+      try {
+        rec.id = (window.GN && window.GN.createId) ? window.GN.createId('assay') : 'assay-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+      } catch (_) {
+        rec.id = 'assay-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+      }
       rec.createdAt = now; rec.modifiedAt = now;
       list.push(rec);
     }

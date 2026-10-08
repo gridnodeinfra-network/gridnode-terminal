@@ -241,11 +241,20 @@ export function editShot(id) {
   moduleState.editingShotId = id;
   setText('modalSelectedLocation', zoneLabel(record.site) || tx('shot.noInjectionSite', 'No injection site selected'));
   moduleState.selectedLocation = record.site || moduleState.selectedLocation;
-  const recordDate = new Date(record.date);
-  const safeRecordDate = Number.isNaN(recordDate.getTime()) ? new Date() : recordDate;
-  setHumanDateInput($('sDate'), record.date?.slice(0, 10) || todayISO());
-  if ($('sTime')) $('sTime').value = formatTime12(safeRecordDate);
-  moduleState.meridiem = safeRecordDate.getHours() >= 12 ? 'PM' : 'AM';
+  /* Timezone-safe edit loading (audit 2026-10-08): parse date/time components
+   * directly from the ISO string instead of via Date (which converts to the
+   * browser's timezone, causing -24h shifts when editing across timezones).
+   * Preserves the original recorded wall-clock time. */
+  var dateStr = String(record.date || '');
+  var dtm = dateStr.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/);
+  var editDatePart = dtm ? dtm[1] : todayISO();
+  var editHour24 = dtm ? Number(dtm[2]) : 12;
+  var editMin = dtm ? dtm[3] : '00';
+  var editHour12 = editHour24 % 12 || 12;
+  var editMeridiem = editHour24 >= 12 ? 'PM' : 'AM';
+  setHumanDateInput($('sDate'), editDatePart);
+  if ($('sTime')) $('sTime').value = editHour12 + ':' + editMin;
+  moduleState.meridiem = editMeridiem;
   updateMeridiemButtons();
   const medicationId = normalizeMedicationId(record.med);
   setSelect('cpShotMed', medicationId, medicationLabel(medicationId));
