@@ -1634,3 +1634,11 @@ html[data-theme="light"] .gn-qr-detail, html[data-theme="light"] .gn-shot-qr-met
 html[data-theme="light"] #logOv .gn-quick-confirm-title { color: #1a343d !important; }
 html[data-theme="light"] #logOv .gn-quick-confirm-chip { color: #1a343d !important; background: rgba(0, 111, 130, .08) !important; border-color: rgba(0, 111, 130, .35) !important; }
 html[data-theme="light"] #logOv .gn-quick-confirm-kicker { color: #006f82 !important; }
+/* SHOT modal dark background (audit 2026-10-08): .gn-shot-console has a
+   hardcoded dark gradient with !important that persists in DUSK, creating
+   dark-on-dark (1.62:1) with the fixed label colors. Light override. */
+html[data-theme="light"] #logOv .modal.gn-shot-console {
+  background: linear-gradient(180deg, #f8f5ed 0%, #f1eee6 100%) !important;
+  border-top-color: rgba(0, 111, 130, .5) !important;
+  box-shadow: 0 -12px 60px rgba(0, 111, 130, .12) !important;
+}
