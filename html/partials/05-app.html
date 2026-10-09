@@ -516,6 +516,7 @@
         <button class="time-tab" data-labseg="recon" onclick="showLabSeg('recon',this)" data-i18n="lab.mix">MIX</button>
         <button class="time-tab" data-labseg="supply" onclick="showLabSeg('supply',this)" data-i18n="lab.stock">STOCK</button>
         <button class="time-tab" data-labseg="assay" onclick="showLabSeg('assay',this)" data-i18n="lab.assay">ASSAY</button>
+        <button class="time-tab" data-labseg="visuals" onclick="showLabSeg('visuals',this)" data-i18n="lab.visuals">VISUALS</button>
       </div>
 
       <div id="labSeg-draw" data-labseg-block="draw">
@@ -647,6 +648,24 @@
       </div>
       </div>
     </div>
+      <div id="labSeg-visuals" data-labseg-block="visuals" style="display:none">
+        <div class="sec-hdr"><div class="sec-title">// <span class="a">VISUAL INSTRUMENTS</span></div></div>
+        <div class="card">
+          <div class="card-title">DOSE STACK</div>
+          <p class="gn-visual-sub">Each shot as its own decay wave. Combined activity as the dominant curve.</p>
+          <canvas id="gnDoseStackCanvas" class="gn-visual-canvas" height="160"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-title">CADENCE RADAR</div>
+          <p class="gn-visual-sub">Your shot timing vs established rhythm. Rhythmic = consistent.</p>
+          <canvas id="gnCadenceCanvas" class="gn-visual-canvas" height="180"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-title">PROTOCOL FINGERPRINT</div>
+          <p class="gn-visual-sub">Your recent protocol as a visual signature. Recognition, not a score.</p>
+          <canvas id="gnFingerprintCanvas" class="gn-visual-canvas" height="180"></canvas>
+        </div>
+      </div>
 
     
     <div class="page" id="pageProfile">

@@ -1852,3 +1852,8 @@ html[data-theme="light"] .gn-sitemap-legend { color: #1a343d !important; }
 .gn-heatmap-legend { display: flex; justify-content: space-between; margin-top: 6px; font-family: var(--font-m); font-size: .55rem; letter-spacing: 2px; color: var(--text-dim); }
 .gn-heatmap-legend .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 4px #fff; margin-right: 4px; }
 html[data-theme="light"] .gn-heatmap-dow, html[data-theme="light"] .gn-heatmap-legend { color: #1a343d !important; }
+
+/* Visual Instruments (LAB) */
+.gn-visual-sub { font-size: .78rem; color: var(--text-secondary); margin: 4px 0 10px; }
+.gn-visual-canvas { width: 100%; display: block; border-radius: 8px; background: rgba(127,127,127,.05); }
+html[data-theme="light"] .gn-visual-sub { color: #304b55 !important; }

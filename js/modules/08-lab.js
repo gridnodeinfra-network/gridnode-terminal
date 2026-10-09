@@ -613,7 +613,9 @@ export function saveCalculatorReference(type) {
   S.set('inventory', records); appendEventLedger({ type: 'INVENTORY', recordId: records.at(-1).id, label: 'CALCULATOR REFERENCE SAVED' }); queueCloudSync('workspace'); renderInventory(); actionFeedback(tx('lab.referenceSaved', 'REFERENCE SAVED'), tx('lab.referenceSavedDetail', 'INVENTORY UPDATED // EDUCATIONAL MATH ONLY'));
 }
 
-export function renderLab() { ensureLabFoundations(); ensureDoseProjection(); ensureCalculatorInventoryActions(); updateSyr(); updateRecon(); updateSupply(); updateDoseProjection(); renderLabFoundations(); window.GN_I18N?.applyTo?.(document.getElementById('pageLab')); }
+export function renderLab() {
+  try { if (document.querySelector('[data-labseg-block="visuals"]')?.style.display !== "none") renderVisualInstruments(); } catch (_) {}
+  ensureLabFoundations(); ensureDoseProjection(); ensureCalculatorInventoryActions(); updateSyr(); updateRecon(); updateSupply(); updateDoseProjection(); renderLabFoundations(); window.GN_I18N?.applyTo?.(document.getElementById('pageLab')); }
 function positiveNumberField(id, label, maximum) {
   const raw = String($(id)?.value ?? '').trim();
   if (!raw) return { valid: false, message: tx('lab.requiredField', 'ENTER VALID VALUES · {label} IS REQUIRED', { label }) };
@@ -683,6 +685,153 @@ function convertMeasurement(value, from, to) {
 
 function latestMeasurement(type) {
   return S.get('measurements', []).filter(record => record.type === type).sort((a, b) => new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0))[0] || null;
+}
+
+/* Visual Instruments: Dose Stack, Cadence Radar, Protocol Fingerprint */
+function renderVisualInstruments() {
+  try {
+    var shots = (typeof getAllShots === 'function' ? getAllShots() : []).filter(function(s){ return !s.archived; });
+    if (!shots.length) return;
+    renderDoseStack(shots);
+    renderCadenceRadar(shots);
+    renderFingerprint(shots);
+  } catch (_) {}
+}
+
+function renderDoseStack(shots) {
+  var cv = document.getElementById('gnDoseStackCanvas');
+  if (!cv) return;
+  var w = cv.clientWidth || 320, h = 160, dpr = window.devicePixelRatio || 1;
+  cv.width = w * dpr; cv.height = h * dpr;
+  var ctx = cv.getContext('2d'); if (!ctx) return;
+  ctx.scale(dpr, dpr); ctx.clearRect(0, 0, w, h);
+  var now = Date.now(), rangeMs = 21 * 86400000, start = now - rangeMs;
+  var recent = shots.filter(function(s){ var t = new Date(s.date).getTime(); return !Number.isNaN(t) && t >= start && t <= now; }).slice(-8);
+  if (!recent.length) return;
+  var padL = 8, padR = 8, padT = 10, padB = 18, pw = w - padL - padR, ph = h - padT - padB;
+  var xFor = function(t){ return padL + ((t - start) / rangeMs) * pw; };
+  var maxV = 0;
+  var curves = recent.map(function(s){
+    var st = new Date(s.date).getTime(), dose = Number(s.dose) || 1;
+    var pts = [];
+    for (var i = 0; i <= 60; i++) {
+      var t = start + (rangeMs * i / 60);
+      var el = (t - st) / 86400000;
+      var v = el < 0 ? 0 : (el <= 0.75 ? Math.max(0.04, el / 0.75) : Math.exp(-0.28 * (el - 0.75))) * dose;
+      pts.push({ t: t, v: v });
+      if (v > maxV) maxV = v;
+    }
+    return { shot: s, pts: pts };
+  });
+  maxV = maxV || 1;
+  var yFor = function(v){ return padT + ph - (v / maxV) * ph; };
+  // individual faint curves
+  curves.forEach(function(c, i){
+    ctx.strokeStyle = 'rgba(0,212,255,' + (0.12 + (i / curves.length) * 0.15) + ')';
+    ctx.lineWidth = 1; ctx.beginPath();
+    c.pts.forEach(function(p, j){ var x = xFor(p.t), y = yFor(p.v); j ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.stroke();
+  });
+  // combined dominant curve
+  ctx.save();
+  ctx.shadowColor = '#00d4ff'; ctx.shadowBlur = 10; ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  for (var i = 0; i <= 60; i++) {
+    var t = start + (rangeMs * i / 60);
+    var total = curves.reduce(function(sum, c){ var p = c.pts[i]; return sum + (p ? p.v : 0); }, 0);
+    var x = xFor(t), y = yFor(total);
+    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+  }
+  ctx.stroke(); ctx.restore();
+  // shot markers
+  curves.forEach(function(c){
+    var x = xFor(new Date(c.shot.date).getTime());
+    ctx.fillStyle = '#fff'; ctx.shadowColor = '#fff'; ctx.shadowBlur = 6;
+    ctx.beginPath(); ctx.arc(x, padT + ph - 4, 3, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+  });
+}
+
+function renderCadenceRadar(shots) {
+  var cv = document.getElementById('gnCadenceCanvas');
+  if (!cv || shots.length < 2) return;
+  var w = cv.clientWidth || 320, h = 180, dpr = window.devicePixelRatio || 1;
+  cv.width = w * dpr; cv.height = h * dpr;
+  var ctx = cv.getContext('2d'); if (!ctx) return;
+  ctx.scale(dpr, dpr); ctx.clearRect(0, 0, w, h);
+  var st = shots.slice().sort(function(a,b){ return new Date(a.date) - new Date(b.date); }).slice(-12);
+  var gaps = [];
+  for (var i = 1; i < st.length; i++) { var g = (new Date(st[i].date) - new Date(st[i-1].date)) / 86400000; if (g > 0 && g < 60) gaps.push(g); }
+  if (!gaps.length) return;
+  var avg = gaps.reduce(function(a,b){return a+b;},0) / gaps.length;
+  var cx = w / 2, cy = h / 2, R = Math.min(w, h) / 2 - 20;
+  // ideal ring
+  ctx.save(); ctx.setLineDash([4, 4]); ctx.strokeStyle = 'rgba(211,162,74,.5)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+  // actual intervals as radial spokes
+  gaps.forEach(function(g, i){
+    var ang = (i / gaps.length) * Math.PI * 2 - Math.PI / 2;
+    var r = R * Math.min(1.5, Math.max(0.2, g / (avg || 7)));
+    var x = cx + Math.cos(ang) * r, y = cy + Math.sin(ang) * r;
+    var onBeat = Math.abs(g - avg) / (avg || 7) < 0.25;
+    ctx.strokeStyle = onBeat ? '#00d4ff' : '#c26674'; ctx.lineWidth = 2;
+    ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 6;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x, y); ctx.stroke(); ctx.shadowBlur = 0;
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
+  });
+  ctx.fillStyle = '#8295a0'; ctx.font = '10px Share Tech Mono, monospace'; ctx.textAlign = 'center';
+  ctx.fillText('AVG ' + avg.toFixed(1) + 'd', cx, cy + 4);
+}
+
+function renderFingerprint(shots) {
+  var cv = document.getElementById('gnFingerprintCanvas');
+  if (!cv || shots.length < 3) return;
+  var w = cv.clientWidth || 320, h = 180, dpr = window.devicePixelRatio || 1;
+  cv.width = w * dpr; cv.height = h * dpr;
+  var ctx = cv.getContext('2d'); if (!ctx) return;
+  ctx.scale(dpr, dpr); ctx.clearRect(0, 0, w, h);
+  var recent = shots.slice(-8);
+  // 5 axes: dose consistency, interval consistency, recency, count, site variety
+  var doses = recent.map(function(s){ return Number(s.dose) || 0; }).filter(function(d){ return d > 0; });
+  var avgDose = doses.length ? doses.reduce(function(a,b){return a+b;},0)/doses.length : 1;
+  var doseVar = doses.length ? Math.sqrt(doses.reduce(function(a,d){return a + Math.pow(d - avgDose, 2);},0)/doses.length) / (avgDose||1) : 1;
+  var st = recent.slice().sort(function(a,b){ return new Date(a.date) - new Date(b.date); });
+  var gaps = [];
+  for (var i = 1; i < st.length; i++) { var g = (new Date(st[i].date) - new Date(st[i-1].date))/86400000; if (g>0&&g<60) gaps.push(g); }
+  var avgGap = gaps.length ? gaps.reduce(function(a,b){return a+b;},0)/gaps.length : 7;
+  var gapVar = gaps.length ? Math.sqrt(gaps.reduce(function(a,g){return a+Math.pow(g-avgGap,2);},0)/gaps.length)/(avgGap||1) : 1;
+  var lastT = new Date(recent[recent.length-1].date).getTime();
+  var recency = Math.max(0, 1 - ((Date.now() - lastT) / (14 * 86400000)));
+  var sites = {}; recent.forEach(function(s){ if (s.site) sites[s.site] = 1; });
+  var axes = [
+    { label: 'DOSE', v: Math.max(0.1, 1 - Math.min(1, doseVar)) },
+    { label: 'RHYTHM', v: Math.max(0.1, 1 - Math.min(1, gapVar)) },
+    { label: 'RECENT', v: Math.max(0.1, recency) },
+    { label: 'SITES', v: Math.max(0.1, Math.min(1, Object.keys(sites).length / 4)) },
+    { label: 'LOGS', v: Math.max(0.1, Math.min(1, recent.length / 8)) },
+  ];
+  var cx = w/2, cy = h/2, R = Math.min(w,h)/2 - 30;
+  // grid rings
+  [0.33, 0.66, 1].forEach(function(f){
+    ctx.strokeStyle = 'rgba(127,127,127,.2)'; ctx.lineWidth = 1; ctx.beginPath();
+    axes.forEach(function(a, i){ var ang = (i/axes.length)*Math.PI*2 - Math.PI/2; var x = cx + Math.cos(ang)*R*f, y = cy + Math.sin(ang)*R*f; i ? ctx.lineTo(x,y) : ctx.moveTo(x,y); });
+    ctx.closePath(); ctx.stroke();
+  });
+  // data polygon
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,212,255,.18)'; ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 2;
+  ctx.shadowColor = '#00d4ff'; ctx.shadowBlur = 8; ctx.beginPath();
+  axes.forEach(function(a, i){
+    var ang = (i/axes.length)*Math.PI*2 - Math.PI/2;
+    var x = cx + Math.cos(ang)*R*a.v, y = cy + Math.sin(ang)*R*a.v;
+    i ? ctx.lineTo(x,y) : ctx.moveTo(x,y);
+    // axis labels
+    ctx.fillStyle = '#8295a0'; ctx.font = '9px Share Tech Mono, monospace'; ctx.textAlign = 'center';
+    var lx = cx + Math.cos(ang)*(R+16), ly = cy + Math.sin(ang)*(R+16);
+    ctx.fillText(a.label, lx, ly + 3);
+    ctx.fillStyle = 'rgba(0,212,255,.18)';
+  });
+  ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
 }
 
 /* Injection Site Map: visual body diagram with recency encoding */
