@@ -2735,6 +2735,37 @@ function buildTimeline(options = {}) {
   ].sort(compareTimelineEvents);
 }
 
+/* Shot Constellation Timeline: visual event map above the history list */
+function renderConstellation() {
+  var el = document.getElementById('gnConstellation');
+  if (!el) return;
+  try {
+    var events = buildTimeline().slice().reverse(); // oldest first for left-to-right
+    if (events.length < 2) { el.hidden = true; return; }
+    el.hidden = false;
+    var nodes = document.getElementById('gnConstellationNodes');
+    if (!nodes) return;
+    var times = events.map(function(e){ return new Date(e.record.date || e.record.createdAt || 0).getTime(); }).filter(function(t){ return !Number.isNaN(t); });
+    if (!times.length) { el.hidden = true; return; }
+    var mn = Math.min.apply(null, times), mx = Math.max.apply(null, times), span = (mx - mn) || 1;
+    // vertical lane by type: shots center, weights upper, labs lower
+    nodes.innerHTML = events.slice(-40).map(function(e, i){
+      var t = new Date(e.record.date || e.record.createdAt || 0).getTime();
+      var x = ((t - mn) / span * 96 + 2).toFixed(2);
+      var lane = e.type === 'shot' ? '50%' : (e.type === 'weight' ? '28%' : '72%');
+      var cls = e.type === 'shot' ? 'shot' : (e.type === 'weight' ? 'weight' : 'lab');
+      return '<div class="gn-const-node ' + cls + '" style="left:' + x + '%;top:' + lane + '" data-const-idx="' + i + '" title="' + e.type + '"></div>';
+    }).join('');
+    nodes.querySelectorAll('.gn-const-node').forEach(function(n){
+      n.addEventListener('click', function(){
+        var idx = Number(n.dataset.constIdx);
+        var cards = document.querySelectorAll('#logList > *');
+        if (cards[idx]) { cards[idx].scrollIntoView({ behavior: 'smooth', block: 'center' }); cards[idx].style.outline = '2px solid #00d4ff'; setTimeout(function(){ cards[idx].style.outline = ''; }, 1500); }
+      });
+    });
+  } catch (_) { el.hidden = true; }
+}
+
 /* S5: ALL subview — renders the TimelineEvent union, newest first. */
 function renderAllHistory() {
   const list = $('logList');
@@ -2744,6 +2775,7 @@ function renderAllHistory() {
     list.innerHTML = `<div class="empty gn-first-run-card"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${tx('history.allEmptyTitle', 'NOTHING LOGGED YET')}</b><span class="gn-first-run-sub">${tx('history.allEmptySub', 'Log a shot or your weight to start your timeline.')}</span><br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>${tx('runtime.logShot', 'LOG SHOT')}</button> <button class="btn-full btn-secondary empty-cta" type="button" onclick="openWeightModal()">${tx('history.logWeight', 'LOG WEIGHT')}</button></div>`;
     return;
   }
+  renderConstellation();
   list.innerHTML = events.map(event => event.type === 'shot'
     ? shotCardHtml(event.record, false)
     : weightCardHtml(event.record, event.datePrecision)).join('');

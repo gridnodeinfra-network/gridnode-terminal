@@ -1786,3 +1786,41 @@ html[data-theme="light"] .gn-phase-strip-now { background: #0a6f82; box-shadow: 
 html[data-theme="light"] .gn-delta-kicker { color: #1a343d !important; }
 html[data-theme="light"] .gn-delta-main { color: #1a343d !important; }
 html[data-theme="light"] .gn-delta-spark polyline { stroke: #0a6f82; }
+
+/* Shot Constellation Timeline */
+.gn-constellation { margin: 0 0 14px; }
+.gn-constellation-kicker {
+  font-family: var(--font-m); font-size: .55rem; letter-spacing: 3px;
+  color: var(--text-dim); margin-bottom: 8px;
+}
+.gn-constellation-track { position: relative; height: 64px; }
+.gn-constellation-line {
+  position: absolute; left: 0; right: 0; top: 50%; height: 2px;
+  transform: translateY(-50%);
+  background: linear-gradient(90deg, rgba(0,212,255,.15), rgba(0,212,255,.5), rgba(0,212,255,.15));
+  border-radius: 1px;
+}
+.gn-constellation-nodes { position: absolute; inset: 0; }
+.gn-const-node {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  border-radius: 50%; cursor: pointer; transition: transform .15s ease;
+}
+.gn-const-node:active { transform: translate(-50%, -50%) scale(1.3); }
+.gn-const-node.shot {
+  width: 18px; height: 18px;
+  background: radial-gradient(circle at 35% 30%, #fff, #00d4ff 70%);
+  box-shadow: 0 0 12px rgba(0,212,255,.9), 0 0 4px #fff;
+  border: 1px solid rgba(255,255,255,.6);
+}
+.gn-const-node.weight {
+  width: 11px; height: 11px;
+  background: radial-gradient(circle at 35% 30%, #e8f4f8, #4fb8d8 70%);
+  box-shadow: 0 0 8px rgba(79,184,216,.7);
+  border: 1px solid rgba(255,255,255,.4);
+}
+.gn-const-node.lab {
+  width: 13px; height: 13px; border-radius: 3px;
+  background: #d3a24a; box-shadow: 0 0 8px rgba(211,162,74,.8);
+  border: 1px solid rgba(255,255,255,.4); transform: translate(-50%, -50%) rotate(45deg);
+}
+html[data-theme="light"] .gn-constellation-kicker { color: #1a343d !important; }
