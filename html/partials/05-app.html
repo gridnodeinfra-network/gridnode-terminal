@@ -99,12 +99,24 @@
 
             <div class="phase-nodes" id="phaseNodes"></div>
             <div class="phase-marker gn-phase-marker" id="phaseMarker" aria-hidden="true" hidden></div>
+            <div class="phase-marker gn-orbit-inspect" id="orbitInspectMarker" aria-hidden="true" hidden></div>
             <div class="ring-center">
               <div class="ring-days" id="ringDays">—</div>
               <div class="ring-until" data-i18n="phase.nextShotLabel">NEXT SHOT</div>
               <div class="ring-pct" id="ringPct">TAP FAB // LOG FIRST SHOT</div>
             </div>
           </div>
+        </div>
+
+        <!-- Dose Orbit prototype: Live Phase Strip -->
+        <div class="gn-phase-strip" id="gnPhaseStrip" aria-hidden="true" hidden>
+          <div class="gn-phase-strip-track" id="gnPhaseStripTrack">
+            <div class="gn-phase-strip-zones" id="gnPhaseStripZones"></div>
+            <div class="gn-phase-strip-shots" id="gnPhaseStripShots"></div>
+            <div class="gn-phase-strip-now" id="gnPhaseStripNow"></div>
+            <div class="gn-phase-strip-inspect" id="gnPhaseStripInspect" hidden></div>
+          </div>
+          <div class="gn-phase-strip-labels"><span data-i18n="phase.stripPast">PAST</span><span data-i18n="phase.stripNow">NOW</span><span data-i18n="phase.stripFuture">FUTURE</span></div>
         </div>
 
         <div class="phase-context-text" id="phaseContextText">Log a SHOT to see educational cycle context grounded in your own records.</div>

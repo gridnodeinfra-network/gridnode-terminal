@@ -1,0 +1,14 @@
+S3 is shipped to preview.
+
+**What went live (commit 527a733, preview/phase-engine-polish):**
+- Nav display labels renamed: HOME to TODAY, SHOTS to HISTORY, RESULTS to PROGRESS.
+- Display labels only. Element IDs (navDash, navLog, navRes) and showPage routes ('Dash', 'Log', 'Results') are untouched, so bookmarks, PWA shortcuts, analytics, and tests are unaffected.
+- Page headers aligned with the nav: TODAY / HISTORY / PROGRESS.
+- LAB and VAULT keep their branded nouns; both already carried plain-language subtitles ("// EDUCATIONAL UTILITIES //", "// NODE PROFILE HUB //").
+- i18n en + es-419 (HOY / HISTORIAL / PROGRESO). Static contract test test:s3.
+
+**Preview:**
+- https://b707e6f3.gridnode.pages.dev
+- https://preview.gridnode.pages.dev/
+
+**Next: S4 HISTORY shell.** The renamed HISTORY tab currently shows shots only. Per the plan, it must visibly acknowledge both shots and weights before we pretend the timeline is merged, so the interim UI gets ALL / SHOTS / WEIGHT filters. S5 then builds the unified TimelineEvent presentation layer on top.

@@ -1,0 +1,18 @@
+S5 is shipped to preview.
+
+**What went live (commit 20e4069, preview/phase-engine-polish):**
+- TimelineEvent union: presentation-level merge of shots + weights for the HISTORY ALL view.
+- Namespaced IDs: shot:<id> / weight:<id> (no cross-type collisions).
+- occurredAt kept separate from createdAt; legacy records with null createdAt sort last within their timestamp (deterministic, not guessed).
+- Date-only weight precision preserved: date-only weights render as dates, never "12:00 AM" invented midnight.
+- Deterministic sort: occurredAt DESC → createdAt DESC → type ASC → id ASC.
+- Storage models untouched: getAllShots / getWeights remain the sources. SHOTS and WEIGHT subviews stay on native models. Client-side only, zero migration risk.
+- Contract test test:s5: 24 checks, including a behavioral proof of the sort (extracts the pure functions and exercises tie-breaks).
+
+**Preview:**
+- https://498fdfa0.gridnode.pages.dev
+- https://preview.gridnode.pages.dev/
+
+**Note:** the S4 ALL view's plain interleave is now rewired onto the union. S4's contract (test:s4) still passes unchanged.
+
+**Next:** the simplification plan's S5 is done. Proposing S6: quick-repeat parity test (prove quick-repeat and equivalent full-form submissions create the same persisted record + side effects) — your earlier suggestion, queued since S1. Say the word and I'll spec it.

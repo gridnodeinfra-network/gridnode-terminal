@@ -2051,6 +2051,11 @@ function renderDashboard() {
   const next = nextShotDate(lastShot, profile);
   const currentWeight = weightMetrics.currentWeight || 0;
   const goalGap = Number(profile.goalWt) && currentWeight ? currentWeight - Number(profile.goalWt) : null;
+  renderTodayLastShot(lastShot);
+  renderTodayWeight(lastWeight);
+  GNOrbit.lastShot = lastShot || null;
+  GNOrbit.shots = shots || [];
+  renderPhaseStrip(lastShot, shots);
   const phase = renderPhase(lastShot, shots);
   renderProtocolCurve(shots, phase);
   refreshNodeHeader({ lastShot, next, phase, currentWeight: lastWeight?.weight });
@@ -2175,6 +2180,189 @@ function nextShotDate(shot, profile) {
   const days = Number.isFinite(Number(profile.shotDay)) ? ((Number(profile.shotDay) - date.getDay() + 7) % 7 || 7) : 7;
   date.setDate(date.getDate() + days);
   return date.toISOString();
+}
+
+/* S6 Phase A: TODAY weight snapshot */
+function renderTodayWeight(lastWeight) {
+  var el = document.getElementById('gnTodayWeight');
+  if (!el) return;
+  if (!lastWeight || lastWeight.weight == null) { el.hidden = true; return; }
+  el.hidden = false;
+  var val = document.getElementById('gnTodayWeightVal');
+  if (val) {
+    try {
+      var w = Number(lastWeight.weight);
+      var unit = lastWeight.unit === 'kg' ? 'kg' : 'lb';
+      val.textContent = w.toFixed(1) + ' ' + unit;
+    } catch (_) { val.textContent = '—'; }
+  }
+  el.onclick = function() { if (window.GNModules && window.GNModules.showPage) window.GNModules.showPage('Progress'); };
+}
+
+/* S6 Phase A: TODAY priority stack — compact last-shot card */
+function renderTodayLastShot(lastShot) {
+  var card = document.getElementById('gnTodayLastShot');
+  if (!card) return;
+  if (!lastShot) { card.hidden = true; return; }
+  card.hidden = false;
+  var main = document.getElementById('gnTodayLastShotMain');
+  var sub = document.getElementById('gnTodayLastShotSub');
+  try {
+    var medLabel = (window.GN_MEDICATION_IDENTITY && window.GN_MEDICATION_IDENTITY.label) ? window.GN_MEDICATION_IDENTITY.label(lastShot.med) : String(lastShot.med || '');
+    var doseStr = lastShot.dose != null ? String(lastShot.dose) + ' mg' : '';
+    if (main) main.textContent = (medLabel + ' ' + doseStr).trim() || '—';
+    var dateStr = '';
+    try {
+      var d = new Date(lastShot.date);
+      if (!Number.isNaN(d.getTime())) dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    } catch (_) {}
+    var siteStr = lastShot.site ? String(lastShot.site) : '';
+    if (sub) sub.textContent = [dateStr, siteStr].filter(Boolean).join(' · ') || '—';
+  } catch (_) {}
+}
+
+
+/* Dose Orbit prototype (2026-10-08): tappable/scrubbable phase ring + Live Phase Strip.
+   Visual grammar: solid/glow = recorded, dashed/amber = estimate. */
+var GNOrbit = { lastShot: null, shots: [], inspecting: false, liveCycle: 0 };
+
+function orbitAngleToCycle(clientX, clientY) {
+  var wrap = document.getElementById('ringWrap');
+  if (!wrap) return 0;
+  var r = wrap.getBoundingClientRect();
+  var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  var angle = Math.atan2(clientY - cy, clientX - cx); // -PI..PI, 0 = east
+  var deg = (angle * 180 / Math.PI + 90 + 360) % 360; // 0 = north, clockwise
+  return Math.min(0.999, Math.max(0, deg / 360));
+}
+
+function orbitInspect(cyclePos) {
+  if (!GNOrbit.lastShot || typeof PHASES === 'undefined') return;
+  GNOrbit.inspecting = true;
+  var phase = PHASES.find(function(item) { return cyclePos >= item.start && cyclePos < item.end; }) || PHASES[PHASES.length - 1];
+  var phaseIdx = PHASES.indexOf(phase);
+  var approxCycle = Math.round(cyclePos * 20) * 5;
+  var daysIn = (cyclePos * 7).toFixed(1);
+  try {
+    var nameEl = document.getElementById('phaseNameTxt');
+    var tplName = (typeof templatePhaseName === 'function') ? templatePhaseName(GNOrbit.lastShot, phaseIdx) : null;
+    if (nameEl) nameEl.textContent = (tplName || ((typeof localizedPhaseName === 'function') ? localizedPhaseName(phase) : phase.name)) + ' ~';
+    var numEl = document.getElementById('phaseNumTxt');
+    if (numEl) numEl.textContent = '~' + approxCycle + '% · ~' + daysIn + 'd in';
+    var pctEl = document.getElementById('ringPct');
+    if (pctEl) pctEl.textContent = '~' + approxCycle + '% CYCLE · INSPECT';
+  } catch (_) {}
+  var marker = document.getElementById('orbitInspectMarker');
+  if (marker) {
+    var angle = (cyclePos * Math.PI * 2) - (Math.PI / 2);
+    marker.style.left = (50 + (Math.cos(angle) * 45)) + '%';
+    marker.style.top = (50 + (Math.sin(angle) * 45)) + '%';
+    marker.style.borderColor = phase.color || '#d3a24a';
+    marker.hidden = false;
+  }
+  var stripInspect = document.getElementById('gnPhaseStripInspect');
+  if (stripInspect) { stripInspect.style.left = (cyclePos * 100) + '%'; stripInspect.hidden = false; }
+  var wrap = document.getElementById('ringWrap');
+  if (wrap) wrap.classList.add('gn-orbit-active');
+}
+
+function orbitReset() {
+  if (!GNOrbit.inspecting) return;
+  GNOrbit.inspecting = false;
+  var marker = document.getElementById('orbitInspectMarker');
+  if (marker) marker.hidden = true;
+  var stripInspect = document.getElementById('gnPhaseStripInspect');
+  if (stripInspect) stripInspect.hidden = true;
+  var wrap = document.getElementById('ringWrap');
+  if (wrap) wrap.classList.remove('gn-orbit-active');
+  if (GNOrbit.lastShot && typeof renderPhase === 'function') renderPhase(GNOrbit.lastShot, GNOrbit.shots);
+}
+
+function orbitStripToCycle(clientX) {
+  var track = document.getElementById('gnPhaseStripTrack');
+  if (!track) return 0;
+  var r = track.getBoundingClientRect();
+  return Math.min(0.999, Math.max(0, (clientX - r.left) / r.width));
+}
+
+function initDoseOrbit() {
+  var wrap = document.getElementById('ringWrap');
+  if (!wrap || wrap.dataset.orbitInit) return;
+  wrap.dataset.orbitInit = '1';
+  var dragging = false;
+  var onMove = function(e) {
+    if (!dragging || !GNOrbit.lastShot) return;
+    var t = e.touches ? e.touches[0] : e;
+    orbitInspect(orbitAngleToCycle(t.clientX, t.clientY));
+    if (e.cancelable) e.preventDefault();
+  };
+  wrap.addEventListener('pointerdown', function(e) {
+    if (!GNOrbit.lastShot) return;
+    dragging = true;
+    wrap.setPointerCapture && wrap.setPointerCapture(e.pointerId);
+    orbitInspect(orbitAngleToCycle(e.clientX, e.clientY));
+  });
+  wrap.addEventListener('pointermove', onMove);
+  var endDrag = function() { if (dragging) { dragging = false; setTimeout(orbitReset, 1200); } };
+  wrap.addEventListener('pointerup', endDrag);
+  wrap.addEventListener('pointercancel', endDrag);
+  wrap.addEventListener('pointerleave', function() { if (dragging) { dragging = false; orbitReset(); } });
+
+  var track = document.getElementById('gnPhaseStripTrack');
+  if (track && !track.dataset.orbitInit) {
+    track.dataset.orbitInit = '1';
+    var sDragging = false;
+    track.addEventListener('pointerdown', function(e) {
+      if (!GNOrbit.lastShot) return;
+      sDragging = true;
+      track.setPointerCapture && track.setPointerCapture(e.pointerId);
+      orbitInspect(orbitStripToCycle(e.clientX));
+    });
+    track.addEventListener('pointermove', function(e) {
+      if (!sDragging || !GNOrbit.lastShot) return;
+      orbitInspect(orbitStripToCycle(e.clientX));
+      if (e.cancelable) e.preventDefault();
+    });
+    var sEnd = function() { if (sDragging) { sDragging = false; setTimeout(orbitReset, 1200); } };
+    track.addEventListener('pointerup', sEnd);
+    track.addEventListener('pointercancel', sEnd);
+  }
+}
+
+function renderPhaseStrip(lastShot, shots) {
+  var strip = document.getElementById('gnPhaseStrip');
+  if (!strip || typeof PHASES === 'undefined') return;
+  if (!lastShot) { strip.hidden = true; return; }
+  strip.hidden = false;
+  try {
+    var zones = document.getElementById('gnPhaseStripZones');
+    if (zones) {
+      zones.innerHTML = PHASES.map(function(p) {
+        var w = Math.max(0, (p.end - p.start) * 100);
+        return '<div style="width:' + w + '%;background:' + (p.color || '#888') + '22;border-right:1px solid ' + (p.color || '#888') + '55"></div>';
+      }).join('');
+    }
+    var shotsEl = document.getElementById('gnPhaseStripShots');
+    if (shotsEl) {
+      var now = Date.now();
+      var lastTime = new Date(lastShot.date).getTime();
+      shotsEl.innerHTML = (shots || []).slice(-12).map(function(s) {
+        var t = new Date(s.date).getTime();
+        if (Number.isNaN(t)) return '';
+        var cyclePos = (lastTime - t) / 604800000; // 0 = last shot (right edge = now side)
+        var x = Math.max(0, Math.min(1, 1 - cyclePos)) * 100;
+        return '<div class="gn-phase-strip-shot" style="left:' + x + '%"></div>';
+      }).join('');
+    }
+    var nowEl = document.getElementById('gnPhaseStripNow');
+    if (nowEl) {
+      var elapsed = Math.max(0, (Date.now() - new Date(lastShot.date).getTime()) / 86400000);
+      var liveCycle = Math.min(0.999, elapsed / 7);
+      GNOrbit.liveCycle = liveCycle;
+      nowEl.style.left = (liveCycle * 100) + '%';
+    }
+  } catch (_) {}
+  initDoseOrbit();
 }
 
 function renderPhase(lastShot, shots) {

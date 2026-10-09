@@ -1710,3 +1710,56 @@ html[data-theme="light"] .gn-measurements-grid label > span b,
 html[data-theme="light"] .gn-measurements-grid label > span small {
   color: #1a343d !important;
 }
+
+/* Dose Orbit prototype: visual grammar (ChatGPT collab 2026-10-08)
+   ring = current state · solid/glow = recorded · dashed/amber = estimate */
+.gn-orbit-inspect {
+  position: absolute; width: 14px; height: 14px; border-radius: 50%;
+  transform: translate(-50%, -50%); z-index: 6;
+  background: transparent; border: 2px dashed #d3a24a;
+  box-shadow: 0 0 10px rgba(211, 162, 74, .8);
+  pointer-events: none;
+}
+.gn-orbit-inspect[hidden] { display: none !important; }
+#ringWrap.gn-orbit-active { cursor: grab; }
+#ringWrap.gn-orbit-active:active { cursor: grabbing; }
+#ringWrap.gn-orbit-active .ring-svg { pointer-events: none; }
+
+/* Live Phase Strip */
+.gn-phase-strip { margin: 10px 4px 4px; user-select: none; -webkit-user-select: none; }
+.gn-phase-strip-track {
+  position: relative; height: 34px; border-radius: 8px; overflow: hidden;
+  border: 1px solid var(--border); background: rgba(255,255,255,.03);
+  cursor: ew-resize; touch-action: pan-y;
+}
+.gn-phase-strip-zones { position: absolute; inset: 0; display: flex; }
+.gn-phase-strip-zones > div { height: 100%; }
+.gn-phase-strip-shots { position: absolute; inset: 0; }
+.gn-phase-strip-shot {
+  position: absolute; top: 50%; width: 10px; height: 10px; border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff; box-shadow: 0 0 8px rgba(255,255,255,.9), 0 0 2px #fff;
+  border: 1px solid rgba(0,0,0,.4);
+}
+.gn-phase-strip-now {
+  position: absolute; top: -2px; bottom: -2px; width: 3px;
+  transform: translateX(-50%);
+  background: #fff; box-shadow: 0 0 12px rgba(255,255,255,.95), 0 0 4px #fff;
+  border-radius: 2px; pointer-events: none;
+}
+.gn-phase-strip-inspect {
+  position: absolute; top: -2px; bottom: -2px; width: 2px;
+  transform: translateX(-50%);
+  background: transparent; border-left: 2px dashed #d3a24a;
+  box-shadow: 0 0 8px rgba(211,162,74,.7);
+  pointer-events: none;
+}
+.gn-phase-strip-inspect[hidden] { display: none !important; }
+.gn-phase-strip-labels {
+  display: flex; justify-content: space-between;
+  font-family: var(--font-m); font-size: .55rem; letter-spacing: 2px;
+  color: var(--text-dim); margin-top: 4px; padding: 0 2px;
+}
+html[data-theme="light"] .gn-phase-strip-labels { color: #1a343d !important; }
+html[data-theme="light"] .gn-phase-strip-shot { box-shadow: 0 0 6px rgba(0,111,130,.7); }
+html[data-theme="light"] .gn-phase-strip-now { background: #0a6f82; box-shadow: 0 0 8px rgba(10,111,130,.8); }
