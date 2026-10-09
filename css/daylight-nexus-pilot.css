@@ -1869,3 +1869,26 @@ html[data-theme="light"] .gn-visual-sub { color: #304b55 !important; }
 .gn-compare-row2 span { color: var(--text-dim); }
 .gn-compare-row2 b { font-family: var(--font-d); text-align: center; }
 html[data-theme="light"] .gn-compare-row label span, html[data-theme="light"] .gn-compare-row2 span { color: #1a343d !important; }
+
+/* Visual drill-down overlay */
+#ringCenter { cursor: pointer; }
+.gn-drilldown {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(5,8,12,.96); backdrop-filter: blur(8px);
+  display: flex; flex-direction: column; padding: 20px;
+}
+.gn-drilldown[hidden] { display: none !important; }
+.gn-drilldown-head {
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: var(--font-m); letter-spacing: 3px; font-size: .8rem;
+  color: #fff; margin-bottom: 16px;
+}
+.gn-drilldown-head button {
+  background: none; border: 1px solid rgba(255,255,255,.3); color: #fff;
+  width: 36px; height: 36px; border-radius: 50%; font-size: 1rem; cursor: pointer;
+}
+.gn-drilldown-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; }
+.gn-drilldown-body .phase-ring-svg-wrap { transform: scale(1.35); }
+/* Motion: new shot pulse */
+@keyframes gn-shot-pulse { 0% { box-shadow: 0 0 0 0 rgba(0,212,255,.7); } 100% { box-shadow: 0 0 0 24px rgba(0,212,255,0); } }
+.gn-shot-pulse { animation: gn-shot-pulse .8s ease-out; }

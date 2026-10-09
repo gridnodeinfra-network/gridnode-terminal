@@ -100,7 +100,7 @@
             <div class="phase-nodes" id="phaseNodes"></div>
             <div class="phase-marker gn-phase-marker" id="phaseMarker" aria-hidden="true" hidden></div>
             <div class="phase-marker gn-orbit-inspect" id="orbitInspectMarker" aria-hidden="true" hidden></div>
-            <div class="ring-center">
+            <div class="ring-center" id="ringCenter" role="button" tabindex="0" aria-label="Expand phase view">
               <div class="ring-days" id="ringDays">—</div>
               <div class="ring-until" data-i18n="phase.nextShotLabel">NEXT SHOT</div>
               <div class="ring-pct" id="ringPct">TAP FAB // LOG FIRST SHOT</div>
@@ -179,6 +179,12 @@
     </div>
 
     
+    
+    <!-- Visual drill-down overlay -->
+    <div class="gn-drilldown" id="gnDrilldown" hidden>
+      <div class="gn-drilldown-head"><span>PHASE ENGINE</span><button type="button" id="gnDrilldownClose" aria-label="Close">✕</button></div>
+      <div class="gn-drilldown-body" id="gnDrilldownBody"></div>
+    </div>
     <div class="page" id="pageLog">
       <div class="page-hdr">
         <div class="page-title" data-i18n-html="shots.historyHeadingHtml">HISTORY</div>

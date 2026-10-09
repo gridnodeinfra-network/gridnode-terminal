@@ -164,8 +164,17 @@ function renderDashboard() {
   renderTodayWeight(lastWeight);
   GNOrbit.lastShot = lastShot || null;
   GNOrbit.shots = shots || [];
+  try {
+    var sc = (shots || []).length;
+    if (GNLastShotCount && sc > GNLastShotCount) {
+      var pc = document.getElementById('phaseCard');
+      if (pc) { pc.classList.remove('gn-shot-pulse'); void pc.offsetWidth; pc.classList.add('gn-shot-pulse'); }
+    }
+    GNLastShotCount = sc;
+  } catch (_) {}
   renderPhaseStrip(lastShot, shots);
   renderDeltaCards(shots, weights, lastShot, lastWeight);
+  try { initDrilldown(); } catch (_) {}
   const phase = renderPhase(lastShot, shots);
   renderProtocolCurve(shots, phase);
   refreshNodeHeader({ lastShot, next, phase, currentWeight: lastWeight?.weight });
@@ -389,9 +398,35 @@ function renderDeltaCards(shots, weights, lastShot, lastWeight) {
   } catch (_) {}
 }
 
+/* Visual drill-down + motion */
+function initDrilldown() {
+  var center = document.getElementById('ringCenter');
+  var overlay = document.getElementById('gnDrilldown');
+  var body = document.getElementById('gnDrilldownBody');
+  var close = document.getElementById('gnDrilldownClose');
+  if (!center || !overlay || center.dataset.drillInit) return;
+  center.dataset.drillInit = '1';
+  center.addEventListener('click', function(e){
+    e.stopPropagation();
+    var wrap = document.getElementById('ringWrap');
+    if (!wrap || !body) return;
+    body.innerHTML = '';
+    var clone = wrap.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.querySelectorAll('[id]').forEach(function(el){ el.removeAttribute('id'); });
+    body.appendChild(clone);
+    overlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+  });
+  function closeDd(){ overlay.hidden = true; document.body.style.overflow = ''; if (body) body.innerHTML = ''; }
+  if (close) close.addEventListener('click', closeDd);
+  overlay.addEventListener('click', function(e){ if (e.target === overlay) closeDd(); });
+}
+
 /* Dose Orbit prototype (2026-10-08): tappable/scrubbable phase ring + Live Phase Strip.
    Visual grammar: solid/glow = recorded, dashed/amber = estimate. */
 var GNOrbit = { lastShot: null, shots: [], inspecting: false, liveCycle: 0 };
+var GNLastShotCount = 0;
 
 function orbitAngleToCycle(clientX, clientY) {
   var wrap = document.getElementById('ringWrap');
