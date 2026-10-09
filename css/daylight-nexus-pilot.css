@@ -1892,3 +1892,12 @@ html[data-theme="light"] .gn-compare-row label span, html[data-theme="light"] .g
 /* Motion: new shot pulse */
 @keyframes gn-shot-pulse { 0% { box-shadow: 0 0 0 0 rgba(0,212,255,.7); } 100% { box-shadow: 0 0 0 24px rgba(0,212,255,0); } }
 .gn-shot-pulse { animation: gn-shot-pulse .8s ease-out; }
+
+/* Chart scrub tooltip */
+.gn-chart-scrub-tip {
+  position: absolute; top: 8px; transform: translateX(-50%);
+  background: rgba(5,8,12,.92); color: #fff; border: 1px solid rgba(0,212,255,.4);
+  font-family: var(--font-m); font-size: .68rem; padding: 4px 10px; border-radius: 6px;
+  pointer-events: none; white-space: nowrap; z-index: 5;
+}
+.gn-chart-scrub-tip[hidden] { display: none !important; }

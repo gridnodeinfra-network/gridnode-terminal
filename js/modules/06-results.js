@@ -216,6 +216,31 @@ function renderPhaseHeatmap(shots) {
   } catch (_) { container.hidden = true; }
 }
 
+/* Scrub-to-inspect on weight chart */
+function initWeightScrub(canvas, weights) {
+  if (!canvas || !weights || !weights.length || canvas.dataset.scrubInit) return;
+  canvas.dataset.scrubInit = '1';
+  var tip = document.createElement('div');
+  tip.className = 'gn-chart-scrub-tip';
+  tip.hidden = true;
+  canvas.parentElement.style.position = 'relative';
+  canvas.parentElement.appendChild(tip);
+  function showTip(clientX) {
+    var r = canvas.getBoundingClientRect();
+    var frac = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+    var idx = Math.round(frac * (weights.length - 1));
+    var w = weights[idx];
+    if (!w) return;
+    tip.hidden = false;
+    tip.textContent = Number(w.weight).toFixed(1) + ' · ' + new Date(w.date).toLocaleDateString();
+    tip.style.left = (frac * 100) + '%';
+  }
+  canvas.addEventListener('pointerdown', function(e){ showTip(e.clientX); canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener('pointermove', function(e){ if (e.buttons) showTip(e.clientX); });
+  canvas.addEventListener('pointerup', function(){ tip.hidden = true; });
+  canvas.addEventListener('pointerleave', function(){ tip.hidden = true; });
+}
+
 function drawWeightTrendChart(canvas, weights, shots, goal) {
   const summary = $('weightTrendChartSummary');
   if (!canvas) return null;
@@ -276,6 +301,7 @@ function drawWeightTrendChart(canvas, weights, shots, goal) {
 
   context.fillStyle = '#00E6F0';
   points.forEach(p => { context.beginPath(); context.arc(p.x, p.y, 3, 0, Math.PI * 2); context.fill(); });
+  try { initWeightScrub(canvas, weights); } catch (_) {}
   const start = parseLocalDate(weights[0].date), end = parseLocalDate(weights.at(-1).date); context.fillStyle = '#8295a0'; context.fillText(formatDate(start, { month: 'short', day: 'numeric' }), left, height - 8); context.textAlign = 'right'; context.fillText(formatDate(end, { month: 'short', day: 'numeric' }), width - right, height - 8); context.textAlign = 'left';
   let priorDose = null;
   const shotMarkers = [];
