@@ -87,6 +87,7 @@ export function renderResults() {
   setDisplay('weightTrendEmpty', !weights.length); setDisplay('weightTrendLive', Boolean(weights.length));
   setDisplay('resultsSummaryEmpty', !weights.length && !shots.length);
   drawWeightTrendChart($('wtChart'), filterWeightsForChart(weights), shots, profile.goalWt);
+  try { renderPhaseHeatmap(shots); } catch (_) {}
   drawTrendArrow($('wtChart'), filterWeightsForChart(weights), profile.goalWt);
   renderWeightRecords(weights);
   renderMeasurementTrend();
@@ -169,6 +170,50 @@ function renderMeasurementTrend() {
   const rows = [...latest.values()].sort((a, b) => a.type.localeCompare(b.type));
   setDisplay('measurementTrendEmpty', !rows.length);
   list.innerHTML = rows.filter(record => Number.isFinite(Number(record.value))).map(record => `<div class="gn-measurement-trend-row"><b>${safeText(record.type)}</b><span>${Number(record.value).toFixed(1)} ${safeText(record.unit)}</span></div>`).join('');
+}
+
+/* Phase Heatmap: calendar colored by estimated phase state */
+function renderPhaseHeatmap(shots) {
+  var container = document.getElementById('gnPhaseHeatmap');
+  if (!container || typeof PHASES === 'undefined') return;
+  try {
+    if (!shots || !shots.length) { container.hidden = true; return; }
+    container.hidden = false;
+    var now = new Date(); now.setHours(0,0,0,0);
+    var start = new Date(now); start.setDate(start.getDate() - 34); // 5 weeks
+    var shotTimes = shots.map(function(s){ var d = new Date(s.date); d.setHours(0,0,0,0); return d.getTime(); });
+    var html = '<div class="gn-heatmap-grid">';
+    var weekdays = ['S','M','T','W','T','F','S'];
+    html += weekdays.map(function(d){ return '<div class="gn-heatmap-dow">' + d + '</div>'; }).join('');
+    // align start to Sunday
+    var d = new Date(start); d.setDate(d.getDate() - d.getDay());
+    for (var i = 0; i < 35; i++) {
+      var t = d.getTime();
+      var isShot = shotTimes.indexOf(t) >= 0;
+      var cls = 'gn-heatmap-day', title = '';
+      // find most recent shot before/on this day for phase estimate
+      var refShot = null;
+      for (var s = shots.length - 1; s >= 0; s--) {
+        var st = new Date(shots[s].date).getTime();
+        if (st <= t + 86400000) { refShot = shots[s]; break; }
+      }
+      if (refShot) {
+        var elapsed = Math.max(0, (t - new Date(refShot.date).getTime()) / 86400000);
+        var cp = Math.min(0.999, elapsed / 7);
+        var ph = PHASES.find(function(p){ return cp >= p.start && cp < p.end; }) || PHASES[PHASES.length-1];
+        var col = ph.color || '#888';
+        cls += ' has-phase';
+        title = 'Phase: ' + (ph.name || '');
+        html += '<div class="' + cls + '" style="background:' + col + '44;border-color:' + col + '" title="' + title + '"' + (isShot ? ' data-shot="1"' : '') + '>' + (isShot ? '<i></i>' : '') + '</div>';
+      } else {
+        html += '<div class="' + cls + ' empty"></div>';
+      }
+      d.setDate(d.getDate() + 1);
+    }
+    html += '</div>';
+    html += '<div class="gn-heatmap-legend"><span>PHASE MAP · 5 WEEKS</span><span><i class="dot"></i>SHOT DAY</span></div>';
+    container.innerHTML = html;
+  } catch (_) { container.hidden = true; }
 }
 
 function drawWeightTrendChart(canvas, weights, shots, goal) {

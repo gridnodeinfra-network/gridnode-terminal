@@ -685,6 +685,60 @@ function latestMeasurement(type) {
   return S.get('measurements', []).filter(record => record.type === type).sort((a, b) => new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0))[0] || null;
 }
 
+/* Injection Site Map: visual body diagram with recency encoding */
+var GNSiteMap = { zones: null };
+
+function siteMapZoneCoords() {
+  // Simplified body: abdomen 6, thighs 6, arms 4 — SVG viewBox 0 0 200 280
+  return [
+    { id: 'Upper Left', x: 70, y: 95, w: 28, h: 22 }, { id: 'Upper Right', x: 102, y: 95, w: 28, h: 22 },
+    { id: 'Middle Left', x: 70, y: 120, w: 28, h: 22 }, { id: 'Middle Right', x: 102, y: 120, w: 28, h: 22 },
+    { id: 'Lower Left', x: 70, y: 145, w: 28, h: 22 }, { id: 'Lower Right', x: 102, y: 145, w: 28, h: 22 },
+    { id: 'Left Thigh Upper', x: 62, y: 180, w: 32, h: 26 }, { id: 'Right Thigh Upper', x: 106, y: 180, w: 32, h: 26 },
+    { id: 'Left Thigh Lower', x: 62, y: 210, w: 32, h: 26 }, { id: 'Right Thigh Lower', x: 106, y: 210, w: 32, h: 26 },
+    { id: 'Left Thigh Outer', x: 40, y: 195, w: 20, h: 40 }, { id: 'Right Thigh Outer', x: 140, y: 195, w: 20, h: 40 },
+    { id: 'Left Back Upper Arm Upper', x: 30, y: 80, w: 22, h: 20 }, { id: 'Left Back Upper Arm Lower', x: 30, y: 102, w: 22, h: 20 },
+    { id: 'Right Back Upper Arm Upper', x: 148, y: 80, w: 22, h: 20 }, { id: 'Right Back Upper Arm Lower', x: 148, y: 102, w: 22, h: 20 },
+  ];
+}
+
+function renderSiteMap() {
+  var container = document.getElementById('gnSiteMap');
+  if (!container) return;
+  try {
+    var shots = (typeof getAllShots === 'function' ? getAllShots() : []).filter(function(s){ return !s.archived; });
+    var now = Date.now();
+    var lastUse = {};
+    shots.forEach(function(s){
+      var t = new Date(s.date).getTime();
+      if (Number.isNaN(t) || !s.site) return;
+      if (!lastUse[s.site] || t > lastUse[s.site]) lastUse[s.site] = t;
+    });
+    var zones = siteMapZoneCoords();
+    var svg = '<svg viewBox="0 0 200 280" class="gn-sitemap-svg" role="img" aria-label="Injection site map">';
+    svg += '<ellipse cx="100" cy="40" rx="28" ry="32" class="gn-sitemap-body"/>';
+    svg += '<rect x="68" y="70" width="64" height="100" rx="18" class="gn-sitemap-body"/>';
+    svg += '<rect x="58" y="170" width="36" height="90" rx="14" class="gn-sitemap-body"/>';
+    svg += '<rect x="106" y="170" width="36" height="90" rx="14" class="gn-sitemap-body"/>';
+    svg += '<rect x="28" y="72" width="26" height="60" rx="12" class="gn-sitemap-body"/>';
+    svg += '<rect x="146" y="72" width="26" height="60" rx="12" class="gn-sitemap-body"/>';
+    zones.forEach(function(z){
+      var t = lastUse[z.id];
+      var cls = 'gn-sitemap-zone', opacity = 0.15, label = 'never';
+      if (t) {
+        var daysAgo = (now - t) / 86400000;
+        if (daysAgo < 7) { cls += ' recent'; opacity = 0.95; label = Math.floor(daysAgo) + 'd ago'; }
+        else if (daysAgo < 21) { cls += ' warm'; opacity = 0.6; label = Math.floor(daysAgo) + 'd ago'; }
+        else { cls += ' cool'; opacity = 0.35; label = Math.floor(daysAgo) + 'd ago'; }
+      }
+      svg += '<rect x="' + z.x + '" y="' + z.y + '" width="' + z.w + '" height="' + z.h + '" rx="6" class="' + cls + '" opacity="' + opacity + '" data-site="' + z.id + '"><title>' + z.id + (t ? ' · ' + label : ' · never') + '</title></rect>';
+    });
+    svg += '</svg>';
+    svg += '<div class="gn-sitemap-legend"><span><i class="sw recent"></i>RECENT</span><span><i class="sw warm"></i>USED</span><span><i class="sw cool"></i>OLD</span><span><i class="sw never"></i>NEVER</span></div>';
+    container.innerHTML = svg;
+  } catch (_) {}
+}
+
 function ensureProfileMeasurements() {
   const page = $('pageProfile');
   if (!page || $('gnMeasurementsCard')) return;
@@ -701,11 +755,16 @@ function ensureProfileMeasurements() {
       <div class="gn-measurements-grid">${MEASUREMENT_TYPES.map(([type, label, key]) => `<label><span><b data-i18n="${key}">${label}</b><small id="gnMeasurementLatest_${type}" data-i18n="vault.noRecord">NO RECORD</small></span><input type="number" min="0" step="0.1" inputmode="decimal" data-measurement-type="${type}" aria-label="${tx(key, label)}"></label>`).join('')}</div>
       <button type="submit" class="btn-full btn-secondary" data-i18n="vault.saveMeasurements">SAVE MEASUREMENTS</button>
     </form>
+    <div class="gn-sitemap-wrap">
+      <div class="gn-foundation-kicker" data-i18n="vault.siteMapKicker">// INJECTION SITES</div>
+      <div id="gnSiteMap" class="gn-sitemap"></div>
+    </div>
     <div class="gn-measurements-empty" id="gnMeasurementsEmpty">No measurements logged yet.</div>
   </section>`);
   window.GN_I18N?.applyTo?.($('gnMeasurementsCard'));
   $('gnMeasurementsForm')?.addEventListener('submit', event => { event.preventDefault(); saveMeasurements(); });
   installCustomPickers(page);
+  try { renderSiteMap(); } catch (_) {}
 }
 
 function renderMeasurements() {

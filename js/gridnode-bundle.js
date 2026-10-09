@@ -4047,6 +4047,7 @@ function renderResults() {
   setDisplay('weightTrendEmpty', !weights.length); setDisplay('weightTrendLive', Boolean(weights.length));
   setDisplay('resultsSummaryEmpty', !weights.length && !shots.length);
   drawWeightTrendChart($('wtChart'), filterWeightsForChart(weights), shots, profile.goalWt);
+  try { renderPhaseHeatmap(shots); } catch (_) {}
   drawTrendArrow($('wtChart'), filterWeightsForChart(weights), profile.goalWt);
   renderWeightRecords(weights);
   renderMeasurementTrend();
@@ -4129,6 +4130,50 @@ function renderMeasurementTrend() {
   const rows = [...latest.values()].sort((a, b) => a.type.localeCompare(b.type));
   setDisplay('measurementTrendEmpty', !rows.length);
   list.innerHTML = rows.filter(record => Number.isFinite(Number(record.value))).map(record => `<div class="gn-measurement-trend-row"><b>${safeText(record.type)}</b><span>${Number(record.value).toFixed(1)} ${safeText(record.unit)}</span></div>`).join('');
+}
+
+/* Phase Heatmap: calendar colored by estimated phase state */
+function renderPhaseHeatmap(shots) {
+  var container = document.getElementById('gnPhaseHeatmap');
+  if (!container || typeof PHASES === 'undefined') return;
+  try {
+    if (!shots || !shots.length) { container.hidden = true; return; }
+    container.hidden = false;
+    var now = new Date(); now.setHours(0,0,0,0);
+    var start = new Date(now); start.setDate(start.getDate() - 34); // 5 weeks
+    var shotTimes = shots.map(function(s){ var d = new Date(s.date); d.setHours(0,0,0,0); return d.getTime(); });
+    var html = '<div class="gn-heatmap-grid">';
+    var weekdays = ['S','M','T','W','T','F','S'];
+    html += weekdays.map(function(d){ return '<div class="gn-heatmap-dow">' + d + '</div>'; }).join('');
+    // align start to Sunday
+    var d = new Date(start); d.setDate(d.getDate() - d.getDay());
+    for (var i = 0; i < 35; i++) {
+      var t = d.getTime();
+      var isShot = shotTimes.indexOf(t) >= 0;
+      var cls = 'gn-heatmap-day', title = '';
+      // find most recent shot before/on this day for phase estimate
+      var refShot = null;
+      for (var s = shots.length - 1; s >= 0; s--) {
+        var st = new Date(shots[s].date).getTime();
+        if (st <= t + 86400000) { refShot = shots[s]; break; }
+      }
+      if (refShot) {
+        var elapsed = Math.max(0, (t - new Date(refShot.date).getTime()) / 86400000);
+        var cp = Math.min(0.999, elapsed / 7);
+        var ph = PHASES.find(function(p){ return cp >= p.start && cp < p.end; }) || PHASES[PHASES.length-1];
+        var col = ph.color || '#888';
+        cls += ' has-phase';
+        title = 'Phase: ' + (ph.name || '');
+        html += '<div class="' + cls + '" style="background:' + col + '44;border-color:' + col + '" title="' + title + '"' + (isShot ? ' data-shot="1"' : '') + '>' + (isShot ? '<i></i>' : '') + '</div>';
+      } else {
+        html += '<div class="' + cls + ' empty"></div>';
+      }
+      d.setDate(d.getDate() + 1);
+    }
+    html += '</div>';
+    html += '<div class="gn-heatmap-legend"><span>PHASE MAP · 5 WEEKS</span><span><i class="dot"></i>SHOT DAY</span></div>';
+    container.innerHTML = html;
+  } catch (_) { container.hidden = true; }
 }
 
 function drawWeightTrendChart(canvas, weights, shots, goal) {
@@ -5371,6 +5416,60 @@ function latestMeasurement(type) {
   return S.get('measurements', []).filter(record => record.type === type).sort((a, b) => new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0))[0] || null;
 }
 
+/* Injection Site Map: visual body diagram with recency encoding */
+var GNSiteMap = { zones: null };
+
+function siteMapZoneCoords() {
+  // Simplified body: abdomen 6, thighs 6, arms 4 — SVG viewBox 0 0 200 280
+  return [
+    { id: 'Upper Left', x: 70, y: 95, w: 28, h: 22 }, { id: 'Upper Right', x: 102, y: 95, w: 28, h: 22 },
+    { id: 'Middle Left', x: 70, y: 120, w: 28, h: 22 }, { id: 'Middle Right', x: 102, y: 120, w: 28, h: 22 },
+    { id: 'Lower Left', x: 70, y: 145, w: 28, h: 22 }, { id: 'Lower Right', x: 102, y: 145, w: 28, h: 22 },
+    { id: 'Left Thigh Upper', x: 62, y: 180, w: 32, h: 26 }, { id: 'Right Thigh Upper', x: 106, y: 180, w: 32, h: 26 },
+    { id: 'Left Thigh Lower', x: 62, y: 210, w: 32, h: 26 }, { id: 'Right Thigh Lower', x: 106, y: 210, w: 32, h: 26 },
+    { id: 'Left Thigh Outer', x: 40, y: 195, w: 20, h: 40 }, { id: 'Right Thigh Outer', x: 140, y: 195, w: 20, h: 40 },
+    { id: 'Left Back Upper Arm Upper', x: 30, y: 80, w: 22, h: 20 }, { id: 'Left Back Upper Arm Lower', x: 30, y: 102, w: 22, h: 20 },
+    { id: 'Right Back Upper Arm Upper', x: 148, y: 80, w: 22, h: 20 }, { id: 'Right Back Upper Arm Lower', x: 148, y: 102, w: 22, h: 20 },
+  ];
+}
+
+function renderSiteMap() {
+  var container = document.getElementById('gnSiteMap');
+  if (!container) return;
+  try {
+    var shots = (typeof getAllShots === 'function' ? getAllShots() : []).filter(function(s){ return !s.archived; });
+    var now = Date.now();
+    var lastUse = {};
+    shots.forEach(function(s){
+      var t = new Date(s.date).getTime();
+      if (Number.isNaN(t) || !s.site) return;
+      if (!lastUse[s.site] || t > lastUse[s.site]) lastUse[s.site] = t;
+    });
+    var zones = siteMapZoneCoords();
+    var svg = '<svg viewBox="0 0 200 280" class="gn-sitemap-svg" role="img" aria-label="Injection site map">';
+    svg += '<ellipse cx="100" cy="40" rx="28" ry="32" class="gn-sitemap-body"/>';
+    svg += '<rect x="68" y="70" width="64" height="100" rx="18" class="gn-sitemap-body"/>';
+    svg += '<rect x="58" y="170" width="36" height="90" rx="14" class="gn-sitemap-body"/>';
+    svg += '<rect x="106" y="170" width="36" height="90" rx="14" class="gn-sitemap-body"/>';
+    svg += '<rect x="28" y="72" width="26" height="60" rx="12" class="gn-sitemap-body"/>';
+    svg += '<rect x="146" y="72" width="26" height="60" rx="12" class="gn-sitemap-body"/>';
+    zones.forEach(function(z){
+      var t = lastUse[z.id];
+      var cls = 'gn-sitemap-zone', opacity = 0.15, label = 'never';
+      if (t) {
+        var daysAgo = (now - t) / 86400000;
+        if (daysAgo < 7) { cls += ' recent'; opacity = 0.95; label = Math.floor(daysAgo) + 'd ago'; }
+        else if (daysAgo < 21) { cls += ' warm'; opacity = 0.6; label = Math.floor(daysAgo) + 'd ago'; }
+        else { cls += ' cool'; opacity = 0.35; label = Math.floor(daysAgo) + 'd ago'; }
+      }
+      svg += '<rect x="' + z.x + '" y="' + z.y + '" width="' + z.w + '" height="' + z.h + '" rx="6" class="' + cls + '" opacity="' + opacity + '" data-site="' + z.id + '"><title>' + z.id + (t ? ' · ' + label : ' · never') + '</title></rect>';
+    });
+    svg += '</svg>';
+    svg += '<div class="gn-sitemap-legend"><span><i class="sw recent"></i>RECENT</span><span><i class="sw warm"></i>USED</span><span><i class="sw cool"></i>OLD</span><span><i class="sw never"></i>NEVER</span></div>';
+    container.innerHTML = svg;
+  } catch (_) {}
+}
+
 function ensureProfileMeasurements() {
   const page = $('pageProfile');
   if (!page || $('gnMeasurementsCard')) return;
@@ -5387,11 +5486,16 @@ function ensureProfileMeasurements() {
       <div class="gn-measurements-grid">${MEASUREMENT_TYPES.map(([type, label, key]) => `<label><span><b data-i18n="${key}">${label}</b><small id="gnMeasurementLatest_${type}" data-i18n="vault.noRecord">NO RECORD</small></span><input type="number" min="0" step="0.1" inputmode="decimal" data-measurement-type="${type}" aria-label="${tx(key, label)}"></label>`).join('')}</div>
       <button type="submit" class="btn-full btn-secondary" data-i18n="vault.saveMeasurements">SAVE MEASUREMENTS</button>
     </form>
+    <div class="gn-sitemap-wrap">
+      <div class="gn-foundation-kicker" data-i18n="vault.siteMapKicker">// INJECTION SITES</div>
+      <div id="gnSiteMap" class="gn-sitemap"></div>
+    </div>
     <div class="gn-measurements-empty" id="gnMeasurementsEmpty">No measurements logged yet.</div>
   </section>`);
   window.GN_I18N?.applyTo?.($('gnMeasurementsCard'));
   $('gnMeasurementsForm')?.addEventListener('submit', event => { event.preventDefault(); saveMeasurements(); });
   installCustomPickers(page);
+  try { renderSiteMap(); } catch (_) {}
 }
 
 function renderMeasurements() {

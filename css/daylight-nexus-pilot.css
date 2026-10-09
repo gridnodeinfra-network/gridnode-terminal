@@ -1824,3 +1824,31 @@ html[data-theme="light"] .gn-delta-spark polyline { stroke: #0a6f82; }
   border: 1px solid rgba(255,255,255,.4); transform: translate(-50%, -50%) rotate(45deg);
 }
 html[data-theme="light"] .gn-constellation-kicker { color: #1a343d !important; }
+
+/* Injection Site Map */
+.gn-sitemap-wrap { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
+.gn-sitemap { display: flex; flex-direction: column; align-items: center; }
+.gn-sitemap-svg { width: min(100%, 240px); height: auto; }
+.gn-sitemap-body { fill: rgba(127,127,127,.12); stroke: rgba(127,127,127,.3); stroke-width: 1; }
+.gn-sitemap-zone { fill: #00d4ff; stroke: #fff; stroke-width: 1; cursor: pointer; }
+.gn-sitemap-zone.recent { fill: #ff6b6b; }
+.gn-sitemap-zone.warm { fill: #d3a24a; }
+.gn-sitemap-zone.cool { fill: #4fb8d8; }
+.gn-sitemap-legend { display: flex; gap: 12px; margin-top: 8px; font-family: var(--font-m); font-size: .58rem; letter-spacing: 2px; color: var(--text-dim); }
+.gn-sitemap-legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: baseline; }
+.gn-sitemap-legend .sw.recent { background: #ff6b6b; }
+.gn-sitemap-legend .sw.warm { background: #d3a24a; }
+.gn-sitemap-legend .sw.cool { background: #4fb8d8; }
+.gn-sitemap-legend .sw.never { background: rgba(127,127,127,.25); border: 1px solid rgba(127,127,127,.4); }
+html[data-theme="light"] .gn-sitemap-legend { color: #1a343d !important; }
+
+/* Phase Heatmap */
+.gn-heatmap-wrap { margin-bottom: 14px; }
+.gn-heatmap-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.gn-heatmap-dow { font-family: var(--font-m); font-size: .55rem; text-align: center; color: var(--text-dim); padding: 2px 0; }
+.gn-heatmap-day { aspect-ratio: 1; border-radius: 4px; border: 1px solid rgba(127,127,127,.15); position: relative; }
+.gn-heatmap-day.empty { background: rgba(127,127,127,.06); }
+.gn-heatmap-day i { position: absolute; inset: 30%; border-radius: 50%; background: #fff; box-shadow: 0 0 6px #fff; display: block; }
+.gn-heatmap-legend { display: flex; justify-content: space-between; margin-top: 6px; font-family: var(--font-m); font-size: .55rem; letter-spacing: 2px; color: var(--text-dim); }
+.gn-heatmap-legend .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 4px #fff; margin-right: 4px; }
+html[data-theme="light"] .gn-heatmap-dow, html[data-theme="light"] .gn-heatmap-legend { color: #1a343d !important; }
