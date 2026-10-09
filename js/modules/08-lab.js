@@ -687,6 +687,41 @@ function latestMeasurement(type) {
   return S.get('measurements', []).filter(record => record.type === type).sort((a, b) => new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0))[0] || null;
 }
 
+/* Before/After Compare: two periods side by side */
+function renderCompare() {
+  var selA = document.getElementById('gnCompareA'), selB = document.getElementById('gnCompareB');
+  var out = document.getElementById('gnCompareOut');
+  if (!selA || !selB || !out) return;
+  try {
+    var shots = (typeof getAllShots === 'function' ? getAllShots() : []).filter(function(s){ return !s.archived; });
+    if (shots.length < 4) { out.innerHTML = '<p class="gn-visual-sub">Log at least 4 shots to compare periods.</p>'; return; }
+    // Build month options from shot dates
+    var months = {};
+    shots.forEach(function(s){ var d = new Date(s.date); var k = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); months[k] = 1; });
+    var keys = Object.keys(months).sort();
+    if (!selA.options.length) {
+      keys.forEach(function(k){ var o1 = document.createElement('option'); o1.value = k; o1.textContent = k; selA.appendChild(o1); var o2 = document.createElement('option'); o2.value = k; o2.textContent = k; selB.appendChild(o2); });
+      if (keys.length >= 2) { selA.value = keys[0]; selB.value = keys[keys.length-1]; }
+      selA.onchange = renderCompare; selB.onchange = renderCompare;
+    }
+    function statsFor(mk) {
+      var recs = shots.filter(function(s){ var d = new Date(s.date); return (d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0')) === mk; });
+      if (!recs.length) return null;
+      var doses = recs.map(function(s){ return Number(s.dose)||0; }).filter(function(d){return d>0;});
+      var avgDose = doses.length ? (doses.reduce(function(a,b){return a+b;},0)/doses.length).toFixed(1) : '—';
+      var st = recs.slice().sort(function(a,b){return new Date(a.date)-new Date(b.date);});
+      var gaps = [];
+      for (var i=1;i<st.length;i++){ var g=(new Date(st[i].date)-new Date(st[i-1].date))/86400000; if(g>0&&g<60) gaps.push(g); }
+      var avgGap = gaps.length ? (gaps.reduce(function(a,b){return a+b;},0)/gaps.length).toFixed(1)+'d' : '—';
+      return { n: recs.length, dose: avgDose, gap: avgGap };
+    }
+    var a = statsFor(selA.value), b = statsFor(selB.value);
+    function row(label, va, vb) { return '<div class="gn-compare-row2"><span>' + label + '</span><b>' + (va==null?'—':va) + '</b><b>' + (vb==null?'—':vb) + '</b></div>'; }
+    out.innerHTML = '<div class="gn-compare-grid"><div class="gn-compare-row2 head"><span></span><b>' + selA.value + '</b><b>' + selB.value + '</b></div>'
+      + row('SHOTS', a&&a.n, b&&b.n) + row('AVG DOSE', a&&a.dose, b&&b.dose) + row('AVG GAP', a&&a.gap, b&&b.gap) + '</div>';
+  } catch (_) {}
+}
+
 /* Visual Instruments: Dose Stack, Cadence Radar, Protocol Fingerprint */
 function renderVisualInstruments() {
   try {
@@ -695,6 +730,7 @@ function renderVisualInstruments() {
     renderDoseStack(shots);
     renderCadenceRadar(shots);
     renderFingerprint(shots);
+    renderCompare();
   } catch (_) {}
 }
 

@@ -1857,3 +1857,15 @@ html[data-theme="light"] .gn-heatmap-dow, html[data-theme="light"] .gn-heatmap-l
 .gn-visual-sub { font-size: .78rem; color: var(--text-secondary); margin: 4px 0 10px; }
 .gn-visual-canvas { width: 100%; display: block; border-radius: 8px; background: rgba(127,127,127,.05); }
 html[data-theme="light"] .gn-visual-sub { color: #304b55 !important; }
+
+/* Before/After Compare */
+.gn-compare-row { display: flex; gap: 10px; margin-bottom: 10px; }
+.gn-compare-row label { flex: 1; }
+.gn-compare-row label span { font-family: var(--font-m); font-size: .58rem; letter-spacing: 2px; color: var(--text-dim); display: block; margin-bottom: 4px; }
+.gn-compare-grid { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.gn-compare-row2 { display: grid; grid-template-columns: 1fr 1fr 1fr; padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: .82rem; }
+.gn-compare-row2:last-child { border-bottom: none; }
+.gn-compare-row2.head { background: rgba(127,127,127,.08); font-family: var(--font-m); font-size: .62rem; letter-spacing: 1px; }
+.gn-compare-row2 span { color: var(--text-dim); }
+.gn-compare-row2 b { font-family: var(--font-d); text-align: center; }
+html[data-theme="light"] .gn-compare-row label span, html[data-theme="light"] .gn-compare-row2 span { color: #1a343d !important; }
