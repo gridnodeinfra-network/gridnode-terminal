@@ -1763,3 +1763,26 @@ html[data-theme="light"] .gn-measurements-grid label > span small {
 html[data-theme="light"] .gn-phase-strip-labels { color: #1a343d !important; }
 html[data-theme="light"] .gn-phase-strip-shot { box-shadow: 0 0 6px rgba(0,111,130,.7); }
 html[data-theme="light"] .gn-phase-strip-now { background: #0a6f82; box-shadow: 0 0 8px rgba(10,111,130,.8); }
+
+/* Visual instruments: Delta Cards */
+.gn-delta-row { display: flex; gap: 10px; margin-bottom: 12px; }
+.gn-delta-card {
+  flex: 1; background: var(--surface, #f4f1e9); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 12px; cursor: pointer; min-width: 0;
+}
+.gn-delta-kicker {
+  font-family: var(--font-m); font-size: .55rem; letter-spacing: 3px;
+  color: var(--text-dim); margin-bottom: 6px;
+}
+.gn-delta-main {
+  font-family: var(--font-d); font-weight: 700; font-size: 1.05rem;
+  color: var(--text-primary); margin-bottom: 6px; white-space: nowrap;
+}
+.gn-delta-spark { display: block; width: 100%; height: 28px; }
+.gn-delta-spark polyline { fill: none; stroke: #00d4ff; stroke-width: 2; }
+.gn-delta-bar { position: relative; height: 8px; border-radius: 4px; background: rgba(127,127,127,.18); overflow: hidden; }
+.gn-delta-bar-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: linear-gradient(90deg, #00d4ff, #4fb8d8); transition: width .6s ease; }
+.gn-delta-bar-ghost { position: absolute; top: 0; bottom: 0; border-right: 2px dashed rgba(211,162,74,.9); }
+html[data-theme="light"] .gn-delta-kicker { color: #1a343d !important; }
+html[data-theme="light"] .gn-delta-main { color: #1a343d !important; }
+html[data-theme="light"] .gn-delta-spark polyline { stroke: #0a6f82; }

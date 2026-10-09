@@ -137,6 +137,17 @@
       ctx.lineTo(xFor(build.end), padT + plotH);
       ctx.closePath(); ctx.fill();
 
+      // uncertainty envelope: translucent band = modeled estimate, not measured
+      try {
+        var unc = 0.12; // ±12% visual uncertainty
+        ctx.save();
+        ctx.fillStyle = C.curveSoft + '22';
+        ctx.beginPath();
+        build.points.forEach((v, i) => { const x = padL + plotW * i / (build.count - 1), y = yFor(v * (1 + unc)); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+        for (var ui = build.points.length - 1; ui >= 0; ui--) { const x2 = padL + plotW * ui / (build.count - 1), y2 = yFor(build.points[ui] * (1 - unc)); ctx.lineTo(x2, y2); }
+        ctx.closePath(); ctx.fill();
+        ctx.restore();
+      } catch (_) {}
       // glow pass + core pass
       ctx.shadowColor = C.curveSoft; ctx.shadowBlur = 14; ctx.strokeStyle = C.curveSoft; ctx.lineWidth = 4;
       ctx.beginPath();
@@ -149,9 +160,11 @@
     }
 
     // shot markers: filled = actual, hollow = planned
+    build._hitMarkers = [];
     build.markers.forEach(m => {
       const x = xFor(m.t);
       if (x < padL - 8 || x > width - padR + 8) return;
+      build._hitMarkers.push({ x: x, t: m.t, shot: m.shot || null });
       const y = build.modelKind === 'curve' && build.points.length
         ? yFor(modelValueAt(build, m.t)) : padT + plotH * 0.72;
       ctx.save();
@@ -311,6 +324,26 @@
 
       drawScene(canvas, build, { height: 130 });
       drawOverlay(overlaySvg, build, { height: 130 });
+      // event-linked markers: tap a shot marker to jump to HISTORY
+      try {
+        if (!canvas.dataset.markerTapInit && build._hitMarkers && build._hitMarkers.length) {
+          canvas.dataset.markerTapInit = '1';
+          canvas.style.cursor = 'pointer';
+          canvas.addEventListener('click', function(e) {
+            var r = canvas.getBoundingClientRect();
+            var scaleX = canvas.width / r.width;
+            var mx = (e.clientX - r.left) * scaleX;
+            var dpr = window.devicePixelRatio || 1;
+            for (var i = 0; i < (build._hitMarkers || []).length; i++) {
+              var hm = build._hitMarkers[i];
+              if (Math.abs(hm.x * dpr - mx) < 16 * dpr) {
+                if (window.GNModules && window.GNModules.showPage) window.GNModules.showPage('History');
+                break;
+              }
+            }
+          });
+        }
+      } catch (_) {}
 
       const last = build.markers.filter(m => !m.planned).at(-1);
       const elapsedH = last ? (build.now - last.t) / HOUR_MS : 0;

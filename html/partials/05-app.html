@@ -148,6 +148,20 @@
         <span class="gn-today-weight-link" data-i18n="dashboard.viewProgress">→</span>
       </div>
 
+      <!-- Visual instruments: Delta Cards -->
+      <div class="gn-delta-row" id="gnDeltaRow" hidden>
+        <div class="gn-delta-card" id="gnDeltaWeight" role="button" tabindex="0" aria-label="Weight trend">
+          <div class="gn-delta-kicker" data-i18n="dashboard.deltaWeight">WEIGHT Δ</div>
+          <div class="gn-delta-main"><span id="gnDeltaWeightArrow">→</span> <span id="gnDeltaWeightVal">—</span></div>
+          <svg class="gn-delta-spark" id="gnDeltaWeightSpark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"></svg>
+        </div>
+        <div class="gn-delta-card" id="gnDeltaShot" role="button" tabindex="0" aria-label="Shot timing">
+          <div class="gn-delta-kicker" data-i18n="dashboard.deltaShot">SHOT RHYTHM</div>
+          <div class="gn-delta-main"><span id="gnDeltaShotVal">—</span></div>
+          <div class="gn-delta-bar"><div class="gn-delta-bar-fill" id="gnDeltaShotFill"></div><div class="gn-delta-bar-ghost" id="gnDeltaShotGhost"></div></div>
+        </div>
+      </div>
+
       <div class="sec-hdr" id="phaseCurveHdr"><div class="sec-title" data-i18n-html="phase.phaseCurveTitle">// <span class="a">PHASE_CURVE</span></div></div>
       <div class="card gn-trust-surface-estimate" id="phaseCurveCard" data-trust="estimate">
         <div class="card-title-row"><div class="card-title" data-i18n="phase.estimatedProtocolCurve">ESTIMATED PROTOCOL CURVE</div><button type="button" class="gn-peptide-expand" id="medExpandBtn" onclick="window.GN_PEPTIDE_VIZ && GN_PEPTIDE_VIZ.openOverlay()" hidden data-i18n="peptide.expand">EXPAND ▸</button></div>

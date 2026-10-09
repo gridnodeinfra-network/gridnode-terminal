@@ -2056,6 +2056,7 @@ function renderDashboard() {
   GNOrbit.lastShot = lastShot || null;
   GNOrbit.shots = shots || [];
   renderPhaseStrip(lastShot, shots);
+  renderDeltaCards(shots, weights, lastShot, lastWeight);
   const phase = renderPhase(lastShot, shots);
   renderProtocolCurve(shots, phase);
   refreshNodeHeader({ lastShot, next, phase, currentWeight: lastWeight?.weight });
@@ -2221,6 +2222,63 @@ function renderTodayLastShot(lastShot) {
   } catch (_) {}
 }
 
+
+/* Visual instruments: Delta Cards */
+function renderDeltaCards(shots, weights, lastShot, lastWeight) {
+  var row = document.getElementById('gnDeltaRow');
+  if (!row) return;
+  var showW = weights && weights.length >= 2;
+  var showS = shots && shots.length >= 1;
+  if (!showW && !showS) { row.hidden = true; return; }
+  row.hidden = false;
+  try {
+    var wCard = document.getElementById('gnDeltaWeight');
+    if (wCard) {
+      wCard.style.display = showW ? '' : 'none';
+      if (showW) {
+        var sorted = weights.slice().sort(function(a,b){ return new Date(b.date||b.createdAt||0) - new Date(a.date||a.createdAt||0); });
+        var cur = Number(sorted[0].weight), prev = Number(sorted[1].weight);
+        var delta = cur - prev;
+        var arrow = document.getElementById('gnDeltaWeightArrow');
+        var val = document.getElementById('gnDeltaWeightVal');
+        if (arrow) { arrow.textContent = delta > 0.05 ? '↗' : (delta < -0.05 ? '↘' : '→'); arrow.style.color = delta > 0.05 ? '#c26674' : (delta < -0.05 ? '#63b98b' : 'inherit'); }
+        if (val) val.textContent = (delta >= 0 ? '+' : '') + delta.toFixed(1);
+        var spark = document.getElementById('gnDeltaWeightSpark');
+        if (spark) {
+          var pts = sorted.slice(0, 12).reverse().map(function(w){ return Number(w.weight); }).filter(Number.isFinite);
+          if (pts.length >= 2) {
+            var mn = Math.min.apply(null, pts), mx = Math.max.apply(null, pts), rg = (mx - mn) || 1;
+            var pl = pts.map(function(v, i){ var x = (i / (pts.length - 1) * 100).toFixed(1); var y = (26 - ((v - mn) / rg) * 24).toFixed(1); return x + ',' + y; }).join(' ');
+            spark.innerHTML = '<polyline points="' + pl + '"/>';
+          }
+        }
+        wCard.onclick = function(){ if (window.GNModules && window.GNModules.showPage) window.GNModules.showPage('Progress'); };
+      }
+    }
+    var sCard = document.getElementById('gnDeltaShot');
+    if (sCard) {
+      sCard.style.display = showS ? '' : 'none';
+      if (showS && lastShot) {
+        var elapsed = Math.max(0, (Date.now() - new Date(lastShot.date).getTime()) / 86400000);
+        var val2 = document.getElementById('gnDeltaShotVal');
+        if (val2) val2.textContent = elapsed < 1 ? Math.floor(elapsed * 24) + 'h since' : Math.floor(elapsed) + 'd ' + Math.floor((elapsed % 1) * 24) + 'h since';
+        var avg = 7;
+        if (shots.length >= 2) {
+          var st = shots.slice().sort(function(a,b){ return new Date(a.date) - new Date(b.date); });
+          var gaps = [];
+          for (var i = 1; i < st.length; i++) { var g = (new Date(st[i].date) - new Date(st[i-1].date)) / 86400000; if (g > 0 && g < 60) gaps.push(g); }
+          if (gaps.length) avg = gaps.reduce(function(a,b){return a+b;},0) / gaps.length;
+        }
+        var fill = document.getElementById('gnDeltaShotFill');
+        var ghost = document.getElementById('gnDeltaShotGhost');
+        var pct = Math.min(100, (elapsed / Math.max(avg, 0.5)) * 100);
+        if (fill) fill.style.width = pct + '%';
+        if (ghost) ghost.style.left = '100%';
+        sCard.onclick = function(){ if (window.GNModules && window.GNModules.showPage) window.GNModules.showPage('History'); };
+      }
+    }
+  } catch (_) {}
+}
 
 /* Dose Orbit prototype (2026-10-08): tappable/scrubbable phase ring + Live Phase Strip.
    Visual grammar: solid/glow = recorded, dashed/amber = estimate. */
