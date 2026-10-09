@@ -1912,3 +1912,7 @@ html[data-theme="light"] .gn-compare-row label span, html[data-theme="light"] .g
 #gnMoreOptions .gn-auth-quiet { margin-top: 8px; }
 .gn-auth-footlinks { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 18px; }
 .gn-auth-footsep { color: rgba(130,149,160,.4); font-size: .6rem; }
+
+/* Orbit touch handling */
+#ringWrap { touch-action: pan-y; }
+#ringWrap.gn-orbit-active { touch-action: none; }

@@ -406,8 +406,8 @@ function initDrilldown() {
   var close = document.getElementById('gnDrilldownClose');
   if (!center || !overlay || center.dataset.drillInit) return;
   center.dataset.drillInit = '1';
-  center.addEventListener('click', function(e){
-    e.stopPropagation();
+  function openDd(e){
+    if (e) e.stopPropagation();
     var wrap = document.getElementById('ringWrap');
     if (!wrap || !body) return;
     body.innerHTML = '';
@@ -417,7 +417,8 @@ function initDrilldown() {
     body.appendChild(clone);
     overlay.hidden = false;
     document.body.style.overflow = 'hidden';
-  });
+  }
+  center.addEventListener('click', openDd);
   function closeDd(){ overlay.hidden = true; document.body.style.overflow = ''; if (body) body.innerHTML = ''; }
   if (close) close.addEventListener('click', closeDd);
   overlay.addEventListener('click', function(e){ if (e.target === overlay) closeDd(); });
@@ -500,8 +501,11 @@ function initDoseOrbit() {
   };
   wrap.addEventListener('pointerdown', function(e) {
     if (!GNOrbit.lastShot) return;
+    // Don't hijack taps on the center (drill-down target)
+    var center = document.getElementById('ringCenter');
+    if (center && (center === e.target || center.contains(e.target))) return;
     dragging = true;
-    wrap.setPointerCapture && wrap.setPointerCapture(e.pointerId);
+    try { wrap.setPointerCapture(e.pointerId); } catch (_) {}
     orbitInspect(orbitAngleToCycle(e.clientX, e.clientY));
   });
   wrap.addEventListener('pointermove', onMove);
