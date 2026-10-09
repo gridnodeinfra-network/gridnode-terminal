@@ -2064,5 +2064,17 @@
   "dashboard.retrySync": "REINTENTAR SINCRONIZACIÓN",
   "trust.recorded": "REGISTRADO",
   "trust.estimate": "ESTIMADO",
-  "trust.plan": "PLANIFICADO"
+  "trust.plan": "PLANIFICADO",
+  "dashboard.logShot": "REGISTRAR DOSIS",
+  "dashboard.lastShot": "ÚLTIMA DOSIS",
+  "dashboard.weight": "PESO",
+  "dashboard.viewProgress": "VER PROGRESO →",
+  "dashboard.deltaWeight": "PESO Δ",
+  "dashboard.deltaShot": "RITMO DOSIS",
+  "history.constellation": "CRONOLOGÍA",
+  "vault.siteMapKicker": "// SITIOS DE INYECCIÓN",
+  "phase.stripPast": "PASADO",
+  "phase.stripNow": "AHORA",
+  "phase.stripFuture": "FUTURO",
+  "lab.visuals": "VISUALES"
 }

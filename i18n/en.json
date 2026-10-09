@@ -1997,5 +1997,17 @@
   "dashboard.retrySync": "RETRY SYNC",
   "trust.recorded": "RECORDED",
   "trust.estimate": "ESTIMATE",
-  "trust.plan": "PLAN"
+  "trust.plan": "PLAN",
+  "dashboard.logShot": "LOG SHOT",
+  "dashboard.lastShot": "LAST SHOT",
+  "dashboard.weight": "WEIGHT",
+  "dashboard.viewProgress": "VIEW PROGRESS →",
+  "dashboard.deltaWeight": "WEIGHT Δ",
+  "dashboard.deltaShot": "SHOT RHYTHM",
+  "history.constellation": "TIMELINE",
+  "vault.siteMapKicker": "// INJECTION SITES",
+  "phase.stripPast": "PAST",
+  "phase.stripNow": "NOW",
+  "phase.stripFuture": "FUTURE",
+  "lab.visuals": "VISUALS"
 }
