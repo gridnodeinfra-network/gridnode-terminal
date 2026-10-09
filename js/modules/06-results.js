@@ -291,6 +291,28 @@ function drawWeightTrendChart(canvas, weights, shots, goal) {
   context.lineTo(points.at(-1).x, top + plotHeight);
   context.closePath();
   context.fill();
+  // Ribbon: smoothed trend corridor (±1 std band around moving average)
+  try {
+    var win = Math.max(2, Math.floor(values.length / 5));
+    var smooth = values.map(function(_, i){
+      var s = Math.max(0, i - win), e = Math.min(values.length, i + win + 1);
+      var slice = values.slice(s, e);
+      return slice.reduce(function(a,b){return a+b;},0) / slice.length;
+    });
+    var resid = values.map(function(v, i){ return Math.abs(v - smooth[i]); });
+    var sigma = resid.reduce(function(a,b){return a+b;},0) / (resid.length || 1) || (span * 0.03);
+    context.save();
+    context.fillStyle = 'rgba(0,230,240,.10)';
+    context.beginPath();
+    smooth.forEach(function(v, i){ var x = xFor(i), y = yFor(v + sigma); i ? context.lineTo(x, y) : context.moveTo(x, y); });
+    for (var ri = smooth.length - 1; ri >= 0; ri--) { context.lineTo(xFor(ri), yFor(smooth[ri] - sigma)); }
+    context.closePath(); context.fill();
+    // smoothed center path (dashed = trend estimate)
+    context.setLineDash([6, 4]); context.strokeStyle = 'rgba(0,230,240,.45)'; context.lineWidth = 1.5;
+    context.beginPath();
+    smooth.forEach(function(v, i){ var x = xFor(i), y = yFor(v); i ? context.lineTo(x, y) : context.moveTo(x, y); });
+    context.stroke(); context.restore();
+  } catch (_) {}
 
   context.shadowColor = 'rgba(0, 230, 240, 0.65)'; context.shadowBlur = 14; context.strokeStyle = 'rgba(0, 230, 240, 0.55)'; context.lineWidth = 4; context.beginPath();
   points.forEach((p, i) => { if (!i) context.moveTo(p.x, p.y); else context.lineTo(p.x, p.y); });
@@ -318,6 +340,21 @@ function drawWeightTrendChart(canvas, weights, shots, goal) {
     shotMarkers.push({ x: px, y: py, kind: changed ? 'dose' : 'shot', t: time });
     priorDose = dose;
   });
+  // Shot event lane: ticks on the same time axis below the chart
+  try {
+    var laneY = height - 14;
+    context.strokeStyle = 'rgba(127,127,127,.25)'; context.lineWidth = 1;
+    context.beginPath(); context.moveTo(left, laneY); context.lineTo(width - right, laneY); context.stroke();
+    var t0 = start.getTime(), t1 = end.getTime(), tspan = (t1 - t0) || 1;
+    (shots || []).forEach(function(shot){
+      var st = parseLocalDate(shot.date).getTime();
+      if (!Number.isFinite(st) || st < t0 || st > t1) return;
+      var sx = left + ((st - t0) / tspan) * plotWidth;
+      context.fillStyle = '#00d4ff'; context.shadowColor = '#00d4ff'; context.shadowBlur = 5;
+      context.fillRect(sx - 1.5, laneY - 7, 3, 14);
+      context.shadowBlur = 0;
+    });
+  } catch (_) {}
   const profileStart = Number(getProfile().startWt) || values[0];
   const milestoneMarkers = [];
   [5, 10, 15, 20].forEach(percent => {

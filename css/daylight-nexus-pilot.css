@@ -1901,3 +1901,7 @@ html[data-theme="light"] .gn-compare-row label span, html[data-theme="light"] .g
   pointer-events: none; white-space: nowrap; z-index: 5;
 }
 .gn-chart-scrub-tip[hidden] { display: none !important; }
+
+/* Visual grammar: violet = plan */
+.gn-planned, [data-plan="true"] { --plan-color: #a78bfa; }
+.gn-phase-strip-shot.planned { background: #a78bfa; box-shadow: 0 0 8px rgba(167,139,250,.8); }

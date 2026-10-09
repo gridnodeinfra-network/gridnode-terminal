@@ -171,7 +171,7 @@
       ctx.translate(x, y);
       ctx.rotate(Math.PI / 4);
       if (m.planned) {
-        ctx.strokeStyle = C.dim; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.rect(-3.5, -3.5, 7, 7); ctx.stroke();
+        ctx.strokeStyle = '#a78bfa'; ctx.shadowColor = '#a78bfa'; ctx.shadowBlur = 6; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.rect(-3.5, -3.5, 7, 7); ctx.stroke(); ctx.shadowBlur = 0;
       } else {
         ctx.shadowColor = C.curve; ctx.shadowBlur = 8;
         ctx.fillStyle = C.curve; ctx.fillRect(-3.5, -3.5, 7, 7);
