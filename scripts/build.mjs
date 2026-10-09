@@ -73,7 +73,8 @@ const PKG_VERSION = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
 const htmlPath = join(ROOT, 'index.html');
 const partialOrder = JSON.parse(readFileSync(join(ROOT, 'html/partials/order.json'), 'utf8'));
 const assembledHtml = partialOrder.map(name => readFileSync(join(ROOT, 'html/partials', name), 'utf8')).join('');
-writeFileSync(htmlPath, assembledHtml);
+const generatedBanner = '<!-- GENERATED FILE — DO NOT EDIT. Source lives in html/partials/. Edits here are overwritten on build. -->\n';
+writeFileSync(htmlPath, generatedBanner + assembledHtml);
 console.log(`index.html: assembled from ${partialOrder.length} partials`);
 
 // 1. index.html — stamp every ?v= query (scripts + stylesheets)
