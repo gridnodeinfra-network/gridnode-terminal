@@ -312,35 +312,43 @@ function renderWelcomeView() {
   <p class="gn-auth-view-sub" data-i18n="otp.welcomeSub">Sign in to get to your grid.</p>
   <div id="gnOtpNoAccount"></div>
   <input class="gn-auth-field" id="gnOtpEmail" type="email" inputmode="email" autocomplete="email" data-i18n-ph="otp.emailPlaceholder" placeholder="name@email.com" data-i18n-aria-label="auth.emailAddress" aria-label="Email">
-  <button class="gn-auth-primary" id="gnSendCodeBtn" type="button"><span data-i18n="otp.sendCode">SEND ME A SIGN-IN CODE</span></button>
+  <button class="gn-auth-primary gn-auth-primary-compact" id="gnSendCodeBtn" type="button"><span data-i18n="otp.sendCode">SEND ME A SIGN-IN CODE</span></button>
   <div class="gn-auth-divider"><span data-i18n="otp.orContinueWithEmail">or</span></div>
   <div class="gn-google-button-shell" id="gnGoogleButtonMount" data-i18n-aria-label="auth.continueWithGoogle" aria-label="Continue with Google"></div>
-  <button class="gn-auth-quiet" id="gnPasskeyBtn" type="button" style="display:none">
-    <span data-i18n="otp.usePasskeyInstead">Use a passkey instead</span>
-    <span class="gn-quiet-sub" data-i18n="otp.passkeyHint">Have a passkey? Your device can offer it in the email field.</span>
-  </button>
-  <button class="gn-auth-quiet" id="gnDeviceBtn" type="button">
-    <span data-i18n="auth.continueOnDevice">CONTINUE ON THIS DEVICE</span>
-    <span class="gn-quiet-sub" data-i18n="otp.continueOnDeviceSub">Nothing leaves your phone.</span>
-  </button>
-  <div class="gn-auth-links" style="justify-content:center;margin-top:8px">
-    <button class="gn-auth-link" id="gnNewHereBtn" type="button"><span data-i18n="otp.newHereLink">New here? I HAVE A NODE KEY</span></button>
+  <div class="gn-auth-links" style="justify-content:center;margin-top:10px">
+    <button class="gn-auth-link" id="gnMoreOptionsToggle" type="button" aria-expanded="false"><span data-i18n="otp.moreSignInOptions">More sign-in options</span></button>
   </div>
-  <div class="gn-auth-links" style="justify-content:center;margin-top:2px">
-    <button class="gn-auth-link" id="gnPasswordToggle" type="button"><span data-i18n="otp.usePasswordInstead">Use password instead</span></button>
+  <div id="gnMoreOptions" hidden>
+    <button class="gn-auth-quiet" id="gnPasskeyBtn" type="button" style="display:none">
+      <span data-i18n="otp.usePasskey">Use passkey</span>
+    </button>
+    <button class="gn-auth-quiet" id="gnPasswordToggle" type="button">
+      <span data-i18n="otp.usePasswordInstead">Use password instead</span>
+    </button>
+    <button class="gn-auth-quiet" id="gnDeviceBtn" type="button">
+      <span data-i18n="auth.useLocally">USE LOCALLY</span>
+    </button>
+    <div class="gn-auth-links" style="justify-content:center;margin-top:8px">
+      <button class="gn-auth-link" id="gnNewHereBtn" type="button"><span data-i18n="otp.newHereNodeKey">New to GRID//NODE? ENTER NODE KEY</span></button>
+    </div>
   </div>
   <div id="gnPasswordBlock" ${expand ? '' : 'hidden'}>
     <form id="gnAuthForm" novalidate>
       <input class="gn-auth-field" id="gnAuthEmail" type="email" inputmode="email" autocomplete="email" data-i18n-ph="auth.emailPlaceholder" placeholder="EMAIL ADDRESS" data-i18n-aria-label="auth.emailAddress" aria-label="Email">
       <input class="gn-auth-field" id="gnAuthPassword" type="password" autocomplete="current-password" data-i18n-ph="auth.passwordPlaceholder" placeholder="PASSWORD" data-i18n-aria-label="auth.password" aria-label="Password">
-      <button class="gn-auth-primary" id="gnAuthSubmit" type="submit">SIGN IN TO CLOUD</button>
+      <button class="gn-auth-primary gn-auth-primary-compact" id="gnAuthSubmit" type="submit">SIGN IN TO CLOUD</button>
     </form>
     <div class="gn-auth-links">
       <button class="gn-auth-link" id="gnAuthModeToggle" type="button">CREATE ACCOUNT</button>
       <button class="gn-auth-link" id="gnAuthReset" type="button" data-i18n="auth.resetPassword">RESET PASSWORD</button>
     </div>
   </div>
-  <div class="gn-auth-message" id="gnOtpMsg" role="status" aria-live="polite"></div>`;
+  <div class="gn-auth-message" id="gnOtpMsg" role="status" aria-live="polite"></div>
+  <div class="gn-auth-footlinks">
+    <button class="gn-auth-link" type="button" onclick="openPrivacyPolicy()"><span data-i18n="auth.privacyData">Privacy &amp; data</span></button>
+    <span class="gn-auth-footsep">·</span>
+    <button class="gn-auth-link" type="button" onclick="openMedicalDisclaimer()"><span data-i18n="auth.medicalDisclaimer">Medical disclaimer</span></button>
+  </div>`;
 }
 
 function renderCodeView() {
@@ -406,6 +414,14 @@ function wireAuthView(name) {
     $('gnOtpEmail')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submitWelcomeEmail(); } });
     $('gnDeviceBtn')?.addEventListener('click', () => { requestLegalAccept(enterLocalSession); });
     $('gnNewHereBtn')?.addEventListener('click', () => showAuthView('newhere'));
+    $('gnMoreOptionsToggle')?.addEventListener('click', () => {
+      const panel = $('gnMoreOptions');
+      const toggle = $('gnMoreOptionsToggle');
+      if (!panel || !toggle) return;
+      const open = panel.hasAttribute('hidden');
+      if (open) { panel.removeAttribute('hidden'); toggle.setAttribute('aria-expanded', 'true'); }
+      else { panel.setAttribute('hidden', ''); toggle.setAttribute('aria-expanded', 'false'); }
+    });
     $('gnPasswordToggle')?.addEventListener('click', () => {
       const block = $('gnPasswordBlock');
       if (!block) return;

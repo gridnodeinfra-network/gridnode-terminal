@@ -1905,3 +1905,10 @@ html[data-theme="light"] .gn-compare-row label span, html[data-theme="light"] .g
 /* Visual grammar: violet = plan */
 .gn-planned, [data-plan="true"] { --plan-color: #a78bfa; }
 .gn-phase-strip-shot.planned { background: #a78bfa; box-shadow: 0 0 8px rgba(167,139,250,.8); }
+
+/* Sign-in redesign (ChatGPT collab 2026-10-08): one job per screen */
+.gn-auth-primary-compact { min-height: 60px !important; box-shadow: 0 0 14px rgba(255,59,59,.35) !important; }
+#gnMoreOptions { margin-top: 6px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.07); }
+#gnMoreOptions .gn-auth-quiet { margin-top: 8px; }
+.gn-auth-footlinks { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 18px; }
+.gn-auth-footsep { color: rgba(130,149,160,.4); font-size: .6rem; }

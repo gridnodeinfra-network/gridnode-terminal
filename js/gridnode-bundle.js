@@ -5975,6 +5975,7 @@ function exportBackup() {
 
 /* v0.15.42: dedicated bilingual privacy policy overlay, reachable from the
  * landing footer and from VAULT → YOUR DATA. */
+window.openMedicalDisclaimer = openMedicalDisclaimer;
 function openPrivacyPolicy() {
   const overlay = $('gnPrivacyOverlay');
   if (!overlay) return;
@@ -5982,6 +5983,9 @@ function openPrivacyPolicy() {
   window.GN_I18N?.applyTo?.(overlay);
   overlay.classList.add('active');
   overlay.querySelector('.gn-privacy-close')?.focus();
+}
+function openMedicalDisclaimer() {
+  showToast(tx('auth.medicalDisclaimerText', 'GRID//NODE is a personal tracking tool, not medical advice. Always consult your provider.'), false);
 }
 function closePrivacyPolicy() { $('gnPrivacyOverlay')?.classList.remove('active', 'gn-ownership'); }
 
@@ -6953,7 +6957,7 @@ document.addEventListener('gn:shot-saved', () => {
   if (h) { try { h.fire([10, 60, 20]); } catch (_) {} }
 });
 
-window.GNModules=Object.freeze({getProfile:getProfile,getProfileForEvidence:getProfileForEvidence,selectState:selectState,moduleState:moduleState,refreshNodeHeader:refreshNodeHeader,showScreen:showScreen,showPage:showPage,refreshAll:refreshAll,loadApp:loadApp,computeTotalChange:computeTotalChange,saveProfileMed:saveProfileMed,saveProfileMetrics:saveProfileMetrics,calcAndShowBMI:calcAndShowBMI,toggleSelect:toggleSelect,selectOpt:selectOpt,retryCloudHydration:retryCloudHydration,showPhasesModal:showPhasesModal,closePhases:closePhases,renderShots:renderShots,setShotHistoryView:setShotHistoryView,setHistoryType:setHistoryType,scannerSkinTone:scannerSkinTone,setScannerSkinTone:setScannerSkinTone,setScannerMode:setScannerMode,selectScannerLocation:selectScannerLocation,renderScanner:renderScanner,openLogModal:openLogModal,closeLog:closeLog,cancelLogClose:cancelLogClose,editShot:editShot,openArchiveConfirm:openArchiveConfirm,cancelArchiveShot:cancelArchiveShot,confirmArchiveShot:confirmArchiveShot,restoreArchivedShot:restoreArchivedShot,openPermanentDeleteConfirm:openPermanentDeleteConfirm,cancelPermanentDeleteShot:cancelPermanentDeleteShot,confirmPermanentDeleteShot:confirmPermanentDeleteShot,saveShot:saveShot,openFutureTimestampConfirm:openFutureTimestampConfirm,closeFutureTimestampConfirm:closeFutureTimestampConfirm,cancelFutureTimestampSave:cancelFutureTimestampSave,confirmFutureTimestampSave:confirmFutureTimestampSave,handleShotFab:handleShotFab,openQuickConfirm:openQuickConfirm,confirmQuickShot:confirmQuickShot,quickConfirmDetails:quickConfirmDetails,openWeightModal:openWeightModal,closeWt:closeWt,setWeightUnit:setWeightUnit,saveWt:saveWt,renderResults:renderResults,setResultsView:setResultsView,setRange:setRange,setWtRange:setWtRange,showLabSeg:showLabSeg,showYouSeg:showYouSeg,openLabTool:openLabTool,closeLabTool:closeLabTool,exportInventory:exportInventory,updateDoseProjection:updateDoseProjection,saveCalculatorReference:saveCalculatorReference,renderLab:renderLab,updateSyr:updateSyr,updateRecon:updateRecon,updateSupply:updateSupply,setMeasurementUnit:setMeasurementUnit,saveMeasurements:saveMeasurements,replayGuidedTour:replayGuidedTour,openDeleteLocalData:openDeleteLocalData,closeDeleteLocalData:closeDeleteLocalData,updateDeleteLocalButton:updateDeleteLocalButton,confirmDeleteLocalData:confirmDeleteLocalData,openDeleteCloudAccount:openDeleteCloudAccount,closeDeleteCloudAccount:closeDeleteCloudAccount,confirmDeleteCloudAccount:confirmDeleteCloudAccount,renderProfile:renderProfile,dismissSystemUpdate:dismissSystemUpdate,openSystemUpdate:openSystemUpdate,exportCSV:exportCSV,exportBackup:exportBackup,openPrivacyPolicy:openPrivacyPolicy,closePrivacyPolicy:closePrivacyPolicy,openDataOwnership:openDataOwnership,openTermsOfService:openTermsOfService,closeTermsOfService:closeTermsOfService,prepareCSVImport:prepareCSVImport,handleCSVImportFile:handleCSVImportFile,openImportDialog:openImportDialog,closeImportDialog:closeImportDialog,handleUnifiedCsvSelection:handleUnifiedCsvSelection,handleBackupImportFile:handleBackupImportFile,confirmBackupImport:confirmBackupImport,cancelCSVImport:cancelCSVImport,confirmCSVImport:confirmCSVImport,parseShotsyJSON:parseShotsyJSON,handleShotsyJSONFile:handleShotsyJSONFile,toggleImportForce:toggleImportForce,previewCSVImportForTesting:previewCSVImportForTesting,renderCalendar:renderCalendar,calPrev:calPrev,calNext:calNext,calDayClick:calDayClick,openArsenalMod:openArsenalMod,closeArs:closeArs,saveArs:saveArs,requestLoadoutRemove:requestLoadoutRemove,cancelLoadoutRemove:cancelLoadoutRemove,confirmLoadoutRemove:confirmLoadoutRemove,formatTime24:formatTime24,formatTime12:formatTime12,gnSetShotMeridiem:gnSetShotMeridiem,gnShotClockLiveFormat:gnShotClockLiveFormat,gnNormalizeShotClockField:gnNormalizeShotClockField,gnWeightDateInput:gnWeightDateInput,gnWeightTimeInput:gnWeightTimeInput,gnOpenShotDatePicker:gnOpenShotDatePicker,gnCloseShotDatePicker:gnCloseShotDatePicker,gnDatePickerMove:gnDatePickerMove,gnSelectPickerDate:gnSelectPickerDate,gnSetShotDateFromPicker:gnSetShotDateFromPicker,gnSetShotDateValue:gnSetShotDateValue,gnSetShotTimeValue:gnSetShotTimeValue,gnMedRevealGroup:gnMedRevealGroup,updatePills:updatePills,selPill:selPill,initModules:initModules,trustBadge:trustBadge,approxPct:approxPct,approxNum:approxNum});
+window.GNModules=Object.freeze({getProfile:getProfile,getProfileForEvidence:getProfileForEvidence,selectState:selectState,moduleState:moduleState,refreshNodeHeader:refreshNodeHeader,showScreen:showScreen,showPage:showPage,refreshAll:refreshAll,loadApp:loadApp,computeTotalChange:computeTotalChange,saveProfileMed:saveProfileMed,saveProfileMetrics:saveProfileMetrics,calcAndShowBMI:calcAndShowBMI,toggleSelect:toggleSelect,selectOpt:selectOpt,retryCloudHydration:retryCloudHydration,showPhasesModal:showPhasesModal,closePhases:closePhases,renderShots:renderShots,setShotHistoryView:setShotHistoryView,setHistoryType:setHistoryType,scannerSkinTone:scannerSkinTone,setScannerSkinTone:setScannerSkinTone,setScannerMode:setScannerMode,selectScannerLocation:selectScannerLocation,renderScanner:renderScanner,openLogModal:openLogModal,closeLog:closeLog,cancelLogClose:cancelLogClose,editShot:editShot,openArchiveConfirm:openArchiveConfirm,cancelArchiveShot:cancelArchiveShot,confirmArchiveShot:confirmArchiveShot,restoreArchivedShot:restoreArchivedShot,openPermanentDeleteConfirm:openPermanentDeleteConfirm,cancelPermanentDeleteShot:cancelPermanentDeleteShot,confirmPermanentDeleteShot:confirmPermanentDeleteShot,saveShot:saveShot,openFutureTimestampConfirm:openFutureTimestampConfirm,closeFutureTimestampConfirm:closeFutureTimestampConfirm,cancelFutureTimestampSave:cancelFutureTimestampSave,confirmFutureTimestampSave:confirmFutureTimestampSave,handleShotFab:handleShotFab,openQuickConfirm:openQuickConfirm,confirmQuickShot:confirmQuickShot,quickConfirmDetails:quickConfirmDetails,openWeightModal:openWeightModal,closeWt:closeWt,setWeightUnit:setWeightUnit,saveWt:saveWt,renderResults:renderResults,setResultsView:setResultsView,setRange:setRange,setWtRange:setWtRange,showLabSeg:showLabSeg,showYouSeg:showYouSeg,openLabTool:openLabTool,closeLabTool:closeLabTool,exportInventory:exportInventory,updateDoseProjection:updateDoseProjection,saveCalculatorReference:saveCalculatorReference,renderLab:renderLab,updateSyr:updateSyr,updateRecon:updateRecon,updateSupply:updateSupply,setMeasurementUnit:setMeasurementUnit,saveMeasurements:saveMeasurements,replayGuidedTour:replayGuidedTour,openDeleteLocalData:openDeleteLocalData,closeDeleteLocalData:closeDeleteLocalData,updateDeleteLocalButton:updateDeleteLocalButton,confirmDeleteLocalData:confirmDeleteLocalData,openDeleteCloudAccount:openDeleteCloudAccount,closeDeleteCloudAccount:closeDeleteCloudAccount,confirmDeleteCloudAccount:confirmDeleteCloudAccount,renderProfile:renderProfile,dismissSystemUpdate:dismissSystemUpdate,openSystemUpdate:openSystemUpdate,exportCSV:exportCSV,exportBackup:exportBackup,openPrivacyPolicy:openPrivacyPolicy,openMedicalDisclaimer:openMedicalDisclaimer,closePrivacyPolicy:closePrivacyPolicy,openDataOwnership:openDataOwnership,openTermsOfService:openTermsOfService,closeTermsOfService:closeTermsOfService,prepareCSVImport:prepareCSVImport,handleCSVImportFile:handleCSVImportFile,openImportDialog:openImportDialog,closeImportDialog:closeImportDialog,handleUnifiedCsvSelection:handleUnifiedCsvSelection,handleBackupImportFile:handleBackupImportFile,confirmBackupImport:confirmBackupImport,cancelCSVImport:cancelCSVImport,confirmCSVImport:confirmCSVImport,parseShotsyJSON:parseShotsyJSON,handleShotsyJSONFile:handleShotsyJSONFile,toggleImportForce:toggleImportForce,previewCSVImportForTesting:previewCSVImportForTesting,renderCalendar:renderCalendar,calPrev:calPrev,calNext:calNext,calDayClick:calDayClick,openArsenalMod:openArsenalMod,closeArs:closeArs,saveArs:saveArs,requestLoadoutRemove:requestLoadoutRemove,cancelLoadoutRemove:cancelLoadoutRemove,confirmLoadoutRemove:confirmLoadoutRemove,formatTime24:formatTime24,formatTime12:formatTime12,gnSetShotMeridiem:gnSetShotMeridiem,gnShotClockLiveFormat:gnShotClockLiveFormat,gnNormalizeShotClockField:gnNormalizeShotClockField,gnWeightDateInput:gnWeightDateInput,gnWeightTimeInput:gnWeightTimeInput,gnOpenShotDatePicker:gnOpenShotDatePicker,gnCloseShotDatePicker:gnCloseShotDatePicker,gnDatePickerMove:gnDatePickerMove,gnSelectPickerDate:gnSelectPickerDate,gnSetShotDateFromPicker:gnSetShotDateFromPicker,gnSetShotDateValue:gnSetShotDateValue,gnSetShotTimeValue:gnSetShotTimeValue,gnMedRevealGroup:gnMedRevealGroup,updatePills:updatePills,selPill:selPill,initModules:initModules,trustBadge:trustBadge,approxPct:approxPct,approxNum:approxNum});
 
 const modules=window.GNModules;
 
@@ -7266,35 +7270,43 @@ function renderWelcomeView() {
   <p class="gn-auth-view-sub" data-i18n="otp.welcomeSub">Sign in to get to your grid.</p>
   <div id="gnOtpNoAccount"></div>
   <input class="gn-auth-field" id="gnOtpEmail" type="email" inputmode="email" autocomplete="email" data-i18n-ph="otp.emailPlaceholder" placeholder="name@email.com" data-i18n-aria-label="auth.emailAddress" aria-label="Email">
-  <button class="gn-auth-primary" id="gnSendCodeBtn" type="button"><span data-i18n="otp.sendCode">SEND ME A SIGN-IN CODE</span></button>
+  <button class="gn-auth-primary gn-auth-primary-compact" id="gnSendCodeBtn" type="button"><span data-i18n="otp.sendCode">SEND ME A SIGN-IN CODE</span></button>
   <div class="gn-auth-divider"><span data-i18n="otp.orContinueWithEmail">or</span></div>
   <div class="gn-google-button-shell" id="gnGoogleButtonMount" data-i18n-aria-label="auth.continueWithGoogle" aria-label="Continue with Google"></div>
-  <button class="gn-auth-quiet" id="gnPasskeyBtn" type="button" style="display:none">
-    <span data-i18n="otp.usePasskeyInstead">Use a passkey instead</span>
-    <span class="gn-quiet-sub" data-i18n="otp.passkeyHint">Have a passkey? Your device can offer it in the email field.</span>
-  </button>
-  <button class="gn-auth-quiet" id="gnDeviceBtn" type="button">
-    <span data-i18n="auth.continueOnDevice">CONTINUE ON THIS DEVICE</span>
-    <span class="gn-quiet-sub" data-i18n="otp.continueOnDeviceSub">Nothing leaves your phone.</span>
-  </button>
-  <div class="gn-auth-links" style="justify-content:center;margin-top:8px">
-    <button class="gn-auth-link" id="gnNewHereBtn" type="button"><span data-i18n="otp.newHereLink">New here? I HAVE A NODE KEY</span></button>
+  <div class="gn-auth-links" style="justify-content:center;margin-top:10px">
+    <button class="gn-auth-link" id="gnMoreOptionsToggle" type="button" aria-expanded="false"><span data-i18n="otp.moreSignInOptions">More sign-in options</span></button>
   </div>
-  <div class="gn-auth-links" style="justify-content:center;margin-top:2px">
-    <button class="gn-auth-link" id="gnPasswordToggle" type="button"><span data-i18n="otp.usePasswordInstead">Use password instead</span></button>
+  <div id="gnMoreOptions" hidden>
+    <button class="gn-auth-quiet" id="gnPasskeyBtn" type="button" style="display:none">
+      <span data-i18n="otp.usePasskey">Use passkey</span>
+    </button>
+    <button class="gn-auth-quiet" id="gnPasswordToggle" type="button">
+      <span data-i18n="otp.usePasswordInstead">Use password instead</span>
+    </button>
+    <button class="gn-auth-quiet" id="gnDeviceBtn" type="button">
+      <span data-i18n="auth.useLocally">USE LOCALLY</span>
+    </button>
+    <div class="gn-auth-links" style="justify-content:center;margin-top:8px">
+      <button class="gn-auth-link" id="gnNewHereBtn" type="button"><span data-i18n="otp.newHereNodeKey">New to GRID//NODE? ENTER NODE KEY</span></button>
+    </div>
   </div>
   <div id="gnPasswordBlock" ${expand ? '' : 'hidden'}>
     <form id="gnAuthForm" novalidate>
       <input class="gn-auth-field" id="gnAuthEmail" type="email" inputmode="email" autocomplete="email" data-i18n-ph="auth.emailPlaceholder" placeholder="EMAIL ADDRESS" data-i18n-aria-label="auth.emailAddress" aria-label="Email">
       <input class="gn-auth-field" id="gnAuthPassword" type="password" autocomplete="current-password" data-i18n-ph="auth.passwordPlaceholder" placeholder="PASSWORD" data-i18n-aria-label="auth.password" aria-label="Password">
-      <button class="gn-auth-primary" id="gnAuthSubmit" type="submit">SIGN IN TO CLOUD</button>
+      <button class="gn-auth-primary gn-auth-primary-compact" id="gnAuthSubmit" type="submit">SIGN IN TO CLOUD</button>
     </form>
     <div class="gn-auth-links">
       <button class="gn-auth-link" id="gnAuthModeToggle" type="button">CREATE ACCOUNT</button>
       <button class="gn-auth-link" id="gnAuthReset" type="button" data-i18n="auth.resetPassword">RESET PASSWORD</button>
     </div>
   </div>
-  <div class="gn-auth-message" id="gnOtpMsg" role="status" aria-live="polite"></div>`;
+  <div class="gn-auth-message" id="gnOtpMsg" role="status" aria-live="polite"></div>
+  <div class="gn-auth-footlinks">
+    <button class="gn-auth-link" type="button" onclick="openPrivacyPolicy()"><span data-i18n="auth.privacyData">Privacy &amp; data</span></button>
+    <span class="gn-auth-footsep">·</span>
+    <button class="gn-auth-link" type="button" onclick="openMedicalDisclaimer()"><span data-i18n="auth.medicalDisclaimer">Medical disclaimer</span></button>
+  </div>`;
 }
 
 function renderCodeView() {
@@ -7360,6 +7372,14 @@ function wireAuthView(name) {
     $('gnOtpEmail')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submitWelcomeEmail(); } });
     $('gnDeviceBtn')?.addEventListener('click', () => { requestLegalAccept(enterLocalSession); });
     $('gnNewHereBtn')?.addEventListener('click', () => showAuthView('newhere'));
+    $('gnMoreOptionsToggle')?.addEventListener('click', () => {
+      const panel = $('gnMoreOptions');
+      const toggle = $('gnMoreOptionsToggle');
+      if (!panel || !toggle) return;
+      const open = panel.hasAttribute('hidden');
+      if (open) { panel.removeAttribute('hidden'); toggle.setAttribute('aria-expanded', 'true'); }
+      else { panel.setAttribute('hidden', ''); toggle.setAttribute('aria-expanded', 'false'); }
+    });
     $('gnPasswordToggle')?.addEventListener('click', () => {
       const block = $('gnPasswordBlock');
       if (!block) return;

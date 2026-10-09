@@ -2076,5 +2076,11 @@
   "phase.stripPast": "PASADO",
   "phase.stripNow": "AHORA",
   "phase.stripFuture": "FUTURO",
-  "lab.visuals": "VISUALES"
+  "lab.visuals": "VISUALES",
+  "otp.moreSignInOptions": "Más opciones de acceso",
+  "otp.usePasskey": "Usar passkey",
+  "otp.newHereNodeKey": "¿Nuevo en GRID//NODE? INGRESAR NODE KEY",
+  "auth.useLocally": "USAR LOCALMENTE",
+  "auth.privacyData": "Privacidad y datos",
+  "auth.medicalDisclaimer": "Aviso médico"
 }

@@ -132,6 +132,7 @@ export function exportBackup() {
 
 /* v0.15.42: dedicated bilingual privacy policy overlay, reachable from the
  * landing footer and from VAULT → YOUR DATA. */
+window.openMedicalDisclaimer = openMedicalDisclaimer;
 export function openPrivacyPolicy() {
   const overlay = $('gnPrivacyOverlay');
   if (!overlay) return;
@@ -139,6 +140,9 @@ export function openPrivacyPolicy() {
   window.GN_I18N?.applyTo?.(overlay);
   overlay.classList.add('active');
   overlay.querySelector('.gn-privacy-close')?.focus();
+}
+export function openMedicalDisclaimer() {
+  showToast(tx('auth.medicalDisclaimerText', 'GRID//NODE is a personal tracking tool, not medical advice. Always consult your provider.'), false);
 }
 export function closePrivacyPolicy() { $('gnPrivacyOverlay')?.classList.remove('active', 'gn-ownership'); }
 

@@ -2009,5 +2009,11 @@
   "phase.stripPast": "PAST",
   "phase.stripNow": "NOW",
   "phase.stripFuture": "FUTURE",
-  "lab.visuals": "VISUALS"
+  "lab.visuals": "VISUALS",
+  "otp.moreSignInOptions": "More sign-in options",
+  "otp.usePasskey": "Use passkey",
+  "otp.newHereNodeKey": "New to GRID//NODE? ENTER NODE KEY",
+  "auth.useLocally": "USE LOCALLY",
+  "auth.privacyData": "Privacy & data",
+  "auth.medicalDisclaimer": "Medical disclaimer"
 }
