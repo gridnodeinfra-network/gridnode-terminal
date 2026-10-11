@@ -644,7 +644,7 @@
 
   function pollUpgrades() {
     const wtTime = document.getElementById('wtTime');
-    if (wtTime && wtTime.type !== 'time') { wtTime.type = 'time'; wtTime.inputMode = 'none'; }
+    if (wtTime && wtTime.type !== 'time') { wtTime.type = 'time'; wtTime.inputMode = 'none'; wtTime.removeAttribute('oninput'); /* mask conflicts with native picker */ }
     upgradeDropdownSemantics();
     wireOverlayFocus();
     wireShotDraft();

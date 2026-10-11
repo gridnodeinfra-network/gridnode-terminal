@@ -1791,11 +1791,12 @@ function showPage(name, navElement) {
     nav.classList.add('active');
     nav.setAttribute('aria-current', 'page');
   }
-  $('scrollBody')?.scrollTo({ top: 0, behavior: 'auto' });
   if (name === 'Log') renderShots();
   if (name === 'Results') renderResults();
   if (name === 'Lab') renderLab();
   if (name === 'Profile') renderProfile();
+  /* MOBILE-FIRST perf: scroll after render to avoid double full-document layout */
+  $('scrollBody')?.scrollTo({ top: 0, behavior: 'auto' });
   document.dispatchEvent(new CustomEvent('gn:pagechange', { detail: { name, previousPage } }));
 }
 
@@ -2331,6 +2332,11 @@ function initDrilldown() {
   });
   function closeDd(){ overlay.hidden = true; document.body.style.overflow = ''; if (body) body.innerHTML = ''; }
   if (close) close.addEventListener('click', closeDd);
+  /* MOBILE-FIRST: close on browser back (popstate), consistent with log sheet */
+  window.addEventListener('popstate', function(){
+    var ov = document.getElementById('gnDrilldown');
+    if (ov && !ov.hidden) { ov.hidden = true; document.body.style.overflow = ''; var b = document.getElementById('gnDrilldownBody'); if (b) b.innerHTML = ''; }
+  });
   overlay.addEventListener('click', function(e){ if (e.target === overlay) closeDd(); });
 }
 
@@ -2402,6 +2408,9 @@ function initDoseOrbit() {
   var wrap = document.getElementById('ringWrap');
   if (!wrap || wrap.dataset.orbitInit) return;
   wrap.dataset.orbitInit = '1';
+  /* MOBILE-FIRST: allow horizontal orbit drag without the page stealing vertical scroll.
+     pan-y lets vertical scroll pass through; horizontal movement stays with the ring. */
+  try { wrap.style.touchAction = 'pan-y'; } catch (_) {}
   var dragging = false;
   var onMove = function(e) {
     if (!dragging || !GNOrbit.lastShot) return;
@@ -2879,7 +2888,7 @@ function renderConstellation() {
       var x = ((t - mn) / span * 96 + 2).toFixed(2);
       var lane = e.type === 'shot' ? '50%' : (e.type === 'weight' ? '28%' : '72%');
       var cls = e.type === 'shot' ? 'shot' : (e.type === 'weight' ? 'weight' : 'lab');
-      return '<div class="gn-const-node ' + cls + '" style="left:' + x + '%;top:' + lane + '" data-const-idx="' + i + '" title="' + e.type + '"></div>';
+      return '<div class="gn-const-node ' + cls + '" style="left:' + x + '%;top:' + lane + '" data-const-idx="' + i + '" title="' + e.type + '" role="button" tabindex="0" aria-label="' + e.type + ' event"></div>';
     }).join('');
     nodes.querySelectorAll('.gn-const-node').forEach(function(n){
       n.addEventListener('click', function(){

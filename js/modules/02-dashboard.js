@@ -440,6 +440,11 @@ function initDrilldown() {
   });
   function closeDd(){ overlay.hidden = true; document.body.style.overflow = ''; if (body) body.innerHTML = ''; }
   if (close) close.addEventListener('click', closeDd);
+  /* MOBILE-FIRST: close on browser back (popstate), consistent with log sheet */
+  window.addEventListener('popstate', function(){
+    var ov = document.getElementById('gnDrilldown');
+    if (ov && !ov.hidden) { ov.hidden = true; document.body.style.overflow = ''; var b = document.getElementById('gnDrilldownBody'); if (b) b.innerHTML = ''; }
+  });
   overlay.addEventListener('click', function(e){ if (e.target === overlay) closeDd(); });
 }
 
@@ -511,6 +516,9 @@ function initDoseOrbit() {
   var wrap = document.getElementById('ringWrap');
   if (!wrap || wrap.dataset.orbitInit) return;
   wrap.dataset.orbitInit = '1';
+  /* MOBILE-FIRST: allow horizontal orbit drag without the page stealing vertical scroll.
+     pan-y lets vertical scroll pass through; horizontal movement stays with the ring. */
+  try { wrap.style.touchAction = 'pan-y'; } catch (_) {}
   var dragging = false;
   var onMove = function(e) {
     if (!dragging || !GNOrbit.lastShot) return;

@@ -186,7 +186,7 @@ body.gn-private-active { overflow: hidden; overscroll-behavior: none; }
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); /* MOBILE-FIRST: was 84px, clipped 61px at 360w */
 }
 .bottom-nav { padding-bottom: env(safe-area-inset-bottom, 0px) !important; }
 :is(button, [role="button"], .nav-item, summary, label) { -webkit-tap-highlight-color: rgba(0, 212, 255, .13); touch-action: manipulation; }

@@ -171,10 +171,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 
 /* SCANLINES */
 .scanlines{position:fixed;inset:0;z-index:9999;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.02) 3px,rgba(0,0,0,0.02) 4px);opacity:.7}
-.scan-sweep{position:fixed;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.028),transparent);z-index:9998;pointer-events:none;animation:sweepDown 14s linear infinite;opacity:.55}
+.scan-sweep{position:fixed;left:0;right:0;top:0;height:1px;will-change:transform;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.028),transparent);z-index:9998;pointer-events:none;animation:sweepDown 14s linear infinite;opacity:.55}
 
 /* ANIMATIONS */
-@keyframes sweepDown{0%{top:-1%}100%{top:101%}}
+@keyframes sweepDown{0%{transform:translateY(-10px)}100%{transform:translateY(110vh)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes fadeInUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
@@ -4210,7 +4210,7 @@ function scrollLandingTo(id) {
 <div class="landing-product-preview" role="group" aria-label="GRID//NODE live product preview">
   <div class="landing-preview-frame">
     <div class="landing-preview-bar"><span class="landing-preview-dot"></span><span class="landing-preview-dot"></span><span class="landing-preview-dot"></span><span class="landing-preview-tag">GRID//NODE — LIVE</span></div>
-    <img class="landing-preview-shot" id="landingPreviewShot" src="assets/preview-dashboard.png" data-preview-src-en="assets/preview-dashboard.png" data-preview-src-es="assets/preview-dashboard-es.png" alt="GRID//NODE dashboard — SHOTS, Phase Engine, RESULTS" loading="eager" fetchpriority="high" decoding="async">
+    <img class="landing-preview-shot" id="landingPreviewShot" src="assets/preview-dashboard.png" width="390" height="844" data-preview-src-en="assets/preview-dashboard.png" data-preview-src-es="assets/preview-dashboard-es.png" alt="GRID//NODE dashboard — SHOTS, Phase Engine, RESULTS" loading="eager" fetchpriority="high" decoding="async">
   </div>
   <p class="landing-preview-caption" data-i18n="landing.previewCaption">A functioning biotech command system — protocol logs, phase estimates, and trends on your device.</p>
 </div>
@@ -4219,7 +4219,7 @@ function scrollLandingTo(id) {
 
     <section class="landing-section landing-preem" id="meetPreem">
       <div class="landing-preem-frame">
-        <img class="landing-preem-shot" src="assets/brand/preem-gridnode-hero.webp" alt="PREEM, the GRID//NODE wolverine" loading="lazy" decoding="async">
+        <img class="landing-preem-shot" src="assets/brand/preem-gridnode-hero.webp" width="800" height="600" alt="PREEM, the GRID//NODE wolverine" loading="lazy" decoding="async">
       </div>
       <div class="landing-preem-copy">
         <p class="landing-kicker" data-i18n="landing.preemKicker">// MEET PREEM //</p>
@@ -5088,41 +5088,40 @@ function scrollLandingTo(id) {
   </div>
 
   
-  <div style="
-    background:#0e0e16;background:var(--panel, #0e0e16);border:1px solid rgba(255,255,255,0.07);
-    border-radius:8px;padding:20px;margin-bottom:20px;
-    display:flex;align-items:center;gap:16px;
-  ">
-    
-    <div id="profAvaWrap" style="
-      width:64px;height:64px;border-radius:50%;
-      border:2px solid #00d4ff;overflow:hidden;flex-shrink:0;
-      box-shadow:0 0 14px rgba(0,212,255,0.3);
-      background:#0a0a14;background:var(--surface, #0a0a14);display:flex;align-items:center;justify-content:center;
-    ">
-      <img id="profAvaIcon" src="/assets/brand/icons/pwa-512.png" alt="GRID//NODE NODE mark" width="64" height="64" decoding="async">
+  <div id="gnVaultSummary" class="gn-vault-summary">
+    <div class="gn-vault-idrow">
+      <div id="profAvaWrap" class="gn-vault-avatar">
+        <img id="profAvaIcon" src="/assets/brand/icons/pwa-512.png" alt="GRID//NODE NODE mark" width="64" height="64" decoding="async">
+      </div>
+      <div class="gn-vault-idtxt">
+        <div id="profNameTxt" class="gn-vault-name">PROFILE</div>
+        <div id="profEmail" class="gn-vault-email"></div>
+        <div class="gn-vault-ver">GRID//NODE <span id="gnProfileHeroVersion"></span></div>
+      </div>
+      <button type="button" class="gn-vault-close" onclick="closeProfileHub()" aria-label="Close profile" data-i18n-aria-label="vault.closeHub">&#10005;</button>
     </div>
-    
-    <div style="flex:1;min-width:0">
-      <div id="profNameTxt" style="
-        font-family:'Orbitron',monospace;font-size:1rem;
-        color:#eeeef5;letter-spacing:2px;margin-bottom:3px;
-        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-      ">PROFILE</div>
-      <div id="profEmail" style="
-        font-family:'Share Tech Mono',monospace;font-size:0.62rem;
-        color:var(--text-dim);letter-spacing:1px;margin-bottom:3px;
-        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-      "></div>
-      <div style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);letter-spacing:2px">
-        GRID//NODE <span id="gnProfileHeroVersion"></span>
+    <div class="gn-vault-statusline">
+      <span id="gnProfileSync" class="gn-vault-pill">LOCAL MODE</span>
+    </div>
+    <div class="gn-vault-stats">
+      <div class="gn-vault-stat">
+        <span class="gn-vault-stat-label" data-i18n="vault.statMedication">MEDICATION</span>
+        <b id="gnProfileMedication" data-i18n="vault.notEntered">Not entered</b>
+      </div>
+      <div class="gn-vault-stat">
+        <span class="gn-vault-stat-label" data-i18n="vault.statWeight">LATEST WEIGHT</span>
+        <b id="gnProfileWeight">&mdash;</b>
       </div>
     </div>
   </div>
 
-  
-  <div id="profMedSection" style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:3px;margin-bottom:10px" data-i18n="profile.sectionMedication">// MEDICATION</div>
-  <div style="background:#0e0e16;background:var(--panel, #0e0e16);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:16px;margin-bottom:20px">
+  <details class="gn-vault-card" id="gnMedCard">
+    <summary class="gn-vault-card-head">
+      <span class="gn-vault-card-ico" aria-hidden="true"><svg><use href="#gn-syringe"></use></svg></span>
+      <span class="gn-vault-card-titles"><b data-i18n="profile.sectionMedication">// MEDICATION</b><small id="gnMedCardSummary" class="gn-vault-card-sub">&nbsp;</small></span>
+      <span class="gn-vault-chev" aria-hidden="true">&rsaquo;</span>
+    </summary>
+    <div class="gn-vault-card-body">
     <div class="form-group">
       <div class="form-label" id="cpMedProfLabel" data-i18n="shot.medication">MEDICATION</div>
       <div class="cp-select" id="cpMedProf">
@@ -5189,11 +5188,16 @@ function scrollLandingTo(id) {
         </div>
       </div>
     </div>
-  </div>
+    </div>
+  </details>
 
-  
-  <div id="profBodySection" style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:3px;margin-bottom:10px" data-i18n="profile.sectionBody">// BODY METRICS</div>
-  <div style="background:#0e0e16;background:var(--panel, #0e0e16);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:16px;margin-bottom:20px">
+  <details class="gn-vault-card" id="gnBodyCard">
+    <summary class="gn-vault-card-head">
+      <span class="gn-vault-card-ico" aria-hidden="true"><svg><use href="#gn-biometric-gauge"></use></svg></span>
+      <span class="gn-vault-card-titles"><b data-i18n="profile.sectionBody">// BODY METRICS</b><small id="gnProfileBody" class="gn-vault-card-sub" data-i18n="vault.notEntered">Not entered</small></span>
+      <span class="gn-vault-chev" aria-hidden="true">&rsaquo;</span>
+    </summary>
+    <div class="gn-vault-card-body">
     <div class="form-row">
       <div class="form-group">
         <label class="form-label" for="profHtFt" data-i18n="profile.heightFt">HEIGHT (ft)</label>
@@ -5240,7 +5244,8 @@ function scrollLandingTo(id) {
       <span id="profBMIVal" style="font-family:'Orbitron',monospace;font-size:1.4rem;font-weight:700;color:#00d4ff">—</span>
       <span id="profBMICat" style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:#9898b0;margin-left:8px;letter-spacing:2px"></span>
     </div>
-  </div>
+    </div>
+  </details>
 
   
     </div></div>

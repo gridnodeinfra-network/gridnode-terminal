@@ -703,6 +703,8 @@ html[data-theme="light"] .gn-whatsnew-history { color: var(--text-accent); borde
 }
 html[data-theme="light"] #landing { --surface: #f7f4ed; --surface-elevated: #fffdf8; --panel: #f7f4ed; --panel2: #efebe2; }
 html[data-theme="light"] :is(#landing,#login,#app,.overlay,.gn-lab-tool-overlay,.gn-whatsnew-overlay) :is(button,label,summary,input,textarea,select,option,small,p,li,th,td) { font-size: max(12px,.75rem) !important; opacity: 1 !important; }
+/* MOBILE-FIRST: iOS Safari auto-zooms on inputs <16px. Keep text inputs at 16px in light theme. */
+html[data-theme="light"] :is(#landing,#login,#app,.overlay) :is(input[type="text"],input[type="number"],input[type="email"],input[type="tel"],input[type="password"],input:not([type]),textarea) { font-size: 16px !important; }
 html[data-theme="light"] :is(.landing-language-control span,.landing-kicker,.landing-note strong,.landing-note>span,.landing-local-link,.landing-preview-tag,.landing-preview-caption,.landing-footer-label,.gn-auth-kicker,.gn-auth-primary-label,.gn-auth-message,.gn-auth-note,.gn-topbar-language-control button,#nodeHeaderPhase,.gn-dashboard-mission-kicker,.gn-wanda-label,.gn-wanda-note,.gn-instrument-code,.gn-data-quality,.gn-chart-state,.gn-target-empty,.gn-telemetry-summary,.gn-arc-empty,.gn-level-kicker,.scanner-source-tag,#scannerModeLabel,.scanner-status-helper,.shots-safety-note,.shot-history-toggle,#shotHistoryHelper,.gn-log-step,.gn-shot-time-helper,.gn-shot-date-helper,.gn-foundation-kicker,.gn-foundation-signal,.gn-lab-breadcrumb,.gn-dose-copy,.results-metric-label,.empty-subline,.s6-label,.phase-readout-label,.phase-readout-copy,.gn-measurements-copy,.gn-preferences-status,.gn-record-state,.cal-day-head,#calTitle,.gn-custom-picker-trigger,.gn-custom-date-trigger,.gn-stable-zone-title,.gn-stable-zone-btn,.gn-research-context,.gn-research-disclaimer,.gn-dose-output,.gn-profile-section-label,#gnProfileSync,#profEmail) {
   font-size: max(12px,.75rem) !important; line-height: 1.45 !important; letter-spacing: min(.055em,1px) !important; font-weight: 500 !important; opacity: 1 !important;
 }
@@ -2208,6 +2210,7 @@ html[data-theme="light"] {
 /* Shell chrome: modern glass without washing the HUD. */
 #app .topbar {
   position: relative;
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
   backdrop-filter: blur(18px) saturate(1.15);
   -webkit-backdrop-filter: blur(18px) saturate(1.15);
   border-bottom-color: rgba(0, 212, 255, 0.12) !important;
@@ -2246,6 +2249,7 @@ html:not([data-theme="light"]) #app .node-header-wrap {
 
 .bottom-nav {
   padding: 4px 6px calc(4px + env(safe-area-inset-bottom, 0px)) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(1.2);
   backdrop-filter: blur(22px) saturate(1.2);
   -webkit-backdrop-filter: blur(22px) saturate(1.2);
   border-top-color: rgba(0, 212, 255, 0.14) !important;
@@ -2363,6 +2367,7 @@ html[data-theme="light"] .card {
 .gn-peptide-overlay-card,
 .gn-lab-tool-panel,
 .gn-import-panel {
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
   backdrop-filter: blur(16px) saturate(1.1);
   -webkit-backdrop-filter: blur(16px) saturate(1.1);
   border-radius: 16px !important;
@@ -2505,6 +2510,7 @@ html[data-theme="light"] #pageDash .gn-tip-card { background: rgba(0, 111, 130, 
 
 /* Landing CTA row: one clear primary, quieter secondary. */
 .landing-btn.secondary {
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-radius: 12px !important;
@@ -2699,6 +2705,7 @@ html[data-theme="light"] .clean-zone-layer {
     0 0 0 1px rgba(0, 0, 0, .25),
     inset 0 0 12px rgba(0, 212, 255, .08),
     0 0 14px rgba(0, 212, 255, .1) !important;
+  -webkit-backdrop-filter: blur(0.5px);
   backdrop-filter: blur(0.5px);
 }
 .asset-scan-stage.mode-core .track12-zone[data-mode="core"]::before,
@@ -2905,6 +2912,7 @@ html[data-theme="light"] .scan-sweep { opacity: .12 !important; }
 .page-title { letter-spacing: 2px !important; }
 .toast {
   border-radius: 12px !important;
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }

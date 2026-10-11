@@ -27,11 +27,12 @@ export function showPage(name, navElement) {
     nav.classList.add('active');
     nav.setAttribute('aria-current', 'page');
   }
-  $('scrollBody')?.scrollTo({ top: 0, behavior: 'auto' });
   if (name === 'Log') renderShots();
   if (name === 'Results') renderResults();
   if (name === 'Lab') renderLab();
   if (name === 'Profile') renderProfile();
+  /* MOBILE-FIRST perf: scroll after render to avoid double full-document layout */
+  $('scrollBody')?.scrollTo({ top: 0, behavior: 'auto' });
   document.dispatchEvent(new CustomEvent('gn:pagechange', { detail: { name, previousPage } }));
 }
 

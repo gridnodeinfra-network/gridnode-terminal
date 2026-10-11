@@ -222,7 +222,7 @@ function renderConstellation() {
       var x = ((t - mn) / span * 96 + 2).toFixed(2);
       var lane = e.type === 'shot' ? '50%' : (e.type === 'weight' ? '28%' : '72%');
       var cls = e.type === 'shot' ? 'shot' : (e.type === 'weight' ? 'weight' : 'lab');
-      return '<div class="gn-const-node ' + cls + '" style="left:' + x + '%;top:' + lane + '" data-const-idx="' + i + '" title="' + e.type + '"></div>';
+      return '<div class="gn-const-node ' + cls + '" style="left:' + x + '%;top:' + lane + '" data-const-idx="' + i + '" title="' + e.type + '" role="button" tabindex="0" aria-label="' + e.type + ' event"></div>';
     }).join('');
     nodes.querySelectorAll('.gn-const-node').forEach(function(n){
       n.addEventListener('click', function(){
