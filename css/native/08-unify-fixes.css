@@ -1,0 +1,179 @@
+/* ── 08-unify-fixes.css · TRACK5 typography + theme unification ─────────────
+ * Implements the typography/theme fixes from design-tokens-track5.md against
+ * TOKEN-CONTRACT.md v1.0. Loaded LAST in the cascade (see
+ * html/partials/01-head.html + css/native/order.json), so every rule here is
+ * a deliberate unification override — not a new component style.
+ *
+ *  §1  Font-weight aliases: Orbitron 800 + Share Tech Mono 600/700/800.
+ *  §2  Contract tokens + --text-muted contrast alias (dusk).
+ *  §3  Canonical .kicker + aliases for the legacy kicker classes.
+ *  §4  Theme-violation contrast corrections (light).
+ *  §5  07-journey first-shot modal: light-theme variant.
+ * ───────────────────────────────────────────────────────────────────────── */
+
+/* ── §1 · Font-weight aliases ────────────────────────────────────────────
+ * Google Fonts (html/partials/01-head.html) loads Orbitron 400/700/900 and
+ * Share Tech Mono 400 only, but CSS requests Orbitron 800 (60+ sites,
+ * stylesheets + inline styles) and STM 600/700/800. Instead of an extra font
+ * download, these @font-face aliases serve the ALREADY-LOADED files for the
+ * missing weights:
+ *  - Orbitron 800 → the served file is a variable font (wght 400-900), so
+ *    this renders a TRUE ExtraBold 800 — no faux-bold synthesis, no extra
+ *    download (identical URL = HTTP cache hit).
+ *  - Share Tech Mono 600-800 → the 400 file, so "bold mono" renders the true
+ *    mono shapes instead of browser-synthesized faux-bold.
+ * URLs are copied verbatim from the css2 response for the exact Google Fonts
+ * URL in 01-head.html. If that URL ever changes, re-copy the matching woff2
+ * URLs here. Graceful degradation: a stale URL just falls back to today's
+ * synthesis behavior. unicode-range is intentionally omitted — per-glyph
+ * fallback still applies for codepoints the latin file does not cover. */
+@font-face {
+  font-family: 'Orbitron';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/orbitron/v35/yMJRMIlzdpvBhQQL_Qq7dy0.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Share Tech Mono';
+  font-style: normal;
+  font-weight: 600 800;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/sharetechmono/v16/J7aHnp1uDWRBEqV98dVQztYldFcLowEF.woff2') format('woff2');
+}
+
+/* ── §2 · Token contract v1.0 bindings ─────────────────────────────────── */
+:root {
+  --brand-cyan: #00d4ff;
+  --brand-amber: #ffd166;
+  --text-1: #eef6f8;
+  --text-2: #b7c7d3;
+  --text-3: #8295a0;              /* contract: replaces #484860 */
+  /* Contrast fix: dusk --text-muted resolved to 2.17-3.94:1 (AA FAIL).
+   * Aliased to --text-3 → 6.18:1 on --surface #0e0e16 (AA PASS). */
+  --text-muted: var(--text-3);
+  --kicker-font: 'Share Tech Mono', monospace;
+  --kicker-size: .625rem;
+  --kicker-weight: 700;
+  --kicker-spacing: 2.5px;
+  --kicker-color: var(--brand-cyan);
+}
+html[data-theme="light"] {
+  --brand-cyan: #00677f;          /* 5.73:1 on paper — AA PASS */
+  --brand-amber: #8b5b08;         /* 5.17:1 on paper — AA PASS */
+}
+
+/* ── §3 · Canonical kicker ──────────────────────────────────────────────
+ * ONE kicker style (TOKEN-CONTRACT.md): Share Tech Mono, .625rem, 700,
+ * 2.5px tracking, 1.2 line-height, uppercase, brand cyan. The color
+ * auto-adapts to #00677f in light theme via --brand-cyan, so no separate
+ * light color rule is needed. Every legacy kicker class aliases to it —
+ * usage sites are untouched. !important is required: the DAY OPS light
+ * system sets kicker type with !important (00-base L105, 03-premium
+ * L614/L708), so a normal override would silently lose in light theme.
+ * Sanctioned variants (kept, re-asserted AFTER the alias):
+ *  - .gn-fc-coach-kicker stays amber (the single sanctioned color variant)
+ *  - .gn-wn-cat-tag keeps its semantic category colors (fixed/new/a11y)
+ *  - .landing-kicker keeps its CRT glitch animation (Pipe-approved 2026-08-08)
+ * Retired: mint (#41e0c7) and dim-gray kicker variants. */
+.kicker,
+.gn-kicker,
+.gn-whatsnew-kicker,
+.gn-dashboard-mission-kicker,
+.gn-fc-kicker,
+.gn-fc-coach-kicker,
+.gn-peptide-overlay-kicker,
+.gn-today-lastshot-kicker,
+.gn-today-weight-kicker,
+.gn-delta-kicker,
+.gn-constellation-kicker,
+.gn-foundation-kicker,
+.sec-title,
+.gn-tip-kicker,
+.gn-404-kicker,
+.gn-level-kicker,
+.gn-wn-cat-tag,
+.gn-fsc-kicker,
+.landing-kicker,
+.boot-deck-kicker,
+.gn-auth-kicker,
+.phase-sphere-kicker,
+.gn-quick-confirm-kicker,
+.panel-kicker,
+.gn-vault-portal-kicker {
+  font-family: var(--kicker-font) !important;
+  font-size: var(--kicker-size) !important;
+  font-weight: var(--kicker-weight) !important;
+  letter-spacing: var(--kicker-spacing) !important;
+  line-height: 1.2 !important;
+  text-transform: uppercase !important;
+  color: var(--kicker-color) !important;
+}
+/* Light theme: beat the earlier !important light color overrides
+ * (daylight L1677/1696/1786/1826, 00-base L105, 03-premium L614) back to
+ * the canonical cyan. Equal specificity + later source order wins. */
+html[data-theme="light"] .kicker,
+html[data-theme="light"] .gn-kicker,
+html[data-theme="light"] .gn-whatsnew-kicker,
+html[data-theme="light"] .gn-dashboard-mission-kicker,
+html[data-theme="light"] .gn-fc-kicker,
+html[data-theme="light"] .gn-fc-coach-kicker,
+html[data-theme="light"] .gn-peptide-overlay-kicker,
+html[data-theme="light"] .gn-today-lastshot-kicker,
+html[data-theme="light"] .gn-today-weight-kicker,
+html[data-theme="light"] .gn-delta-kicker,
+html[data-theme="light"] .gn-constellation-kicker,
+html[data-theme="light"] .gn-foundation-kicker,
+html[data-theme="light"] .sec-title,
+html[data-theme="light"] .gn-tip-kicker,
+html[data-theme="light"] .gn-404-kicker,
+html[data-theme="light"] .gn-level-kicker,
+html[data-theme="light"] .gn-wn-cat-tag,
+html[data-theme="light"] .gn-fsc-kicker,
+html[data-theme="light"] .landing-kicker,
+html[data-theme="light"] .boot-deck-kicker,
+html[data-theme="light"] .gn-auth-kicker,
+html[data-theme="light"] .phase-sphere-kicker,
+html[data-theme="light"] .gn-quick-confirm-kicker,
+html[data-theme="light"] .panel-kicker,
+html[data-theme="light"] .gn-vault-portal-kicker {
+  color: var(--kicker-color) !important;
+}
+/* Sanctioned variants — re-asserted after the alias. --accent-amber is
+ * already theme-remapped (#ffd166 dusk / #8b5b08 light). */
+.gn-fc-coach-kicker { color: var(--accent-amber) !important; }
+html[data-theme="light"] .gn-fc-coach-kicker { color: var(--accent-amber) !important; }
+.gn-wn-cat[data-cat="fixed"] .gn-wn-cat-tag { color: #00ff88 !important; }
+.gn-wn-cat[data-cat="new"] .gn-wn-cat-tag { color: #FF5B5B !important; }
+.gn-wn-cat[data-cat="accessibility"] .gn-wn-cat-tag { color: #ffd166 !important; }
+html[data-theme="light"] .gn-wn-cat[data-cat="fixed"] .gn-wn-cat-tag { color: #006b42 !important; }
+html[data-theme="light"] .gn-wn-cat[data-cat="new"] .gn-wn-cat-tag { color: #a30f2e !important; }
+html[data-theme="light"] .gn-wn-cat[data-cat="accessibility"] .gn-wn-cat-tag { color: #7a5a10 !important; }
+
+/* ── §4 · Theme-violation contrast corrections ──────────────────────────
+ * Audit §4 re-verified 2026-10-11: violations 1-6 and 8 already carry
+ * passing light overrides (daylight-nexus-pilot.css L1577-1599). Only the
+ * two still-failing ambers are corrected here:
+ *  - #7 .gn-research-custom-group > span and #9 .gn-research-mode-title:
+ *    the existing #a86400 override computes to 4.15:1 on paper (AA FAIL);
+ *    raised to #8b5b08 (5.17:1 PASS). */
+html[data-theme="light"] .gn-research-custom-group > span { color: #8b5b08 !important; }
+html[data-theme="light"] .gn-research-mode-custom .gn-research-mode-title { color: #8b5b08; }
+
+/* ── §5 · 07-journey first-shot modal: light-theme variant ──────────────
+ * The modal was hard-coded dark with zero data-theme rules (audit §4.11).
+ * Dusk keeps the original dark card; light gets a paper variant. The lava
+ * primary button is unchanged (white on the red gradient passes AA).
+ * .gn-fsc-kicker / .gn-fsc-next-label inherit the canonical kicker (§3). */
+html[data-theme="light"] .gn-fsc-overlay { background: rgba(43, 47, 47, .48); }
+html[data-theme="light"] .gn-fsc-card {
+  border-color: rgba(0, 111, 130, .45);
+  border-top-color: #006f82;
+  background: linear-gradient(150deg, rgba(0, 111, 130, .10), rgba(248, 245, 237, .97) 60%);
+  box-shadow: 0 24px 60px rgba(76, 61, 43, .25), inset 0 1px rgba(255, 255, 255, .6);
+}
+html[data-theme="light"] .gn-fsc-card h2 { color: #15282f; }
+html[data-theme="light"] .gn-fsc-card p { color: #3f535a; }
+html[data-theme="light"] .gn-fsc-x { color: #476169; }
+html[data-theme="light"] .gn-fsc-x:hover { color: #15282f; }
+html[data-theme="light"] .gn-fsc-secondary { color: #006f82; border-color: rgba(0, 111, 130, .4); }

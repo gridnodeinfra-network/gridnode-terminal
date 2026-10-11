@@ -4,18 +4,17 @@
    decorative-opacity, never thin. DAY OPS gets stronger contrast.
    Wins over earlier rules by being later + !important where needed.
    ============================================================ */
+/* Unified 2026-10-11: --text-dim, --type-helper and --type-label now live in
+   css/native/08-design-tokens.css (the canonical token layer) with the same
+   values, except --type-label which follows the contract (.72rem). This
+   block defers to the canonical layer instead of redefining values. */
 :root {
-  --text-dim: #6f6f88;            /* dark-theme dim floor */
-  --type-helper: .78rem;
-  --type-label: .75rem;
+  /* (tokens moved to 08-design-tokens.css) */
 }
 html[data-theme="light"] {
   --text-primary: #1a2328;
   --text-secondary: #33454c;
   --text-muted: #3f535a;
-  --text-dim: #3f535a;            /* was near-invisible gray */
-  --type-helper: .78rem;
-  --type-label: .75rem;
 }
 
 /* Microtext floor: .52–.59rem monospace labels -> .68rem, weight 600+ */
@@ -25,7 +24,7 @@ html[data-theme="light"] {
 .gn-record-row small, .gn-weight-record small, .gn-progress-signal small,
 .boot-deck-kicker, .boot-slogan, .boot-prog-pct, .boot-deck-footer,
 .boot-line, .form-label, .gn-helper, .gn-hint, .gn-footnote,
-.gn-tab-label, .gn-badge, .gn-chip, .gn-sec-label, .gn-caption {
+.gn-tab-label, .gn-badge, .gn-sec-label, .gn-caption {
   font-size: .72rem !important;
   letter-spacing: .02em !important;
   font-weight: 600 !important;
@@ -39,7 +38,7 @@ p, .gn-body, .gn-empty-state span, .gn-research-notice span,
 }
 /* Buttons & controls: readable weight, no thinning */
 button, .btn, .gn-btn, .gn-stable-zone-btn, .gn-record-delete,
-.gn-tab, .gn-chip, [role="button"] {
+[role="button"] {
   font-weight: 600 !important;
 }
 /* Helper text never invisible */
@@ -121,7 +120,7 @@ html[data-theme="light"] #boot { background: #0b0f16 !important; }
     font-size: 16px !important;   /* iOS zoom prevention */
     min-height: 46px !important;
   }
-  .gn-tab, .scanner-mode-btn { min-height: 44px !important; font-size: .76rem !important; }}
+  .scanner-mode-btn { min-height: 44px !important; font-size: .76rem !important; }}
 
 /* Served readability inventory closure. These are the remaining functional
    roles found by the rendered DAY OPS audit; all inherit the semantic colors
@@ -132,15 +131,17 @@ html[data-theme="light"] :is(#landing,#login,#app,.overlay,.gn-lab-tool-overlay,
   opacity: 1 !important;
 }
 html[data-theme="light"] :is(
-  .landing-language-control span,.landing-kicker,.landing-note strong,.landing-note>span,
+/* TRACK5: kicker classes removed from this DAY OPS floor — the canonical
+   .kicker (08-unify-fixes.css) governs kickers in both themes. */
+  .landing-language-control span,.landing-note strong,.landing-note>span,
   .landing-local-link,.landing-preview-tag,.landing-preview-caption,.landing-footer-label,
-  .gn-auth-kicker,.gn-auth-primary-label,.gn-auth-message,.gn-auth-note,
+  .gn-auth-primary-label,.gn-auth-message,.gn-auth-note,
   .gn-topbar-language-control button,#nodeHeaderPhase,
-  .gn-dashboard-mission-kicker,.gn-wanda-label,.gn-wanda-note,.gn-instrument-code,
-  .gn-data-quality,.gn-chart-state,.gn-target-empty,.gn-telemetry-summary,.gn-arc-empty,.gn-level-kicker,
+  .gn-wanda-label,.gn-wanda-note,.gn-instrument-code,
+  .gn-data-quality,.gn-chart-state,.gn-target-empty,.gn-telemetry-summary,.gn-arc-empty,
   .scanner-source-tag,#scannerModeLabel,.scanner-status-helper,.shots-safety-note,
   .shot-history-toggle,#shotHistoryHelper,.gn-log-step,.gn-shot-time-helper,.gn-shot-date-helper,
-  .gn-foundation-kicker,.gn-foundation-signal,.gn-lab-breadcrumb,.gn-dose-copy,
+  .gn-foundation-signal,.gn-lab-breadcrumb,.gn-dose-copy,
   .results-metric-label,.empty-subline,.s6-label,.phase-readout-label,.phase-readout-copy,
   .gn-measurements-copy,.gn-preferences-status,.gn-record-state,.gn-data-quality,
   .cal-day-head,#calTitle,.gn-custom-picker-trigger,.gn-custom-date-trigger,

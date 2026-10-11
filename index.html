@@ -40,6 +40,7 @@
 
 <script src="./js/gridnode-theme.js?v=20260918.c67df9d"></script>
 <link rel="stylesheet" href="./css/daylight-nexus-pilot.css?v=20260918.c67df9d">
+<link rel="stylesheet" href="./css/native/08-design-tokens.css?v=20260918.c67df9d">
 <link id="gnNativeCss" rel="stylesheet" href="./css/native/00-base.css?v=20260918.c67df9d">
 <link rel="stylesheet" href="./css/native/01-readability-floor.css?v=20260918.c67df9d">
 <link rel="stylesheet" href="./css/native/02-first-five-minutes.css?v=20260918.c67df9d">
@@ -49,6 +50,8 @@
 <link rel="stylesheet" href="./css/native/05-logshot-2step.css?v=20260918.c67df9d">
 <link rel="stylesheet" href="./css/native/06-premium-pass.css?v=20260918.c67df9d">
 <link rel="stylesheet" href="./css/native/07-journey.css?v=20260918.c67df9d">
+<link rel="stylesheet" href="./css/native/08-unify-fixes.css?v=20260918.c67df9d">
+<link rel="stylesheet" href="./css/native/09-unified-components.css?v=20260918.c67df9d">
 
 <link rel="manifest" href="/manifest.json">
 <meta name="description" content="GRID//NODE is a local-first personal biotech system for tracking GLP-1 protocols, peptides, weight, phases, and user-entered outcomes.">
@@ -717,7 +720,6 @@ button.sec-act{display:inline-flex;align-items:center;min-height:44px;padding:0;
 .btn-primary:hover{box-shadow:0 6px 24px rgba(255,59,59,0.5);transform:translateY(-1px)}
 .btn-secondary{background:transparent;color:var(--cyan);border:1px solid var(--cyan);margin-top:9px}
 .btn-secondary:hover{background:var(--cyan-dim)}
-.btn-green{background:linear-gradient(135deg,var(--green),#00cc66);color:var(--bg);margin-top:9px}
 
 /* DIVIDER */
 .divider{height:1px;background:var(--border);margin:18px 0}
@@ -2342,12 +2344,6 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
   cursor:pointer;
 }
 .log-location-action:active{transform:scale(.99);background:rgba(0,212,255,.10)}
-.log-modal-bottom-close{
-  margin-top:10px;
-  color:#bdd7df;
-  border-color:rgba(255,255,255,.13);
-  background:rgba(255,255,255,.035);
-}
 .results-direction{
   margin:10px 0 8px;
   padding:9px 10px;

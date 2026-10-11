@@ -18,6 +18,7 @@ const SHELL = [
   '/manifest.json',
   '/css/daylight-nexus-pilot.css' + V,
   // Phase 2 refactor: gridnode-native.css split into css/native/ (order.json); keep cascade order.
+  '/css/native/08-design-tokens.css' + V,
   '/css/native/00-base.css' + V,
   '/css/native/01-readability-floor.css' + V,
   '/css/native/02-first-five-minutes.css' + V,

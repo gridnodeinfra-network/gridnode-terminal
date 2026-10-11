@@ -27,7 +27,7 @@ html.gn-keyboard-open #signOutOverlay {
 #app, .scroll-body, #scrollBody {
   overscroll-behavior-y: contain;
 }
-.bottom-nav, .nav-lbl, .fab, .topbar, .gn-node-pill {
+.bottom-nav, .nav-lbl, .fab, .topbar {
   user-select: none;
   -webkit-user-select: none;
 }
@@ -99,16 +99,16 @@ html[data-theme="light"] :is(
   .syr-scale-lbl, .gn-syr-forensic
 ) { color: var(--text-helper) !important; opacity: 1 !important; font-weight: 500 !important; }
 
+/* TRACK5: kicker classes removed — canonical .kicker (08-unify-fixes.css) governs. */
 html[data-theme="light"] :is(
   .form-label, .gn-form-grid label > span, .gn-record-form label > span,
-  .gn-profile-section-label, .sec-title, .gn-stable-zone-title,
-  .gn-foundation-kicker, .gn-whatsnew-kicker, .gn-wn-cat-tag,
-  .gn-auth-kicker, .gn-auth-primary-label, .gn-dashboard-mission-kicker
+  .gn-profile-section-label, .gn-stable-zone-title,
+  .gn-auth-primary-label
 ) { color: var(--text-label) !important; opacity: 1 !important; font-weight: 700 !important; }
 
 html[data-theme="light"] :is(
   .page-title .a, .sec-title .a, .gn-accent-c, .gn-profile-chevron,
-  .gn-utility-chevron, .gn-lab-back, .tab.active, .seg-tab.active,
+  .gn-utility-chevron, .gn-lab-back,
   .time-tab.active, .scanner-mode-btn.active, .gn-record-state
 ) { color: var(--text-accent) !important; opacity: 1 !important; }
 
@@ -142,7 +142,7 @@ html[data-theme="light"] :is(.cp-option, .gn-select-option):is(:hover, :focus-vi
 }
 html[data-theme="light"] .cp-group-label { color: var(--text-label) !important; background: #e8eff0 !important; opacity: 1 !important; }
 
-html[data-theme="light"] :is(button, .btn, .btn-full, .nav-item, .tab, .seg-tab, .time-tab, .scanner-mode-btn) {
+html[data-theme="light"] :is(button, .btn, .btn-full, .nav-item, .time-tab, .scanner-mode-btn) {
   opacity: 1;
 }
 html[data-theme="light"] :is(button, input, textarea, select, [role="button"]):disabled,
@@ -381,19 +381,16 @@ html[data-theme="light"] #pageLab .cheat-table { background: var(--surface, #f4f
  * Typography by role, red-lava action system, mobile header, chart lanes. */
 
 /* ── 1. Typography by role ── */
+/* Unified 2026-10-11: lava tokens are aliases to the canonical brand tokens
+   (css/native/08-design-tokens.css). The four :root lava blocks across
+   00-base / 03-premium-system now agree — no more conflicting redefinitions. */
 :root {
-  --lava-core: #FF3B3B;
-  --lava-core-hi: #FF5B5B;
-  --lava-edge: #D12424;
-  --lava-glow: rgba(255, 59, 59, .42);
-  /* ── Charts (visual grammar) — TOKEN-CONTRACT v1.0 ──
-     Canvas charts use JS literal mirrors (see CHART_* in the module code);
-     CSS/DOM/SVG chart elements use these variables directly. */
-  --chart-actual: #00d4ff;      /* recorded data */
-  --chart-estimate: #ffd166;    /* dashed amber = estimate */
-  --chart-plan: #a78bfa;        /* violet = plan */
-  --chart-grid: rgba(255,255,255,.07);
-  --chart-danger: #FF3B3B;
+  --lava-core: var(--brand-red);
+  --lava-core-hi: var(--brand-red-hi);
+  --lava-edge: var(--brand-red-deep);
+  --lava-hot: #CC2944;                 /* preserved dark cascade winner */
+  --lava-glow: rgba(255, 79, 34, .28); /* preserved cascade winner */
+  /* Charts: canonical --chart-* tokens live in 08-design-tokens.css (loads first). */
 }
 body { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 /* Form guidance + helper copy: readable companion font, relaxed leading. */
@@ -649,7 +646,9 @@ html[data-theme="light"] .gn-wn-cat[data-cat="accessibility"] .gn-wn-cat-tag { b
 /* ═══ Pass 2: mobile polish — shared component system ═══
  * Research Peptides, Syringe Draw, Dose Projection, data cards, DAY OPS. */
 
-/* Shared tokens (extend the existing scale; no magic numbers). */
+/* Shared tokens (extend the existing scale; no magic numbers).
+   Unified 2026-10-11: --type-helper moved to css/native/08-design-tokens.css
+   (.78rem, the readability-floor cascade winner); this block defers to it. */
 :root {
   --ctl-h: 46px;              /* control height / touch target */
   --card-pad: 16px;
@@ -657,7 +656,6 @@ html[data-theme="light"] .gn-wn-cat[data-cat="accessibility"] .gn-wn-cat-tag { b
   --radius-card: 12px;
   --type-label: .72rem;
   --text-body: .88rem;
-  --type-helper: .76rem;
 }
 html[data-theme="light"] {
   --ctl-bg: #ffffff;

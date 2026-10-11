@@ -1812,6 +1812,16 @@ document.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.
 document.addEventListener('keydown', function (e) {
   if (e.key !== 'Escape') return;
   if (document.querySelector('#futureTimestampConfirm.active')) return;
+  /* The native shell binds its own Escape keydown on overlay elements
+   * (gridnode-native.js wireOverlayDismiss, same selector below): it clicks
+   * the overlay's close/cancel control. When the keypress originated inside
+   * such an overlay, that handler already ran during bubbling — skip the
+   * document chain here to avoid double-handling (e.g. the native layer
+   * dismisses the discard confirm, then closeLog() on the dirty sheet would
+   * immediately re-open it). Overlays outside that selector (privacy, terms,
+   * delete dialogs) and body-focus keypresses still use the chain. */
+  var nativeLayer = e.target && e.target.closest ? e.target.closest('.overlay, .archive-confirm-overlay, .future-confirm-overlay, .gn-date-overlay, .csv-import-overlay, .gn-import-overlay, .gn-whatsnew-overlay, .gn-peptide-overlay, .gn-onb-overlay, .gn-lab-tool-overlay') : null;
+  if (nativeLayer) return;
   var disc = document.getElementById('shotDiscardConfirmOv');
   if (disc && (disc.classList.contains('active') || getComputedStyle(disc).display !== 'none')) { cancelShotDiscard(); return; }
   var chain = [

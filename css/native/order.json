@@ -1,4 +1,5 @@
 [
+  "08-design-tokens.css",
   "00-base.css",
   "01-readability-floor.css",
   "02-first-five-minutes.css",
@@ -7,5 +8,7 @@
   "04-vault-redesign.css",
   "05-logshot-2step.css",
   "06-premium-pass.css",
-  "07-journey.css"
+  "07-journey.css",
+  "08-unify-fixes.css",
+  "09-unified-components.css"
 ]

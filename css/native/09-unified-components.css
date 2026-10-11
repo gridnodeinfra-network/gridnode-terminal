@@ -1,0 +1,511 @@
+/* ════════════════════════════════════════════════════════════════════
+   GRID//NODE — 09-unified-components.css
+   Unified component bases (TRACK 2 audit §8). Loads LAST in the native
+   cascade (see css/native/order.json), so its rules win equal-specificity
+   ties against earlier one-offs.
+
+   Token source of truth: ~/workspace/gridnode-overnight/TOKEN-CONTRACT.md.
+   Components reference the contract token names with contract-value
+   fallbacks, e.g. var(--brand-cyan, #00d4ff). Where an existing class is
+   re-declared here, the fallback chain ends at the legacy var so current
+   rendering is preserved until markup migrates (no visual change yet).
+   The single sanctioned visual change in this file is the .btn-primary
+   light-theme kill (B1): lava red everywhere, no more cyan dual identity.
+
+   RULES for future edits:
+   - Do not add new one-off component classes; extend these bases instead.
+   - The kill list (deleting old classes) happens after verification, not here.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────
+   BUTTONS
+   ───────────────────────────────────────────────────────────── */
+
+/* .btn — THE base. All action buttons build on this. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2, 8px);
+  min-height: var(--ctl-h, 48px);
+  padding: 14px 18px;
+  border-radius: var(--radius-control, 8px);
+  font-family: var(--font-display, 'Orbitron', sans-serif);
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform .16s ease, box-shadow .16s ease, background .16s ease,
+              border-color .16s ease, filter .16s ease, color .16s ease;
+}
+.btn:active { transform: scale(.98); }
+.btn:disabled,
+.btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; transform: none; }
+
+/* .btn-primary — ONE meaning: lava red, every theme, every context.
+   This kills the cyan dual identity (was: 03-premium-system.css:986). */
+.btn-primary,
+.btn-full.btn-primary {
+  background: linear-gradient(135deg, var(--brand-red, var(--red, #FF3B3B)), var(--brand-red-deep, #D12424));
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(255, 59, 59, .3);
+}
+.btn-primary:hover,
+.btn-full.btn-primary:hover {
+  box-shadow: 0 6px 24px rgba(255, 59, 59, .5);
+  transform: translateY(-1px);
+}
+/* Light theme: same lava identity. Same selector + !important as the old
+   cyan rule, later in the cascade, so lava wins (B1). */
+html[data-theme="light"] :is(#app, .overlay, .gn-lab-tool-overlay) .btn-primary {
+  border-color: #D12424 !important;
+  background: linear-gradient(180deg, #D12424 0%, #FF3B3B 52%, #D12424 100%) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  box-shadow: inset 0 1px rgba(255, 190, 128, .72), inset 0 -1px rgba(82, 0, 0, .42), 0 8px 20px rgba(255, 79, 34, .28) !important;
+  text-shadow: 0 1px 1px rgba(70, 0, 0, .38) !important;
+}
+
+/* .btn-secondary — transparent, cyan text + 1px cyan border. */
+.btn-secondary {
+  background: transparent;
+  color: var(--brand-cyan, var(--cyan, #00d4ff));
+  border: 1px solid var(--brand-cyan, var(--cyan, #00d4ff));
+  margin-top: 9px; /* legacy rhythm; remove when markup owns its spacing */
+}
+.btn-secondary:hover { background: var(--cyan-dim, rgba(0, 212, 255, .12)); }
+
+/* .btn-ghost — borderless text button. */
+.btn-ghost {
+  background: transparent;
+  border: none;
+  color: var(--brand-cyan, var(--cyan, #00d4ff));
+  min-height: 44px;
+  padding: 10px 12px;
+  font-family: var(--font-display, 'Orbitron', sans-serif);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.btn-ghost:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* .btn-danger — red ghost for destructive actions. */
+.btn-danger {
+  background: rgba(255, 59, 59, .06);
+  border: 1px solid rgba(255, 59, 59, .45);
+  color: var(--brand-red-hi, #FF5B5B);
+  min-height: var(--ctl-h, 48px);
+  padding: 12px 18px;
+  border-radius: var(--radius-control, 8px);
+  font-family: var(--font-display, 'Orbitron', sans-serif);
+  font-size: .74rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background .16s ease, border-color .16s ease, transform .16s ease;
+}
+.btn-danger:hover { background: rgba(255, 59, 59, .14); border-color: var(--brand-red, #FF3B3B); }
+.btn-danger:active { transform: scale(.98); }
+
+/* .btn-sm — dense modifier (40px). */
+.btn-sm {
+  min-height: var(--ctl-h-sm, 40px);
+  padding: 10px 14px;
+  font-size: .68rem;
+}
+
+/* .btn-icon — 44px circle. Merges .modal-btn, .topbar-btn, .gn-record-delete. */
+.btn-icon {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  border: 1px solid var(--border-2, rgba(255, 255, 255, .16));
+  background: var(--surface-2, #121218);
+  color: var(--text-2, #b7c7d3);
+  transition: border-color .16s ease, color .16s ease, transform .16s ease, box-shadow .16s ease;
+}
+.btn-icon:hover { border-color: var(--brand-cyan, #00d4ff); color: var(--brand-cyan, #00d4ff); }
+.btn-icon:active { transform: scale(.94); }
+/* .btn-icon.close — the neutral X, everywhere. */
+.btn-icon.close:hover { color: var(--brand-red, #FF3B3B); border-color: var(--brand-red, #FF3B3B); }
+/* .btn-icon.danger — the red save/confirm circle (was .modal-btn.save). */
+.btn-icon.danger {
+  background: var(--brand-red, #FF3B3B);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 0 16px rgba(255, 59, 59, .35);
+}
+.btn-icon.danger:hover { color: #fff; border-color: transparent; filter: brightness(1.06); }
+
+/* .btn-icon-sm — 28px circle, explicit opt-in for dense rows. */
+.btn-icon-sm {
+  width: 28px;
+  height: 28px;
+  font-size: .75rem;
+}
+
+/* .btn-cta — THE empty-state CTA. Single pattern for every empty state. */
+.btn-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2, 8px);
+  min-height: 52px;
+  min-width: 220px;
+  max-width: 100%;
+  padding: 14px 22px;
+  border: none;
+  border-radius: var(--radius-control, 8px);
+  background: linear-gradient(135deg, var(--brand-red, #FF3B3B), var(--brand-red-deep, #D12424));
+  color: #fff;
+  font-family: var(--font-display, 'Orbitron', sans-serif);
+  font-size: .74rem;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(255, 59, 59, .3);
+  transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
+}
+.btn-cta:hover { box-shadow: 0 6px 24px rgba(255, 59, 59, .5); transform: translateY(-1px); }
+.btn-cta:active { transform: scale(.98); }
+
+/* ─────────────────────────────────────────────────────────────
+   CARDS
+   ───────────────────────────────────────────────────────────── */
+
+/* .card — THE base: 16px padding, 16px radius. Re-declared here with the
+   contract token names; fallbacks keep current rendering identical. */
+.card {
+  background: var(--surface-1, var(--panel, #0e0e16));
+  border: 1px solid var(--border-1, var(--border));
+  padding: var(--sp-4, 16px);
+  margin-bottom: 14px;
+  border-radius: var(--radius-card, 16px);
+}
+
+/* .card-sm — dense card: 12px padding. */
+.card-sm {
+  padding: var(--sp-3, 12px);
+}
+
+/* .card-accent — 3px top accent bar + tinted gradient. Merges the
+   .gn-fsc-card / .gn-fc-card / .gn-first-run-card / .gn-tip-card /
+   .stat-card top-bar pattern. */
+.card-accent {
+  position: relative;
+  border-top: 3px solid var(--brand-cyan, #00d4ff);
+  background: linear-gradient(180deg, rgba(0, 212, 255, .07), var(--surface-1, var(--panel, #0e0e16)) 34%);
+}
+.card-accent.card-danger,
+.card-danger {
+  border-top-color: var(--danger, var(--brand-red, #FF3B3B));
+  background: linear-gradient(180deg, rgba(255, 59, 59, .07), var(--surface-1, var(--panel, #0e0e16)) 34%);
+}
+html[data-theme="light"] .card-accent {
+  background: linear-gradient(180deg, rgba(0, 103, 127, .07), var(--surface-1, #fffdf8) 34%);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   INPUTS
+   ───────────────────────────────────────────────────────────── */
+
+/* .input — THE text input: 48px, matches .form-input chrome. */
+.input {
+  width: 100%;
+  min-height: var(--ctl-h, 48px);
+  padding: 12px 14px;
+  border-radius: var(--radius-control, 8px);
+  border: 1px solid var(--border-2, rgba(255, 255, 255, .16));
+  background: var(--surface-2, var(--bg2, #121218));
+  color: var(--text-1, #eef6f8);
+  font-family: var(--font-body, 'Rajdhani', sans-serif);
+  font-size: 1rem;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.input::placeholder { color: var(--text-3, #8295a0); opacity: 1; }
+.input:focus {
+  border-color: var(--brand-cyan, #00d4ff);
+  box-shadow: 0 0 0 2px rgba(0, 212, 255, .25);
+}
+
+/* .input-sm — dense grid input: 40px. Replaces .gn-preferences-grid inputs. */
+.input-sm {
+  min-height: var(--ctl-h-sm, 40px);
+  padding: 9px 10px;
+  font-size: .84rem;
+}
+
+/* .select — custom select trigger. Merges .cp-select-trigger /
+   .gn-select-trigger / .gn-custom-picker-trigger. */
+.select {
+  width: 100%;
+  min-height: var(--ctl-h, 48px);
+  padding: 12px 40px 12px 14px;
+  border-radius: var(--radius-control, 8px);
+  border: 1px solid var(--border-2, rgba(255, 255, 255, .16));
+  background-color: var(--surface-2, var(--bg2, #121218));
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2300d4ff' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  color: var(--text-1, #eef6f8);
+  font-family: var(--font-body, 'Rajdhani', sans-serif);
+  font-size: .95rem;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.select:focus {
+  border-color: var(--brand-cyan, #00d4ff);
+  box-shadow: 0 0 0 2px rgba(0, 212, 255, .25);
+}
+html[data-theme="light"] .select {
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2300677f' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+/* .check-row — checkbox row. Merges the three .se-check definitions into one. */
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 52px;
+  padding: 12px 14px;
+  background: var(--surface-2, var(--bg2, #121218));
+  border: 1px solid var(--border-1, var(--border));
+  border-radius: var(--radius-control, 8px);
+  font-family: var(--font-body, 'Rajdhani', sans-serif);
+  font-size: .95rem;
+  color: var(--text-2, #b7c7d3);
+  cursor: pointer;
+  transition: border-color .2s ease, color .2s ease;
+}
+.check-row:hover { border-color: rgba(0, 212, 255, .35); color: var(--text-1, #eef6f8); }
+.check-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  margin: 0;
+  accent-color: var(--brand-red, #FF3B3B);
+  cursor: pointer;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SEGMENTS — one container, one active language.
+   Replaces .time-tab, .shot-history-toggle, .results-view-btn,
+   .scanner-mode-btn, .gn-ampm-btn.
+   ───────────────────────────────────────────────────────────── */
+
+.seg {
+  display: flex;
+  gap: var(--sp-2, 8px);
+  flex-wrap: wrap;
+}
+.seg-btn {
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: var(--radius-nested, 10px);
+  border: 1px solid var(--border-1, var(--border));
+  background: transparent;
+  color: var(--text-2, #b7c7d3);
+  font-family: var(--font-mono, 'Share Tech Mono', monospace);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color .2s ease, background .2s ease, color .2s ease, box-shadow .2s ease;
+}
+.seg-btn:hover { border-color: var(--border-cyan, rgba(0, 212, 255, .35)); }
+/* THE active language: cyan tint bg + cyan border + cyan text. */
+.seg-btn.active,
+.seg-btn[aria-selected="true"] {
+  border-color: var(--brand-cyan, #00d4ff);
+  color: var(--brand-cyan, #00d4ff);
+  background: rgba(0, 212, 255, .14);
+  box-shadow: 0 0 12px rgba(0, 212, 255, .18);
+}
+/* Light theme mapping: teal fill + white text. */
+html[data-theme="light"] .seg-btn.active,
+html[data-theme="light"] .seg-btn[aria-selected="true"] {
+  background: var(--brand-cyan, #00677f);
+  border-color: var(--brand-cyan, #00677f);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(0, 103, 127, .25);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   EMPTY STATES — one pattern: icon + title + body + CTA.
+   ───────────────────────────────────────────────────────────── */
+
+.empty {
+  text-align: center;
+  padding: 44px 20px;
+  font-family: var(--font-mono, 'Share Tech Mono', monospace);
+  font-size: .62rem;
+  color: var(--text-3, var(--text-dim, #8295a0));
+  letter-spacing: 2px;
+  line-height: 2.5;
+}
+.empty-ico {
+  font-size: 2.4rem;
+  display: block;
+  margin-bottom: 10px;
+  opacity: .35;
+}
+.empty-title {
+  font-family: var(--font-display, 'Orbitron', sans-serif);
+  font-size: var(--type-title, 1.1rem);
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-1, #eef6f8);
+  line-height: 1.4;
+  margin: 0 0 var(--sp-2, 8px);
+}
+.empty-body {
+  font-family: var(--font-body, 'Rajdhani', sans-serif);
+  font-size: var(--type-body, .88rem);
+  color: var(--text-2, #b7c7d3);
+  line-height: 1.6;
+  letter-spacing: .02em;
+  margin: 0 0 var(--sp-1, 4px);
+}
+.empty .btn-cta { margin-top: 18px; }
+
+/* ─────────────────────────────────────────────────────────────
+   PILLS / TAGS
+   ───────────────────────────────────────────────────────────── */
+
+/* .pill — state pill. Merges .dose-pill/.node-pill/.gn-evidence-chip
+   state language into one radius + type system. */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill, 999px);
+  border: 1px solid var(--border-1, var(--border));
+  background: rgba(255, 255, 255, .04);
+  color: var(--text-2, #b7c7d3);
+  font-family: var(--font-mono, 'Share Tech Mono', monospace);
+  font-size: .6rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.pill-cyan {
+  color: var(--brand-cyan, #00d4ff);
+  border-color: var(--border-cyan, rgba(0, 212, 255, .35));
+  background: rgba(0, 212, 255, .08);
+}
+.pill-green {
+  color: var(--brand-green, #00ff88);
+  border-color: rgba(0, 255, 136, .35);
+  background: rgba(0, 255, 136, .08);
+}
+.pill-yellow {
+  color: var(--brand-amber, #ffd166);
+  border-color: rgba(255, 209, 102, .35);
+  background: rgba(255, 209, 102, .08);
+}
+.pill-red {
+  color: var(--brand-red, #FF3B3B);
+  border-color: rgba(255, 59, 59, .4);
+  background: rgba(255, 59, 59, .08);
+}
+html[data-theme="light"] .pill { background: rgba(20, 60, 70, .05); }
+html[data-theme="light"] .pill-cyan { color: #00677f; border-color: rgba(0, 103, 127, .4); background: rgba(0, 103, 127, .08); }
+html[data-theme="light"] .pill-green { color: #00794a; border-color: rgba(0, 121, 74, .4); background: rgba(0, 121, 74, .08); }
+html[data-theme="light"] .pill-yellow { color: #8a5b00; border-color: rgba(138, 91, 0, .4); background: rgba(138, 91, 0, .08); }
+html[data-theme="light"] .pill-red { color: #c81e1e; border-color: rgba(200, 30, 30, .4); background: rgba(200, 30, 30, .08); }
+
+/* .tag — small square tag (was .gn-evidence-chip contexts). */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-1, var(--border));
+  background: rgba(255, 255, 255, .04);
+  color: var(--text-2, #b7c7d3);
+  font-family: var(--font-mono, 'Share Tech Mono', monospace);
+  font-size: .52rem;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   .kicker — the canonical kicker (token contract): Share Tech Mono
+   700, .625rem, 2.5px letter-spacing, cyan.
+   ───────────────────────────────────────────────────────────── */
+
+.kicker {
+  font-family: var(--kicker-font, 'Share Tech Mono', monospace);
+  font-size: var(--kicker-size, .625rem);
+  font-weight: var(--kicker-weight, 700);
+  letter-spacing: var(--kicker-spacing, 2.5px);
+  color: var(--kicker-color, var(--brand-cyan, #00d4ff));
+  text-transform: uppercase;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   UNIFIED FOCUS — the new bases join the 2px-cyan + 3px-glow
+   :focus-visible system (was 03-premium-system.css:2965).
+   ───────────────────────────────────────────────────────────── */
+
+.btn:focus-visible, .btn-cta:focus-visible, .btn-icon:focus-visible,
+.seg-btn:focus-visible, .input:focus-visible, .select:focus-visible,
+.pill:focus-visible {
+  outline: 2px solid var(--brand-cyan, #00d4ff) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 3px rgba(0, 212, 255, .14) !important;
+}
+html[data-theme="light"] .btn:focus-visible, html[data-theme="light"] .btn-cta:focus-visible,
+html[data-theme="light"] .btn-icon:focus-visible, html[data-theme="light"] .seg-btn:focus-visible,
+html[data-theme="light"] .input:focus-visible, html[data-theme="light"] .select:focus-visible {
+  outline-color: #006f82 !important;
+  box-shadow: 0 0 0 3px rgba(0, 111, 130, .14) !important;
+}
+
+/* Reduced motion: the new bases stay quiet too. */
+@media (prefers-reduced-motion: reduce) {
+  .btn, .btn-cta, .btn-icon, .btn-danger, .seg-btn { transition: none; }
+}

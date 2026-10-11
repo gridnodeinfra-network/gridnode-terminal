@@ -1,0 +1,121 @@
+/* ═══════════════════════════════════════════════════════════════════
+   GRID//NODE UNIFIED DESIGN TOKENS — 08-design-tokens.css
+   Implements TOKEN-CONTRACT.md v1.0 (authoritative token names, used
+   exactly). Loaded FIRST among native stylesheets (css/native/order.json)
+   so the canonical layer is the base of the cascade.
+
+   Consolidation only — no visual redesign. Every token below resolves to
+   the value the previous cascade winner produced, except where the
+   contract explicitly sets a different value (see notes).
+
+   Legacy aliases at the bottom preserve previous cascade winners for
+   tokens that predate the contract:
+     --lava-*      (were redefined 4x across 00-base / 03-premium-system)
+     --text-dim    (readability-floor winner #6f6f88 / light #476169)
+     --type-helper (readability-floor winner .78rem)
+   NOTE on --type-label: the contract sets .72rem; the old
+   01-readability-floor override (.75rem) was retired, so labels using
+   var(--type-label) render ~0.5px smaller. Intentional consolidation.
+   ═══════════════════════════════════════════════════════════════════ */
+:root {
+  /* Brand (founder-locked) */
+  --brand-cyan: #00d4ff;
+  --brand-red: #FF3B3B;
+  --brand-red-hi: #FF5B5B;
+  --brand-red-deep: #D12424;
+  --brand-amber: #ffd166;
+  --brand-green: #00ff88;
+  --brand-violet: #a78bfa;
+
+  /* Text — DUSK (dark) default */
+  --text-1: #eef6f8;
+  --text-2: #b7c7d3;
+  --text-3: #8295a0;          /* replaces #484860 (was 2.17:1, now AA) */
+
+  /* Surfaces — DUSK */
+  --surface-1: #0e0e16;
+  --surface-2: #121218;
+  --surface-3: #161622;
+
+  /* Borders */
+  --border-1: rgba(255,255,255,.09);
+  --border-2: rgba(255,255,255,.16);
+  --border-cyan: rgba(0,212,255,.35);
+
+  /* Spacing scale */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-6: 24px; --sp-8: 32px;
+
+  /* Radii */
+  --radius-card: 16px;
+  --radius-nested: 10px;
+  --radius-control: 8px;
+  --radius-pill: 999px;
+
+  /* Fonts */
+  --font-display: 'Orbitron', sans-serif;
+  --font-body: 'Rajdhani', sans-serif;
+  --font-mono: 'Share Tech Mono', monospace;
+  --font-m: 'Share Tech Mono', monospace;      /* back-compat: was undefined */
+  --font-d: 'Orbitron', sans-serif;           /* back-compat: was undefined */
+  --font-b: 'Rajdhani', sans-serif;           /* back-compat: was undefined */
+
+  /* Type scale */
+  --type-display: 1.5rem;
+  --type-title: 1.1rem;
+  --type-subtitle: .95rem;
+  --type-body: .88rem;
+  --type-label: .72rem;
+  --type-caption: .62rem;
+  --type-micro: .55rem;
+
+  /* Kicker (signature brand element) */
+  --kicker-font: 'Share Tech Mono', monospace;
+  --kicker-size: .625rem;
+  --kicker-weight: 700;
+  --kicker-spacing: 2.5px;
+  --kicker-color: var(--brand-cyan);
+
+  /* Controls */
+  --ctl-h: 48px;
+  --ctl-h-sm: 40px;
+
+  /* Charts (visual grammar) */
+  --chart-actual: #00d4ff;      /* recorded data */
+  --chart-estimate: #ffd166;    /* dashed amber = estimate */
+  --chart-plan: #a78bfa;        /* violet = plan */
+  --chart-grid: rgba(255,255,255,.07);
+  --chart-danger: #FF3B3B;
+
+  /* Semantic */
+  --success: #00ff88;
+  --warning: #ffd166;
+  --danger: #FF3B3B;
+  --info: #00d4ff;
+
+  /* ── Legacy aliases: previous cascade winners, no contract equivalent ── */
+  /* Lava (Mars Red) CTA family — was redefined 4x; now single aliases. */
+  --lava-core: var(--brand-red);
+  --lava-core-hi: var(--brand-red-hi);
+  --lava-edge: var(--brand-red-deep);
+  --lava-hot: #CC2944;                 /* preserved dark cascade winner */
+  --lava-glow: rgba(255, 79, 34, .28); /* preserved cascade winner */
+  /* Dim text + helper size — readability-floor cascade winners. */
+  --text-dim: #6f6f88;
+  --type-helper: .78rem;
+}
+
+html[data-theme="light"] {
+  --brand-cyan: #00677f;
+  --text-1: #1c2b31;
+  --text-2: #3f535a;
+  --text-3: #5d7a86;
+  --surface-1: #f4f1e9;
+  --surface-2: #f8f5ed;
+  --surface-3: #fffdf8;
+  --border-1: rgba(20,60,70,.14);
+  --border-2: rgba(20,60,70,.25);
+  --chart-grid: rgba(20,60,70,.08);
+
+  /* Legacy alias, light theme: preserved cascade winner. */
+  --text-dim: #476169;
+}

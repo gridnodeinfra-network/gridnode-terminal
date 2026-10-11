@@ -1942,11 +1942,6 @@ html[data-theme="light"] .gn-compare-row label span, html[data-theme="light"] .g
 .gn-const-node::before { content:''; position:absolute; left:50%; top:50%; width:44px; height:44px; transform:translate(-50%,-50%); }
 
 /* MOBILE-FIRST batch: 320px fixes, FAB, scanner zones */
-/* FIX 8: LAB segment tabs wrap at 320px */
-@media (max-width: 360px) {
-  .lab-seg-tabs, [data-labseg-tabs] { flex-wrap: wrap; gap: 6px; }
-  .lab-seg-tabs .time-tab, [data-labseg-tabs] .time-tab { flex: 1 1 30%; min-width: 0; font-size: .62rem; padding: 10px 4px; }
-}
 /* FIX 9: BACK TO LAB collision at 320px */
 @media (max-width: 360px) {
   .gn-lab-back { font-size: .68rem; }

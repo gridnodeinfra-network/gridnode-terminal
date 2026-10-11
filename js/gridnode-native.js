@@ -56,6 +56,7 @@
     // Phase 2 refactor: gridnode-native.css is split into css/native/*.css files.
     // GN_NATIVE_CSS_ORDER must match css/native/order.json (checked by contract test).
     const files = [
+      '08-design-tokens.css',
       '00-base.css',
       '01-readability-floor.css',
       '02-first-five-minutes.css',
@@ -65,6 +66,8 @@
       '05-logshot-2step.css',
       '06-premium-pass.css',
       '07-journey.css',
+      '08-unify-fixes.css',
+      '09-unified-components.css',
     ];
     files.forEach((file, index) => {
       const link = document.createElement('link');

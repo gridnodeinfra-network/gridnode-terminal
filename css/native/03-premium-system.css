@@ -282,7 +282,7 @@ html[data-theme="light"] #landing::before {
 html[data-theme="light"] #landing .landing-hero { background: transparent !important; }
 html[data-theme="light"] #landing .landing-logo { filter: none !important; }
 html[data-theme="light"] #landing .landing-kicker { color: #006f82 !important; }
-html[data-theme="dark"] #landing .landing-kicker { text-shadow: 0 0 14px rgba(0, 212, 255, 0.35); }
+html:not([data-theme="light"]) #landing .landing-kicker { text-shadow: 0 0 14px rgba(0, 212, 255, 0.35); }
 html[data-theme="light"] #landing .landing-headline { color: #17272e !important; text-shadow: none !important; }
 html[data-theme="light"] #landing .landing-copy,
 html[data-theme="light"] #landing .landing-copy span { color: #38515a !important; }
@@ -586,7 +586,8 @@ html[data-theme="light"] {
   --text-primary: #15282f;
   --text-secondary: #304b55;
   --text-muted: #4b636b;
-  --text-dim: #526970;
+  /* Unified 2026-10-11: --text-dim lives in 08-design-tokens.css (#476169,
+     the cascade winner); this block defers to the canonical layer. */
   --text-helper: #395861;
   --text-label: #203d47;
   --text-placeholder: #5b7077;
@@ -611,7 +612,7 @@ html[data-theme="light"] {
 html[data-theme="light"] :is(.page-sub,.form-helper,.gn-shot-date-helper,.gn-auth-note,.gn-research-context,.gn-cloud-status,.gn-date-dow,.gn-calendar-detail,.gn-wanda-copy,.gn-dashboard-support,.phase-sphere-status,.gn-syr-meta,.syr-result-sub,.syr-scale-lbl,.gn-syr-forensic) {
   color: var(--text-helper) !important; opacity: 1 !important; font-weight: 500 !important;
 }
-html[data-theme="light"] :is(.form-label,.gn-form-grid label>span,.gn-record-form label>span,.gn-profile-section-label,.sec-title,.gn-stable-zone-title,.gn-foundation-kicker,.gn-whatsnew-kicker,.gn-wn-cat-tag,.gn-auth-kicker,.gn-auth-primary-label,.gn-dashboard-mission-kicker) {
+html[data-theme="light"] :is(.form-label,.gn-form-grid label>span,.gn-record-form label>span,.gn-profile-section-label,.gn-stable-zone-title,.gn-auth-primary-label) {
   color: var(--text-label) !important; opacity: 1 !important; font-weight: 700 !important;
 }
 html[data-theme="light"] :is(input,textarea,select,.form-input,.form-textarea,.cp-select-trigger,.gn-select-trigger,.cp-option,.gn-select-option) {
@@ -705,7 +706,9 @@ html[data-theme="light"] #landing { --surface: #f7f4ed; --surface-elevated: #fff
 html[data-theme="light"] :is(#landing,#login,#app,.overlay,.gn-lab-tool-overlay,.gn-whatsnew-overlay) :is(button,label,summary,input,textarea,select,option,small,p,li,th,td) { font-size: max(12px,.75rem) !important; opacity: 1 !important; }
 /* MOBILE-FIRST: iOS Safari auto-zooms on inputs <16px. Keep text inputs at 16px in light theme. */
 html[data-theme="light"] :is(#landing,#login,#app,.overlay) :is(input[type="text"],input[type="number"],input[type="email"],input[type="tel"],input[type="password"],input:not([type]),textarea) { font-size: 16px !important; }
-html[data-theme="light"] :is(.landing-language-control span,.landing-kicker,.landing-note strong,.landing-note>span,.landing-local-link,.landing-preview-tag,.landing-preview-caption,.landing-footer-label,.gn-auth-kicker,.gn-auth-primary-label,.gn-auth-message,.gn-auth-note,.gn-topbar-language-control button,#nodeHeaderPhase,.gn-dashboard-mission-kicker,.gn-wanda-label,.gn-wanda-note,.gn-instrument-code,.gn-data-quality,.gn-chart-state,.gn-target-empty,.gn-telemetry-summary,.gn-arc-empty,.gn-level-kicker,.scanner-source-tag,#scannerModeLabel,.scanner-status-helper,.shots-safety-note,.shot-history-toggle,#shotHistoryHelper,.gn-log-step,.gn-shot-time-helper,.gn-shot-date-helper,.gn-foundation-kicker,.gn-foundation-signal,.gn-lab-breadcrumb,.gn-dose-copy,.results-metric-label,.empty-subline,.s6-label,.phase-readout-label,.phase-readout-copy,.gn-measurements-copy,.gn-preferences-status,.gn-record-state,.cal-day-head,#calTitle,.gn-custom-picker-trigger,.gn-custom-date-trigger,.gn-stable-zone-title,.gn-stable-zone-btn,.gn-research-context,.gn-research-disclaimer,.gn-dose-output,.gn-profile-section-label,#gnProfileSync,#profEmail) {
+/* TRACK5: kicker classes removed from this DAY OPS floor — the canonical
+   .kicker (08-unify-fixes.css) governs kickers in both themes. */
+html[data-theme="light"] :is(.landing-language-control span,.landing-note strong,.landing-note>span,.landing-local-link,.landing-preview-tag,.landing-preview-caption,.landing-footer-label,.gn-auth-primary-label,.gn-auth-message,.gn-auth-note,.gn-topbar-language-control button,#nodeHeaderPhase,.gn-wanda-label,.gn-wanda-note,.gn-instrument-code,.gn-data-quality,.gn-chart-state,.gn-target-empty,.gn-telemetry-summary,.gn-arc-empty,.scanner-source-tag,#scannerModeLabel,.scanner-status-helper,.shots-safety-note,.shot-history-toggle,#shotHistoryHelper,.gn-log-step,.gn-shot-time-helper,.gn-shot-date-helper,.gn-foundation-signal,.gn-lab-breadcrumb,.gn-dose-copy,.results-metric-label,.empty-subline,.s6-label,.phase-readout-label,.phase-readout-copy,.gn-measurements-copy,.gn-preferences-status,.gn-record-state,.cal-day-head,#calTitle,.gn-custom-picker-trigger,.gn-custom-date-trigger,.gn-stable-zone-title,.gn-stable-zone-btn,.gn-research-context,.gn-research-disclaimer,.gn-dose-output,.gn-profile-section-label,#gnProfileSync,#profEmail) {
   font-size: max(12px,.75rem) !important; line-height: 1.45 !important; letter-spacing: min(.055em,1px) !important; font-weight: 500 !important; opacity: 1 !important;
 }
 html[data-theme="light"] :is(.gn-foundation-kicker,.gn-foundation-signal,.gn-log-step,.scanner-source-tag,.phase-readout-label,.gn-wanda-label,.results-metric-label,.cal-day-head,.gn-profile-section-label) { font-weight: 700 !important; }
@@ -730,9 +733,9 @@ html[data-theme="light"] :is(.cal-day,.cal-day-name) { background: transparent !
 html[data-theme="light"] .cal-day-num { color: var(--text-secondary) !important; }
 html[data-theme="light"] .cal-day:is(:hover,.selected,.today) { background: rgba(0,95,115,.10) !important; }
 html[data-theme="light"] .gn-shot-advanced-trigger { color: var(--text-label) !important; background: #e3e7e4 !important; border-color: rgba(32,61,71,.28) !important; }
-html[data-theme="light"] :is(.btn-secondary,.log-modal-bottom-close) { color: var(--text-accent) !important; -webkit-text-fill-color: var(--text-accent) !important; border-color: rgba(0,95,115,.42) !important; background: rgba(255,253,248,.82) !important; }
+html[data-theme="light"] .btn-secondary { color: var(--text-accent) !important; -webkit-text-fill-color: var(--text-accent) !important; border-color: rgba(0,95,115,.42) !important; background: rgba(255,253,248,.82) !important; }
 html[data-theme="light"] .gn-language-control > span { font-size: 12px !important; color: var(--text-secondary) !important; opacity: 1 !important; }
-html[data-theme="light"] :is(.scanner-selected-panel b,.results-signal-note b,.gn-reference-pending strong,.gn-foundation-tile b,.gn-research-group>span,.gn-research-notice strong,.gn-wn-cat-tag,.gn-whatsnew-kicker,.gn-whatsnew-title) { font-size: 12px !important; opacity: 1 !important; }
+html[data-theme="light"] :is(.scanner-selected-panel b,.results-signal-note b,.gn-reference-pending strong,.gn-foundation-tile b,.gn-research-group>span,.gn-research-notice strong,.gn-whatsnew-title) { font-size: 12px !important; opacity: 1 !important; }
 html[data-theme="light"] :is(.results-signal-note,.results-signal-note span,.gn-reference-pending span,.gn-weekly-report p,.gn-research-notice span,.gn-research-disclaimer) { font-size: 13px !important; line-height: 1.5 !important; color: var(--text-secondary) !important; opacity: 1 !important; }
 html[data-theme="light"] :is(.gn-syr-result .k,.gn-syr-result .v,#syrText,#syrML,#syrConcDisplay,.gn-syr-headroom,.gn-syr-pk-hud .k,.gn-syr-pk-hud .v) { font-size: 12px !important; opacity: 1 !important; }
 html[data-theme="light"] .gn-syr-u100 { font-size: 12px !important; color: var(--text-warning) !important; opacity: 1 !important; }
@@ -778,7 +781,8 @@ html[data-theme="light"] {
   --text-helper: var(--text-helper-light);
   --text-label: var(--text-label-light);
   --text-muted: var(--text-muted-functional-light);
-  --text-dim: var(--text-muted-functional-light);
+  /* Unified 2026-10-11: --text-dim lives in 08-design-tokens.css (#476169,
+     the cascade winner); this block defers to the canonical layer. */
   --text-placeholder: var(--text-placeholder-light);
   --text-disabled: var(--text-disabled-light);
   --text-accent: var(--text-accent-light);
@@ -826,7 +830,7 @@ html[data-theme="light"] :is(
 html[data-theme="light"] :is(
   .form-label,.gn-form-grid label>span,.gn-record-form label>span,
   .gn-dose-grid label>span,.gn-measurements-grid label>span,
-  .gn-preferences-grid label>span,.gn-profile-section-label,.sec-title,
+  .gn-preferences-grid label>span,.gn-profile-section-label,
   .gn-stable-zone-title,.results-metric-label,.phase-readout-label,
   .gn-shot-filter-grid label>span,.scanner-selected-panel small
 ) {
@@ -874,10 +878,10 @@ html[data-theme="light"] :is(
   html[data-theme="light"] :is(
     .form-label,.gn-form-grid label>span,.gn-record-form label>span,
     .gn-dose-grid label>span,.gn-measurements-grid label>span,
-    .gn-preferences-grid label>span,.gn-profile-section-label,.sec-title,
+    .gn-preferences-grid label>span,.gn-profile-section-label,
     .gn-stable-zone-title,.results-metric-label,.phase-readout-label,
     .gn-shot-filter-grid label>span,.scanner-selected-panel small,
-    .scanner-source-tag,.gn-foundation-kicker,.gn-foundation-signal,
+    .scanner-source-tag,.gn-foundation-signal,
     .gn-log-step,.asset-matrix-title b,#scannerModeLabel
   ) {
     font-size: 14px !important;
@@ -1177,12 +1181,15 @@ html[data-theme="light"] #logOv #cpShotMedDrop .cp-group-minimized-label {
 
 /* NIGHT GRID production gate — preserve the dark identity while ensuring
    functional status, navigation, safety copy and instrument labels remain
-   usable at phone distance. */
+   usable at phone distance.
+   Unified 2026-10-11: lava tokens are aliases to the canonical brand tokens
+   (css/native/08-design-tokens.css); all :root lava blocks now agree. */
 :root {
-  --lava-hot: #D12424;
-  --lava-core: #FF3B3B;
-  --lava-edge: #D12424;
-  --lava-glow: rgba(255, 79, 34, .28);
+  --lava-core: var(--brand-red);
+  --lava-core-hi: var(--brand-red-hi);
+  --lava-edge: var(--brand-red-deep);
+  --lava-hot: #CC2944;                 /* preserved dark cascade winner */
+  --lava-glow: rgba(255, 79, 34, .28); /* preserved cascade winner */
 }
 :is(
   #logOv .btn-primary,#logOv .modal-btn.save,
@@ -1297,7 +1304,8 @@ html:not([data-theme="light"]) .gn-auth-note {
 .gn-tip-card .gn-tip-kicker { display: block; font: 700 .58rem var(--font-d); letter-spacing: 2.4px; color: #41e0c7; margin-bottom: 4px; }
 .gn-tip-card p { margin: 0; font: .74rem/1.45 var(--font-b); color: #c2d7de; }
 .gn-wanda-card.info { border-left-color: #00d4ff; }
-.gn-wanda-card.info .gn-wanda-value { color: #eef6f8; }
+/* TRACK5: removed dead `.gn-wanda-card.info .gn-wanda-value { color: #eef6f8; }` —
+   it never applied (00-base beats it with !important in both themes). */
 /* v0.15.44: the shot FAB stays visible in the zero-shot state too (FAB lives on
    every tab except Vault). The Get-started hero CTA remains the primary prompt;
    the FAB is the quick action. */
@@ -1463,15 +1471,19 @@ html[data-theme="light"] .gn-inline-error { background: rgba(255, 59, 59, .06); 
 /* ─────────────────────────────────────────────────────────────────────
    Exquisite Eyes WCAG / audit fixes — 2026-08-07
    Verified by scripts/audit-served-day-ops.cjs (light + dark passes).
-   ───────────────────────────────────────────────────────────────────── */
+   ─────────────────────────────────────────────────────────────────────
+   Unified 2026-10-11: lava tokens are aliases to the canonical brand tokens
+   (css/native/08-design-tokens.css). The 2026-08-07 WCAG deepening is
+   superseded by the 2026-08-08 founder Mars Red restoration below; the
+   historical note is kept for context.
+   (Historical: white text on the red-lava CTAs measured 3.04–3.54:1;
+   deepened stops were #CC2944 / #C61F3A / #8F0F28.) */
 :root {
-  /* White text on the red-lava CTAs measured 3.04–3.54:1 (audit).
-     Deepened within the lava family: every gradient stop now ≥4.5:1
-     with white (the audit takes the minimum across all stops). */
-  --lava-hot: #CC2944;    /* was #D12424/#FF3B3B family */
-  --lava-core: #C61F3A;   /* was #FF3B3B (3.54:1) */
-  --lava-core-hi: #CC2944; /* was #FF5B5B */
-  --lava-edge: #8F0F28;   /* deep anchor, 9.3:1 */
+  --lava-core: var(--brand-red);
+  --lava-core-hi: var(--brand-red-hi);
+  --lava-edge: var(--brand-red-deep);
+  --lava-hot: #CC2944;                 /* preserved dark cascade winner */
+  --lava-glow: rgba(255, 79, 34, .28); /* preserved cascade winner */
 }
 /* Light theme re-binds the lava vars in html[data-theme="light"] (line ~2151);
    re-deepen them there too so the audit's minimum-stop contrast passes. */
@@ -1551,11 +1563,15 @@ html[data-theme="light"] #app :is(.gn-empty-hero p, .gn-telemetry-heading p,
    is carried by the existing 0 1px 2px rgba(60,0,12,.45) text-shadow;
    the audit's other fixes (calendar days, text floors, passkey, links)
    remain untouched. Only CTA surfaces are restored.
-   ───────────────────────────────────────────────────────────────────── */
+   ─────────────────────────────────────────────────────────────────────
+   Unified 2026-10-11: lava tokens are aliases to the canonical brand tokens
+   (css/native/08-design-tokens.css); all :root lava blocks now agree. */
 :root {
-  --lava-core-hi: #FF5B5B;   /* Mars Red hover/light */
-  --lava-core: #FF3B3B;      /* Mars Red primary */
-  --lava-edge: #D12424;      /* Mars Red deep / pressed */
+  --lava-core: var(--brand-red);       /* Mars Red primary */
+  --lava-core-hi: var(--brand-red-hi); /* Mars Red hover/light */
+  --lava-edge: var(--brand-red-deep);  /* Mars Red deep / pressed */
+  --lava-hot: #CC2944;                 /* preserved dark cascade winner */
+  --lava-glow: rgba(255, 79, 34, .28); /* preserved cascade winner */
 }
 html[data-theme="light"] {
   --lava-hot: #FF4B4B;
@@ -2499,7 +2515,7 @@ html[data-theme="light"] #pageDash .gn-tip-card { background: rgba(0, 111, 130, 
 .gn-hub-close { min-width: 44px !important; min-height: 44px !important; height: 44px !important; }
 
 /* Chips / pills: denser modern tags. */
-.dose-pill, .time-tab, .gn-evidence-chip, .gn-node-pill, .node-pill {
+.dose-pill, .time-tab, .gn-evidence-chip, .node-pill {
   border-radius: 999px !important;
   transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.1s ease;
 }
@@ -2936,7 +2952,7 @@ html[data-theme="light"] input[aria-invalid="true"], html[data-theme="light"] te
 @media (prefers-reduced-motion: no-preference){
   .btn-primary, .btn-full.btn-primary, .gn-auth-primary, .gn-whatsnew-close,
   .future-confirm-save, .landing-btn.primary, .gn-foundation-tile,
-  .nav-item, .gn-chip, .gn-mode-tab, .cp-option, .modal-btn, .topbar-btn,
+  .nav-item, .cp-option, .modal-btn, .topbar-btn,
   .scanner-mode-btn, .gn-stable-zone-btn {
     transition: transform 180ms cubic-bezier(.2,.75,.25,1),
                 box-shadow 180ms ease,
@@ -2952,8 +2968,8 @@ html[data-theme="light"] input[aria-invalid="true"], html[data-theme="light"] te
   transform: translateY(-1px);
   filter: saturate(1.04) brightness(1.06);
 }
-.gn-foundation-tile:hover, .gn-chip:hover, .nav-item:hover, .cp-option:hover,
-.gn-mode-tab:hover, .scanner-mode-btn:hover, .gn-stable-zone-btn:hover {
+.gn-foundation-tile:hover, .nav-item:hover, .cp-option:hover,
+.scanner-mode-btn:hover, .gn-stable-zone-btn:hover {
   transform: translateY(-1px);
   filter: brightness(1.08);
 }
@@ -2966,9 +2982,9 @@ html[data-theme="light"] input[aria-invalid="true"], html[data-theme="light"] te
 .gn-auth-primary:focus-visible, .gn-whatsnew-close:focus-visible,
 .future-confirm-save:focus-visible, .landing-btn:focus-visible,
 .landing-btn.primary:focus-visible,
-.nav-item:focus-visible, .gn-chip:focus-visible,
+.nav-item:focus-visible,
 .gn-foundation-tile:focus-visible, .cp-option:focus-visible,
-.gn-mode-tab:focus-visible, .scanner-mode-btn:focus-visible,
+.scanner-mode-btn:focus-visible,
 .gn-stable-zone-btn:focus-visible, .gn-theme-opt:focus-visible {
   outline: 2px solid var(--cyan-core, #00d4ff) !important;
   outline-offset: 2px !important;
@@ -2979,9 +2995,9 @@ html[data-theme="light"] .btn-primary:focus-visible, html[data-theme="light"] .b
 html[data-theme="light"] .gn-auth-primary:focus-visible, html[data-theme="light"] .gn-whatsnew-close:focus-visible,
 html[data-theme="light"] .future-confirm-save:focus-visible, html[data-theme="light"] .landing-btn:focus-visible,
 html[data-theme="light"] .landing-btn.primary:focus-visible,
-html[data-theme="light"] .nav-item:focus-visible, html[data-theme="light"] .gn-chip:focus-visible,
+html[data-theme="light"] .nav-item:focus-visible,
 html[data-theme="light"] .gn-foundation-tile:focus-visible, html[data-theme="light"] .cp-option:focus-visible,
-html[data-theme="light"] .gn-mode-tab:focus-visible, html[data-theme="light"] .scanner-mode-btn:focus-visible,
+html[data-theme="light"] .scanner-mode-btn:focus-visible,
 html[data-theme="light"] .gn-stable-zone-btn:focus-visible, html[data-theme="light"] .gn-theme-opt:focus-visible {
   outline-color: #006f82 !important;
   box-shadow: 0 0 0 3px rgba(0, 111, 130, .14) !important;
@@ -3047,7 +3063,7 @@ html[data-theme="light"] .s6-card, html[data-theme="light"] .gn-wanda-card {
 
 /* Touch target floor for legacy controls (guarded, not over-riding existing
    44px rules; only additive for any control that might otherwise be too thin). */
-.gn-tab, .gn-chip, .gn-mode-tab, .gn-foundation-tile { min-height: 44px; }
+.gn-foundation-tile { min-height: 44px; }
 
 /* NODE / Profile hub row: tighter, more deliberate hover affordance. */
 .gn-profile-row:hover, .gn-profile-section button:hover {
