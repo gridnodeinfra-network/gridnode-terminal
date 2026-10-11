@@ -2082,5 +2082,6 @@
   "otp.newHereNodeKey": "¿Nuevo en GRID//NODE? INGRESAR NODE KEY",
   "auth.useLocally": "USAR LOCALMENTE",
   "auth.privacyData": "Privacidad y datos",
-  "auth.medicalDisclaimer": "Aviso médico"
+  "auth.medicalDisclaimer": "Aviso médico",
+  "vault.dangerZone": "Zona de peligro"
 }

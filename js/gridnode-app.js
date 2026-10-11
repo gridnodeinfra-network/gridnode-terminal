@@ -253,8 +253,6 @@ function authShell() {
     <div class="gn-auth-kicker" data-i18n="auth.secureConnection">SECURE CONNECTION // TERMINAL READY</div>
     <h1 class="gn-auth-title">GRID//NODE</h1>
     <div id="gnAuthViewRoot"></div>
-    <div class="gn-auth-policy-link"><button type="button" id="gnVaultPolicyLink" data-i18n="landing.yourDataYourRules">YOUR DATA, YOUR RULES</button></div>
-    <div class="gn-auth-note" data-i18n="auth.inviteBetaNote">GRID//NODE is in private beta. Cloud sync requires a NODE KEY invite.</div>
     <div class="gn-auth-message" id="loginMsg" role="status" aria-live="polite"></div>
   </div>
   <div class="gn-legal-modal" id="gnLegalModal" hidden>

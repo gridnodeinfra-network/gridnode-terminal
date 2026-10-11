@@ -2015,5 +2015,6 @@
   "otp.newHereNodeKey": "New to GRID//NODE? ENTER NODE KEY",
   "auth.useLocally": "USE LOCALLY",
   "auth.privacyData": "Privacy & data",
-  "auth.medicalDisclaimer": "Medical disclaimer"
+  "auth.medicalDisclaimer": "Medical disclaimer",
+  "vault.dangerZone": "Danger Zone"
 }
