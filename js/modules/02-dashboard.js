@@ -484,7 +484,7 @@ function orbitInspect(cyclePos) {
     var angle = (cyclePos * Math.PI * 2) - (Math.PI / 2);
     marker.style.left = (50 + (Math.cos(angle) * 45)) + '%';
     marker.style.top = (50 + (Math.sin(angle) * 45)) + '%';
-    marker.style.borderColor = phase.color || '#d3a24a';
+    marker.style.borderColor = phase.color || '#e57f9e';
     marker.hidden = false;
   }
   var stripInspect = document.getElementById('gnPhaseStripInspect');

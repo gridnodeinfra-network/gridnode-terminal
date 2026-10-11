@@ -62,10 +62,14 @@
   const NS = 'http://www.w3.org/2000/svg';
 
   const C = {
-    onset: '#00d4ff', active: '#00ff88', peak: '#ffd700',
+    onset: '#00d4ff', active: '#00ff88', peak: '#e57f9e',
     response: '#ff8c00', decay: '#ff5577', baseline: '#9898b0',
     grid: 'rgba(255,255,255,.07)', dim: '#8295a0',
-    curve: '#00E6F0', curveSoft: 'rgba(0,230,240,.55)'
+    curve: '#00E6F0', curveSoft: 'rgba(0,230,240,.55)',
+    /* Chart grammar tokens — canvas-literal mirrors of TOKEN-CONTRACT --chart-*.
+       peak moved off gold (#ffd700) so amber stays reserved for estimates. */
+    estimate: '#ffd166',
+    estimateEdge: 'rgba(255,209,102,.55)'
   };
 
   let lastRender = null; // { shots, medId, medLabel, labelMap, range, now }
@@ -141,11 +145,16 @@
       try {
         var unc = 0.12; // ±12% visual uncertainty
         ctx.save();
-        ctx.fillStyle = C.curveSoft + '22';
+        // BUG FIX: was `C.curveSoft + '22'` → 'rgba(0,230,240,.55)22', an invalid
+        // color string that canvas silently ignores — the envelope never painted.
+        ctx.fillStyle = 'rgba(0,230,240,.08)';
         ctx.beginPath();
         build.points.forEach((v, i) => { const x = padL + plotW * i / (build.count - 1), y = yFor(v * (1 + unc)); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
         for (var ui = build.points.length - 1; ui >= 0; ui--) { const x2 = padL + plotW * ui / (build.count - 1), y2 = yFor(build.points[ui] * (1 - unc)); ctx.lineTo(x2, y2); }
         ctx.closePath(); ctx.fill();
+        // dashed amber edge: estimates carry structure, not just alpha (grammar: dashed amber = estimate)
+        ctx.setLineDash([4, 4]); ctx.strokeStyle = C.estimateEdge; ctx.lineWidth = 1;
+        ctx.stroke(); ctx.setLineDash([]);
         ctx.restore();
       } catch (_) {}
       // glow pass + core pass

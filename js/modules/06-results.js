@@ -330,6 +330,14 @@ function initWeightScrub(canvas, weights) {
 }
 
 function drawWeightTrendChart(canvas, weights, shots, goal) {
+  /* Chart grammar tokens — canvas-literal mirrors of TOKEN-CONTRACT --chart-*.
+     Canvas cannot consume CSS var() per pixel, so these literals are pinned to
+     the token values; CSS/DOM/SVG chart elements use var(--chart-*) directly. */
+  const CHART = {
+    ACTUAL: '#00d4ff',                 /* --chart-actual: recorded data */
+    ESTIMATE_LINE: 'rgba(255,209,102,.6)',  /* --chart-estimate #ffd166 at .6: dashed estimate lines */
+    PLAN_LINE: 'rgba(167,139,250,.55)'      /* --chart-plan #a78bfa at .55: dashed plan lines */
+  };
   const summary = $('weightTrendChartSummary');
   if (!canvas) return null;
   const width = Math.max(280, canvas.clientWidth || 320), height = Math.max(200, canvas.clientHeight || 220), scale = window.devicePixelRatio || 1;
@@ -362,7 +370,7 @@ function drawWeightTrendChart(canvas, weights, shots, goal) {
   const yFor = value => top + (max - Number(value)) / span * plotHeight;
   context.font = '10px Share Tech Mono, monospace'; context.fillStyle = '#8295a0'; context.strokeStyle = 'rgba(255,255,255,.10)'; context.lineWidth = 1;
   for (let index = 0; index <= 3; index++) { const y = top + plotHeight * index / 3; context.beginPath(); context.moveTo(left, y); context.lineTo(width - right, y); context.stroke(); context.fillText(`${(max - (span * index / 3)).toFixed(1)}`, 4, y + 3); }
-  if (Number(goal) > 0) { const goalY = yFor(goal); context.save(); context.setLineDash([5, 4]); context.strokeStyle = 'rgba(255,215,0,.55)'; context.beginPath(); context.moveTo(left, goalY); context.lineTo(width - right, goalY); context.stroke(); context.restore(); }
+  if (Number(goal) > 0) { const goalY = yFor(goal); context.save(); context.setLineDash([5, 4]); context.strokeStyle = CHART.PLAN_LINE; context.beginPath(); context.moveTo(left, goalY); context.lineTo(width - right, goalY); context.stroke(); context.restore(); }
 
   // Premium REFINEMENT (2026-08-10): cyan area gradient under the curve, then a
   // boosted glow halo on the line itself. Halo is drawn twice — once wider, once
@@ -395,8 +403,8 @@ function drawWeightTrendChart(canvas, weights, shots, goal) {
     smooth.forEach(function(v, i){ var x = xFor(i), y = yFor(v + sigma); i ? context.lineTo(x, y) : context.moveTo(x, y); });
     for (var ri = smooth.length - 1; ri >= 0; ri--) { context.lineTo(xFor(ri), yFor(smooth[ri] - sigma)); }
     context.closePath(); context.fill();
-    // smoothed center path (dashed = trend estimate)
-    context.setLineDash([6, 4]); context.strokeStyle = 'rgba(0,230,240,.45)'; context.lineWidth = 1.5;
+    // smoothed center path (dashed = trend estimate; grammar: dashed amber)
+    context.setLineDash([6, 4]); context.strokeStyle = CHART.ESTIMATE_LINE; context.lineWidth = 1.5;
     context.beginPath();
     smooth.forEach(function(v, i){ var x = xFor(i), y = yFor(v); i ? context.lineTo(x, y) : context.moveTo(x, y); });
     context.stroke(); context.restore();
@@ -422,9 +430,15 @@ function drawWeightTrendChart(canvas, weights, shots, goal) {
     const nearest = points.reduce((best, item, index) => Math.abs(parseLocalDate(weights[index].date).getTime() - time) < Math.abs(parseLocalDate(weights[best.index].date).getTime() - time) ? item : best, points[0]).index;
     const changed = priorDose !== null && dose !== priorDose;
     const px = xFor(nearest), py = yFor(values[nearest]);
-    context.fillStyle = changed ? '#ffd700' : '#FF3B3B';
+    // Dose-change = recorded event → grammar cyan (--chart-actual) with white
+    // inner ring so it stays the highest-attention node on the chart.
+    context.fillStyle = changed ? CHART.ACTUAL : '#FF3B3B';
     context.beginPath(); context.arc(px, py, changed ? 6 : 4, 0, Math.PI * 2); context.fill();
-    if (changed) { context.fillStyle = '#ffd700'; context.font = '9px Share Tech Mono, monospace'; context.fillText(tx('results.chartDose', 'DOSE'), Math.min(width - 38, px + 5), Math.max(10, py - 7)); }
+    if (changed) {
+      context.strokeStyle = '#ffffff'; context.lineWidth = 1.5;
+      context.beginPath(); context.arc(px, py, 3.2, 0, Math.PI * 2); context.stroke();
+      context.fillStyle = CHART.ACTUAL; context.font = '9px Share Tech Mono, monospace'; context.fillText(tx('results.chartDose', 'DOSE'), Math.min(width - 38, px + 5), Math.max(10, py - 7));
+    }
     shotMarkers.push({ x: px, y: py, kind: changed ? 'dose' : 'shot', t: time });
     priorDose = dose;
   });
@@ -573,7 +587,7 @@ function renderWeightChartLegend(canvas, geometry) {
   const items = [
     { key: 'cyan',   label: tx('results.legendWeight', 'WEIGHT') },
     { key: 'red',    label: tx('results.legendShot', 'SHOT') },
-    { key: 'yellow', label: tx('results.legendDose', 'DOSE') },
+    { key: 'dose',   label: tx('results.legendDose', 'DOSE') },
     { key: 'green',  label: tx('results.legendMilestone', 'MILESTONE') },
     { key: 'goal',   label: tx('results.legendGoal', 'GOAL') }
   ];

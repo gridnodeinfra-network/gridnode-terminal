@@ -82,6 +82,7 @@ html[data-theme="light"] {
   --red-hi: #FF5B5B;
   --red-lo: #D12424;
   --red: var(--text-error);
+  --chart-grid: rgba(20,60,70,.08); /* light-theme grid per TOKEN-CONTRACT */
 }html[data-theme="light"] :is(#login, #app, .overlay, .gn-delete-overlay, .gn-lab-tool-overlay, .gn-whatsnew-overlay) {
   color: var(--text-primary);
 }html[data-theme="light"] :is(
@@ -385,6 +386,14 @@ html[data-theme="light"] #pageLab .cheat-table { background: var(--surface, #f4f
   --lava-core-hi: #FF5B5B;
   --lava-edge: #D12424;
   --lava-glow: rgba(255, 59, 59, .42);
+  /* ── Charts (visual grammar) — TOKEN-CONTRACT v1.0 ──
+     Canvas charts use JS literal mirrors (see CHART_* in the module code);
+     CSS/DOM/SVG chart elements use these variables directly. */
+  --chart-actual: #00d4ff;      /* recorded data */
+  --chart-estimate: #ffd166;    /* dashed amber = estimate */
+  --chart-plan: #a78bfa;        /* violet = plan */
+  --chart-grid: rgba(255,255,255,.07);
+  --chart-danger: #FF3B3B;
 }
 body { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 /* Form guidance + helper copy: readable companion font, relaxed leading. */
@@ -473,11 +482,13 @@ html[data-theme="light"] .gn-whatsnew-close {
   width: 10px; height: 10px; border-radius: 50%;
   display: inline-block; box-shadow: 0 0 6px currentColor;
 }
-.gn-chart-legend .sw-cyan   { background: #00E6F0; color: #00E6F0; }
-.gn-chart-legend .sw-red    { background: #FF3B3B; color: #FF3B3B; }
+.gn-chart-legend .sw-cyan   { background: var(--chart-actual); color: var(--chart-actual); }
+.gn-chart-legend .sw-red    { background: var(--chart-danger); color: var(--chart-danger); }
 .gn-chart-legend .sw-yellow { background: #ffd700; color: #ffd700; }
+/* DOSE = recorded event (grammar: cyan), white inner ring mirrors the canvas marker */
+.gn-chart-legend .sw-dose   { background: var(--chart-actual); color: var(--chart-actual); border-radius: 2px; border: 1px solid #fff; box-shadow: 0 0 6px var(--chart-actual); }
 .gn-chart-legend .sw-green  { background: #00ff88; color: #00ff88; }
-.gn-chart-legend .sw-goal   { background: transparent; color: rgba(255,215,0,.85); border: 1px dashed rgba(255,215,0,.85); box-shadow: none; border-radius: 0; height: 0; width: 14px; }
+.gn-chart-legend .sw-goal   { background: transparent; color: var(--chart-plan); border: 1px dashed var(--chart-plan); box-shadow: none; border-radius: 0; height: 0; width: 14px; }
 
 /* ── Peptide Evidence Phase Curve (2026-08-10) ── */
 .card-title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }

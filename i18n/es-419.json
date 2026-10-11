@@ -339,6 +339,7 @@
   "dashboard.weeklyRateLabel": "RITMO SEMANAL",
   "dashboard.weeksInRow_one": "{count} SEMANA SEGUIDA ✓",
   "dashboard.weeksInRow_other": "{count} SEMANAS SEGUIDAS ✓",
+  "dashboard.zeroShotCloudSub": "SINCRONIZADO CON TU NUBE",
   "dashboard.zeroShotSub": "GUARDADO EN ESTE DISPOSITIVO",
   "date.cancel": "CANCELAR",
   "date.close": "CERRAR",
@@ -2109,5 +2110,8 @@
   "auth.medicalDisclaimer": "Aviso médico",
   "vault.dangerZone": "Zona de peligro",
   "auth.resetPassword": "Restablecer contraseña",
-  "phase.estimateInfoAria": "Acerca de esta estimación"
+  "phase.estimateInfoAria": "Acerca de esta estimación",
+  "auth.revokePasskey": "REVOCAR",
+  "vault.signOutHelp": "Terminar esta sesión en la nube",
+  "vault.groupSecurity": "// SEGURIDAD"
 }

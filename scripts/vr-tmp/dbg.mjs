@@ -1,0 +1,14 @@
+import { chromium } from 'playwright';
+const b = await chromium.launch({ headless: true, executablePath: '/home/hatch/.cache/ms-playwright/chromium-1248/chrome-linux64/chrome', args: ['--no-sandbox'] });
+const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, serviceWorkers: 'block', reducedMotion: 'reduce' });
+const p = await ctx.newPage();
+await p.goto('http://127.0.0.1:4173/?vr=1', { waitUntil: 'domcontentloaded' });
+await p.evaluate(() => { localStorage.setItem('gn_theme_v1','dark'); localStorage.setItem('gn.lang','en'); localStorage.setItem('gn_onboarding_v1','complete'); });
+await p.reload({ waitUntil: 'domcontentloaded' });
+await p.waitForTimeout(1500);
+console.log('navDash count:', await p.locator('#navDash').count(), 'visible:', await p.locator('#navDash').isVisible().catch(()=>false));
+console.log('navLog count:', await p.locator('#navLog').count());
+console.log('navVault count:', await p.locator('#navVault').count());
+console.log('body text head:', (await p.locator('body').innerText()).slice(0, 300).replace(/\n/g,' | '));
+await p.screenshot({ path: '/tmp/dbg.png' });
+await b.close();

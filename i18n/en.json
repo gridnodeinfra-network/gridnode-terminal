@@ -339,6 +339,7 @@
   "dashboard.weeklyRateLabel": "WEEKLY RATE",
   "dashboard.weeksInRow_one": "{count} WEEK IN A ROW ✓",
   "dashboard.weeksInRow_other": "{count} WEEKS IN A ROW ✓",
+  "dashboard.zeroShotCloudSub": "SYNCED TO YOUR CLOUD",
   "dashboard.zeroShotSub": "STORED ON THIS DEVICE",
   "date.cancel": "CANCEL",
   "date.close": "CLOSE",
@@ -2042,5 +2043,8 @@
   "auth.medicalDisclaimer": "Medical disclaimer",
   "vault.dangerZone": "Danger Zone",
   "auth.resetPassword": "Reset password",
-  "phase.estimateInfoAria": "About this estimate"
+  "phase.estimateInfoAria": "About this estimate",
+  "auth.revokePasskey": "REVOKE",
+  "vault.signOutHelp": "End this cloud session",
+  "vault.groupSecurity": "// SECURITY"
 }

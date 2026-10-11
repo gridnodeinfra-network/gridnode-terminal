@@ -171,10 +171,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 
 /* SCANLINES */
 .scanlines{position:fixed;inset:0;z-index:9999;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.02) 3px,rgba(0,0,0,0.02) 4px);opacity:.7}
-.scan-sweep{position:fixed;left:0;right:0;top:0;height:1px;will-change:transform;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.028),transparent);z-index:9998;pointer-events:none;animation:sweepDown 14s linear infinite;opacity:.55}
+.scan-sweep{position:fixed;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.028),transparent);z-index:9998;pointer-events:none;animation:sweepDown 14s linear infinite;opacity:.55}
 
 /* ANIMATIONS */
-@keyframes sweepDown{0%{transform:translateY(-10px)}100%{transform:translateY(110vh)}}
+@keyframes sweepDown{0%{top:-1%}100%{top:101%}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes fadeInUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
@@ -4210,7 +4210,7 @@ function scrollLandingTo(id) {
 <div class="landing-product-preview" role="group" aria-label="GRID//NODE live product preview">
   <div class="landing-preview-frame">
     <div class="landing-preview-bar"><span class="landing-preview-dot"></span><span class="landing-preview-dot"></span><span class="landing-preview-dot"></span><span class="landing-preview-tag">GRID//NODE — LIVE</span></div>
-    <img class="landing-preview-shot" id="landingPreviewShot" src="assets/preview-dashboard.png" width="390" height="844" data-preview-src-en="assets/preview-dashboard.png" data-preview-src-es="assets/preview-dashboard-es.png" alt="GRID//NODE dashboard — SHOTS, Phase Engine, RESULTS" loading="eager" fetchpriority="high" decoding="async">
+    <img class="landing-preview-shot" id="landingPreviewShot" src="assets/preview-dashboard.png" data-preview-src-en="assets/preview-dashboard.png" data-preview-src-es="assets/preview-dashboard-es.png" alt="GRID//NODE dashboard — SHOTS, Phase Engine, RESULTS" loading="eager" fetchpriority="high" decoding="async">
   </div>
   <p class="landing-preview-caption" data-i18n="landing.previewCaption">A functioning biotech command system — protocol logs, phase estimates, and trends on your device.</p>
 </div>
@@ -4219,7 +4219,7 @@ function scrollLandingTo(id) {
 
     <section class="landing-section landing-preem" id="meetPreem">
       <div class="landing-preem-frame">
-        <img class="landing-preem-shot" src="assets/brand/preem-gridnode-hero.webp" width="800" height="600" alt="PREEM, the GRID//NODE wolverine" loading="lazy" decoding="async">
+        <img class="landing-preem-shot" src="assets/brand/preem-gridnode-hero.webp" alt="PREEM, the GRID//NODE wolverine" loading="lazy" decoding="async">
       </div>
       <div class="landing-preem-copy">
         <p class="landing-kicker" data-i18n="landing.preemKicker">// MEET PREEM //</p>
@@ -4487,8 +4487,8 @@ function scrollLandingTo(id) {
               <g id="tickMarks"></g>
               <defs>
                 <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stop-color="#d3a24a" id="arcStop1"/>
-                  <stop offset="100%" stop-color="#c08a52" id="arcStop2"/>
+                  <stop offset="0%" stop-color="#e57f9e" id="arcStop1"/>
+                  <stop offset="100%" stop-color="#c07a94" id="arcStop2"/>
                 </linearGradient>
               </defs>
             </svg>
@@ -9539,7 +9539,7 @@ body.gn-vault-picker-open #pageProfile .gn-vault-hud-select.open .gn-vault-hud-o
   position:sticky !important;
   top:0 !important;
   z-index:90 !important;
-  margin:0 -16px 14px !important;
+  margin:0 0 14px !important;
   padding:calc(12px + max(0px,var(--safe-top))) 16px 12px !important;
   min-height:62px;
   background:

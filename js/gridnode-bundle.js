@@ -1479,7 +1479,7 @@ function sideEffectLabel(value) {
 const PHASES = [
   { name: 'ONSET', support: 'Early in the cycle. Your first observations start shaping this signal.', context: 'Early in the cycle after your latest logged shot. Appetite, energy, symptoms, and notes begin shaping this signal.', color: '#4fb8d8', start: 0, end: 0.08 },
   { name: 'ACTIVE', support: 'Active window of the cycle. Compare with your own earlier cycles.', context: 'Active window of the cycle. Compare this point with your own earlier logged observations.', color: '#63b98b', start: 0.08, end: 0.28 },
-  { name: 'PEAK WINDOW', support: 'Estimated highest relative level this cycle. Not a laboratory measurement.', context: 'Estimated highest relative level this cycle. Individual response varies; this is not a laboratory measurement.', color: '#d3a24a', start: 0.28, end: 0.52 },
+  { name: 'PEAK WINDOW', support: 'Estimated highest relative level this cycle. Not a laboratory measurement.', context: 'Estimated highest relative level this cycle. Individual response varies; this is not a laboratory measurement.', color: '#e57f9e', start: 0.28, end: 0.52 },
   { name: 'RESPONSE', support: 'Mid-cycle estimate from your timing and logged history.', context: 'Mid-cycle estimate from your timing and logged history.', color: '#4aa89b', start: 0.52, end: 0.76 },
   { name: 'DECAY', support: 'Estimated level declining toward the next shot. Individual response varies.', context: 'Estimated level declining toward the next shot. Watch your own logged patterns; individual response varies.', color: '#c26674', start: 0.76, end: 0.94 },
   { name: 'BASELINE', support: 'Late-cycle estimate before the next shot. Keep logging your patterns.', context: 'Late-cycle estimate before the next shot. Keep logging your patterns.', color: '#9898b0', start: 0.94, end: 1 }
@@ -1802,7 +1802,67 @@ function showPage(name, navElement) {
 
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.querySelector('.page.active')?.id === 'pageProfile') { closeProfileHub(); } });
 document.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target && typeof e.target.matches === 'function' && e.target.matches('.cp-group-minimized')) { e.preventDefault(); e.target.click(); } });
-document.addEventListener('keydown', function (e) { if (e.key !== 'Escape') return; var disc = document.getElementById('shotDiscardConfirmOv'); if (disc && (disc.classList.contains('active') || getComputedStyle(disc).display !== 'none')) { cancelShotDiscard(); return; } if (document.querySelector('#futureTimestampConfirm.active')) return; if (document.querySelector('#logOv.active')) { closeLog(); } if (document.querySelector('#wtOv.active')) { closeWt(); } });
+/* TRACK 3 (2026-10-11): universal modal dismiss. This Escape handler is the
+ * single registry for every modal/overlay surface — checked topmost-first so a
+ * nested confirm closes before its parent. Two deliberate strict exceptions:
+ * #futureTimestampConfirm (explicit choice required) and #gnLegalModal (boot
+ * consent); everything else dismisses on Escape. The phase drill-down, peptide
+ * evidence overlay, and first-shot celebrate keep their own local Escape
+ * handlers; the assay modal closer is reached via window.GN_ASSAY. */
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Escape') return;
+  if (document.querySelector('#futureTimestampConfirm.active')) return;
+  var disc = document.getElementById('shotDiscardConfirmOv');
+  if (disc && (disc.classList.contains('active') || getComputedStyle(disc).display !== 'none')) { cancelShotDiscard(); return; }
+  var chain = [
+    ['#archiveConfirmOv', 'cancelArchiveShot'],
+    ['#permanentDeleteConfirmOv', 'cancelPermanentDeleteShot'],
+    ['#loadoutRemoveOverlay', 'cancelLoadoutRemove'],
+    ['#gnDeleteLocalOverlay', 'closeDeleteLocalData'],
+    ['#gnDeleteCloudOverlay', 'closeDeleteCloudAccount'],
+    ['#arsOv', 'closeArs'],
+    ['#phasesOv', 'closePhases'],
+    ['#logOv', 'closeLog'],
+    ['#wtOv', 'closeWt'],
+    ['#signOutOverlay', 'closeSignOutModal'],
+    ['#gnPrivacyOverlay', 'closePrivacyPolicy'],
+    ['#gnTermsOverlay', 'closeTermsOfService'],
+    ['#gnLabToolOverlay', 'closeLabTool']
+  ];
+  for (var i = 0; i < chain.length; i++) {
+    if (document.querySelector(chain[i][0] + '.active')) {
+      var fn = window[chain[i][1]];
+      if (typeof fn === 'function') fn();
+      return;
+    }
+  }
+  if (document.querySelector('#gnAssayModalOv.active') && window.GN_ASSAY && typeof window.GN_ASSAY.closeAssayModal === 'function') {
+    window.GN_ASSAY.closeAssayModal();
+  }
+});
+
+/* TRACK 3 (2026-10-11): backdrop-tap-to-dismiss. A click that lands directly
+ * on an overlay backdrop (event.target === the overlay element) dismisses it.
+ * Skipped while a custom picker dropdown is open (the tap only closes the
+ * picker), and for the two strict confirms (futureTimestampConfirm,
+ * gnLegalModal) which require an explicit choice. Sign-out already had its own
+ * backdrop listener (js/gridnode-app.js wireGlobalEvents); the drill-down and
+ * assay modals have theirs too. */
+document.addEventListener('click', function (e) {
+  var target = e.target;
+  if (!target || !target.id || !target.classList || !target.classList.contains('active')) return;
+  var closer = {
+    logOv: 'closeLog', wtOv: 'closeWt', arsOv: 'closeArs', phasesOv: 'closePhases',
+    gnPrivacyOverlay: 'closePrivacyPolicy', gnTermsOverlay: 'closeTermsOfService',
+    archiveConfirmOv: 'cancelArchiveShot', shotDiscardConfirmOv: 'cancelShotDiscard',
+    permanentDeleteConfirmOv: 'cancelPermanentDeleteShot', loadoutRemoveOverlay: 'cancelLoadoutRemove',
+    gnDeleteLocalOverlay: 'closeDeleteLocalData', gnDeleteCloudOverlay: 'closeDeleteCloudAccount'
+  }[target.id];
+  if (!closer) return;
+  if (document.querySelector('.cp-dropdown.open, .gn-custom-picker.open, .gn-custom-date.open')) return;
+  var fn = window[closer];
+  if (typeof fn === 'function') fn();
+});
 
 function refreshAll() {
   renderProfile();
@@ -1821,12 +1881,10 @@ function loadApp() {
   /* v0.15.41 S16: zero-shot users (no name, no shots) get plain chrome
      instead of unexplained NODE jargon. Named or active users keep the
      NODE-flavored identity line. */
+  renderDashSub();
   const displayName = window.CU?.defaultName || profile.name || '';
   let zeroShot = !displayName;
   try { zeroShot = zeroShot && !(typeof sortedShots === 'function' && sortedShots().length); } catch (_) {}
-  setText('dashSub', zeroShot
-    ? tx('dashboard.zeroShotSub', 'STORED ON THIS DEVICE')
-    : tx('dashboard.nodeOnline', '// {name} // NODE ONLINE', { name: displayName || 'NODE_USER' }));
   setText('profSub', zeroShot ? '// PROFILE //' : `// ${displayName || 'NODE_USER'} //`);
   setText('profNameTxt', displayName || tx('profile.anonFallback', 'NODE_USER'));
   setText('profEmail', sessionLabel());
@@ -1838,6 +1896,27 @@ function loadApp() {
 
 function setText(id, value) { const element = $(id); if (element) element.textContent = value; }
 function setDisplay(id, visible) { const element = $(id); if (element) element.style.display = visible ? '' : 'none'; }
+
+/* Track 6 auth parity: dashSub zero-shot copy is mode-aware. Cloud-signed-in
+   users with no name/shots see the cloud variant instead of the false
+   local-only claim. Named or active users keep the NODE identity line. */
+function renderDashSub() {
+  const profile = getProfile();
+  const displayName = window.CU?.defaultName || profile.name || '';
+  let zeroShot = !displayName;
+  try { zeroShot = zeroShot && !(typeof sortedShots === 'function' && sortedShots().length); } catch (_) {}
+  if (!zeroShot) {
+    setText('dashSub', tx('dashboard.nodeOnline', '// {name} // NODE ONLINE', { name: displayName || 'NODE_USER' }));
+    return;
+  }
+  setText('dashSub', state.cloud
+    ? tx('dashboard.zeroShotCloudSub', 'SYNCED TO YOUR CLOUD')
+    : tx('dashboard.zeroShotSub', 'STORED ON THIS DEVICE'));
+}
+/* i18n applyTo() resets [data-i18n] elements on gn:langchange, which would
+   restore the static local-only copy for cloud users; refreshAll() does not
+   re-render dashSub, so re-apply the mode-aware copy here. */
+document.addEventListener('gn:langchange', () => { try { renderDashSub(); } catch (_) {} });
 
 // B15 (2026-08-08): number tickers. Stats count up/down over ~600ms with
 // ease-out; changed numbers flash Mars Red (200ms fade). Only animates on
@@ -2376,7 +2455,7 @@ function orbitInspect(cyclePos) {
     var angle = (cyclePos * Math.PI * 2) - (Math.PI / 2);
     marker.style.left = (50 + (Math.cos(angle) * 45)) + '%';
     marker.style.top = (50 + (Math.sin(angle) * 45)) + '%';
-    marker.style.borderColor = phase.color || '#d3a24a';
+    marker.style.borderColor = phase.color || '#e57f9e';
     marker.hidden = false;
   }
   var stripInspect = document.getElementById('gnPhaseStripInspect');
@@ -4530,6 +4609,14 @@ function initWeightScrub(canvas, weights) {
 }
 
 function drawWeightTrendChart(canvas, weights, shots, goal) {
+  /* Chart grammar tokens — canvas-literal mirrors of TOKEN-CONTRACT --chart-*.
+     Canvas cannot consume CSS var() per pixel, so these literals are pinned to
+     the token values; CSS/DOM/SVG chart elements use var(--chart-*) directly. */
+  const CHART = {
+    ACTUAL: '#00d4ff',                 /* --chart-actual: recorded data */
+    ESTIMATE_LINE: 'rgba(255,209,102,.6)',  /* --chart-estimate #ffd166 at .6: dashed estimate lines */
+    PLAN_LINE: 'rgba(167,139,250,.55)'      /* --chart-plan #a78bfa at .55: dashed plan lines */
+  };
   const summary = $('weightTrendChartSummary');
   if (!canvas) return null;
   const width = Math.max(280, canvas.clientWidth || 320), height = Math.max(200, canvas.clientHeight || 220), scale = window.devicePixelRatio || 1;
@@ -4562,7 +4649,7 @@ function drawWeightTrendChart(canvas, weights, shots, goal) {
   const yFor = value => top + (max - Number(value)) / span * plotHeight;
   context.font = '10px Share Tech Mono, monospace'; context.fillStyle = '#8295a0'; context.strokeStyle = 'rgba(255,255,255,.10)'; context.lineWidth = 1;
   for (let index = 0; index <= 3; index++) { const y = top + plotHeight * index / 3; context.beginPath(); context.moveTo(left, y); context.lineTo(width - right, y); context.stroke(); context.fillText(`${(max - (span * index / 3)).toFixed(1)}`, 4, y + 3); }
-  if (Number(goal) > 0) { const goalY = yFor(goal); context.save(); context.setLineDash([5, 4]); context.strokeStyle = 'rgba(255,215,0,.55)'; context.beginPath(); context.moveTo(left, goalY); context.lineTo(width - right, goalY); context.stroke(); context.restore(); }
+  if (Number(goal) > 0) { const goalY = yFor(goal); context.save(); context.setLineDash([5, 4]); context.strokeStyle = CHART.PLAN_LINE; context.beginPath(); context.moveTo(left, goalY); context.lineTo(width - right, goalY); context.stroke(); context.restore(); }
 
   // Premium REFINEMENT (2026-08-10): cyan area gradient under the curve, then a
   // boosted glow halo on the line itself. Halo is drawn twice — once wider, once
@@ -4595,8 +4682,8 @@ function drawWeightTrendChart(canvas, weights, shots, goal) {
     smooth.forEach(function(v, i){ var x = xFor(i), y = yFor(v + sigma); i ? context.lineTo(x, y) : context.moveTo(x, y); });
     for (var ri = smooth.length - 1; ri >= 0; ri--) { context.lineTo(xFor(ri), yFor(smooth[ri] - sigma)); }
     context.closePath(); context.fill();
-    // smoothed center path (dashed = trend estimate)
-    context.setLineDash([6, 4]); context.strokeStyle = 'rgba(0,230,240,.45)'; context.lineWidth = 1.5;
+    // smoothed center path (dashed = trend estimate; grammar: dashed amber)
+    context.setLineDash([6, 4]); context.strokeStyle = CHART.ESTIMATE_LINE; context.lineWidth = 1.5;
     context.beginPath();
     smooth.forEach(function(v, i){ var x = xFor(i), y = yFor(v); i ? context.lineTo(x, y) : context.moveTo(x, y); });
     context.stroke(); context.restore();
@@ -4622,9 +4709,15 @@ function drawWeightTrendChart(canvas, weights, shots, goal) {
     const nearest = points.reduce((best, item, index) => Math.abs(parseLocalDate(weights[index].date).getTime() - time) < Math.abs(parseLocalDate(weights[best.index].date).getTime() - time) ? item : best, points[0]).index;
     const changed = priorDose !== null && dose !== priorDose;
     const px = xFor(nearest), py = yFor(values[nearest]);
-    context.fillStyle = changed ? '#ffd700' : '#FF3B3B';
+    // Dose-change = recorded event → grammar cyan (--chart-actual) with white
+    // inner ring so it stays the highest-attention node on the chart.
+    context.fillStyle = changed ? CHART.ACTUAL : '#FF3B3B';
     context.beginPath(); context.arc(px, py, changed ? 6 : 4, 0, Math.PI * 2); context.fill();
-    if (changed) { context.fillStyle = '#ffd700'; context.font = '9px Share Tech Mono, monospace'; context.fillText(tx('results.chartDose', 'DOSE'), Math.min(width - 38, px + 5), Math.max(10, py - 7)); }
+    if (changed) {
+      context.strokeStyle = '#ffffff'; context.lineWidth = 1.5;
+      context.beginPath(); context.arc(px, py, 3.2, 0, Math.PI * 2); context.stroke();
+      context.fillStyle = CHART.ACTUAL; context.font = '9px Share Tech Mono, monospace'; context.fillText(tx('results.chartDose', 'DOSE'), Math.min(width - 38, px + 5), Math.max(10, py - 7));
+    }
     shotMarkers.push({ x: px, y: py, kind: changed ? 'dose' : 'shot', t: time });
     priorDose = dose;
   });
@@ -4773,7 +4866,7 @@ function renderWeightChartLegend(canvas, geometry) {
   const items = [
     { key: 'cyan',   label: tx('results.legendWeight', 'WEIGHT') },
     { key: 'red',    label: tx('results.legendShot', 'SHOT') },
-    { key: 'yellow', label: tx('results.legendDose', 'DOSE') },
+    { key: 'dose',   label: tx('results.legendDose', 'DOSE') },
     { key: 'green',  label: tx('results.legendMilestone', 'MILESTONE') },
     { key: 'goal',   label: tx('results.legendGoal', 'GOAL') }
   ];
@@ -5613,9 +5706,12 @@ function ensureProfileHub() {
         <div class="gn-vault-row gn-vault-row-static">${ico('gn-vault-core')}<span class="gn-vault-row-txt"><b data-i18n="vault.connectedAccount">Connected Account</b><small id="gnProfileAccount">Local device session</small></span></div>
         <button type="button" class="gn-vault-row" data-gn-local-only onclick="openCloudConnect()">${ico('gn-network-node')}<span class="gn-vault-row-txt"><b data-i18n="vault.connectAccount">Connect Cloud Account</b><small data-i18n="vault.connectAccountHelp">Use a NODE KEY to sync across devices</small></span>${chev}</button>
         <button type="button" class="gn-vault-row" onclick="openSystemUpdate()">${ico('gn-protocol-event')}<span class="gn-vault-row-txt"><b data-i18n="vault.whatsNew">What's New</b><small data-gn-whatsnew-version></small></span>${chev}</button>
-        <button type="button" class="gn-vault-row gn-vault-row-signout" data-gn-cloud-only onclick="openSignOutModal()">${ico('gn-disconnect-node')}<span class="gn-vault-row-txt"><b data-i18n="vault.signOut">SIGN OUT</b><small data-i18n="vault.localOnlyFooter">Your data stays on this device.</small></span>${chev}</button>
+        <button type="button" class="gn-vault-row gn-vault-row-signout" data-gn-cloud-only onclick="openSignOutModal()">${ico('gn-disconnect-node')}<span class="gn-vault-row-txt"><b data-i18n="vault.signOut">SIGN OUT</b><small data-i18n="vault.signOutHelp">End this cloud session</small></span>${chev}</button>
       </div>
       <div class="gn-vault-footline"><span data-i18n="vault.appVersion">App Version</span> <small id="gnProfileVersion"></small> · <button type="button" class="gn-linklike" onclick="window.location.reload()"><span data-i18n="vault.reloadApp">Reload App</span></button></div>
+    </div>
+    <div class="gn-vault-group" data-gn-vault-group="security" data-gn-cloud-only>
+      <div class="gn-vault-group-label" data-i18n="vault.groupSecurity">// SECURITY</div>
     </div>
     <details class="gn-danger-zone gn-vault-danger">
       <summary class="gn-vault-danger-head"><span data-i18n="vault.dangerZone">Danger Zone</span>${chev}</summary>
@@ -7504,7 +7600,7 @@ function injectStableStyles() {
     select,input[type=date],input[type=time]{color-scheme:dark;background:#0e0e16!important;color:#eeeef5!important;border-color:rgba(0,212,255,.18)!important}select option{background:#0e0e16;color:#eeeef5}input[type=date]::-webkit-calendar-picker-indicator{filter:invert(78%) sepia(53%) saturate(1150%) hue-rotate(150deg);opacity:.9}
     .gn-custom-picker,.gn-custom-date{position:relative;width:100%;min-width:0}.gn-custom-picker-trigger,.gn-custom-date-trigger{width:100%;min-height:44px;padding:10px 14px 10px 12px;text-align:left;border:1px solid rgba(0,212,255,.55);background:linear-gradient(180deg,rgba(0,212,255,.07),rgba(0,0,0,.18));color:#eeeef5;font:600 16px var(--font-m,monospace);border-radius:4px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 0 0 0 rgba(0,212,255,0);transition:border-color .15s ease,background-color .15s ease,box-shadow .15s ease}.gn-custom-picker-trigger::after,.gn-custom-date-trigger::after{content:'⌄';float:right;color:#00d4ff;margin-left:8px}.gn-custom-picker-trigger:focus-visible,.gn-custom-date-trigger:focus-visible{outline:none;border-color:#00d4ff;box-shadow:0 0 0 2px rgba(0,212,255,.12)}.gn-custom-picker-menu,.gn-custom-date-popover{display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:640;padding:4px;background:#0e0e16;border:1px solid rgba(0,212,255,.28);border-radius:6px;box-shadow:0 16px 42px rgba(0,0,0,.72),0 0 18px rgba(0,212,255,.1)}.gn-custom-picker.open .gn-custom-picker-menu,.gn-custom-date.open .gn-custom-date-popover{display:grid}.gn-custom-picker-option{min-height:38px;padding:9px 10px;border:0;border-bottom:1px solid rgba(255,255,255,.05);background:transparent;color:#9898b0;text-align:left;font:600 .68rem var(--font-m,monospace);cursor:pointer}.gn-custom-picker-option:last-child{border-bottom:0}.gn-custom-picker-option:hover,.gn-custom-picker-option[aria-selected=true]{color:#00d4ff;background:rgba(0,212,255,.08);box-shadow:0 0 10px rgba(0,212,255,.18)}.gn-custom-date-popover{width:min(330px,calc(100vw - 38px));right:auto;padding:10px}.gn-custom-date-head{display:grid;grid-template-columns:34px 1fr 34px;align-items:center;gap:8px;margin-bottom:9px}.gn-custom-date-head button,.gn-custom-date-foot button{min-height:32px;border:1px solid rgba(0,212,255,.24);background:rgba(0,212,255,.06);color:#00d4ff;font:700 .6rem var(--font-d,monospace);cursor:pointer}.gn-custom-date-head strong{color:#eeeef5;text-align:center;font:700 .68rem var(--font-m,monospace);letter-spacing:1px}.gn-custom-date-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.gn-custom-date-dow{padding:3px 0;color:#8295a0;text-align:center;font:600 .48rem var(--font-m,monospace)}.gn-custom-date-blank{min-height:32px}.gn-custom-date-day{min-height:32px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025);color:#9898b0;font:600 .62rem var(--font-m,monospace);cursor:pointer}.gn-custom-date-day:hover,.gn-custom-date-day.selected{border-color:#00d4ff;color:#00d4ff;background:rgba(0,212,255,.12);box-shadow:0 0 10px rgba(0,212,255,.18)}.gn-custom-date-foot{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}.gn-custom-date-foot button:last-child{color:#9898b0;border-color:rgba(255,255,255,.14);background:transparent}
     .toast{max-width:90vw!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}.toast .gn-toast-message{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .phase-ring-svg-wrap .phase-segment-ring,.landing-phase-visual .phase-segment-ring{position:absolute;border-radius:50%;background:conic-gradient(from -90deg,#4fb8d8 0deg 72deg,#63b98b 72deg 144deg,#d3a24a 144deg 216deg,#c26674 216deg 288deg,#9898b0 288deg 360deg);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px));mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px));pointer-events:none;z-index:0;opacity:.5}
+    .phase-ring-svg-wrap .phase-segment-ring,.landing-phase-visual .phase-segment-ring{position:absolute;border-radius:50%;background:conic-gradient(from -90deg,#4fb8d8 0deg 72deg,#63b98b 72deg 144deg,#e57f9e 144deg 216deg,#c26674 216deg 288deg,#9898b0 288deg 360deg);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px));mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px));pointer-events:none;z-index:0;opacity:.5}
     .phase-ring-svg-wrap .phase-segment-ring{inset:-4px}.phase-ring-svg-wrap .ring-svg{z-index:1}.phase-ring-svg-wrap .phase-nodes{z-index:3}.phase-ring-svg-wrap .ring-center{z-index:4}.phase-marker{position:absolute;width:9px;height:9px;border-radius:50%;transform:translate(-50%,-50%);z-index:5;box-shadow:0 0 0 2px rgba(0,0,0,.45);opacity:.95;pointer-events:none}.phase-marker[hidden]{display:none!important}
     .gn-phase-marker{animation:none}
     .page{transition:opacity .15s ease,visibility .15s ease}.page:not(.active){opacity:0;visibility:hidden;pointer-events:none}.page.active{opacity:1;visibility:visible}
@@ -8885,7 +8981,7 @@ function showApp() {
     if (!page || $('gnPasskeysCard')) return;
     if (!state.cloud) return;
     const hub = page.querySelector('[data-gn-profile-hub]');
-    const host = hub?.querySelector('[data-gn-vault-group="account"]') || hub;
+    const host = hub?.querySelector('[data-gn-vault-group="security"]') || hub?.querySelector('[data-gn-vault-group="account"]') || hub;
     if (!host) return;
     host.insertAdjacentHTML('beforeend', `<details class="gn-vault-card" id="gnPasskeysCard">
       <summary class="gn-vault-card-head">
@@ -8946,7 +9042,7 @@ function showApp() {
     }
     list.innerHTML = passkeys.map(passkey => `<li class="gn-passkey-row" data-id="${safeText(passkey.id)}">
       <div><b>${safeText(passkey.device_name || 'DEVICE')}</b><small>${safeText(tx('auth.lastUsed', 'LAST USED'))} ${safeText(formatDate(passkey.last_used_at || passkey.created_at))}</small></div>
-      <button class="gn-passkey-revoke" type="button" data-revoke="${safeText(passkey.id)}">${safeText(tx('vault.signOut', 'SIGN OUT'))}</button>
+      <button class="gn-passkey-revoke" type="button" data-revoke="${safeText(passkey.id)}">${safeText(tx('auth.revokePasskey', 'REVOKE'))}</button>
     </li>`).join('');
     list.querySelectorAll('[data-revoke]').forEach(button => button.addEventListener('click', async () => {
       const confirmBox = typeof confirmDialog === 'function' ? confirmDialog : (title, copy) => window.confirm(`${title}
@@ -8968,6 +9064,10 @@ ${copy}`);
       if (!(await isWebAuthnSupported())) return;
       const passkeySession = await getCloudSession();
       if (!passkeySession) return;
+      try {
+        const dismissed = localStorage.getItem('gn_passkey_upsell_dismissed');
+        if (dismissed && Date.now() - Number(dismissed) < 30 * 864e5) return;
+      } catch (_) {}
       // Only offer registration once we know the CURRENT account has none.
       try {
         const passkeys = await listPasskeys();
@@ -8988,7 +9088,7 @@ ${copy}`);
           </div>
         </div>`;
         overlay.addEventListener('click', async event => {
-          if (event.target === overlay || event.target.closest('[data-passkey-upsell-later]')) { overlay.classList.remove('active'); return; }
+          if (event.target === overlay || event.target.closest('[data-passkey-upsell-later]')) { try { localStorage.setItem('gn_passkey_upsell_dismissed', String(Date.now())); } catch (_) {} overlay.classList.remove('active'); return; }
           if (event.target.closest('[data-passkey-upsell-register]')) {
             const button = overlay.querySelector('[data-passkey-upsell-register]');
             if (button) button.disabled = true;
@@ -9131,6 +9231,8 @@ async function confirmSignOut() {
   closeSignOutModal();
   await signOutCloud();
   clearSession();
+  document.getElementById('gnPasskeysCard')?.remove();
+  document.getElementById('gnPasskeyUpsell')?.remove();
   authShell();
   modules.showScreen('landing');
 }

@@ -224,7 +224,7 @@
     ov.innerHTML =
       '<div class="modal" role="dialog" aria-modal="true" aria-labelledby="gnAssayModalTitle">' +
       '<div class="modal-hdr"><div class="modal-title" id="gnAssayModalTitle" data-i18n="assay.logTest">LOG TEST</div>' +
-      '<div class="modal-actions"><button type="button" class="btn-icon" id="gnAssayClose" aria-label="Close">×</button></div></div>' +
+      '<div class="modal-actions"><button type="button" class="modal-btn close" id="gnAssayClose" aria-label="Close" data-i18n-aria-label="modal.close"><span class="gn-icon"><svg><use href="#gn-close"></use></svg></span></button></div></div>' +
       '<div class="form-group"><label class="form-label" for="gnAssayPeptide" data-i18n="assay.peptide">PEPTIDE</label><select class="form-input" id="gnAssayPeptide"></select></div>' +
       '<div class="form-group"><label class="form-label" for="gnAssayVendor" data-i18n="assay.vendor">VENDOR</label><input class="form-input" id="gnAssayVendor" list="gnAssayVendorList" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><datalist id="gnAssayVendorList"></datalist></div>' +
       '<div class="form-row">' +
@@ -509,6 +509,7 @@
     labTestVarianceBand: labTestVarianceBand,
     renderAssay: renderAssay,
     openAssayModal: openAssayModal,
+    closeAssayModal: closeAssayModal,
     methodLabel: methodLabel,
     endotoxinLabel: endotoxinLabel
   });
