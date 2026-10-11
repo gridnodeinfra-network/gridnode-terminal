@@ -198,6 +198,13 @@
 #pageProfile .gn-vault-card:last-child {
   margin-bottom: 0;
 }
+/* Explicit closed-state hiding: reinforces the UA ::details-content rule so
+   the collapsed state never depends on UA pseudo-element behavior alone. */
+#pageProfile .gn-vault-card:not([open]) > .gn-vault-card-body,
+#pageProfile .gn-vault-subcard:not([open]) > .gn-record-form,
+#pageProfile .gn-vault-danger:not([open]) > .gn-vault-card-static {
+  display: none;
+}
 #pageProfile .gn-vault-card-head {
   display: flex;
   align-items: center;
@@ -275,6 +282,10 @@
   margin-bottom: 8px;
 }
 
+/* The hidden attribute must beat row display:flex (cloud-only / local-only rows). */
+#pageProfile .gn-vault-row[hidden] {
+  display: none;
+}
 /* ---------- Static rows card ---------- */
 #pageProfile .gn-vault-card-static {
   background: var(--panel, #0e0e16);

@@ -64,6 +64,7 @@
       '04-vault-redesign.css',
       '05-logshot-2step.css',
       '06-premium-pass.css',
+      '07-journey.css',
     ];
     files.forEach((file, index) => {
       const link = document.createElement('link');

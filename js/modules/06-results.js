@@ -86,6 +86,8 @@ export function renderResults() {
   if (direction) { direction.textContent = directionReady ? tx(change < 0 ? 'results.trendDownAcross' : change > 0 ? 'results.trendUpAcross' : 'results.trendStableAcross', 'Trend direction: Stable across logged measurements') : tx('results.trendInsufficient', 'Trend direction: Insufficient Data'); direction.className = 'results-direction ' + (!directionReady ? 'insufficient' : change <= 0 ? 'good' : 'warn'); }
   setDisplay('weightTrendEmpty', !weights.length); setDisplay('weightTrendLive', Boolean(weights.length));
   setDisplay('resultsSummaryEmpty', !weights.length && !shots.length);
+  /* TRACK 3 premium pass: chart-first hero order + inviting empty CTAs. */
+  try { ensureResultsHeroOrder(); ensureResultsEmptyCtas(); } catch (_) {}
   drawWeightTrendChart($('wtChart'), filterWeightsForChart(weights), shots, profile.goalWt);
   try { renderPhaseHeatmap(shots); } catch (_) {}
   drawTrendArrow($('wtChart'), filterWeightsForChart(weights), profile.goalWt);
@@ -109,6 +111,83 @@ export function setResultsView(view) {
   if (showCal) renderCalendar();
 }
 
+/* TRACK 3 premium pass: PROGRESS is chart-first. Canonical ledger order —
+   weight chart hero, phase heatmap strip, then the text modules demoted
+   below. Runs on every render so dynamically mounted sections (telemetry
+   signal, measurement trend) always land in the right place. */
+function ensureResultsHeroOrder() {
+  const ledger = document.getElementById('resultsChartsView');
+  if (!ledger) return;
+  const weightCard = ledger.querySelector(':scope > .results-card.weight');
+  if (weightCard) weightCard.classList.add('t3-chart-hero');
+  /* The live weight chart lives in the telemetry signal section once the
+     telemetry module mounts (it hides the legacy #weightTrendLive by
+     design); the signal section is chart hero #2 in that case. */
+  const telemetrySignal = document.getElementById('gnTelemetrySignal');
+  if (telemetrySignal && telemetrySignal.parentElement === ledger) telemetrySignal.classList.add('t3-chart-hero');
+  const summaryCard = ledger.querySelector(':scope > .results-card.summary');
+  if (summaryCard) summaryCard.classList.add('t3-demote-summary');
+  /* Zero-data state: the weekly report is the designed "log to begin" CTA
+     block — it leads, expanded, above the empty instruments. */
+  const isEmpty = document.body.classList.contains('gn-results-empty');
+  const order = isEmpty ? [
+    '#gnWeeklyReport',
+    '#gnTelemetrySignal',
+    '.results-card.weight',
+    '#gnPhaseHeatmap',
+    '.results-card.summary',
+    '#measurementTrendCard',
+    '.results-card.appetite',
+    '.results-card.energy',
+    '.results-card.effects',
+    '.results-card.continuity',
+    '.gn-reference-pending',
+    '.results-safety'
+  ] : [
+    '.results-card.weight',
+    '#gnTelemetrySignal',
+    '#gnPhaseHeatmap',
+    '#gnWeeklyReport',
+    '.results-card.summary',
+    '#measurementTrendCard',
+    '.results-card.appetite',
+    '.results-card.energy',
+    '.results-card.effects',
+    '.results-card.continuity',
+    '.gn-reference-pending',
+    '.results-safety'
+  ];
+  for (let i = order.length - 1; i >= 0; i--) {
+    const el = order[i].charAt(0) === '#'
+      ? document.getElementById(order[i].slice(1))
+      : ledger.querySelector(':scope > ' + order[i]);
+    if (el && el.parentElement === ledger) ledger.prepend(el);
+  }
+}
+
+/* TRACK 3 premium pass: empty states guide toward action. Appends a CTA
+   button once per empty block; re-runs safely after i18n re-renders. */
+function ensureResultsEmptyCtas() {
+  const addCta = (hostId, key, fallback, onClick, secondary) => {
+    const host = document.getElementById(hostId);
+    if (!host || host.querySelector('.t3-empty-cta')) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 't3-empty-cta' + (secondary ? ' secondary' : '');
+    btn.textContent = tx(key, fallback);
+    btn.addEventListener('click', onClick);
+    host.appendChild(btn);
+  };
+  addCta('weightTrendEmpty', 'results.weightTrendEmptyCta', 'LOG YOUR FIRST WEIGHT', () => openWeightModal());
+  addCta('weightRecordsEmpty', 'results.logWeightCta', 'LOG WEIGHT', () => openWeightModal(), true);
+  addCta('resultsSummaryEmpty', 'shots.emptyShotsCta', 'LOG YOUR FIRST SHOT', () => openLogModal());
+  addCta('appetiteTrendEmpty', 'runtime.logShot', 'LOG SHOT', () => openLogModal(), true);
+  addCta('energyTrendEmpty', 'runtime.logShot', 'LOG SHOT', () => openLogModal(), true);
+  addCta('sideEffectTrendEmpty', 'runtime.logShot', 'LOG SHOT', () => openLogModal(), true);
+  addCta('measurementTrendEmpty', 'results.measurementsEmptyCta', 'OPEN VAULT', () => showPage('Profile', document.getElementById('navVault')), true);
+}
+document.addEventListener('gn:langchange', () => { try { ensureResultsEmptyCtas(); } catch (_) {} });
+
 function renderWeightRecords(weights) {
   const list = $('weightRecordsList');
   if (!list) return;
@@ -127,7 +206,10 @@ function filterWeightsForChart(weights) {
 function ensureResultsEnhancements() {
   const ledger = document.getElementById('pageResults')?.querySelector('.results-ledger');
   if (ledger && !document.getElementById('gnWeeklyReport')) {
-    const markup = '<section class="gn-weekly-report" id="gnWeeklyReport"><div class="gn-foundation-kicker" data-i18n="results.weeklyKicker">// WEEKLY NODE REPORT</div><h3 id="gnWeeklyTitle" data-i18n="results.moreDataNeeded">MORE DATA NEEDED</h3><p id="gnWeeklyCopy" data-i18n="results.weeklyEmptyCopy">Log a shot or log your weight to begin building your SIGNAL.</p><div class="gn-weekly-signals" id="gnWeeklySignals"></div><div class="gn-weekly-actions" id="gnWeeklyActions"><button type="button" onclick="openLogModal()" data-i18n="runtime.logShot">LOG SHOT</button><button type="button" onclick="openWeightModal()" data-i18n="dashboard.logWeight">LOG WEIGHT</button></div></section><div class="gn-reference-pending"><strong data-i18n="results.referencePendingTitle">REFERENCE DATA NOT LOADED</strong><br><span data-i18n="results.referencePendingHtml">Clinical comparison remains off until a medication-specific, source-verified dataset and uncertainty model are available. Your SIGNAL uses your own logged history.</span></div>';
+    /* TRACK 3: weekly report is a collapsible <details> — open only in the
+       zero-data "log to begin" state (it carries the CTAs), collapsed once
+       data exists. Order is normalized by ensureResultsHeroOrder(). */
+    const markup = '<details class="gn-weekly-report" id="gnWeeklyReport" open><summary class="gn-weekly-summary"><span class="gn-foundation-kicker" data-i18n="results.weeklyKicker">// WEEKLY NODE REPORT</span><h3 id="gnWeeklyTitle" data-i18n="results.moreDataNeeded">MORE DATA NEEDED</h3></summary><p id="gnWeeklyCopy" data-i18n="results.weeklyEmptyCopy">Log a shot or log your weight to begin building your SIGNAL.</p><div class="gn-weekly-signals" id="gnWeeklySignals"></div><div class="gn-weekly-actions" id="gnWeeklyActions"><button type="button" onclick="openLogModal()" data-i18n="runtime.logShot">LOG SHOT</button><button type="button" onclick="openWeightModal()" data-i18n="dashboard.logWeight">LOG WEIGHT</button></div></details><div class="gn-reference-pending"><strong data-i18n="results.referencePendingTitle">REFERENCE DATA NOT LOADED</strong><br><span data-i18n="results.referencePendingHtml">Clinical comparison remains off until a medication-specific, source-verified dataset and uncertainty model are available. Your SIGNAL uses your own logged history.</span></div>';
     ledger.insertAdjacentHTML('afterbegin', markup);
   }
   const weightCard = document.getElementById('weightRecordsPanel')?.closest('.results-card');
@@ -141,14 +223,20 @@ function ensureResultsEnhancements() {
 
 function renderWeeklyReport(shots, weights) {
   if (!document.getElementById('gnWeeklyReport')) return;
+  const report = document.getElementById('gnWeeklyReport');
   if (shots.length === 0 && weights.length === 0) {
     setText('gnWeeklyTitle', tx('results.moreDataNeeded', 'MORE DATA NEEDED'));
     setText('gnWeeklyCopy', tx('results.weeklyEmptyCopy', 'Log a shot or log your weight to begin building your SIGNAL.'));
     const signals = document.getElementById('gnWeeklySignals');
     if (signals) signals.innerHTML = '';
     setDisplay('gnWeeklyActions', true);
+    /* TRACK 3: zero-data state stays expanded — it is the inviting
+       "log to begin" CTA block. */
+    report.open = true;
     return;
   }
+  /* TRACK 3: with data, the report collapses — chart-first, show don't tell. */
+  report.open = false;
   const cutoff = Date.now() - 7 * 86400000;
   const weekShots = shots.filter(item => new Date(item.date).getTime() >= cutoff);
   const weekWeights = weights.filter(item => new Date(item.date).getTime() >= cutoff);

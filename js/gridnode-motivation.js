@@ -129,7 +129,7 @@
   }
 
   function arcMarkup(progress) {
-    if (!progress) return `<div class="gn-arc-empty">${safe(tx('telemetry.emptyTarget', 'SET A START AND TARGET WEIGHT TO ACTIVATE'))}</div>`;
+    if (!progress) return `<div class="gn-arc-empty"><span>${safe(tx('telemetry.emptyTarget', 'SET A START AND TARGET WEIGHT TO ACTIVATE'))}</span><button type="button" class="t3-empty-cta" onclick="if(window.showPage)showPage('Profile',document.getElementById('navVault'))">${safe(tx('telemetry.openVaultCta', 'OPEN VAULT'))}</button></div>`;
     const radius = 46, circumference = 2 * Math.PI * radius;
     const offset = circumference * (1 - progress.percent / 100);
     return `<div class="gn-arc-wrap" role="img" aria-label="${safe(tx('progress.arcTitle', 'GOAL VECTOR'))} ${progress.percent.toFixed(0)}%">

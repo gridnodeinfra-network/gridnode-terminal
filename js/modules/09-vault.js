@@ -69,7 +69,13 @@ export function renderProfile() {
   setText('profMedTxt', normalizeMedicationId(profile.med) ? `// ${medicationLabel(profile.med).toUpperCase()}` : tx('profile.noMedicationSet', '// NO MEDICATION SET'));
   const currentWeight = latestWeight()?.weight;
   const height = profile.htFt ? `${profile.htFt}'${profile.htIn || 0}"` : tx('profile.heightNotEntered', 'Height not entered');
-  setText('gnProfileMedication', normalizeMedicationId(profile.med) ? `${medicationLabel(profile.med)}${profile.dose ? ` · ${profile.dose}mg` : ''}` : tx('vault.notEntered', 'Not entered'));
+  const medText = normalizeMedicationId(profile.med) ? `${medicationLabel(profile.med)}${profile.dose ? ` · ${profile.dose}mg` : ''}` : tx('vault.notEntered', 'Not entered');
+  setText('gnProfileMedication', medText);
+  setText('gnMedCardSummary', medText);
+  const summaryWeight = latestWeight()?.weight;
+  setText('gnProfileWeight', summaryWeight != null ? `${Number(summaryWeight).toFixed(1)} lb` : '—');
+  const syncPill = $('gnProfileSync');
+  if (syncPill) syncPill.classList.toggle('is-cloud', !!(typeof state !== 'undefined' && state && state.cloud));
   setText('gnProfileBody', `${height}${currentWeight ? ` · ${Number(currentWeight).toFixed(1)} lb` : ''}`);
   setText('gnProfileVersion', APP_VERSION);
   setText('gnProfileHeroVersion', 'v' + APP_VERSION);
@@ -79,9 +85,12 @@ export function renderProfile() {
   syncCustomPickers($('pageProfile') || document);
   renderMeasurements();
   let status = document.querySelector('.gn-cloud-status');
-  const hero = $('profAvaWrap')?.closest('[style*="background:#0e0e16"]');
+  const hero = document.getElementById('gnVaultSummary') || $('profAvaWrap')?.closest('[style*="background:#0e0e16"]');
   if (!status && hero) { status = document.createElement('div'); status.className = 'gn-cloud-status'; hero.parentElement.insertBefore(status, hero.nextSibling); }
   if (status) status.innerHTML = `<span class="gn-cloud-dot ${state.cloud ? 'cloud' : 'local'}"></span><span>${tx('vault.vaultLabel', 'VAULT')}: ${safeText(nodeSyncLabel())} · ${state.cloud ? tx('vault.cloudConnected', 'Cloud account connected') : tx('vault.cloudLocal', 'Data stays on this device until you connect an account')}</span>`;
+  const badgesCard = $('gnBadgesCard');
+  const profileCards = $('gnVaultProfileCards');
+  if (badgesCard && profileCards && badgesCard.parentElement !== profileCards) profileCards.appendChild(badgesCard);
   renderDeviceVault();
   ensurePasskeySection();
   renderGnHapticsState();

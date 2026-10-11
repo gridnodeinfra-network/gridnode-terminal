@@ -179,6 +179,8 @@ html[data-theme="light"] .screen::before {
   border-radius: var(--t3-r-md);
   padding: 14px;
 }
+/* Telemetry chart frame → nested radius standard. */
+.gn-telemetry-canvas-wrap { border-radius: var(--t3-r-md); overflow: hidden; }
 /* VAULT cards → the app card standard. */
 #pageProfile .gn-preferences-card,
 #pageProfile .vault-card,
@@ -246,15 +248,26 @@ html[data-theme="light"] .screen::before {
 #pageResults .results-empty .t3-empty-cta { align-self: center; }
 /* Telemetry instrument empty states (LAB visuals + PROGRESS signal). */
 .gn-chart-state {
-  display: flex !important;
+  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 4px;
   text-align: center;
 }
+.gn-chart-state[hidden] { display: none; }
 .gn-chart-state .t3-state-msg { max-width: 26ch; }
 .gn-chart-state .t3-empty-cta { margin-top: 10px; }
+/* TODAY goal-vector arc empty state: same inviting treatment. */
+.gn-arc-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 20px 16px;
+}
+.gn-arc-empty .t3-empty-cta { margin-top: 10px; }
 .gn-target-empty {
   display: flex;
   flex-direction: column;

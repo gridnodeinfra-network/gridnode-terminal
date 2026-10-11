@@ -438,40 +438,86 @@ function closeProfileHub() {
 function ensureProfileHub() {
   const page = $('pageProfile');
   if (!page || page.querySelector('[data-gn-profile-hub]')) return;
-  const avatar = $('profAvaWrap');
-  let hero = avatar?.closest('[style*="background:#0e0e16"]')
-    || $('gnVaultSummary')
-    || page.querySelector('.gn-profile-hero')
-    || avatar?.parentElement;
+  const hero = $('gnVaultSummary') || $('profAvaWrap')?.closest('[style*="background:#0e0e16"]');
   if (!hero) return;
-  hero.insertAdjacentHTML('afterend', `<section class="gn-profile-hub" data-gn-profile-hub aria-labelledby="gnProfileHubTitle">
-    <div class="gn-foundation-head"><div><div class="gn-foundation-kicker" data-i18n="vault.kicker">// NODE PROFILE HUB</div><h2 id="gnProfileHubTitle" data-i18n="vault.hubTitle">YOUR NODE</h2></div><span class="gn-foundation-actions"><span class="gn-foundation-signal" id="gnProfileSync">LOCAL MODE</span><button type="button" class="gn-hub-close" id="gnHubClose" onclick="closeProfileHub()" aria-label="CERRAR" data-i18n-aria-label="vault.closeHub">✕</button></span></div>
-    <div class="gn-profile-sections">
-      <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.node">// YOUR NODE</div><button type="button" class="gn-profile-row" onclick="document.getElementById('profMedSection')?.scrollIntoView({behavior:'smooth',block:'start'})"><span><b data-i18n="vault.medicationLabel">Medication</b><small id="gnProfileMedication">Not entered</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="document.getElementById('profBodySection')?.scrollIntoView({behavior:'smooth',block:'start'})"><span><b data-i18n="vault.bodyMetrics">Body Metrics</b><small id="gnProfileBody">Not entered</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="openSystemUpdate()"><span><b data-i18n="vault.whatsNew">What's New</b><small data-gn-whatsnew-version></small></span><span class="gn-profile-chevron">›</span></button></section>
-      <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.yourData">// YOUR DATA</div><button type="button" class="gn-profile-row" onclick="exportCSV()"><span><b data-i18n="vault.exportCsv">Export CSV</b><small data-i18n="vault.exportCsvHelp">Download readable records</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="exportBackup()"><span><b data-i18n="vault.exportBackup">Export Backup</b><small data-i18n="vault.exportBackupHelp">Save a complete local copy</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="openImportDialog()"><span><b data-i18n="vault.importData">Import Data</b><small data-i18n="vault.importDataHelp">Bring history from Shotsy or CSV</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="openPrivacyPolicy()"><span><b data-i18n="vault.privacyPolicy">Privacy Policy</b><small data-i18n="vault.privacyPolicyHelp">How your data is stored</small></span><span class="gn-profile-chevron">›</span></button><button type="button" class="gn-profile-row" onclick="openDataOwnership()"><span><b data-i18n="vault.dataOwnership">Data Ownership</b><small data-i18n="vault.dataOwnershipHelp">Export or delete anytime</small></span><span class="gn-profile-chevron">›</span></button></section>
-      <section class="gn-profile-section"><div class="gn-profile-section-label" data-i18n="vault.tools">// TOOLS</div><button type="button" class="gn-profile-row" onclick="replayGuidedTour()"><span><b data-i18n="vault.replayTour">Replay Tour</b><small data-i18n="vault.replayTourHelp">Restart the guided tour</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row"><span><b data-i18n="vault.theme">Theme</b><small data-i18n="vault.themeHelp">Dark or light display</small></span><span class="gn-theme-toggle-host" role="group" aria-label="THEME"></span></div><button type="button" class="gn-profile-row" onclick="document.querySelector('.gn-device-vault')?.scrollIntoView({behavior:'smooth',block:'start'})"><span><b data-i18n="vault.deviceVaultLink">Device Vault</b><small data-i18n="vault.deviceVaultLinkHelp">Private identity registry</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-row gn-profile-static"><span><b data-i18n="vault.connectedAccount">Connected Account</b><small id="gnProfileAccount">Local device session</small></span></div><button type="button" class="gn-profile-row" data-gn-local-only onclick="openCloudConnect()"><span><b data-i18n="vault.connectAccount">Connect Cloud Account</b><small data-i18n="vault.connectAccountHelp">Use a NODE KEY to sync across devices</small></span><span class="gn-profile-chevron">›</span></button><div class="gn-profile-footer-line"><span data-i18n="vault.appVersion">App Version</span> <small id="gnProfileVersion"></small> · <button type="button" class="gn-linklike" onclick="window.location.reload()"><span data-i18n="vault.reloadApp">Reload App</span></button></div></section>
+  const chev = '<span class="gn-vault-chev" aria-hidden="true">›</span>';
+  const ico = (id) => `<span class="gn-vault-row-ico" aria-hidden="true"><svg><use href="#${id}"></use></svg></span>`;
+  hero.insertAdjacentHTML('afterend', `<section class="gn-vault" data-gn-profile-hub aria-label="${tx('vault.hubAria', 'Node settings')}">
+    <div class="gn-vault-group" data-gn-vault-group="profile">
+      <div class="gn-vault-group-label" data-i18n="vault.groupProfile">// PROFILE</div>
+      <div id="gnVaultProfileCards" class="gn-vault-cards"></div>
     </div>
-    <button type="button" class="gn-profile-signout" data-gn-cloud-only onclick="openSignOutModal()"><span><b data-i18n="vault.signOut">SIGN OUT</b><small data-i18n="vault.localOnlyFooter">Your data stays on this device.</small></span><span class="gn-profile-chevron">›</span></button>
-    <details class="gn-danger-zone"><summary><span data-i18n="vault.dangerZone">Danger Zone</span></summary>
-      <button type="button" class="gn-profile-row gn-profile-danger-row" onclick="openDeleteLocalData()"><span><b data-i18n="vault.deleteAllData">Delete All Local Data</b><small data-i18n="vault.deleteAllDataHelp">Remove this device record</small></span><span class="gn-profile-chevron">›</span></button>
-      <button type="button" class="gn-profile-row gn-profile-danger-row" data-gn-cloud-only onclick="openDeleteCloudAccount()"><span><b data-i18n="vault.deleteCloudAccount">Delete Cloud Account</b><small data-i18n="vault.deleteCloudAccountHelp">Requires server deletion control</small></span><span class="gn-profile-chevron">›</span></button>
+    <div class="gn-vault-group" data-gn-vault-group="data">
+      <div class="gn-vault-group-label" data-i18n="vault.yourData">// YOUR DATA</div>
+      <div class="gn-vault-card-static">
+        <button type="button" class="gn-vault-row" onclick="exportCSV()">${ico('gn-data-packet')}<span class="gn-vault-row-txt"><b data-i18n="vault.exportCsv">Export CSV</b><small data-i18n="vault.exportCsvHelp">Download readable records</small></span>${chev}</button>
+        <button type="button" class="gn-vault-row" onclick="exportBackup()">${ico('gn-archive-core')}<span class="gn-vault-row-txt"><b data-i18n="vault.exportBackup">Export Backup</b><small data-i18n="vault.exportBackupHelp">Save a complete local copy</small></span>${chev}</button>
+        <button type="button" class="gn-vault-row" onclick="openImportDialog()">${ico('gn-timeline-node')}<span class="gn-vault-row-txt"><b data-i18n="vault.importData">Import Data</b><small data-i18n="vault.importDataHelp">Bring history from Shotsy or CSV</small></span>${chev}</button>
+      </div>
+      <div class="gn-vault-card-static">
+        <button type="button" class="gn-vault-row" onclick="openPrivacyPolicy()">${ico('gn-check')}<span class="gn-vault-row-txt"><b data-i18n="vault.privacyPolicy">Privacy Policy</b><small data-i18n="vault.privacyPolicyHelp">How your data is stored</small></span>${chev}</button>
+        <button type="button" class="gn-vault-row" onclick="openDataOwnership()">${ico('gn-operator-profile')}<span class="gn-vault-row-txt"><b data-i18n="vault.dataOwnership">Data Ownership</b><small data-i18n="vault.dataOwnershipHelp">Export or delete anytime</small></span>${chev}</button>
+      </div>
+    </div>
+    <div class="gn-vault-group" data-gn-vault-group="prefs">
+      <div class="gn-vault-group-label" data-i18n="vault.groupPreferences">// PREFERENCES</div>
+      <div class="gn-vault-card-static">
+        <button type="button" class="gn-vault-row" onclick="replayGuidedTour()">${ico('gn-signal')}<span class="gn-vault-row-txt"><b data-i18n="vault.replayTour">Replay Tour</b><small data-i18n="vault.replayTourHelp">Restart the guided tour</small></span>${chev}</button>
+        <div class="gn-vault-row gn-vault-row-static">${ico('gn-phase-ring')}<span class="gn-vault-row-txt"><b data-i18n="vault.theme">Theme</b><small data-i18n="vault.themeHelp">Dark or light display</small></span><span class="gn-theme-toggle-host" role="group" aria-label="THEME"></span></div>
+        <button type="button" class="gn-vault-row" onclick="toggleGnHaptics()"><span class="gn-vault-row-txt"><b data-i18n="vault.hapticsTitle">Haptics</b><small id="gnHapticsHelp"></small></span><span id="gnHapticsState" class="gn-vault-haptics-state" aria-hidden="true"></span></button>
+      </div>
+    </div>
+    <div class="gn-vault-group" data-gn-vault-group="devices">
+      <div class="gn-vault-group-label" data-i18n="vault.deviceVaultKicker">// DEVICE REGISTRY</div>
+      <details class="gn-vault-card" id="gnDeviceCard">
+        <summary class="gn-vault-card-head">
+          <span class="gn-vault-card-ico" aria-hidden="true"><svg><use href="#gn-network-node"></use></svg></span>
+          <span class="gn-vault-card-titles"><b data-i18n="vault.deviceRegistryTitle">DEVICE REGISTRY</b><small id="gnDeviceSummary" class="gn-vault-card-sub"></small></span>
+          ${chev}
+        </summary>
+        <div class="gn-vault-card-body">
+          <p class="gn-ledger-copy" data-i18n="vault.deviceVaultPhilosophy">The device is not the cartridge. The cartridge is not the dose. The dose is not the plan. Device identity, inventory, SHOT events, and LOADOUT remain separate records.</p>
+          <details class="gn-vault-subcard" id="gnDeviceFormWrap">
+            <summary class="gn-vault-subcard-head"><span data-i18n="vault.registerDevice">REGISTER DEVICE</span>${chev}</summary>
+            <form class="gn-record-form" id="gnDeviceForm"><div class="gn-form-grid"><label><span data-i18n="vault.deviceName">DEVICE NAME</span><input id="gnDeviceName" required placeholder="e.g. Home pen A" data-i18n-placeholder="vault.deviceNamePlaceholder"></label><label><span data-i18n="vault.deviceType">DEVICE TYPE</span><select id="gnDeviceType"><option value="REUSABLE" data-i18n="vault.deviceTypeReusable">Reusable pen</option><option value="DISPOSABLE" data-i18n="vault.deviceTypeDisposable">Disposable pen</option><option value="AUTOINJECTOR" data-i18n="vault.deviceTypeAutoinjector">Autoinjector</option><option value="OTHER" data-i18n="vault.deviceTypeOther">Other device</option></select></label><label><span data-i18n="vault.deviceStatus">STATUS</span><select id="gnDeviceStatus">${DEVICE_STATUSES.map(status => { const key = 'vault.status' + status.replace(/\s+/g, ''); return `<option value="${status}" data-i18n="${key}">${tx(key, status)}</option>`; }).join('')}</select></label></div><label><span data-i18n="vault.deviceLabelNotes">LABEL / NOTES</span><textarea id="gnDeviceNotes" rows="2" placeholder="User-entered identity notes" data-i18n-placeholder="vault.deviceNotesPlaceholder"></textarea></label><button class="btn-full btn-secondary" type="submit" data-i18n="vault.deviceRegister">REGISTER DEVICE IDENTITY</button></form>
+          </details>
+          <div class="gn-device-list" id="gnDeviceList"></div>
+        </div>
+      </details>
+    </div>
+    <div class="gn-vault-group" data-gn-vault-group="account">
+      <div class="gn-vault-group-label" data-i18n="vault.groupAccount">// ACCOUNT</div>
+      <div class="gn-vault-card-static">
+        <div class="gn-vault-row gn-vault-row-static">${ico('gn-vault-core')}<span class="gn-vault-row-txt"><b data-i18n="vault.connectedAccount">Connected Account</b><small id="gnProfileAccount">Local device session</small></span></div>
+        <button type="button" class="gn-vault-row" data-gn-local-only onclick="openCloudConnect()">${ico('gn-network-node')}<span class="gn-vault-row-txt"><b data-i18n="vault.connectAccount">Connect Cloud Account</b><small data-i18n="vault.connectAccountHelp">Use a NODE KEY to sync across devices</small></span>${chev}</button>
+        <button type="button" class="gn-vault-row" onclick="openSystemUpdate()">${ico('gn-protocol-event')}<span class="gn-vault-row-txt"><b data-i18n="vault.whatsNew">What's New</b><small data-gn-whatsnew-version></small></span>${chev}</button>
+        <button type="button" class="gn-vault-row gn-vault-row-signout" data-gn-cloud-only onclick="openSignOutModal()">${ico('gn-disconnect-node')}<span class="gn-vault-row-txt"><b data-i18n="vault.signOut">SIGN OUT</b><small data-i18n="vault.localOnlyFooter">Your data stays on this device.</small></span>${chev}</button>
+      </div>
+      <div class="gn-vault-footline"><span data-i18n="vault.appVersion">App Version</span> <small id="gnProfileVersion"></small> · <button type="button" class="gn-linklike" onclick="window.location.reload()"><span data-i18n="vault.reloadApp">Reload App</span></button></div>
+    </div>
+    <details class="gn-danger-zone gn-vault-danger">
+      <summary class="gn-vault-danger-head"><span data-i18n="vault.dangerZone">Danger Zone</span>${chev}</summary>
+      <div class="gn-vault-card-static">
+        <button type="button" class="gn-vault-row gn-vault-row-danger" onclick="openDeleteLocalData()">${ico('gn-trash')}<span class="gn-vault-row-txt"><b data-i18n="vault.deleteAllData">Delete All Local Data</b><small data-i18n="vault.deleteAllDataHelp">Remove this device record</small></span>${chev}</button>
+        <button type="button" class="gn-vault-row gn-vault-row-danger" data-gn-cloud-only onclick="openDeleteCloudAccount()">${ico('gn-trash')}<span class="gn-vault-row-txt"><b data-i18n="vault.deleteCloudAccount">Delete Cloud Account</b><small data-i18n="vault.deleteCloudAccountHelp">Requires server deletion control</small></span>${chev}</button>
+      </div>
     </details>
-    <div class="oskar-dedication gn-profile-footer-line" style="margin:14px 0 4px;text-align:center;opacity:.7"><span data-i18n="vault.oskarMemorialPre">In memory of</span> <span class="oskar-name" data-i18n="vault.oskarName">Oskar</span> <span data-i18n="vault.oskarMemorialPost">(2011–2024) ♥</span></div>
-    <div class="gn-device-vault"><div class="gn-device-vault-head"><div><div class="gn-foundation-kicker" data-i18n="vault.deviceVaultKicker">// DEVICE VAULT</div><h3 data-i18n="vault.deviceVaultSubhead">PHYSICAL OBJECT IDENTITY</h3></div><span class="gn-record-state" data-i18n="vault.deviceVaultPrivate">PRIVATE REGISTRY</span></div><p class="gn-ledger-copy" data-i18n="vault.deviceVaultPhilosophy">The device is not the cartridge. The cartridge is not the dose. The dose is not the plan. Device identity, inventory, SHOT events, and LOADOUT remain separate records.</p><form class="gn-record-form" id="gnDeviceForm"><div class="gn-form-grid"><label><span data-i18n="vault.deviceName">DEVICE NAME</span><input id="gnDeviceName" required placeholder="e.g. Home pen A" data-i18n-placeholder="vault.deviceNamePlaceholder"></label><label><span data-i18n="vault.deviceType">DEVICE TYPE</span><select id="gnDeviceType"><option value="REUSABLE" data-i18n="vault.deviceTypeReusable">Reusable pen</option><option value="DISPOSABLE" data-i18n="vault.deviceTypeDisposable">Disposable pen</option><option value="AUTOINJECTOR" data-i18n="vault.deviceTypeAutoinjector">Autoinjector</option><option value="OTHER" data-i18n="vault.deviceTypeOther">Other device</option></select></label><label><span data-i18n="vault.deviceStatus">STATUS</span><select id="gnDeviceStatus">${DEVICE_STATUSES.map(status => { const key = 'vault.status' + status.replace(/\s+/g, ''); return `<option value="${status}" data-i18n="${key}">${tx(key, status)}</option>`; }).join('')}</select></label></div><label><span data-i18n="vault.deviceLabelNotes">LABEL / NOTES</span><textarea id="gnDeviceNotes" rows="2" placeholder="User-entered identity notes" data-i18n-placeholder="vault.deviceNotesPlaceholder"></textarea></label><button class="btn-full btn-secondary" type="submit" data-i18n="vault.deviceRegister">REGISTER DEVICE IDENTITY</button></form><div class="gn-device-list" id="gnDeviceList"></div></div>
+    <div class="oskar-dedication gn-vault-oskar"><span data-i18n="vault.oskarMemorialPre">In memory of</span> <span class="oskar-name" data-i18n="vault.oskarName">Oskar</span> <span data-i18n="vault.oskarMemorialPost">(2011–2024) ♥</span></div>
   </section>`);
+  const hub = page.querySelector('[data-gn-profile-hub]');
+  const profileCards = $('gnVaultProfileCards');
+  ['gnMedCard', 'gnBodyCard'].forEach(id => { const el = document.getElementById(id); if (el && profileCards && el.parentElement !== profileCards) profileCards.appendChild(el); });
+  const prefsCard = $('gnPreferencesCard');
+  const prefsGroup = hub?.querySelector('[data-gn-vault-group="prefs"]');
+  if (prefsCard && prefsGroup && prefsCard.parentElement !== prefsGroup) prefsGroup.appendChild(prefsCard);
   installCustomPickers(hero.parentElement || page);
   window.GN_I18N?.applyTo?.(page);
   const updateVersion = hero.parentElement?.querySelector('[data-system-update-version]');
   if (updateVersion) updateVersion.textContent = APP_VERSION;
   const updateCopy = hero.parentElement?.querySelector('#gnSystemUpdateCard p');
   if (updateCopy) updateCopy.textContent = tx('vault.systemUpdateNotes', `${APP_VERSION} — LAB tools now open in focused views, the Phase Engine adds neutral cycle context, and the LIVE NODE status is compact on mobile and desktop.`).replace(/^v[^ ]+/, APP_VERSION);
-  const whatsNewVersion = document.querySelector('[data-gn-whatsnew-version]') || hero.parentElement?.querySelector('.gn-profile-section:first-of-type button small');
+  const whatsNewVersion = document.querySelector('[data-gn-whatsnew-version]');
   if (whatsNewVersion) whatsNewVersion.textContent = `v${APP_VERSION}`;
-  const deviceVault = hero.parentElement?.querySelector('.gn-device-vault');
-  const deviceKicker = deviceVault?.querySelector('.gn-foundation-kicker');
-  const deviceSignal = deviceVault?.querySelector('.gn-record-state');
-  if (deviceKicker) deviceKicker.textContent = tx('vault.deviceVaultKicker', '// DEVICE REGISTRY');
-  if (deviceSignal) deviceSignal.textContent = tx('vault.deviceVaultPrivate', 'PRIVATE REGISTRY');
   $('gnSystemUpdateDismiss')?.addEventListener('click', dismissSystemUpdate);
   document.querySelector('[data-system-update-open]')?.addEventListener('click', openSystemUpdate);
   $('gnDeviceForm')?.addEventListener('submit', event => { event.preventDefault(); saveDeviceRecord(); });
@@ -495,8 +541,10 @@ function syncCloudOnlyButtons() {
 
 function renderDeviceVault() {
   const list = $('gnDeviceList');
-  if (!list) return;
+  const summary = $('gnDeviceSummary');
   const devices = S.get('devices', []);
+  if (summary) summary.textContent = devices.length ? tx('vault.deviceCount', '{count} REGISTERED', { count: devices.length }) : tx('vault.deviceReadyEmpty', 'DEVICE REGISTRY READY');
+  if (!list) return;
   const active = devices.filter(device => !device.archived), archived = devices.filter(device => device.archived);
   list.innerHTML = devices.length ? `${active.slice().reverse().map(device => `<article class="gn-record-row"><div><b>${safeText(device.name)}</b><small>${safeText(deviceTypeLabel(device.type))} · ${tx('vault.privateId', 'PRIVATE ID')} ${safeText(device.qrIdentity || tx('vault.devicePending', 'PENDING'))}</small></div><span class="gn-record-state">${safeText(deviceStatusLabel(device.status))}</span><div style="display:flex;gap:4px"><button type="button" class="gn-record-delete" data-device-edit="${safeText(device.id)}" aria-label="${tx('vault.editDevice', 'Edit device')}">✎</button><button type="button" class="gn-record-delete" data-device-retire="${safeText(device.id)}" aria-label="${tx('vault.retireDevice', 'Retire device')}">×</button></div></article>`).join('')}${archived.length ? `<div class="gn-ledger-copy" style="margin-top:10px">${tx('vault.deviceArchived', 'RETIRED / ARCHIVED DEVICES')}</div>${archived.slice().reverse().map(device => `<article class="gn-record-row"><div><b>${safeText(device.name)}</b><small>${safeText(deviceTypeLabel(device.type))} · ${tx('vault.privateIdentityPreserved', 'Private identity preserved')}</small></div><span class="gn-record-state">${safeText(deviceStatusLabel(device.status || 'RETIRED'))}</span><button type="button" class="gn-record-delete" data-device-restore="${safeText(device.id)}" aria-label="${tx('vault.restoreDevice', 'Restore device')}">↺</button></article>`).join('')}` : ''}` : `<div class="gn-empty-state"><span class="gn-icon gn-icon-md gn-accent-y"><svg><use href="#gn-vault-core"></use></svg></span><b>${tx('vault.deviceReadyEmpty', 'DEVICE REGISTRY READY')}</b><span>${tx('vault.deviceReadyEmptyHelp', 'Register a physical object when you want its identity and lifecycle preserved.')}</span></div>`;
 }
@@ -552,7 +600,7 @@ function saveDeviceRecord() {
   const devices = S.get('devices', []), now = new Date().toISOString(), id = moduleState.deviceEditId || createId('device'), existing = devices.find(item => item.id === id);
   const device = { ...(existing || {}), id, name, type: normalizeDeviceType($('gnDeviceType')?.value), status: $('gnDeviceStatus')?.value || 'NEEDS CHECKING', notes: $('gnDeviceNotes')?.value?.trim() || '', qrIdentity: existing?.qrIdentity || `GN-${Math.random().toString(36).slice(2, 10).toUpperCase()}`, source: existing?.source || 'manual', state: existing?.state || 'confirmed', archived: existing?.archived || false, createdAt: existing?.createdAt || now, modifiedAt: now };
   const index = devices.findIndex(item => item.id === id); if (index >= 0) devices[index] = device; else devices.push(device);
-  S.set('devices', devices); appendEventLedger({ type: 'DEVICE', recordId: device.id, label: existing ? 'DEVICE IDENTITY UPDATED' : 'DEVICE IDENTITY REGISTERED' }); queueCloudSync('workspace'); moduleState.deviceEditId = null; $('gnDeviceForm')?.reset(); renderDeviceVault(); actionFeedback(existing ? 'DEVICE IDENTITY UPDATED' : 'DEVICE IDENTITY REGISTERED', 'DEVICE REGISTRY UPDATED // HISTORY PRESERVED');
+  S.set('devices', devices); appendEventLedger({ type: 'DEVICE', recordId: device.id, label: existing ? 'DEVICE IDENTITY UPDATED' : 'DEVICE IDENTITY REGISTERED' }); queueCloudSync('workspace'); moduleState.deviceEditId = null; $('gnDeviceForm')?.reset(); const wrap = document.getElementById('gnDeviceFormWrap'); if (wrap) wrap.open = false; renderDeviceVault(); actionFeedback(existing ? 'DEVICE IDENTITY UPDATED' : 'DEVICE IDENTITY REGISTERED', 'DEVICE REGISTRY UPDATED // HISTORY PRESERVED');
 }
 
 function handleDeviceAction(event) {
@@ -561,7 +609,7 @@ function handleDeviceAction(event) {
   const id = button.dataset.deviceEdit || button.dataset.deviceRetire || button.dataset.deviceRestore;
   const devices = S.get('devices', []), device = devices.find(item => item.id === id);
   if (!device) return;
-  if (button.dataset.deviceEdit) { moduleState.deviceEditId = id; $('gnDeviceName').value = device.name || ''; $('gnDeviceType').value = normalizeDeviceType(device.type); $('gnDeviceStatus').value = device.status || 'NEEDS CHECKING'; $('gnDeviceNotes').value = device.notes || ''; const submit = document.querySelector('#gnDeviceForm button[type="submit"]'); if (submit) submit.textContent = tx('vault.updateDevice', 'UPDATE DEVICE IDENTITY'); syncCustomPicker($('gnDeviceType')); syncCustomPicker($('gnDeviceStatus')); $('gnDeviceForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+  if (button.dataset.deviceEdit) { moduleState.deviceEditId = id; $('gnDeviceName').value = device.name || ''; $('gnDeviceType').value = normalizeDeviceType(device.type); $('gnDeviceStatus').value = device.status || 'NEEDS CHECKING'; $('gnDeviceNotes').value = device.notes || ''; const submit = document.querySelector('#gnDeviceForm button[type="submit"]'); if (submit) submit.textContent = tx('vault.updateDevice', 'UPDATE DEVICE IDENTITY'); syncCustomPicker($('gnDeviceType')); syncCustomPicker($('gnDeviceStatus')); const wrap = document.getElementById('gnDeviceFormWrap'); if (wrap) wrap.open = true; $('gnDeviceForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
   device.archived = Boolean(button.dataset.deviceRetire); device.status = device.archived ? 'RETIRED' : 'READY'; device.modifiedAt = new Date().toISOString(); S.set('devices', devices); appendEventLedger({ type: 'DEVICE', recordId: id, label: device.archived ? 'DEVICE RETIRED' : 'DEVICE RESTORED' }); queueCloudSync('workspace'); renderDeviceVault(); actionFeedback(device.archived ? 'DEVICE RETIRED' : 'DEVICE RESTORED', 'HARDWARE HISTORY PRESERVED // TIMELINE UPDATED');
 }
 
@@ -935,25 +983,29 @@ function renderSiteMap() {
 function ensureProfileMeasurements() {
   const page = $('pageProfile');
   if (!page || $('gnMeasurementsCard')) return;
-  const bodyInput = $('profHtFt');
-  const bodyCard = bodyInput?.closest('div[style*="background:#0e0e16"]');
-  if (!bodyCard) return;
-  bodyCard.insertAdjacentHTML('afterend', `<section class="gn-measurements-card" id="gnMeasurementsCard" aria-labelledby="gnMeasurementsTitle">
-    <div class="gn-foundation-kicker" data-i18n="vault.measurementsKicker">// BODY METRICS</div>
-    <h3 id="gnMeasurementsTitle" data-i18n="vault.measurementsTitle">WEIGHT + MEASUREMENTS</h3>
-    <p class="gn-measurements-copy" data-i18n="vault.measurementsCopy">Use this profile section as the single entry point for weight and user-entered body measurements.</p>
-    <button type="button" class="btn-full btn-primary" onclick="openWeightModal()" style="margin-bottom:10px" data-i18n="dashboard.logWeight">LOG WEIGHT</button>
-    <form id="gnMeasurementsForm" class="gn-measurements-form">
-      <div class="gn-measurements-tools"><label><span data-i18n="vault.measurementUnit">UNIT</span><select id="gnMeasurementUnit" onchange="setMeasurementUnit(this.value)"><option value="in" data-i18n="vault.inches">INCHES</option><option value="cm" data-i18n="vault.centimeters">CENTIMETERS</option></select></label><label><span data-i18n="vault.measurementDate">DATE</span><input id="gnMeasurementDate" type="date"></label></div>
-      <div class="gn-measurements-grid">${MEASUREMENT_TYPES.map(([type, label, key]) => `<label><span><b data-i18n="${key}">${label}</b><small id="gnMeasurementLatest_${type}" data-i18n="vault.noRecord">NO RECORD</small></span><input type="number" min="0" step="0.1" inputmode="decimal" data-measurement-type="${type}" aria-label="${tx(key, label)}"></label>`).join('')}</div>
-      <button type="submit" class="btn-full btn-secondary" data-i18n="vault.saveMeasurements">SAVE MEASUREMENTS</button>
-    </form>
-    <div class="gn-sitemap-wrap">
-      <div class="gn-foundation-kicker" data-i18n="vault.siteMapKicker">// INJECTION SITES</div>
-      <div id="gnSiteMap" class="gn-sitemap"></div>
+  const anchor = $('gnBodyCard');
+  if (!anchor) return;
+  anchor.insertAdjacentHTML('afterend', `<details class="gn-vault-card" id="gnMeasurementsCard">
+    <summary class="gn-vault-card-head">
+      <span class="gn-vault-card-ico" aria-hidden="true"><svg><use href="#gn-trend-signal"></use></svg></span>
+      <span class="gn-vault-card-titles"><b id="gnMeasurementsTitle" data-i18n="vault.measurementsTitle">WEIGHT + MEASUREMENTS</b><small id="gnMeasurementsSummary" class="gn-vault-card-sub" data-i18n="vault.noRecord">NO RECORD</small></span>
+      <span class="gn-vault-chev" aria-hidden="true">›</span>
+    </summary>
+    <div class="gn-vault-card-body">
+      <p class="gn-measurements-copy" data-i18n="vault.measurementsCopy">Use this profile section as the single entry point for weight and user-entered body measurements.</p>
+      <button type="button" class="btn-full btn-primary" onclick="openWeightModal()" style="margin-bottom:10px" data-i18n="dashboard.logWeight">LOG WEIGHT</button>
+      <form id="gnMeasurementsForm" class="gn-measurements-form">
+        <div class="gn-measurements-tools"><label><span data-i18n="vault.measurementUnit">UNIT</span><select id="gnMeasurementUnit" onchange="setMeasurementUnit(this.value)"><option value="in" data-i18n="vault.inches">INCHES</option><option value="cm" data-i18n="vault.centimeters">CENTIMETERS</option></select></label><label><span data-i18n="vault.measurementDate">DATE</span><input id="gnMeasurementDate" type="date"></label></div>
+        <div class="gn-measurements-grid">${MEASUREMENT_TYPES.map(([type, label, key]) => `<label><span><b data-i18n="${key}">${label}</b><small id="gnMeasurementLatest_${type}" data-i18n="vault.noRecord">NO RECORD</small></span><input type="number" min="0" step="0.1" inputmode="decimal" data-measurement-type="${type}" aria-label="${tx(key, label)}"></label>`).join('')}</div>
+        <button type="submit" class="btn-full btn-secondary" data-i18n="vault.saveMeasurements">SAVE MEASUREMENTS</button>
+      </form>
+      <div class="gn-sitemap-wrap">
+        <div class="gn-foundation-kicker" data-i18n="vault.siteMapKicker">// INJECTION SITES</div>
+        <div id="gnSiteMap" class="gn-sitemap"></div>
+      </div>
+      <div class="gn-measurements-empty" id="gnMeasurementsEmpty">No measurements logged yet.</div>
     </div>
-    <div class="gn-measurements-empty" id="gnMeasurementsEmpty">No measurements logged yet.</div>
-  </section>`);
+  </details>`);
   window.GN_I18N?.applyTo?.($('gnMeasurementsCard'));
   $('gnMeasurementsForm')?.addEventListener('submit', event => { event.preventDefault(); saveMeasurements(); });
   installCustomPickers(page);
@@ -982,6 +1034,11 @@ function renderMeasurements() {
     if (field && document.activeElement !== field) field.value = converted === null ? '' : converted.toFixed(1);
   });
   setDisplay('gnMeasurementsEmpty', !records.length);
+  const measureSummary = $('gnMeasurementsSummary');
+  if (measureSummary) {
+    const lw = latestWeight();
+    measureSummary.textContent = lw ? `${Number(lw.weight).toFixed(1)} ${lw.unit || 'lb'} · ${formatDate(lw.date || lw.createdAt)}` : tx('vault.noRecord', 'NO RECORD');
+  }
 }
 
 export function setMeasurementUnit(unit) {

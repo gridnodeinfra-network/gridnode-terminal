@@ -1352,6 +1352,38 @@
     } catch (_) { return false; }
   }
 
+  // TRACK4 journey: a genuine first-run user (zero shots anywhere, no cloud
+  // session) has nothing to compare a changelog against. Auto-showing
+  // WHAT'S NEW over their first-shot mission is overlay fatigue before they
+  // have done anything, so the auto-show is skipped once and acknowledged
+  // silently. The notes stay one tap away via VIEW UPDATE HISTORY.
+  function isGenuineFirstRun() {
+    try {
+      const session = JSON.parse(localStorage.getItem('gn_session_v2') || 'null');
+      if (session && session.type !== 'local' && session?.user?.id) return false;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.endsWith('_shots')) {
+          const records = JSON.parse(localStorage.getItem(key) || '[]');
+          if (Array.isArray(records) && records.length > 0) return false;
+        }
+      }
+      return true;
+    } catch (_) { return false; }
+  }
+
+  // TRACK4: single auto-show gate. Genuine first-run users never get the
+  // changelog popped over their mission; it is acknowledged silently once and
+  // stays available via VIEW UPDATE HISTORY.
+  function autoShow() {
+    if (isGenuineFirstRun()) {
+      acknowledge(VERSION.release);
+      document.dispatchEvent(new CustomEvent('gn:whatsnew-resolved', { detail: { shown: false, skippedFirstRun: true } }));
+      return;
+    }
+    show();
+  }
+
   function boot() {
     const attempt = () => {
       const app = document.getElementById('app');
@@ -1362,12 +1394,12 @@
         // show the changelog after the tour ends instead of over it.
         document.dispatchEvent(new CustomEvent('gn:whatsnew-resolved', { detail: { shown: false, deferred: true } }));
         let done = false;
-        const showDeferred = () => { if (done) return; done = true; show(); };
+        const showDeferred = () => { if (done) return; done = true; autoShow(); };
         document.addEventListener('gn:firstcontact-done', showDeferred, { once: true });
         window.setTimeout(showDeferred, 10 * 60 * 1000); // backstop: never trap the changelog
         return;
       }
-      show();
+      autoShow();
     };
     window.setTimeout(attempt, 900);
   }

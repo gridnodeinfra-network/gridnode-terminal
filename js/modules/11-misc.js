@@ -194,7 +194,9 @@ export function initModules() {
       if (dx < 0 && current < pages.length - 1) document.getElementById(pages[current + 1])?.click();
     }, { passive: true });
   }
-  document.querySelector('.gn-shot-advanced-trigger')?.addEventListener('click', event => { const button = event.currentTarget, body = $(button.dataset.collapseTarget); const open = body?.classList.toggle('gn-hidden') === false; button.setAttribute('aria-expanded', String(open)); });
+  /* TRACK 2: the // MORE DETAILS toggle moved to gnToggleShotAdvanced()
+     (js/modules/05-log-shot.js), wired inline on the button. The old
+     initModules one-liner double-toggled with it, so it is retired. */
   setTodayDefaults();
   renderScanner();
 }

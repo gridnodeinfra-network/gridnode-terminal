@@ -159,9 +159,24 @@
     };
   }
 
-  function showState(wrap, message, visible) {
+  function showState(wrap, message, visible, cta) {
     const stateNode = wrap.querySelector('.gn-chart-state');
-    stateNode.textContent = message;
+    /* TRACK 3: empty states guide toward action — message + CTA button. */
+    stateNode.textContent = '';
+    if (visible) {
+      const msg = document.createElement('div');
+      msg.className = 't3-state-msg';
+      msg.textContent = message;
+      stateNode.appendChild(msg);
+      if (cta) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 't3-empty-cta';
+        btn.textContent = cta.label;
+        btn.addEventListener('click', cta.onClick);
+        stateNode.appendChild(btn);
+      }
+    }
     stateNode.hidden = !visible;
     wrap.querySelector('canvas').hidden = visible;
   }
@@ -211,7 +226,10 @@
     canvas.setAttribute('aria-label', tr('telemetry.bodyMassTitle', 'Body Mass Trajectory'));
     if (!rows.length) {
       const host = canvas.closest('.gn-telemetry-instrument');
-      showState(wrap, tr('telemetry.emptyWeight', 'NO BODY MASS READINGS DETECTED'), true);
+      showState(wrap, tr('telemetry.emptyWeight', 'NO BODY MASS READINGS DETECTED'), true, {
+        label: tr('dashboard.logWeight', 'LOG WEIGHT'),
+        onClick: () => { if (window.openWeightModal) window.openWeightModal(); }
+      });
       host.querySelector('[data-telemetry-summary]').replaceChildren(qualityNode([]));
       updateWeightTable(host, [], source);
       canvas._gnRows = [];
@@ -265,7 +283,10 @@
     canvas.setAttribute('aria-label', tr('telemetry.doseTitle', 'Protocol Dose Timeline'));
     if (!rows.length) {
       const host = canvas.closest('.gn-telemetry-instrument');
-      showState(wrap, tr('telemetry.emptyDose', 'NO ADMINISTRATION SIGNAL DETECTED'), true);
+      showState(wrap, tr('telemetry.emptyDose', 'NO ADMINISTRATION SIGNAL DETECTED'), true, {
+        label: tr('runtime.logShot', 'LOG SHOT'),
+        onClick: () => { if (window.openLogModal) window.openLogModal(); }
+      });
       host.querySelector('[data-telemetry-summary]').replaceChildren(qualityNode([]));
       updateDoseTable(host, []);
       canvas._gnRows = [];
@@ -327,7 +348,7 @@
     const source = sourceData(); const rows = source.weights; const targetNode = host.querySelector('[data-target-vector]'); const summary = host.querySelector('[data-telemetry-summary]');
     const startRaw = Number(source.profile.startWt) || Number(rows[0]?.weight); const currentRaw = Number(rows.at(-1)?.weight); const goalRaw = Number(source.profile.goalWt);
     if (![startRaw, currentRaw, goalRaw].every(value => Number.isFinite(value) && value > 0) || startRaw === goalRaw) {
-      targetNode.innerHTML = `<div class="gn-target-empty">${safe(tr('telemetry.emptyTarget', 'SET A START AND TARGET WEIGHT TO ACTIVATE'))}</div>`;
+      targetNode.innerHTML = `<div class="gn-target-empty"><span>${safe(tr('telemetry.emptyTarget', 'SET A START AND TARGET WEIGHT TO ACTIVATE'))}</span><button type="button" class="t3-empty-cta" onclick="if(window.showPage)showPage('Profile',document.getElementById('navVault'))">${safe(tr('telemetry.openVaultCta', 'OPEN VAULT'))}</button></div>`;
       if (summary) summary.replaceChildren(document.createTextNode(tr('telemetry.sparse', 'INSUFFICIENT DATA FOR DIRECTION')), qualityNode([]));
       updateTargetTable(host, null, source); return;
     }

@@ -326,9 +326,6 @@
 
     
     <div class="page" id="pageResults">
-      <div class="gn-heatmap-wrap" id="gnPhaseHeatmap" hidden>
-        <div class="gn-foundation-kicker">// PHASE MAP</div>
-      </div>
       <div class="page-hdr">
         <div class="page-title" data-i18n-html="results.headingHtml">PROGRESS</div>
         <div class="page-sub" id="resultRange" data-i18n="results.rangeSub">// USER-ENTERED OUTCOMES //</div>
@@ -392,6 +389,9 @@
       </section>
 
       <div class="results-ledger" id="resultsChartsView">
+        <div class="gn-heatmap-wrap" id="gnPhaseHeatmap" hidden>
+          <div class="gn-foundation-kicker">// PHASE MAP</div>
+        </div>
         <section class="results-card summary">
           <div class="results-card-title"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-trend-signal"></use></svg></span><span data-i18n="results.summaryTitle">Progress Summary</span></div>
           <div class="results-card-sub" data-i18n="results.summarySub">Your logged shots and weight, at a glance</div>
@@ -428,7 +428,7 @@
             <div class="card-val" id="wtChartVal">—<span data-i18n="results.lbsCurrent">lbs current</span></div>
             <div class="results-direction insufficient" id="resWeightDirection" data-i18n="results.trendInsufficient">Trend direction: Insufficient Data</div>
             <div class="results-copy" style="margin-bottom:10px" data-i18n="runtime.observedChange">Observed change from logged measurements.</div>
-            <div class="chart-wrap gn-chart-stack" style="height:160px"><canvas id="wtChart"></canvas><svg id="wtChartOverlay" class="gn-chart-overlay" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg></div>
+            <div class="chart-wrap gn-chart-stack"><canvas id="wtChart"></canvas><svg id="wtChartOverlay" class="gn-chart-overlay" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg></div>
             <div class="gn-chart-legend" id="wtChartLegend" aria-hidden="true"></div>
             <div class="time-tabs">
               <button class="time-tab" data-i18n="results.range1m" onclick="setWtRange(this,'1m')">1M</button>
@@ -690,41 +690,40 @@
   </div>
 
   
-  <div style="
-    background:#0e0e16;background:var(--panel, #0e0e16);border:1px solid rgba(255,255,255,0.07);
-    border-radius:8px;padding:20px;margin-bottom:20px;
-    display:flex;align-items:center;gap:16px;
-  ">
-    
-    <div id="profAvaWrap" style="
-      width:64px;height:64px;border-radius:50%;
-      border:2px solid #00d4ff;overflow:hidden;flex-shrink:0;
-      box-shadow:0 0 14px rgba(0,212,255,0.3);
-      background:#0a0a14;background:var(--surface, #0a0a14);display:flex;align-items:center;justify-content:center;
-    ">
-      <img id="profAvaIcon" src="/assets/brand/icons/pwa-512.png" alt="GRID//NODE NODE mark" width="64" height="64" decoding="async">
+  <div id="gnVaultSummary" class="gn-vault-summary">
+    <div class="gn-vault-idrow">
+      <div id="profAvaWrap" class="gn-vault-avatar">
+        <img id="profAvaIcon" src="/assets/brand/icons/pwa-512.png" alt="GRID//NODE NODE mark" width="64" height="64" decoding="async">
+      </div>
+      <div class="gn-vault-idtxt">
+        <div id="profNameTxt" class="gn-vault-name">PROFILE</div>
+        <div id="profEmail" class="gn-vault-email"></div>
+        <div class="gn-vault-ver">GRID//NODE <span id="gnProfileHeroVersion"></span></div>
+      </div>
+      <button type="button" class="gn-vault-close" onclick="closeProfileHub()" aria-label="Close profile" data-i18n-aria-label="vault.closeHub">&#10005;</button>
     </div>
-    
-    <div style="flex:1;min-width:0">
-      <div id="profNameTxt" style="
-        font-family:'Orbitron',monospace;font-size:1rem;
-        color:#eeeef5;letter-spacing:2px;margin-bottom:3px;
-        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-      ">PROFILE</div>
-      <div id="profEmail" style="
-        font-family:'Share Tech Mono',monospace;font-size:0.62rem;
-        color:var(--text-dim);letter-spacing:1px;margin-bottom:3px;
-        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-      "></div>
-      <div style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);letter-spacing:2px">
-        GRID//NODE <span id="gnProfileHeroVersion"></span>
+    <div class="gn-vault-statusline">
+      <span id="gnProfileSync" class="gn-vault-pill">LOCAL MODE</span>
+    </div>
+    <div class="gn-vault-stats">
+      <div class="gn-vault-stat">
+        <span class="gn-vault-stat-label" data-i18n="vault.statMedication">MEDICATION</span>
+        <b id="gnProfileMedication" data-i18n="vault.notEntered">Not entered</b>
+      </div>
+      <div class="gn-vault-stat">
+        <span class="gn-vault-stat-label" data-i18n="vault.statWeight">LATEST WEIGHT</span>
+        <b id="gnProfileWeight">&mdash;</b>
       </div>
     </div>
   </div>
 
-  
-  <div id="profMedSection" style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:3px;margin-bottom:10px" data-i18n="profile.sectionMedication">// MEDICATION</div>
-  <div style="background:#0e0e16;background:var(--panel, #0e0e16);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:16px;margin-bottom:20px">
+  <details class="gn-vault-card" id="gnMedCard">
+    <summary class="gn-vault-card-head">
+      <span class="gn-vault-card-ico" aria-hidden="true"><svg><use href="#gn-syringe"></use></svg></span>
+      <span class="gn-vault-card-titles"><b data-i18n="profile.sectionMedication">// MEDICATION</b><small id="gnMedCardSummary" class="gn-vault-card-sub">&nbsp;</small></span>
+      <span class="gn-vault-chev" aria-hidden="true">&rsaquo;</span>
+    </summary>
+    <div class="gn-vault-card-body">
     <div class="form-group">
       <div class="form-label" id="cpMedProfLabel" data-i18n="shot.medication">MEDICATION</div>
       <div class="cp-select" id="cpMedProf">
@@ -791,11 +790,16 @@
         </div>
       </div>
     </div>
-  </div>
+    </div>
+  </details>
 
-  
-  <div id="profBodySection" style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:3px;margin-bottom:10px" data-i18n="profile.sectionBody">// BODY METRICS</div>
-  <div style="background:#0e0e16;background:var(--panel, #0e0e16);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:16px;margin-bottom:20px">
+  <details class="gn-vault-card" id="gnBodyCard">
+    <summary class="gn-vault-card-head">
+      <span class="gn-vault-card-ico" aria-hidden="true"><svg><use href="#gn-biometric-gauge"></use></svg></span>
+      <span class="gn-vault-card-titles"><b data-i18n="profile.sectionBody">// BODY METRICS</b><small id="gnProfileBody" class="gn-vault-card-sub" data-i18n="vault.notEntered">Not entered</small></span>
+      <span class="gn-vault-chev" aria-hidden="true">&rsaquo;</span>
+    </summary>
+    <div class="gn-vault-card-body">
     <div class="form-row">
       <div class="form-group">
         <label class="form-label" for="profHtFt" data-i18n="profile.heightFt">HEIGHT (ft)</label>
@@ -842,7 +846,8 @@
       <span id="profBMIVal" style="font-family:'Orbitron',monospace;font-size:1.4rem;font-weight:700;color:#00d4ff">—</span>
       <span id="profBMICat" style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:#9898b0;margin-left:8px;letter-spacing:2px"></span>
     </div>
-  </div>
+    </div>
+  </details>
 
   
     </div></div>
