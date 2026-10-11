@@ -4446,11 +4446,9 @@ function scrollLandingTo(id) {
             
           </div>
           <div>
-            <div class="phase-tag" data-i18n="phase.currentPhase">CURRENT PHASE</div>
+            <div class="phase-tag"><span data-i18n="phase.currentPhase">CURRENT PHASE</span> <button type="button" class="gn-info-dot" aria-label="About this estimate" data-i18n-aria-label="phase.estimateInfoAria" onclick="showToast(tx('phase.phaseEngineExplainer','Phase Engine estimates protocol progression using user-entered tracking records. It is educational and estimate-based.'),false)">ⓘ</button></div>
             <div class="phase-name-txt" id="phaseNameTxt">NO SHOTS RECORDED</div>
             <div class="phase-num-txt" id="phaseNumTxt">INITIATE PROTOCOL — log first shot</div>
-            <div class="phase-support" id="phaseSupportTxt">Estimated from your logged protocol history.</div>
-            <div class="phase-clarity-note"><b data-i18n="phase.educationalEstimate">EDUCATIONAL ESTIMATE</b><br><span data-i18n="phase.phaseEngineExplainer">Phase Engine estimates protocol progression using user-entered tracking records. It is educational and estimate-based.</span></div>
           </div>
         </div>
 
@@ -4586,6 +4584,14 @@ function scrollLandingTo(id) {
       </div>
       
       
+      <!-- Shot Constellation Timeline -->
+      <div class="gn-constellation" id="gnConstellation" hidden>
+        <div class="gn-constellation-kicker" data-i18n="history.constellation">TIMELINE</div>
+        <div class="gn-constellation-track" id="gnConstellationTrack">
+          <div class="gn-constellation-line"></div>
+          <div class="gn-constellation-nodes" id="gnConstellationNodes"></div>
+        </div>
+      </div>
       <section class="shots-scanner-card" id="shotsRegionScanner">
         <div class="shots-scanner-head">
           <div>
@@ -4708,14 +4714,7 @@ function scrollLandingTo(id) {
         <button class="shot-history-toggle" type="button" data-shot-history-view="archived" data-i18n="shots.archivedTab">ARCHIVED</button>
       </div>
       <div class="shot-history-helper" id="shotHistoryHelper"></div>
-      <!-- Shot Constellation Timeline -->
-      <div class="gn-constellation" id="gnConstellation" hidden>
-        <div class="gn-constellation-kicker" data-i18n="history.constellation">TIMELINE</div>
-        <div class="gn-constellation-track" id="gnConstellationTrack">
-          <div class="gn-constellation-line"></div>
-          <div class="gn-constellation-nodes" id="gnConstellationNodes"></div>
-        </div>
-      </div>
+
       <div id="logList"><div class="empty"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span>NO SHOTS LOGGED YET<br><button class="btn-full btn-primary empty-cta" type="button" onclick="openLogModal()" aria-label="Log your first shot">LOG YOUR FIRST SHOT</button></div></div>
     </div>
 
@@ -4727,7 +4726,7 @@ function scrollLandingTo(id) {
       <div class="page-hdr">
         <div class="page-title" data-i18n-html="results.headingHtml">PROGRESS</div>
         <div class="page-sub" id="resultRange" data-i18n="results.rangeSub">// USER-ENTERED OUTCOMES //</div>
-        <div class="results-signal-note"><b data-i18n="results.protocolSignal">PROTOCOL SIGNAL</b><br><span data-i18n="results.protocolSignalCopy">Each logged SHOT contributes signal to your evolving protocol record. Additional entries may provide broader context over time.</span></div>
+
         <div class="results-view-toggle" role="group" aria-label="RESULTS view" data-i18n-aria-label="results.viewAria">
           <button class="results-view-btn active" type="button" data-results-view="charts" onclick="setResultsView('charts')" data-i18n="results.viewCharts">CHARTS</button>
           <button class="results-view-btn" type="button" data-results-view="calendar" onclick="setResultsView('calendar')" data-i18n="results.viewCalendar">CALENDAR</button>
@@ -5057,12 +5056,12 @@ function scrollLandingTo(id) {
         </div>
         <div class="card">
           <div class="card-title">CADENCE RADAR</div>
-          <p class="gn-visual-sub">Your shot timing vs established rhythm. Rhythmic = consistent.</p>
+          <p class="gn-visual-sub">Shot timing vs your rhythm.</p>
           <canvas id="gnCadenceCanvas" class="gn-visual-canvas" height="180"></canvas>
         </div>
         <div class="card">
           <div class="card-title">PROTOCOL FINGERPRINT</div>
-          <p class="gn-visual-sub">Your recent protocol as a visual signature. Recognition, not a score.</p>
+          <p class="gn-visual-sub">Your protocol, visualized.</p>
           <canvas id="gnFingerprintCanvas" class="gn-visual-canvas" height="180"></canvas>
         </div>
         <div class="card">
