@@ -439,7 +439,10 @@ function ensureProfileHub() {
   const page = $('pageProfile');
   if (!page || page.querySelector('[data-gn-profile-hub]')) return;
   const avatar = $('profAvaWrap');
-  const hero = avatar?.closest('[style*="background:#0e0e16"]');
+  let hero = avatar?.closest('[style*="background:#0e0e16"]')
+    || $('gnVaultSummary')
+    || page.querySelector('.gn-profile-hero')
+    || avatar?.parentElement;
   if (!hero) return;
   hero.insertAdjacentHTML('afterend', `<section class="gn-profile-hub" data-gn-profile-hub aria-labelledby="gnProfileHubTitle">
     <div class="gn-foundation-head"><div><div class="gn-foundation-kicker" data-i18n="vault.kicker">// NODE PROFILE HUB</div><h2 id="gnProfileHubTitle" data-i18n="vault.hubTitle">YOUR NODE</h2></div><span class="gn-foundation-actions"><span class="gn-foundation-signal" id="gnProfileSync">LOCAL MODE</span><button type="button" class="gn-hub-close" id="gnHubClose" onclick="closeProfileHub()" aria-label="CERRAR" data-i18n-aria-label="vault.closeHub">✕</button></span></div>

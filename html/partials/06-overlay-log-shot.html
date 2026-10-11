@@ -6,23 +6,18 @@
         <div class="modal-title" id="logOvTitle">LOG SHOT</div>
         <div class="gn-console-sub" data-i18n="shot.consoleSub">SHOT PROTOCOL CONSOLE</div>
       </div>
-      <div class="modal-actions"><button class="modal-btn save" aria-label="Save shot" data-i18n-aria-label="modal.saveShot" onclick="saveShot()"><span class="gn-icon"><svg><use href="#gn-check"></use></svg></span></button></div>
+      <div class="modal-actions"><button class="modal-btn save" id="gnShotHdrSave" aria-label="Save shot" data-i18n-aria-label="modal.saveShot" onclick="gnShotPrimaryAction()"><span class="gn-icon"><svg><use href="#gn-check"></use></svg></span></button></div>
     </div>
     <div class="gn-shot-scroll">
-    <div class="form-group gn-shot-datetime-group">
-      <label class="form-label" for="sDate" data-i18n="shot.date">DATE</label>
-      <input class="form-input gn-shot-date-input" type="text" id="sDate" placeholder="Jun 11, 2026" data-i18n-placeholder="shot.datePlaceholder" inputmode="none" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" readonly onclick="gnOpenShotDatePicker()" aria-label="Select SHOT date" data-i18n-aria-label="shot.dateAria">
-      <div class="gn-shot-date-helper" data-i18n="shot.dateHelp">Tap to choose date.</div>
-      <label class="form-label gn-shot-time-label" for="sTime" data-i18n="shot.time">TIME</label>
-      <div class="gn-shot-time-control" role="group" aria-label="SHOT time control" data-i18n-aria-label="shot.timeControlAria">
-        <input class="form-input gn-shot-time-input" type="text" id="sTime" placeholder="8:30" data-i18n-placeholder="shot.timePlaceholder" inputmode="numeric" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" aria-label="Enter SHOT time as hours and minutes" data-i18n-aria-label="shot.timeAria" oninput="gnShotClockLiveFormat(this)" onblur="gnNormalizeShotClockField(this)">
-        <div class="gn-ampm-toggle" role="group" aria-label="Select AM or PM" data-i18n-aria-label="shot.ampmAria">
-          <button class="gn-ampm-btn" id="sTimeAM" type="button" onclick="gnSetShotMeridiem('AM')" data-i18n="shot.am">AM</button>
-          <button class="gn-ampm-btn" id="sTimePM" type="button" onclick="gnSetShotMeridiem('PM')" data-i18n="shot.pm">PM</button>
-        </div>
-      </div>
-      <div class="gn-shot-time-helper" data-i18n="shot.timeHelp">Type the time and tap AM or PM — typing p picks PM for you. Example: 8:30 p.</div>
+    <!-- TRACK 2: 2-step progressive disclosure. Step 1 = essentials (medication,
+         dose, date/time). Step 2 = details (site, device, weight, side effects,
+         notes). All field IDs/classes are unchanged so every reader/writer in
+         05-log-shot.js keeps working. -->
+    <div class="gn-shot-stepper" aria-hidden="true">
+      <span class="gn-shot-dots"><span class="gn-shot-dot gn-on" data-gn-dot="1"></span><span class="gn-shot-dot" data-gn-dot="2"></span></span>
+      <span class="gn-shot-stepname" id="gnShotStepName">STEP 1 OF 2 · ESSENTIALS</span>
     </div>
+    <section class="gn-shot-step gn-on" id="gnShotStep1" data-gn-step="1">
     <div class="form-group">
       <div class="form-label" id="cpShotMedLabel" data-i18n="shot.medication">MEDICATION</div>
       <div class="cp-select" id="cpShotMed">
@@ -90,6 +85,23 @@
       </div>
     </div>
     <div class="form-group"><label class="form-label" for="sDose" data-i18n="shot.doseLabel">DOSE — TAP TO SELECT OR ENTER CUSTOM</label><div class="dose-pills" id="dosePills"></div><input class="form-input" type="number" id="sDose" placeholder="Custom dose (mg)" data-i18n-placeholder="shot.customDose" min="0.1" step="0.1" inputmode="decimal" style="margin-top:7px"></div>
+    <div class="form-group gn-shot-datetime-group">
+      <label class="form-label" for="sDate" data-i18n="shot.date">DATE</label>
+      <input class="form-input gn-shot-date-input" type="text" id="sDate" placeholder="Jun 11, 2026" data-i18n-placeholder="shot.datePlaceholder" inputmode="none" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" readonly onclick="gnOpenShotDatePicker()" aria-label="Select SHOT date" data-i18n-aria-label="shot.dateAria">
+      <div class="gn-shot-date-helper" data-i18n="shot.dateHelp">Tap to choose date.</div>
+      <label class="form-label gn-shot-time-label" for="sTime" data-i18n="shot.time">TIME</label>
+      <div class="gn-shot-time-control" role="group" aria-label="SHOT time control" data-i18n-aria-label="shot.timeControlAria">
+        <input class="form-input gn-shot-time-input" type="text" id="sTime" placeholder="8:30" data-i18n-placeholder="shot.timePlaceholder" inputmode="numeric" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" aria-label="Enter SHOT time as hours and minutes" data-i18n-aria-label="shot.timeAria" oninput="gnShotClockLiveFormat(this)" onblur="gnNormalizeShotClockField(this)">
+        <div class="gn-ampm-toggle" role="group" aria-label="Select AM or PM" data-i18n-aria-label="shot.ampmAria">
+          <button class="gn-ampm-btn" id="sTimeAM" type="button" onclick="gnSetShotMeridiem('AM')" data-i18n="shot.am">AM</button>
+          <button class="gn-ampm-btn" id="sTimePM" type="button" onclick="gnSetShotMeridiem('PM')" data-i18n="shot.pm">PM</button>
+        </div>
+      </div>
+      <div class="gn-shot-time-helper" data-i18n="shot.timeHelp">Type the time and tap AM or PM — typing p picks PM for you. Example: 8:30 p.</div>
+    </div>
+    </section>
+    <section class="gn-shot-step" id="gnShotStep2" data-gn-step="2">
+    <button type="button" class="gn-shot-back" onclick="gnShotStepBack()"><span aria-hidden="true">←</span> <span data-i18n="shot.back">BACK</span></button>
     <div class="form-group">
       <div class="form-label" id="modalSelectedLocationLabel" data-i18n="shot.selectedLocationLabel">INJECTION SITE</div>
       <div class="scanner-location-display" role="group" aria-labelledby="modalSelectedLocationLabel">
@@ -98,9 +110,8 @@
         <div class="gn-modal-zone-grid" id="modalZonePicker" role="group" aria-label="Injection sites"></div>
       </div>
     </div>
-    <div class="gn-log-step" data-gn-shot-step="gear" data-i18n="shot.stepGear">04 // GEAR</div>
     <div class="form-group"><label class="form-label" for="shotDeviceId" data-i18n="shot.deviceUsed">DEVICE USED — OPTIONAL</label><select class="form-input" id="shotDeviceId"><option value="" data-i18n="shot.unknownDevice">Unknown / Not applicable</option></select></div>
-    <button type="button" class="gn-shot-advanced-trigger" data-collapse-target="gnShotAdvanced" aria-expanded="false" aria-controls="gnShotAdvanced">
+    <button type="button" class="gn-shot-advanced-trigger" data-collapse-target="gnShotAdvanced" aria-expanded="false" aria-controls="gnShotAdvanced" onclick="gnToggleShotAdvanced()">
       <span data-i18n="shot.moreDetails">// MORE DETAILS</span>
       <span class="gn-shot-advanced-chevron" aria-hidden="true">▼</span>
     </button>
@@ -122,10 +133,11 @@
       </div>
       <div class="form-group"><label class="form-label" for="sNotes" data-i18n="shots.notesOptional">NOTES — OPTIONAL</label><textarea class="form-textarea" id="sNotes" placeholder="How do you feel?" data-i18n-placeholder="shot.notesPlaceholder" maxlength="500"></textarea></div>
     </div>
+    </section>
     </div><!-- /gn-shot-scroll -->
     <div class="gn-shot-actionbar">
       <div class="gn-shot-summary" aria-live="polite"><span class="gn-shot-summary-item" id="gnShotSummaryMed">&mdash;</span><span class="gn-shot-summary-sep">//</span><span class="gn-shot-summary-item" id="gnShotSummaryDose">&mdash;</span><span class="gn-shot-summary-sep">//</span><span class="gn-shot-summary-item" id="gnShotSummarySite">&mdash;</span></div>
-      <button class="btn-full btn-primary gn-shot-fire" onclick="saveShot()">LOG SHOT</button>
+      <button class="btn-full btn-primary gn-shot-fire" onclick="gnShotPrimaryAction()">LOG SHOT</button>
     </div>
     <div class="gn-quick-confirm gn-hidden" id="gnQuickConfirm" aria-live="polite">
       <div class="gn-quick-confirm-kicker" data-i18n="shot.quickRepeatKicker">QUICK REPEAT</div>
@@ -137,5 +149,3 @@
     </div>
   </div>
 </div>
-
-

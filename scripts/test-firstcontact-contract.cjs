@@ -37,7 +37,7 @@ check('no gn-onb- selectors in CSS', !/gn-onb-/.test(nativeCss), 'stale v1 spotl
 // match css/native/order.json or the fallback would load a stale file set.
 const nativeOrder = require('./read-native-css.cjs').order;
 const nativeJs = read('js/gridnode-native.js');
-const injectedFiles = [...nativeJs.matchAll(/'(\d\d-[a-z-]+\.css)'/g)].map(m => m[1]);
+const injectedFiles = [...nativeJs.matchAll(/'(\d\d-[a-z0-9-]+\.css)'/g)].map(m => m[1]);
 check('injectCss file list matches css/native/order.json',
   JSON.stringify(injectedFiles) === JSON.stringify(nativeOrder),
   'fallback CSS list drifted from the pinned order');

@@ -1918,17 +1918,20 @@ html[data-theme="light"] .gn-compare-row label span, html[data-theme="light"] .g
 #ringWrap.gn-orbit-active { touch-action: none; }
 
 /* Vault simplification (overnight sprint 2026-10-11) */
-.gn-profile-static { cursor: default; }
+.gn-profile-row.gn-profile-static { cursor: default; }
+.gn-profile-row.gn-profile-static:hover { background: transparent; }
 .gn-profile-static .gn-profile-chevron { display: none; }
-.gn-profile-footer-line { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 14px; font: 600 .58rem var(--font-m,monospace); letter-spacing: 1.2px; color: #586d76; }
+.gn-profile-footer-line { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 14px; font: 600 .58rem var(--font-m,monospace); letter-spacing: 1.2px; color: #8a9aa2; }
 .gn-linklike { background: none; border: none; padding: 0; font: inherit; color: #8295a0; text-decoration: underline; cursor: pointer; }
 .gn-linklike:hover { color: #00d4ff; }
 .gn-danger-zone { margin-top: 16px; border: 1px solid rgba(255,59,59,.25); border-radius: 6px; }
-.gn-danger-zone summary { cursor: pointer; padding: 12px; font: 700 .62rem var(--font-m,monospace); letter-spacing: 1.6px; color: #FF6B6B; list-style: none; }
+.gn-danger-zone summary { cursor: pointer; padding: 12px;min-height:44px;display:flex;align-items:center; font: 700 .62rem var(--font-m,monospace); letter-spacing: 1.6px; color: #FF6B6B; list-style: none; }
 .gn-danger-zone summary::-webkit-details-marker { display: none; }
 .gn-danger-zone summary::before { content: '▸ '; }
 .gn-danger-zone[open] summary::before { content: '▾ '; }
 .gn-danger-zone .gn-profile-row { border-top: 1px solid rgba(255,59,59,.12); }
 
-.gn-info-dot{background:none;border:1px solid rgba(0,212,255,.4);border-radius:50%;width:18px;height:18px;font-size:.6rem;color:#00d4ff;cursor:pointer;padding:0;line-height:1;vertical-align:middle;margin-left:4px}
+.gn-info-dot{background:none;border:1px solid rgba(0,212,255,.4);border-radius:50%;width:18px;height:18px;min-height:18px;font-size:.6rem;color:#00d4ff;cursor:pointer;padding:0;line-height:1;vertical-align:middle;margin-left:4px}
 .gn-info-dot:hover{background:rgba(0,212,255,.12)}
+
+.gn-phase-chip:empty { display: none; }

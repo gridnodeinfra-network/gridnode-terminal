@@ -148,6 +148,19 @@ function renderDashboard() {
   }
   renderFirstShotMission(missionMode);
   if (firstShotMission) firstShotMission.hidden = shots.length > 0;
+  // TRACK4 journey: the telemetry module mounts before the wanda dashboard
+  // exists, so its prepend fallback lands above the page header and buries the
+  // first-shot mission + quick actions below the fold. Re-dock it after the
+  // wanda actions row (its intended anchor) whenever it sits above the wanda
+  // dashboard. Idempotent: only moves when mispositioned.
+  try {
+    const wanda = document.getElementById('gnWandaDashboard');
+    const telemetry = document.getElementById('gnTelemetryDashboard');
+    const actions = wanda ? wanda.querySelector('.gn-wanda-actions') : null;
+    if (wanda && telemetry && actions && (telemetry.compareDocumentPosition(wanda) & Node.DOCUMENT_POSITION_FOLLOWING)) {
+      actions.insertAdjacentElement('afterend', telemetry);
+    }
+  } catch (_) {}
   // Zero-shot state: the gnFirstShotMission CTA stays visible as the hero;
   // activation-state CSS dims the not-yet-live metrics behind it.
   // (v0.15.45: removed the old wandaEl display:none that hid the mission too.)
@@ -419,6 +432,12 @@ function initDrilldown() {
     document.body.style.overflow = 'hidden';
   }
   center.addEventListener('click', openDd);
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      var ov = document.getElementById('gnDrilldown');
+      if (ov && !ov.hidden) { ov.hidden = true; document.body.style.overflow = ''; }
+    }
+  });
   function closeDd(){ overlay.hidden = true; document.body.style.overflow = ''; if (body) body.innerHTML = ''; }
   if (close) close.addEventListener('click', closeDd);
   overlay.addEventListener('click', function(e){ if (e.target === overlay) closeDd(); });
@@ -676,5 +695,72 @@ if (typeof document !== 'undefined' && !window.__gnPhaseStateListener) {
       const phase = renderPhase(lastShot, shots);
       refreshNodeHeader({ lastShot, phase });
     } catch (_) { /* keep the generic fallback names */ }
+  });
+}
+
+// ── TRACK4 journey: first-shot achievement ──────────────────────────────
+// The empty → first-data transition should feel like an achievement with a
+// clear next step, not a silent dashboard refresh. One-time overlay after the
+// very first shot is saved: celebrates, then points at the next action (log
+// weight). Dismisses via X (top-right), Escape, or either button.
+const GN_FIRST_SHOT_CELEBRATED_KEY = 'gn_first_shot_celebrated_v1';
+
+function gnFirstShotCelebrated() {
+  try { return localStorage.getItem(GN_FIRST_SHOT_CELEBRATED_KEY) === '1'; } catch (_) { return false; }
+}
+
+function closeFirstShotCelebrate() {
+  const overlay = document.getElementById('gnFirstShotCelebrate');
+  if (!overlay) return;
+  overlay.classList.remove('active');
+  overlay.setAttribute('aria-hidden', 'true');
+  window.setTimeout(() => overlay.remove(), 260);
+}
+
+function showFirstShotCelebrate() {
+  if (document.getElementById('gnFirstShotCelebrate')) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'gnFirstShotCelebrate';
+  overlay.className = 'gn-fsc-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-labelledby', 'gnFscTitle');
+  overlay.innerHTML =
+    '<div class="gn-fsc-card">'
+    + '<button type="button" class="gn-fsc-x" aria-label="' + safeText(tx('modal.close', 'Close')) + '"><span aria-hidden="true">×</span></button>'
+    + '<div class="gn-fsc-kicker">' + safeText(tx('journey.firstShotKicker', 'GRID ACTIVATED')) + '</div>'
+    + '<h2 id="gnFscTitle">' + safeText(tx('journey.firstShotTitle', 'FIRST SHOT LOGGED')) + '</h2>'
+    + '<p>' + safeText(tx('journey.firstShotBody', 'Your Phase Engine is live and your timeline has started. One quick step builds your SIGNAL.')) + '</p>'
+    + '<div class="gn-fsc-next"><span class="gn-fsc-next-label">' + safeText(tx('journey.nextUp', 'NEXT UP')) + '</span>'
+    + '<button type="button" class="gn-fsc-primary" id="gnFscWeight">' + safeText(tx('dashboard.logWeight', 'LOG WEIGHT')) + '</button></div>'
+    + '<button type="button" class="gn-fsc-secondary" id="gnFscExplore">' + safeText(tx('journey.exploreGrid', 'EXPLORE THE GRID')) + '</button>'
+    + '</div>';
+  document.body.appendChild(overlay);
+  window.GN_I18N?.applyTo?.(overlay);
+  overlay.querySelector('.gn-fsc-x').addEventListener('click', closeFirstShotCelebrate);
+  overlay.querySelector('#gnFscExplore').addEventListener('click', closeFirstShotCelebrate);
+  overlay.querySelector('#gnFscWeight').addEventListener('click', () => {
+    closeFirstShotCelebrate();
+    try { openWeightModal(); } catch (_) {}
+  });
+  const onKey = (event) => {
+    if (event.key === 'Escape') { closeFirstShotCelebrate(); document.removeEventListener('keydown', onKey); }
+  };
+  document.addEventListener('keydown', onKey);
+  requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('active')));
+  window.setTimeout(() => { try { overlay.querySelector('#gnFscWeight').focus({ preventScroll: true }); } catch (_) {} }, 60);
+}
+
+if (typeof document !== 'undefined' && !window.__gnFirstShotCelebrateListener) {
+  window.__gnFirstShotCelebrateListener = true;
+  document.addEventListener('gn:shot-saved', (event) => {
+    try {
+      if (!event?.detail?.isNew || gnFirstShotCelebrated()) return;
+      const total = (typeof getAllShots === 'function' ? getAllShots() : []).filter(s => !s.archived).length;
+      if (total !== 1) return;
+      try { localStorage.setItem(GN_FIRST_SHOT_CELEBRATED_KEY, '1'); } catch (_) {}
+      // Let the save toast land first; the achievement follows it.
+      window.setTimeout(showFirstShotCelebrate, 650);
+    } catch (_) {}
   });
 }

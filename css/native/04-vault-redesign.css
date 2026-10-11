@@ -1,0 +1,543 @@
+/* ============================================================
+ * 04-vault-redesign.css — VAULT REDESIGN (Track 1, 2026-10-11)
+ * Premium settings experience: profile summary card, grouped
+ * sections with strong dividers, in-place expandable cards.
+ * Order in css/native/order.json: 04-vault-redesign < 05-logshot-2step <
+ * 06-premium-pass (TRACK 3 polish layer, loads last and wins ties).
+ * Vault-scoped selectors (#pageProfile ...) avoid collisions. Cyberpunk identity kept:
+ * Orbitron display, Share Tech Mono labels, cyan accent.
+ * ============================================================ */
+
+/* ---------- Profile summary card ---------- */
+#pageProfile .gn-vault-summary {
+  background: var(--panel, #0e0e16);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-top: 2px solid rgba(0, 212, 255, 0.55);
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 12px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+}
+#pageProfile .gn-vault-idrow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+#pageProfile .gn-vault-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid #00d4ff;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 0 14px rgba(0, 212, 255, 0.3);
+  background: var(--surface, #0a0a14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#pageProfile .gn-vault-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+#pageProfile .gn-vault-idtxt {
+  flex: 1;
+  min-width: 0;
+}
+#pageProfile .gn-vault-name {
+  font-family: var(--font-d, 'Orbitron', monospace);
+  font-size: 1rem;
+  color: #eeeef5;
+  letter-spacing: 2px;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#pageProfile .gn-vault-email {
+  font-family: var(--font-m, 'Share Tech Mono', monospace);
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#pageProfile .gn-vault-ver {
+  font-family: var(--font-m, 'Share Tech Mono', monospace);
+  font-size: 0.55rem;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+}
+#pageProfile .gn-vault-close {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  cursor: pointer;
+  line-height: 1;
+}
+#pageProfile .gn-vault-close:hover {
+  color: #00d4ff;
+  border-color: rgba(0, 212, 255, 0.5);
+}
+#pageProfile .gn-vault-statusline {
+  margin-top: 14px;
+}
+#pageProfile .gn-vault-pill {
+  display: inline-block;
+  font-family: var(--font-m, 'Share Tech Mono', monospace);
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.03);
+}
+#pageProfile .gn-vault-pill.is-cloud {
+  border-color: rgba(0, 212, 255, 0.6);
+  color: #00d4ff;
+  background: rgba(0, 212, 255, 0.07);
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.25);
+}
+#pageProfile .gn-vault-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+#pageProfile .gn-vault-stat {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+#pageProfile .gn-vault-stat-label {
+  font-family: var(--font-m, 'Share Tech Mono', monospace);
+  font-size: 0.55rem;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+}
+#pageProfile .gn-vault-stat b {
+  font-family: var(--font-d, 'Orbitron', monospace);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #eef6f8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- Cloud status strip ---------- */
+#pageProfile .gn-cloud-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-m, 'Share Tech Mono', monospace);
+  font-size: 0.6rem;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  padding: 10px 4px;
+  margin-bottom: 4px;
+}
+#pageProfile .gn-cloud-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #8a93a6;
+}
+#pageProfile .gn-cloud-dot.cloud {
+  background: #00d4ff;
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.8);
+}
+
+/* ---------- Section groups ---------- */
+#pageProfile .gn-vault-group {
+  margin-bottom: 26px;
+}
+#pageProfile .gn-vault-group-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-m, 'Share Tech Mono', monospace);
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  letter-spacing: 3px;
+  margin-bottom: 12px;
+}
+#pageProfile .gn-vault-group-label::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+#pageProfile .gn-vault-cards {
+  display: grid;
+  gap: 10px;
+}
+
+/* ---------- Expandable cards (details) ---------- */
+#pageProfile .gn-vault-card {
+  background: var(--panel, #0e0e16);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+#pageProfile .gn-vault-card:last-child {
+  margin-bottom: 0;
+}
+#pageProfile .gn-vault-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 62px;
+  padding: 12px 14px;
+  cursor: pointer;
+  list-style: none;
+}
+#pageProfile .gn-vault-card-head::-webkit-details-marker {
+  display: none;
+}
+#pageProfile .gn-vault-card-head:focus-visible {
+  outline: 2px solid rgba(0, 212, 255, 0.6);
+  outline-offset: -2px;
+}
+#pageProfile .gn-vault-card-ico {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  color: #00d4ff;
+}
+#pageProfile .gn-vault-card-ico svg {
+  width: 18px;
+  height: 18px;
+}
+#pageProfile .gn-vault-card-titles {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+#pageProfile .gn-vault-card-titles b {
+  font-family: var(--font-d, 'Orbitron', monospace);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #eef6f8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#pageProfile .gn-vault-card-sub {
+  font-family: var(--font-m, 'Share Tech Mono', monospace);
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#pageProfile .gn-vault-chev {
+  flex-shrink: 0;
+  color: var(--text-dim);
+  font-size: 1.25rem;
+  line-height: 1;
+  transition: transform 0.18s ease, color 0.18s ease;
+}
+#pageProfile details[open] > summary .gn-vault-chev {
+  transform: rotate(90deg);
+  color: #00d4ff;
+}
+#pageProfile .gn-vault-card-body {
+  padding: 6px 16px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+#pageProfile .gn-vault-card-body > .gn-foundation-kicker {
+  margin-bottom: 8px;
+}
+
+/* ---------- Static rows card ---------- */
+#pageProfile .gn-vault-card-static {
+  background: var(--panel, #0e0e16);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+#pageProfile .gn-vault-card-static:last-child {
+  margin-bottom: 0;
+}
+#pageProfile .gn-vault-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 58px;
+  padding: 10px 14px;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+#pageProfile .gn-vault-row + .gn-vault-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+#pageProfile button.gn-vault-row:active {
+  background: rgba(0, 212, 255, 0.06);
+}
+#pageProfile .gn-vault-row-static {
+  cursor: default;
+}
+#pageProfile .gn-vault-row-ico {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 212, 255, 0.07);
+  border: 1px solid rgba(0, 212, 255, 0.22);
+  color: #00d4ff;
+}
+#pageProfile .gn-vault-row-ico svg {
+  width: 16px;
+  height: 16px;
+}
+#pageProfile .gn-vault-row-txt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+#pageProfile .gn-vault-row-txt b {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #eef6f8;
+  letter-spacing: 0.4px;
+}
+#pageProfile .gn-vault-row-txt small {
+  font-family: var(--font-m, 'Share Tech Mono', monospace);
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#pageProfile .gn-vault-row .gn-theme-toggle-host {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+#pageProfile .gn-vault-haptics-state {
+  flex-shrink: 0;
+  font-family: var(--font-m, 'Share Tech Mono', monospace);
+  font-size: 0.9rem;
+  color: #00d4ff;
+  margin-left: auto;
+}
+#pageProfile .gn-vault-row-danger b {
+  color: #ff7b7b;
+}
+#pageProfile .gn-vault-row-danger .gn-vault-row-ico {
+  background: rgba(255, 59, 59, 0.08);
+  border-color: rgba(255, 59, 59, 0.3);
+  color: #ff7b7b;
+}
+
+/* ---------- Nested register-device expander ---------- */
+#pageProfile .gn-vault-subcard {
+  margin: 12px 0 4px;
+  border: 1px dashed rgba(0, 212, 255, 0.32);
+  border-radius: 10px;
+  overflow: hidden;
+}
+#pageProfile .gn-vault-subcard-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--font-m, 'Share Tech Mono', monospace);
+  font-size: 0.68rem;
+  letter-spacing: 2px;
+  color: #00d4ff;
+}
+#pageProfile .gn-vault-subcard-head::-webkit-details-marker {
+  display: none;
+}
+#pageProfile .gn-vault-subcard .gn-record-form {
+  padding: 2px 14px 14px;
+}
+#pageProfile .gn-device-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+#pageProfile .gn-device-list:empty {
+  margin-top: 0;
+}
+
+/* ---------- Footer line / dedication ---------- */
+#pageProfile .gn-vault-footline {
+  text-align: center;
+  font-family: var(--font-m, 'Share Tech Mono', monospace);
+  font-size: 0.6rem;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  margin-top: 12px;
+}
+#pageProfile .gn-vault-oskar {
+  text-align: center;
+  font-family: var(--font-m, 'Share Tech Mono', monospace);
+  font-size: 0.62rem;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  opacity: 0.75;
+  margin: 8px 0 30px;
+}
+
+/* ---------- Danger zone ---------- */
+#pageProfile .gn-vault-danger {
+  background: var(--panel, #0e0e16);
+  border: 1px solid rgba(255, 59, 59, 0.28);
+  border-radius: 14px;
+  margin-bottom: 22px;
+  overflow: hidden;
+}
+#pageProfile .gn-vault-danger-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--font-m, 'Share Tech Mono', monospace);
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+  color: #ff8080;
+}
+#pageProfile .gn-vault-danger-head::-webkit-details-marker {
+  display: none;
+}
+#pageProfile .gn-vault-danger .gn-vault-card-static {
+  border: 0;
+  border-top: 1px solid rgba(255, 59, 59, 0.16);
+  border-radius: 0;
+  margin-bottom: 0;
+  background: transparent;
+}
+
+/* ---------- Badges card inside PROFILE group ---------- */
+#pageProfile #gnVaultProfileCards #gnBadgesCard {
+  background: var(--panel, #0e0e16);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 16px;
+  margin: 0;
+}
+
+/* ---------- Measurements / preferences inner spacing ---------- */
+#pageProfile #gnMeasurementsCard .gn-measurements-copy {
+  margin: 2px 0 12px;
+}
+#pageProfile #gnMeasurementsCard .gn-sitemap-wrap {
+  margin-top: 14px;
+}
+#pageProfile #gnPreferencesCard .gn-preferences-grid {
+  margin: 12px 0;
+}
+
+/* ---------- Desktop: centered premium column ---------- */
+@media (min-width: 900px) {
+  #pageProfile .gn-vault-summary,
+  #pageProfile .gn-cloud-status,
+  #pageProfile .gn-vault {
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  #pageProfile .gn-vault-group-label {
+    font-size: 0.68rem;
+  }
+}
+
+/* ---------- Light theme ---------- */
+html[data-theme="light"] #pageProfile .gn-vault-summary,
+html[data-theme="light"] #pageProfile .gn-vault-card,
+html[data-theme="light"] #pageProfile .gn-vault-card-static,
+html[data-theme="light"] #pageProfile .gn-vault-danger,
+html[data-theme="light"] #pageProfile #gnVaultProfileCards #gnBadgesCard {
+  background: var(--surface, #f4f1e9);
+  border-color: rgba(0, 111, 130, 0.22);
+}
+html[data-theme="light"] #pageProfile .gn-vault-name,
+html[data-theme="light"] #pageProfile .gn-vault-stat b,
+html[data-theme="light"] #pageProfile .gn-vault-card-titles b,
+html[data-theme="light"] #pageProfile .gn-vault-row-txt b {
+  color: var(--text-primary, #1c2b31);
+}
+html[data-theme="light"] #pageProfile .gn-vault-group-label::after,
+html[data-theme="light"] #pageProfile .gn-vault-stats,
+html[data-theme="light"] #pageProfile .gn-vault-card-body,
+html[data-theme="light"] #pageProfile .gn-vault-row + .gn-vault-row {
+  border-color: rgba(0, 111, 130, 0.16);
+}
+html[data-theme="light"] #pageProfile .gn-vault-pill {
+  border-color: rgba(0, 111, 130, 0.3);
+  background: rgba(0, 111, 130, 0.06);
+}
+html[data-theme="light"] #pageProfile .gn-vault-pill.is-cloud {
+  border-color: #00718a;
+  color: #00718a;
+  background: rgba(0, 113, 138, 0.08);
+  box-shadow: none;
+}
+html[data-theme="light"] #pageProfile .gn-vault-card-ico,
+html[data-theme="light"] #pageProfile .gn-vault-row-ico {
+  background: rgba(0, 113, 138, 0.08);
+  border-color: rgba(0, 113, 138, 0.3);
+  color: #00718a;
+}
+html[data-theme="light"] #pageProfile .gn-vault-subcard {
+  border-color: rgba(0, 113, 138, 0.4);
+}
+html[data-theme="light"] #pageProfile .gn-vault-subcard-head {
+  color: #00718a;
+}
+html[data-theme="light"] #pageProfile details[open] > summary .gn-vault-chev {
+  color: #00718a;
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  #pageProfile .gn-vault-chev {
+    transition: none;
+  }
+}

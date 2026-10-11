@@ -106,16 +106,33 @@
     }
 
     window.GN_USAGE = {
-      track(eventName, extra) { send(eventName, extra); }
+      track(eventName, extra) { gatedSend(eventName, extra); }
     };
 
-    if (isNewSession) send('session_start');
-    send('page_view');
+    /* Privacy: never track before the user accepts the legal modal.
+     * Local-only sessions are also excluded — "your data stays on this device". */
+    function legalAccepted() {
+      try { return !!localStorage.getItem('gn_legal_accept_v1'); } catch (e) { return false; }
+    }
+    function isLocalOnly() {
+      try {
+        const s = localStorage.getItem('gn_session_v2');
+        if (!s) return true;
+        return !JSON.parse(s).cloud;
+      } catch (e) { return true; }
+    }
+    function gatedSend(name, extra) {
+      if (!legalAccepted() || isLocalOnly()) return;
+      send(name, extra);
+    }
+
+    if (isNewSession) gatedSend('session_start');
+    gatedSend('page_view');
 
     document.addEventListener('click', (ev) => {
       try {
         const target = ev.target && ev.target.closest ? ev.target.closest('[data-usage]') : null;
-        if (target) send(target.getAttribute('data-usage'));
+        if (target) gatedSend(target.getAttribute('data-usage'));
       } catch (e) { /* silent */ }
     }, { passive: true });
   } catch (e) {

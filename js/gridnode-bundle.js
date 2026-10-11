@@ -2039,6 +2039,19 @@ function renderDashboard() {
   }
   renderFirstShotMission(missionMode);
   if (firstShotMission) firstShotMission.hidden = shots.length > 0;
+  // TRACK4 journey: the telemetry module mounts before the wanda dashboard
+  // exists, so its prepend fallback lands above the page header and buries the
+  // first-shot mission + quick actions below the fold. Re-dock it after the
+  // wanda actions row (its intended anchor) whenever it sits above the wanda
+  // dashboard. Idempotent: only moves when mispositioned.
+  try {
+    const wanda = document.getElementById('gnWandaDashboard');
+    const telemetry = document.getElementById('gnTelemetryDashboard');
+    const actions = wanda ? wanda.querySelector('.gn-wanda-actions') : null;
+    if (wanda && telemetry && actions && (telemetry.compareDocumentPosition(wanda) & Node.DOCUMENT_POSITION_FOLLOWING)) {
+      actions.insertAdjacentElement('afterend', telemetry);
+    }
+  } catch (_) {}
   // Zero-shot state: the gnFirstShotMission CTA stays visible as the hero;
   // activation-state CSS dims the not-yet-live metrics behind it.
   // (v0.15.45: removed the old wandaEl display:none that hid the mission too.)
@@ -2310,6 +2323,12 @@ function initDrilldown() {
     document.body.style.overflow = 'hidden';
   }
   center.addEventListener('click', openDd);
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      var ov = document.getElementById('gnDrilldown');
+      if (ov && !ov.hidden) { ov.hidden = true; document.body.style.overflow = ''; }
+    }
+  });
   function closeDd(){ overlay.hidden = true; document.body.style.overflow = ''; if (body) body.innerHTML = ''; }
   if (close) close.addEventListener('click', closeDd);
   overlay.addEventListener('click', function(e){ if (e.target === overlay) closeDd(); });
@@ -2567,6 +2586,73 @@ if (typeof document !== 'undefined' && !window.__gnPhaseStateListener) {
       const phase = renderPhase(lastShot, shots);
       refreshNodeHeader({ lastShot, phase });
     } catch (_) { /* keep the generic fallback names */ }
+  });
+}
+
+// ── TRACK4 journey: first-shot achievement ──────────────────────────────
+// The empty → first-data transition should feel like an achievement with a
+// clear next step, not a silent dashboard refresh. One-time overlay after the
+// very first shot is saved: celebrates, then points at the next action (log
+// weight). Dismisses via X (top-right), Escape, or either button.
+const GN_FIRST_SHOT_CELEBRATED_KEY = 'gn_first_shot_celebrated_v1';
+
+function gnFirstShotCelebrated() {
+  try { return localStorage.getItem(GN_FIRST_SHOT_CELEBRATED_KEY) === '1'; } catch (_) { return false; }
+}
+
+function closeFirstShotCelebrate() {
+  const overlay = document.getElementById('gnFirstShotCelebrate');
+  if (!overlay) return;
+  overlay.classList.remove('active');
+  overlay.setAttribute('aria-hidden', 'true');
+  window.setTimeout(() => overlay.remove(), 260);
+}
+
+function showFirstShotCelebrate() {
+  if (document.getElementById('gnFirstShotCelebrate')) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'gnFirstShotCelebrate';
+  overlay.className = 'gn-fsc-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-labelledby', 'gnFscTitle');
+  overlay.innerHTML =
+    '<div class="gn-fsc-card">'
+    + '<button type="button" class="gn-fsc-x" aria-label="' + safeText(tx('modal.close', 'Close')) + '"><span aria-hidden="true">×</span></button>'
+    + '<div class="gn-fsc-kicker">' + safeText(tx('journey.firstShotKicker', 'GRID ACTIVATED')) + '</div>'
+    + '<h2 id="gnFscTitle">' + safeText(tx('journey.firstShotTitle', 'FIRST SHOT LOGGED')) + '</h2>'
+    + '<p>' + safeText(tx('journey.firstShotBody', 'Your Phase Engine is live and your timeline has started. One quick step builds your SIGNAL.')) + '</p>'
+    + '<div class="gn-fsc-next"><span class="gn-fsc-next-label">' + safeText(tx('journey.nextUp', 'NEXT UP')) + '</span>'
+    + '<button type="button" class="gn-fsc-primary" id="gnFscWeight">' + safeText(tx('dashboard.logWeight', 'LOG WEIGHT')) + '</button></div>'
+    + '<button type="button" class="gn-fsc-secondary" id="gnFscExplore">' + safeText(tx('journey.exploreGrid', 'EXPLORE THE GRID')) + '</button>'
+    + '</div>';
+  document.body.appendChild(overlay);
+  window.GN_I18N?.applyTo?.(overlay);
+  overlay.querySelector('.gn-fsc-x').addEventListener('click', closeFirstShotCelebrate);
+  overlay.querySelector('#gnFscExplore').addEventListener('click', closeFirstShotCelebrate);
+  overlay.querySelector('#gnFscWeight').addEventListener('click', () => {
+    closeFirstShotCelebrate();
+    try { openWeightModal(); } catch (_) {}
+  });
+  const onKey = (event) => {
+    if (event.key === 'Escape') { closeFirstShotCelebrate(); document.removeEventListener('keydown', onKey); }
+  };
+  document.addEventListener('keydown', onKey);
+  requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('active')));
+  window.setTimeout(() => { try { overlay.querySelector('#gnFscWeight').focus({ preventScroll: true }); } catch (_) {} }, 60);
+}
+
+if (typeof document !== 'undefined' && !window.__gnFirstShotCelebrateListener) {
+  window.__gnFirstShotCelebrateListener = true;
+  document.addEventListener('gn:shot-saved', (event) => {
+    try {
+      if (!event?.detail?.isNew || gnFirstShotCelebrated()) return;
+      const total = (typeof getAllShots === 'function' ? getAllShots() : []).filter(s => !s.archived).length;
+      if (total !== 1) return;
+      try { localStorage.setItem(GN_FIRST_SHOT_CELEBRATED_KEY, '1'); } catch (_) {}
+      // Let the save toast land first; the achievement follows it.
+      window.setTimeout(showFirstShotCelebrate, 650);
+    } catch (_) {}
   });
 }
 
@@ -3254,11 +3340,9 @@ function openLogModal(options = {}) {
   if (!modal) return;
   delete modal.dataset.gnModuleDraft;
   let draftDeviceId = '';
-  if (!modal.querySelector('[data-gn-shot-step="timing"]')) {
-    modal.querySelector('.gn-shot-datetime-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="timing" data-i18n="shot.timing">' + tx('shot.timing', '01 // TIMING') + '</div>');
-    $('cpShotMed')?.closest('.form-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="protocol" data-i18n="shot.protocol">' + tx('shot.protocol', '02 // PROTOCOL') + '</div>');
-    $('modalSelectedLocation')?.closest('.form-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="location" data-i18n="shot.location">' + tx('shot.location', '03 // LOCATION') + '</div>');
-  }
+  /* TRACK 2 (2-step redesign): the old 01//02//03//04 console section headers
+     injected here are retired. The partial now carries a stepper + two step
+     sections; progress is communicated by gnSetShotStep/syncShotStepLabels. */
   const preserveDraft = Boolean(options.preserve || moduleState.pendingLocationDraft || moduleState.shotDraft);
   moduleState.pendingLocationDraft = false;
   if (preserveDraft && moduleState.shotDraft) {
@@ -3310,6 +3394,7 @@ function openLogModal(options = {}) {
   updateMeridiemButtons();
   cancelLogClose();
   closeQuickConfirm(); // S1: full console never inherits quick-repeat mode.
+  gnSetShotStep(1, { instant: true }); // TRACK 2: every open starts on step 1.
   modal.classList.add('active');
   syncLogModalLabels();
 }
@@ -3321,9 +3406,108 @@ function openLogModal(options = {}) {
 function syncLogModalLabels() {
   const editing = Boolean(moduleState.editingShotId);
   document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode(tx(editing ? 'shot.editShot' : 'shot.logShot', editing ? 'EDIT SHOT' : 'LOG SHOT')));
-  document.querySelector('#logOv .gn-shot-fire')?.replaceChildren(document.createTextNode(tx(editing ? 'shot.saveShot' : 'shot.logShot', editing ? 'SAVE SHOT' : 'LOG SHOT')));
+  /* TRACK 2: the primary action is step-aware. Step 1 advances (CONTINUE);
+     step 2 commits (LOG SHOT / SAVE SHOT in edit mode). */
+  const fireLabel = gnShotStep() === 1
+    ? tx('shot.continue', 'CONTINUE')
+    : tx(editing ? 'shot.saveShot' : 'shot.logShot', editing ? 'SAVE SHOT' : 'LOG SHOT');
+  document.querySelector('#logOv .gn-shot-fire')?.replaceChildren(document.createTextNode(fireLabel));
+  const hdrSave = $('gnShotHdrSave');
+  if (hdrSave) hdrSave.setAttribute('aria-label', gnShotStep() === 1 ? tx('shot.continue', 'CONTINUE') : tx('modal.saveShot', 'Save shot'));
 }
-document.addEventListener('gn:langchange', () => { if ($('logOv')?.classList.contains('active')) syncLogModalLabels(); });
+document.addEventListener('gn:langchange', () => { if ($('logOv')?.classList.contains('active')) { syncLogModalLabels(); syncShotStepLabels(); } });
+
+/* TRACK 2 — 2-step progressive disclosure.
+ * Step 1: medication + dose + date/time (the essentials).
+ * Step 2: injection site + device + weight + side effects + notes (details).
+ * Only visibility changes: every field keeps its ID, so all validation,
+ * drafts, the summary watcher, and saveShot() work exactly as before. */
+function gnShotStep() { return moduleState.shotStep === 2 ? 2 : 1; }
+
+function gnSetShotStep(step, options = {}) {
+  const modal = $('logOv');
+  const next = step === 2 ? 2 : 1;
+  const prev = gnShotStep();
+  moduleState.shotStep = next;
+  if (modal) {
+    modal.classList.toggle('gn-on-step-1', next === 1);
+    modal.classList.toggle('gn-on-step-2', next === 2);
+    modal.querySelectorAll('.gn-shot-step').forEach(section => {
+      section.classList.toggle('gn-on', Number(section.getAttribute('data-gn-step')) === next);
+    });
+    modal.querySelectorAll('.gn-shot-dot').forEach(dot => {
+      dot.classList.toggle('gn-on', Number(dot.getAttribute('data-gn-dot')) <= next);
+    });
+    if (!options.instant && next !== prev) {
+      const dir = next > prev ? 'gn-stepping-fwd' : 'gn-stepping-back';
+      modal.classList.add(dir);
+      window.setTimeout(() => modal.classList.remove(dir), 340);
+    }
+    const scroller = modal.querySelector('.gn-shot-scroll');
+    if (scroller) scroller.scrollTop = 0;
+  }
+  syncShotStepLabels();
+  syncLogModalLabels();
+}
+
+function syncShotStepLabels() {
+  const step = gnShotStep();
+  const nameEl = $('gnShotStepName');
+  const label = tx(step === 2 ? 'shot.step2Label' : 'shot.step1Label', step === 2 ? 'STEP 2 OF 2 · DETAILS' : 'STEP 1 OF 2 · ESSENTIALS');
+  if (nameEl) nameEl.textContent = label;
+  $('gnShotStep1')?.setAttribute('aria-label', tx('shot.step1Label', 'STEP 1 OF 2 · ESSENTIALS'));
+  $('gnShotStep2')?.setAttribute('aria-label', tx('shot.step2Label', 'STEP 2 OF 2 · DETAILS'));
+}
+
+function gnValidateStep1() {
+  /* Mirrors saveShot()'s essential-field checks (medication, dose, date, time)
+     so the Continue gate can never disagree with the final commit validation. */
+  qa('#logOv [aria-invalid="true"]').forEach(field => field.removeAttribute('aria-invalid'));
+  const med = normalizeMedicationId(selectState.cpShotMed?.val);
+  const dose = Number($('sDose')?.value);
+  const date = readHumanDateInput($('sDate'));
+  const time = getShotTime24($('sTime')?.value);
+  const invalidFields = [];
+  if (!med) invalidFields.push($('cpShotMed'));
+  if (!(Number.isFinite(dose) && dose > 0)) invalidFields.push($('sDose'));
+  if (!date) invalidFields.push($('sDate'));
+  if (!time) invalidFields.push($('sTime'));
+  return { ok: invalidFields.length === 0, invalidFields, time };
+}
+
+function gnShotStepNext() {
+  const check = gnValidateStep1();
+  if (!check.ok) {
+    check.invalidFields.filter(Boolean).forEach(field => field.setAttribute('aria-invalid', 'true'));
+    check.invalidFields.find(Boolean)?.focus?.();
+    // v0.15.53: never fail silently — name the time problem explicitly.
+    const msg = !check.time
+      ? tx('shots.timeRequired', 'Set the shot time and pick AM or PM.')
+      : tx('shot.step1Required', 'Add medication, dose, date, and time to continue.');
+    showToast(msg, true);
+    notifyCoachSaveBlocked(check.invalidFields);
+    return;
+  }
+  gnSetShotStep(2);
+}
+
+function gnShotStepBack() { gnSetShotStep(1); }
+
+/* Primary action for the sticky action bar + header check button.
+ * Step 1 advances (with validation); step 2 commits via saveShot(). */
+function gnShotPrimaryAction() {
+  if (gnShotStep() === 1) gnShotStepNext();
+  else saveShot();
+}
+
+/* The // MORE DETAILS collapsible never had a working toggle in source
+ * (dead button); wire it here so step 2's optional block actually opens. */
+function gnToggleShotAdvanced() {
+  const body = $('gnShotAdvanced');
+  if (!body) return;
+  const hidden = body.classList.toggle('gn-hidden');
+  document.querySelector('#logOv .gn-shot-advanced-trigger')?.setAttribute('aria-expanded', hidden ? 'false' : 'true');
+}
 
 /* v0.15.44 — SHOT CONSOLE live summary bar. Reads the same sources of truth
  * the form commits (selectState.cpShotMed, #sDose, moduleState.selectedLocation)
@@ -3668,10 +3852,18 @@ function saveShot(allowFuture = false) {
       invalidFields.find(Boolean)?.focus?.();
       // v0.15.53: never fail silently — name the time problem explicitly so the
       // user knows to pick AM/PM instead of tapping SAVE again in confusion.
+      // TRACK 2: on step 2 the essentials are already validated at Continue, so
+      // a lone missing site gets a targeted message (+ scrolls the picker into
+      // view) instead of the generic required-fields toast.
+      const realFields = invalidFields.filter(Boolean);
+      const onlySiteMissing = realFields.length === 0 && !site;
       const msg = !time
         ? tx('shots.timeRequired', 'Set the shot time and pick AM or PM.')
-        : tx('shots.requiredFields', 'Add medication, dose, date, time, and a logged location.');
+        : onlySiteMissing
+          ? tx('shot.siteRequired', 'Pick an injection site to log the shot.')
+          : tx('shots.requiredFields', 'Add medication, dose, date, time, and a logged location.');
       showToast(msg, true);
+      if (onlySiteMissing) $('modalSelectedLocation')?.closest('.form-group')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
       notifyCoachSaveBlocked(invalidFields);
       return;
     }
@@ -5272,7 +5464,10 @@ function ensureProfileHub() {
   const page = $('pageProfile');
   if (!page || page.querySelector('[data-gn-profile-hub]')) return;
   const avatar = $('profAvaWrap');
-  const hero = avatar?.closest('[style*="background:#0e0e16"]');
+  let hero = avatar?.closest('[style*="background:#0e0e16"]')
+    || $('gnVaultSummary')
+    || page.querySelector('.gn-profile-hero')
+    || avatar?.parentElement;
   if (!hero) return;
   hero.insertAdjacentHTML('afterend', `<section class="gn-profile-hub" data-gn-profile-hub aria-labelledby="gnProfileHubTitle">
     <div class="gn-foundation-head"><div><div class="gn-foundation-kicker" data-i18n="vault.kicker">// NODE PROFILE HUB</div><h2 id="gnProfileHubTitle" data-i18n="vault.hubTitle">YOUR NODE</h2></div><span class="gn-foundation-actions"><span class="gn-foundation-signal" id="gnProfileSync">LOCAL MODE</span><button type="button" class="gn-hub-close" id="gnHubClose" onclick="closeProfileHub()" aria-label="CERRAR" data-i18n-aria-label="vault.closeHub">✕</button></span></div>
@@ -6966,7 +7161,7 @@ document.addEventListener('gn:shot-saved', () => {
   if (h) { try { h.fire([10, 60, 20]); } catch (_) {} }
 });
 
-window.GNModules=Object.freeze({getProfile:getProfile,getProfileForEvidence:getProfileForEvidence,selectState:selectState,moduleState:moduleState,refreshNodeHeader:refreshNodeHeader,showScreen:showScreen,showPage:showPage,refreshAll:refreshAll,loadApp:loadApp,computeTotalChange:computeTotalChange,saveProfileMed:saveProfileMed,saveProfileMetrics:saveProfileMetrics,calcAndShowBMI:calcAndShowBMI,toggleSelect:toggleSelect,selectOpt:selectOpt,retryCloudHydration:retryCloudHydration,showPhasesModal:showPhasesModal,closePhases:closePhases,renderShots:renderShots,setShotHistoryView:setShotHistoryView,setHistoryType:setHistoryType,scannerSkinTone:scannerSkinTone,setScannerSkinTone:setScannerSkinTone,setScannerMode:setScannerMode,selectScannerLocation:selectScannerLocation,renderScanner:renderScanner,openLogModal:openLogModal,closeLog:closeLog,cancelLogClose:cancelLogClose,editShot:editShot,openArchiveConfirm:openArchiveConfirm,cancelArchiveShot:cancelArchiveShot,confirmArchiveShot:confirmArchiveShot,restoreArchivedShot:restoreArchivedShot,openPermanentDeleteConfirm:openPermanentDeleteConfirm,cancelPermanentDeleteShot:cancelPermanentDeleteShot,confirmPermanentDeleteShot:confirmPermanentDeleteShot,saveShot:saveShot,openFutureTimestampConfirm:openFutureTimestampConfirm,closeFutureTimestampConfirm:closeFutureTimestampConfirm,cancelFutureTimestampSave:cancelFutureTimestampSave,confirmFutureTimestampSave:confirmFutureTimestampSave,handleShotFab:handleShotFab,openQuickConfirm:openQuickConfirm,confirmQuickShot:confirmQuickShot,quickConfirmDetails:quickConfirmDetails,openWeightModal:openWeightModal,closeWt:closeWt,setWeightUnit:setWeightUnit,saveWt:saveWt,renderResults:renderResults,setResultsView:setResultsView,setRange:setRange,setWtRange:setWtRange,showLabSeg:showLabSeg,showYouSeg:showYouSeg,openLabTool:openLabTool,closeLabTool:closeLabTool,exportInventory:exportInventory,updateDoseProjection:updateDoseProjection,saveCalculatorReference:saveCalculatorReference,renderLab:renderLab,updateSyr:updateSyr,updateRecon:updateRecon,updateSupply:updateSupply,setMeasurementUnit:setMeasurementUnit,saveMeasurements:saveMeasurements,replayGuidedTour:replayGuidedTour,openDeleteLocalData:openDeleteLocalData,closeDeleteLocalData:closeDeleteLocalData,updateDeleteLocalButton:updateDeleteLocalButton,confirmDeleteLocalData:confirmDeleteLocalData,openDeleteCloudAccount:openDeleteCloudAccount,closeDeleteCloudAccount:closeDeleteCloudAccount,confirmDeleteCloudAccount:confirmDeleteCloudAccount,renderProfile:renderProfile,dismissSystemUpdate:dismissSystemUpdate,openSystemUpdate:openSystemUpdate,exportCSV:exportCSV,exportBackup:exportBackup,openPrivacyPolicy:openPrivacyPolicy,openMedicalDisclaimer:openMedicalDisclaimer,closePrivacyPolicy:closePrivacyPolicy,openDataOwnership:openDataOwnership,openTermsOfService:openTermsOfService,closeTermsOfService:closeTermsOfService,prepareCSVImport:prepareCSVImport,handleCSVImportFile:handleCSVImportFile,openImportDialog:openImportDialog,closeImportDialog:closeImportDialog,handleUnifiedCsvSelection:handleUnifiedCsvSelection,handleBackupImportFile:handleBackupImportFile,confirmBackupImport:confirmBackupImport,cancelCSVImport:cancelCSVImport,confirmCSVImport:confirmCSVImport,parseShotsyJSON:parseShotsyJSON,handleShotsyJSONFile:handleShotsyJSONFile,toggleImportForce:toggleImportForce,previewCSVImportForTesting:previewCSVImportForTesting,renderCalendar:renderCalendar,calPrev:calPrev,calNext:calNext,calDayClick:calDayClick,openArsenalMod:openArsenalMod,closeArs:closeArs,saveArs:saveArs,requestLoadoutRemove:requestLoadoutRemove,cancelLoadoutRemove:cancelLoadoutRemove,confirmLoadoutRemove:confirmLoadoutRemove,formatTime24:formatTime24,formatTime12:formatTime12,gnSetShotMeridiem:gnSetShotMeridiem,gnShotClockLiveFormat:gnShotClockLiveFormat,gnNormalizeShotClockField:gnNormalizeShotClockField,gnWeightDateInput:gnWeightDateInput,gnWeightTimeInput:gnWeightTimeInput,gnOpenShotDatePicker:gnOpenShotDatePicker,gnCloseShotDatePicker:gnCloseShotDatePicker,gnDatePickerMove:gnDatePickerMove,gnSelectPickerDate:gnSelectPickerDate,gnSetShotDateFromPicker:gnSetShotDateFromPicker,gnSetShotDateValue:gnSetShotDateValue,gnSetShotTimeValue:gnSetShotTimeValue,gnMedRevealGroup:gnMedRevealGroup,updatePills:updatePills,selPill:selPill,initModules:initModules,trustBadge:trustBadge,approxPct:approxPct,approxNum:approxNum});
+window.GNModules=Object.freeze({getProfile:getProfile,getProfileForEvidence:getProfileForEvidence,selectState:selectState,moduleState:moduleState,refreshNodeHeader:refreshNodeHeader,showScreen:showScreen,showPage:showPage,refreshAll:refreshAll,loadApp:loadApp,computeTotalChange:computeTotalChange,saveProfileMed:saveProfileMed,saveProfileMetrics:saveProfileMetrics,calcAndShowBMI:calcAndShowBMI,toggleSelect:toggleSelect,selectOpt:selectOpt,retryCloudHydration:retryCloudHydration,showPhasesModal:showPhasesModal,closePhases:closePhases,renderShots:renderShots,setShotHistoryView:setShotHistoryView,setHistoryType:setHistoryType,scannerSkinTone:scannerSkinTone,setScannerSkinTone:setScannerSkinTone,setScannerMode:setScannerMode,selectScannerLocation:selectScannerLocation,renderScanner:renderScanner,openLogModal:openLogModal,gnSetShotStep:gnSetShotStep,gnShotStepNext:gnShotStepNext,gnShotStepBack:gnShotStepBack,gnShotPrimaryAction:gnShotPrimaryAction,gnToggleShotAdvanced:gnToggleShotAdvanced,closeLog:closeLog,cancelLogClose:cancelLogClose,editShot:editShot,openArchiveConfirm:openArchiveConfirm,cancelArchiveShot:cancelArchiveShot,confirmArchiveShot:confirmArchiveShot,restoreArchivedShot:restoreArchivedShot,openPermanentDeleteConfirm:openPermanentDeleteConfirm,cancelPermanentDeleteShot:cancelPermanentDeleteShot,confirmPermanentDeleteShot:confirmPermanentDeleteShot,saveShot:saveShot,openFutureTimestampConfirm:openFutureTimestampConfirm,closeFutureTimestampConfirm:closeFutureTimestampConfirm,cancelFutureTimestampSave:cancelFutureTimestampSave,confirmFutureTimestampSave:confirmFutureTimestampSave,handleShotFab:handleShotFab,openQuickConfirm:openQuickConfirm,confirmQuickShot:confirmQuickShot,quickConfirmDetails:quickConfirmDetails,openWeightModal:openWeightModal,closeWt:closeWt,setWeightUnit:setWeightUnit,saveWt:saveWt,renderResults:renderResults,setResultsView:setResultsView,setRange:setRange,setWtRange:setWtRange,showLabSeg:showLabSeg,showYouSeg:showYouSeg,openLabTool:openLabTool,closeLabTool:closeLabTool,exportInventory:exportInventory,updateDoseProjection:updateDoseProjection,saveCalculatorReference:saveCalculatorReference,renderLab:renderLab,updateSyr:updateSyr,updateRecon:updateRecon,updateSupply:updateSupply,setMeasurementUnit:setMeasurementUnit,saveMeasurements:saveMeasurements,replayGuidedTour:replayGuidedTour,openDeleteLocalData:openDeleteLocalData,closeDeleteLocalData:closeDeleteLocalData,updateDeleteLocalButton:updateDeleteLocalButton,confirmDeleteLocalData:confirmDeleteLocalData,openDeleteCloudAccount:openDeleteCloudAccount,closeDeleteCloudAccount:closeDeleteCloudAccount,confirmDeleteCloudAccount:confirmDeleteCloudAccount,renderProfile:renderProfile,dismissSystemUpdate:dismissSystemUpdate,openSystemUpdate:openSystemUpdate,exportCSV:exportCSV,exportBackup:exportBackup,openPrivacyPolicy:openPrivacyPolicy,openMedicalDisclaimer:openMedicalDisclaimer,closePrivacyPolicy:closePrivacyPolicy,openDataOwnership:openDataOwnership,openTermsOfService:openTermsOfService,closeTermsOfService:closeTermsOfService,prepareCSVImport:prepareCSVImport,handleCSVImportFile:handleCSVImportFile,openImportDialog:openImportDialog,closeImportDialog:closeImportDialog,handleUnifiedCsvSelection:handleUnifiedCsvSelection,handleBackupImportFile:handleBackupImportFile,confirmBackupImport:confirmBackupImport,cancelCSVImport:cancelCSVImport,confirmCSVImport:confirmCSVImport,parseShotsyJSON:parseShotsyJSON,handleShotsyJSONFile:handleShotsyJSONFile,toggleImportForce:toggleImportForce,previewCSVImportForTesting:previewCSVImportForTesting,renderCalendar:renderCalendar,calPrev:calPrev,calNext:calNext,calDayClick:calDayClick,openArsenalMod:openArsenalMod,closeArs:closeArs,saveArs:saveArs,requestLoadoutRemove:requestLoadoutRemove,cancelLoadoutRemove:cancelLoadoutRemove,confirmLoadoutRemove:confirmLoadoutRemove,formatTime24:formatTime24,formatTime12:formatTime12,gnSetShotMeridiem:gnSetShotMeridiem,gnShotClockLiveFormat:gnShotClockLiveFormat,gnNormalizeShotClockField:gnNormalizeShotClockField,gnWeightDateInput:gnWeightDateInput,gnWeightTimeInput:gnWeightTimeInput,gnOpenShotDatePicker:gnOpenShotDatePicker,gnCloseShotDatePicker:gnCloseShotDatePicker,gnDatePickerMove:gnDatePickerMove,gnSelectPickerDate:gnSelectPickerDate,gnSetShotDateFromPicker:gnSetShotDateFromPicker,gnSetShotDateValue:gnSetShotDateValue,gnSetShotTimeValue:gnSetShotTimeValue,gnMedRevealGroup:gnMedRevealGroup,updatePills:updatePills,selPill:selPill,initModules:initModules,trustBadge:trustBadge,approxPct:approxPct,approxNum:approxNum});
 
 const modules=window.GNModules;
 
@@ -6984,6 +7179,7 @@ function bridge() {
   const names = [
     'showScreen', 'showPage', 'refreshAll', 'loadApp', 'showPhasesModal', 'closePhases',
     'openLogModal', 'closeLog', 'saveShot', 'editShot', 'handleShotFab',
+    'gnShotStepNext', 'gnShotStepBack', 'gnShotPrimaryAction', 'gnToggleShotAdvanced',
     'openArchiveConfirm', 'cancelArchiveShot', 'confirmArchiveShot', 'restoreArchivedShot',
     'openPermanentDeleteConfirm', 'cancelPermanentDeleteShot', 'confirmPermanentDeleteShot',
     'openFutureTimestampConfirm', 'closeFutureTimestampConfirm', 'cancelFutureTimestampSave',
@@ -8524,14 +8720,19 @@ function showApp() {
     if (!page || $('gnPasskeysCard')) return;
     if (!state.cloud) return;
     const hub = page.querySelector('[data-gn-profile-hub]');
-    if (!hub) return;
-    hub.insertAdjacentHTML('beforeend', `<section class="gn-passkeys-card" id="gnPasskeysCard" aria-labelledby="gnPasskeysTitle">
-      <div class="gn-foundation-kicker" data-i18n="auth.passkeysKicker">// PASSKEYS</div>
-      <h3 id="gnPasskeysTitle" data-i18n="auth.passkeysTitle">MANAGE PASSKEYS</h3>
-      <p class="gn-measurements-copy" data-i18n="auth.passkeysCopy">Sign in with your fingerprint, face, or security key.</p>
-      <ul class="gn-passkeys-list" data-gn-passkeys-list></ul>
-      <button type="button" class="btn-full btn-primary" id="gnRegisterPasskeyBtn" data-i18n="auth.registerNewPasskey">+ REGISTER A NEW PASSKEY</button>
-    </section>`);
+    const host = hub?.querySelector('[data-gn-vault-group="account"]') || hub;
+    if (!host) return;
+    host.insertAdjacentHTML('beforeend', `<details class="gn-vault-card" id="gnPasskeysCard">
+      <summary class="gn-vault-card-head">
+        <span class="gn-vault-card-ico" aria-hidden="true"><svg><use href="#gn-vault-core"></use></svg></span>
+        <span class="gn-vault-card-titles"><b id="gnPasskeysTitle" data-i18n="auth.passkeysTitle">MANAGE PASSKEYS</b><small class="gn-vault-card-sub" data-i18n="auth.passkeysCopy">Sign in with your fingerprint, face, or security key.</small></span>
+        <span class="gn-vault-chev" aria-hidden="true">›</span>
+      </summary>
+      <div class="gn-vault-card-body">
+        <ul class="gn-passkeys-list" data-gn-passkeys-list></ul>
+        <button type="button" class="btn-full btn-primary" id="gnRegisterPasskeyBtn" data-i18n="auth.registerNewPasskey">+ REGISTER A NEW PASSKEY</button>
+      </div>
+    </details>`);
     $('gnRegisterPasskeyBtn')?.addEventListener('click', async () => {
       const btn = $('gnRegisterPasskeyBtn');
       // Guard against double-taps: a second concurrent ceremony would race

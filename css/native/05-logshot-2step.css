@@ -1,0 +1,105 @@
+/* ==========================================================================
+   TRACK 2 — LOG SHOT 2-step redesign (css/native/05-logshot-2step.css)
+   Progressive disclosure for the LOG SHOT console:
+     STEP 1 — essentials: medication + dose + date/time, one CONTINUE action.
+     STEP 2 — details: injection site + device + // MORE DETAILS
+              (weight, side effects, notes).
+   Presentation only. All field IDs are unchanged; validation, drafts, and the
+   saved record shape in js/modules/05-log-shot.js are untouched.
+   Visual language follows the v0.15.44 SHOT CONSOLE (cyan HUD on dark).
+   ========================================================================== */
+
+/* ---- Stepper: progress dots + "STEP n OF 2" label ------------------------ */
+#logOv .gn-shot-stepper{
+  display:flex;align-items:center;gap:12px;
+  padding:2px 4px 12px;
+  user-select:none;-webkit-user-select:none;
+}
+#logOv .gn-shot-dots{display:flex;align-items:center;gap:8px}
+#logOv .gn-shot-dot{
+  width:10px;height:10px;border-radius:50%;
+  border:1.5px solid rgba(0,229,255,.55);
+  background:transparent;
+  transition:background .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+#logOv .gn-shot-dot.gn-on{
+  background:#00e5ff;border-color:#bffbff;
+  box-shadow:0 0 10px rgba(0,229,255,.85);
+}
+#logOv .gn-shot-stepname{
+  font-family:var(--font-m);font-size:.62rem;font-weight:700;letter-spacing:2.5px;
+  color:rgba(0,229,255,.78);text-shadow:0 0 8px rgba(0,229,255,.3);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+/* ---- Step sections: only the active step is visible ---------------------- */
+#logOv .gn-shot-step{display:none}
+#logOv .gn-shot-step.gn-on{display:block}
+
+/* Direction-aware slide/fade on step change. The modal carries
+   .gn-stepping-fwd / .gn-stepping-back for ~one animation duration. */
+#logOv.gn-stepping-fwd .gn-shot-step.gn-on{
+  animation:gnShotStepInFwd .28s cubic-bezier(.2,.7,.3,1);
+}
+#logOv.gn-stepping-back .gn-shot-step.gn-on{
+  animation:gnShotStepInBack .28s cubic-bezier(.2,.7,.3,1);
+}
+@keyframes gnShotStepInFwd{
+  from{opacity:0;transform:translateX(44px)}
+  to{opacity:1;transform:translateX(0)}
+}
+@keyframes gnShotStepInBack{
+  from{opacity:0;transform:translateX(-44px)}
+  to{opacity:1;transform:translateX(0)}
+}
+@media (prefers-reduced-motion: reduce){
+  #logOv.gn-stepping-fwd .gn-shot-step.gn-on,
+  #logOv.gn-stepping-back .gn-shot-step.gn-on{animation:none}
+}
+
+/* ---- Back link (top of step 2, thumb-reachable) --------------------------- */
+#logOv .gn-shot-back{
+  display:inline-flex;align-items:center;gap:7px;
+  min-height:44px;min-width:44px;
+  margin:0 0 8px;padding:6px 14px 6px 4px;
+  background:none;border:none;cursor:pointer;
+  color:var(--cyan);
+  font-family:var(--font-m);font-size:.72rem;font-weight:700;letter-spacing:2px;
+  text-shadow:0 0 8px rgba(0,229,255,.35);
+}
+#logOv .gn-shot-back:active{transform:scale(.95)}
+#logOv .gn-shot-back:focus-visible{
+  outline:1.5px solid rgba(0,229,255,.7);outline-offset:2px;border-radius:6px;
+}
+
+/* ---- Step 1: the primary action is CONTINUE (cyan), not the red commit.
+   Step 2 keeps the existing red LOG SHOT / SAVE SHOT treatment. ------------ */
+#logOv.gn-on-step-1 .gn-shot-fire{
+  background:linear-gradient(135deg,#00e5ff,#0090b0) !important;
+  color:#03141b !important;
+  box-shadow:0 0 26px rgba(0,229,255,.5), inset 0 1px 0 rgba(255,255,255,.4) !important;
+  text-shadow:none;
+}
+
+/* ---- Step 1 breathing room: the three essentials get roomier panels ------ */
+#logOv.gn-on-step-1 .gn-shot-scroll .form-group{
+  padding:16px 14px;margin-bottom:10px;
+}
+#logOv.gn-on-step-1 .gn-shot-datetime-group .form-input,
+#logOv.gn-on-step-1 #sDose{min-height:52px;font-size:1.02rem}
+
+/* ---- Step 2: required-site affordance -------------------------------------
+   The site picker stays mandatory (saveShot validation unchanged); give the
+   "no site" readout a warning tint until a zone is chosen. ------------------ */
+#logOv.gn-on-step-2 #modalSelectedLocation{transition:color .2s ease}
+
+/* ---- Light theme parity (daylight-nexus-pilot.css is the light skin) ------
+   The console is dark-first; keep the stepper legible if a light theme wins. */
+html[data-theme="light"] #logOv .gn-shot-stepname{color:#0b6b7a;text-shadow:none}
+html[data-theme="light"] #logOv .gn-shot-dot{border-color:rgba(11,107,122,.6)}
+html[data-theme="light"] #logOv .gn-shot-dot.gn-on{background:#0b6b7a;box-shadow:0 0 8px rgba(11,107,122,.5)}
+html[data-theme="light"] #logOv .gn-shot-back{color:#0b6b7a;text-shadow:none}
+html[data-theme="light"] #logOv.gn-on-step-1 .gn-shot-fire{
+  background:linear-gradient(135deg,#00b8d4,#007a94) !important;color:#fff !important;
+  box-shadow:0 0 18px rgba(0,184,212,.4) !important;
+}

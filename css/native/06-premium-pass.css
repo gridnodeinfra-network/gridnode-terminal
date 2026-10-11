@@ -1,0 +1,312 @@
+/* ═══════════════════════════════════════════════════════════════════
+   GRID//NODE — TRACK 3 · VISUAL PREMIUM PASS (06-premium-pass.css)
+   Stylesheet owner: TRACK 3. Sibling track sheets (04-vault-redesign,
+   05-logshot-2step, 07-journey) are reviewed for collisions here; this
+   file stays collision-free by scoping every rule under explicit
+   namespaces (.t3-*, #pageResults, .gn-chart-state) and never redefining
+   another track's class names.
+
+   Sections:
+     1. Premium tokens (card system + type scale)
+     2. Background atmosphere (CSS-only, static, near-zero cost)
+     3. PROGRESS chart-first heroes (weight chart + phase heatmap)
+     4. Demoted text modules (weekly report collapse, quiet legends)
+     5. Card hierarchy normalization (audit-grounded, 2026-10-11)
+     6. Empty states — inviting, CTA-driven
+     7. Typography scale normalization
+     8. Guards (reduced motion, light theme)
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── 1. PREMIUM TOKENS ─────────────────────────────────────────── */
+:root {
+  --t3-r-lg: 14px;            /* primary cards */
+  --t3-r-md: 10px;            /* nested cards, notices */
+  --t3-r-sm: 8px;             /* chips, buttons, inputs */
+  --t3-pad: 16px;             /* primary card padding */
+  --t3-pad-sm: 12px;          /* nested card padding */
+  --t3-card-bg: linear-gradient(180deg, rgba(16,16,26,.96), rgba(7,7,12,.98));
+  --t3-card-border: 1px solid rgba(0,212,255,.10);
+  --t3-type-kicker: .56rem;   /* section kickers */
+  --t3-type-card-title: .8rem;/* card titles */
+}
+
+/* ── 2. BACKGROUND ATMOSPHERE ────────────────────────────────────
+   One static ::before per screen: a faint cyan bloom high on the
+   viewport + a whisper of bottom vignette. Pure CSS, no repaint cost
+   (no animation, no images), sits above the flat bg but below nothing
+   interactive (pointer-events:none). Opacity is deliberately tiny —
+   depth, not decoration. Painted at z-index:0 inside the screen's own
+   layer: it tints background gaps between cards, never traps positioned
+   UI in a new stacking context. */
+.screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(1100px 520px at 50% -8%, rgba(0,212,255,.055), transparent 62%),
+    radial-gradient(900px 500px at 50% 112%, rgba(0,0,0,.28), transparent 60%);
+}
+html[data-theme="light"] .screen::before {
+  background:
+    radial-gradient(1100px 520px at 50% -8%, rgba(6,187,227,.07), transparent 62%),
+    radial-gradient(900px 500px at 50% 112%, rgba(10,20,30,.06), transparent 60%);
+}
+
+/* ── 3. PROGRESS CHART-FIRST HEROES ────────────────────────────── */
+/* Weight trend card = the payoff hero: taller chart, breathing room. */
+#pageResults .t3-chart-hero {
+  border-color: rgba(0,212,255,.22);
+  box-shadow: 0 0 0 1px rgba(0,212,255,.06), 0 14px 44px rgba(0,0,0,.5);
+}
+#pageResults .t3-chart-hero .chart-wrap.gn-chart-stack { height: 208px; }
+@media (min-width: 900px) {
+  #pageResults .t3-chart-hero .chart-wrap.gn-chart-stack { height: 264px; }
+}
+/* Base stack height (was inline 160px on the weight chart). */
+#pageResults .chart-wrap.gn-chart-stack { height: 160px; }
+#pageResults .t3-chart-hero .card-val {
+  font-size: 1.7rem;
+  letter-spacing: 1px;
+}
+/* Phase heatmap = hero strip #2: card treatment, was unstyled. */
+#pageResults #gnPhaseHeatmap {
+  background: var(--t3-card-bg);
+  border: var(--t3-card-border);
+  border-left: 2px solid var(--cyan);
+  border-radius: var(--t3-r-lg);
+  padding: 14px 16px 12px;
+  margin-bottom: 14px;
+}
+#pageResults #gnPhaseHeatmap .gn-foundation-kicker { margin-bottom: 10px; }
+#pageResults #gnPhaseHeatmap[hidden] { display: none; }
+#pageResults .gn-heatmap-grid { gap: 4px; }
+#pageResults .gn-heatmap-day { border-radius: 5px; }
+
+/* ── 4. DEMOTED TEXT MODULES ───────────────────────────────────── */
+/* Weekly report collapses to a <details> once data exists; the empty
+   "log to begin" state stays open (it carries the CTAs). */
+#pageResults .gn-weekly-report {
+  background: rgba(0,212,255,.03);
+  border: 1px solid rgba(0,212,255,.12);
+  border-radius: var(--t3-r-md);
+  padding: 0;
+  margin-bottom: 14px;
+}
+#pageResults .gn-weekly-summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 12px 14px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+#pageResults .gn-weekly-summary::-webkit-details-marker { display: none; }
+#pageResults .gn-weekly-summary::after {
+  content: "▸";
+  margin-left: auto;
+  color: var(--cyan);
+  font-size: .7rem;
+  transition: transform .18s ease;
+  flex: 0 0 auto;
+}
+#pageResults .gn-weekly-report[open] .gn-weekly-summary::after { transform: rotate(90deg); }
+#pageResults .gn-weekly-summary .gn-foundation-kicker { margin: 0; }
+#pageResults .gn-weekly-summary h3 {
+  margin: 0;
+  font-family: var(--font-d);
+  font-size: .78rem;
+  letter-spacing: 2px;
+  color: var(--text);
+}
+#pageResults .gn-weekly-report > p,
+#pageResults .gn-weekly-report .gn-weekly-signals,
+#pageResults .gn-weekly-report .gn-weekly-actions { margin: 0 14px; }
+#pageResults .gn-weekly-report > p { padding: 2px 0 10px; }
+#pageResults .gn-weekly-report .gn-weekly-actions { padding-bottom: 14px; }
+#pageResults .gn-weekly-report .gn-weekly-signals { padding-bottom: 10px; }
+/* Summary card demoted: compact strip, metrics inline. */
+#pageResults .results-card.t3-demote-summary { padding: 12px 14px; }
+#pageResults .results-card.t3-demote-summary .results-card-sub { display: none; }
+#pageResults .results-card.t3-demote-summary .results-grid-2 {
+  display: flex;
+  gap: 18px;
+}
+#pageResults .results-card.t3-demote-summary .results-metric-value { font-size: 1rem; }
+/* Reference-pending notice sits with the safety note at the bottom. */
+#pageResults .gn-reference-pending {
+  border: 1px dashed rgba(255,215,0,.25);
+  border-radius: var(--t3-r-md);
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  font-family: var(--font-m);
+  font-size: .6rem;
+  line-height: 1.6;
+  letter-spacing: .6px;
+  color: #a7b3bd;
+}
+#pageResults .gn-reference-pending strong { color: var(--yellow); letter-spacing: 1.6px; }
+/* Quiet the legends that restate the obvious. */
+#pageResults .t3-chart-hero #weightTrendChartSummary,
+#pageResults .t3-chart-hero .results-copy {
+  font-size: .68rem;
+  color: var(--text-dim);
+  letter-spacing: .4px;
+}
+#pageResults .gn-chart-legend { opacity: .85; }
+
+/* ── 5. CARD HIERARCHY NORMALIZATION ─────────────────────────────
+   Audit 2026-10-11 (computed): .card=14px/16px, .results-card=6px,
+   .s6-card=14px, telemetry=8px/10px, vault prefs=6px. Normalize to:
+   primary 14px/16px · nested 10px/12-14px. Phase hero (18px) keeps its
+   identity; empty-state dashed cards keep theirs. */
+/* PROGRESS primary cards → the app card standard. */
+#pageResults .results-card {
+  border-radius: var(--t3-r-lg);
+  padding: var(--t3-pad);
+  border: 1px solid rgba(255,255,255,.075);
+}
+/* Nested metric cards → one step smaller than their parent. */
+#pageResults .s6-card,
+#pageLab .s6-card,
+#pageDash .s6-card {
+  border-radius: var(--t3-r-md);
+  padding: 12px 10px;
+}
+/* Telemetry instruments (nested in TODAY + PROGRESS cards). */
+.gn-telemetry-instrument {
+  border-radius: var(--t3-r-md);
+  padding: 14px;
+}
+/* VAULT cards → the app card standard. */
+#pageProfile .gn-preferences-card,
+#pageProfile .vault-card,
+#pageProfile .gn-measurements-card,
+#pageProfile .gn-profile-hub,
+#pageProfile .gn-device-vault {
+  border-radius: var(--t3-r-lg);
+  padding: var(--t3-pad);
+}
+/* HISTORY log entries → the app card standard. */
+#pageLog .log-entry {
+  border-radius: var(--t3-r-lg);
+}
+/* Safety/notice blocks → quieter radius. */
+#pageResults .results-safety { border-radius: var(--t3-r-md); }
+/* Consistent card spacing rhythm inside pages. */
+#pageResults .results-card,
+#pageLab .card,
+#pageDash .card { margin-bottom: 14px; }
+
+/* ── 6. EMPTY STATES — INVITING, CTA-DRIVEN ────────────────────── */
+/* Shared CTA button for every empty state. */
+.t3-empty-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px 20px;
+  min-height: 46px;
+  border: 1px solid rgba(0,212,255,.5);
+  border-radius: var(--t3-r-sm);
+  background: rgba(0,212,255,.08);
+  color: var(--cyan);
+  font-family: var(--font-d);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.t3-empty-cta:hover { background: rgba(0,212,255,.15); box-shadow: 0 0 16px rgba(0,212,255,.25); }
+.t3-empty-cta:active { transform: scale(.97); }
+.t3-empty-cta.secondary {
+  border-color: var(--border2);
+  background: rgba(255,255,255,.03);
+  color: var(--text-mid);
+}
+/* PROGRESS empty blocks: centered, guidance-first, CTA last. */
+#pageResults .results-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+  padding: 18px 14px;
+}
+#pageResults .results-empty .empty-subline {
+  display: block;
+  margin-top: 6px;
+  font-size: .78rem;
+  color: var(--text-dim);
+}
+#pageResults .results-empty .t3-empty-cta { align-self: center; }
+/* Telemetry instrument empty states (LAB visuals + PROGRESS signal). */
+.gn-chart-state {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+}
+.gn-chart-state .t3-state-msg { max-width: 26ch; }
+.gn-chart-state .t3-empty-cta { margin-top: 10px; }
+.gn-target-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+  padding: 22px 16px;
+  font-family: var(--font-m);
+  font-size: .6rem;
+  letter-spacing: 1.4px;
+  line-height: 1.7;
+  color: var(--text-mid);
+  border: 1px dashed rgba(0,212,255,.22);
+  border-radius: var(--t3-r-md);
+  background: rgba(0,212,255,.03);
+}
+/* HISTORY + generic .empty blocks: keep their voice, unify the CTA. */
+.empty .empty-cta {
+  border-radius: var(--t3-r-sm);
+  letter-spacing: 2px;
+}
+
+/* ── 7. TYPOGRAPHY SCALE NORMALIZATION ───────────────────────────
+   One card-title system: Orbitron .8rem uppercase (the PROGRESS
+   pattern, the more premium of the two). Kicker scale unified. */
+/* Card titles: LAB legacy .card-title joins the results-card-title system. */
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-d);
+  font-size: var(--t3-type-card-title);
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+/* Section kickers: one scale (was .53rem cyan vs .62rem dim). */
+.gn-foundation-kicker,
+.sec-title {
+  font-size: var(--t3-type-kicker);
+  letter-spacing: 2.5px;
+}
+.sec-title { text-transform: uppercase; }
+/* Metric values: keep Orbitron, tighten the spread. */
+.card-val { font-size: 1.25rem; }
+.s6-val { font-size: 1rem; }
+.results-metric-value { font-size: 1.05rem; }
+
+/* ── 8. GUARDS ─────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  #pageResults .gn-weekly-summary::after { transition: none; }
+  .t3-empty-cta { transition: none; }
+}

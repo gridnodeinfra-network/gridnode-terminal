@@ -3,11 +3,9 @@ export function openLogModal(options = {}) {
   if (!modal) return;
   delete modal.dataset.gnModuleDraft;
   let draftDeviceId = '';
-  if (!modal.querySelector('[data-gn-shot-step="timing"]')) {
-    modal.querySelector('.gn-shot-datetime-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="timing" data-i18n="shot.timing">' + tx('shot.timing', '01 // TIMING') + '</div>');
-    $('cpShotMed')?.closest('.form-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="protocol" data-i18n="shot.protocol">' + tx('shot.protocol', '02 // PROTOCOL') + '</div>');
-    $('modalSelectedLocation')?.closest('.form-group')?.insertAdjacentHTML('afterbegin', '<div class="gn-log-step" data-gn-shot-step="location" data-i18n="shot.location">' + tx('shot.location', '03 // LOCATION') + '</div>');
-  }
+  /* TRACK 2 (2-step redesign): the old 01//02//03//04 console section headers
+     injected here are retired. The partial now carries a stepper + two step
+     sections; progress is communicated by gnSetShotStep/syncShotStepLabels. */
   const preserveDraft = Boolean(options.preserve || moduleState.pendingLocationDraft || moduleState.shotDraft);
   moduleState.pendingLocationDraft = false;
   if (preserveDraft && moduleState.shotDraft) {
@@ -59,6 +57,7 @@ export function openLogModal(options = {}) {
   updateMeridiemButtons();
   cancelLogClose();
   closeQuickConfirm(); // S1: full console never inherits quick-repeat mode.
+  gnSetShotStep(1, { instant: true }); // TRACK 2: every open starts on step 1.
   modal.classList.add('active');
   syncLogModalLabels();
 }
@@ -70,9 +69,108 @@ export function openLogModal(options = {}) {
 function syncLogModalLabels() {
   const editing = Boolean(moduleState.editingShotId);
   document.querySelector('#logOv .modal-title')?.replaceChildren(document.createTextNode(tx(editing ? 'shot.editShot' : 'shot.logShot', editing ? 'EDIT SHOT' : 'LOG SHOT')));
-  document.querySelector('#logOv .gn-shot-fire')?.replaceChildren(document.createTextNode(tx(editing ? 'shot.saveShot' : 'shot.logShot', editing ? 'SAVE SHOT' : 'LOG SHOT')));
+  /* TRACK 2: the primary action is step-aware. Step 1 advances (CONTINUE);
+     step 2 commits (LOG SHOT / SAVE SHOT in edit mode). */
+  const fireLabel = gnShotStep() === 1
+    ? tx('shot.continue', 'CONTINUE')
+    : tx(editing ? 'shot.saveShot' : 'shot.logShot', editing ? 'SAVE SHOT' : 'LOG SHOT');
+  document.querySelector('#logOv .gn-shot-fire')?.replaceChildren(document.createTextNode(fireLabel));
+  const hdrSave = $('gnShotHdrSave');
+  if (hdrSave) hdrSave.setAttribute('aria-label', gnShotStep() === 1 ? tx('shot.continue', 'CONTINUE') : tx('modal.saveShot', 'Save shot'));
 }
-document.addEventListener('gn:langchange', () => { if ($('logOv')?.classList.contains('active')) syncLogModalLabels(); });
+document.addEventListener('gn:langchange', () => { if ($('logOv')?.classList.contains('active')) { syncLogModalLabels(); syncShotStepLabels(); } });
+
+/* TRACK 2 — 2-step progressive disclosure.
+ * Step 1: medication + dose + date/time (the essentials).
+ * Step 2: injection site + device + weight + side effects + notes (details).
+ * Only visibility changes: every field keeps its ID, so all validation,
+ * drafts, the summary watcher, and saveShot() work exactly as before. */
+function gnShotStep() { return moduleState.shotStep === 2 ? 2 : 1; }
+
+export function gnSetShotStep(step, options = {}) {
+  const modal = $('logOv');
+  const next = step === 2 ? 2 : 1;
+  const prev = gnShotStep();
+  moduleState.shotStep = next;
+  if (modal) {
+    modal.classList.toggle('gn-on-step-1', next === 1);
+    modal.classList.toggle('gn-on-step-2', next === 2);
+    modal.querySelectorAll('.gn-shot-step').forEach(section => {
+      section.classList.toggle('gn-on', Number(section.getAttribute('data-gn-step')) === next);
+    });
+    modal.querySelectorAll('.gn-shot-dot').forEach(dot => {
+      dot.classList.toggle('gn-on', Number(dot.getAttribute('data-gn-dot')) <= next);
+    });
+    if (!options.instant && next !== prev) {
+      const dir = next > prev ? 'gn-stepping-fwd' : 'gn-stepping-back';
+      modal.classList.add(dir);
+      window.setTimeout(() => modal.classList.remove(dir), 340);
+    }
+    const scroller = modal.querySelector('.gn-shot-scroll');
+    if (scroller) scroller.scrollTop = 0;
+  }
+  syncShotStepLabels();
+  syncLogModalLabels();
+}
+
+function syncShotStepLabels() {
+  const step = gnShotStep();
+  const nameEl = $('gnShotStepName');
+  const label = tx(step === 2 ? 'shot.step2Label' : 'shot.step1Label', step === 2 ? 'STEP 2 OF 2 · DETAILS' : 'STEP 1 OF 2 · ESSENTIALS');
+  if (nameEl) nameEl.textContent = label;
+  $('gnShotStep1')?.setAttribute('aria-label', tx('shot.step1Label', 'STEP 1 OF 2 · ESSENTIALS'));
+  $('gnShotStep2')?.setAttribute('aria-label', tx('shot.step2Label', 'STEP 2 OF 2 · DETAILS'));
+}
+
+function gnValidateStep1() {
+  /* Mirrors saveShot()'s essential-field checks (medication, dose, date, time)
+     so the Continue gate can never disagree with the final commit validation. */
+  qa('#logOv [aria-invalid="true"]').forEach(field => field.removeAttribute('aria-invalid'));
+  const med = normalizeMedicationId(selectState.cpShotMed?.val);
+  const dose = Number($('sDose')?.value);
+  const date = readHumanDateInput($('sDate'));
+  const time = getShotTime24($('sTime')?.value);
+  const invalidFields = [];
+  if (!med) invalidFields.push($('cpShotMed'));
+  if (!(Number.isFinite(dose) && dose > 0)) invalidFields.push($('sDose'));
+  if (!date) invalidFields.push($('sDate'));
+  if (!time) invalidFields.push($('sTime'));
+  return { ok: invalidFields.length === 0, invalidFields, time };
+}
+
+export function gnShotStepNext() {
+  const check = gnValidateStep1();
+  if (!check.ok) {
+    check.invalidFields.filter(Boolean).forEach(field => field.setAttribute('aria-invalid', 'true'));
+    check.invalidFields.find(Boolean)?.focus?.();
+    // v0.15.53: never fail silently — name the time problem explicitly.
+    const msg = !check.time
+      ? tx('shots.timeRequired', 'Set the shot time and pick AM or PM.')
+      : tx('shot.step1Required', 'Add medication, dose, date, and time to continue.');
+    showToast(msg, true);
+    notifyCoachSaveBlocked(check.invalidFields);
+    return;
+  }
+  gnSetShotStep(2);
+}
+
+export function gnShotStepBack() { gnSetShotStep(1); }
+
+/* Primary action for the sticky action bar + header check button.
+ * Step 1 advances (with validation); step 2 commits via saveShot(). */
+export function gnShotPrimaryAction() {
+  if (gnShotStep() === 1) gnShotStepNext();
+  else saveShot();
+}
+
+/* The // MORE DETAILS collapsible never had a working toggle in source
+ * (dead button); wire it here so step 2's optional block actually opens. */
+export function gnToggleShotAdvanced() {
+  const body = $('gnShotAdvanced');
+  if (!body) return;
+  const hidden = body.classList.toggle('gn-hidden');
+  document.querySelector('#logOv .gn-shot-advanced-trigger')?.setAttribute('aria-expanded', hidden ? 'false' : 'true');
+}
 
 /* v0.15.44 — SHOT CONSOLE live summary bar. Reads the same sources of truth
  * the form commits (selectState.cpShotMed, #sDose, moduleState.selectedLocation)
@@ -417,10 +515,18 @@ export function saveShot(allowFuture = false) {
       invalidFields.find(Boolean)?.focus?.();
       // v0.15.53: never fail silently — name the time problem explicitly so the
       // user knows to pick AM/PM instead of tapping SAVE again in confusion.
+      // TRACK 2: on step 2 the essentials are already validated at Continue, so
+      // a lone missing site gets a targeted message (+ scrolls the picker into
+      // view) instead of the generic required-fields toast.
+      const realFields = invalidFields.filter(Boolean);
+      const onlySiteMissing = realFields.length === 0 && !site;
       const msg = !time
         ? tx('shots.timeRequired', 'Set the shot time and pick AM or PM.')
-        : tx('shots.requiredFields', 'Add medication, dose, date, time, and a logged location.');
+        : onlySiteMissing
+          ? tx('shot.siteRequired', 'Pick an injection site to log the shot.')
+          : tx('shots.requiredFields', 'Add medication, dose, date, time, and a logged location.');
       showToast(msg, true);
+      if (onlySiteMissing) $('modalSelectedLocation')?.closest('.form-group')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
       notifyCoachSaveBlocked(invalidFields);
       return;
     }

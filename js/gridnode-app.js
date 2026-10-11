@@ -17,6 +17,7 @@ function bridge() {
   const names = [
     'showScreen', 'showPage', 'refreshAll', 'loadApp', 'showPhasesModal', 'closePhases',
     'openLogModal', 'closeLog', 'saveShot', 'editShot', 'handleShotFab',
+    'gnShotStepNext', 'gnShotStepBack', 'gnShotPrimaryAction', 'gnToggleShotAdvanced',
     'openArchiveConfirm', 'cancelArchiveShot', 'confirmArchiveShot', 'restoreArchivedShot',
     'openPermanentDeleteConfirm', 'cancelPermanentDeleteShot', 'confirmPermanentDeleteShot',
     'openFutureTimestampConfirm', 'closeFutureTimestampConfirm', 'cancelFutureTimestampSave',
@@ -1557,14 +1558,19 @@ function showApp() {
     if (!page || $('gnPasskeysCard')) return;
     if (!state.cloud) return;
     const hub = page.querySelector('[data-gn-profile-hub]');
-    if (!hub) return;
-    hub.insertAdjacentHTML('beforeend', `<section class="gn-passkeys-card" id="gnPasskeysCard" aria-labelledby="gnPasskeysTitle">
-      <div class="gn-foundation-kicker" data-i18n="auth.passkeysKicker">// PASSKEYS</div>
-      <h3 id="gnPasskeysTitle" data-i18n="auth.passkeysTitle">MANAGE PASSKEYS</h3>
-      <p class="gn-measurements-copy" data-i18n="auth.passkeysCopy">Sign in with your fingerprint, face, or security key.</p>
-      <ul class="gn-passkeys-list" data-gn-passkeys-list></ul>
-      <button type="button" class="btn-full btn-primary" id="gnRegisterPasskeyBtn" data-i18n="auth.registerNewPasskey">+ REGISTER A NEW PASSKEY</button>
-    </section>`);
+    const host = hub?.querySelector('[data-gn-vault-group="account"]') || hub;
+    if (!host) return;
+    host.insertAdjacentHTML('beforeend', `<details class="gn-vault-card" id="gnPasskeysCard">
+      <summary class="gn-vault-card-head">
+        <span class="gn-vault-card-ico" aria-hidden="true"><svg><use href="#gn-vault-core"></use></svg></span>
+        <span class="gn-vault-card-titles"><b id="gnPasskeysTitle" data-i18n="auth.passkeysTitle">MANAGE PASSKEYS</b><small class="gn-vault-card-sub" data-i18n="auth.passkeysCopy">Sign in with your fingerprint, face, or security key.</small></span>
+        <span class="gn-vault-chev" aria-hidden="true">›</span>
+      </summary>
+      <div class="gn-vault-card-body">
+        <ul class="gn-passkeys-list" data-gn-passkeys-list></ul>
+        <button type="button" class="btn-full btn-primary" id="gnRegisterPasskeyBtn" data-i18n="auth.registerNewPasskey">+ REGISTER A NEW PASSKEY</button>
+      </div>
+    </details>`);
     $('gnRegisterPasskeyBtn')?.addEventListener('click', async () => {
       const btn = $('gnRegisterPasskeyBtn');
       // Guard against double-taps: a second concurrent ceremony would race

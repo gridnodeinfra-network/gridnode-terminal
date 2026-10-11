@@ -61,6 +61,9 @@
       '02-first-five-minutes.css',
       '03-premium-system.css',
       '04-first-contact.css',
+      '04-vault-redesign.css',
+      '05-logshot-2step.css',
+      '06-premium-pass.css',
     ];
     files.forEach((file, index) => {
       const link = document.createElement('link');
