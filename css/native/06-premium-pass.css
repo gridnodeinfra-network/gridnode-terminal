@@ -326,3 +326,51 @@ html[data-theme="light"] .screen::before {
   #pageResults .gn-weekly-summary::after { transition: none; }
   .t3-empty-cta { transition: none; }
 }
+
+/* ── 9. TRACK A · ELEVATION + DATA-VIZ FINISH ──────────────────────
+   Canonical tiers from 08-design-tokens.css. Base cards sit on elev-1,
+   the chart hero is the one raised surface on PROGRESS (elev-2), nested
+   instruments stay quiet. Shadows/borders only: no text colors change,
+   so AA contrast is untouched. */
+/* PROGRESS + HISTORY + VAULT card tiers (TODAY/LAB .card family is bound
+   in 03-premium-system.css via the --gn-elev-* aliases). */
+#pageResults .results-card { box-shadow: var(--elev-1); border-color: var(--border-1); }
+#pageResults .t3-chart-hero {
+  box-shadow: var(--elev-2);
+  background: var(--grad-card);
+}
+html:not([data-theme="light"]) #pageResults .t3-chart-hero { border-color: var(--border-cyan); }
+#pageResults #gnPhaseHeatmap { box-shadow: var(--elev-1); }
+#pageLog .log-entry { box-shadow: var(--elev-1); }
+#pageProfile .gn-preferences-card,
+#pageProfile .vault-card,
+#pageProfile .gn-measurements-card,
+#pageProfile .gn-profile-hub,
+#pageProfile .gn-device-vault { box-shadow: var(--elev-1); }
+/* Nested instruments: hairline definition, no competing shadow. */
+.gn-telemetry-instrument {
+  border: 1px solid var(--border-1);
+  background: var(--grad-card);
+}
+.gn-telemetry-canvas-wrap { border: 1px solid var(--border-1); }
+/* Chart legends: a quiet instrument readout row under the chart, split
+   from the canvas by the chart-grid hairline, on the spacing scale. */
+.gn-chart-legend {
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--chart-grid);
+  column-gap: var(--sp-4);
+  row-gap: var(--sp-2);
+}
+#pageResults .gn-chart-legend { opacity: 1; }
+/* Section rhythm: one gap between card groups on every tab (--sp-4). */
+#pageResults .results-card,
+#pageLab .card,
+#pageDash .card,
+#pageLog .log-entry,
+#pageProfile .gn-preferences-card,
+#pageProfile .vault-card,
+#pageProfile .gn-measurements-card { margin-bottom: var(--sp-4); }
+#pageResults #gnPhaseHeatmap,
+#pageResults .gn-weekly-report,
+#pageResults .gn-reference-pending { margin-bottom: var(--sp-4); }

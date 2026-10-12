@@ -92,6 +92,23 @@
   --danger: #FF3B3B;
   --info: #00d4ff;
 
+  /* Elevation scale (Track A, additive) — one shadow tier per surface role:
+     elev-1 base card · elev-2 raised/hero card · elev-3 modal/sheet ·
+     elev-fab floating action · elev-nav bottom navigation.
+     DUSK: deep neutral shadow + faint cyan edge light (on-brand, no glow
+     soup). The inset top line is the machined edge light. */
+  --elev-1: 0 1px 2px rgba(0, 0, 0, .35), 0 8px 24px rgba(0, 0, 0, .28), inset 0 1px 0 rgba(255, 255, 255, .05);
+  --elev-2: 0 2px 4px rgba(0, 0, 0, .4), 0 16px 40px rgba(0, 0, 0, .42), inset 0 1px 0 rgba(255, 255, 255, .06), 0 0 0 1px rgba(0, 212, 255, .05);
+  --elev-3: 0 4px 8px rgba(0, 0, 0, .45), 0 28px 64px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .07), 0 0 0 1px rgba(0, 212, 255, .08);
+  --elev-fab: 0 10px 28px rgba(0, 0, 0, .5), 0 0 18px rgba(255, 60, 60, .45), 0 0 46px rgba(255, 60, 60, .18), inset 0 0 14px rgba(255, 60, 60, .28);
+  --elev-nav: 0 -12px 36px rgba(0, 0, 0, .42);
+
+  /* Gradient tokens (brand-derived only) */
+  --grad-card: linear-gradient(180deg, var(--surface-3), var(--surface-2));
+  --grad-hero: linear-gradient(155deg, color-mix(in srgb, var(--brand-cyan) 9%, var(--surface-3)), var(--surface-1) 62%);
+  --grad-lava: linear-gradient(135deg, var(--brand-red), var(--brand-red-deep));
+  --edge-light: inset 0 1px 0 rgba(255, 255, 255, .06);
+
   /* ── Legacy aliases: previous cascade winners, no contract equivalent ── */
   /* Lava (Mars Red) CTA family — was redefined 4x; now single aliases. */
   --lava-core: var(--brand-red);
@@ -115,6 +132,17 @@ html[data-theme="light"] {
   --border-1: rgba(20,60,70,.14);
   --border-2: rgba(20,60,70,.25);
   --chart-grid: rgba(20,60,70,.08);
+
+  /* Elevation scale, light theme: soft warm shadows (the app's warm-grey
+     shadow family, 76,61,43), bright inset edge, NO cyan glow. */
+  --elev-1: 0 1px 2px rgba(76, 61, 43, .07), 0 8px 22px rgba(76, 61, 43, .1), inset 0 1px 0 rgba(255, 255, 255, .75);
+  --elev-2: 0 2px 4px rgba(76, 61, 43, .08), 0 16px 36px rgba(76, 61, 43, .14), inset 0 1px 0 rgba(255, 255, 255, .85);
+  --elev-3: 0 4px 10px rgba(76, 61, 43, .1), 0 28px 58px rgba(76, 61, 43, .2), inset 0 1px 0 rgba(255, 255, 255, .9);
+  --elev-fab: 0 10px 26px rgba(76, 61, 43, .28), 0 0 0 1px rgba(165, 29, 54, .25), inset 0 0 14px rgba(255, 60, 60, .28);
+  --elev-nav: 0 -10px 30px rgba(76, 61, 43, .12);
+  --grad-card: linear-gradient(180deg, var(--surface-3), var(--surface-2));
+  --grad-hero: linear-gradient(155deg, rgba(0, 103, 127, .07), var(--surface-2) 62%);
+  --edge-light: inset 0 1px 0 rgba(255, 255, 255, .85);
 
   /* Legacy alias, light theme: preserved cascade winner. */
   --text-dim: #476169;
