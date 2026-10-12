@@ -35,6 +35,12 @@
 <link rel="mask-icon" href="/assets/brand/icons/pwa-maskable-512.png" color="#050708">
 <link rel="preload" as="image" type="image/svg+xml" href="/assets/brand/ui/update-badge.svg">
 <link rel="preload" as="image" type="image/svg+xml" href="/assets/brand/ui/watermark.svg">
+<!-- TRACK D perf: warm the font origins early and preload the landing LCP
+     image (hero product preview, fetchpriority=high in 03-landing.html) so
+     first paint is not gated on late discovery. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="image" type="image/png" href="assets/preview-dashboard.png" fetchpriority="high">
   <meta name="color-scheme" content="dark light">
   <meta name="supported-color-schemes" content="dark light">
 
@@ -4207,7 +4213,7 @@ function scrollLandingTo(id) {
 <div class="landing-product-preview" role="group" aria-label="GRID//NODE live product preview">
   <div class="landing-preview-frame">
     <div class="landing-preview-bar"><span class="landing-preview-dot"></span><span class="landing-preview-dot"></span><span class="landing-preview-dot"></span><span class="landing-preview-tag">GRID//NODE — LIVE</span></div>
-    <img class="landing-preview-shot" id="landingPreviewShot" src="assets/preview-dashboard.png" data-preview-src-en="assets/preview-dashboard.png" data-preview-src-es="assets/preview-dashboard-es.png" alt="GRID//NODE dashboard — SHOTS, Phase Engine, RESULTS" loading="eager" fetchpriority="high" decoding="async">
+    <img class="landing-preview-shot" id="landingPreviewShot" src="assets/preview-dashboard.png" data-preview-src-en="assets/preview-dashboard.png" data-preview-src-es="assets/preview-dashboard-es.png" alt="GRID//NODE dashboard — SHOTS, Phase Engine, RESULTS" width="1440" height="900" loading="eager" fetchpriority="high" decoding="async">
   </div>
   <p class="landing-preview-caption" data-i18n="landing.previewCaption">A functioning biotech command system — protocol logs, phase estimates, and trends on your device.</p>
 </div>
@@ -4216,7 +4222,7 @@ function scrollLandingTo(id) {
 
     <section class="landing-section landing-preem" id="meetPreem">
       <div class="landing-preem-frame">
-        <img class="landing-preem-shot" src="assets/brand/preem-gridnode-hero.webp" alt="PREEM, the GRID//NODE wolverine" loading="lazy" decoding="async">
+        <img class="landing-preem-shot" src="assets/brand/preem-gridnode-hero.webp" alt="PREEM, the GRID//NODE wolverine" width="1024" height="1536" loading="lazy" decoding="async">
       </div>
       <div class="landing-preem-copy">
         <p class="landing-kicker" data-i18n="landing.preemKicker">// MEET PREEM //</p>
