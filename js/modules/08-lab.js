@@ -489,7 +489,7 @@ function ensureProfileHub() {
       <div class="gn-vault-group-label" data-i18n="vault.groupAccount">// ACCOUNT</div>
       <div class="gn-vault-card-static">
         <div class="gn-vault-row gn-vault-row-static">${ico('gn-vault-core')}<span class="gn-vault-row-txt"><b data-i18n="vault.connectedAccount">Connected Account</b><small id="gnProfileAccount">Local device session</small></span></div>
-        <button type="button" class="gn-vault-row" data-gn-local-only onclick="openCloudConnect()">${ico('gn-network-node')}<span class="gn-vault-row-txt"><b data-i18n="vault.connectAccount">Connect Cloud Account</b><small data-i18n="vault.connectAccountHelp">Use a NODE KEY to sync across devices</small></span>${chev}</button>
+        <button type="button" class="gn-vault-row" data-gn-local-only onclick="openCloudConnect()">${ico('gn-network-node')}<span class="gn-vault-row-txt"><b data-i18n="vault.signIn">Sign In</b><small data-i18n="vault.signInHelp">Use Google or a NODE KEY</small></span>${chev}</button>
         <button type="button" class="gn-vault-row" onclick="openSystemUpdate()">${ico('gn-protocol-event')}<span class="gn-vault-row-txt"><b data-i18n="vault.whatsNew">What's New</b><small data-gn-whatsnew-version></small></span>${chev}</button>
         <button type="button" class="gn-vault-row gn-vault-row-signout" data-gn-cloud-only onclick="openSignOutModal()">${ico('gn-disconnect-node')}<span class="gn-vault-row-txt"><b data-i18n="vault.signOut">SIGN OUT</b><small data-i18n="vault.signOutHelp">End this cloud session</small></span>${chev}</button>
       </div>

@@ -1929,6 +1929,8 @@
   "nodekey.grantedNext": "// CLAVE ACEPTADA — ELIGE GOOGLE O CORREO PARA CREAR TU CUENTA EN LA NUBE",
   "vault.connectAccount": "Conectar cuenta en la nube",
   "vault.connectAccountHelp": "Usa una NODE KEY para sincronizar entre dispositivos",
+  "vault.signIn": "Iniciar sesión",
+  "vault.signInHelp": "Usa Google o una NODE KEY",
   "phase.daysLeftHours": "{d}d {h}h",
   "phase.tmpl.activation": "ACTIVACIÓN",
   "phase.tmpl.activation.do": [

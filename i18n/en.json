@@ -1745,6 +1745,8 @@
   "vault.cloudStatus": "DATA STATUS: {status}",
   "vault.connectAccount": "Connect Cloud Account",
   "vault.connectAccountHelp": "Use a NODE KEY to sync across devices",
+  "vault.signIn": "Sign In",
+  "vault.signInHelp": "Use Google or a NODE KEY",
   "vault.connectedAccount": "Connected Account",
   "vault.connectedAccountLocal": "Local device session",
   "vault.csvExportReady": "CSV export prepared.",
