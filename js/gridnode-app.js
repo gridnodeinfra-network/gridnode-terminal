@@ -1944,7 +1944,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.closeSignOutModal = closeSignOutModal;
   window.confirmSignOut = confirmSignOut;
   wireGlobalEvents();
-  registerServiceWorker();
+  /* TRACK D perf: SW registration is not on the first-paint/first-entry
+     path. Defer it to window load (idle callback as backstop) so boot
+     longtasks and network contention stay focused on the entry flow.
+     Registration itself is unchanged. */
+  const deferSwRegister = () => {
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(() => registerServiceWorker(), { timeout: 3000 });
+    else registerServiceWorker();
+  };
+  if (document.readyState === 'complete') deferSwRegister();
+  else window.addEventListener('load', deferSwRegister, { once: true });
   await wireCloudAuthEvents();
   await restoreSession();
   // Load the cloud library in the background so the local-first boot is immediate.

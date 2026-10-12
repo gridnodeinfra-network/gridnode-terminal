@@ -61,7 +61,22 @@ export function saveWt() {
   }
 }
 
+/* TRACK D perf: PROGRESS render scheduling ONLY (no content/state change).
+ * renderResults used to run every canvas draw and list build synchronously
+ * inside the tab-switch click, so the switch could not paint until the
+ * heaviest work in the app finished (median ~4s under CPU 4x). The stats,
+ * DOM and list passes still run synchronously; only the canvas chart draws
+ * are scheduled for idle time (post-paint), token-guarded so a newer render
+ * supersedes chart draws queued by an older one. */
+let resultsRenderToken = 0;
+function scheduleResultsWork(token, fn) {
+  const run = () => { if (token === resultsRenderToken) fn(); };
+  if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 200 });
+  else requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(run, 0)));
+}
+
 export function renderResults() {
+  const renderToken = ++resultsRenderToken;
   ensureResultsEnhancements();
   window.GN_I18N?.applyTo?.(document.getElementById('pageResults'));
   const shots = sortedShots();
@@ -125,9 +140,17 @@ export function renderResults() {
   setDisplay('resultsSummaryEmpty', !weights.length && !shots.length);
   /* TRACK 3 premium pass: chart-first hero order + inviting empty CTAs. */
   try { ensureResultsHeroOrder(); ensureResultsEmptyCtas(); } catch (_) {}
-  drawWeightTrendChart($('wtChart'), filterWeightsForChart(weights), shots, profile.goalWt);
-  try { renderPhaseHeatmap(shots); } catch (_) {}
-  drawTrendArrow($('wtChart'), filterWeightsForChart(weights), profile.goalWt);
+  /* TRACK D perf: the canvas chart draws (the long-task core of the old
+     synchronous render) run after the tab has painted — see
+     scheduleResultsWork above. Same calls, same order, same final canvas
+     state. All DOM/list renders below stay synchronous: synchronous
+     readers of pageResults content (e.g. right after showPage('Results'))
+     must keep seeing complete content, exactly as before. */
+  scheduleResultsWork(renderToken, () => {
+    drawWeightTrendChart($('wtChart'), filterWeightsForChart(weights), shots, profile.goalWt);
+    try { renderPhaseHeatmap(shots); } catch (_) {}
+    drawTrendArrow($('wtChart'), filterWeightsForChart(weights), profile.goalWt);
+  });
   renderWeightRecords(weights);
   renderMeasurementTrend();
   renderTrendLists(shots);

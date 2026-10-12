@@ -32,6 +32,12 @@
 <link rel="mask-icon" href="/assets/brand/icons/pwa-maskable-512.png" color="#050708">
 <link rel="preload" as="image" type="image/svg+xml" href="/assets/brand/ui/update-badge.svg">
 <link rel="preload" as="image" type="image/svg+xml" href="/assets/brand/ui/watermark.svg">
+<!-- TRACK D perf: warm the font origins early and preload the landing LCP
+     image (hero product preview, fetchpriority=high in 03-landing.html) so
+     first paint is not gated on late discovery. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="image" type="image/png" href="assets/preview-dashboard.png" fetchpriority="high">
   <meta name="color-scheme" content="dark light">
   <meta name="supported-color-schemes" content="dark light">
 
