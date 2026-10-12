@@ -4201,6 +4201,7 @@ function scrollLandingTo(id) {
       <div class="landing-cta-row">
         <button class="landing-btn primary" type="button" onclick="startGridNode()" data-usage="enter_grid_click" data-i18n="landing.enterGrid">ENTER THE GRID</button>
       </div>
+      <p class="landing-entry-ways" data-i18n="landing.entryWays">Start on this device · Sync with Google · Invited? Use your NODE KEY</p>
       <button class="landing-explore-link" type="button" onclick="scrollLandingTo('howItWorks');return false" data-i18n="landing.explore">EXPLORE THE SYSTEM ↓</button>
       <div class="landing-note landing-trust"><strong data-i18n="landing.trustTitle">Your body. Your data. Your grid.</strong><span data-i18n="landing.trustCopy">Your data lives on this device first. Cloud sync is optional.</span></div>
 <div class="landing-product-preview" role="group" aria-label="GRID//NODE live product preview">
@@ -4842,20 +4843,6 @@ function scrollLandingTo(id) {
           </div>
         </section>
 
-        <section class="results-card appetite">
-          <div class="results-card-title"><span class="gn-icon gn-icon-md gn-accent-y"><svg><use href="#gn-signal"></use></svg></span><span data-i18n="results.appetiteTrendTitle">Appetite Trend</span></div>
-          <div class="results-card-sub" data-i18n="results.userEnteredOutcomes">User-entered outcomes only</div>
-          <div id="appetiteTrendLive" class="results-list"></div>
-          <div id="appetiteTrendEmpty" class="results-empty" data-i18n-html="results.noAppetiteHtml">No entries yet. Log observations to build your trend.</div>
-        </section>
-
-        <section class="results-card energy">
-          <div class="results-card-title"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-signal"></use></svg></span><span data-i18n="results.energyTrendTitle">Energy Trend</span></div>
-          <div class="results-card-sub" data-i18n="results.userEnteredOutcomes">User-entered outcomes only</div>
-          <div id="energyTrendLive" class="results-list"></div>
-          <div id="energyTrendEmpty" class="results-empty" data-i18n-html="results.noEnergyHtml">No entries yet. Log observations to build your trend.</div>
-        </section>
-
         <section class="results-card effects">
           <div class="results-card-title"><span class="gn-icon gn-icon-md gn-accent-r"><svg><use href="#gn-alert"></use></svg></span><span data-i18n="results.sideEffectTrendTitle">Side Effect Trend</span></div>
           <div class="results-card-sub" data-i18n="results.userEnteredShotObservations">User-entered observations from SHOTS records</div>
@@ -5459,11 +5446,11 @@ function scrollLandingTo(id) {
 
 
 <div class="overlay" id="arsOv">
-  <div class="modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="arsTitle">
     <div class="modal-hdr">
-      <div class="modal-actions"><button class="modal-btn close" onclick="closeArs()"><span class="gn-icon"><svg><use href="#gn-close"></use></svg></span></button></div>
+      <div class="modal-actions"><button class="modal-btn close" aria-label="Close" data-i18n-aria-label="modal.close" onclick="closeArs()"><span class="gn-icon"><svg><use href="#gn-close"></use></svg></span></button></div>
       <div class="modal-title" id="arsTitle">ADD CONTEXT</div>
-      <div class="modal-actions"><button class="modal-btn save" onclick="saveArs()"><span class="gn-icon"><svg><use href="#gn-check"></use></svg></span></button></div>
+      <div class="modal-actions"><button class="modal-btn save" aria-label="Save context" data-i18n-aria-label="shots.saveContext" onclick="saveArs()"><span class="gn-icon"><svg><use href="#gn-check"></use></svg></span></button></div>
     </div>
     <div class="form-group"><label class="form-label" for="aName" data-i18n="lab.arsenalName">CONTEXT NAME</label><input class="form-input" id="aName" placeholder="e.g. GLP-1 reference item" data-i18n-placeholder="lab.referenceNamePlaceholder"></div>
     <div class="form-row">
@@ -5494,10 +5481,10 @@ function scrollLandingTo(id) {
 
 
 <div class="overlay" id="phasesOv">
-  <div class="modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="phasesOvTitle">
     <div class="modal-hdr">
       <div class="modal-actions"><button class="modal-btn close" type="button" onclick="closePhases()" aria-label="Close" data-i18n-aria-label="common.close"><span class="gn-icon" aria-hidden="true"><svg><use href="#gn-close"></use></svg></span></button></div>
-      <div class="modal-title" data-i18n="phase.allPhases">ALL PHASES</div>
+      <div class="modal-title" id="phasesOvTitle" data-i18n="phase.allPhases">ALL PHASES</div>
       <div style="width:38px"></div>
     </div>
     <div id="allPhasesContent"></div>

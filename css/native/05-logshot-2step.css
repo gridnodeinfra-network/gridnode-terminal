@@ -18,17 +18,17 @@
 #logOv .gn-shot-dots{display:flex;align-items:center;gap:8px}
 #logOv .gn-shot-dot{
   width:10px;height:10px;border-radius:50%;
-  border:1.5px solid rgba(0,229,255,.55);
+  border:1.5px solid rgba(0,212,255,.55);
   background:transparent;
   transition:background .2s ease, box-shadow .2s ease, border-color .2s ease;
 }
 #logOv .gn-shot-dot.gn-on{
-  background:#00e5ff;border-color:#bffbff;
-  box-shadow:0 0 10px rgba(0,229,255,.85);
+  background:var(--brand-cyan);border-color:#bffbff;
+  box-shadow:0 0 10px rgba(0,212,255,.85);
 }
 #logOv .gn-shot-stepname{
   font-family:var(--font-m);font-size:.62rem;font-weight:700;letter-spacing:2.5px;
-  color:rgba(0,229,255,.78);text-shadow:0 0 8px rgba(0,229,255,.3);
+  color:rgba(0,212,255,.78);text-shadow:0 0 8px rgba(0,212,255,.3);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 
@@ -65,19 +65,19 @@
   background:none;border:none;cursor:pointer;
   color:var(--cyan);
   font-family:var(--font-m);font-size:.72rem;font-weight:700;letter-spacing:2px;
-  text-shadow:0 0 8px rgba(0,229,255,.35);
+  text-shadow:0 0 8px rgba(0,212,255,.35);
 }
 #logOv .gn-shot-back:active{transform:scale(.95)}
 #logOv .gn-shot-back:focus-visible{
-  outline:1.5px solid rgba(0,229,255,.7);outline-offset:2px;border-radius:6px;
+  outline:1.5px solid rgba(0,212,255,.7);outline-offset:2px;border-radius:6px;
 }
 
 /* ---- Step 1: the primary action is CONTINUE (cyan), not the red commit.
    Step 2 keeps the existing red LOG SHOT / SAVE SHOT treatment. ------------ */
 #logOv.gn-on-step-1 .gn-shot-fire{
-  background:linear-gradient(135deg,#00e5ff,#0090b0) !important;
+  background:linear-gradient(135deg,var(--brand-cyan),#0090b0) !important;
   color:#03141b !important;
-  box-shadow:0 0 26px rgba(0,229,255,.5), inset 0 1px 0 rgba(255,255,255,.4) !important;
+  box-shadow:0 0 26px rgba(0,212,255,.5), inset 0 1px 0 rgba(255,255,255,.4) !important;
   text-shadow:none;
 }
 

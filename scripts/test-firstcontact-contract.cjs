@@ -158,13 +158,14 @@ const skipBinds = (fc.match(/data-fc-coach-skip/g) || []).length;
 check('coach skip binding single-source', skipBinds >= 2 && fc.includes('function renderCoachCopy'),
   'skip listener must live in renderCoachCopy only (' + skipBinds + ' refs)');
 
-if (failures) { console.error(`\nfirstcontact contract: ${failures} FAILURE(S)`); process.exit(1); }
-
-// --- Replay anchor must exist in the profile page ---------------------------
+// --- Replay + reload live in the VAULT hub (v0.15.42 architecture) ---------
+// The pre-v0.15.42 profile utility-row anchor was replaced: Replay Tour is an
+// explicit VAULT hub button (replayGuidedTour -> GN_FIRSTCONTACT.restart) and
+// Reload App is the VAULT footline button. Assert where they actually render.
 {
-  const html = read('index.html');
-  check('replay anchor (Reload App utility row) exists', html.includes('gn-utility-row') && html.includes('window.location.reload()'), '');
-  check('injectReplay targets the real anchor', fc.includes('#pageProfile .gn-utility-row[onclick*="reload"]'), '');
+  const lab = read('js/modules/08-lab.js');
+  check('replay tour button exists in VAULT hub', lab.includes('onclick="replayGuidedTour()"'), '');
+  check('reload app footline exists in VAULT hub', lab.includes('window.location.reload()'), '');
 }
 
 // --- QA 2026-09-10: coach must tick immediately on modal interaction --------
@@ -182,5 +183,7 @@ check('coaching modal pads buttons clear of coach sheet',
 check('comfort card lang buttons toggle active immediately',
   /data-fc-lang[\s\S]{0,400}classList\.toggle\('active'/.test(fc) && fc.includes("localStorage.setItem('gn.lang', next)"),
   'ES button keeps pressed state after switching back to EN');
+
+if (failures) { console.error(`\nfirstcontact contract: ${failures} FAILURE(S)`); process.exit(1); }
 
 console.log('\nfirstcontact contract: ALL PASS');

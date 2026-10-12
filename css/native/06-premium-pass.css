@@ -19,14 +19,17 @@
 
 /* ── 1. PREMIUM TOKENS ─────────────────────────────────────────── */
 :root {
-  --t3-r-lg: 14px;            /* primary cards */
-  --t3-r-md: 10px;            /* nested cards, notices */
-  --t3-r-sm: 8px;             /* chips, buttons, inputs */
-  --t3-pad: 16px;             /* primary card padding */
-  --t3-pad-sm: 12px;          /* nested card padding */
-  --t3-card-bg: linear-gradient(180deg, rgba(16,16,26,.96), rgba(7,7,12,.98));
-  --t3-card-border: 1px solid rgba(0,212,255,.10);
-  --t3-type-kicker: .56rem;   /* section kickers */
+  /* A4 2026-10-12: t3 aliases now DERIVE from the contract tokens instead of
+     restating near-miss values (r-lg was 14px vs contract --radius-card 16px;
+     card-bg was a hard dark gradient that leaked into the light theme). */
+  --t3-r-lg: var(--radius-card);   /* primary cards */
+  --t3-r-md: var(--radius-nested); /* nested cards, notices */
+  --t3-r-sm: var(--radius-control);/* chips, buttons, inputs */
+  --t3-pad: var(--sp-4);            /* primary card padding */
+  --t3-pad-sm: var(--sp-3);         /* nested card padding */
+  --t3-card-bg: linear-gradient(180deg, var(--surface-2), var(--surface-1));
+  --t3-card-border: 1px solid var(--border-1);
+  --t3-type-kicker: var(--kicker-size); /* section kickers */
   --t3-type-card-title: .8rem;/* card titles */
 }
 
@@ -50,7 +53,7 @@
 }
 html[data-theme="light"] .screen::before {
   background:
-    radial-gradient(1100px 520px at 50% -8%, rgba(6,187,227,.07), transparent 62%),
+    radial-gradient(1100px 520px at 50% -8%, rgba(0,212,255,.07), transparent 62%),
     radial-gradient(900px 500px at 50% 112%, rgba(10,20,30,.06), transparent 60%);
 }
 
@@ -136,7 +139,7 @@ html[data-theme="light"] .screen::before {
 #pageResults .results-card.t3-demote-summary .results-metric-value { font-size: 1rem; }
 /* Reference-pending notice sits with the safety note at the bottom. */
 #pageResults .gn-reference-pending {
-  border: 1px dashed rgba(255,215,0,.25);
+  border: 1px dashed rgba(255,209,102,.25);
   border-radius: var(--t3-r-md);
   padding: 10px 12px;
   margin-bottom: 14px;
@@ -144,7 +147,7 @@ html[data-theme="light"] .screen::before {
   font-size: .6rem;
   line-height: 1.6;
   letter-spacing: .6px;
-  color: #a7b3bd;
+  color: var(--text-2);
 }
 #pageResults .gn-reference-pending strong { color: var(--yellow); letter-spacing: 1.6px; }
 /* Quiet the legends that restate the obvious. */

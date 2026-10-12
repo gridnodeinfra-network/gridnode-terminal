@@ -149,10 +149,16 @@
       grid: token(wrap, '--chart-grid', 'rgba(142,165,173,.18)'),
       axis: token(wrap, '--chart-axis', '#8ea5ad'),
       label: token(wrap, '--chart-label', '#9fb3bd'),
-      primary: token(wrap, '--chart-primary', '#00d4ff'),
-      secondary: token(wrap, '--chart-secondary', '#ffd166'),
+      /* Canonical chart tokens live in css/native/08-design-tokens.css
+       * (TOKEN-CONTRACT --chart-*): recorded data is --chart-actual, the
+       * amber series / dashed goal line is --chart-estimate. The old
+       * --chart-primary/--chart-secondary/--chart-target names are not
+       * contract tokens, so those reads always fell back. Fallbacks below
+       * are the contract values, so the rendered colors do not change. */
+      primary: token(wrap, '--chart-actual', '#00d4ff'),
+      secondary: token(wrap, '--chart-estimate', '#ffd166'),
       comparison: token(wrap, '--chart-comparison', '#b66892'),
-      target: token(wrap, '--chart-target', '#ffd166'),
+      target: token(wrap, '--chart-estimate', '#ffd166'),
       success: token(wrap, '--chart-success', '#00c979'),
       area: token(wrap, '--chart-area-primary', 'rgba(0,212,255,.1)'),
       crosshair: token(wrap, '--chart-crosshair', 'rgba(255,209,102,.68)')

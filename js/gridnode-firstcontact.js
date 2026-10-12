@@ -45,6 +45,9 @@
   var pickingLocation = false;
   var pickTimer = null;
   var coachInputHandler = null; // immediate coachTick on modal input/click (no 600ms wait)
+  var stackTimer = null;   // beat-2 stacking guard: celebrate / modal serialization
+  var stackYielded = false;
+  var curveDeferred = false;
 
   /* ------------------------------------------------------------------ */
   /* Copy (EN + ES). t() prefers the live GN_I18N catalog, falls back here. */
@@ -839,10 +842,64 @@
   }
 
   /* ------------------------------------------------------------------ */
+  /* Beat-2 stacking guard (full-pass residual): the GRID ACTIVATED      */
+  /* celebrate overlay (gnFirstShotCelebrate, 02-dashboard) fires on the */
+  /* same gn:shot-saved event as the coach's advance to THE CURVE, and   */
+  /* the weight modal (#wtOv, z 200) sits below this overlay (z 9000).   */
+  /* Without serialization all three stacked: celebrate + curve card at  */
+  /* once, and LOG WEIGHT opened the weight modal UNDER the tour card.   */
+  /* Minimal fix, tour side only: THE CURVE never appears while the      */
+  /* celebrate is up or a log/weight modal is active, and it yields      */
+  /* (hides) if either appears while it is showing, then returns.        */
+  /* ------------------------------------------------------------------ */
+  function stackBlocked() {
+    if (document.getElementById('gnFirstShotCelebrate')) return true;
+    var wt = document.getElementById('wtOv');
+    if (wt && wt.classList.contains('active')) return true;
+    var log = document.getElementById('logOv');
+    if (log && log.classList.contains('active')) return true;
+    return false;
+  }
+  function stopStackWatch() {
+    if (stackTimer) { clearInterval(stackTimer); stackTimer = null; }
+    stackYielded = false;
+    curveDeferred = false;
+  }
+  function startStackWatch() {
+    if (stackTimer) return;
+    stackTimer = setInterval(function () {
+      if (!overlay || cur !== 2) { stopStackWatch(); return; }
+      if (stackBlocked()) {
+        stackYielded = true;
+        overlay.style.display = 'none';
+        return;
+      }
+      if (!stackYielded) return;
+      stackYielded = false;
+      if (curveDeferred) { curveDeferred = false; renderCurve(); return; }
+      overlay.style.display = '';
+      var el = curveTarget();
+      if (el) { positionHole(el); positionCard(el); }
+    }, 250);
+  }
+
+  /* ------------------------------------------------------------------ */
   /* Beat 3 — THE CURVE. Auto-navigate to RESULTS; spotlight the Phase   */
   /* Engine readout (or its empty state on the skip path).               */
   /* ------------------------------------------------------------------ */
   function renderCurve() {
+    if (stackBlocked()) {
+      /* Celebrate (or a modal it opened) owns the screen first. Drop the
+         coach sheet, hide the tour, and let the stacking guard re-enter
+         this beat once both have been dismissed/finished. */
+      exitModalPhase();
+      dosePhase = 'spot';
+      curveDeferred = true;
+      stackYielded = true;
+      if (overlay) overlay.style.display = 'none';
+      startStackWatch();
+      return;
+    }
     exitModalPhase();
     dosePhase = 'spot';
     if (overlay) overlay.style.display = '';
@@ -851,6 +908,8 @@
       if (typeof window.showPage === 'function') window.showPage('Results', document.getElementById('navRes'));
     } catch (_) {}
     setTimeout(function () {
+      if (!overlay) return;
+      if (stackBlocked()) { renderCurve(); return; }
       var el = curveTarget();
       removeSpotlight();
       var card = overlay.querySelector('[data-fc-card]');
@@ -876,6 +935,9 @@
         positionCard(null);
       }
       setState('2');
+      /* Keep guarding while the card is up: if the celebrate or a modal
+         appears later in this beat, the card yields instead of stacking. */
+      startStackWatch();
     }, 350);
   }
 
@@ -889,6 +951,7 @@
     cur = i;
     setState(String(i));
     removeSpotlight();
+    if (i !== 2) stopStackWatch();
     if (i === 0) renderSignal();
     else if (i === 1) {
       /* v0.15.38: stamp when the FIRST DOSE beat starts. The native
@@ -909,6 +972,7 @@
   }
   function dismiss(complete) {
     if (!complete) { try { localStorage.setItem(DISMISSED, '1'); } catch (_) {} }
+    stopStackWatch();
     exitModalPhase();
     /* v0.15.38: clear the FIRST DOSE beat stamp (see renderBeat). */
     try { delete document.body.dataset.gnFcDoseStart; } catch (_) {}

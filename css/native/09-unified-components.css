@@ -70,8 +70,8 @@
 /* Light theme: same lava identity. Same selector + !important as the old
    cyan rule, later in the cascade, so lava wins (B1). */
 html[data-theme="light"] :is(#app, .overlay, .gn-lab-tool-overlay) .btn-primary {
-  border-color: #D12424 !important;
-  background: linear-gradient(180deg, #D12424 0%, #FF3B3B 52%, #D12424 100%) !important;
+  border-color: var(--brand-red-deep) !important;
+  background: linear-gradient(180deg, var(--brand-red-deep) 0%, var(--brand-red) 52%, var(--brand-red-deep) 100%) !important;
   color: #fff !important;
   -webkit-text-fill-color: #fff !important;
   box-shadow: inset 0 1px rgba(255, 190, 128, .72), inset 0 -1px rgba(82, 0, 0, .42), 0 8px 20px rgba(255, 79, 34, .28) !important;

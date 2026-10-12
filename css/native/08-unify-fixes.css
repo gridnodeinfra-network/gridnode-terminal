@@ -9,6 +9,8 @@
  *  §3  Canonical .kicker + aliases for the legacy kicker classes.
  *  §4  Theme-violation contrast corrections (light).
  *  §5  07-journey first-shot modal: light-theme variant.
+ *  §6  Reduced-motion: transition neutralization (full-pass residual).
+ *  §7  44px touch targets, hit area only (full-pass residual).
  * ───────────────────────────────────────────────────────────────────────── */
 
 /* ── §1 · Font-weight aliases ────────────────────────────────────────────
@@ -166,3 +168,48 @@ html[data-theme="light"] .gn-research-mode-custom .gn-research-mode-title { colo
  * hard-coded light palette is gone — one rule set, both themes, derived
  * from 08-design-tokens.css like every other modal. The canonical kicker
  * (§3) still covers .gn-fsc-kicker. */
+
+/* ── §6 · Reduced-motion: transition neutralization ─────────────────────
+ * Animations were already neutralized under prefers-reduced-motion (the
+ * global pattern in the head style block: animation-duration 0.01ms on
+ * *, *::before, *::after), but elements kept their full transition
+ * durations. This block mirrors that animation override for transitions,
+ * in this file so the native cascade carries it too. !important is
+ * required for the same reason as §3: transition declarations across the
+ * sheets and inline style blocks would otherwise win on source order.
+ * Known limit (verified 2026-10-12): a universal selector still cannot
+ * beat the ~65 elements whose transitions come from compound class-level
+ * `transition: ... !important` shorthands (03-premium-system, inline
+ * blocks); those need their source rules changed, not a broader override. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── §7 · 44px touch targets (hit area only, no visual change) ──────────
+ * Remaining sub-44px controls from the full-pass audit. Only hit-area
+ * floors change; no padding, font, color, or layout is touched:
+ *  - .log-action-btn was 28-36px tall depending on variant/context.
+ *  - .results-view-btn was 42px (03-premium-system).
+ *  - .gn-vault-close was 34px wide (04-vault-redesign); its used width
+ *    clamps up to the 44px min-width, height is left as designed.
+ *  - .gn-const-node dots are 11-18px visuals; an invisible centered
+ *    ::after expands the hit area to 44x44 (the ::before slot is already
+ *    used by daylight-nexus-pilot.css for the same trick there). The
+ *    dot's own box, and therefore its rendering, is unchanged.
+ * !important: this sheet loads before the later inline <style> blocks
+ * that re-declare some of these controls, so a plain declaration would
+ * silently lose (same situation as §3). */
+.log-action-btn { min-height: 44px !important; }
+.results-view-btn { min-height: 44px !important; }
+.gn-vault-close { min-width: 44px !important; }
+.gn-const-node::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}

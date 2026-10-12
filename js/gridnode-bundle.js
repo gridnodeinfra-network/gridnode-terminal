@@ -2181,12 +2181,17 @@ function ensureWandaDashboard() {
   const markup = '<section id="gnWandaDashboard" aria-label="' + safeText(tx('dashboard.currentProtocolSignals', 'Current protocol signals')) + '">'
     + '<section class="gn-dashboard-mission" id="gnFirstShotMission" aria-labelledby="gnFirstShotMissionTitle"><span class="gn-dashboard-mission-kicker" data-i18n="dashboard.firstShotKicker">START HERE</span><h2 id="gnFirstShotMissionTitle" data-i18n="shots.activateYourGrid">LOG YOUR FIRST SHOT TO ACTIVATE YOUR GRID</h2><p data-i18n="shots.firstShotSub">One shot unlocks the Phase Engine, RESULTS, and your full dashboard.</p><button type="button" onclick="openLogModal()" data-i18n="shots.logYourFirst">LOG YOUR FIRST SHOT</button></section>'
     + '<div class="gn-wanda-grid">'
-    + '<button class="gn-wanda-card" id="gnWandaNext" type="button" onclick="openLogModal()"><span class="gn-wanda-label" data-i18n="dashboard.nextShotLabel">NEXT SHOT</span><b class="gn-wanda-value" id="gnWandaNextValue">' + tx('runtime.logShot', 'LOG SHOT') + '</b><small class="gn-wanda-note" id="gnWandaNextNote" data-i18n="dashboard.logShotStartTimeline">Log a shot to start your timeline</small></button>'
+    /* A1 simplification: card values are DATA, not commands. Empty states used
+       to read LOG SHOT / LOG WEIGHT / SET GOAL — the same commands already on
+       the action row below, the header button, and the FAB — so the grid looked
+       like 4 more buttons to choose between. Cards stay tappable (same targets);
+       only their empty value text now says what is missing. */
+    + '<button class="gn-wanda-card" id="gnWandaNext" type="button" onclick="openLogModal()"><span class="gn-wanda-label" data-i18n="dashboard.nextShotLabel">NEXT SHOT</span><b class="gn-wanda-value" id="gnWandaNextValue">' + tx('dashboard.noShotYet', 'NO SHOT YET') + '</b><small class="gn-wanda-note" id="gnWandaNextNote" data-i18n="dashboard.logShotStartTimeline">Log a shot to start your timeline</small></button>'
 
-    + '<button class="gn-wanda-card info" id="gnWandaWeight" type="button" onclick="openWeightModal()"><span class="gn-wanda-label" data-i18n="dashboard.currentWeight">CURRENT WEIGHT</span><b class="gn-wanda-value" id="gnWandaWeightValue">' + tx('dashboard.logWeight', 'LOG WEIGHT') + '</b><small class="gn-wanda-note" data-i18n="dashboard.latestRecord">Latest record</small></button>'
+    + '<button class="gn-wanda-card info" id="gnWandaWeight" type="button" onclick="openWeightModal()"><span class="gn-wanda-label" data-i18n="dashboard.currentWeight">CURRENT WEIGHT</span><b class="gn-wanda-value" id="gnWandaWeightValue">' + tx('dashboard.notLoggedYet', 'NOT LOGGED') + '</b><small class="gn-wanda-note" data-i18n="dashboard.latestRecord">Latest record</small></button>'
 
-    + '<button class="gn-wanda-card" id="gnWandaRate" type="button" onclick="showPage(\'Results\',document.getElementById(\'navRes\'))"><span class="gn-wanda-label" data-i18n="dashboard.weeklyRateLabel">WEEKLY RATE</span><b class="gn-wanda-value" id="gnWandaRateValue">' + tx('dashboard.keepLogging', 'KEEP LOGGING') + '</b><small class="gn-wanda-note" data-i18n="dashboard.keepLoggingBuilds">Keep logging — data builds over time</small></button>'
-    + '<button class="gn-wanda-card info" id="gnWandaGoal" type="button" onclick="showPage(\'Profile\',document.getElementById(\'navVault\'))"><span class="gn-wanda-label" data-i18n="dashboard.toGoal">TO GOAL</span><b class="gn-wanda-value" id="gnWandaGoalValue">' + tx('dashboard.setGoal', 'SET GOAL') + '</b><small class="gn-wanda-note" data-i18n="dashboard.fromLatestWeight">From latest weight</small></button>'
+    + '<button class="gn-wanda-card" id="gnWandaRate" type="button" onclick="showPage(\'Results\',document.getElementById(\'navRes\'))"><span class="gn-wanda-label" data-i18n="dashboard.weeklyRateLabel">WEEKLY RATE</span><b class="gn-wanda-value" id="gnWandaRateValue">—</b><small class="gn-wanda-note" data-i18n="dashboard.keepLoggingBuilds">Keep logging — data builds over time</small></button>'
+    + '<button class="gn-wanda-card info" id="gnWandaGoal" type="button" onclick="showPage(\'Profile\',document.getElementById(\'navVault\'))"><span class="gn-wanda-label" data-i18n="dashboard.toGoal">TO GOAL</span><b class="gn-wanda-value" id="gnWandaGoalValue">' + tx('dashboard.goalNotSet', 'NO GOAL SET') + '</b><small class="gn-wanda-note" data-i18n="dashboard.fromLatestWeight">From latest weight</small></button>'
     + '</div><div class="gn-wanda-actions"><button type="button" onclick="openLogModal()" data-i18n="runtime.logShot">LOG SHOT</button><button type="button" onclick="openWeightModal()" data-i18n="dashboard.logWeight">LOG WEIGHT</button></div><div class="gn-streak-card" id="gnStreakCard" hidden><b id="gnStreakValue"></b><span id="gnStreakCopy"></span></div></section>';
   header.insertAdjacentHTML('afterend', markup);
   window.GN_I18N?.applyTo?.(document.getElementById('gnWandaDashboard'));
@@ -2251,7 +2256,7 @@ function renderShotStreak(shots, next) {
 
 function renderWandaDashboard({ shots, lastShot, lastWeight, next, phase, weightMetrics, goalGap }) {
   window.GN_I18N?.applyTo?.(document.getElementById('gnWandaDashboard'));
-  setText('gnWandaNextValue', next ? formatDate(next, { month: 'short', day: 'numeric' }) : tx('runtime.logShot', 'LOG SHOT'));
+  setText('gnWandaNextValue', next ? formatDate(next, { month: 'short', day: 'numeric' }) : tx('dashboard.noShotYet', 'NO SHOT YET'));
   let nextNote = tx('dashboard.logShotStartTimeline', 'Log a shot to start your timeline');
   const nextCard = document.getElementById('gnWandaNext');
   nextCard?.classList.remove('attention', 'empty');
@@ -2267,10 +2272,10 @@ function renderWandaDashboard({ shots, lastShot, lastWeight, next, phase, weight
   setText('gnWandaNextNote', nextNote);
   const localizedName = localizedPhaseName(phase);
 
-  setText('gnWandaWeightValue', lastWeight ? Number(lastWeight.weight).toFixed(1) + ' lb' : tx('dashboard.logWeight', 'LOG WEIGHT'));
+  setText('gnWandaWeightValue', lastWeight ? Number(lastWeight.weight).toFixed(1) + ' lb' : tx('dashboard.notLoggedYet', 'NOT LOGGED'));
 
-  setText('gnWandaRateValue', weightMetrics.weeklyAverage === null ? tx('dashboard.keepLogging', 'KEEP LOGGING') : tx('dashboard.weeklyRate', '{value} lb/wk', { value: weightMetrics.weeklyAverage.toFixed(1) }));
-  setText('gnWandaGoalValue', goalGap === null ? tx('dashboard.setGoal', 'SET GOAL') : Math.max(0, goalGap).toFixed(1) + ' lb');
+  setText('gnWandaRateValue', weightMetrics.weeklyAverage === null ? '—' : tx('dashboard.weeklyRate', '{value} lb/wk', { value: weightMetrics.weeklyAverage.toFixed(1) }));
+  setText('gnWandaGoalValue', goalGap === null ? tx('dashboard.goalNotSet', 'NO GOAL SET') : Math.max(0, goalGap).toFixed(1) + ' lb');
 
   document.getElementById('gnWandaWeight')?.classList.toggle('empty', !lastWeight);
 
@@ -2309,7 +2314,9 @@ function renderTodayWeight(lastWeight) {
       val.textContent = w.toFixed(1) + ' ' + unit;
     } catch (_) { val.textContent = '—'; }
   }
-  el.onclick = function() { if (window.GNModules && window.GNModules.showPage) window.GNModules.showPage('Progress'); };
+  /* A1 simplification: page name is 'Results' (nav label PROGRESS). The old
+     'Progress' name matched no page, so this tap was a silent dead end. */
+  el.onclick = function() { if (window.GNModules && window.GNModules.showPage) window.GNModules.showPage('Results', document.getElementById('navRes')); };
 }
 
 /* S6 Phase A: TODAY priority stack — compact last-shot card */
@@ -2364,7 +2371,7 @@ function renderDeltaCards(shots, weights, lastShot, lastWeight) {
             spark.innerHTML = '<polyline points="' + pl + '"/>';
           }
         }
-        wCard.onclick = function(){ if (window.GNModules && window.GNModules.showPage) window.GNModules.showPage('Progress'); };
+        wCard.onclick = function(){ if (window.GNModules && window.GNModules.showPage) window.GNModules.showPage('Results', document.getElementById('navRes')); };
       }
     }
     var sCard = document.getElementById('gnDeltaShot');
@@ -2386,7 +2393,8 @@ function renderDeltaCards(shots, weights, lastShot, lastWeight) {
         var pct = Math.min(100, (elapsed / Math.max(avg, 0.5)) * 100);
         if (fill) fill.style.width = pct + '%';
         if (ghost) ghost.style.left = '100%';
-        sCard.onclick = function(){ if (window.GNModules && window.GNModules.showPage) window.GNModules.showPage('History'); };
+        /* A1: page name is 'Log' (nav label HISTORY); 'History' matched no page. */
+        sCard.onclick = function(){ if (window.GNModules && window.GNModules.showPage) window.GNModules.showPage('Log', document.getElementById('navLog')); };
       }
     }
   } catch (_) {}
@@ -2757,7 +2765,7 @@ if (typeof document !== 'undefined' && !window.__gnFirstShotCelebrateListener) {
 function ensureShotHistoryFilters() {
   const controls = $('shotHistoryControls');
   if (!controls || $('gnShotFilters')) return;
-  controls.insertAdjacentHTML('afterend', `<details class="gn-shot-filters" id="gnShotFilters"><summary><span data-i18n="shots.filterHistory">FILTER SHOT HISTORY</span> <span class="gn-filter-count" id="gnShotFilterCount"></span></summary><div class="gn-shot-filter-grid"><label><span data-i18n="shot.medication">MEDICATION</span><select id="gnShotFilterMedication"><option value="" data-i18n="shots.allMedications">ALL MEDICATIONS</option></select></label><label><span data-i18n="shot.location">LOCATION</span><select id="gnShotFilterSite"><option value="" data-i18n="shots.allLocations">ALL LOCATIONS</option></select></label><label><span data-i18n="shots.dateRange">DATE RANGE</span><select id="gnShotFilterRange"><option value="all" data-i18n="shots.allTime">ALL TIME</option><option value="today" data-i18n="shots.today">TODAY</option><option value="week" data-i18n="shots.thisWeek">THIS WEEK</option><option value="month" data-i18n="shots.thisMonth">THIS MONTH</option></select></label><label><span data-i18n="shots.notesSearch">NOTES SEARCH</span><input id="gnShotFilterQuery" type="search" placeholder="Search notes" data-i18n-placeholder="shots.searchNotes"></label></div><button type="button" class="gn-shot-filter-clear" id="gnShotFilterClear" hidden data-i18n="shots.clearAllFilters">CLEAR ALL FILTERS</button></details>`);
+  controls.insertAdjacentHTML('afterend', `<details class="gn-shot-filters" id="gnShotFilters"><summary><span data-i18n="shots.filterHistory">FILTER SHOT HISTORY</span> <span class="gn-filter-count" id="gnShotFilterCount"></span></summary><div class="gn-shot-filter-grid"><label><span data-i18n="shot.medication">MEDICATION</span><select id="gnShotFilterMedication"><option value="" data-i18n="shots.allMedications">ALL MEDICATIONS</option></select></label><label><span data-i18n="shot.location">LOCATION</span><select id="gnShotFilterSite"><option value="" data-i18n="shots.allLocations">ALL LOCATIONS</option></select></label><label><span data-i18n="shots.dateRange">DATE RANGE</span><select id="gnShotFilterRange"><option value="all" data-i18n="shots.allTime">ALL TIME</option><option value="today" data-i18n="shots.today">TODAY</option><option value="week" data-i18n="shots.thisWeek">THIS WEEK</option><option value="month" data-i18n="shots.thisMonth">THIS MONTH</option></select></label><label><span data-i18n="shots.searchHistory">SEARCH HISTORY</span><input id="gnShotFilterQuery" type="search" placeholder="Search medication, site, or notes" data-i18n-placeholder="shots.searchHistoryPlaceholder"></label></div><button type="button" class="gn-shot-filter-clear" id="gnShotFilterClear" hidden data-i18n="shots.clearAllFilters">CLEAR ALL FILTERS</button></details>`);
   window.GN_I18N?.applyTo?.($('gnShotFilters'));
   $('gnShotFilters')?.addEventListener('input', event => {
     const id = event.target.id;
@@ -2770,24 +2778,57 @@ function ensureShotHistoryFilters() {
   $('gnShotFilterClear')?.addEventListener('click', () => { moduleState.shotFilters = { medication: '', site: '', range: 'all', query: '' }; renderShots(); });
 }
 
-function filterShots(records) {
+function shotFilterCutoff() {
+  const range = moduleState.shotFilters.range;
+  if (range === 'today') { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); }
+  if (range === 'week') { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - 6); return d.getTime(); }
+  if (range === 'month') { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - 29); return d.getTime(); }
+  return null;
+}
+
+/* A1 simplification: one predicate for SHOTS and for the ALL timeline, and the
+   search box now matches what users actually remember — medication, site, or
+   dose — not only the free-text notes field (the old "NOTES SEARCH" label hid
+   that limitation and made most searches return nothing). */
+function shotMatchesFilters(record) {
   const filters = moduleState.shotFilters;
   const query = filters.query.trim().toLowerCase();
-  let cutoff = null;
-  if (filters.range === 'today') {
-    const d = new Date(); d.setHours(0,0,0,0); cutoff = d.getTime();
-  } else if (filters.range === 'week') {
-    const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - 6); cutoff = d.getTime();
-  } else if (filters.range === 'month') {
-    const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - 29); cutoff = d.getTime();
+  const cutoff = shotFilterCutoff();
+  if (filters.medication && normalizeMedicationId(record.med) !== filters.medication) return false;
+  if (filters.site && (record.site || '') !== filters.site) return false;
+  if (cutoff && new Date(record.date).getTime() < cutoff) return false;
+  if (query) {
+    const haystack = [
+      record.notes || '',
+      medicationLabel(record.med) || '',
+      record.site || '',
+      (typeof zoneLabel === 'function' && zoneLabel(record.site)) || '',
+      record.dose != null ? String(record.dose) : ''
+    ].join(' ').toLowerCase();
+    if (!haystack.includes(query)) return false;
   }
-  return records.filter(record => {
-    if (filters.medication && normalizeMedicationId(record.med) !== filters.medication) return false;
-    if (filters.site && (record.site || '') !== filters.site) return false;
-    if (cutoff && new Date(record.date).getTime() < cutoff) return false;
-    if (query && !String(record.notes || '').toLowerCase().includes(query)) return false;
-    return true;
-  });
+  return true;
+}
+
+function filterShots(records) {
+  return records.filter(shotMatchesFilters);
+}
+
+function historyFiltersActive() {
+  return Object.values(moduleState.shotFilters).some(value => value && value !== 'all');
+}
+
+/* Weight rows in the ALL timeline honour the same search/range, so a filtered
+   ALL view never mixes filtered shots with unfiltered weights. Medication and
+   site filters are shot-only concepts and exclude weight rows while active. */
+function weightMatchesFilters(record) {
+  const filters = moduleState.shotFilters;
+  if (filters.medication || filters.site) return false;
+  const cutoff = shotFilterCutoff();
+  if (cutoff && new Date(record.date).getTime() < cutoff) return false;
+  const query = filters.query.trim().toLowerCase();
+  if (query && !['weight', String(record.weight ?? ''), record.notes || ''].join(' ').toLowerCase().includes(query)) return false;
+  return true;
 }
 
 function renderShotFilterOptions(records) {
@@ -2815,11 +2856,15 @@ function renderShots() {
   const shotsChrome = historyType === 'shots';
   setDisplay('shotHistoryControls', shotsChrome);
   setDisplay('shotHistoryHelper', shotsChrome);
+  /* A1: the filter bar belongs to SHOTS and to ALL (the default view). Before,
+     it only existed inside SHOTS, so finding a past record from the default
+     ALL view meant switching subviews first — an extra step with no signpost.
+     WEIGHT keeps its own simple list, so filters stay hidden there. */
+  if (historyType !== 'weight') ensureShotHistoryFilters();
   const existingFilters = $('gnShotFilters');
-  if (existingFilters) existingFilters.hidden = !shotsChrome;
+  if (existingFilters) existingFilters.hidden = historyType === 'weight';
   if (historyType === 'weight') { renderWeightHistory(); return; }
-  if (historyType === 'all') { renderAllHistory(); return; }
-  ensureShotHistoryFilters();
+  if (historyType === 'all') { renderShotFilterOptions(getAllShots()); renderAllHistory(); return; }
   const list = $('logList');
   if (!list) return;
   const all = getAllShots();
@@ -2993,7 +3038,15 @@ function renderConstellation() {
 function renderAllHistory() {
   const list = $('logList');
   if (!list) return;
-  const events = buildTimeline();
+  const allEvents = buildTimeline();
+  const events = historyFiltersActive()
+    ? allEvents.filter(event => event.type === 'shot' ? shotMatchesFilters(event.record) : weightMatchesFilters(event.record))
+    : allEvents;
+  if (!events.length && allEvents.length && historyFiltersActive()) {
+    list.innerHTML = `<div class="empty"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${tx('shots.noFilterMatch', 'NO SHOTS MATCH THESE FILTERS.')}</b><br><button class="btn-full btn-secondary empty-cta" type="button" id="gnShotFilterEmptyClear">${tx('shots.clearFilters', 'CLEAR FILTERS')}</button></div>`;
+    $('gnShotFilterEmptyClear')?.addEventListener('click', () => { moduleState.shotFilters = { medication: '', site: '', range: 'all', query: '' }; renderShots(); });
+    return;
+  }
   if (!events.length) {
     list.innerHTML = `<div class="empty gn-first-run-card"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${tx('history.allEmptyTitle', 'NOTHING LOGGED YET')}</b><span class="gn-first-run-sub">${tx('history.allEmptySub', 'Log a shot or your weight to start your timeline.')}</span><br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>${tx('runtime.logShot', 'LOG SHOT')}</button> <button class="btn-full btn-secondary empty-cta" type="button" onclick="openWeightModal()">${tx('history.logWeight', 'LOG WEIGHT')}</button></div>`;
     return;
@@ -3475,6 +3528,20 @@ function openLogModal(options = {}) {
     if ($('sWt')) $('sWt').value = '';
     if ($('sNotes')) $('sNotes').value = '';
     qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = false; });
+  }
+  /* A1 simplification (recognition over memorization): if no site is staged
+     yet — neither from the scanner nor a draft/edit (both set selectedLocation
+     before this point) — pre-stage the most recent shot's site. Step 2 then
+     opens with a site already picked; the user can change it in the same
+     picker, or just tap LOG SHOT. Saves the mode-tab + zone taps on the
+     common repeat shot. No site is ever invented: with no prior shot the
+     picker still starts empty and saveShot() still requires a site. */
+  if (!moduleState.selectedLocation) {
+    try {
+      const lastSite = getAllShots().filter(item => !item.archived && item.site)
+        .sort((a, b) => String(b.date).localeCompare(String(a.date)))[0]?.site;
+      if (lastSite) moduleState.selectedLocation = lastSite;
+    } catch (_) {}
   }
   setText('modalSelectedLocation', zoneLabel(moduleState.selectedLocation) || tx('shot.noInjectionSite', 'No injection site selected'));
   installModalZonePicker();
@@ -4426,8 +4493,6 @@ function ensureResultsHeroOrder() {
     '#gnPhaseHeatmap',
     '.results-card.summary',
     '#measurementTrendCard',
-    '.results-card.appetite',
-    '.results-card.energy',
     '.results-card.effects',
     '.results-card.continuity',
     '.gn-reference-pending',
@@ -4439,8 +4504,6 @@ function ensureResultsHeroOrder() {
     '#gnWeeklyReport',
     '.results-card.summary',
     '#measurementTrendCard',
-    '.results-card.appetite',
-    '.results-card.energy',
     '.results-card.effects',
     '.results-card.continuity',
     '.gn-reference-pending',
@@ -4467,12 +4530,17 @@ function ensureResultsEmptyCtas() {
     btn.addEventListener('click', onClick);
     host.appendChild(btn);
   };
+  /* A1 simplification: on an empty PROGRESS screen the weekly report already
+     offers LOG SHOT + LOG WEIGHT, and the FAB + page header offer the same.
+     This helper used to add up to seven more identical CTAs (LOG SHOT alone
+     appeared on the summary, appetite, energy, and side-effect empties), so
+     the screen read as a wall of duplicate buttons. Keep one CTA per distinct
+     job: first weight, first shot, and measurements (a different action).
+     Appetite/energy empties get no CTA at all — no flow in the app records
+     appetite or energy directly, so a LOG SHOT button there promised a
+     result it cannot produce. */
   addCta('weightTrendEmpty', 'results.weightTrendEmptyCta', 'LOG YOUR FIRST WEIGHT', () => openWeightModal());
-  addCta('weightRecordsEmpty', 'results.logWeightCta', 'LOG WEIGHT', () => openWeightModal(), true);
   addCta('resultsSummaryEmpty', 'shots.emptyShotsCta', 'LOG YOUR FIRST SHOT', () => openLogModal());
-  addCta('appetiteTrendEmpty', 'runtime.logShot', 'LOG SHOT', () => openLogModal(), true);
-  addCta('energyTrendEmpty', 'runtime.logShot', 'LOG SHOT', () => openLogModal(), true);
-  addCta('sideEffectTrendEmpty', 'runtime.logShot', 'LOG SHOT', () => openLogModal(), true);
   addCta('measurementTrendEmpty', 'results.measurementsEmptyCta', 'OPEN VAULT', () => showPage('Profile', document.getElementById('navVault')), true);
 }
 document.addEventListener('gn:langchange', () => { try { ensureResultsEmptyCtas(); } catch (_) {} });
@@ -4895,8 +4963,12 @@ function drawTrendArrow(canvas, weights, goal) {
   const yFor = value => top + (max - Number(value)) / span * plotHeight;
   const delta = values.at(-1) - values.at(-2);
   const arrow = delta < -0.05 ? '▼' : delta > 0.05 ? '▲' : '►';
+  /* Chart grammar token — canvas-literal mirror of --chart-estimate
+     (#ffd166), same pattern as the CHART constants in drawWeightTrendChart:
+     a flat delta is an estimate-state reading, not a recorded direction. */
+  const ESTIMATE = '#ffd166'; /* --chart-estimate */
   context.setTransform(scale, 0, 0, scale, 0, 0);
-  context.fillStyle = delta < -0.05 ? '#00ff88' : delta > 0.05 ? '#FF5B5B' : '#ffd700';
+  context.fillStyle = delta < -0.05 ? '#00ff88' : delta > 0.05 ? '#FF5B5B' : ESTIMATE;
   context.font = '700 14px Share Tech Mono, monospace';
   context.textAlign = 'left';
   context.fillText(arrow, Math.min(width - 16, xFor(values.length - 1) + 7), yFor(values.at(-1)) + 5);
@@ -4911,7 +4983,8 @@ function renderTrendLists(shots) {
       ? effects.slice(-6).reverse().map(effect => '<div class="results-list-row"><b>' + safeText(sideEffectLabel(effect)) + '</b><span>' + tx('runtime.loggedObservation', 'logged observation') + '</span></div>').join('')
       : '';
   }
-  setDisplay('appetiteTrendEmpty', true); setDisplay('energyTrendEmpty', true);
+  /* Appetite/energy trend cards removed (full-pass residual): no code
+     anywhere wrote into them, so they rendered a permanent empty state. */
 }
 
 function drawCanvasChart(canvas, values, color) {
@@ -5234,15 +5307,14 @@ function ensureLabFoundations() {
     <div class="gn-foundation-grid">
       <button type="button" class="gn-foundation-tile" data-lab-focus="calculators"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-g"><svg><use href="#gn-biometric-gauge"></use></svg></span></span><b data-i18n="lab.calculators">CALCULATORS</b><small data-i18n="lab.calculatorsHelp">Focused educational tools</small></button>
       <button type="button" class="gn-foundation-tile active" data-lab-focus="research"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-lab-vessel"></use></svg></span></span><b data-i18n="lab.researchPeptides">RESEARCH PEPTIDES</b><small data-i18n="lab.researchPeptidesHelp">Personal record tracking</small></button>
-      <button type="button" class="gn-foundation-tile" data-lab-focus="inventory"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-g"><svg><use href="#gn-inventory-core"></use></svg></span></span><b data-i18n="lab.inventory">INVENTORY</b><small data-i18n="lab.inventoryHelp">Supply records + deduction</small></button>
+      <button type="button" class="gn-foundation-tile" data-lab-focus="inventory"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-g"><svg><use href="#gn-inventory-core"></use></svg></span></span><b data-i18n="lab.savedInventory">SAVED INVENTORY</b><small data-i18n="lab.inventoryHelp">Supply records + deduction</small></button>
       <button type="button" class="gn-foundation-tile" data-lab-focus="devices"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-y"><svg><use href="#gn-vault-core"></use></svg></span></span><b data-i18n="lab.deviceVault">DEVICE VAULT</b><small data-i18n="lab.deviceVaultHelp">Identity, lifecycle, status</small></button>
       <button type="button" class="gn-foundation-tile" data-lab-focus="ledger"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-r"><svg><use href="#gn-timeline-node"></use></svg></span></span><b data-i18n="lab.eventLedger">EVENT LEDGER</b><small data-i18n="lab.eventLedgerHelp">Source-aware history</small></button>
     </div>
     <details class="gn-foundation-section" open id="gnResearchSection"><summary><span data-i18n="lab.researchPeptides">RESEARCH PEPTIDES</span><em data-i18n="research.organize">ORGANIZE · OBSERVE · REVIEW</em></summary>
       <div class="gn-research-notice gn-research-notice-compact"><button type="button" class="gn-research-info-toggle" aria-expanded="false" aria-controls="gnResearchNoticeBody" data-i18n-aria-label="research.noticeToggleAria"><span aria-hidden="true">?</span></button><strong data-i18n="research.noticeTitle">USER-ENTERED RESEARCH RECORDS</strong><span class="gn-research-notice-body" id="gnResearchNoticeBody" hidden data-i18n="research.noticeBody">Some compounds above have FDA-approved indications in specific clinical contexts. This organizer does not distinguish regulated from research use. All records are user-entered. Verify independently.</span></div>
-      <div class="gn-research-library">${RESEARCH_LIBRARY.map(({ category, names, context }) => { const catKey = RESEARCH_CATEGORY_KEYS[category]; const ctxKey = context === 'RESEARCH-FOCUSED RECORDS · REGULATORY STATUS IS NOT VERIFIED HERE.' ? 'lab.researchKicker' : 'lab.mixedResearchContext'; return `<div class="gn-research-group"><span>${safeText(catKey ? tx(catKey, category) : category)}</span><small class="gn-research-context">${safeText(tx(ctxKey, context))}</small><div>${names.map(name => `<button type="button" data-research-name="${safeText(name)}" data-research-category="${safeText(catKey)}">${safeText(name)}</button>`).join('')}</div></div>`; }).join('')}<div class="gn-research-group gn-research-custom-group"><span data-i18n="lab.customEntry">CUSTOM ENTRY</span><small class="gn-research-context" data-i18n="lab.customEntryHelp">USER-ENTERED RECORD · REGULATORY STATUS IS NOT VERIFIED HERE.</small><div><button type="button" class="gn-research-custom-link" data-research-name="" data-research-category="lab.customResearch" data-i18n="research.customEntryLink">¿Necesitas un compuesto personalizado? → Crear entrada personalizada</button></div></div>
+      <div class="gn-research-library">${RESEARCH_LIBRARY.map(({ category, names, context }) => { const catKey = RESEARCH_CATEGORY_KEYS[category]; const ctxKey = context === 'RESEARCH-FOCUSED RECORDS · REGULATORY STATUS IS NOT VERIFIED HERE.' ? 'lab.researchKicker' : 'lab.mixedResearchContext'; return `<div class="gn-research-group"><span>${safeText(catKey ? tx(catKey, category) : category)}</span><small class="gn-research-context">${safeText(tx(ctxKey, context))}</small><div>${names.map(name => `<button type="button" data-research-name="${safeText(name)}" data-research-category="${safeText(catKey)}">${safeText(name)}</button>`).join('')}</div></div>`; }).join('')}<div class="gn-research-group gn-research-custom-group"><span data-i18n="lab.customEntry">CUSTOM ENTRY</span><small class="gn-research-context" data-i18n="lab.customEntryHelp">USER-ENTERED RECORD · REGULATORY STATUS IS NOT VERIFIED HERE.</small><div><button type="button" class="gn-research-custom-link" data-research-name="" data-research-category="lab.customResearch" data-i18n="research.customEntryLink">Need a custom compound? → Create custom entry</button></div></div>
       <div class="gn-custom-warning" id="gnCustomWarning" data-i18n="research.customWarning">⚠ CUSTOM ENTRIES ARE NOT VERIFIED AGAINST THE LIBRARY. Verify the name and category independently.</div></div>
-      <div class="gn-research-disclaimer" data-i18n="research.noticeBody">Some compounds above have FDA-approved indications in specific clinical contexts. This organizer does not distinguish regulated from research use. All records are user-entered. Verify independently.</div>
       <div class="gn-research-mode" id="gnResearchMode" data-mode="pick" style="display:none">
         <div class="gn-research-mode-chips"><span class="gn-research-chip" id="gnModeLibraryChip" data-i18n="research.modeLibrarySelected">BIBLIOTECA · SELECCIONADA</span><span class="gn-research-chip" id="gnModeCategoryChip" data-i18n="research.modeCategoryAssigned">CATEGORÍA · ASIGNADA</span></div>
         <div class="gn-research-mode-custom"><span class="gn-research-mode-title" data-i18n="research.modeCustomTitle">CREAR ENTRADA PERSONALIZADA</span><button type="button" class="gn-research-back" id="gnModeBack" onclick="researchBackToLibrary()" data-i18n="research.backToLibrary">← Volver a la biblioteca</button></div>
@@ -5803,11 +5875,12 @@ function renderGnHapticsState() {
   const supported = window.gnHaptics?.supported?.();
   const enabled = window.gnHaptics?.enabled?.();
   if (!supported) {
-    stateEl.textContent = '·';
+    stateEl.textContent = '—';
     if (helpEl) helpEl.textContent = tx('vault.hapticsUnsupported', 'Not supported on this device.');
     return;
   }
-  stateEl.textContent = enabled ? '◆' : '◇';
+  /* A1: plain ON / OFF words instead of ◆ / ◇ glyphs the user had to decode. */
+  stateEl.textContent = enabled ? tx('vault.hapticsStateOn', 'ON') : tx('vault.hapticsStateOff', 'OFF');
   if (helpEl) helpEl.textContent = enabled ? tx('vault.hapticsOn', 'ON — save and lock actions vibrate briefly.') : tx('vault.hapticsOff', 'OFF — silent confirmation. Tap to enable.');
 }
 
@@ -7524,6 +7597,12 @@ function injectStableStyles() {
     .gn-auth-secondary:hover{border-color:#00d4ff;background:rgba(0,212,255,.09)}
     .gn-auth-secondary[aria-expanded="true"]{border-color:#00d4ff;color:#fff;background:rgba(0,212,255,.1)}
     .gn-legal-modal-title{margin:0 0 16px;color:#00d4ff;font:700 .66rem var(--font-d,monospace);letter-spacing:2px}
+    .gn-legal-intro{margin:-8px 0 16px;color:var(--text-2,#b7c7d3);font:.68rem/1.55 var(--font-m,monospace)}
+    .gn-entry-label{margin:16px 0 2px;color:var(--brand-cyan,#00d4ff);font:700 var(--kicker-size,.62rem) var(--font-m,monospace);letter-spacing:2px;text-align:center}
+    .gn-entry-local{width:100%;min-height:56px;margin-top:14px;padding:10px 12px;border:1px solid var(--border-cyan,rgba(0,212,255,.4));background:rgba(0,212,255,.05);color:var(--brand-cyan,#00d4ff);border-radius:var(--radius-control,3px);cursor:pointer;font:700 .72rem var(--font-d,monospace);letter-spacing:1.6px}
+    .gn-entry-local:hover{border-color:var(--brand-cyan,#00d4ff);background:rgba(0,212,255,.1)}
+    .gn-entry-local .gn-quiet-sub{display:block;margin-top:4px;color:var(--text-2,#b7c7d3);font:500 .58rem var(--font-m,monospace);letter-spacing:.6px}
+    .gn-entry-key{color:var(--text-1,#eef6f8)}
     #login>div[hidden]{display:none!important}
     .gn-legal-modal{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(2,2,8,.82);backdrop-filter:blur(8px)}
     .gn-legal-modal.active{display:flex}
@@ -7674,6 +7753,7 @@ function authShell() {
     <div class="gn-legal-modal" id="gnLegalModal" hidden>
       <div class="gn-legal-modal-card" role="dialog" aria-modal="true" aria-labelledby="gnLegalModalTitle">
         <h2 class="gn-legal-modal-title" id="gnLegalModalTitle" data-i18n="legal.modalTitle">BEFORE YOU ENTER</h2>
+      <p class="gn-legal-intro" data-i18n="legal.modalIntro">Two quick checks before you enter. Nothing is sent or synced until you agree.</p>
         <label class="gn-legal-check"><input type="checkbox" id="gnLegalModalTerms"><span data-i18n="legal.modalTerms">I am 18 or older and I accept the <button type="button" class="gn-legal-link" id="gnLegalModalTermsLink" data-i18n="footer.termsOfService">TERMS OF SERVICE</button> and <button type="button" class="gn-legal-link" id="gnLegalModalPrivacyLink" data-i18n="footer.privacyPolicy">PRIVACY POLICY</button>.</span></label>
         <label class="gn-legal-check"><input type="checkbox" id="gnLegalModalResearch"><span data-i18n="legal.modalResearch">I understand GRID//NODE is a personal tracking tool, not medical advice.</span></label>
         <button type="button" class="gn-legal-under18" id="gnLegalModalUnder18" data-i18n="legal.under18">I AM UNDER 18</button>
@@ -7711,6 +7791,7 @@ function authShell() {
   <div class="gn-legal-modal" id="gnLegalModal" hidden>
     <div class="gn-legal-modal-card" role="dialog" aria-modal="true" aria-labelledby="gnLegalModalTitle">
       <h2 class="gn-legal-modal-title" id="gnLegalModalTitle" data-i18n="legal.modalTitle">BEFORE YOU ENTER</h2>
+      <p class="gn-legal-intro" data-i18n="legal.modalIntro">Two quick checks before you enter. Nothing is sent or synced until you agree.</p>
       <label class="gn-legal-check"><input type="checkbox" id="gnLegalModalTerms"><span data-i18n="legal.modalTerms">I am 18 or older and I accept the <button type="button" class="gn-legal-link" id="gnLegalModalTermsLink" data-i18n="footer.termsOfService">TERMS OF SERVICE</button> and <button type="button" class="gn-legal-link" id="gnLegalModalPrivacyLink" data-i18n="footer.privacyPolicy">PRIVACY POLICY</button>.</span></label>
       <label class="gn-legal-check"><input type="checkbox" id="gnLegalModalResearch"><span data-i18n="legal.modalResearch">I understand GRID//NODE is a personal tracking tool, not medical advice.</span></label>
       <button type="button" class="gn-legal-under18" id="gnLegalModalUnder18" data-i18n="legal.under18">I AM UNDER 18</button>
@@ -7759,13 +7840,22 @@ function renderWelcomeView() {
   const expand = gnExpandPassword;
   gnExpandPassword = false;
   return `
-  <h2 class="gn-auth-view-title" data-i18n="otp.welcomeBack">WELCOME BACK</h2>
-  <p class="gn-auth-view-sub" data-i18n="otp.welcomeSub">Sign in to get to your grid.</p>
+  <h2 class="gn-auth-view-title" data-i18n="otp.chooseTitle">HOW DO YOU WANT TO ENTER?</h2>
+  <p class="gn-auth-view-sub" data-i18n="otp.chooseSub">Three ways in. Pick one — you can switch later in VAULT.</p>
   <div id="gnOtpNoAccount"></div>
+  <div class="gn-entry-label" id="gnGoogleLabel" data-i18n="otp.googleLabel">GOOGLE · SYNC ACROSS DEVICES</div>
+  <div class="gn-google-button-shell" id="gnGoogleButtonMount" data-i18n-aria-label="auth.continueWithGoogle" aria-label="Continue with Google"></div>
+  <div class="gn-auth-divider"><span data-i18n="otp.emailLabel">EMAIL CODE · RETURNING ACCOUNTS</span></div>
   <input class="gn-auth-field" id="gnOtpEmail" type="email" inputmode="email" autocomplete="email" data-i18n-ph="otp.emailPlaceholder" placeholder="name@email.com" data-i18n-aria-label="auth.emailAddress" aria-label="Email">
   <button class="gn-auth-primary gn-auth-primary-compact" id="gnSendCodeBtn" type="button"><span data-i18n="otp.sendCode">SEND ME A SIGN-IN CODE</span></button>
-  <div class="gn-auth-divider"><span data-i18n="otp.orContinueWithEmail">or</span></div>
-  <div class="gn-google-button-shell" id="gnGoogleButtonMount" data-i18n-aria-label="auth.continueWithGoogle" aria-label="Continue with Google"></div>
+  <button class="gn-entry-local" id="gnDeviceBtn" type="button">
+    <span data-i18n="otp.localTitle">CONTINUE ON THIS DEVICE</span>
+    <span class="gn-quiet-sub" data-i18n="otp.localSub">Start now, no account. Your data stays on this device.</span>
+  </button>
+  <button class="gn-auth-quiet gn-entry-key" id="gnNewHereBtn" type="button">
+    <span data-i18n="otp.newHereNodeKey">New to GRID//NODE? ENTER NODE KEY</span>
+    <span class="gn-quiet-sub" data-i18n="otp.keySub">Invite-only beta — enter the key you were given.</span>
+  </button>
   <div class="gn-auth-links" style="justify-content:center;margin-top:10px">
     <button class="gn-auth-link" id="gnMoreOptionsToggle" type="button" aria-expanded="false"><span data-i18n="otp.moreSignInOptions">More sign-in options</span></button>
   </div>
@@ -7776,12 +7866,6 @@ function renderWelcomeView() {
     <button class="gn-auth-quiet" id="gnPasswordToggle" type="button">
       <span data-i18n="otp.usePasswordInstead">Use password instead</span>
     </button>
-    <button class="gn-auth-quiet" id="gnDeviceBtn" type="button">
-      <span data-i18n="auth.useLocally">USE LOCALLY</span>
-    </button>
-    <div class="gn-auth-links" style="justify-content:center;margin-top:8px">
-      <button class="gn-auth-link" id="gnNewHereBtn" type="button"><span data-i18n="otp.newHereNodeKey">New to GRID//NODE? ENTER NODE KEY</span></button>
-    </div>
   </div>
   <div id="gnPasswordBlock" ${expand ? '' : 'hidden'}>
     <form id="gnAuthForm" novalidate>
@@ -8452,10 +8536,15 @@ async function renderGoogleIdentityButton() {
   const host = $('gnGoogleButtonMount');
   if (!host) return;
   host.style.display = 'none';
+  /* AGENT2 full-pass: the GOOGLE label above the mount must never dangle
+   * without a button — it follows the mount's visibility exactly. */
+  const gnGoogleLabel = $('gnGoogleLabel');
+  if (gnGoogleLabel) gnGoogleLabel.style.display = 'none';
   const enabled = await isCloudProviderEnabled('google');
   if (!host.isConnected) return;
   if (!enabled) return;
   host.style.removeProperty('display');
+  if (gnGoogleLabel) gnGoogleLabel.style.removeProperty('display');
   try {
     await loadGoogleIdentityLibrary();
     if (!host.isConnected || !window.google?.accounts?.id) throw new Error('GOOGLE_LIBRARY_UNAVAILABLE');
@@ -8484,6 +8573,8 @@ async function renderGoogleIdentityButton() {
   } catch (error) {
     console.warn('[GRID//NODE Google identity]', error);
     host.style.display = 'none';
+    const gnGoogleLabelErr = $('gnGoogleLabel');
+    if (gnGoogleLabelErr) gnGoogleLabelErr.style.display = 'none';
     setAuthMessage(tx('auth.googleCouldNotLoad', '// GOOGLE SIGN-IN COULD NOT LOAD — USE EMAIL OR CONTINUE LOCALLY'), true);
   }
 }
@@ -9225,7 +9316,7 @@ async function startGridNode() {
     if (i < messages.length - 1) {
       line.classList.remove('boot-typing');
       tag.textContent = '[ OK ] ' + status;
-      if (!reduced) await new Promise(r => window.setTimeout(r, 90)); /* v0.15.45: was 140 */
+      if (!reduced) await new Promise(r => window.setTimeout(r, 50)); /* AGENT2 full-pass: snappier boot, tap-to-skip unchanged */
     }
   }
   // completion: kicker ONLINE + cyan->Mars Red pulse on the emblem
@@ -9233,7 +9324,7 @@ async function startGridNode() {
   const emblem = document.querySelector('.gn-b2b-symbol');
   if (emblem && !reduced && !bootSkipped) {
     emblem.classList.add('boot-complete-pulse');
-    await new Promise(r => window.setTimeout(r, 500)); /* v0.15.45: was 750 */
+    await new Promise(r => window.setTimeout(r, 250)); /* AGENT2 full-pass: snappier boot, tap-to-skip unchanged */
     emblem.classList.remove('boot-complete-pulse');
   }
   if (bootEl) bootEl.removeEventListener('pointerdown', markBootSkipped);

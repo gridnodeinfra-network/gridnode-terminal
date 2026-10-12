@@ -481,10 +481,10 @@ html[data-theme="light"] .gn-whatsnew-close {
 }
 .gn-chart-legend .sw-cyan   { background: var(--chart-actual); color: var(--chart-actual); }
 .gn-chart-legend .sw-red    { background: var(--chart-danger); color: var(--chart-danger); }
-.gn-chart-legend .sw-yellow { background: #ffd700; color: #ffd700; }
+.gn-chart-legend .sw-yellow { background: var(--chart-estimate); color: var(--chart-estimate); }
 /* DOSE = recorded event (grammar: cyan), white inner ring mirrors the canvas marker */
 .gn-chart-legend .sw-dose   { background: var(--chart-actual); color: var(--chart-actual); border-radius: 2px; border: 1px solid #fff; box-shadow: 0 0 6px var(--chart-actual); }
-.gn-chart-legend .sw-green  { background: #00ff88; color: #00ff88; }
+.gn-chart-legend .sw-green  { background: var(--success); color: var(--success); }
 .gn-chart-legend .sw-goal   { background: transparent; color: var(--chart-plan); border: 1px dashed var(--chart-plan); box-shadow: none; border-radius: 0; height: 0; width: 14px; }
 
 /* ── Peptide Evidence Phase Curve (2026-08-10) ── */
@@ -509,7 +509,7 @@ html[data-theme="light"] .gn-peptide-tip { background: rgba(255, 255, 255, .96);
   border: 1px solid rgba(255, 255, 255, .14); color: #8295a0; background: rgba(255, 255, 255, .05);
 }
 .gn-evidence-chip[data-state="pk"] { color: #00ff88; border-color: rgba(0, 255, 136, .45); background: rgba(0, 255, 136, .08); }
-.gn-evidence-chip[data-state="pd"] { color: #ffd700; border-color: rgba(255, 215, 0, .45); background: rgba(255, 215, 0, .08); }
+.gn-evidence-chip[data-state="pd"] { color: var(--chart-estimate); border-color: rgba(255, 209, 102, .45); background: rgba(255, 209, 102, .08); }
 .gn-evidence-chip[data-state="iv"] { color: #5bd6c5; border-color: rgba(91, 214, 197, .45); background: rgba(91, 214, 197, .08); }
 .gn-evidence-chip[data-state="generic"] { color: #00d4ff; border-color: rgba(0, 212, 255, .4); background: rgba(0, 212, 255, .08); }
 .gn-peptide-summary {
@@ -537,11 +537,13 @@ html[data-theme="light"] .gn-peptide-overlay-card { background: #f7f5ee; color: 
 .gn-peptide-overlay-title { margin: 4px 0 6px; font: 800 1.05rem var(--font-d, monospace); letter-spacing: 1.2px; color: var(--text, #eef6f8); }
 html[data-theme="light"] .gn-peptide-overlay-title { color: #0e1a22; }
 .gn-peptide-overlay-close {
-  font: 700 .56rem var(--font-m, "Share Tech Mono", monospace); letter-spacing: 1.4px; color: #ff5577;
-  background: rgba(255, 85, 119, .08); border: 1px solid rgba(255, 85, 119, .4); border-radius: 8px;
+  font: 700 .56rem var(--font-m, "Share Tech Mono", monospace); letter-spacing: 1.4px; color: var(--brand-red-hi);
+  background: rgba(255, 91, 91, .08); border: 1px solid rgba(255, 91, 91, .4); border-radius: 8px;
   padding: 7px 10px; cursor: pointer; text-transform: uppercase; white-space: nowrap;
 }
-.gn-peptide-overlay-close:hover, .gn-peptide-overlay-close:focus-visible { background: rgba(255, 85, 119, .16); outline: none; }
+.gn-peptide-overlay-close:hover, .gn-peptide-overlay-close:focus-visible { background: rgba(255, 91, 91, .16); outline: none; }
+/* A4: light theme — brand-red-hi is a dark-surface tint; use the app light error tone (03 --text-error). */
+html[data-theme="light"] .gn-peptide-overlay-close { color: #a51d36; border-color: rgba(165, 29, 54, .4); background: rgba(165, 29, 54, .08); }
 .gn-peptide-overlay-scroll { overflow-y: auto; padding: 14px 18px 18px; }
 .gn-peptide-overlay-grid { display: grid; grid-template-columns: minmax(0, 1fr) 160px; gap: 14px; }
 .gn-peptide-big-block, .gn-peptide-ring-block { min-width: 0; }
@@ -562,13 +564,13 @@ html[data-theme="light"] .gn-peptide-dossier { background: rgba(0, 0, 0, .03); b
 .gn-peptide-dossier-line { font: 600 .56rem/1.5 var(--font-m, "Share Tech Mono", monospace); letter-spacing: .5px; color: #c7d6db; margin: 3px 0; }
 html[data-theme="light"] .gn-peptide-dossier-line { color: #33464f; }
 .gn-peptide-dossier-line b { color: #8295a0; font-weight: 700; }
-.gn-peptide-dossier-sub { font: 700 .54rem var(--font-m, "Share Tech Mono", monospace); letter-spacing: 1.6px; color: #ffd700; margin: 9px 0 4px; }
+.gn-peptide-dossier-sub { font: 700 .54rem var(--font-m, "Share Tech Mono", monospace); letter-spacing: 1.6px; color: var(--chart-estimate); margin: 9px 0 4px; }
 .gn-peptide-dossier-note { font: 600 .54rem/1.55 var(--font-m, "Share Tech Mono", monospace); letter-spacing: .3px; color: #aebfc6; margin: 2px 0; }
 html[data-theme="light"] .gn-peptide-dossier-note { color: #44565e; }
 .gn-peptide-dossier-src { display: flex; align-items: center; min-height: 44px; padding: 4px 0; font: 600 .54rem/1.5 var(--font-m, "Share Tech Mono", monospace); letter-spacing: .3px; color: #5bd6c5; text-decoration: none; margin: 2px 0; word-break: break-word; }
 .gn-peptide-dossier-src:hover { text-decoration: underline; }
-.gn-peptide-animal { margin-top: 12px; padding: 10px 14px; border: 1px dashed rgba(255, 140, 0, .4); border-radius: 10px; }
-.gn-peptide-animal-head { font: 700 .54rem var(--font-m, "Share Tech Mono", monospace); letter-spacing: 1.4px; color: #ff8c00; margin-bottom: 6px; }
+.gn-peptide-animal { margin-top: 12px; padding: 10px 14px; border: 1px dashed rgba(255, 209, 102, .4); border-radius: 10px; }
+.gn-peptide-animal-head { font: 700 .54rem var(--font-m, "Share Tech Mono", monospace); letter-spacing: 1.4px; color: var(--brand-amber); margin-bottom: 6px; }
 .gn-peptide-animal canvas { display: block; width: 100%; height: 64px; }
 .gn-peptide-lanes { margin-top: 14px; }
 .gn-peptide-lanes-head { font: 800 .6rem var(--font-d, monospace); letter-spacing: 1.8px; color: #00d4ff; margin-bottom: 8px; }
@@ -650,10 +652,12 @@ html[data-theme="light"] .gn-wn-cat[data-cat="accessibility"] .gn-wn-cat-tag { b
    Unified 2026-10-11: --type-helper moved to css/native/08-design-tokens.css
    (.78rem, the readability-floor cascade winner); this block defers to it. */
 :root {
-  --ctl-h: 46px;              /* control height / touch target */
+  /* A4 2026-10-12: --ctl-h (contract 48px) and --radius-card (contract 16px)
+     redefinitions removed — the canonical values in 08-design-tokens.css now
+     govern. They were silently overriding the contract for every component
+     using var(--ctl-h)/var(--radius-card), including the 09 bases. */
   --card-pad: 16px;
   --card-gap: 14px;
-  --radius-card: 12px;
   --type-label: .72rem;
   --text-body: .88rem;
 }
@@ -918,7 +922,7 @@ html[data-theme="light"] .zone-overlay[data-selected="true"], html[data-theme="l
 }
 .gn-empty-state[data-kind="data"], .empty, .results-empty {
   border: 1px dashed var(--border, rgba(255,255,255,.14));
-  border-radius: var(--radius-card, 12px);
+  border-radius: var(--radius-card, 16px);
 }
 .gn-error-state b { color: #FF5B5B !important; }
 .gn-loading-state .gn-state-ico { animation: gnLoadSpin 1.1s linear infinite; }@keyframes gnLoadSpin{ to { transform: rotate(360deg); }}
