@@ -35,9 +35,10 @@
   padding: 26px 22px 20px;
   border: 1px solid color-mix(in srgb, var(--brand-cyan) 45%, transparent);
   border-top: 3px solid var(--brand-cyan);
-  border-radius: 14px;
+  border-radius: var(--radius-card);
   background: linear-gradient(150deg, color-mix(in srgb, var(--brand-cyan) 10%, transparent), var(--surface-1) 60%);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, .5), inset 0 1px var(--border-1);
+  /* Track A finish: canonical modal tier (elev-3, theme-scoped). */
+  box-shadow: var(--elev-3);
   transform: translateY(10px) scale(.98);
   transition: transform .24s cubic-bezier(.2, .7, .3, 1);
 }
@@ -97,7 +98,7 @@
   min-height: 52px;
   border: 1px solid var(--brand-red-hi);
   border-radius: var(--radius-control, 8px);
-  background: linear-gradient(135deg, var(--brand-red), var(--brand-red-deep));
+  background: var(--grad-lava, linear-gradient(135deg, var(--brand-red), var(--brand-red-deep)));
   color: #fff;
   box-shadow: 0 10px 24px rgba(255, 59, 59, .28);
   font: 800 .76rem var(--font-d, monospace);
