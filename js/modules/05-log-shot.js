@@ -41,6 +41,20 @@ export function openLogModal(options = {}) {
     if ($('sNotes')) $('sNotes').value = '';
     qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = false; });
   }
+  /* A1 simplification (recognition over memorization): if no site is staged
+     yet — neither from the scanner nor a draft/edit (both set selectedLocation
+     before this point) — pre-stage the most recent shot's site. Step 2 then
+     opens with a site already picked; the user can change it in the same
+     picker, or just tap LOG SHOT. Saves the mode-tab + zone taps on the
+     common repeat shot. No site is ever invented: with no prior shot the
+     picker still starts empty and saveShot() still requires a site. */
+  if (!moduleState.selectedLocation) {
+    try {
+      const lastSite = getAllShots().filter(item => !item.archived && item.site)
+        .sort((a, b) => String(b.date).localeCompare(String(a.date)))[0]?.site;
+      if (lastSite) moduleState.selectedLocation = lastSite;
+    } catch (_) {}
+  }
   setText('modalSelectedLocation', zoneLabel(moduleState.selectedLocation) || tx('shot.noInjectionSite', 'No injection site selected'));
   installModalZonePicker();
   renderModalZonePicker();

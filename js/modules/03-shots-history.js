@@ -2,7 +2,7 @@
 function ensureShotHistoryFilters() {
   const controls = $('shotHistoryControls');
   if (!controls || $('gnShotFilters')) return;
-  controls.insertAdjacentHTML('afterend', `<details class="gn-shot-filters" id="gnShotFilters"><summary><span data-i18n="shots.filterHistory">FILTER SHOT HISTORY</span> <span class="gn-filter-count" id="gnShotFilterCount"></span></summary><div class="gn-shot-filter-grid"><label><span data-i18n="shot.medication">MEDICATION</span><select id="gnShotFilterMedication"><option value="" data-i18n="shots.allMedications">ALL MEDICATIONS</option></select></label><label><span data-i18n="shot.location">LOCATION</span><select id="gnShotFilterSite"><option value="" data-i18n="shots.allLocations">ALL LOCATIONS</option></select></label><label><span data-i18n="shots.dateRange">DATE RANGE</span><select id="gnShotFilterRange"><option value="all" data-i18n="shots.allTime">ALL TIME</option><option value="today" data-i18n="shots.today">TODAY</option><option value="week" data-i18n="shots.thisWeek">THIS WEEK</option><option value="month" data-i18n="shots.thisMonth">THIS MONTH</option></select></label><label><span data-i18n="shots.notesSearch">NOTES SEARCH</span><input id="gnShotFilterQuery" type="search" placeholder="Search notes" data-i18n-placeholder="shots.searchNotes"></label></div><button type="button" class="gn-shot-filter-clear" id="gnShotFilterClear" hidden data-i18n="shots.clearAllFilters">CLEAR ALL FILTERS</button></details>`);
+  controls.insertAdjacentHTML('afterend', `<details class="gn-shot-filters" id="gnShotFilters"><summary><span data-i18n="shots.filterHistory">FILTER SHOT HISTORY</span> <span class="gn-filter-count" id="gnShotFilterCount"></span></summary><div class="gn-shot-filter-grid"><label><span data-i18n="shot.medication">MEDICATION</span><select id="gnShotFilterMedication"><option value="" data-i18n="shots.allMedications">ALL MEDICATIONS</option></select></label><label><span data-i18n="shot.location">LOCATION</span><select id="gnShotFilterSite"><option value="" data-i18n="shots.allLocations">ALL LOCATIONS</option></select></label><label><span data-i18n="shots.dateRange">DATE RANGE</span><select id="gnShotFilterRange"><option value="all" data-i18n="shots.allTime">ALL TIME</option><option value="today" data-i18n="shots.today">TODAY</option><option value="week" data-i18n="shots.thisWeek">THIS WEEK</option><option value="month" data-i18n="shots.thisMonth">THIS MONTH</option></select></label><label><span data-i18n="shots.searchHistory">SEARCH HISTORY</span><input id="gnShotFilterQuery" type="search" placeholder="Search medication, site, or notes" data-i18n-placeholder="shots.searchHistoryPlaceholder"></label></div><button type="button" class="gn-shot-filter-clear" id="gnShotFilterClear" hidden data-i18n="shots.clearAllFilters">CLEAR ALL FILTERS</button></details>`);
   window.GN_I18N?.applyTo?.($('gnShotFilters'));
   $('gnShotFilters')?.addEventListener('input', event => {
     const id = event.target.id;
@@ -15,24 +15,57 @@ function ensureShotHistoryFilters() {
   $('gnShotFilterClear')?.addEventListener('click', () => { moduleState.shotFilters = { medication: '', site: '', range: 'all', query: '' }; renderShots(); });
 }
 
-function filterShots(records) {
+function shotFilterCutoff() {
+  const range = moduleState.shotFilters.range;
+  if (range === 'today') { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); }
+  if (range === 'week') { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - 6); return d.getTime(); }
+  if (range === 'month') { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - 29); return d.getTime(); }
+  return null;
+}
+
+/* A1 simplification: one predicate for SHOTS and for the ALL timeline, and the
+   search box now matches what users actually remember — medication, site, or
+   dose — not only the free-text notes field (the old "NOTES SEARCH" label hid
+   that limitation and made most searches return nothing). */
+function shotMatchesFilters(record) {
   const filters = moduleState.shotFilters;
   const query = filters.query.trim().toLowerCase();
-  let cutoff = null;
-  if (filters.range === 'today') {
-    const d = new Date(); d.setHours(0,0,0,0); cutoff = d.getTime();
-  } else if (filters.range === 'week') {
-    const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - 6); cutoff = d.getTime();
-  } else if (filters.range === 'month') {
-    const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - 29); cutoff = d.getTime();
+  const cutoff = shotFilterCutoff();
+  if (filters.medication && normalizeMedicationId(record.med) !== filters.medication) return false;
+  if (filters.site && (record.site || '') !== filters.site) return false;
+  if (cutoff && new Date(record.date).getTime() < cutoff) return false;
+  if (query) {
+    const haystack = [
+      record.notes || '',
+      medicationLabel(record.med) || '',
+      record.site || '',
+      (typeof zoneLabel === 'function' && zoneLabel(record.site)) || '',
+      record.dose != null ? String(record.dose) : ''
+    ].join(' ').toLowerCase();
+    if (!haystack.includes(query)) return false;
   }
-  return records.filter(record => {
-    if (filters.medication && normalizeMedicationId(record.med) !== filters.medication) return false;
-    if (filters.site && (record.site || '') !== filters.site) return false;
-    if (cutoff && new Date(record.date).getTime() < cutoff) return false;
-    if (query && !String(record.notes || '').toLowerCase().includes(query)) return false;
-    return true;
-  });
+  return true;
+}
+
+function filterShots(records) {
+  return records.filter(shotMatchesFilters);
+}
+
+function historyFiltersActive() {
+  return Object.values(moduleState.shotFilters).some(value => value && value !== 'all');
+}
+
+/* Weight rows in the ALL timeline honour the same search/range, so a filtered
+   ALL view never mixes filtered shots with unfiltered weights. Medication and
+   site filters are shot-only concepts and exclude weight rows while active. */
+function weightMatchesFilters(record) {
+  const filters = moduleState.shotFilters;
+  if (filters.medication || filters.site) return false;
+  const cutoff = shotFilterCutoff();
+  if (cutoff && new Date(record.date).getTime() < cutoff) return false;
+  const query = filters.query.trim().toLowerCase();
+  if (query && !['weight', String(record.weight ?? ''), record.notes || ''].join(' ').toLowerCase().includes(query)) return false;
+  return true;
 }
 
 function renderShotFilterOptions(records) {
@@ -60,11 +93,15 @@ export function renderShots() {
   const shotsChrome = historyType === 'shots';
   setDisplay('shotHistoryControls', shotsChrome);
   setDisplay('shotHistoryHelper', shotsChrome);
+  /* A1: the filter bar belongs to SHOTS and to ALL (the default view). Before,
+     it only existed inside SHOTS, so finding a past record from the default
+     ALL view meant switching subviews first — an extra step with no signpost.
+     WEIGHT keeps its own simple list, so filters stay hidden there. */
+  if (historyType !== 'weight') ensureShotHistoryFilters();
   const existingFilters = $('gnShotFilters');
-  if (existingFilters) existingFilters.hidden = !shotsChrome;
+  if (existingFilters) existingFilters.hidden = historyType === 'weight';
   if (historyType === 'weight') { renderWeightHistory(); return; }
-  if (historyType === 'all') { renderAllHistory(); return; }
-  ensureShotHistoryFilters();
+  if (historyType === 'all') { renderShotFilterOptions(getAllShots()); renderAllHistory(); return; }
   const list = $('logList');
   if (!list) return;
   const all = getAllShots();
@@ -238,7 +275,15 @@ function renderConstellation() {
 function renderAllHistory() {
   const list = $('logList');
   if (!list) return;
-  const events = buildTimeline();
+  const allEvents = buildTimeline();
+  const events = historyFiltersActive()
+    ? allEvents.filter(event => event.type === 'shot' ? shotMatchesFilters(event.record) : weightMatchesFilters(event.record))
+    : allEvents;
+  if (!events.length && allEvents.length && historyFiltersActive()) {
+    list.innerHTML = `<div class="empty"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${tx('shots.noFilterMatch', 'NO SHOTS MATCH THESE FILTERS.')}</b><br><button class="btn-full btn-secondary empty-cta" type="button" id="gnShotFilterEmptyClear">${tx('shots.clearFilters', 'CLEAR FILTERS')}</button></div>`;
+    $('gnShotFilterEmptyClear')?.addEventListener('click', () => { moduleState.shotFilters = { medication: '', site: '', range: 'all', query: '' }; renderShots(); });
+    return;
+  }
   if (!events.length) {
     list.innerHTML = `<div class="empty gn-first-run-card"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${tx('history.allEmptyTitle', 'NOTHING LOGGED YET')}</b><span class="gn-first-run-sub">${tx('history.allEmptySub', 'Log a shot or your weight to start your timeline.')}</span><br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>${tx('runtime.logShot', 'LOG SHOT')}</button> <button class="btn-full btn-secondary empty-cta" type="button" onclick="openWeightModal()">${tx('history.logWeight', 'LOG WEIGHT')}</button></div>`;
     return;

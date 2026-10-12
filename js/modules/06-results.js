@@ -137,8 +137,6 @@ function ensureResultsHeroOrder() {
     '#gnPhaseHeatmap',
     '.results-card.summary',
     '#measurementTrendCard',
-    '.results-card.appetite',
-    '.results-card.energy',
     '.results-card.effects',
     '.results-card.continuity',
     '.gn-reference-pending',
@@ -150,8 +148,6 @@ function ensureResultsHeroOrder() {
     '#gnWeeklyReport',
     '.results-card.summary',
     '#measurementTrendCard',
-    '.results-card.appetite',
-    '.results-card.energy',
     '.results-card.effects',
     '.results-card.continuity',
     '.gn-reference-pending',
@@ -178,12 +174,17 @@ function ensureResultsEmptyCtas() {
     btn.addEventListener('click', onClick);
     host.appendChild(btn);
   };
+  /* A1 simplification: on an empty PROGRESS screen the weekly report already
+     offers LOG SHOT + LOG WEIGHT, and the FAB + page header offer the same.
+     This helper used to add up to seven more identical CTAs (LOG SHOT alone
+     appeared on the summary, appetite, energy, and side-effect empties), so
+     the screen read as a wall of duplicate buttons. Keep one CTA per distinct
+     job: first weight, first shot, and measurements (a different action).
+     Appetite/energy empties get no CTA at all — no flow in the app records
+     appetite or energy directly, so a LOG SHOT button there promised a
+     result it cannot produce. */
   addCta('weightTrendEmpty', 'results.weightTrendEmptyCta', 'LOG YOUR FIRST WEIGHT', () => openWeightModal());
-  addCta('weightRecordsEmpty', 'results.logWeightCta', 'LOG WEIGHT', () => openWeightModal(), true);
   addCta('resultsSummaryEmpty', 'shots.emptyShotsCta', 'LOG YOUR FIRST SHOT', () => openLogModal());
-  addCta('appetiteTrendEmpty', 'runtime.logShot', 'LOG SHOT', () => openLogModal(), true);
-  addCta('energyTrendEmpty', 'runtime.logShot', 'LOG SHOT', () => openLogModal(), true);
-  addCta('sideEffectTrendEmpty', 'runtime.logShot', 'LOG SHOT', () => openLogModal(), true);
   addCta('measurementTrendEmpty', 'results.measurementsEmptyCta', 'OPEN VAULT', () => showPage('Profile', document.getElementById('navVault')), true);
 }
 document.addEventListener('gn:langchange', () => { try { ensureResultsEmptyCtas(); } catch (_) {} });
@@ -606,8 +607,12 @@ function drawTrendArrow(canvas, weights, goal) {
   const yFor = value => top + (max - Number(value)) / span * plotHeight;
   const delta = values.at(-1) - values.at(-2);
   const arrow = delta < -0.05 ? '▼' : delta > 0.05 ? '▲' : '►';
+  /* Chart grammar token — canvas-literal mirror of --chart-estimate
+     (#ffd166), same pattern as the CHART constants in drawWeightTrendChart:
+     a flat delta is an estimate-state reading, not a recorded direction. */
+  const ESTIMATE = '#ffd166'; /* --chart-estimate */
   context.setTransform(scale, 0, 0, scale, 0, 0);
-  context.fillStyle = delta < -0.05 ? '#00ff88' : delta > 0.05 ? '#FF5B5B' : '#ffd700';
+  context.fillStyle = delta < -0.05 ? '#00ff88' : delta > 0.05 ? '#FF5B5B' : ESTIMATE;
   context.font = '700 14px Share Tech Mono, monospace';
   context.textAlign = 'left';
   context.fillText(arrow, Math.min(width - 16, xFor(values.length - 1) + 7), yFor(values.at(-1)) + 5);
@@ -622,7 +627,8 @@ function renderTrendLists(shots) {
       ? effects.slice(-6).reverse().map(effect => '<div class="results-list-row"><b>' + safeText(sideEffectLabel(effect)) + '</b><span>' + tx('runtime.loggedObservation', 'logged observation') + '</span></div>').join('')
       : '';
   }
-  setDisplay('appetiteTrendEmpty', true); setDisplay('energyTrendEmpty', true);
+  /* Appetite/energy trend cards removed (full-pass residual): no code
+     anywhere wrote into them, so they rendered a permanent empty state. */
 }
 
 function drawCanvasChart(canvas, values, color) {
