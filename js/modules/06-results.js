@@ -1,4 +1,5 @@
 export function openWeightModal() {
+  clearWtFieldErrors();
   const wtOvEl = $('wtOv');
   if (wtOvEl && !wtOvEl.querySelector('.gn-drawer-handle')) wtOvEl.insertAdjacentHTML('afterbegin', '<div class="gn-drawer-handle" aria-hidden="true"></div>');
   setHumanDateInput($('wtDate'), todayISO(), true);
@@ -12,15 +13,29 @@ export function setWeightUnit(unit) {
   moduleState.weightUnit = unit === 'kg' ? 'kg' : 'lb';
   qa('[data-wt-unit]').forEach(button => button.classList.toggle('active', button.dataset.wtUnit === moduleState.weightUnit));
 }
+/* TRACK C: weight-form field errors. The weight error used to live ONLY
+   in the #wtError slot at the bottom of the modal — measured 188px below
+   the weight field on a 390px screen, past the unit toggle and notes, in
+   all-caps system voice, with the field itself unmarked. Value/date
+   errors now sit at their field in plain language (shared .gn-field-error
+   pattern); #wtError remains only for the form-level storage failure. */
+function clearWtFieldErrors() {
+  qa('#wtOv .gn-field-error').forEach(el => el.remove());
+  $('wtVal')?.removeAttribute('aria-invalid');
+  $('wtDate')?.removeAttribute('aria-invalid');
+  setDisplay('wtError', false);
+}
+
 export function saveWt() {
   if (moduleState.savingWt) return;
   moduleState.savingWt = true;
   try {
     const raw = Number($('wtVal')?.value);
     const date = readHumanDateInput($('wtDate'), true) || todayISO();
-    if (!Number.isFinite(raw) || raw <= 0) { setText('wtError', tx('weight.invalid', 'ENTER A VALID WEIGHT VALUE')); setDisplay('wtError', true); return; }
+    clearWtFieldErrors();
+    if (!Number.isFinite(raw) || raw <= 0) { $('wtVal')?.setAttribute('aria-invalid', 'true'); shotFieldError($('wtVal'), 'gnWtErrVal', tx('weight.invalidPlain', 'Enter your weight as a number greater than zero.')); $('wtVal')?.focus(); return; }
     const dateTime = new Date(`${date}T${$('wtTime')?.value || '12:00'}`);
-    if (Number.isNaN(dateTime.getTime()) || dateTime > new Date()) { setText('wtError', tx('weight.futureNotAllowed', 'FUTURE DATE NOT ALLOWED')); setDisplay('wtError', true); return; }
+    if (Number.isNaN(dateTime.getTime()) || dateTime > new Date()) { $('wtDate')?.setAttribute('aria-invalid', 'true'); shotFieldError($('wtDate')?.closest('.form-group') || $('wtDate'), 'gnWtErrDate', tx('weight.futurePlain', 'That date is in the future. Pick today or an earlier date.')); $('wtDate')?.focus(); return; }
     const weight = moduleState.weightUnit === 'kg' ? raw * 2.2046226218 : raw;
     const previousWeight = sortedWeights().at(-1)?.weight;
     const milestone = weightMilestone(previousWeight, weight, getProfile());
@@ -40,6 +55,7 @@ export function saveWt() {
     refreshAll();
     if (milestone) celebrateMilestone(milestone.type, milestone.value);
     showToast(tx('toast.weightLogged', 'Peso registrado'), false, () => undoWeight(record.id), `${raw} ${moduleState.weightUnit === 'kg' ? 'kg' : 'lb'}`);
+    addToastNextStep(tx('toast.viewProgress', 'VIEW PROGRESS'), () => showPage('Results', document.getElementById('navRes')));
   } finally {
     moduleState.savingWt = false;
   }
@@ -57,6 +73,27 @@ export function renderResults() {
      state (see body.gn-results-empty CSS); any logged shot or weight
      reveals the data cards. */
   try { document.body.classList.toggle('gn-results-empty', shots.length === 0 && weights.length === 0); } catch (_) {}
+  /* TRACK C: a cloud user whose records have not arrived sees the sync
+     state, not a fake "nothing logged yet" PROGRESS screen. */
+  try {
+    const page = $('pageResults');
+    const cloudUser = Boolean(state.session?.user?.id && state.cloudClient);
+    const syncMode = (shots.length === 0 && weights.length === 0 && cloudUser && state.cloudHydration !== 'ok')
+      ? (state.cloudHydration === 'failed' ? 'failed' : 'syncing') : null;
+    if (page) page.classList.toggle('gn-ux-syncing', syncMode === 'syncing');
+    const ledger = document.getElementById('resultsChartsView');
+    let note = document.getElementById('gnResultsSyncNote');
+    if (syncMode && ledger) {
+      if (!note) { note = document.createElement('div'); note.id = 'gnResultsSyncNote'; ledger.prepend(note); }
+      if (syncMode === 'failed') {
+        note.className = 'gn-ux-sync-error'; note.setAttribute('role', 'alert');
+        note.innerHTML = '<b>' + safeText(tx('dashboard.syncFailedTitle', "COULDN'T REACH YOUR DATA")) + '</b>' + safeText(tx('dashboard.syncFailedSub', 'Your cloud records didn\u2019t load. Your data is safe \u2014 check your connection and try again.')) + '<button type="button" class="btn-full btn-secondary" onclick="retryCloudHydration()">' + safeText(tx('dashboard.retrySync', 'RETRY SYNC')) + '</button>';
+      } else {
+        note.className = 'gn-ux-sync-note'; note.removeAttribute('role');
+        note.innerHTML = '<span>' + safeText(tx('dashboard.syncingSub', 'Your records are on their way. This takes a few seconds.')) + '</span><div class="gn-skeleton gn-skeleton-line mid" aria-hidden="true"></div>';
+      }
+    } else if (note) note.remove();
+  } catch (_) {}
   const first = weightMetrics.first;
   const change = weightMetrics.change;
   const spanDays = weightMetrics.spanDays;

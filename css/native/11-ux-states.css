@@ -1,0 +1,197 @@
+/* ============================================================
+   11-ux-states.css — TRACK C (FEEL + FLOW)
+   One loading pattern, one empty pattern, one field-error pattern,
+   app-wide. Every value derives from TOKEN-CONTRACT tokens
+   (08-design-tokens.css); no new palette, no new radii, no new
+   durations invented here. Where Track B's motion tokens land
+   (10-motion.css), the shimmer duration/easing below should be
+   re-pointed at var(--motion-*) — the values used here are the
+   contract-era defaults, kept in one place for that swap.
+   ============================================================ */
+
+/* ---------- LOADING: skeleton shimmer ----------
+   Used for: TODAY while cloud hydration is pending
+   (body/page .gn-ux-syncing, set by 02-dashboard / 06-results /
+   03-shots-history) and any .gn-skeleton block a module injects
+   while records are on their way. Local renders are synchronous,
+   so skeletons only ever represent a real wait (cloud hydration),
+   never a decorative delay. */
+.gn-skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-nested);
+  background: var(--surface-3);
+  min-height: 14px;
+}
+.gn-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 20%, var(--border-2) 50%, transparent 80%);
+  opacity: .45;
+  transform: translateX(-100%);
+  animation: gn-ux-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes gn-ux-shimmer {
+  to { transform: translateX(100%); }
+}
+.gn-skeleton-line { height: 12px; margin-bottom: var(--sp-2); }
+.gn-skeleton-line.short { width: 45%; }
+.gn-skeleton-line.mid { width: 70%; }
+.gn-skeleton-card {
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-card);
+  background: var(--surface-2);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-3);
+}
+.gn-skeleton-list { padding: var(--sp-2) 0; }
+/* Syncing pages: dim the stale/empty values behind the skeleton so a
+   cloud user never reads placeholder zeros as real data. */
+.gn-ux-syncing .gn-wanda-grid,
+.gn-ux-syncing .results-card,
+.gn-ux-syncing #logList {
+  opacity: .45;
+  pointer-events: none;
+}
+.gn-ux-sync-note {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-card);
+  background: var(--surface-2);
+  color: var(--text-2);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-3);
+  font-size: var(--type-body);
+}
+.gn-ux-sync-note .gn-skeleton { flex: 1; }
+/* Sync-failed: same surface, calm (info, not alarm), one retry. */
+.gn-ux-sync-error {
+  border: 1px solid var(--border-cyan);
+  border-radius: var(--radius-card);
+  background: var(--surface-2);
+  color: var(--text-2);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-3);
+  font-size: var(--type-body);
+  line-height: 1.45;
+}
+.gn-ux-sync-error b { color: var(--text-1); display: block; margin-bottom: var(--sp-1); }
+.gn-ux-sync-error button { margin-top: var(--sp-3); }
+
+/* Reduced motion: shimmer OFF (contract requirement). The skeleton
+   stays as a static placeholder; content is never hidden behind it. */
+@media (prefers-reduced-motion: reduce) {
+  .gn-skeleton::after { animation: none; display: none; }
+  .gn-ux-syncing .gn-wanda-grid,
+  .gn-ux-syncing .results-card,
+  .gn-ux-syncing #logList { opacity: .6; }
+}
+
+/* ---------- EMPTY: one pattern ----------
+   Icon + ONE plain line + ONE clear CTA. Applies to the existing
+   empty hosts (.empty in HISTORY, .gn-empty-state in LAB,
+   .results-empty in PROGRESS) so every empty surface reads the
+   same without renaming markup across modules. Extra CTAs inside
+   an empty host are demoted to quiet links by the modules; this
+   block only guarantees spacing, rhythm, and a single visual
+   weight for the primary action. */
+.empty .empty-cta,
+.gn-empty-state .empty-cta,
+.results-empty .t3-empty-cta {
+  margin-top: var(--sp-3);
+  min-height: var(--ctl-h);
+}
+.gn-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  color: var(--text-2);
+  font-size: var(--type-body);
+  line-height: 1.45;
+}
+.gn-empty-state b { color: var(--text-1); }
+.gn-empty-state .gn-ux-empty-link,
+.empty .gn-ux-empty-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: 0;
+  padding: var(--sp-2) 0;
+  color: var(--brand-cyan);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.results-empty {
+  color: var(--text-2);
+  font-size: var(--type-body);
+  line-height: 1.45;
+}
+.results-empty .empty-subline { display: block; margin-top: var(--sp-1); }
+
+/* ---------- ERROR: inline, at the field, plain language ----------
+   .gn-field-error is THE field-error element (LAB research already
+   proves the pattern as .gn-form-error; both names share this look
+   so existing research markup and new log-shot / weight / inventory
+   markup render identically). Placed directly after its field by
+   the owning module; role="alert" is set in markup/JS. */
+/* Colours match the existing .gn-form-error rule in
+   03-premium-system.css exactly, so the established LAB research
+   errors and the new log-shot / weight / inventory errors are
+   visually identical (that rule is not redefined here). */
+.gn-field-error {
+  display: block;
+  color: #ff8095;
+  font-size: var(--type-label);
+  font-weight: 600;
+  line-height: 1.4;
+  margin-top: var(--sp-1);
+  letter-spacing: .2px;
+}
+html[data-theme="light"] .gn-field-error {
+  color: #8a0f2a;
+}
+/* The invalid field itself: border carries the signal even when the
+   message has scrolled out of view. */
+[aria-invalid="true"] {
+  border-color: var(--danger) !important;
+  outline: none;
+}
+html[data-theme="light"] [aria-invalid="true"] { border-color: #a51d36 !important; }
+/* Weight modal legacy error slot: kept for storage/future errors,
+   restyled to the same plain, calm language surface. */
+.results-weight-error {
+  color: #ff8095;
+  font-size: var(--type-body);
+  font-weight: 600;
+  line-height: 1.4;
+  padding: var(--sp-2) 0;
+}
+html[data-theme="light"] .results-weight-error { color: #8a0f2a; }
+
+/* ---------- POST-ACTION: toast next-step ----------
+   The undoable toast gains ONE secondary action (VIEW) next to
+   UNDO, added by the save flows in 05-log-shot / 06-results.
+   Same row, same hit area, quieter weight than UNDO so the eye
+   lands on the confirmation first. */
+.gn-toast-view {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 var(--sp-2);
+  background: none;
+  border: 0;
+  color: var(--brand-cyan);
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  white-space: nowrap;
+}

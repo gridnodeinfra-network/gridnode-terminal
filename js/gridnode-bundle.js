@@ -2128,6 +2128,11 @@ function renderDashboard() {
     missionMode = state.cloudHydration === 'failed' ? 'sync-failed' : 'syncing';
   }
   renderFirstShotMission(missionMode);
+  /* TRACK C: one loading pattern — while cloud hydration is pending the
+     page carries .gn-ux-syncing (11-ux-states.css): the mission shows
+     skeleton bars and the not-yet-real metric values are dimmed, so a
+     syncing user never reads placeholder zeros as their data. */
+  if (dashboard) dashboard.classList.toggle('gn-ux-syncing', missionMode === 'syncing');
   if (firstShotMission) firstShotMission.hidden = shots.length > 0;
   // TRACK4 journey: the telemetry module mounts before the wanda dashboard
   // exists, so its prepend fallback lands above the page header and buries the
@@ -2206,7 +2211,8 @@ function renderFirstShotMission(mode) {
   if (mode === 'syncing') {
     mission.innerHTML = '<span class="gn-dashboard-mission-kicker">' + safeText(tx('dashboard.syncingKicker', 'SYNCING')) + '</span>'
       + '<h2 id="gnFirstShotMissionTitle">' + safeText(tx('dashboard.syncingTitle', 'PULLING YOUR GRID FROM THE CLOUD')) + '</h2>'
-      + '<p>' + safeText(tx('dashboard.syncingSub', 'Your records are on their way. This takes a few seconds.')) + '</p>';
+      + '<p>' + safeText(tx('dashboard.syncingSub', 'Your records are on their way. This takes a few seconds.')) + '</p>'
+      + '<div class="gn-skeleton gn-skeleton-line mid" aria-hidden="true"></div><div class="gn-skeleton gn-skeleton-line short" aria-hidden="true"></div>';
   } else if (mode === 'sync-failed') {
     mission.innerHTML = '<span class="gn-dashboard-mission-kicker">' + safeText(tx('dashboard.syncFailedKicker', 'CONNECTION ISSUE')) + '</span>'
       + '<h2 id="gnFirstShotMissionTitle">' + safeText(tx('dashboard.syncFailedTitle', "COULDN'T REACH YOUR DATA")) + '</h2>'
@@ -2844,6 +2850,20 @@ function renderShotFilterOptions(records) {
   const clear = $('gnShotFilterClear'); if (clear) clear.hidden = !count;
 }
 
+/* TRACK C: HISTORY gets the same honest sync states as TODAY (S1 in
+   02-dashboard). A cloud user whose records have not arrived yet must
+   never see the first-run pitch or a fake "nothing logged" empty. */
+function historySyncMode(totalRecords) {
+  if (totalRecords > 0) return null;
+  const cloudUser = Boolean(state.session?.user?.id && state.cloudClient);
+  if (!cloudUser || state.cloudHydration === 'ok') return null;
+  return state.cloudHydration === 'failed' ? 'failed' : 'syncing';
+}
+function historySyncMarkup(mode) {
+  if (mode === 'failed') return `<div class="gn-ux-sync-error" role="alert"><b>${tx('dashboard.syncFailedTitle', "COULDN'T REACH YOUR DATA")}</b>${tx('dashboard.syncFailedSub', 'Your cloud records didn\u2019t load. Your data is safe \u2014 check your connection and try again.')}<br><button type="button" class="btn-full btn-secondary empty-cta" onclick="retryCloudHydration()">${tx('dashboard.retrySync', 'RETRY SYNC')}</button></div>`;
+  return `<div class="gn-skeleton-list" role="status" aria-label="${tx('dashboard.syncingTitle', 'PULLING YOUR GRID FROM THE CLOUD')}"><div class="gn-skeleton-card"><div class="gn-skeleton gn-skeleton-line mid"></div><div class="gn-skeleton gn-skeleton-line short"></div></div><div class="gn-skeleton-card"><div class="gn-skeleton gn-skeleton-line mid"></div><div class="gn-skeleton gn-skeleton-line short"></div></div></div>`;
+}
+
 function renderShots() {
   renderScanner();
   /* S4/S5: HISTORY type filter — ALL / SHOTS / WEIGHT. ALL renders the
@@ -2887,12 +2907,14 @@ function renderShots() {
   setText('shotHistoryHelper', moduleState.shotHistoryView === 'archived' ? tx('shots.archivedRetained', 'Archived records remain stored for review and can be restored.') : tx('shots.activeRecordsRetained', 'Active SHOT records are retained in your local VAULT.'));
   qa('[data-shot-history-view]').forEach(button => button.classList.toggle('active', button.dataset.shotHistoryView === moduleState.shotHistoryView));
   if (!visible.length) {
+    const syncMode = historySyncMode(all.length);
+    if (syncMode) { list.innerHTML = historySyncMarkup(syncMode); return; }
     const activeFilters = Object.values(moduleState.shotFilters).some(value => value && value !== 'all');
     /* QA 2026-09-17: an empty ARCHIVED tab with active history behind it is
      * not a first run — show a neutral archived state, never the
      * "log your first shot" pitch. */
     if (!activeFilters && moduleState.shotHistoryView === 'archived' && all.some(record => !record.archived)) {
-      list.innerHTML = `<div class="empty gn-first-run-card"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${tx('shots.noArchivedShots', 'NO ARCHIVED SHOTS')}</b><span class="gn-first-run-sub">${tx('shots.noArchivedHint', 'Archived shots rest here. Archive a shot from your active history to tuck it away without deleting it.')}</span></div>`;
+      list.innerHTML = `<div class="empty gn-first-run-card"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${tx('shots.noArchivedShots', 'NO ARCHIVED SHOTS')}</b><span class="gn-first-run-sub">${tx('shots.noArchivedHint', 'Archived shots rest here. Archive a shot from your active history to tuck it away without deleting it.')}</span><br><button class="btn-full btn-secondary empty-cta" type="button" data-shot-history-view="active">${tx('shots.viewActive', 'VIEW ACTIVE SHOTS')}</button></div>`;
       return;
     }
     /* QA 2026-09-18: an empty ACTIVE tab with everything archived is not a
@@ -2902,7 +2924,7 @@ function renderShots() {
       list.innerHTML = `<div class="empty gn-first-run-card"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${tx('shots.noActiveShots', 'NO ACTIVE SHOTS')}</b><span class="gn-first-run-sub">${tx('shots.noActiveHint', 'Every shot is archived. Restore one from the archive to bring it back, or log a new shot.')}</span><br><button class="btn-full btn-secondary empty-cta" type="button" data-shot-history-view="archived">${tx('shots.viewArchive', 'VIEW ARCHIVE')}</button></div>`;
       return;
     }
-    list.innerHTML = `<div class="empty${activeFilters ? '' : ' gn-first-run-card'}"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${activeFilters ? tx('shots.noFilterMatch', 'NO SHOTS MATCH THESE FILTERS.') : moduleState.shotHistoryView === 'archived' ? tx('shots.noArchivedShots', 'NO ARCHIVED SHOTS') : tx('shots.activateYourGrid', 'LOG YOUR FIRST SHOT TO ACTIVATE YOUR GRID')}</b>${activeFilters ? '<br><button class="btn-full btn-secondary empty-cta" type="button" id="gnShotFilterEmptyClear">' + tx('shots.clearFilters', 'CLEAR FILTERS') + '</button>' : '<span class="gn-first-run-sub">' + tx('shots.firstShotSub', 'One shot unlocks the Phase Engine, RESULTS, and your full dashboard.') + '</span><br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>' + tx('shots.logYourFirst', 'LOG YOUR FIRST SHOT') + '</button>'}</div>`;
+    list.innerHTML = `<div class="empty${activeFilters ? '' : ' gn-first-run-card'}"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${activeFilters ? tx('shots.noFilterMatch', 'NO SHOTS MATCH THESE FILTERS.') : moduleState.shotHistoryView === 'archived' ? tx('shots.noArchivedShots', 'NO ARCHIVED SHOTS') : tx('shots.activateYourGrid', 'LOG YOUR FIRST SHOT TO ACTIVATE YOUR GRID')}</b>${activeFilters ? '<br><button class="btn-full btn-secondary empty-cta" type="button" id="gnShotFilterEmptyClear">' + tx('shots.clearFilters', 'CLEAR FILTERS') + '</button>' : '<span class="gn-first-run-sub">' + (moduleState.shotHistoryView === 'archived' ? tx('shots.noArchivedHint', 'Archived shots rest here. Archive a shot from your active history to tuck it away without deleting it.') : tx('shots.firstShotSub', 'One shot unlocks the Phase Engine, RESULTS, and your full dashboard.')) + '</span><br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>' + tx('shots.logYourFirst', 'LOG YOUR FIRST SHOT') + '</button>'}</div>`;
     $('gnShotFilterEmptyClear')?.addEventListener('click', () => { moduleState.shotFilters = { medication: '', site: '', range: 'all', query: '' }; renderShots(); });
     return;
   }
@@ -3048,7 +3070,9 @@ function renderAllHistory() {
     return;
   }
   if (!events.length) {
-    list.innerHTML = `<div class="empty gn-first-run-card"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${tx('history.allEmptyTitle', 'NOTHING LOGGED YET')}</b><span class="gn-first-run-sub">${tx('history.allEmptySub', 'Log a shot or your weight to start your timeline.')}</span><br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>${tx('runtime.logShot', 'LOG SHOT')}</button> <button class="btn-full btn-secondary empty-cta" type="button" onclick="openWeightModal()">${tx('history.logWeight', 'LOG WEIGHT')}</button></div>`;
+    const syncMode = historySyncMode(allEvents.length);
+    if (syncMode) { list.innerHTML = historySyncMarkup(syncMode); return; }
+    list.innerHTML = `<div class="empty gn-first-run-card"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${tx('history.allEmptyTitle', 'NOTHING LOGGED YET')}</b><span class="gn-first-run-sub">${tx('history.allEmptySub', 'Log a shot or your weight to start your timeline.')}</span><br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>${tx('runtime.logShot', 'LOG SHOT')}</button><br><button class="gn-ux-empty-link" type="button" onclick="openWeightModal()">${tx('history.logWeightInstead', 'or log your weight instead')}</button></div>`;
     return;
   }
   renderConstellation();
@@ -3643,8 +3667,23 @@ function gnValidateStep1() {
 function gnShotStepNext() {
   const check = gnValidateStep1();
   if (!check.ok) {
+    /* TRACK C: same inline field errors as the final SAVE gate — the
+       message sits under the field that needs fixing, not only in a
+       toast. (Helpers are declared with saveShot below; hoisted.) */
+    clearShotFieldErrors();
     check.invalidFields.filter(Boolean).forEach(field => field.setAttribute('aria-invalid', 'true'));
-    check.invalidFields.find(Boolean)?.focus?.();
+    check.invalidFields.filter(Boolean).forEach(field => {
+      if (field.id === 'cpShotMed') shotFieldError(field, 'gnShotErrMed', tx('shots.medRequiredPlain', 'Pick your medication from the list.'));
+      else if (field.id === 'sDose') shotFieldError(field, 'gnShotErrDose', tx('shots.doseRequiredPlain', 'Enter a dose greater than zero.'));
+      else if (field.id === 'sDate') shotFieldError(field.closest('.form-group') || field, 'gnShotErrDate', tx('shots.dateRequiredPlain', 'Pick the date of this shot.'));
+      else if (field.id === 'sTime') shotFieldError(field.closest('.form-group') || field, 'gnShotErrTime', tx('shots.timeRequired', 'Set the shot time and pick AM or PM.'));
+    });
+    const firstInvalid = check.invalidFields.find(Boolean);
+    if (firstInvalid) {
+      if (firstInvalid.id === 'cpShotMed') firstInvalid.querySelector('.cp-select-trigger')?.focus?.();
+      else firstInvalid.focus?.();
+      firstInvalid.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+    }
     // v0.15.53: never fail silently — name the time problem explicitly.
     const msg = !check.time
       ? tx('shots.timeRequired', 'Set the shot time and pick AM or PM.')
@@ -3653,6 +3692,7 @@ function gnShotStepNext() {
     notifyCoachSaveBlocked(check.invalidFields);
     return;
   }
+  clearShotFieldErrors();
   gnSetShotStep(2);
 }
 
@@ -3994,6 +4034,57 @@ function notifyCoachSaveBlocked(invalidFields) {
   } catch (_) { /* never break the save path for coach telemetry */ }
 }
 
+/* TRACK C: inline field errors for the shot console. Until now a failed
+   SAVE only fired a toast: nothing at the field said what to fix, and
+   focus() on the non-focusable medication picker silently did nothing.
+   The message now lives directly under its field in plain language; the
+   toast stays as the summary (the coach path still reads it). Errors
+   clear as the user fixes each field. */
+function shotFieldError(anchor, id, message) {
+  if (!anchor) return;
+  let el = document.getElementById(id);
+  if (!el) {
+    el = document.createElement('div');
+    el.id = id;
+    el.className = 'gn-field-error';
+    el.setAttribute('role', 'alert');
+    anchor.insertAdjacentElement('afterend', el);
+  }
+  el.textContent = message;
+}
+function clearShotFieldErrors() {
+  qa('#logOv .gn-field-error').forEach(el => el.remove());
+}
+/* TRACK C: post-action momentum. The undoable save toast gains ONE
+   next-step action (VIEW) beside UNDO, so a saved shot leads somewhere
+   instead of just expiring. First-shot saves keep the GRID ACTIVATED
+   celebration as their surface; this only decorates the toast. */
+function addToastNextStep(label, onClick) {
+  const toast = $('toastEl');
+  if (!toast || !toast.classList.contains('undoable') || toast.querySelector('.gn-toast-view')) return;
+  const body = toast.querySelector('.gn-toast-body');
+  const undo = toast.querySelector('.gn-toast-undo');
+  if (!body || !undo) return;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'gn-toast-view';
+  btn.textContent = label;
+  btn.addEventListener('click', () => { clearTimeout(toast._timer); toast.classList.remove('active'); onClick(); });
+  body.insertBefore(btn, undo);
+}
+document.addEventListener('input', (e) => {
+  const t = e.target;
+  if (!t || !t.closest || !t.closest('#logOv')) return;
+  if (t.id === 'sDose') { $('gnShotErrDose')?.remove(); t.removeAttribute('aria-invalid'); }
+  if (t.id === 'sWt') { $('gnShotErrWt')?.remove(); t.removeAttribute('aria-invalid'); }
+  if (t.id === 'sTime') $('gnShotErrTime')?.remove();
+});
+document.addEventListener('click', (e) => {
+  if (!e.target || !e.target.closest || !e.target.closest('#logOv')) return;
+  if (e.target.closest('#cpShotMed')) { $('gnShotErrMed')?.remove(); $('cpShotMed')?.removeAttribute('aria-invalid'); }
+  if (e.target.closest('#modalZonePicker')) { $('gnShotErrSite')?.remove(); $('logLocationAction')?.removeAttribute('aria-invalid'); }
+});
+
 function saveShot(allowFuture = false) {
   if (moduleState.savingShot) return;
   moduleState.savingShot = true;
@@ -4006,6 +4097,7 @@ function saveShot(allowFuture = false) {
     const time = getShotTime24($('sTime')?.value);
     const site = moduleState.selectedLocation;
     qa('#logOv [aria-invalid="true"]').forEach(field => field.removeAttribute('aria-invalid'));
+    clearShotFieldErrors();
     const invalidFields = [];
     if (!med) invalidFields.push($('cpShotMed'));
     if (!(Number.isFinite(dose) && dose > 0)) invalidFields.push($('sDose'));
@@ -4014,7 +4106,17 @@ function saveShot(allowFuture = false) {
     if (!site) invalidFields.push($('logLocationAction'));
     if (invalidFields.length) {
       invalidFields.filter(Boolean).forEach(field => field.setAttribute('aria-invalid', 'true'));
-      invalidFields.find(Boolean)?.focus?.();
+      if (!med) shotFieldError($('cpShotMed'), 'gnShotErrMed', tx('shots.medRequiredPlain', 'Pick your medication from the list.'));
+      if (!(Number.isFinite(dose) && dose > 0)) shotFieldError($('sDose'), 'gnShotErrDose', tx('shots.doseRequiredPlain', 'Enter a dose greater than zero.'));
+      if (!date) shotFieldError($('sDate')?.closest('.form-group') || $('sDate'), 'gnShotErrDate', tx('shots.dateRequiredPlain', 'Pick the date of this shot.'));
+      if (!time) shotFieldError($('sTime')?.closest('.form-group') || $('sTime'), 'gnShotErrTime', tx('shots.timeRequired', 'Set the shot time and pick AM or PM.'));
+      if (!site) shotFieldError($('logLocationAction')?.closest('.form-group') || $('logLocationAction'), 'gnShotErrSite', tx('shot.siteRequired', 'Pick an injection site to log the shot.'));
+      const firstInvalid = invalidFields.find(Boolean);
+      if (firstInvalid) {
+        if (firstInvalid.id === 'cpShotMed') firstInvalid.querySelector('.cp-select-trigger')?.focus?.();
+        else firstInvalid.focus?.();
+        firstInvalid.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+      }
       // v0.15.53: never fail silently — name the time problem explicitly so the
       // user knows to pick AM/PM instead of tapping SAVE again in confusion.
       // TRACK 2: on step 2 the essentials are already validated at Continue, so
@@ -4034,6 +4136,7 @@ function saveShot(allowFuture = false) {
     }
     if (weightRaw && !(Number.isFinite(weight) && weight > 0)) {
       $('sWt')?.setAttribute('aria-invalid', 'true');
+      shotFieldError($('sWt'), 'gnShotErrWt', tx('shots.validWeightPlain', 'Weight must be a number greater than zero, or left blank.'));
       $('sWt')?.focus();
       showToast(tx('shots.validWeightRequired', 'Optional weight must be greater than zero.'), true);
       return;
@@ -4137,6 +4240,7 @@ function saveShot(allowFuture = false) {
     const shotTimeLabel = formatTime12(new Date(record.date));
     const shotDetail = `${record.dose} mg ${medicationLabel(normalizeMedicationId(record.med))} · ${zoneLabel(record.site)}`;
     showToast(`${tx('toast.shotLogged', 'Dosis registrada')} · ${shotTimeLabel}`, false, () => undoShot(record.id), shotDetail);
+    addToastNextStep(tx('toast.viewProgress', 'VIEW PROGRESS'), () => showPage('Results', document.getElementById('navRes')));
     return record;
   } finally {
     moduleState.savingShot = false;
@@ -4355,6 +4459,7 @@ function researchBackToLibrary() {
 
 
 function openWeightModal() {
+  clearWtFieldErrors();
   const wtOvEl = $('wtOv');
   if (wtOvEl && !wtOvEl.querySelector('.gn-drawer-handle')) wtOvEl.insertAdjacentHTML('afterbegin', '<div class="gn-drawer-handle" aria-hidden="true"></div>');
   setHumanDateInput($('wtDate'), todayISO(), true);
@@ -4368,15 +4473,29 @@ function setWeightUnit(unit) {
   moduleState.weightUnit = unit === 'kg' ? 'kg' : 'lb';
   qa('[data-wt-unit]').forEach(button => button.classList.toggle('active', button.dataset.wtUnit === moduleState.weightUnit));
 }
+/* TRACK C: weight-form field errors. The weight error used to live ONLY
+   in the #wtError slot at the bottom of the modal — measured 188px below
+   the weight field on a 390px screen, past the unit toggle and notes, in
+   all-caps system voice, with the field itself unmarked. Value/date
+   errors now sit at their field in plain language (shared .gn-field-error
+   pattern); #wtError remains only for the form-level storage failure. */
+function clearWtFieldErrors() {
+  qa('#wtOv .gn-field-error').forEach(el => el.remove());
+  $('wtVal')?.removeAttribute('aria-invalid');
+  $('wtDate')?.removeAttribute('aria-invalid');
+  setDisplay('wtError', false);
+}
+
 function saveWt() {
   if (moduleState.savingWt) return;
   moduleState.savingWt = true;
   try {
     const raw = Number($('wtVal')?.value);
     const date = readHumanDateInput($('wtDate'), true) || todayISO();
-    if (!Number.isFinite(raw) || raw <= 0) { setText('wtError', tx('weight.invalid', 'ENTER A VALID WEIGHT VALUE')); setDisplay('wtError', true); return; }
+    clearWtFieldErrors();
+    if (!Number.isFinite(raw) || raw <= 0) { $('wtVal')?.setAttribute('aria-invalid', 'true'); shotFieldError($('wtVal'), 'gnWtErrVal', tx('weight.invalidPlain', 'Enter your weight as a number greater than zero.')); $('wtVal')?.focus(); return; }
     const dateTime = new Date(`${date}T${$('wtTime')?.value || '12:00'}`);
-    if (Number.isNaN(dateTime.getTime()) || dateTime > new Date()) { setText('wtError', tx('weight.futureNotAllowed', 'FUTURE DATE NOT ALLOWED')); setDisplay('wtError', true); return; }
+    if (Number.isNaN(dateTime.getTime()) || dateTime > new Date()) { $('wtDate')?.setAttribute('aria-invalid', 'true'); shotFieldError($('wtDate')?.closest('.form-group') || $('wtDate'), 'gnWtErrDate', tx('weight.futurePlain', 'That date is in the future. Pick today or an earlier date.')); $('wtDate')?.focus(); return; }
     const weight = moduleState.weightUnit === 'kg' ? raw * 2.2046226218 : raw;
     const previousWeight = sortedWeights().at(-1)?.weight;
     const milestone = weightMilestone(previousWeight, weight, getProfile());
@@ -4396,6 +4515,7 @@ function saveWt() {
     refreshAll();
     if (milestone) celebrateMilestone(milestone.type, milestone.value);
     showToast(tx('toast.weightLogged', 'Peso registrado'), false, () => undoWeight(record.id), `${raw} ${moduleState.weightUnit === 'kg' ? 'kg' : 'lb'}`);
+    addToastNextStep(tx('toast.viewProgress', 'VIEW PROGRESS'), () => showPage('Results', document.getElementById('navRes')));
   } finally {
     moduleState.savingWt = false;
   }
@@ -4413,6 +4533,27 @@ function renderResults() {
      state (see body.gn-results-empty CSS); any logged shot or weight
      reveals the data cards. */
   try { document.body.classList.toggle('gn-results-empty', shots.length === 0 && weights.length === 0); } catch (_) {}
+  /* TRACK C: a cloud user whose records have not arrived sees the sync
+     state, not a fake "nothing logged yet" PROGRESS screen. */
+  try {
+    const page = $('pageResults');
+    const cloudUser = Boolean(state.session?.user?.id && state.cloudClient);
+    const syncMode = (shots.length === 0 && weights.length === 0 && cloudUser && state.cloudHydration !== 'ok')
+      ? (state.cloudHydration === 'failed' ? 'failed' : 'syncing') : null;
+    if (page) page.classList.toggle('gn-ux-syncing', syncMode === 'syncing');
+    const ledger = document.getElementById('resultsChartsView');
+    let note = document.getElementById('gnResultsSyncNote');
+    if (syncMode && ledger) {
+      if (!note) { note = document.createElement('div'); note.id = 'gnResultsSyncNote'; ledger.prepend(note); }
+      if (syncMode === 'failed') {
+        note.className = 'gn-ux-sync-error'; note.setAttribute('role', 'alert');
+        note.innerHTML = '<b>' + safeText(tx('dashboard.syncFailedTitle', "COULDN'T REACH YOUR DATA")) + '</b>' + safeText(tx('dashboard.syncFailedSub', 'Your cloud records didn\u2019t load. Your data is safe \u2014 check your connection and try again.')) + '<button type="button" class="btn-full btn-secondary" onclick="retryCloudHydration()">' + safeText(tx('dashboard.retrySync', 'RETRY SYNC')) + '</button>';
+      } else {
+        note.className = 'gn-ux-sync-note'; note.removeAttribute('role');
+        note.innerHTML = '<span>' + safeText(tx('dashboard.syncingSub', 'Your records are on their way. This takes a few seconds.')) + '</span><div class="gn-skeleton gn-skeleton-line mid" aria-hidden="true"></div>';
+      }
+    } else if (note) note.remove();
+  } catch (_) {}
   const first = weightMetrics.first;
   const change = weightMetrics.change;
   const spanDays = weightMetrics.spanDays;
@@ -5323,7 +5464,7 @@ function ensureLabFoundations() {
       <div class="gn-record-list" id="gnResearchList"></div>
     </details>
     <details class="gn-foundation-section" id="gnLedgerSection"><summary><span data-i18n="lab.ledgerTitle">SOURCE-AWARE EVENT LEDGER</span><em data-i18n="lab.noSilentRewrites">NO SILENT REWRITES</em></summary><div class="gn-ledger-copy" data-i18n="lab.ledgerCopy">Every important record keeps its origin and review state. Manual Entry, Import, Device Reported, and System Generated events remain distinguishable.</div><div class="gn-ledger-list" id="gnLedgerList"></div></details>
-    <details class="gn-foundation-section" id="gnSupplySection"><summary><span data-i18n="lab.savedInventory">SAVED INVENTORY</span><em data-i18n="lab.separateCalculators">SEPARATE FROM CALCULATORS</em></summary><div class="gn-ledger-copy"><strong data-i18n="lab.calculatorEstimate">CALCULATOR / REFERENCE ESTIMATE</strong> <span data-i18n="lab.inventoryBoundary">remains educational math. Saved Inventory is user-entered supply records and does not verify product, storage, potency, or safety.</span></div><form class="gn-record-form" id="gnInventoryForm"><div class="gn-form-grid"><label><span data-i18n="lab.itemName">ITEM NAME</span><input id="gnInventoryName" required placeholder="e.g. cartridge A" data-i18n-placeholder="lab.itemNamePlaceholder"></label><label><span data-i18n="lab.itemType">ITEM TYPE</span><select id="gnInventoryType"><option value="VIAL" data-i18n="lab.typeVial">Vial</option><option value="CARTRIDGE" data-i18n="lab.typeCartridge">Cartridge</option><option value="DISPOSABLE_PEN" data-i18n="lab.typeDisposable">Disposable pen</option><option value="BOX_PACKAGE" data-i18n="lab.typeBox">Box or package</option><option value="SUPPLY" data-i18n="lab.typeSupply">General supply item</option><option value="CUSTOM" data-i18n="lab.typeCustom">Custom item</option></select></label><label><span data-i18n="lab.quantity">QUANTITY</span><input id="gnInventoryQuantity" type="number" min="0" step="any" placeholder="0"></label></div><div class="gn-form-grid"><label><span data-i18n="lab.units">UNITS</span><input id="gnInventoryUnits" placeholder="items, mL, boxes" data-i18n-placeholder="lab.unitsPlaceholder"></label><label><span data-i18n="lab.expiration">EXPIRATION / BUD</span><input id="gnInventoryExpiry" type="date"></label><label><span data-i18n="lab.storageLocation">STORAGE LOCATION</span><input id="gnInventoryLocation" placeholder="User-entered location" data-i18n-placeholder="lab.storagePlaceholder"></label></div><label><span data-i18n="lab.notes">NOTES</span><textarea id="gnInventoryNotes" rows="2" placeholder="User-entered supply notes" data-i18n-placeholder="lab.supplyNotesPlaceholder"></textarea></label><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-full btn-secondary" type="submit" style="flex:1 1 180px" id="gnInventorySave" data-i18n="lab.saveInventory">SAVE INVENTORY ITEM</button><button class="btn-full btn-secondary" type="button" id="gnInventoryExport" style="flex:0 1 170px" data-i18n="lab.exportInventory">EXPORT INVENTORY</button></div></form><div class="gn-record-list" id="gnInventoryList"></div></details>
+    <details class="gn-foundation-section" id="gnSupplySection"><summary><span data-i18n="lab.savedInventory">SAVED INVENTORY</span><em data-i18n="lab.separateCalculators">SEPARATE FROM CALCULATORS</em></summary><div class="gn-ledger-copy"><strong data-i18n="lab.calculatorEstimate">CALCULATOR / REFERENCE ESTIMATE</strong> <span data-i18n="lab.inventoryBoundary">remains educational math. Saved Inventory is user-entered supply records and does not verify product, storage, potency, or safety.</span></div><form class="gn-record-form" id="gnInventoryForm" novalidate><div class="gn-form-grid"><label><span data-i18n="lab.itemName">ITEM NAME</span><input id="gnInventoryName" required placeholder="e.g. cartridge A" data-i18n-placeholder="lab.itemNamePlaceholder"></label><label><span data-i18n="lab.itemType">ITEM TYPE</span><select id="gnInventoryType"><option value="VIAL" data-i18n="lab.typeVial">Vial</option><option value="CARTRIDGE" data-i18n="lab.typeCartridge">Cartridge</option><option value="DISPOSABLE_PEN" data-i18n="lab.typeDisposable">Disposable pen</option><option value="BOX_PACKAGE" data-i18n="lab.typeBox">Box or package</option><option value="SUPPLY" data-i18n="lab.typeSupply">General supply item</option><option value="CUSTOM" data-i18n="lab.typeCustom">Custom item</option></select></label><label><span data-i18n="lab.quantity">QUANTITY</span><input id="gnInventoryQuantity" type="number" min="0" step="any" placeholder="0"></label></div><div class="gn-form-grid"><label><span data-i18n="lab.units">UNITS</span><input id="gnInventoryUnits" placeholder="items, mL, boxes" data-i18n-placeholder="lab.unitsPlaceholder"></label><label><span data-i18n="lab.expiration">EXPIRATION / BUD</span><input id="gnInventoryExpiry" type="date"></label><label><span data-i18n="lab.storageLocation">STORAGE LOCATION</span><input id="gnInventoryLocation" placeholder="User-entered location" data-i18n-placeholder="lab.storagePlaceholder"></label></div><label><span data-i18n="lab.notes">NOTES</span><textarea id="gnInventoryNotes" rows="2" placeholder="User-entered supply notes" data-i18n-placeholder="lab.supplyNotesPlaceholder"></textarea></label><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-full btn-secondary" type="submit" style="flex:1 1 180px" id="gnInventorySave" data-i18n="lab.saveInventory">SAVE INVENTORY ITEM</button><button class="btn-full btn-secondary" type="button" id="gnInventoryExport" style="flex:0 1 170px" data-i18n="lab.exportInventory">EXPORT INVENTORY</button></div></form><div class="gn-record-list" id="gnInventoryList"></div></details>
   </section>`);
   $('gnResearchForm')?.addEventListener('submit', event => { event.preventDefault(); saveResearchRecord(); });
   // B12 (2026-08-08): compact research notice — "?" toggles the body.
@@ -5595,7 +5736,7 @@ function renderLabFoundations() {
   const ledger = $('gnLedgerList');
   if (ledger) {
     const events = S.get('eventLedger', []).slice(-8).reverse();
-    ledger.innerHTML = events.length ? events.map(event => `<div class="gn-ledger-row"><span class="gn-ledger-dot"></span><div><b>${safeText(eventLabelText(event.label || event.type))}</b><small>${safeText(formatDateTime(event.date || event.createdAt))}</small></div><em>${safeText(eventSourceText(event.source))} · ${safeText(eventStateText(event.state))}</em></div>`).join('') : `<div class="gn-empty-state"><b>${tx('lab.ledgerReady', 'LEDGER READY')}</b><span>${tx('lab.ledgerEmpty', 'New SHOTS and RESULTS events will appear here with their origin.')}</span></div>`;
+    ledger.innerHTML = events.length ? events.map(event => `<div class="gn-ledger-row"><span class="gn-ledger-dot"></span><div><b>${safeText(eventLabelText(event.label || event.type))}</b><small>${safeText(formatDateTime(event.date || event.createdAt))}</small></div><em>${safeText(eventSourceText(event.source))} · ${safeText(eventStateText(event.state))}</em></div>`).join('') : `<div class="gn-empty-state"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span><b>${tx('lab.ledgerReady', 'LEDGER READY')}</b><span>${tx('lab.ledgerEmpty', 'New SHOTS and RESULTS events will appear here with their origin.')}</span><button type="button" class="gn-ux-empty-link" onclick="openLogModal()">${tx('runtime.logShot', 'LOG SHOT')}</button></div>`;
   }
   renderInventory();
   syncCustomPickers($('pageLab') || document);
@@ -5607,12 +5748,16 @@ function renderInventory() {
   const records = S.get('inventory', []);
   const visible = records.filter(record => !record.archived);
   const archived = records.filter(record => record.archived);
-  list.innerHTML = records.length ? `${visible.map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(inventoryTypeLabel(record.type))} · ${safeText(record.quantity ?? '—')} ${safeText(record.units || '')} · ${safeText(record.location || tx('lab.locationNotEntered', 'LOCATION NOT ENTERED'))}</small></div><span class="gn-record-state">${safeText(record.status === 'ARCHIVED' ? tx('research.archivedState', 'ARCHIVED') : tx('lab.active', 'ACTIVE'))}</span><div style="display:flex;gap:4px"><button type="button" class="gn-record-delete" data-inventory-edit="${safeText(record.id)}" aria-label="Edit inventory item" data-i18n-aria-label="lab.editInventoryAria">✎</button><button type="button" class="gn-record-delete" data-inventory-archive="${safeText(record.id)}" aria-label="Archive inventory item" data-i18n-aria-label="lab.archiveInventoryAria">×</button></div></article>`).join('')}${archived.length ? `<div class="gn-ledger-copy" style="margin-top:10px">${tx('research.archivedHeading', 'ARCHIVED RECORDS · Restore the record before editing.')}</div>${archived.map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(inventoryTypeLabel(record.type))} · ${tx('research.archivedPrefix', 'Archived')} ${safeText(formatDate(record.modifiedAt || record.createdAt))}</small></div><span class="gn-record-state">${tx('research.archivedState', 'ARCHIVED')}</span><button type="button" class="gn-record-delete gn-restore-edit" data-inventory-restore="${safeText(record.id)}" aria-label="Restore inventory item to edit" data-i18n-aria-label="lab.restoreInventoryAria">${tx('research.restoreToEdit', 'RESTORE TO EDIT')}</button></article>`).join('')}` : ''}` : `<div class="gn-empty-state"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-archive-core"></use></svg></span><b>${tx('lab.inventoryReady', 'SAVED INVENTORY READY')}</b><span>${tx('lab.inventoryEmpty', 'Record supplies separately from educational calculators when you want a persistent list.')}</span></div>`;
+  list.innerHTML = records.length ? `${visible.map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(inventoryTypeLabel(record.type))} · ${safeText(record.quantity ?? '—')} ${safeText(record.units || '')} · ${safeText(record.location || tx('lab.locationNotEntered', 'LOCATION NOT ENTERED'))}</small></div><span class="gn-record-state">${safeText(record.status === 'ARCHIVED' ? tx('research.archivedState', 'ARCHIVED') : tx('lab.active', 'ACTIVE'))}</span><div style="display:flex;gap:4px"><button type="button" class="gn-record-delete" data-inventory-edit="${safeText(record.id)}" aria-label="Edit inventory item" data-i18n-aria-label="lab.editInventoryAria">✎</button><button type="button" class="gn-record-delete" data-inventory-archive="${safeText(record.id)}" aria-label="Archive inventory item" data-i18n-aria-label="lab.archiveInventoryAria">×</button></div></article>`).join('')}${archived.length ? `<div class="gn-ledger-copy" style="margin-top:10px">${tx('research.archivedHeading', 'ARCHIVED RECORDS · Restore the record before editing.')}</div>${archived.map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(inventoryTypeLabel(record.type))} · ${tx('research.archivedPrefix', 'Archived')} ${safeText(formatDate(record.modifiedAt || record.createdAt))}</small></div><span class="gn-record-state">${tx('research.archivedState', 'ARCHIVED')}</span><button type="button" class="gn-record-delete gn-restore-edit" data-inventory-restore="${safeText(record.id)}" aria-label="Restore inventory item to edit" data-i18n-aria-label="lab.restoreInventoryAria">${tx('research.restoreToEdit', 'RESTORE TO EDIT')}</button></article>`).join('')}` : ''}` : `<div class="gn-empty-state"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-archive-core"></use></svg></span><b>${tx('lab.inventoryReady', 'SAVED INVENTORY READY')}</b><span>${tx('lab.inventoryEmptyPlain', 'Nothing saved yet. Add your first supply item with the form above.')}</span><button type="button" class="btn-full btn-secondary empty-cta" onclick="document.getElementById('gnInventoryForm')?.scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('gnInventoryName')?.focus()">${tx('lab.addFirstItem', 'ADD YOUR FIRST ITEM')}</button></div>`;
 }
 
 function saveInventoryRecord() {
   const name = $('gnInventoryName')?.value?.trim();
-  if (!name) { actionFeedback(tx('inventory.notSaved', 'INVENTORY NOT SAVED'), tx('inventory.addName', 'ADD AN ITEM NAME BEFORE COMMITTING'), true); return; }
+  if (!name) { const nameInput = $('gnInventoryName'); nameInput?.setAttribute('aria-invalid', 'true'); shotFieldError(nameInput, 'gnInventoryNameError', tx('inventory.addNamePlain', 'Give the item a name so you can find it later.')); nameInput?.focus(); actionFeedback(tx('inventory.notSaved', 'INVENTORY NOT SAVED'), tx('inventory.addName', 'ADD AN ITEM NAME BEFORE COMMITTING'), true); return; }
+  $('gnInventoryNameError')?.remove(); $('gnInventoryName')?.removeAttribute('aria-invalid');
+  const qtyRaw = $('gnInventoryQuantity')?.value;
+  if (qtyRaw && Number(qtyRaw) < 0) { const qtyInput = $('gnInventoryQuantity'); qtyInput?.setAttribute('aria-invalid', 'true'); shotFieldError(qtyInput, 'gnInventoryQtyError', tx('inventory.qtyPlain', 'Quantity cannot be negative. Use 0 or more.')); qtyInput?.focus(); actionFeedback(tx('inventory.notSaved', 'INVENTORY NOT SAVED'), tx('inventory.qtyPlain', 'Quantity cannot be negative. Use 0 or more.'), true); return; }
+  $('gnInventoryQtyError')?.remove(); $('gnInventoryQuantity')?.removeAttribute('aria-invalid');
   const records = S.get('inventory', []);
   const now = new Date().toISOString();
   const id = moduleState.inventoryEditId || createId('inventory');
@@ -5777,7 +5922,7 @@ function ensureProfileHub() {
           <p class="gn-ledger-copy" data-i18n="vault.deviceVaultPhilosophy">The device is not the cartridge. The cartridge is not the dose. The dose is not the plan. Device identity, inventory, SHOT events, and LOADOUT remain separate records.</p>
           <details class="gn-vault-subcard" id="gnDeviceFormWrap">
             <summary class="gn-vault-subcard-head"><span data-i18n="vault.registerDevice">REGISTER DEVICE</span>${chev}</summary>
-            <form class="gn-record-form" id="gnDeviceForm"><div class="gn-form-grid"><label><span data-i18n="vault.deviceName">DEVICE NAME</span><input id="gnDeviceName" required placeholder="e.g. Home pen A" data-i18n-placeholder="vault.deviceNamePlaceholder"></label><label><span data-i18n="vault.deviceType">DEVICE TYPE</span><select id="gnDeviceType"><option value="REUSABLE" data-i18n="vault.deviceTypeReusable">Reusable pen</option><option value="DISPOSABLE" data-i18n="vault.deviceTypeDisposable">Disposable pen</option><option value="AUTOINJECTOR" data-i18n="vault.deviceTypeAutoinjector">Autoinjector</option><option value="OTHER" data-i18n="vault.deviceTypeOther">Other device</option></select></label><label><span data-i18n="vault.deviceStatus">STATUS</span><select id="gnDeviceStatus">${DEVICE_STATUSES.map(status => { const key = 'vault.status' + status.replace(/\s+/g, ''); return `<option value="${status}" data-i18n="${key}">${tx(key, status)}</option>`; }).join('')}</select></label></div><label><span data-i18n="vault.deviceLabelNotes">LABEL / NOTES</span><textarea id="gnDeviceNotes" rows="2" placeholder="User-entered identity notes" data-i18n-placeholder="vault.deviceNotesPlaceholder"></textarea></label><button class="btn-full btn-secondary" type="submit" data-i18n="vault.deviceRegister">REGISTER DEVICE IDENTITY</button></form>
+            <form class="gn-record-form" id="gnDeviceForm" novalidate><div class="gn-form-grid"><label><span data-i18n="vault.deviceName">DEVICE NAME</span><input id="gnDeviceName" required placeholder="e.g. Home pen A" data-i18n-placeholder="vault.deviceNamePlaceholder"></label><label><span data-i18n="vault.deviceType">DEVICE TYPE</span><select id="gnDeviceType"><option value="REUSABLE" data-i18n="vault.deviceTypeReusable">Reusable pen</option><option value="DISPOSABLE" data-i18n="vault.deviceTypeDisposable">Disposable pen</option><option value="AUTOINJECTOR" data-i18n="vault.deviceTypeAutoinjector">Autoinjector</option><option value="OTHER" data-i18n="vault.deviceTypeOther">Other device</option></select></label><label><span data-i18n="vault.deviceStatus">STATUS</span><select id="gnDeviceStatus">${DEVICE_STATUSES.map(status => { const key = 'vault.status' + status.replace(/\s+/g, ''); return `<option value="${status}" data-i18n="${key}">${tx(key, status)}</option>`; }).join('')}</select></label></div><label><span data-i18n="vault.deviceLabelNotes">LABEL / NOTES</span><textarea id="gnDeviceNotes" rows="2" placeholder="User-entered identity notes" data-i18n-placeholder="vault.deviceNotesPlaceholder"></textarea></label><button class="btn-full btn-secondary" type="submit" data-i18n="vault.deviceRegister">REGISTER DEVICE IDENTITY</button></form>
           </details>
           <div class="gn-device-list" id="gnDeviceList"></div>
         </div>
@@ -5916,7 +6061,8 @@ function pulseGnCapture(saveButton) {
 
 function saveDeviceRecord() {
   const name = $('gnDeviceName')?.value?.trim();
-  if (!name) { actionFeedback(tx('device.notRegistered', 'DEVICE NOT REGISTERED'), tx('device.addName', 'ADD A DEVICE NAME BEFORE COMMITTING'), true); return; }
+  if (!name) { const nameInput = $('gnDeviceName'); nameInput?.setAttribute('aria-invalid', 'true'); shotFieldError(nameInput, 'gnDeviceNameError', tx('device.addNamePlain', 'Give the device a name so you can tell it apart.')); nameInput?.focus(); actionFeedback(tx('device.notRegistered', 'DEVICE NOT REGISTERED'), tx('device.addName', 'ADD A DEVICE NAME BEFORE COMMITTING'), true); return; }
+  $('gnDeviceNameError')?.remove(); $('gnDeviceName')?.removeAttribute('aria-invalid');
   const devices = S.get('devices', []), now = new Date().toISOString(), id = moduleState.deviceEditId || createId('device'), existing = devices.find(item => item.id === id);
   const device = { ...(existing || {}), id, name, type: normalizeDeviceType($('gnDeviceType')?.value), status: $('gnDeviceStatus')?.value || 'NEEDS CHECKING', notes: $('gnDeviceNotes')?.value?.trim() || '', qrIdentity: existing?.qrIdentity || `GN-${Math.random().toString(36).slice(2, 10).toUpperCase()}`, source: existing?.source || 'manual', state: existing?.state || 'confirmed', archived: existing?.archived || false, createdAt: existing?.createdAt || now, modifiedAt: now };
   const index = devices.findIndex(item => item.id === id); if (index >= 0) devices[index] = device; else devices.push(device);

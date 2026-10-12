@@ -155,8 +155,23 @@ function gnValidateStep1() {
 export function gnShotStepNext() {
   const check = gnValidateStep1();
   if (!check.ok) {
+    /* TRACK C: same inline field errors as the final SAVE gate — the
+       message sits under the field that needs fixing, not only in a
+       toast. (Helpers are declared with saveShot below; hoisted.) */
+    clearShotFieldErrors();
     check.invalidFields.filter(Boolean).forEach(field => field.setAttribute('aria-invalid', 'true'));
-    check.invalidFields.find(Boolean)?.focus?.();
+    check.invalidFields.filter(Boolean).forEach(field => {
+      if (field.id === 'cpShotMed') shotFieldError(field, 'gnShotErrMed', tx('shots.medRequiredPlain', 'Pick your medication from the list.'));
+      else if (field.id === 'sDose') shotFieldError(field, 'gnShotErrDose', tx('shots.doseRequiredPlain', 'Enter a dose greater than zero.'));
+      else if (field.id === 'sDate') shotFieldError(field.closest('.form-group') || field, 'gnShotErrDate', tx('shots.dateRequiredPlain', 'Pick the date of this shot.'));
+      else if (field.id === 'sTime') shotFieldError(field.closest('.form-group') || field, 'gnShotErrTime', tx('shots.timeRequired', 'Set the shot time and pick AM or PM.'));
+    });
+    const firstInvalid = check.invalidFields.find(Boolean);
+    if (firstInvalid) {
+      if (firstInvalid.id === 'cpShotMed') firstInvalid.querySelector('.cp-select-trigger')?.focus?.();
+      else firstInvalid.focus?.();
+      firstInvalid.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+    }
     // v0.15.53: never fail silently — name the time problem explicitly.
     const msg = !check.time
       ? tx('shots.timeRequired', 'Set the shot time and pick AM or PM.')
@@ -165,6 +180,7 @@ export function gnShotStepNext() {
     notifyCoachSaveBlocked(check.invalidFields);
     return;
   }
+  clearShotFieldErrors();
   gnSetShotStep(2);
 }
 
@@ -506,6 +522,57 @@ function notifyCoachSaveBlocked(invalidFields) {
   } catch (_) { /* never break the save path for coach telemetry */ }
 }
 
+/* TRACK C: inline field errors for the shot console. Until now a failed
+   SAVE only fired a toast: nothing at the field said what to fix, and
+   focus() on the non-focusable medication picker silently did nothing.
+   The message now lives directly under its field in plain language; the
+   toast stays as the summary (the coach path still reads it). Errors
+   clear as the user fixes each field. */
+function shotFieldError(anchor, id, message) {
+  if (!anchor) return;
+  let el = document.getElementById(id);
+  if (!el) {
+    el = document.createElement('div');
+    el.id = id;
+    el.className = 'gn-field-error';
+    el.setAttribute('role', 'alert');
+    anchor.insertAdjacentElement('afterend', el);
+  }
+  el.textContent = message;
+}
+function clearShotFieldErrors() {
+  qa('#logOv .gn-field-error').forEach(el => el.remove());
+}
+/* TRACK C: post-action momentum. The undoable save toast gains ONE
+   next-step action (VIEW) beside UNDO, so a saved shot leads somewhere
+   instead of just expiring. First-shot saves keep the GRID ACTIVATED
+   celebration as their surface; this only decorates the toast. */
+function addToastNextStep(label, onClick) {
+  const toast = $('toastEl');
+  if (!toast || !toast.classList.contains('undoable') || toast.querySelector('.gn-toast-view')) return;
+  const body = toast.querySelector('.gn-toast-body');
+  const undo = toast.querySelector('.gn-toast-undo');
+  if (!body || !undo) return;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'gn-toast-view';
+  btn.textContent = label;
+  btn.addEventListener('click', () => { clearTimeout(toast._timer); toast.classList.remove('active'); onClick(); });
+  body.insertBefore(btn, undo);
+}
+document.addEventListener('input', (e) => {
+  const t = e.target;
+  if (!t || !t.closest || !t.closest('#logOv')) return;
+  if (t.id === 'sDose') { $('gnShotErrDose')?.remove(); t.removeAttribute('aria-invalid'); }
+  if (t.id === 'sWt') { $('gnShotErrWt')?.remove(); t.removeAttribute('aria-invalid'); }
+  if (t.id === 'sTime') $('gnShotErrTime')?.remove();
+});
+document.addEventListener('click', (e) => {
+  if (!e.target || !e.target.closest || !e.target.closest('#logOv')) return;
+  if (e.target.closest('#cpShotMed')) { $('gnShotErrMed')?.remove(); $('cpShotMed')?.removeAttribute('aria-invalid'); }
+  if (e.target.closest('#modalZonePicker')) { $('gnShotErrSite')?.remove(); $('logLocationAction')?.removeAttribute('aria-invalid'); }
+});
+
 export function saveShot(allowFuture = false) {
   if (moduleState.savingShot) return;
   moduleState.savingShot = true;
@@ -518,6 +585,7 @@ export function saveShot(allowFuture = false) {
     const time = getShotTime24($('sTime')?.value);
     const site = moduleState.selectedLocation;
     qa('#logOv [aria-invalid="true"]').forEach(field => field.removeAttribute('aria-invalid'));
+    clearShotFieldErrors();
     const invalidFields = [];
     if (!med) invalidFields.push($('cpShotMed'));
     if (!(Number.isFinite(dose) && dose > 0)) invalidFields.push($('sDose'));
@@ -526,7 +594,17 @@ export function saveShot(allowFuture = false) {
     if (!site) invalidFields.push($('logLocationAction'));
     if (invalidFields.length) {
       invalidFields.filter(Boolean).forEach(field => field.setAttribute('aria-invalid', 'true'));
-      invalidFields.find(Boolean)?.focus?.();
+      if (!med) shotFieldError($('cpShotMed'), 'gnShotErrMed', tx('shots.medRequiredPlain', 'Pick your medication from the list.'));
+      if (!(Number.isFinite(dose) && dose > 0)) shotFieldError($('sDose'), 'gnShotErrDose', tx('shots.doseRequiredPlain', 'Enter a dose greater than zero.'));
+      if (!date) shotFieldError($('sDate')?.closest('.form-group') || $('sDate'), 'gnShotErrDate', tx('shots.dateRequiredPlain', 'Pick the date of this shot.'));
+      if (!time) shotFieldError($('sTime')?.closest('.form-group') || $('sTime'), 'gnShotErrTime', tx('shots.timeRequired', 'Set the shot time and pick AM or PM.'));
+      if (!site) shotFieldError($('logLocationAction')?.closest('.form-group') || $('logLocationAction'), 'gnShotErrSite', tx('shot.siteRequired', 'Pick an injection site to log the shot.'));
+      const firstInvalid = invalidFields.find(Boolean);
+      if (firstInvalid) {
+        if (firstInvalid.id === 'cpShotMed') firstInvalid.querySelector('.cp-select-trigger')?.focus?.();
+        else firstInvalid.focus?.();
+        firstInvalid.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+      }
       // v0.15.53: never fail silently — name the time problem explicitly so the
       // user knows to pick AM/PM instead of tapping SAVE again in confusion.
       // TRACK 2: on step 2 the essentials are already validated at Continue, so
@@ -546,6 +624,7 @@ export function saveShot(allowFuture = false) {
     }
     if (weightRaw && !(Number.isFinite(weight) && weight > 0)) {
       $('sWt')?.setAttribute('aria-invalid', 'true');
+      shotFieldError($('sWt'), 'gnShotErrWt', tx('shots.validWeightPlain', 'Weight must be a number greater than zero, or left blank.'));
       $('sWt')?.focus();
       showToast(tx('shots.validWeightRequired', 'Optional weight must be greater than zero.'), true);
       return;
@@ -649,6 +728,7 @@ export function saveShot(allowFuture = false) {
     const shotTimeLabel = formatTime12(new Date(record.date));
     const shotDetail = `${record.dose} mg ${medicationLabel(normalizeMedicationId(record.med))} · ${zoneLabel(record.site)}`;
     showToast(`${tx('toast.shotLogged', 'Dosis registrada')} · ${shotTimeLabel}`, false, () => undoShot(record.id), shotDetail);
+    addToastNextStep(tx('toast.viewProgress', 'VIEW PROGRESS'), () => showPage('Results', document.getElementById('navRes')));
     return record;
   } finally {
     moduleState.savingShot = false;
