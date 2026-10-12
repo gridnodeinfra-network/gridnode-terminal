@@ -574,7 +574,7 @@
   border-right:1px solid rgba(156,255,213,.86) !important;
   box-shadow:1px 0 8px rgba(31,255,174,.22),inset 0 0 8px rgba(31,255,174,.10) !important;
   z-index:1 !important;
-  transition:width .22s ease !important;
+  transition:width var(--dur-2) var(--ease-out) !important;
 }
 .syringe-visual.gn-syr-final .syr-stopper{
   position:absolute;
@@ -599,7 +599,7 @@
   background:#ffd76a !important;
   box-shadow:0 0 8px rgba(255,215,106,.62),0 0 2px rgba(255,255,255,.7) !important;
   z-index:5 !important;
-  transition:left .22s ease !important;
+  transition:left var(--dur-2) var(--ease-out) !important;
 }
 .syringe-visual.gn-syr-final .syr-target-line::before{
   top:-5px !important;
@@ -797,7 +797,7 @@
   box-shadow:
     1px 0 8px rgba(39,255,178,.28),
     inset 0 0 8px rgba(39,255,178,.12) !important;
-  transition:width .16s linear !important;
+  transition:width var(--dur-2) linear !important;
 }
 
 /* Exact draw edge/stopper, same shared source as fluid and target. */
@@ -825,7 +825,7 @@
   transform:translateX(-1px) !important;
   background:#ffd76a !important;
   box-shadow:0 0 8px rgba(255,215,106,.68),0 0 2px rgba(255,255,255,.72) !important;
-  transition:left .16s linear !important;
+  transition:left var(--dur-2) linear !important;
   z-index:6 !important;
 }
 .syringe-visual.gn-syr-final.gn-syr-instrument .syr-target-line::before{

@@ -30,7 +30,7 @@
   background: linear-gradient(100deg, transparent 20%, var(--border-2) 50%, transparent 80%);
   opacity: .45;
   transform: translateX(-100%);
-  animation: gn-ux-shimmer 1.4s ease-in-out infinite;
+  animation: gn-ux-shimmer 1.4s var(--ease-inout) infinite;
 }
 @keyframes gn-ux-shimmer {
   to { transform: translateX(100%); }

@@ -185,11 +185,14 @@ html[data-theme="light"] .gn-research-mode-custom .gn-research-mode-title { colo
  * and 10-motion.css collapses --dur-1/2/3 to 0.01ms under
  * prefers-reduced-motion, so var() resolution neutralizes them without
  * fighting specificity. This universal rule stays as the catch-all for
- * every non-!important transition. Remaining known sources outside
- * Track B ownership: html/partials/12-styles-polish-patches.html
- * (duplicate syringe !important shorthands, same selectors as
- * 01-head.html) and html/partials/09-styles-scanner-patches.html
- * (.zone-confirming flash) — same one-line tokenization applies. */
+ * every non-!important transition. The duplicate syringe !important
+ * shorthands in html/partials/12-styles-polish-patches.html and the
+ * .zone-confirming flash in html/partials/09-styles-scanner-patches.html
+ * were tokenized the same way at integration (coordinator, 2026-10-12).
+ * Intentionally left: the 9999s autofill-delay hack in
+ * 12-styles-polish-patches.html (its duration IS its function) and
+ * literal timings inside JS-injected styles in js/gridnode-app.js,
+ * which CSS cannot reach. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     transition-duration: 0.01ms !important;
