@@ -52,6 +52,7 @@
 <link rel="stylesheet" href="./css/native/07-journey.css?v=20260918.c67df9d">
 <link rel="stylesheet" href="./css/native/08-unify-fixes.css?v=20260918.c67df9d">
 <link rel="stylesheet" href="./css/native/09-unified-components.css?v=20260918.c67df9d">
+<link rel="stylesheet" href="./css/native/10-motion.css?v=20260918.c67df9d">
 
 <link rel="manifest" href="/manifest.json">
 <meta name="description" content="GRID//NODE is a local-first personal biotech system for tracking GLP-1 protocols, peptides, weight, phases, and user-entered outcomes.">
@@ -1013,9 +1014,9 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 .vault-collapse-trigger{display:flex;align-items:center;justify-content:space-between;width:100%;cursor:pointer;padding:6px 0;background:none;border:none;color:inherit;font:inherit;text-align:left}
 .vault-collapse-trigger:hover .vault-card-title{color:#c8e9f5}
 .vault-collapse-trigger:focus-visible{outline:1px solid rgba(0,212,255,.6);outline-offset:4px;border-radius:4px}
-.vault-collapse-trigger .vault-collapse-chevron{font-family:var(--font-m);font-size:.7rem;color:#9fd9e8;transition:transform .25s ease;letter-spacing:0;margin-left:auto;padding-left:8px}
+.vault-collapse-trigger .vault-collapse-chevron{font-family:var(--font-m);font-size:.7rem;color:#9fd9e8;transition:transform var(--dur-2) var(--ease-inout);letter-spacing:0;margin-left:auto;padding-left:8px}
 .vault-collapse-trigger[aria-expanded="false"] .vault-collapse-chevron{transform:rotate(-90deg)}
-.vault-collapse-body{display:block;overflow:hidden;transition:max-height .35s ease,opacity .25s ease;max-height:2000px;opacity:1}
+.vault-collapse-body{display:block;overflow:hidden;transition:max-height var(--dur-3) var(--ease-inout),opacity var(--dur-2) var(--ease-out);max-height:2000px;opacity:1}
 .vault-collapse-body.gn-hidden{max-height:0;opacity:0;pointer-events:none}
 .vault-collapse-trigger .vault-card-title{margin-bottom:0}
 /* ═══ VAULT: SYSTEM card (refresh / reconnect) ═══ */
@@ -1089,9 +1090,9 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 .gn-shot-advanced-trigger{display:flex;align-items:center;justify-content:space-between;width:100%;cursor:pointer;padding:10px 12px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);color:#9fd9e8;font-family:var(--font-m);font-size:.62rem;letter-spacing:2.5px;text-transform:uppercase;margin-top:8px;transition:all .2s ease}
 .gn-shot-advanced-trigger:hover{border-color:rgba(0,212,255,.3);color:#c8e9f5;background:rgba(0,0,0,.38)}
 .gn-shot-advanced-trigger:focus-visible{outline:1px solid rgba(0,212,255,.6);outline-offset:2px}
-.gn-shot-advanced-trigger .gn-shot-advanced-chevron{font-size:.8rem;letter-spacing:0;transition:transform .25s ease}
+.gn-shot-advanced-trigger .gn-shot-advanced-chevron{font-size:.8rem;letter-spacing:0;transition:transform var(--dur-2) var(--ease-inout)}
 .gn-shot-advanced-trigger[aria-expanded="false"] .gn-shot-advanced-chevron{transform:rotate(-90deg)}
-.gn-shot-advanced-body{overflow:hidden;transition:max-height .35s ease,opacity .25s ease;max-height:3000px;opacity:1;margin-top:8px}
+.gn-shot-advanced-body{overflow:hidden;transition:max-height var(--dur-3) var(--ease-inout),opacity var(--dur-2) var(--ease-out);max-height:3000px;opacity:1;margin-top:8px}
 .gn-shot-advanced-body.gn-hidden{max-height:0;opacity:0;pointer-events:none;margin-top:0}
 /* ═══ MINIMALISM: medication category-first dropdown ═══ */
 .cp-dropdown{min-width:240px;max-height:none}
@@ -1100,7 +1101,7 @@ html,body{overscroll-behavior-y:contain;touch-action:pan-y}
 .cp-group-minimized .cp-group-minimized-label{font-family:var(--font-m);font-size:.6rem;color:#9fd9e8;letter-spacing:2.2px}
 .cp-group-minimized .cp-group-minimized-hint{font-family:var(--font-m);font-size:.5rem;color:#7a8c97;letter-spacing:1.4px;text-transform:lowercase}
 .cp-group-minimized .cp-group-minimized-count{font-family:var(--font-m);font-size:.5rem;color:#6a7884;background:rgba(0,212,255,.08);border-radius:8px;padding:2px 8px;margin-left:auto}
-.cp-group-options{max-height:0;opacity:0;overflow:hidden;transition:max-height .25s ease,opacity .2s ease;padding:0 14px;background:rgba(0,0,0,.18)}
+.cp-group-options{max-height:0;opacity:0;overflow:hidden;transition:max-height var(--dur-2) var(--ease-inout),opacity var(--dur-2) var(--ease-out);padding:0 14px;background:rgba(0,0,0,.18)}
 .cp-group-options.gn-revealed{max-height:200px;opacity:1;padding:4px 14px 8px}
 .cp-group-options .cp-option{padding:7px 0;font-size:.88rem}
 .cp-group-label{cursor:pointer;display:flex;align-items:center;justify-content:space-between}
@@ -3656,7 +3657,7 @@ html[data-theme="light"] .csv-import-notimported{border-color:rgba(0,111,130,.25
   border-right:1px solid rgba(156,255,213,.86) !important;
   box-shadow:1px 0 8px rgba(31,255,174,.22),inset 0 0 8px rgba(31,255,174,.10) !important;
   z-index:1 !important;
-  transition:width .22s ease !important;
+  transition:width var(--dur-2) var(--ease-out) !important;
 }
 .syringe-visual.gn-syr-final .syr-stopper{
   position:absolute;
@@ -3681,7 +3682,7 @@ html[data-theme="light"] .csv-import-notimported{border-color:rgba(0,111,130,.25
   background:#ffd76a !important;
   box-shadow:0 0 8px rgba(255,215,106,.62),0 0 2px rgba(255,255,255,.7) !important;
   z-index:5 !important;
-  transition:left .22s ease !important;
+  transition:left var(--dur-2) var(--ease-out) !important;
 }
 .syringe-visual.gn-syr-final .syr-target-line::before{
   top:-5px !important;
@@ -3805,7 +3806,7 @@ html[data-theme="light"] .csv-import-notimported{border-color:rgba(0,111,130,.25
   box-shadow:
     1px 0 8px rgba(39,255,178,.28),
     inset 0 0 8px rgba(39,255,178,.12) !important;
-  transition:width .16s linear !important;
+  transition:width var(--dur-2) linear !important;
 }
 
 /* Exact draw edge/stopper, same shared source as fluid and target. */
@@ -3833,7 +3834,7 @@ html[data-theme="light"] .csv-import-notimported{border-color:rgba(0,111,130,.25
   transform:translateX(-1px) !important;
   background:#ffd76a !important;
   box-shadow:0 0 8px rgba(255,215,106,.68),0 0 2px rgba(255,255,255,.72) !important;
-  transition:left .16s linear !important;
+  transition:left var(--dur-2) linear !important;
   z-index:6 !important;
 }
 .syringe-visual.gn-syr-final.gn-syr-instrument .syr-target-line::before{
@@ -10296,7 +10297,7 @@ body.gn-log-shot-picker-open .fab{
   transform: none !important;
   filter: none !important;
   opacity: 1 !important;
-  transition: opacity .2s ease !important;
+  transition: opacity var(--dur-2) var(--ease-out) !important;
   width: 100% !important;
   height: 100% !important;
   -webkit-object-fit: cover !important;

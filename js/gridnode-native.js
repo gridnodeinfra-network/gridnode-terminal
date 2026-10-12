@@ -68,6 +68,7 @@
       '07-journey.css',
       '08-unify-fixes.css',
       '09-unified-components.css',
+      '10-motion.css',
     ];
     files.forEach((file, index) => {
       const link = document.createElement('link');
