@@ -72,6 +72,12 @@ function injectStableStyles() {
     .gn-auth-secondary:hover{border-color:#00d4ff;background:rgba(0,212,255,.09)}
     .gn-auth-secondary[aria-expanded="true"]{border-color:#00d4ff;color:#fff;background:rgba(0,212,255,.1)}
     .gn-legal-modal-title{margin:0 0 16px;color:#00d4ff;font:700 .66rem var(--font-d,monospace);letter-spacing:2px}
+    .gn-legal-intro{margin:-8px 0 16px;color:var(--text-2,#b7c7d3);font:.68rem/1.55 var(--font-m,monospace)}
+    .gn-entry-label{margin:16px 0 2px;color:var(--brand-cyan,#00d4ff);font:700 var(--kicker-size,.62rem) var(--font-m,monospace);letter-spacing:2px;text-align:center}
+    .gn-entry-local{width:100%;min-height:56px;margin-top:14px;padding:10px 12px;border:1px solid var(--border-cyan,rgba(0,212,255,.4));background:rgba(0,212,255,.05);color:var(--brand-cyan,#00d4ff);border-radius:var(--radius-control,3px);cursor:pointer;font:700 .72rem var(--font-d,monospace);letter-spacing:1.6px}
+    .gn-entry-local:hover{border-color:var(--brand-cyan,#00d4ff);background:rgba(0,212,255,.1)}
+    .gn-entry-local .gn-quiet-sub{display:block;margin-top:4px;color:var(--text-2,#b7c7d3);font:500 .58rem var(--font-m,monospace);letter-spacing:.6px}
+    .gn-entry-key{color:var(--text-1,#eef6f8)}
     #login>div[hidden]{display:none!important}
     .gn-legal-modal{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(2,2,8,.82);backdrop-filter:blur(8px)}
     .gn-legal-modal.active{display:flex}
@@ -222,6 +228,7 @@ function authShell() {
     <div class="gn-legal-modal" id="gnLegalModal" hidden>
       <div class="gn-legal-modal-card" role="dialog" aria-modal="true" aria-labelledby="gnLegalModalTitle">
         <h2 class="gn-legal-modal-title" id="gnLegalModalTitle" data-i18n="legal.modalTitle">BEFORE YOU ENTER</h2>
+      <p class="gn-legal-intro" data-i18n="legal.modalIntro">Two quick checks before you enter. Nothing is sent or synced until you agree.</p>
         <label class="gn-legal-check"><input type="checkbox" id="gnLegalModalTerms"><span data-i18n="legal.modalTerms">I am 18 or older and I accept the <button type="button" class="gn-legal-link" id="gnLegalModalTermsLink" data-i18n="footer.termsOfService">TERMS OF SERVICE</button> and <button type="button" class="gn-legal-link" id="gnLegalModalPrivacyLink" data-i18n="footer.privacyPolicy">PRIVACY POLICY</button>.</span></label>
         <label class="gn-legal-check"><input type="checkbox" id="gnLegalModalResearch"><span data-i18n="legal.modalResearch">I understand GRID//NODE is a personal tracking tool, not medical advice.</span></label>
         <button type="button" class="gn-legal-under18" id="gnLegalModalUnder18" data-i18n="legal.under18">I AM UNDER 18</button>
@@ -259,6 +266,7 @@ function authShell() {
   <div class="gn-legal-modal" id="gnLegalModal" hidden>
     <div class="gn-legal-modal-card" role="dialog" aria-modal="true" aria-labelledby="gnLegalModalTitle">
       <h2 class="gn-legal-modal-title" id="gnLegalModalTitle" data-i18n="legal.modalTitle">BEFORE YOU ENTER</h2>
+      <p class="gn-legal-intro" data-i18n="legal.modalIntro">Two quick checks before you enter. Nothing is sent or synced until you agree.</p>
       <label class="gn-legal-check"><input type="checkbox" id="gnLegalModalTerms"><span data-i18n="legal.modalTerms">I am 18 or older and I accept the <button type="button" class="gn-legal-link" id="gnLegalModalTermsLink" data-i18n="footer.termsOfService">TERMS OF SERVICE</button> and <button type="button" class="gn-legal-link" id="gnLegalModalPrivacyLink" data-i18n="footer.privacyPolicy">PRIVACY POLICY</button>.</span></label>
       <label class="gn-legal-check"><input type="checkbox" id="gnLegalModalResearch"><span data-i18n="legal.modalResearch">I understand GRID//NODE is a personal tracking tool, not medical advice.</span></label>
       <button type="button" class="gn-legal-under18" id="gnLegalModalUnder18" data-i18n="legal.under18">I AM UNDER 18</button>
@@ -307,13 +315,22 @@ function renderWelcomeView() {
   const expand = gnExpandPassword;
   gnExpandPassword = false;
   return `
-  <h2 class="gn-auth-view-title" data-i18n="otp.welcomeBack">WELCOME BACK</h2>
-  <p class="gn-auth-view-sub" data-i18n="otp.welcomeSub">Sign in to get to your grid.</p>
+  <h2 class="gn-auth-view-title" data-i18n="otp.chooseTitle">HOW DO YOU WANT TO ENTER?</h2>
+  <p class="gn-auth-view-sub" data-i18n="otp.chooseSub">Three ways in. Pick one — you can switch later in VAULT.</p>
   <div id="gnOtpNoAccount"></div>
+  <div class="gn-entry-label" id="gnGoogleLabel" data-i18n="otp.googleLabel">GOOGLE · SYNC ACROSS DEVICES</div>
+  <div class="gn-google-button-shell" id="gnGoogleButtonMount" data-i18n-aria-label="auth.continueWithGoogle" aria-label="Continue with Google"></div>
+  <div class="gn-auth-divider"><span data-i18n="otp.emailLabel">EMAIL CODE · RETURNING ACCOUNTS</span></div>
   <input class="gn-auth-field" id="gnOtpEmail" type="email" inputmode="email" autocomplete="email" data-i18n-ph="otp.emailPlaceholder" placeholder="name@email.com" data-i18n-aria-label="auth.emailAddress" aria-label="Email">
   <button class="gn-auth-primary gn-auth-primary-compact" id="gnSendCodeBtn" type="button"><span data-i18n="otp.sendCode">SEND ME A SIGN-IN CODE</span></button>
-  <div class="gn-auth-divider"><span data-i18n="otp.orContinueWithEmail">or</span></div>
-  <div class="gn-google-button-shell" id="gnGoogleButtonMount" data-i18n-aria-label="auth.continueWithGoogle" aria-label="Continue with Google"></div>
+  <button class="gn-entry-local" id="gnDeviceBtn" type="button">
+    <span data-i18n="otp.localTitle">CONTINUE ON THIS DEVICE</span>
+    <span class="gn-quiet-sub" data-i18n="otp.localSub">Start now, no account. Your data stays on this device.</span>
+  </button>
+  <button class="gn-auth-quiet gn-entry-key" id="gnNewHereBtn" type="button">
+    <span data-i18n="otp.newHereNodeKey">New to GRID//NODE? ENTER NODE KEY</span>
+    <span class="gn-quiet-sub" data-i18n="otp.keySub">Invite-only beta — enter the key you were given.</span>
+  </button>
   <div class="gn-auth-links" style="justify-content:center;margin-top:10px">
     <button class="gn-auth-link" id="gnMoreOptionsToggle" type="button" aria-expanded="false"><span data-i18n="otp.moreSignInOptions">More sign-in options</span></button>
   </div>
@@ -324,12 +341,6 @@ function renderWelcomeView() {
     <button class="gn-auth-quiet" id="gnPasswordToggle" type="button">
       <span data-i18n="otp.usePasswordInstead">Use password instead</span>
     </button>
-    <button class="gn-auth-quiet" id="gnDeviceBtn" type="button">
-      <span data-i18n="auth.useLocally">USE LOCALLY</span>
-    </button>
-    <div class="gn-auth-links" style="justify-content:center;margin-top:8px">
-      <button class="gn-auth-link" id="gnNewHereBtn" type="button"><span data-i18n="otp.newHereNodeKey">New to GRID//NODE? ENTER NODE KEY</span></button>
-    </div>
   </div>
   <div id="gnPasswordBlock" ${expand ? '' : 'hidden'}>
     <form id="gnAuthForm" novalidate>
@@ -1000,10 +1011,15 @@ async function renderGoogleIdentityButton() {
   const host = $('gnGoogleButtonMount');
   if (!host) return;
   host.style.display = 'none';
+  /* AGENT2 full-pass: the GOOGLE label above the mount must never dangle
+   * without a button — it follows the mount's visibility exactly. */
+  const gnGoogleLabel = $('gnGoogleLabel');
+  if (gnGoogleLabel) gnGoogleLabel.style.display = 'none';
   const enabled = await isCloudProviderEnabled('google');
   if (!host.isConnected) return;
   if (!enabled) return;
   host.style.removeProperty('display');
+  if (gnGoogleLabel) gnGoogleLabel.style.removeProperty('display');
   try {
     await loadGoogleIdentityLibrary();
     if (!host.isConnected || !window.google?.accounts?.id) throw new Error('GOOGLE_LIBRARY_UNAVAILABLE');
@@ -1032,6 +1048,8 @@ async function renderGoogleIdentityButton() {
   } catch (error) {
     console.warn('[GRID//NODE Google identity]', error);
     host.style.display = 'none';
+    const gnGoogleLabelErr = $('gnGoogleLabel');
+    if (gnGoogleLabelErr) gnGoogleLabelErr.style.display = 'none';
     setAuthMessage(tx('auth.googleCouldNotLoad', '// GOOGLE SIGN-IN COULD NOT LOAD — USE EMAIL OR CONTINUE LOCALLY'), true);
   }
 }
@@ -1773,7 +1791,7 @@ async function startGridNode() {
     if (i < messages.length - 1) {
       line.classList.remove('boot-typing');
       tag.textContent = '[ OK ] ' + status;
-      if (!reduced) await new Promise(r => window.setTimeout(r, 90)); /* v0.15.45: was 140 */
+      if (!reduced) await new Promise(r => window.setTimeout(r, 50)); /* AGENT2 full-pass: snappier boot, tap-to-skip unchanged */
     }
   }
   // completion: kicker ONLINE + cyan->Mars Red pulse on the emblem
@@ -1781,7 +1799,7 @@ async function startGridNode() {
   const emblem = document.querySelector('.gn-b2b-symbol');
   if (emblem && !reduced && !bootSkipped) {
     emblem.classList.add('boot-complete-pulse');
-    await new Promise(r => window.setTimeout(r, 500)); /* v0.15.45: was 750 */
+    await new Promise(r => window.setTimeout(r, 250)); /* AGENT2 full-pass: snappier boot, tap-to-skip unchanged */
     emblem.classList.remove('boot-complete-pulse');
   }
   if (bootEl) bootEl.removeEventListener('pointerdown', markBootSkipped);

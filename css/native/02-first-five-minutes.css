@@ -46,6 +46,18 @@ html[data-theme="light"] .gn-first-run-card {
 html[data-theme="light"] .gn-first-run-card .gn-first-run-title { color: #1a2328 !important; }
 html[data-theme="light"] .gn-first-run-sub { color: #33454c !important; }
 
+/* Entry-ways preview on the landing hero: the three entry paths are named
+   before the first tap, so ENTER THE GRID is never a leap into the unknown. */
+.landing-entry-ways {
+  margin: 10px auto 0 !important;
+  max-width: 340px !important;
+  text-align: center !important;
+  color: var(--text-2, #b7c7d3) !important;
+  font: 600 var(--type-caption, .62rem)/1.6 var(--font-m, monospace) !important;
+  letter-spacing: .08em !important;
+}
+html[data-theme="light"] .landing-entry-ways { color: #33454c !important; }
+
 /* JACK IN subtitle — entry-language clarity. */
 .gn-auth-subtitle {
   margin: 2px 0 10px !important;
