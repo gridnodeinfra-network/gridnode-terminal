@@ -520,6 +520,7 @@
   "lab.ledgerTitle": "REGISTRO DE EVENTOS CON ORIGEN",
   "lab.linkedMedication": "MEDICAMENTO VINCULADO",
   "lab.localRecords": "REGISTROS LOCALES",
+  "lab.cloudRecords": "REGISTROS EN LA NUBE",
   "lab.locationNotEntered": "UBICACIÓN NO INGRESADA",
   "lab.medicationPlaceholder": "p. ej. Zepbound",
   "lab.metabolic": "METABÓLICO Y COMPOSICIÓN CORPORAL",

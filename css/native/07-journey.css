@@ -2,7 +2,13 @@
  * Connective tissue only: first-run flow, achievement moments, next-step
  * clarity. No screen redesigns here; those belong to other tracks.
  * Registered in html/partials/01-head.html (already referenced).
- */
+ *
+ * Theme-aware via the unified design tokens (08-design-tokens.css):
+ * every color derives from a contract token, so DUSK and light render
+ * from this one rule set. No per-theme palette lives here — the former
+ * hard-coded dark values (and the hard-coded light variant bolted onto
+ * 08-unify-fixes.css §5) were retired 2026-10-12; Pipe confirmed the
+ * dark-only rendering was a mistake, not an intentional exception. */
 
 /* First-shot achievement overlay: the empty → first-data moment.
  * One-time dialog. Dismisses via X (top-right), Escape, or either button.
@@ -15,7 +21,7 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(3, 6, 10, .72);
+  background: color-mix(in srgb, var(--surface-1) 42%, rgba(2, 5, 8, .8));
   -webkit-backdrop-filter: blur(3px);
   backdrop-filter: blur(3px);
   opacity: 0;
@@ -27,11 +33,11 @@
   position: relative;
   width: min(100%, 340px);
   padding: 26px 22px 20px;
-  border: 1px solid rgba(0, 212, 255, .45);
-  border-top: 3px solid #00d4ff;
+  border: 1px solid color-mix(in srgb, var(--brand-cyan) 45%, transparent);
+  border-top: 3px solid var(--brand-cyan);
   border-radius: 14px;
-  background: linear-gradient(150deg, rgba(0, 212, 255, .10), rgba(6, 12, 19, .97) 60%);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, .5), inset 0 1px rgba(255, 255, 255, .05);
+  background: linear-gradient(150deg, color-mix(in srgb, var(--brand-cyan) 10%, transparent), var(--surface-1) 60%);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .5), inset 0 1px var(--border-1);
   transform: translateY(10px) scale(.98);
   transition: transform .24s cubic-bezier(.2, .7, .3, 1);
 }
@@ -49,16 +55,16 @@
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: #9fb6c0;
+  color: var(--text-3);
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
 }
-.gn-fsc-x:hover { color: #fff; }
-.gn-fsc-x:focus-visible { outline: 2px solid #00d4ff; outline-offset: 2px; }
+.gn-fsc-x:hover { color: var(--text-1); }
+.gn-fsc-x:focus-visible { outline: 2px solid var(--brand-cyan); outline-offset: 2px; }
 
 .gn-fsc-kicker {
-  color: #83eaf5;
+  color: var(--kicker-color, var(--brand-cyan));
   font: 700 .68rem/1.2 var(--font-m, monospace);
   letter-spacing: .14em;
   margin-bottom: 8px;
@@ -67,13 +73,13 @@
 .gn-fsc-card h2 {
   margin: 0 0 10px;
   padding-right: 32px;
-  color: #f3fbff;
+  color: var(--text-1);
   font: 900 clamp(1.15rem, 5vw, 1.45rem)/1.15 var(--font-d, monospace);
   letter-spacing: .03em;
 }
 .gn-fsc-card p {
   margin: 0 0 18px;
-  color: #b9cbd2;
+  color: var(--text-2);
   font: 600 .86rem/1.5 var(--font-b, system-ui);
 }
 .gn-fsc-next {
@@ -82,18 +88,18 @@
   margin-bottom: 10px;
 }
 .gn-fsc-next-label {
-  color: #83eaf5;
+  color: var(--kicker-color, var(--brand-cyan));
   font: 700 .62rem/1.2 var(--font-m, monospace);
   letter-spacing: .14em;
 }
 .gn-fsc-primary {
   width: 100%;
   min-height: 52px;
-  border: 1px solid #FF5B5B;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #FF3B3B, #a80f31);
+  border: 1px solid var(--brand-red-hi);
+  border-radius: var(--radius-control, 8px);
+  background: linear-gradient(135deg, var(--brand-red), var(--brand-red-deep));
   color: #fff;
-  box-shadow: 0 10px 24px rgba(255, 45, 85, .26);
+  box-shadow: 0 10px 24px rgba(255, 59, 59, .28);
   font: 800 .76rem var(--font-d, monospace);
   letter-spacing: .1em;
   cursor: pointer;
@@ -102,10 +108,10 @@
 .gn-fsc-secondary {
   width: 100%;
   min-height: 48px;
-  border: 1px solid rgba(0, 212, 255, .4);
-  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--brand-cyan) 40%, transparent);
+  border-radius: var(--radius-control, 8px);
   background: transparent;
-  color: #83eaf5;
+  color: var(--brand-cyan);
   font: 800 .72rem var(--font-d, monospace);
   letter-spacing: .1em;
   cursor: pointer;

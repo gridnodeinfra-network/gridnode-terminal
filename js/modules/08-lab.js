@@ -4,7 +4,7 @@ function ensureLabFoundations() {
   const header = page.querySelector('.page-hdr');
   if (!header) return;
   header.insertAdjacentHTML('afterend', `<section class="gn-foundation-panel" data-gn-lab-foundation aria-labelledby="gnLabFoundationTitle">
-    <div class="gn-foundation-head"><div><div class="gn-foundation-kicker" data-i18n="lab.organizedSystems">// ORGANIZED SYSTEMS</div><h2 id="gnLabFoundationTitle">LAB <span data-i18n="lab.expansionLayer">EXPANSION LAYER</span></h2></div><span class="gn-foundation-signal" data-i18n="lab.localRecords">LOCAL RECORDS</span></div>
+    <div class="gn-foundation-head"><div><div class="gn-foundation-kicker" data-i18n="lab.organizedSystems">// ORGANIZED SYSTEMS</div><h2 id="gnLabFoundationTitle">LAB <span data-i18n="lab.expansionLayer">EXPANSION LAYER</span></h2></div><span class="gn-foundation-signal" data-gn-lab-records-pill data-i18n="lab.localRecords">LOCAL RECORDS</span></div>
     <div class="gn-lab-breadcrumb">LAB <b>›</b> <span data-i18n="lab.chooseSystemPhrase">CHOOSE A SYSTEM</span></div>
     <div class="gn-foundation-grid">
       <button type="button" class="gn-foundation-tile" data-lab-focus="calculators"><span class="gn-foundation-icon"><span class="gn-icon gn-icon-md gn-accent-g"><svg><use href="#gn-biometric-gauge"></use></svg></span></span><b data-i18n="lab.calculators">CALCULATORS</b><small data-i18n="lab.calculatorsHelp">Focused educational tools</small></button>
@@ -65,7 +65,7 @@ function ensureLabFoundations() {
   overlay.setAttribute('aria-modal', 'true');
   overlay.setAttribute('role', 'dialog');
   overlay.setAttribute('aria-labelledby', 'gnLabToolTitle');
-  overlay.innerHTML = `<div class="gn-lab-tool-shell"><header class="gn-lab-tool-head"><button type="button" class="gn-lab-back" data-lab-back data-i18n="lab.back">${tx('lab.back', '← BACK TO LAB')}</button><div><div class="gn-foundation-kicker" data-i18n="lab.kicker">// LAB SYSTEM</div><h2 id="gnLabToolTitle">${tx('lab.chooseSystem', 'LAB > CHOOSE A SYSTEM')}</h2></div><span class="gn-foundation-signal" data-i18n="lab.localRecords">LOCAL RECORDS</span></header><div id="gnLabToolHost" class="gn-lab-tool-host"></div></div>`;
+  overlay.innerHTML = `<div class="gn-lab-tool-shell"><header class="gn-lab-tool-head"><button type="button" class="gn-lab-back" data-lab-back data-i18n="lab.back">${tx('lab.back', '← BACK TO LAB')}</button><div><div class="gn-foundation-kicker" data-i18n="lab.kicker">// LAB SYSTEM</div><h2 id="gnLabToolTitle">${tx('lab.chooseSystem', 'LAB > CHOOSE A SYSTEM')}</h2></div><span class="gn-foundation-signal" data-gn-lab-records-pill data-i18n="lab.localRecords">LOCAL RECORDS</span></header><div id="gnLabToolHost" class="gn-lab-tool-host"></div></div>`;
   document.body.appendChild(overlay);
   overlay.querySelector('[data-lab-back]')?.addEventListener('click', closeLabTool);
   qa('[data-lab-focus]').forEach(tile => tile.addEventListener('click', () => openLabTool(tile.dataset.labFocus)));
@@ -282,6 +282,7 @@ const gnHaptics = (() => {
 try { window.gnHaptics = gnHaptics; } catch (_) {}
 
 function renderLabFoundations() {
+  syncLabRecordsPill();
   const list = $('gnResearchList');
   if (list) {
     const records = S.get('researchRecords', []);
@@ -540,6 +541,24 @@ function syncCloudOnlyButtons() {
   try { hasCloud = !!(typeof state !== 'undefined' && state && state.cloud); } catch (_) {}
   document.querySelectorAll('[data-gn-cloud-only]').forEach((el) => { el.hidden = !hasCloud; });
   document.querySelectorAll('[data-gn-local-only]').forEach((el) => { el.hidden = hasCloud; });
+  syncLabRecordsPill();
+}
+
+/* The LAB records pill names where records live: LOCAL RECORDS for a
+ * device-only session, CLOUD RECORDS once a cloud account is connected.
+ * It swaps the data-i18n key (not just the text) so GN_I18N.applyTo and
+ * language switches stay consistent with the live mode. Runs from
+ * syncCloudOnlyButtons (every profile render) and renderLabFoundations
+ * (every LAB render), so the pill flips on sign in / sign out without a
+ * reload, exactly like the cloud-gated controls above. */
+function syncLabRecordsPill() {
+  let hasCloud = false;
+  try { hasCloud = !!(typeof state !== 'undefined' && state && state.cloud); } catch (_) {}
+  const key = hasCloud ? 'lab.cloudRecords' : 'lab.localRecords';
+  document.querySelectorAll('[data-gn-lab-records-pill]').forEach((el) => {
+    el.setAttribute('data-i18n', key);
+    el.textContent = tx(key, hasCloud ? 'CLOUD RECORDS' : 'LOCAL RECORDS');
+  });
 }
 
 function renderDeviceVault() {

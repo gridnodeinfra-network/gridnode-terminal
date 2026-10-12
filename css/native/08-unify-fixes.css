@@ -161,19 +161,8 @@ html[data-theme="light"] .gn-research-custom-group > span { color: #8b5b08 !impo
 html[data-theme="light"] .gn-research-mode-custom .gn-research-mode-title { color: #8b5b08; }
 
 /* ── §5 · 07-journey first-shot modal: light-theme variant ──────────────
- * The modal was hard-coded dark with zero data-theme rules (audit §4.11).
- * Dusk keeps the original dark card; light gets a paper variant. The lava
- * primary button is unchanged (white on the red gradient passes AA).
- * .gn-fsc-kicker / .gn-fsc-next-label inherit the canonical kicker (§3). */
-html[data-theme="light"] .gn-fsc-overlay { background: rgba(43, 47, 47, .48); }
-html[data-theme="light"] .gn-fsc-card {
-  border-color: rgba(0, 111, 130, .45);
-  border-top-color: #006f82;
-  background: linear-gradient(150deg, rgba(0, 111, 130, .10), rgba(248, 245, 237, .97) 60%);
-  box-shadow: 0 24px 60px rgba(76, 61, 43, .25), inset 0 1px rgba(255, 255, 255, .6);
-}
-html[data-theme="light"] .gn-fsc-card h2 { color: #15282f; }
-html[data-theme="light"] .gn-fsc-card p { color: #3f535a; }
-html[data-theme="light"] .gn-fsc-x { color: #476169; }
-html[data-theme="light"] .gn-fsc-x:hover { color: #15282f; }
-html[data-theme="light"] .gn-fsc-secondary { color: #006f82; border-color: rgba(0, 111, 130, .4); }
+ * RETIRED 2026-10-12. The modal is now token-driven in 07-journey.css
+ * itself (Pipe confirmed the dark-only rendering was a mistake), so this
+ * hard-coded light palette is gone — one rule set, both themes, derived
+ * from 08-design-tokens.css like every other modal. The canonical kicker
+ * (§3) still covers .gn-fsc-kicker. */

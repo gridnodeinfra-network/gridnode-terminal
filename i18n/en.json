@@ -548,6 +548,7 @@
   "lab.ledgerTitle": "SOURCE-AWARE EVENT LEDGER",
   "lab.linkedMedication": "LINKED MEDICATION",
   "lab.localRecords": "LOCAL RECORDS",
+  "lab.cloudRecords": "CLOUD RECORDS",
   "lab.locationNotEntered": "LOCATION NOT ENTERED",
   "lab.medicationPlaceholder": "e.g. Zepbound",
   "lab.metabolic": "METABOLIC & BODY COMPOSITION",
