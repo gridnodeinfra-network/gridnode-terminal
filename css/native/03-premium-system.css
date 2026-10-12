@@ -540,7 +540,7 @@ html[data-theme="light"] #landing .landing-preview-caption { color: #49616a; }
   border-radius: 12px !important;
   font: 800 .72rem var(--font-d, monospace) !important;
   letter-spacing: 1.4px !important;
-  transition: transform .14s var(--gn-ease-press, ease), box-shadow .18s ease, filter .18s ease !important;
+  transition: transform var(--dur-1) var(--ease-press), box-shadow var(--dur-2) var(--ease-out), filter var(--dur-2) var(--ease-out) !important;
 }
 /* LOG SHOT leads; LOG WEIGHT stays secondary cyan. */
 html:not([data-theme="light"]) .gn-wanda-actions > button:first-child {
@@ -1661,7 +1661,7 @@ html[data-theme="light"] .gn-crt-scanline::before {
    ───────────────────────────────────────────────────────────────────── */
 .gn-ticker-flash {
   color: #FF5B5B !important;
-  transition: color .2s ease-out !important;
+  transition: color var(--dur-2) var(--ease-out) !important;
 }@media (prefers-reduced-motion: reduce){
   .gn-ticker-flash { transition: none !important; }}
 
@@ -2349,7 +2349,7 @@ html[data-theme="light"] .card {
     0 0 18px rgba(255,60,60,.55),
     0 0 46px rgba(255,60,60,.22),
     inset 0 0 14px rgba(255,60,60,.28) !important;
-  transition: transform 0.18s ease !important;
+  transition: transform var(--dur-2) var(--ease-out) !important;
 }
 .fab:hover, .fab:focus-visible {
   transform: scale(1.06) !important;
@@ -2369,7 +2369,7 @@ html[data-theme="light"] .card {
 .landing-btn.primary, .future-confirm-save, .gn-whatsnew-close {
   border-radius: 12px !important;
   letter-spacing: 1.6px !important;
-  transition: transform 0.14s var(--gn-ease-press), box-shadow 0.2s ease, filter 0.2s ease !important;
+  transition: transform var(--dur-1) var(--ease-press), box-shadow var(--dur-2) var(--ease-out), filter var(--dur-2) var(--ease-out) !important;
 }
 .btn-primary:hover, .btn-full.btn-primary:hover, .gn-auth-primary:hover,
 .landing-btn.primary:hover, .future-confirm-save:hover, .gn-whatsnew-close:hover {
@@ -2404,7 +2404,7 @@ html[data-theme="light"] .gn-import-panel {
 .form-input, input[type="text"], input[type="number"], input[type="email"],
 input[type="password"], input[type="search"], input[type="time"], textarea, select {
   border-radius: var(--radius-control) !important;
-  transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease !important;
+  transition: border-color var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out) !important;
 }
 .form-input:focus, input:focus, textarea:focus, select:focus {
   border-color: rgba(0, 212, 255, 0.55) !important;
@@ -2596,7 +2596,7 @@ html[data-theme="light"] .shots-scanner-card {
   border-radius: 12px !important;
   font-weight: 800 !important;
   letter-spacing: 1.8px !important;
-  transition: transform .12s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease !important;
+  transition: transform var(--dur-1) var(--ease-press), border-color var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out) !important;
 }
 .scanner-mode-btn:active { transform: scale(.97); }
 .scanner-mode-btn.active {
@@ -2644,7 +2644,7 @@ html[data-theme="light"] .asset-helper { color: #33484f !important; background: 
   box-shadow:
     inset 0 0 40px rgba(0, 212, 255, .06),
     0 0 28px rgba(0, 212, 255, .08) !important;
-  transition: aspect-ratio .28s ease !important;
+  transition: aspect-ratio var(--dur-3) var(--ease-out) !important;
 }
 .asset-scan-stage.mode-upper { aspect-ratio: 3 / 4.1 !important; }
 .scan-asset {
@@ -2657,7 +2657,7 @@ html[data-theme="light"] .asset-helper { color: #33484f !important; background: 
   filter: saturate(.75) contrast(1.08) brightness(.92) !important;
   transform: scale(1.08) !important;
   transform-origin: center 28% !important;
-  transition: transform .32s cubic-bezier(.16,1,.3,1), object-position .32s ease, filter .24s ease !important;
+  transition: transform var(--dur-3) var(--ease-out), object-position var(--dur-3) var(--ease-out), filter var(--dur-2) var(--ease-out) !important;
 }
 /* Mode framing: three purposeful diagnostic crops */
 .asset-scan-stage.mode-core .scan-asset {
@@ -2708,7 +2708,7 @@ html[data-theme="light"] .clean-zone-layer {
   filter: none !important;
   min-width: 44px;
   min-height: 44px;
-  transition: opacity .16s ease, transform .12s ease, box-shadow .16s ease, background .16s ease !important;
+  transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-press), box-shadow var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out) !important;
 }
 .asset-scan-stage.mode-core .track12-zone[data-mode="core"],
 .asset-scan-stage.mode-lower .track12-zone[data-mode="lower"],
@@ -2818,7 +2818,7 @@ html[data-theme="light"] .gn-stable-zone-title { color: #00677f !important; }
   letter-spacing: .4px !important;
   padding: 10px 12px !important;
   text-align: left !important;
-  transition: transform .12s ease, border-color .16s ease, background .16s ease !important;
+  transition: transform var(--dur-1) var(--ease-press), border-color var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out) !important;
 }
 .gn-stable-zone-btn:hover, .gn-stable-zone-btn:focus-visible {
   border-color: rgba(0, 230, 240, .7) !important;
@@ -2873,7 +2873,7 @@ html[data-theme="light"] .asset-scan-stage .track12-zone.selected-active {
   height: 20px !important;
   stroke-width: 1.75 !important;
   filter: drop-shadow(0 0 4px currentColor) drop-shadow(0 0 1px currentColor) !important;
-  transition: color .16s ease, filter .16s ease, transform .12s ease !important;
+  transition: color var(--dur-2) var(--ease-out), filter var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-press) !important;
 }
 .gn-lang-globe,
 #app .gn-lang-globe,
@@ -2888,7 +2888,7 @@ html[data-theme="light"] .asset-scan-stage .track12-zone.selected-active {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  transition: border-color .16s ease, background .16s ease, box-shadow .16s ease, transform .12s ease !important;
+  transition: border-color var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-press) !important;
 }
 .gn-lang-wrap[data-lang="en"] .gn-lang-globe { color: #00d4ff !important; }
 .gn-lang-wrap[data-lang="es"] .gn-lang-globe { color: #FF3B3B !important; }

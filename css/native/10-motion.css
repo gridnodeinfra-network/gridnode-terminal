@@ -1,0 +1,206 @@
+/* ═══════════════════════════════════════════════════════════════════
+   GRID//NODE — 10-motion.css · ONE MOTION LANGUAGE (Track B, UI/UX MAX)
+   Loads LAST in the native cascade (css/native/order.json). Every
+   animation/transition pattern in the app should resolve to the tokens
+   below. Transform/opacity only for the patterns defined here (60fps,
+   no layout-property animation), except where this file re-times a
+   pre-existing pattern (vault accordion max-height, noted inline).
+
+   REDUCED-MOTION ARCHITECTURE (the §6 source fix):
+   Compound `transition: ... !important` shorthands (03-premium-system,
+   00-base, inline <style> blocks) outrank the universal
+   `transition-duration: 0.01ms !important` override in 08-unify-fixes
+   §6, leaving ~67-75 residual elements at full duration under
+   prefers-reduced-motion. Those shorthands now take their DURATIONS
+   from the tokens below (the !important may stay). var() resolves at
+   use time, so collapsing the tokens under reduced motion (bottom of
+   this file) neutralizes those transitions without fighting
+   specificity. Same mechanism covers every rule in the app that
+   references --dur-* or the bridged legacy vars (--gn-motion-*,
+   --gn-ease-*).
+   ═══════════════════════════════════════════════════════════════════ */
+:root {
+  /* Duration scale */
+  --dur-1: 120ms;   /* instant acknowledgement: press feedback, exits */
+  --dur-2: 200ms;   /* standard: hovers, tabs, modals, toasts */
+  --dur-3: 320ms;   /* emphasis: accordions, scanner framing, celebration card */
+
+  /* Easings */
+  --ease-out: cubic-bezier(.16, 1, .3, 1);        /* decisive settle (was --gn-ease-out) */
+  --ease-inout: cubic-bezier(.65, 0, .35, 1);     /* two-way moves: accordion, chevrons */
+  --ease-press: cubic-bezier(.2, .7, .3, 1);      /* tactile press (was --gn-ease-press) */
+  --ease-spring: cubic-bezier(.34, 1.4, .64, 1);   /* signature spring: gentle overshoot for arrivals */
+
+  /* Legacy bridges: existing rules that reference the old 03-premium
+   * motion vars now resolve to this scale (and collapse with it under
+   * reduced motion). Values match the old definitions except
+   * --gn-motion-fast 140ms -> 120ms and --gn-motion-base 220ms -> 200ms,
+   * the deliberate one-language alignment. */
+  --gn-motion-fast: var(--dur-1);
+  --gn-motion-base: var(--dur-2);
+  --gn-ease-out: var(--ease-out);
+  --gn-ease-press: var(--ease-press);
+}
+
+/* ── Shared keyframes (transform/opacity only) ─────────────────────── */
+@keyframes gnFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes gnModalIn {
+  from { opacity: 0; transform: scale(.96) translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes gnSheetRise {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes gnToastIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Tab / page transitions ──────────────────────────────────────────
+ * Re-times 00-base's gnPageIn (fade + 6px rise) to the token scale.
+ * The keyframes themselves live in 00-base; only the timing is
+ * re-asserted here so the whole app shares one duration/easing. */
+/* #app prefix: the head style block re-declares .page.active with a
+ * legacy fadeInUp after the stylesheet links in document order, so
+ * equal specificity would lose on order alone. */
+#app .page.active { animation: gnPageIn var(--dur-2) var(--ease-out) both; }
+
+/* ── Modals / sheets ─────────────────────────────────────────────────
+ * Enter: backdrop fades on --dur-2; centered dialogs scale .96 -> 1 +
+ * fade on --dur-2/--ease-out; bottom sheets rise. 00-base put
+ * gnSheetIn (28px rise of the WHOLE overlay incl. backdrop) on
+ * #logOv/#wtOv/#signOutOverlay; those are centered modals (B11), so
+ * the backdrop now only fades and the panel does the moving.
+ * Exit: display-toggled overlays cannot animate out in pure CSS
+ * (the .active class and display:none change in the same frame);
+ * opacity-transition overlays (.gn-fsc-*) get the quicker --dur-1
+ * exit below via asymmetric transition durations. */
+#logOv.active, #wtOv.active, #signOutOverlay.active {
+  animation: gnFadeIn var(--dur-2) var(--ease-out) both;
+}
+#logOv.active .modal, #wtOv.active .modal {
+  animation: gnModalIn var(--dur-2) var(--ease-out) both;
+}
+.overlay.active .modal {
+  animation: gnSheetRise var(--dur-2) var(--ease-out) both;
+}
+.archive-confirm-overlay.active { animation: gnFadeIn var(--dur-1) var(--ease-out) both; }
+.archive-confirm-overlay.active .archive-confirm-panel,
+.gn-whatsnew-overlay.active .gn-whatsnew-card,
+.overlay.active .gn-delete-panel,
+.overlay.active .gn-peptide-overlay-card,
+.overlay.active .gn-import-panel {
+  animation: gnModalIn var(--dur-2) var(--ease-out) both;
+}
+
+/* GRID ACTIVATED first-shot celebration (07-journey): timing aligned
+ * to tokens, energy kept — card still rises + scales in, now on the
+ * signature spring at --dur-3; exit is the quicker --dur-1 fade. */
+.gn-fsc-overlay { transition: opacity var(--dur-1) var(--ease-out); }
+.gn-fsc-overlay.active { transition: opacity var(--dur-2) var(--ease-out); }
+.gn-fsc-card { transition: transform var(--dur-3) var(--ease-spring); }
+
+/* ── Toasts ──────────────────────────────────────────────────────────
+ * Slide/fade in on the signature spring (re-times 03-premium's
+ * 220ms/180ms pair and 01-head's slideUp .3s to the token scale). */
+.toast {
+  transition: transform var(--dur-2) var(--ease-spring), opacity var(--dur-2) var(--ease-out);
+}
+/* .active raises specificity over the legacy slideUp in the head
+ * style block; !important is required because the runtime-injected
+ * sheet in js/gridnode-app.js sets `.toast{animation:none!important}`
+ * (flat-toast restyle). Specificity (0,2,0) beats its (0,1,0); the
+ * reduced-motion block below mirrors it back off with the same
+ * weight. Transform is translateY only — the toast is a full-width
+ * bottom bar, so a 12px rise + fade reads as a slide-in. */
+.toast.active {
+  animation: gnToastIn var(--dur-2) var(--ease-out) both !important;
+}
+
+/* ── Accordions (Vault groups + shot-advanced + picker groups) ──────
+ * Re-times the pre-existing max-height pattern (01-head declarations
+ * are also tokenized at the source); transform/opacity-only does not
+ * apply to this legacy pattern — the body height IS the content. */
+.vault-collapse-body {
+  transition: max-height var(--dur-3) var(--ease-inout), opacity var(--dur-2) var(--ease-out);
+}
+.vault-collapse-trigger .vault-collapse-chevron,
+.gn-shot-advanced-trigger .gn-shot-advanced-chevron {
+  transition: transform var(--dur-2) var(--ease-inout);
+}
+.gn-shot-advanced-body {
+  transition: max-height var(--dur-3) var(--ease-inout), opacity var(--dur-2) var(--ease-out);
+}
+.cp-group-options {
+  transition: max-height var(--dur-2) var(--ease-inout), opacity var(--dur-2) var(--ease-out);
+}
+
+/* ── Press feedback ──────────────────────────────────────────────────
+ * Every interactive element acknowledges touch within --dur-1.
+ * The :is() list is the app's interactive families that did not
+ * already carry a token-timed :active state in their home sheets
+ * (buttons in 09-unified-components carry their own). The transition
+ * below is a superset of the properties these families animate, so
+ * hovers stay smooth while transform (the press) runs at --dur-1.
+ * Rules with !important transitions elsewhere (e.g. .fab in
+ * 03-premium) keep theirs — importance beats this normal declaration,
+ * and those are tokenized at their source. */
+:is(.nav-item, .fab, .topbar-btn, .modal-btn, .user-card, .wq-card,
+    .cal-day, .dose-pill, .se-check, .time-tab, .cp-option,
+    .log-action-btn, .vault-action-btn, .landing-btn, .seg-btn,
+    .check-row, .btn-ghost, .gn-theme-opt, .scanner-mode-btn,
+    .gn-stable-zone-btn, .vault-collapse-trigger) {
+  transition: transform var(--dur-1) var(--ease-press),
+              background-color var(--dur-2) var(--ease-out),
+              border-color var(--dur-2) var(--ease-out),
+              color var(--dur-2) var(--ease-out),
+              box-shadow var(--dur-2) var(--ease-out),
+              filter var(--dur-2) var(--ease-out),
+              opacity var(--dur-2) var(--ease-out);
+}
+:is(.nav-item, .topbar-btn, .modal-btn, .user-card, .wq-card,
+    .cal-day, .dose-pill, .se-check, .time-tab, .cp-option,
+    .log-action-btn, .vault-action-btn, .landing-btn, .seg-btn,
+    .check-row, .btn-ghost, .gn-theme-opt, .scanner-mode-btn,
+    .gn-stable-zone-btn):active {
+  transform: scale(.97);
+}
+/* Elements whose transform is spoken for (indicator bars, centering)
+ * acknowledge with opacity/filter instead of scale. */
+.nav-item:active { transform: none; filter: brightness(1.35); }
+.fab:active { transform: scale(.92); }
+
+/* ── Reduced motion: collapse the scale at the token source ─────────
+ * Every transition/animation in the app that references --dur-* (or
+ * the bridged --gn-motion-*) resolves to 0.01ms here, INCLUDING the
+ * compound `transition: ... !important` shorthands that the universal
+ * override in 08-unify-fixes §6 could not beat. This file's own
+ * keyframe animations are explicitly switched off as well (the
+ * global animation-duration override already covers them; this is
+ * belt-and-braces for the patterns defined above). */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-1: 0.01ms;
+    --dur-2: 0.01ms;
+    --dur-3: 0.01ms;
+  }
+  #app .page.active,
+  #logOv.active, #wtOv.active, #signOutOverlay.active,
+  #logOv.active .modal, #wtOv.active .modal,
+  .overlay.active .modal,
+  .archive-confirm-overlay.active,
+  .archive-confirm-overlay.active .archive-confirm-panel,
+  .gn-whatsnew-overlay.active .gn-whatsnew-card,
+  .overlay.active .gn-delete-panel,
+  .overlay.active .gn-peptide-overlay-card,
+  .overlay.active .gn-import-panel {
+    animation: none;
+  }
+  .toast.active {
+    animation: none !important;
+  }
+}
