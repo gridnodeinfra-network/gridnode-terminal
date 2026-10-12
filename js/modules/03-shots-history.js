@@ -81,6 +81,20 @@ function renderShotFilterOptions(records) {
   const clear = $('gnShotFilterClear'); if (clear) clear.hidden = !count;
 }
 
+/* TRACK C: HISTORY gets the same honest sync states as TODAY (S1 in
+   02-dashboard). A cloud user whose records have not arrived yet must
+   never see the first-run pitch or a fake "nothing logged" empty. */
+function historySyncMode(totalRecords) {
+  if (totalRecords > 0) return null;
+  const cloudUser = Boolean(state.session?.user?.id && state.cloudClient);
+  if (!cloudUser || state.cloudHydration === 'ok') return null;
+  return state.cloudHydration === 'failed' ? 'failed' : 'syncing';
+}
+function historySyncMarkup(mode) {
+  if (mode === 'failed') return `<div class="gn-ux-sync-error" role="alert"><b>${tx('dashboard.syncFailedTitle', "COULDN'T REACH YOUR DATA")}</b>${tx('dashboard.syncFailedSub', 'Your cloud records didn\u2019t load. Your data is safe \u2014 check your connection and try again.')}<br><button type="button" class="btn-full btn-secondary empty-cta" onclick="retryCloudHydration()">${tx('dashboard.retrySync', 'RETRY SYNC')}</button></div>`;
+  return `<div class="gn-skeleton-list" role="status" aria-label="${tx('dashboard.syncingTitle', 'PULLING YOUR GRID FROM THE CLOUD')}"><div class="gn-skeleton-card"><div class="gn-skeleton gn-skeleton-line mid"></div><div class="gn-skeleton gn-skeleton-line short"></div></div><div class="gn-skeleton-card"><div class="gn-skeleton gn-skeleton-line mid"></div><div class="gn-skeleton gn-skeleton-line short"></div></div></div>`;
+}
+
 export function renderShots() {
   renderScanner();
   /* S4/S5: HISTORY type filter — ALL / SHOTS / WEIGHT. ALL renders the
@@ -124,12 +138,14 @@ export function renderShots() {
   setText('shotHistoryHelper', moduleState.shotHistoryView === 'archived' ? tx('shots.archivedRetained', 'Archived records remain stored for review and can be restored.') : tx('shots.activeRecordsRetained', 'Active SHOT records are retained in your local VAULT.'));
   qa('[data-shot-history-view]').forEach(button => button.classList.toggle('active', button.dataset.shotHistoryView === moduleState.shotHistoryView));
   if (!visible.length) {
+    const syncMode = historySyncMode(all.length);
+    if (syncMode) { list.innerHTML = historySyncMarkup(syncMode); return; }
     const activeFilters = Object.values(moduleState.shotFilters).some(value => value && value !== 'all');
     /* QA 2026-09-17: an empty ARCHIVED tab with active history behind it is
      * not a first run — show a neutral archived state, never the
      * "log your first shot" pitch. */
     if (!activeFilters && moduleState.shotHistoryView === 'archived' && all.some(record => !record.archived)) {
-      list.innerHTML = `<div class="empty gn-first-run-card"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${tx('shots.noArchivedShots', 'NO ARCHIVED SHOTS')}</b><span class="gn-first-run-sub">${tx('shots.noArchivedHint', 'Archived shots rest here. Archive a shot from your active history to tuck it away without deleting it.')}</span></div>`;
+      list.innerHTML = `<div class="empty gn-first-run-card"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${tx('shots.noArchivedShots', 'NO ARCHIVED SHOTS')}</b><span class="gn-first-run-sub">${tx('shots.noArchivedHint', 'Archived shots rest here. Archive a shot from your active history to tuck it away without deleting it.')}</span><br><button class="btn-full btn-secondary empty-cta" type="button" data-shot-history-view="active">${tx('shots.viewActive', 'VIEW ACTIVE SHOTS')}</button></div>`;
       return;
     }
     /* QA 2026-09-18: an empty ACTIVE tab with everything archived is not a
@@ -139,7 +155,7 @@ export function renderShots() {
       list.innerHTML = `<div class="empty gn-first-run-card"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${tx('shots.noActiveShots', 'NO ACTIVE SHOTS')}</b><span class="gn-first-run-sub">${tx('shots.noActiveHint', 'Every shot is archived. Restore one from the archive to bring it back, or log a new shot.')}</span><br><button class="btn-full btn-secondary empty-cta" type="button" data-shot-history-view="archived">${tx('shots.viewArchive', 'VIEW ARCHIVE')}</button></div>`;
       return;
     }
-    list.innerHTML = `<div class="empty${activeFilters ? '' : ' gn-first-run-card'}"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${activeFilters ? tx('shots.noFilterMatch', 'NO SHOTS MATCH THESE FILTERS.') : moduleState.shotHistoryView === 'archived' ? tx('shots.noArchivedShots', 'NO ARCHIVED SHOTS') : tx('shots.activateYourGrid', 'LOG YOUR FIRST SHOT TO ACTIVATE YOUR GRID')}</b>${activeFilters ? '<br><button class="btn-full btn-secondary empty-cta" type="button" id="gnShotFilterEmptyClear">' + tx('shots.clearFilters', 'CLEAR FILTERS') + '</button>' : '<span class="gn-first-run-sub">' + tx('shots.firstShotSub', 'One shot unlocks the Phase Engine, RESULTS, and your full dashboard.') + '</span><br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>' + tx('shots.logYourFirst', 'LOG YOUR FIRST SHOT') + '</button>'}</div>`;
+    list.innerHTML = `<div class="empty${activeFilters ? '' : ' gn-first-run-card'}"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${activeFilters ? tx('shots.noFilterMatch', 'NO SHOTS MATCH THESE FILTERS.') : moduleState.shotHistoryView === 'archived' ? tx('shots.noArchivedShots', 'NO ARCHIVED SHOTS') : tx('shots.activateYourGrid', 'LOG YOUR FIRST SHOT TO ACTIVATE YOUR GRID')}</b>${activeFilters ? '<br><button class="btn-full btn-secondary empty-cta" type="button" id="gnShotFilterEmptyClear">' + tx('shots.clearFilters', 'CLEAR FILTERS') + '</button>' : '<span class="gn-first-run-sub">' + (moduleState.shotHistoryView === 'archived' ? tx('shots.noArchivedHint', 'Archived shots rest here. Archive a shot from your active history to tuck it away without deleting it.') : tx('shots.firstShotSub', 'One shot unlocks the Phase Engine, RESULTS, and your full dashboard.')) + '</span><br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>' + tx('shots.logYourFirst', 'LOG YOUR FIRST SHOT') + '</button>'}</div>`;
     $('gnShotFilterEmptyClear')?.addEventListener('click', () => { moduleState.shotFilters = { medication: '', site: '', range: 'all', query: '' }; renderShots(); });
     return;
   }
@@ -285,7 +301,9 @@ function renderAllHistory() {
     return;
   }
   if (!events.length) {
-    list.innerHTML = `<div class="empty gn-first-run-card"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${tx('history.allEmptyTitle', 'NOTHING LOGGED YET')}</b><span class="gn-first-run-sub">${tx('history.allEmptySub', 'Log a shot or your weight to start your timeline.')}</span><br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>${tx('runtime.logShot', 'LOG SHOT')}</button> <button class="btn-full btn-secondary empty-cta" type="button" onclick="openWeightModal()">${tx('history.logWeight', 'LOG WEIGHT')}</button></div>`;
+    const syncMode = historySyncMode(allEvents.length);
+    if (syncMode) { list.innerHTML = historySyncMarkup(syncMode); return; }
+    list.innerHTML = `<div class="empty gn-first-run-card"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${tx('history.allEmptyTitle', 'NOTHING LOGGED YET')}</b><span class="gn-first-run-sub">${tx('history.allEmptySub', 'Log a shot or your weight to start your timeline.')}</span><br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>${tx('runtime.logShot', 'LOG SHOT')}</button><br><button class="gn-ux-empty-link" type="button" onclick="openWeightModal()">${tx('history.logWeightInstead', 'or log your weight instead')}</button></div>`;
     return;
   }
   renderConstellation();

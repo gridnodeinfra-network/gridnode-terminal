@@ -147,6 +147,11 @@ function renderDashboard() {
     missionMode = state.cloudHydration === 'failed' ? 'sync-failed' : 'syncing';
   }
   renderFirstShotMission(missionMode);
+  /* TRACK C: one loading pattern — while cloud hydration is pending the
+     page carries .gn-ux-syncing (11-ux-states.css): the mission shows
+     skeleton bars and the not-yet-real metric values are dimmed, so a
+     syncing user never reads placeholder zeros as their data. */
+  if (dashboard) dashboard.classList.toggle('gn-ux-syncing', missionMode === 'syncing');
   if (firstShotMission) firstShotMission.hidden = shots.length > 0;
   // TRACK4 journey: the telemetry module mounts before the wanda dashboard
   // exists, so its prepend fallback lands above the page header and buries the
@@ -225,7 +230,8 @@ function renderFirstShotMission(mode) {
   if (mode === 'syncing') {
     mission.innerHTML = '<span class="gn-dashboard-mission-kicker">' + safeText(tx('dashboard.syncingKicker', 'SYNCING')) + '</span>'
       + '<h2 id="gnFirstShotMissionTitle">' + safeText(tx('dashboard.syncingTitle', 'PULLING YOUR GRID FROM THE CLOUD')) + '</h2>'
-      + '<p>' + safeText(tx('dashboard.syncingSub', 'Your records are on their way. This takes a few seconds.')) + '</p>';
+      + '<p>' + safeText(tx('dashboard.syncingSub', 'Your records are on their way. This takes a few seconds.')) + '</p>'
+      + '<div class="gn-skeleton gn-skeleton-line mid" aria-hidden="true"></div><div class="gn-skeleton gn-skeleton-line short" aria-hidden="true"></div>';
   } else if (mode === 'sync-failed') {
     mission.innerHTML = '<span class="gn-dashboard-mission-kicker">' + safeText(tx('dashboard.syncFailedKicker', 'CONNECTION ISSUE')) + '</span>'
       + '<h2 id="gnFirstShotMissionTitle">' + safeText(tx('dashboard.syncFailedTitle', "COULDN'T REACH YOUR DATA")) + '</h2>'
