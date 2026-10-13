@@ -854,6 +854,7 @@
   "nodekey.error": "FALLO LA VERIFICACION — INTENTA DE NUEVO",
   "nodekey.expired": "ACCESO DENEGADO // CLAVE EXPIRADA",
   "nodekey.googleGate": "// LAS CUENTAS NUEVAS DE GOOGLE NECESITAN UN NODE KEY — U OMITE SI YA TIENES UNA",
+  "nodekey.googleReady": "// LISTO — TOCA CONTINUAR CON GOOGLE PARA TERMINAR DE INICIAR SESIÓN",
   "nodekey.granted": "ACCESO CONCEDIDO",
   "nodekey.needed": "SE REQUIERE UN NODE KEY PARA CREAR UNA CUENTA EN LA NUBE",
   "nodekey.placeholder": "NODE-XXXXXX",

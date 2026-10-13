@@ -882,6 +882,7 @@
   "nodekey.error": "KEY CHECK FAILED — TRY AGAIN",
   "nodekey.expired": "ACCESS DENIED // KEY EXPIRED",
   "nodekey.googleGate": "// NEW GOOGLE ACCOUNTS NEED A NODE KEY — OR SKIP IF YOU ALREADY HAVE ONE",
+  "nodekey.googleReady": "// CLEARED — TAP CONTINUE WITH GOOGLE TO FINISH SIGNING IN",
   "nodekey.granted": "ACCESS GRANTED",
   "nodekey.grantedNext": "// KEY ACCEPTED — NOW CHOOSE GOOGLE OR EMAIL TO CREATE YOUR CLOUD ACCOUNT",
   "nodekey.haveKey": "I HAVE A NODE KEY",

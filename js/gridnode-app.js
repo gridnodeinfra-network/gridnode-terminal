@@ -1087,9 +1087,22 @@ async function renderGoogleIdentityButton() {
     });
   } catch (error) {
     console.warn('[GRID//NODE Google identity]', error);
-    host.style.display = 'none';
+    /* F1 flow steering: GIS is the branded road, but when the GIS library
+     * itself is unavailable (blocked or failed to load) the Supabase
+     * redirect flow remains as the genuine fallback — a working sign-in
+     * beats no sign-in. handleGoogleSignIn keeps its own NODE KEY
+     * pre-gate, so the fallback never bypasses the beta gate. */
+    if (!host.isConnected) return;
+    host.style.removeProperty('display');
     const gnGoogleLabelErr = $('gnGoogleLabel');
-    if (gnGoogleLabelErr) gnGoogleLabelErr.style.display = 'none';
+    if (gnGoogleLabelErr) gnGoogleLabelErr.style.removeProperty('display');
+    host.replaceChildren();
+    const fallbackBtn = document.createElement('button');
+    fallbackBtn.type = 'button';
+    fallbackBtn.className = 'gn-auth-secondary gn-google-fallback-btn';
+    fallbackBtn.textContent = tx('auth.continueWithGoogle', 'CONTINUE WITH GOOGLE');
+    fallbackBtn.addEventListener('click', () => { handleGoogleSignIn(); });
+    host.appendChild(fallbackBtn);
     setAuthMessage(tx('auth.googleCouldNotLoad', '// GOOGLE SIGN-IN COULD NOT LOAD — USE EMAIL OR CONTINUE LOCALLY'), true);
   }
 }
@@ -1243,6 +1256,24 @@ function markGoogleKnownSession(session) {
   if (session?.user?.app_metadata?.provider === 'google') markGoogleKnownDevice();
 }
 
+/* F1 flow steering (2026-10-13): once a user clears the NODE KEY gate in
+ * this page session (key validated, or the "already have an account" skip),
+ * Google sign-in stays on the branded GIS road instead of being handed to
+ * the Supabase redirect flow. The flag is session-scoped only — nothing is
+ * persisted — and the fail-closed post-auth backstop
+ * (ensureNodeKeyClearance) still enforces clearance for genuinely new
+ * accounts, exactly as it did when the gate continuation used the
+ * redirect flow. */
+let gnGoogleGatePassed = false;
+
+function returnToGoogleSignIn() {
+  gnGoogleGatePassed = true;
+  gnAuthView = 'welcome';
+  authShell();
+  modules.showScreen('login');
+  setAuthMessage(tx('nodekey.googleReady', '// CLEARED — TAP CONTINUE WITH GOOGLE TO FINISH SIGNING IN'), false);
+}
+
 function requireNodeKeyForGoogle(proceed) {
   const passThrough = () => {
     const p = proceed;
@@ -1250,7 +1281,7 @@ function requireNodeKeyForGoogle(proceed) {
     gnKeySkipAction = null;
     p();
   };
-  if (getNodeKeyGrant() || isGoogleKnownDevice()) { passThrough(); return; }
+  if (getNodeKeyGrant() || isGoogleKnownDevice() || gnGoogleGatePassed) { passThrough(); return; }
   gnKeyContinuation = passThrough;
   gnKeySkipAction = passThrough;
   gnAuthView = 'newhere';
@@ -1931,15 +1962,19 @@ function wireGlobalEvents() {
   /* Google pre-gate interceptor: the GIS-rendered button's clicks are captured
    * by Google's SDK before our callback ever runs, so the callback wrapper
    * alone cannot pre-gate. Intercept in the capture phase (before the event
-   * reaches the Google iframe) on unknown devices, then route through the
-   * pre-gated OAuth flow. Known devices and grant holders pass through to GIS. */
+   * reaches the Google iframe) on unknown devices and run the NODE KEY gate
+   * first. F1 steering: once the gate clears, returnToGoogleSignIn brings
+   * the user back to this GIS button (branded road) instead of handing off
+   * to the Supabase redirect flow; the session flag lets their next tap
+   * pass straight through to GIS. Known devices and grant holders pass
+   * through to GIS immediately. */
   document.addEventListener('click', event => {
     const mount = event.target?.closest?.('#gnGoogleButtonMount');
     if (!mount || mount.style.display === 'none') return;
-    if (getNodeKeyGrant() || isGoogleKnownDevice()) return;
+    if (getNodeKeyGrant() || isGoogleKnownDevice() || gnGoogleGatePassed) return;
     event.stopPropagation();
     event.preventDefault();
-    requireNodeKeyForGoogle(() => doGoogleSignIn());
+    requireNodeKeyForGoogle(() => returnToGoogleSignIn());
   }, true);
   document.addEventListener('click', event => {
     const button = event.target?.closest?.('[data-lang-choice]');
@@ -2014,6 +2049,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   modules.initModules();
   window.startGridNode = startGridNode;
   window.handleGoogleSignIn = handleGoogleSignIn;
+  /* F1 steering: the static #loginGoogleBtn in index.html routes here so
+   * it lands on the GIS welcome view instead of firing the Supabase
+   * redirect flow directly. authShell replaces the static login markup
+   * in every live flow; this keeps the pre-shell button on the same road. */
+  window.openGoogleSignIn = () => { gnAuthView = 'welcome'; authShell(); modules.showScreen('login'); };
   window.openSignOutModal = openSignOutModal;
   window.closeSignOutModal = closeSignOutModal;
   window.confirmSignOut = confirmSignOut;
