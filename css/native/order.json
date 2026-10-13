@@ -13,9 +13,5 @@
   "09-unified-components.css",
   "10-motion.css",
   "11-ux-states.css",
-  "12-legacy-head.css",
-  "13-legacy-scanner.css",
-  "14-legacy-confirm.css",
-  "15-legacy-polish.css",
-  "16-legacy-tail.css"
+  "12-legacy-externalized.css"
 ]
