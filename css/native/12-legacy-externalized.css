@@ -3877,6 +3877,9 @@ html[data-theme="light"] .csv-import-notimported{border-color:rgba(0,111,130,.25
   .syringe-visual.gn-syr-final.gn-syr-instrument .syr-scale-labels{padding-left:50px !important;padding-right:22px !important;}
   .syringe-visual.gn-syr-final.gn-syr-instrument .syr-scale-lbl{font-size:.53rem !important;}
 
+
+}
+}
 #shotsRegionScanner .biotech-stage { aspect-ratio:1; touch-action:pan-y pinch-zoom; contain:layout paint; }
 #shotsRegionScanner .biotech-asset,
 #shotsRegionScanner .biotech-zones { position:absolute; inset:0; width:100%; height:100%; }
