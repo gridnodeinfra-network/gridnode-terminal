@@ -23,7 +23,7 @@ const SHELL = [
   '/css/native/01-readability-floor.css' + V,
   '/css/native/02-first-five-minutes.css' + V,
   '/css/native/03-premium-system.css' + V,
-  '/css/native/04-first-contact.css' + V,
+  '/css/native/04-onboarding.css' + V,
   '/css/native/05-logshot-2step.css' + V,
   '/js/gridnode-theme.js' + V,
   '/js/gridnode-version.js' + V,

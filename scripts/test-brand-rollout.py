@@ -165,7 +165,7 @@ class BrandRolloutTests(unittest.TestCase):
             "css/native/01-readability-floor.css",
             "css/native/02-first-five-minutes.css",
             "css/native/03-premium-system.css",
-            "css/native/04-first-contact.css",
+            "css/native/04-onboarding.css",
             "css/daylight-nexus-pilot.css",
             "js/gridnode-app.js",
             "js/gridnode-bundle.js",

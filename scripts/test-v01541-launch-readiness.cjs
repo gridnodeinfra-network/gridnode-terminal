@@ -38,7 +38,7 @@ console.log('v0.15.41 launch-readiness contract:');
 
 // --- 1. Vibration removal ---------------------------------------------
 const srcJs = ['js/gridnode-core.js', 'js/gridnode-native.js', 'js/gridnode-motivation.js',
-  'js/gridnode-firstcontact.js', 'js/gridnode-app.js', 'js/gridnode-i18n.js'];
+  'js/gridnode-onboarding.js', 'js/gridnode-app.js', 'js/gridnode-i18n.js'];
 const modules = fs.readdirSync(path.join(ROOT, 'js/modules')).filter(f => f.endsWith('.js')).map(f => 'js/modules/' + f);
 const partials = fs.readdirSync(path.join(ROOT, 'html/partials')).filter(f => f.endsWith('.html')).map(f => 'html/partials/' + f);
 const allSources = srcJs.concat(modules, partials);
@@ -101,7 +101,7 @@ check('topbar VAULT button removed (bottom-nav VAULT remains)', !/topbar-hub-lab
 check('no SIGNAL nav label remains', !/data-i18n="nav\.signal"/.test(appPartial));
 
 // --- 6. Tour plain language -------------------------------------------
-const fc = read('js/gridnode-firstcontact.js');
+const fc = read('js/gridnode-onboarding.js');
 check('beat 1 names no Phase Engine', !/fc\.grid\.(resultsBody|labBody)[\s\S]{0,120}Phase Engine/.test(fc) && !fc.includes("'fc.grid.resultsBody': 'Your curve. The Phase Engine"));
 check('beat 3 still explains Phase Engine', /fc\.curve\.body.*Phase Engine/.test(fc));
 check('DARK/LIGHT theme labels', fc.includes("'fc.comfort.night': 'DARK'") && fc.includes("'fc.comfort.dusk': 'LIGHT'"));

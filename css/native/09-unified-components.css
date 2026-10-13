@@ -215,7 +215,7 @@ html[data-theme="light"] :is(#app, .overlay, .gn-lab-tool-overlay) .btn-primary 
 }
 
 /* .card-accent — 3px top accent bar + tinted gradient. Merges the
-   .gn-fsc-card / .gn-fc-card / .gn-first-run-card / .gn-tip-card /
+   .gn-fsc-card / .gn-first-run-card / .gn-tip-card /
    .stat-card top-bar pattern. */
 .card-accent {
   position: relative;

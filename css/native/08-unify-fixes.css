@@ -74,7 +74,6 @@ html[data-theme="light"] {
  * system sets kicker type with !important (00-base L105, 03-premium
  * L614/L708), so a normal override would silently lose in light theme.
  * Sanctioned variants (kept, re-asserted AFTER the alias):
- *  - .gn-fc-coach-kicker stays amber (the single sanctioned color variant)
  *  - .gn-wn-cat-tag keeps its semantic category colors (fixed/new/a11y)
  *  - .landing-kicker keeps its CRT glitch animation (Pipe-approved 2026-08-08)
  * Retired: mint (#41e0c7) and dim-gray kicker variants. */
@@ -82,8 +81,6 @@ html[data-theme="light"] {
 .gn-kicker,
 .gn-whatsnew-kicker,
 .gn-dashboard-mission-kicker,
-.gn-fc-kicker,
-.gn-fc-coach-kicker,
 .gn-peptide-overlay-kicker,
 .gn-today-lastshot-kicker,
 .gn-today-weight-kicker,
@@ -118,8 +115,6 @@ html[data-theme="light"] .kicker,
 html[data-theme="light"] .gn-kicker,
 html[data-theme="light"] .gn-whatsnew-kicker,
 html[data-theme="light"] .gn-dashboard-mission-kicker,
-html[data-theme="light"] .gn-fc-kicker,
-html[data-theme="light"] .gn-fc-coach-kicker,
 html[data-theme="light"] .gn-peptide-overlay-kicker,
 html[data-theme="light"] .gn-today-lastshot-kicker,
 html[data-theme="light"] .gn-today-weight-kicker,
@@ -141,10 +136,7 @@ html[data-theme="light"] .panel-kicker,
 html[data-theme="light"] .gn-vault-portal-kicker {
   color: var(--kicker-color) !important;
 }
-/* Sanctioned variants — re-asserted after the alias. --accent-amber is
- * already theme-remapped (#ffd166 dusk / #8b5b08 light). */
-.gn-fc-coach-kicker { color: var(--accent-amber) !important; }
-html[data-theme="light"] .gn-fc-coach-kicker { color: var(--accent-amber) !important; }
+/* Sanctioned variants — re-asserted after the alias. */
 .gn-wn-cat[data-cat="fixed"] .gn-wn-cat-tag { color: #00ff88 !important; }
 .gn-wn-cat[data-cat="new"] .gn-wn-cat-tag { color: #FF5B5B !important; }
 .gn-wn-cat[data-cat="accessibility"] .gn-wn-cat-tag { color: #ffd166 !important; }

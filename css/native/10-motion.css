@@ -24,6 +24,8 @@
   --dur-1: 120ms;   /* instant acknowledgement: press feedback, exits */
   --dur-2: 200ms;   /* standard: hovers, tabs, modals, toasts */
   --dur-3: 320ms;   /* emphasis: accordions, scanner framing, celebration card */
+  --dur-breathe: 6s;    /* ambient artwork: slow opacity breathing (ONBOARDING REBORN token extension, 2026-10-13) */
+  --dur-orbit: 30s;     /* ambient artwork: one full satellite revolution (ONBOARDING REBORN token extension, 2026-10-13) */
 
   /* Easings */
   --ease-out: cubic-bezier(.16, 1, .3, 1);        /* decisive settle (was --gn-ease-out) */
@@ -187,6 +189,8 @@
     --dur-1: 0.01ms;
     --dur-2: 0.01ms;
     --dur-3: 0.01ms;
+    --dur-breathe: 0.01ms;
+    --dur-orbit: 0.01ms;
   }
   #app .page.active,
   #logOv.active, #wtOv.active, #signOutOverlay.active,

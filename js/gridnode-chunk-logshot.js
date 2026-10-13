@@ -501,14 +501,15 @@ async function confirmPermanentDeleteShot() {
   showToast(cloudDeleted ? tx('shots.deletedCloud', 'Archived record deleted.') : tx('shots.deletedLocalQueued', 'Deleted locally. Cloud deletion queued for retry.'));
 }
 
-/* FIRST CONTACT onboarding: when the dose coach is up, save-validation errors must
- * surface inside the coach card. The global error toast (z-index 1000) and the
- * future-timestamp confirm (z-index 540) both paint UNDER the coach sheet
- * (z-index 9500), so without this the user taps SAVE and gets zero feedback.
- * This maps the failing fields to stable keys and lets the coach explain. */
+/* ONBOARDING (FIRST RUN): while the visual guide (.gn-ob-guide) is
+ * spotlighting inside the modal, save-validation errors must surface
+ * in the guide's callout. The global error toast (z-index 1000) and
+ * the future-timestamp confirm (z-index 540) both paint where the user
+ * may miss them, so this maps the failing fields to stable keys and
+ * lets the visual guide explain. */
 function notifyCoachSaveBlocked(invalidFields) {
   try {
-    if (!document.querySelector('.gn-fc-coach')) return;
+    if (!document.querySelector('.gn-ob-guide')) return;
     const keys = [];
     (invalidFields || []).filter(Boolean).forEach(field => {
       const id = field.id || '';
@@ -519,7 +520,7 @@ function notifyCoachSaveBlocked(invalidFields) {
       else if (id === 'logLocationAction') keys.push('loc');
     });
     document.dispatchEvent(new CustomEvent('gn:coach-save-blocked', { detail: { fields: keys } }));
-  } catch (_) { /* never break the save path for coach telemetry */ }
+  } catch (_) { /* never break the save path for guide telemetry */ }
 }
 
 /* TRACK C: inline field errors for the shot console. Until now a failed

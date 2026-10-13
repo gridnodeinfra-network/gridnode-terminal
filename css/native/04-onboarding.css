@@ -1,0 +1,295 @@
+/* ============================================================
+   ONBOARDING (FIRST RUN) — ONBOARDING REBORN (2026-10-13).
+   Spec: onboarding-reborn/DESIGN.md §2.3 chrome, §2.7 visual guide,
+   §2.12 themes, §2.13 motion, Part 4 accessibility.
+   Token-only values; both themes designed natively.
+   ============================================================ */
+
+/* ── Art layer (lifted from Agent 2's gn-ob-art.css) ──────────────
+ * --ob-* maps to TOKEN-CONTRACT tokens. The --dur-breathe/--dur-orbit
+ * extension tokens live in 10-motion.css (adopted proposals); the
+ * light-theme artwork inks below are the adopted ink proposals. */
+:root {
+  --ob-ink:        var(--text-1);
+  --ob-ink-soft:   var(--text-2);
+  --ob-faint:      var(--text-3);
+  --ob-accent:     var(--brand-cyan);
+  --ob-accent-dim: var(--border-cyan);
+  --ob-violet:     var(--brand-violet);
+  --ob-amber:      var(--brand-amber);
+  --ob-green:      var(--brand-green);
+  --ob-red:        var(--brand-red);
+  --ob-grid:       var(--chart-grid);
+  --ob-hairline:   var(--border-1);
+  --ob-ring:       var(--border-2);
+  --ob-surface:    var(--surface-2);
+  --ob-glow-hi:    drop-shadow(0 0 12px rgba(0, 212, 255, .40));
+}
+[data-theme="light"] {
+  --ob-amber:  #b97d0e;
+  --ob-green:  #0a8f57;
+  --ob-violet: #6d4fd0;
+  --ob-red:    var(--brand-red-deep);
+  --ob-glow-hi: drop-shadow(0 8px 16px rgba(0, 103, 127, .22));
+}
+.ob-art { display: block; width: 100%; height: auto; flex: none; }
+.ob-art * { vector-effect: non-scaling-stroke; }
+.ob-enter {
+  opacity: 0;
+  animation: obArtIn var(--dur-3) var(--ease-spring) both;
+  animation-delay: var(--ob-delay, 0ms);
+}
+@keyframes obArtIn {
+  from { opacity: 0; transform: translateY(10px) scale(.985); }
+  to   { opacity: 1; transform: none; }
+}
+.ob-hero-glow {
+  filter: var(--ob-glow-hi);
+  animation: obBreathe var(--dur-breathe) var(--ease-inout) infinite alternate;
+}
+@keyframes obBreathe { from { opacity: .82; } to { opacity: 1; } }
+.ob-hero-orbit-spin {
+  transform-origin: 160px 160px;
+  transform-box: view-box;
+  animation: obSpin var(--dur-orbit) linear infinite;
+}
+@keyframes obSpin { to { transform: rotate(360deg); } }
+.ob-thread-fill {
+  stroke-dasharray: 100;
+  stroke-dashoffset: calc(100 - var(--ob-progress, 0) * 100);
+  transition: stroke-dashoffset var(--dur-3) var(--ease-out);
+}
+.ob-thread-node circle { transition: fill var(--dur-2) var(--ease-out), stroke var(--dur-2) var(--ease-out); }
+.ob-thread-halo { animation: obBreathe var(--dur-breathe) var(--ease-inout) infinite alternate; }
+
+/* Wheel lit/filled segment color (§2.12): --chart-actual in DUSK; in
+ * LIGHT the token chain leaves it at #00d4ff (2.0:1, decorative only),
+ * so the lit segment takes --brand-cyan #00677f instead. */
+.gn-ob { --ob-wheel-lit: var(--chart-actual); }
+[data-theme="light"] .gn-ob { --ob-wheel-lit: var(--brand-cyan); }
+
+/* ── Story surface chrome (§2.3) ───────────────────────────────── */
+.gn-ob {
+  position: fixed; inset: 0; z-index: 9500;
+  display: flex; flex-direction: column;
+  background:
+    radial-gradient(120% 60% at 50% 0%, color-mix(in srgb, var(--brand-cyan) 6%, transparent), transparent 60%),
+    var(--surface-1);
+  color: var(--text-1); font-family: var(--font-body);
+}
+[data-theme="light"] .gn-ob {
+  background:
+    radial-gradient(120% 60% at 50% 0%, rgba(255, 255, 255, .5), transparent 60%),
+    var(--surface-2);
+}
+.gn-ob.gn-ob-hidden { display: none !important; }
+.gn-ob-top {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: calc(var(--sp-3) + env(safe-area-inset-top)) var(--sp-4) var(--sp-2);
+}
+.gn-ob-count {
+  font-family: var(--font-mono); font-size: var(--type-caption);
+  color: var(--text-3); min-width: 52px;
+}
+.gn-ob-progress { flex: 1; display: flex; justify-content: center; }
+.gn-ob-thread { width: min(300px, 46vw); height: 20px; }
+.gn-ob-track { stroke: var(--border-2); stroke-width: 2; }
+.gn-ob-fill { stroke: var(--brand-cyan); stroke-width: 2; transition: all var(--dur-3) var(--ease-inout); }
+.gn-ob-node { fill: var(--surface-1); stroke: var(--border-2); stroke-width: 1.5; }
+.gn-ob-node.is-on { fill: var(--brand-cyan); stroke: var(--brand-cyan); }
+.gn-ob-skip {
+  margin-left: auto; min-width: 52px; min-height: 48px;
+  background: none; border: 0; cursor: pointer;
+  font-family: var(--font-body); font-size: var(--type-caption); color: var(--text-3);
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.gn-ob-main {
+  flex: 1; min-height: 0; overflow-y: auto;
+  width: min(400px, 100%); margin: 0 auto;
+  padding: var(--sp-4);
+  display: flex; flex-direction: column; justify-content: center; gap: var(--sp-3);
+  position: relative;
+}
+.gn-ob-in-f { animation: obScreenIn var(--dur-3) var(--ease-inout) both; }
+.gn-ob-in-b { animation: obScreenInB var(--dur-3) var(--ease-inout) both; }
+@keyframes obScreenIn { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: none; } }
+@keyframes obScreenInB { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
+.gn-ob-kicker {
+  margin: 0; text-align: center;
+  font-family: var(--font-mono); font-size: var(--type-caption);
+  letter-spacing: .18em; color: var(--kicker-color);
+}
+.gn-ob-title {
+  margin: 0; text-align: center; outline: none;
+  font-size: var(--type-display); line-height: 1.15; color: var(--text-1);
+}
+.gn-ob-body {
+  margin: 0 auto; text-align: center; max-width: 34ch;
+  font-size: var(--type-body); line-height: var(--leading-body); color: var(--text-2);
+}
+.gn-ob-note {
+  margin: 0 auto; text-align: center; max-width: 36ch;
+  font-size: var(--type-caption); line-height: var(--leading-body); color: var(--text-3);
+}
+.gn-ob-visual { display: flex; justify-content: center; }
+.gn-ob-visual-hero .ob-art { width: min(280px, 72vw); }
+.gn-ob-visual-wheel .gn-ob-wheel { width: 168px; }
+.gn-ob-visual-wheel-sm .gn-ob-wheel { width: 120px; }
+.gn-ob-theme-host {
+  position: absolute; z-index: 2;
+  top: calc(64px + env(safe-area-inset-top)); left: var(--sp-4);
+  min-width: 76px; min-height: 34px;
+}
+.gn-ob-langrow { display: flex; justify-content: center; }
+.gn-ob-seg {
+  display: inline-flex; gap: 2px; padding: 2px;
+  background: var(--surface-2); border: 1px solid var(--border-1); border-radius: 999px;
+}
+.gn-ob-seg-btn {
+  min-height: 48px; min-width: 56px; padding: 0 var(--sp-3);
+  background: none; border: 0; border-radius: 999px; cursor: pointer;
+  font-family: var(--font-mono); font-size: var(--type-caption); color: var(--text-3);
+}
+.gn-ob-seg-btn[aria-pressed="true"] { background: var(--surface-3); color: var(--brand-cyan); }
+
+/* THE LOOP medallions */
+.gn-ob-loop { display: flex; align-items: flex-start; width: 100%; max-width: 340px; }
+.gn-ob-medallion { display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); width: 84px; flex: none; }
+.gn-ob-medallion .gn-ob-ico {
+  width: 64px; height: 64px; padding: 18px; box-sizing: border-box;
+  border: 1.5px solid var(--border-2); border-radius: 50%;
+  background: var(--surface-2); color: var(--brand-cyan); box-shadow: var(--elev-1);
+}
+.gn-ob-medallion-label { font-size: var(--type-caption); color: var(--text-2); text-align: center; line-height: 1.3; }
+.gn-ob-thread-seg { flex: 1; height: 2px; background: var(--border-2); margin-top: 32px; }
+.gn-ob-ico { display: block; }
+
+/* THE MAP zone rows */
+.gn-ob-zones { display: flex; flex-direction: column; gap: var(--sp-2); width: 100%; }
+.gn-ob-zone {
+  display: flex; align-items: center; gap: var(--sp-3);
+  min-height: 56px; padding: var(--sp-2) var(--sp-3);
+  background: var(--surface-2); border: 1px solid var(--border-1);
+  border-radius: var(--radius-card); box-shadow: var(--elev-1);
+}
+.gn-ob-zone .gn-ob-ico { width: 24px; height: 24px; flex: none; color: var(--brand-cyan); }
+.gn-ob-zone-text { display: flex; flex-direction: column; gap: 1px; }
+.gn-ob-zone-name { font-size: var(--type-body); font-weight: 600; color: var(--text-1); }
+.gn-ob-zone-body { font-size: var(--type-caption); color: var(--text-2); line-height: 1.35; }
+
+/* FIRST SHOT secondary */
+.gn-ob-later {
+  align-self: center; min-height: 48px; padding: 0 var(--sp-3);
+  background: none; border: 0; cursor: pointer;
+  font-family: var(--font-body); font-size: var(--type-body); color: var(--text-3);
+  text-decoration: underline; text-underline-offset: 3px;
+}
+
+/* COMFORT theme cards: previews render in the previewed theme's own
+ * token values (scoped --pv-* on the element). */
+.gn-ob-comfort { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); width: 100%; }
+.gn-ob-theme-card {
+  min-height: 132px; padding: var(--sp-2); cursor: pointer;
+  display: flex; flex-direction: column; gap: var(--sp-2);
+  background: var(--surface-2); border: 1px solid var(--border-1);
+  border-radius: var(--radius-card); box-shadow: var(--elev-1);
+  font-family: var(--font-body);
+}
+.gn-ob-theme-card[aria-pressed="true"] { border-color: var(--border-cyan); box-shadow: var(--elev-2); }
+.gn-ob-theme-name { font-size: var(--type-body); color: var(--text-2); text-align: center; }
+.gn-ob-theme-card[aria-pressed="true"] .gn-ob-theme-name { color: var(--brand-cyan); }
+.gn-ob-pv {
+  position: relative; display: block; height: 84px; overflow: hidden;
+  background: var(--pv-surface); border-radius: 8px;
+}
+.gn-ob-pv-wheel { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 54px; height: 54px; }
+.gn-ob-pv-lines { position: absolute; left: 78px; right: 10px; top: 50%; transform: translateY(-50%); }
+.gn-ob-pv-lines span { display: block; height: 7px; border-radius: 999px; }
+.gn-ob-pv-lines span:first-child { width: 70%; margin-bottom: 6px; }
+.gn-ob-pv-lines span:last-child { width: 45%; opacity: .6; }
+
+/* Payoff check draw */
+.gn-ob-check { stroke-dasharray: 36; stroke-dashoffset: 0; animation: obCheckDraw var(--dur-3) var(--ease-out) both; }
+@keyframes obCheckDraw { from { stroke-dashoffset: 36; opacity: 0; } to { stroke-dashoffset: 0; opacity: 1; } }
+
+/* Footer */
+.gn-ob-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4) calc(var(--sp-4) + env(safe-area-inset-bottom));
+}
+.gn-ob-back {
+  min-height: 48px; padding: 0 var(--sp-2);
+  background: none; border: 0; cursor: pointer;
+  font-family: var(--font-body); font-size: var(--type-body); color: var(--text-2);
+}
+.gn-ob-primary { min-height: var(--ctl-h); margin-left: auto; }
+
+/* Focus visibility (Part 4.2) */
+.gn-ob button:focus-visible, .gn-ob-guide button:focus-visible {
+  outline: 2px solid var(--brand-cyan); outline-offset: 2px;
+}
+
+/* ── THE VISUAL GUIDE (§2.7) ───────────────────────────────────── */
+.gn-ob-guide { position: fixed; inset: 0; z-index: 9600; pointer-events: none; }
+.gn-ob-scrim { position: fixed; background: rgba(5, 5, 8, .78); pointer-events: auto; }
+[data-theme="light"] .gn-ob-scrim { background: rgba(28, 43, 49, .45); }
+.gn-ob-ring {
+  position: fixed; pointer-events: none;
+  border: 2px solid var(--brand-cyan); border-radius: 12px;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand-cyan) 22%, transparent);
+  transition: left var(--dur-2) var(--ease-inout), top var(--dur-2) var(--ease-inout),
+              width var(--dur-2) var(--ease-inout), height var(--dur-2) var(--ease-inout);
+}
+[data-theme="light"] .gn-ob-ring {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .65);
+}
+.gn-ob-callout {
+  position: fixed; z-index: 2; pointer-events: auto;
+  width: min(320px, calc(100vw - 32px));
+  background: var(--surface-3); border: 1px solid var(--border-1);
+  border-radius: var(--radius-card); box-shadow: var(--elev-3);
+  padding: var(--sp-3) var(--sp-4);
+}
+.gn-ob-callout-in { animation: obCalloutIn var(--dur-2) var(--ease-out) both; }
+@keyframes obCalloutIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.gn-ob-callout-line {
+  margin: 0; font-size: var(--type-body); line-height: var(--leading-body); color: var(--text-1);
+  transition: opacity var(--dur-1) var(--ease-out);
+}
+.gn-ob-callout-line.is-blocked { color: var(--danger); }
+/* §4.1: if the live light --danger falls short of AA on --surface-3,
+ * the blocked line uses the shipped coach value #b3231b in light. */
+[data-theme="light"] .gn-ob-callout-line.is-blocked { color: #b3231b; }
+.gn-ob-callout-skip {
+  display: block; margin-left: auto; min-height: 48px; padding: 0 4px;
+  background: none; border: 0; cursor: pointer;
+  font-family: var(--font-body); font-size: var(--type-caption); color: var(--text-3);
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.gn-ob-callout.is-docked {
+  position: sticky; top: 0; z-index: 6;
+  width: auto; max-width: none; box-shadow: none;
+  margin: 0 0 var(--sp-3);
+}
+.gn-ob-callout.is-docked-app { right: 16px; width: auto; }
+
+/* Measured AA fix (axe-core on the built guide, 2026-10-13): --text-3
+ * (#5d7a86) on the light surface measures 4.19:1 at caption sizes,
+ * under the 4.5:1 floor DESIGN §4.1 sets (its table estimated 4.55).
+ * Light-theme captions in the guide chrome step up to --text-2
+ * (7.6:1); DUSK keeps --text-3 (5.7:1, passes). */
+[data-theme="light"] .gn-ob-count,
+[data-theme="light"] .gn-ob-skip,
+[data-theme="light"] .gn-ob-note,
+[data-theme="light"] .gn-ob-seg-btn { color: var(--text-2); }
+[data-theme="light"] .gn-ob-seg-btn[aria-pressed="true"] { color: var(--brand-cyan); }
+
+/* ── Reduced motion (§2.13): keyframes in this file go fully static;
+ * durations already collapse through the --dur-* tokens. ───────── */
+@media (prefers-reduced-motion: reduce) {
+  .ob-enter { animation: none; opacity: 1; }
+  .ob-hero-glow, .ob-hero-orbit-spin, .ob-thread-halo { animation: none; }
+  .ob-thread-fill, .ob-thread-node circle { transition: none; }
+  .gn-ob-in-f, .gn-ob-in-b, .gn-ob-callout-in, .gn-ob-check { animation: none; }
+  .gn-ob-ring { transition: none; }
+}

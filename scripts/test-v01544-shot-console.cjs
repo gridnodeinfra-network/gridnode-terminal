@@ -45,7 +45,7 @@ const lab08 = read('js/modules/08-lab.js');
 const vault09 = read('js/modules/09-vault.js');
 const logshot05 = read('js/modules/05-log-shot.js');
 const misc11 = read('js/modules/11-misc.js');
-const fc = read('js/gridnode-firstcontact.js');
+const fc = read('js/gridnode-onboarding.js');
 const scanner04 = read('js/modules/04-scanner.js');
 const bundle = read('js/gridnode-bundle.js');
 // 2026-10-12 code-split delivery change: module 05 (log-shot) no longer ships

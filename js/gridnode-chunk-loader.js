@@ -34,7 +34,7 @@
   /* ---- manifest: key -> file in js/ ---- */
   var MANIFEST = {
     whatsnew: 'gridnode-whatsnew.js',
-    firstcontact: 'gridnode-firstcontact.js',
+    onboarding: 'gridnode-onboarding.js',
     telemetry: 'gridnode-telemetry.js',
     motivation: 'gridnode-motivation.js',
     reminders: 'gridnode-reminders.js',
@@ -283,7 +283,7 @@
 
   /* ---- deferred batch: runs once #app is shown, on idle ----
      Order is contractual (Analysis A §2.1/§2.2):
-     templates (parallel) -> firstcontact -> whatsnew -> telemetry ->
+     templates (parallel) -> onboarding -> whatsnew -> telemetry ->
      motivation -> reminders -> vault preload -> progress composite (last,
      so TODAY's protocol curve lands without blocking first paint). */
   var deferredStarted = false;
@@ -294,16 +294,17 @@
       /* (a) templates at showApp time, parallel and non-blocking; the
          fallback + gn:phase-state-ready re-render already exist in 00/02. */
       GNLoadScript('templates').catch(function () {});
-      /* (b) firstcontact — prioritized for first-run users; returning users
-         (onboarding complete) still get it in this batch for REPLAY TOUR. */
-      try { await GNLoadScript('firstcontact'); } catch (_) {}
-      /* Re-dispatch rule: if whatsnew somehow resolved before firstcontact
+      /* (b) onboarding — prioritized for first-run users;
+         returning users (onboarding complete) still get it in this
+         batch for REPLAY TOUR. */
+      try { await GNLoadScript('onboarding'); } catch (_) {}
+      /* Re-dispatch rule: if whatsnew somehow resolved before onboarding
          registered its listener, re-fire once so maybeAutoStart can't stall.
          VISUALS MAX 2 / F3: never re-fire while whatsnew is still pending
-         (shouldAutoShow) — a bare resolved event would release First
-         Contact underneath the still-open changelog modal. */
+         (shouldAutoShow) — a bare resolved event would release the
+         onboarding guide underneath the still-open changelog modal. */
       try { if (window.GN_WHATS_NEW && (typeof window.GN_WHATS_NEW.shouldAutoShow !== 'function' || !window.GN_WHATS_NEW.shouldAutoShow())) document.dispatchEvent(new CustomEvent('gn:whatsnew-resolved')); } catch (_) {}
-      /* (c) whatsnew AFTER firstcontact has loaded (or failed). */
+      /* (c) whatsnew AFTER onboarding has loaded (or failed). */
       try { await GNLoadScript('whatsnew'); } catch (_) {}
       /* (d) telemetry, then re-dock via its refresh hook. */
       try {

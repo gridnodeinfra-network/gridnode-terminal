@@ -61,7 +61,7 @@
       '01-readability-floor.css',
       '02-first-five-minutes.css',
       '03-premium-system.css',
-      '04-first-contact.css',
+      '04-onboarding.css',
       '04-vault-redesign.css',
       '05-logshot-2step.css',
       '06-premium-pass.css',
