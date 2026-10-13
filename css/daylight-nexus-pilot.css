@@ -602,7 +602,9 @@ html[data-theme="light"] { --surface-telemetry: rgba(238, 234, 224, .94); }
 html[data-theme="light"] #landing,
 html[data-theme="light"] #login {
   background-color: var(--background);
-  background-image: linear-gradient(90deg, rgba(235, 237, 240, .94) 0 34%, rgba(235, 237, 240, .74) 58%, rgba(215, 222, 230, .48) 100%), url('../assets/nexus-city-night-v1.webp');
+  /* VISUALS MAX 2: light theme gets the shipped daylight city art (was the
+     night city washed under paper); wash gradient unchanged. */
+  background-image: linear-gradient(90deg, rgba(235, 237, 240, .94) 0 34%, rgba(235, 237, 240, .74) 58%, rgba(215, 222, 230, .48) 100%), url('../assets/nexus-city-daylight-v1.webp');
   background-position: center;
   background-size: cover;
   background-attachment: scroll;
@@ -812,6 +814,17 @@ html[data-theme="light"] .gn-import-actions .gn-import-close { border-color: var
 html[data-theme="light"] .modal-actions .modal-btn.save,
 html[data-theme="light"] .csv-import-save,
 html[data-theme="light"] .gn-import-actions .csv-import-save { background: linear-gradient(135deg, #D12424, #633247) !important; color: var(--text-inverse) !important; }
+
+/* VISUALS MAX 2: landing language globe — its visible disc is drawn by
+   .landing-lang-wrap .gn-lang-globe::before (03-premium-system) with a dark
+   charcoal fill in BOTH themes and no light variant, so the teal kanji glyph
+   sat on charcoal on paper. Align the disc with the in-app light globe /
+   pearl pill treatment: pearl fill, ink border. Glyph color already remaps
+   to #006f82 in light (03-premium-system). */
+html[data-theme="light"] .landing-lang-wrap .gn-lang-globe::before {
+  background: rgba(248, 245, 237, .92) !important;
+  border-color: rgba(20, 60, 70, .3) !important;
+}
 
 /* DAYLIGHT NODE MARK — soft chip, right-aligned, no hardcoded glow. */
 .landing-node-mark svg { filter: none !important; width: 24px !important; height: 24px !important; }
@@ -1824,6 +1837,26 @@ html[data-theme="light"] .gn-delta-spark polyline { stroke: #0a6f82; }
   border: 1px solid rgba(255,255,255,.4); transform: translate(-50%, -50%) rotate(45deg);
 }
 html[data-theme="light"] .gn-constellation-kicker { color: #1a343d !important; }
+/* VISUALS MAX 2 D1-ELEVATE: light theme only — remap the constellation to
+   ink-on-paper. Fills derive from var(--brand-cyan) (light value #00677f);
+   glows soften to the same family at low alpha. DUSK rules above untouched. */
+html[data-theme="light"] .gn-constellation-line {
+  background: linear-gradient(90deg, rgba(0, 103, 127, .18), rgba(0, 103, 127, .45), rgba(0, 103, 127, .18));
+}
+html[data-theme="light"] .gn-const-node.shot {
+  background: radial-gradient(circle at 35% 30%, #fff, var(--brand-cyan) 70%);
+  box-shadow: 0 0 8px rgba(0, 103, 127, .45), 0 0 3px #fff;
+  border-color: rgba(0, 103, 127, .35);
+}
+html[data-theme="light"] .gn-const-node.weight {
+  background: radial-gradient(circle at 35% 30%, #eef6f7, color-mix(in srgb, var(--brand-cyan) 55%, #fff) 70%);
+  box-shadow: 0 0 6px rgba(0, 103, 127, .35);
+  border-color: rgba(0, 103, 127, .3);
+}
+html[data-theme="light"] .gn-const-node.lab {
+  /* fill keeps the documented DUSK amber #d3a24a (legible on paper); only the neon-strength glow softens */
+  box-shadow: 0 0 6px rgba(168, 110, 19, .45);
+}
 
 /* Injection Site Map */
 .gn-sitemap-wrap { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }

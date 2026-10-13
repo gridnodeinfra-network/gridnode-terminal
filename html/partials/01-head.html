@@ -42,6 +42,29 @@
   <meta name="supported-color-schemes" content="dark light">
 
 <script src="./js/gridnode-theme.js?v=20260918.c67df9d"></script>
+<script>
+/* F2 (VISUALS MAX 2): post-auth return detection at first paint. When the
+ * URL carries an OAuth/Supabase auth response (implicit tokens in the hash,
+ * a PKCE code or an error in the query), or a fresh return marker is in
+ * sessionStorage, flag the document BEFORE first paint so the landing can
+ * show the honest SIGNING YOU IN status (css/native/11-ux-states.css)
+ * instead of dead air while gridnode-app restoreSession exchanges the
+ * session and hydrates. The app clears html.gn-auth-returning exactly
+ * once: into the app on success, back to the signed-out landing on
+ * failure, or via its 6s backstop. Ordinary cold visits match nothing
+ * here and never see the state. */
+(function () {
+  try {
+    var h = window.location.hash || '', s = window.location.search || '';
+    var authReturn = /access_token=|refresh_token=|provider_token=|error=|type=(recovery|signup|invite|magiclink|email)/.test(h) || /[?&](code|error|error_code)=/.test(s);
+    var fresh = false, ts = 0;
+    try { ts = parseInt(sessionStorage.getItem('gn_auth_return_v1') || '0', 10) || 0; } catch (_) {}
+    fresh = ts > 0 && (Date.now() - ts) < 60000;
+    if (authReturn) { try { sessionStorage.setItem('gn_auth_return_v1', String(Date.now())); } catch (_) {} }
+    if (authReturn || fresh) document.documentElement.classList.add('gn-auth-returning');
+  } catch (_) {}
+})();
+</script>
 <style id="gn-critical-paint">html{background:#050508}html[data-theme="light"]{background:#e8e4da}html:not(.gn-css-ready) #app{visibility:hidden}</style>
 <link rel="stylesheet" href="./css/daylight-nexus-pilot.css?v=20260918.c67df9d">
 <link rel="stylesheet" href="./css/native/08-design-tokens.css?v=20260918.c67df9d">

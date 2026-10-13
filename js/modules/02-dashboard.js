@@ -637,6 +637,12 @@ function renderPhase(lastShot, shots) {
     setText('pibPay', tx('phase.appetiteSymptoms', 'Track appetite, symptoms, energy, side effects, and notes as your protocol history develops.'));
     const emptyMarker = document.getElementById('phaseMarker');
     if (emptyMarker) emptyMarker.hidden = true;
+    const segWrap0 = document.getElementById('ringWrap');
+    if (segWrap0) segWrap0.style.removeProperty('--gn-seg-ring');
+    const nodes0 = document.getElementById('phaseNodes');
+    if (nodes0) { nodes0.innerHTML = ''; delete nodes0.dataset.sig; }
+    const ticks0 = document.getElementById('tickMarks');
+    if (ticks0) { ticks0.innerHTML = ''; delete ticks0.dataset.sig; }
     // S2: nothing to estimate yet — clear any trust treatment from a prior render.
     document.getElementById('phaseCard')?.removeAttribute('data-trust');
     document.getElementById('phaseCard')?.querySelector('.gn-trust-badge')?.remove();
@@ -674,6 +680,51 @@ function renderPhase(lastShot, shots) {
   setText('pibPay', tx('phase.appetiteSymptoms', 'Track appetite, symptoms, energy, side effects, and notes as your protocol history develops.'));
   const arc = document.getElementById('phaseArc');
   if (arc) { const circumference = 678.6; arc.style.strokeDashoffset = String(circumference * (1 - cyclePosition)); arc.style.stroke = phase.color; }
+  // Dead-gradient repair: #phaseArc references url(#arcGrad) but the inline
+  // stroke above overrides it every render, so the stops never painted.
+  // Wire the stops to the current phase color each render (sheen via
+  // stop-opacity) so the gradient defs carry live data.
+  const stop1 = document.getElementById('arcStop1');
+  const stop2 = document.getElementById('arcStop2');
+  if (stop1) { stop1.setAttribute('stop-color', phase.color); stop1.setAttribute('stop-opacity', '1'); }
+  if (stop2) { stop2.setAttribute('stop-color', phase.color); stop2.setAttribute('stop-opacity', '0.55'); }
+  // Segment ring truth: generate the conic from the real PHASES fractions
+  // + colors (8/20/24/24/18/6%). The old static injection in
+  // gridnode-app.js drew 5 equal 72deg segments that contradicted the 6
+  // phases; it now only provides a neutral fallback via --gn-seg-ring.
+  const segRingWrap = document.getElementById('ringWrap');
+  if (segRingWrap) {
+    const stops = PHASES.map(p => p.color + ' ' + (p.start * 360).toFixed(1) + 'deg ' + (p.end * 360).toFixed(1) + 'deg').join(',');
+    segRingWrap.style.setProperty('--gn-seg-ring', 'conic-gradient(from -90deg,' + stops + ')');
+  }
+  // Populate the formerly dead #phaseNodes / #tickMarks scaffolding with
+  // boundary ticks at the true cumulative phase fractions. Marker math
+  // matches the position marker below (45% radius, angle 0 = top).
+  const nodesHost = document.getElementById('phaseNodes');
+  if (nodesHost) {
+    const nsig = PHASES.map(p => p.start + '-' + p.end + ':' + p.color).join('|');
+    if (nodesHost.dataset.sig !== nsig) {
+      nodesHost.dataset.sig = nsig;
+      nodesHost.innerHTML = PHASES.slice(1).map(p => {
+        const a = (p.start * Math.PI * 2) - (Math.PI / 2);
+        const x = (50 + (Math.cos(a) * 45)).toFixed(2), y = (50 + (Math.sin(a) * 45)).toFixed(2);
+        return '<span class="p-tick" style="left:' + x + '%;top:' + y + '%;border-color:' + p.color + ';background:' + p.color + '"></span>';
+      }).join('');
+    }
+  }
+  const ticks = document.getElementById('tickMarks');
+  if (ticks) {
+    const tsig = PHASES.map(p => p.start + ':' + p.color).join('|');
+    if (ticks.dataset.sig !== tsig) {
+      ticks.dataset.sig = tsig;
+      ticks.innerHTML = PHASES.slice(1).map(p => {
+        const a = (p.start * Math.PI * 2) - (Math.PI / 2);
+        const x1 = (140 + (Math.cos(a) * 100)).toFixed(1), y1 = (140 + (Math.sin(a) * 100)).toFixed(1);
+        const x2 = (140 + (Math.cos(a) * 116)).toFixed(1), y2 = (140 + (Math.sin(a) * 116)).toFixed(1);
+        return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + p.color + '" stroke-width="2" opacity="0.55"/>';
+      }).join('');
+    }
+  }
   const marker = document.getElementById('phaseMarker');
   if (marker) {
     const angle = (cyclePosition * Math.PI * 2) - (Math.PI / 2);

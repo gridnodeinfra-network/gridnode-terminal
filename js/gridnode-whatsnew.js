@@ -1318,6 +1318,13 @@
     if (!opts.force && acknowledged() === VERSION.release) { document.dispatchEvent(new CustomEvent('gn:whatsnew-resolved', { detail: { shown: false } })); return false; }
     if (!hasCurrentNotes()) { document.dispatchEvent(new CustomEvent('gn:whatsnew-resolved', { detail: { shown: false } })); return false; }
     if (!opts.force && document.getElementById('gnWhatsNewOverlay')) return false; // already open — no multi-fire
+    /* F3 queue: never stack over the First Contact tour. If the tour is
+       active, defer this show until it finishes (gn:firstcontact-done),
+       so the two first-run surfaces can never be visible together. */
+    if (window.GN_FIRSTCONTACT?.active?.()) {
+      document.addEventListener('gn:firstcontact-done', () => show(options), { once: true });
+      return false;
+    }
     document.getElementById('gnWhatsNewOverlay')?.remove();
     const historyMode = Boolean(opts.history);
     const releases = historyMode ? Object.keys(NOTES).sort().reverse() : [VERSION.release];
@@ -1390,13 +1397,18 @@
       if (!app || getComputedStyle(app).display === 'none') { window.setTimeout(attempt, 900); return; }
       if (tourPending()) {
         if (!window.GN_FIRSTCONTACT) { window.setTimeout(attempt, 900); return; } // tour script not ready yet
-        // First run: let FIRST CONTACT breathe first. Unblock the tour, then
-        // show the changelog after the tour ends instead of over it.
-        document.dispatchEvent(new CustomEvent('gn:whatsnew-resolved', { detail: { shown: false, deferred: true } }));
-        let done = false;
-        const showDeferred = () => { if (done) return; done = true; autoShow(); };
-        document.addEventListener('gn:firstcontact-done', showDeferred, { once: true });
-        window.setTimeout(showDeferred, 10 * 60 * 1000); // backstop: never trap the changelog
+        /* F3 queue (VISUALS MAX 2): WHAT'S NEW goes FIRST. The old order
+           dispatched gn:whatsnew-resolved immediately and showed the
+           changelog after the tour, which released First Contact while
+           this surface was still pending — and its 10-minute backstop
+           could then stack the changelog over a still-live tour (the
+           device-verified F3 defect). Now autoShow() runs first:
+           genuine first-run users are acknowledged silently inside
+           autoShow (its gn:whatsnew-resolved releases the tour, and
+           nothing was ever shown); everyone else sees the changelog,
+           and its dismissal (gn:whatsnew-dismissed) is what releases
+           First Contact. One queue, no stacking, no backstop needed. */
+        autoShow();
         return;
       }
       autoShow();
@@ -1406,6 +1418,7 @@
 
   window.GN_WHATS_NEW = Object.freeze({
     show, history: () => show({ force: true, history: true }), acknowledged,
+    isOpen: () => Boolean(document.getElementById('gnWhatsNewOverlay')),
     currentRelease: VERSION.release, currentVersion: VERSION.semver,
     releases: Object.freeze(Object.keys(NOTES).sort().reverse()), notes: NOTES,
     shouldAutoShow: () => acknowledged() !== VERSION.release && hasCurrentNotes()

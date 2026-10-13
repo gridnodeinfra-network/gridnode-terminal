@@ -147,6 +147,7 @@
   "auth.revokePasskeyConfirm": "¿REVOCAR ESTE PASSKEY?",
   "auth.signIn": "ENTRAR A LA NUBE",
   "auth.signInSyncLine": "Inicia sesión para sincronizar tu grid entre dispositivos.",
+  "auth.signingYouIn": "INICIANDO TU SESIÓN",
   "auth.syncAcrossDevices": "SINCRONIZAR EN TUS DISPOSITIVOS",
   "auth.timeout": "TIEMPO_AGOTADO",
   "auth.updatePassword": "ACTUALIZAR CONTRASEÑA",

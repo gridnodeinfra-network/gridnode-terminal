@@ -337,6 +337,19 @@
   width: 16px;
   height: 16px;
 }
+/* VISUALS MAX 2 D4: the vault icon spans never carried .gn-icon, so no rule
+   gave their svgs the stroke treatment and they fell back to UA fill black /
+   stroke none (black silhouettes in both themes). Mirror .gn-icon svg
+   (12-legacy-externalized). Unscoped on purpose: the same spans are reused
+   inside the LAB tool overlay (#gnLabToolOverlay). */
+.gn-vault-card-ico svg,
+.gn-vault-row-ico svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 #pageProfile .gn-vault-row-txt {
   flex: 1;
   min-width: 0;
@@ -555,9 +568,167 @@ html[data-theme="light"] #pageProfile .gn-vault-danger-head {
   color: #a51d36;
 }
 
+/* ---------- LAB tool overlay habitat (VISUALS MAX 2 D2/D3) ----------
+   openLabTool('devices') physically moves #gnDeviceCard out of #pageProfile
+   into #gnLabToolOverlay, so every #pageProfile-scoped rule above stops
+   matching: the card lost its layout and its bare <svg> fell back to the UA
+   300x150 fill-black default (three ~55px black discs). The rules below
+   duplicate the card's native styling under the overlay scope ONLY; the
+   native VAULT rules are untouched. Values mirror the #pageProfile rules
+   verbatim so both habitats render the same card. */
+#gnLabToolOverlay .gn-vault-card {
+  background: var(--panel, #0e0e16);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: var(--radius-card);
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+#gnLabToolOverlay .gn-vault-card:last-child {
+  margin-bottom: 0;
+}
+#gnLabToolOverlay .gn-vault-card:not([open]) > .gn-vault-card-body {
+  display: none;
+}
+#gnLabToolOverlay .gn-vault-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 62px;
+  padding: 12px 14px;
+  cursor: pointer;
+  list-style: none;
+}
+#gnLabToolOverlay .gn-vault-card-head::-webkit-details-marker {
+  display: none;
+}
+#gnLabToolOverlay .gn-vault-card-head:focus-visible {
+  outline: 2px solid rgba(0, 212, 255, 0.6);
+  outline-offset: -2px;
+}
+#gnLabToolOverlay .gn-vault-card-ico {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-nested);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  color: var(--brand-cyan);
+}
+#gnLabToolOverlay .gn-vault-card-ico svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+#gnLabToolOverlay .gn-vault-card-titles {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+/* D3: the overlay shell header already titles this tool "DEVICE REGISTRY";
+   hide the card's duplicate <b> title here (native VAULT keeps it). The
+   summary status line below it remains. */
+#gnLabToolOverlay .gn-vault-card-titles b {
+  display: none;
+}
+#gnLabToolOverlay .gn-vault-card-sub {
+  font-family: var(--font-m, 'Share Tech Mono', monospace);
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#gnLabToolOverlay .gn-vault-chev {
+  flex-shrink: 0;
+  color: var(--text-dim);
+  font-size: 1.25rem;
+  line-height: 1;
+  transition: transform 0.18s ease, color 0.18s ease;
+}
+#gnLabToolOverlay details[open] > summary .gn-vault-chev {
+  transform: rotate(90deg);
+  color: var(--brand-cyan);
+}
+#gnLabToolOverlay .gn-vault-card-body {
+  padding: 6px 16px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+#gnLabToolOverlay .gn-vault-subcard {
+  margin: 12px 0 4px;
+  border: 1px dashed rgba(0, 212, 255, 0.32);
+  border-radius: var(--radius-nested);
+  overflow: hidden;
+}
+#gnLabToolOverlay .gn-vault-subcard-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--font-m, 'Share Tech Mono', monospace);
+  font-size: 0.68rem;
+  letter-spacing: 2px;
+  color: var(--brand-cyan);
+}
+#gnLabToolOverlay .gn-vault-subcard-head::-webkit-details-marker {
+  display: none;
+}
+#gnLabToolOverlay .gn-vault-subcard:not([open]) > .gn-record-form {
+  display: none;
+}
+#gnLabToolOverlay .gn-vault-subcard .gn-record-form {
+  padding: 2px 14px 14px;
+}
+#gnLabToolOverlay .gn-device-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+#gnLabToolOverlay .gn-device-list:empty {
+  margin-top: 0;
+}
+/* Overlay habitat, light theme — mirrors the #pageProfile light rules. */
+html[data-theme="light"] #gnLabToolOverlay .gn-vault-card {
+  background: var(--surface, #f4f1e9);
+  border-color: rgba(0, 111, 130, 0.22);
+}
+html[data-theme="light"] #gnLabToolOverlay .gn-vault-card-body {
+  border-color: rgba(0, 111, 130, 0.16);
+}
+html[data-theme="light"] #gnLabToolOverlay .gn-vault-card-ico {
+  background: rgba(0, 113, 138, 0.08);
+  border-color: rgba(0, 113, 138, 0.3);
+  /* !important parity: 03-premium-system forces `summary span` ink
+     (#1b2a30 !important) inside #gnLabToolHost in light theme; the native
+     VAULT chip is teal #00718a, so the overlay chip matches it explicitly. */
+  color: #00718a !important;
+}
+html[data-theme="light"] #gnLabToolOverlay .gn-vault-subcard {
+  border-color: rgba(0, 113, 138, 0.4);
+}
+html[data-theme="light"] #gnLabToolOverlay .gn-vault-subcard-head {
+  color: #00718a;
+}
+html[data-theme="light"] #gnLabToolOverlay details[open] > summary .gn-vault-chev {
+  color: #00718a !important;
+}
+
 /* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
-  #pageProfile .gn-vault-chev {
+  #pageProfile .gn-vault-chev,
+  #gnLabToolOverlay .gn-vault-chev {
     transition: none;
   }
 }

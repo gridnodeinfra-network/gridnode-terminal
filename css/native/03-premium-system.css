@@ -268,12 +268,21 @@ html[data-theme="light"] #landing {
   --text-dim: #60777f;
   --border: rgba(0, 111, 130, .22);
   background-color: #f4f1e9 !important;
+  /* VISUALS MAX 2 (Track C): Track B wired the daylight city art in
+     css/daylight-nexus-pilot.css (live on #login), but it never surfaced
+     on #landing because this !important paper-grid treatment loads later
+     in the cascade and wins. The fix lives at the winning rule, not in a
+     competing override: same paper grid on top, then a light wash, then
+     the city. The wash keeps hero text AA over the brightest art
+     (headline #17272e measures 14:1+ at every wash stop; see the
+     track-c evidence harness). Dark theme is untouched by this block. */
   background-image:
     linear-gradient(rgba(16, 64, 75, .035) 1px, transparent 1px),
     linear-gradient(90deg, rgba(16, 64, 75, .035) 1px, transparent 1px),
-    radial-gradient(circle at 78% 24%, rgba(0, 125, 145, .08), transparent 29%),
-    linear-gradient(145deg, #f7f4ed, #ede9df) !important;
-  background-size: 44px 44px, 44px 44px, auto, auto !important;
+    linear-gradient(90deg, rgba(247, 244, 237, .96) 0, rgba(247, 244, 237, .90) 34%, rgba(244, 241, 233, .82) 58%, rgba(238, 235, 226, .72) 100%),
+    url('/assets/nexus-city-daylight-v1.webp') !important;
+  background-size: 44px 44px, 44px 44px, auto, cover !important;
+  background-position: center, center, center, center !important;
   background-attachment: scroll !important;
 }
 html[data-theme="light"] #landing::before {
@@ -2345,10 +2354,8 @@ html[data-theme="light"] .card {
    html/partials/01-head.html. This layer keeps only the premium press feel. */
 .fab {
   border: 2px solid rgba(255,77,77,.95) !important;
-  box-shadow:
-    0 0 18px rgba(255,60,60,.55),
-    0 0 46px rgba(255,60,60,.22),
-    inset 0 0 14px rgba(255,60,60,.28) !important;
+  /* Glow: single source is var(--elev-fab), bound by the .fab rule in the
+     elevation section below (box-shadow: var(--elev-fab) !important). */
   transition: transform var(--dur-2) var(--ease-out) !important;
 }
 .fab:hover, .fab:focus-visible {

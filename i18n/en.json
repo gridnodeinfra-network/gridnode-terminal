@@ -147,6 +147,7 @@
   "auth.revokePasskeyConfirm": "REVOKE THIS PASSKEY?",
   "auth.signIn": "SIGN IN TO CLOUD",
   "auth.signInSyncLine": "Sign in to sync your grid across devices.",
+  "auth.signingYouIn": "SIGNING YOU IN",
   "auth.syncAcrossDevices": "SYNC ACROSS DEVICES",
   "auth.timeout": "TIMEOUT",
   "auth.updatePassword": "UPDATE PASSWORD",

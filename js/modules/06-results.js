@@ -147,14 +147,26 @@ export function renderResults() {
      readers of pageResults content (e.g. right after showPage('Results'))
      must keep seeing complete content, exactly as before. */
   scheduleResultsWork(renderToken, () => {
-    drawWeightTrendChart($('wtChart'), filterWeightsForChart(weights), shots, profile.goalWt);
+    /* Telemetry-ready: the telemetry section is the live chart and CSS
+       hides #weightTrendLive (html.gn-telemetry-ready). The legacy canvas
+       is display:none then, so drawing it (plus its scrub init and trend
+       arrow) every render is dead work — skip all three in that state.
+       The non-telemetry path is unchanged. */
+    if (!document.documentElement.classList.contains('gn-telemetry-ready')) {
+      drawWeightTrendChart($('wtChart'), filterWeightsForChart(weights), shots, profile.goalWt);
+      drawTrendArrow($('wtChart'), filterWeightsForChart(weights), profile.goalWt);
+    }
     try { renderPhaseHeatmap(shots); } catch (_) {}
-    drawTrendArrow($('wtChart'), filterWeightsForChart(weights), profile.goalWt);
   });
   renderWeightRecords(weights);
   renderMeasurementTrend();
   renderTrendLists(shots);
   renderWeeklyReport(shots, weights);
+  /* Telemetry canvases size their backing store from client size, so a
+     draw that ran while #pageResults was hidden (boot) keeps a nominal
+     fallback backing. Refresh once this page is being rendered (visible)
+     so the backing matches the real client width x DPR. */
+  try { if (window.GN_TELEMETRY && window.GN_TELEMETRY.refresh) window.GN_TELEMETRY.refresh(); } catch (_) {}
   /* v0.15.42: calendar is a RESULTS subview (CHARTS | CALENDAR toggle). */
   setResultsView(moduleState.resultsView === 'calendar' ? 'calendar' : 'charts');
 }
@@ -750,6 +762,20 @@ function renderProtocolCurve(shots, phase) {
     detail.textContent = tx('results.relativeCycleModel', 'relative cycle model · not a measured level');
     const liveLabel = localizedPhaseName(phase) || tx('results.active', 'ACTIVE');
     readout.replaceChildren(document.createTextNode(liveLabel ? liveLabel + ' ' : ''), detail);
+  }
+
+  /* Evidence row: this legacy fallback IS the local-mode path (the
+     evidence layer's model is cloud-gated). Populate the row from
+     existing keys instead of leaving the dead "— · —": chip =
+     peptide.evidenceGeneric (GENERIC TIMING MODEL), summary = med label
+     + phase.estimatedCycleModel. No new copy. The fallback curve color
+     stays phase-pink — PK color semantics are out of scope here. */
+  const fbChip = $('medEvidenceChip');
+  if (fbChip) { fbChip.textContent = tx('peptide.evidenceGeneric', 'GENERIC TIMING MODEL'); fbChip.dataset.state = 'generic'; }
+  const fbSummary = $('medCurveSummary');
+  if (fbSummary) {
+    const fbMedId = normalizeMedicationId(shots.at(-1)?.med);
+    fbSummary.textContent = (fbMedId ? medicationLabel(fbMedId) + ' · ' : '') + tx('phase.estimatedCycleModel', 'relative cycle model · not a measured level');
   }
 
   const now = Date.now();

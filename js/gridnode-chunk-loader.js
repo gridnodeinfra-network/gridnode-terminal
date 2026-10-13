@@ -298,8 +298,11 @@
          (onboarding complete) still get it in this batch for REPLAY TOUR. */
       try { await GNLoadScript('firstcontact'); } catch (_) {}
       /* Re-dispatch rule: if whatsnew somehow resolved before firstcontact
-         registered its listener, re-fire once so maybeAutoStart can't stall. */
-      try { if (window.GN_WHATS_NEW) document.dispatchEvent(new CustomEvent('gn:whatsnew-resolved')); } catch (_) {}
+         registered its listener, re-fire once so maybeAutoStart can't stall.
+         VISUALS MAX 2 / F3: never re-fire while whatsnew is still pending
+         (shouldAutoShow) — a bare resolved event would release First
+         Contact underneath the still-open changelog modal. */
+      try { if (window.GN_WHATS_NEW && (typeof window.GN_WHATS_NEW.shouldAutoShow !== 'function' || !window.GN_WHATS_NEW.shouldAutoShow())) document.dispatchEvent(new CustomEvent('gn:whatsnew-resolved')); } catch (_) {}
       /* (c) whatsnew AFTER firstcontact has loaded (or failed). */
       try { await GNLoadScript('whatsnew'); } catch (_) {}
       /* (d) telemetry, then re-dock via its refresh hook. */

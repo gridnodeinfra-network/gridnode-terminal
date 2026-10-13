@@ -129,17 +129,25 @@
   function prepareCanvas(canvas) {
     const wrap = canvas.closest('.gn-telemetry-canvas-wrap');
     const rect = wrap.getBoundingClientRect();
-    const width = Math.max(260, Math.round(rect.width || 320));
+    /* Backing store sized from the element's actual client size x
+       devicePixelRatio (canvas CSS is width:100%, so clientWidth is the
+       true layout width), capped at 1600 backing px wide. The previous
+       fixed-class backing upscaled soft at desktop widths. Redraws on
+       resize go through the same path (see the resize listener). */
+    const width = Math.max(260, Math.round(canvas.clientWidth || rect.width || 320));
     const compact = canvas.closest('.compact');
     const height = compact ? 150 : 220;
     const ratio = Math.max(1, Math.min(3, devicePixelRatio || 1));
     canvas.style.height = `${height}px`;
-    if (canvas.width !== Math.round(width * ratio) || canvas.height !== Math.round(height * ratio)) {
-      canvas.width = Math.round(width * ratio);
-      canvas.height = Math.round(height * ratio);
+    const backingW = Math.min(1600, Math.round(width * ratio));
+    const scale = backingW / width;
+    const backingH = Math.round(height * scale);
+    if (canvas.width !== backingW || canvas.height !== backingH) {
+      canvas.width = backingW;
+      canvas.height = backingH;
     }
     const context = canvas.getContext('2d');
-    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    context.setTransform(scale, 0, 0, scale, 0, 0);
     context.clearRect(0, 0, width, height);
     return { context, wrap, width, height, compact: Boolean(compact) };
   }

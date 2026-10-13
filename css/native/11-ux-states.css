@@ -181,6 +181,39 @@ html[data-theme="light"] [aria-invalid="true"] { border-color: #a51d36 !importan
 }
 html[data-theme="light"] .results-weight-error { color: #8a0f2a; }
 
+/* ---------- POST-AUTH RETURN: signing-you-in ----------
+   F2 (VISUALS MAX 2). The inline detector in 01-head.html adds
+   html.gn-auth-returning at first paint ONLY on a post-auth return
+   (auth response in the URL / fresh return marker), so this status
+   never flashes on an ordinary cold visit. It reuses the sync-note
+   surface rhythm above: it represents a real wait (Supabase session
+   exchange + cloud hydration in restoreSession) and the app removes
+   the class exactly once — into the app on success, back to the
+   signed-out landing on failure, or via a 6s backstop tied to the
+   4.5s session-restore timeout in gridnode-core getCloudSession.
+   All colours are contract tokens, so both themes stay AA:
+   --text-1 on --surface-2 is 15.4:1 (dark) / 13.9:1 (light). */
+.gn-auth-return { display: none; }
+html.gn-auth-returning .gn-auth-return {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  border: 1px solid var(--border-cyan);
+  border-radius: var(--radius-card);
+  background: var(--surface-2);
+  color: var(--text-1);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-4);
+  font-size: var(--type-body);
+  font-weight: 600;
+  line-height: 1.45;
+  animation: gnFadeIn var(--dur-2) var(--ease-out) both;
+}
+.gn-auth-return-bar { flex: 1; max-width: 180px; }
+@media (prefers-reduced-motion: reduce) {
+  html.gn-auth-returning .gn-auth-return { animation: none; }
+}
+
 /* ---------- POST-ACTION: toast next-step ----------
    The undoable toast gains ONE secondary action (VIEW) next to
    UNDO, added by the save flows in 05-log-shot / 06-results.

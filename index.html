@@ -45,6 +45,29 @@
   <meta name="supported-color-schemes" content="dark light">
 
 <script src="./js/gridnode-theme.js?v=20260918.c67df9d"></script>
+<script>
+/* F2 (VISUALS MAX 2): post-auth return detection at first paint. When the
+ * URL carries an OAuth/Supabase auth response (implicit tokens in the hash,
+ * a PKCE code or an error in the query), or a fresh return marker is in
+ * sessionStorage, flag the document BEFORE first paint so the landing can
+ * show the honest SIGNING YOU IN status (css/native/11-ux-states.css)
+ * instead of dead air while gridnode-app restoreSession exchanges the
+ * session and hydrates. The app clears html.gn-auth-returning exactly
+ * once: into the app on success, back to the signed-out landing on
+ * failure, or via its 6s backstop. Ordinary cold visits match nothing
+ * here and never see the state. */
+(function () {
+  try {
+    var h = window.location.hash || '', s = window.location.search || '';
+    var authReturn = /access_token=|refresh_token=|provider_token=|error=|type=(recovery|signup|invite|magiclink|email)/.test(h) || /[?&](code|error|error_code)=/.test(s);
+    var fresh = false, ts = 0;
+    try { ts = parseInt(sessionStorage.getItem('gn_auth_return_v1') || '0', 10) || 0; } catch (_) {}
+    fresh = ts > 0 && (Date.now() - ts) < 60000;
+    if (authReturn) { try { sessionStorage.setItem('gn_auth_return_v1', String(Date.now())); } catch (_) {} }
+    if (authReturn || fresh) document.documentElement.classList.add('gn-auth-returning');
+  } catch (_) {}
+})();
+</script>
 <style id="gn-critical-paint">html{background:#050508}html[data-theme="light"]{background:#e8e4da}html:not(.gn-css-ready) #app{visibility:hidden}</style>
 <link rel="stylesheet" href="./css/daylight-nexus-pilot.css?v=20260918.c67df9d">
 <link rel="stylesheet" href="./css/native/08-design-tokens.css?v=20260918.c67df9d">
@@ -1714,6 +1737,7 @@ function scrollLandingTo(id) {
 
 <div class="screen active" id="landing" role="main">
   <div class="landing-shell">
+    <div class="gn-auth-return" id="gnAuthReturn" role="status" aria-live="polite" hidden><span class="gn-auth-return-label" data-i18n="auth.signingYouIn">SIGNING YOU IN</span><span class="gn-skeleton gn-auth-return-bar" aria-hidden="true"></span></div>
     <section class="landing-hero">
       <div class="gn-lang-wrap landing-lang-wrap" data-landing-lang></div>
       <div class="landing-node-mark" aria-label="GRID//NODE NODE mark"><svg aria-hidden="true"><use href="#gn-phase-ring"></use></svg></div>
@@ -2085,7 +2109,7 @@ function scrollLandingTo(id) {
         <div class="card-title-row"><div class="card-title" data-i18n="phase.estimatedProtocolCurve">ESTIMATED PROTOCOL CURVE</div><button type="button" class="gn-peptide-expand" id="medExpandBtn" onclick="window.GN_PEPTIDE_VIZ && GN_PEPTIDE_VIZ.openOverlay()" hidden data-i18n="peptide.expand">EXPAND ▸</button></div>
         <div class="card-val" id="medLvlVal">— <span data-i18n="results.logToBegin">log a shot to begin</span></div>
         <div class="protocol-curve-copy" data-i18n="phase.curveCopy">Educational estimate based on logged shot timing. Not a lab measurement.<span class="curve-subline" data-i18n="phase.curveSubline">Curve shows a relative activity model: logged SHOT event → estimated rise → peak → decay.</span></div>
-        <div class="chart-wrap gn-chart-stack" style="height:130px"><canvas id="medChart"></canvas><svg id="medChartOverlay" class="gn-chart-overlay" aria-hidden="true"></svg><div id="medChartTip" class="gn-peptide-tip" hidden></div></div>
+        <div class="chart-wrap gn-chart-stack" style="height:112px"><canvas id="medChart"></canvas><svg id="medChartOverlay" class="gn-chart-overlay" aria-hidden="true"></svg><div id="medChartTip" class="gn-peptide-tip" hidden></div></div>
         <div class="time-tabs">
           <button class="time-tab" data-i18n="results.range2w" onclick="setRange(this,'2w')">2W</button>
           <button class="time-tab active" data-i18n="results.range1m" onclick="setRange(this,'1m')">1M</button>

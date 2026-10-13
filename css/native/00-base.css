@@ -194,7 +194,10 @@ body.gn-private-active { overflow: hidden; overscroll-behavior: none; }
 :is(button, [role="button"], .nav-item, summary) { -webkit-user-select: none; user-select: none; }
 :is(input, textarea, [contenteditable="true"]) { -webkit-user-select: text; user-select: text; }
 html.gn-keyboard-open .bottom-nav, html.gn-keyboard-open .fab { visibility: hidden; pointer-events: none; }@media (max-width: 600px){
-  :is(button, [role="button"], input, select, textarea, summary, .cp-option, .gn-select-option) { min-height: 44px; }
+  /* .gn-const-node is exempt: its 44px touch target already exists via its
+     ::before/::after expansion pseudos; forcing min-height here stretched the
+     11-18px timeline nodes into ovals (VISUALS MAX 2 D1). */
+  :is(button, [role="button"]:not(.gn-const-node), input, select, textarea, summary, .cp-option, .gn-select-option) { min-height: 44px; }
   #app .page { max-width: 100%; overflow-x: hidden; }
   .overlay .modal, .gn-delete-panel, .gn-whatsnew-card { max-height: calc(var(--gn-viewport-height, 100dvh) - env(safe-area-inset-top, 0px) - 12px); }}
 /* Visible focus in BOTH themes (dark default cyan, daylight deep teal). */

@@ -2708,6 +2708,12 @@ function renderPhase(lastShot, shots) {
     setText('pibPay', tx('phase.appetiteSymptoms', 'Track appetite, symptoms, energy, side effects, and notes as your protocol history develops.'));
     const emptyMarker = document.getElementById('phaseMarker');
     if (emptyMarker) emptyMarker.hidden = true;
+    const segWrap0 = document.getElementById('ringWrap');
+    if (segWrap0) segWrap0.style.removeProperty('--gn-seg-ring');
+    const nodes0 = document.getElementById('phaseNodes');
+    if (nodes0) { nodes0.innerHTML = ''; delete nodes0.dataset.sig; }
+    const ticks0 = document.getElementById('tickMarks');
+    if (ticks0) { ticks0.innerHTML = ''; delete ticks0.dataset.sig; }
     // S2: nothing to estimate yet — clear any trust treatment from a prior render.
     document.getElementById('phaseCard')?.removeAttribute('data-trust');
     document.getElementById('phaseCard')?.querySelector('.gn-trust-badge')?.remove();
@@ -2745,6 +2751,51 @@ function renderPhase(lastShot, shots) {
   setText('pibPay', tx('phase.appetiteSymptoms', 'Track appetite, symptoms, energy, side effects, and notes as your protocol history develops.'));
   const arc = document.getElementById('phaseArc');
   if (arc) { const circumference = 678.6; arc.style.strokeDashoffset = String(circumference * (1 - cyclePosition)); arc.style.stroke = phase.color; }
+  // Dead-gradient repair: #phaseArc references url(#arcGrad) but the inline
+  // stroke above overrides it every render, so the stops never painted.
+  // Wire the stops to the current phase color each render (sheen via
+  // stop-opacity) so the gradient defs carry live data.
+  const stop1 = document.getElementById('arcStop1');
+  const stop2 = document.getElementById('arcStop2');
+  if (stop1) { stop1.setAttribute('stop-color', phase.color); stop1.setAttribute('stop-opacity', '1'); }
+  if (stop2) { stop2.setAttribute('stop-color', phase.color); stop2.setAttribute('stop-opacity', '0.55'); }
+  // Segment ring truth: generate the conic from the real PHASES fractions
+  // + colors (8/20/24/24/18/6%). The old static injection in
+  // gridnode-app.js drew 5 equal 72deg segments that contradicted the 6
+  // phases; it now only provides a neutral fallback via --gn-seg-ring.
+  const segRingWrap = document.getElementById('ringWrap');
+  if (segRingWrap) {
+    const stops = PHASES.map(p => p.color + ' ' + (p.start * 360).toFixed(1) + 'deg ' + (p.end * 360).toFixed(1) + 'deg').join(',');
+    segRingWrap.style.setProperty('--gn-seg-ring', 'conic-gradient(from -90deg,' + stops + ')');
+  }
+  // Populate the formerly dead #phaseNodes / #tickMarks scaffolding with
+  // boundary ticks at the true cumulative phase fractions. Marker math
+  // matches the position marker below (45% radius, angle 0 = top).
+  const nodesHost = document.getElementById('phaseNodes');
+  if (nodesHost) {
+    const nsig = PHASES.map(p => p.start + '-' + p.end + ':' + p.color).join('|');
+    if (nodesHost.dataset.sig !== nsig) {
+      nodesHost.dataset.sig = nsig;
+      nodesHost.innerHTML = PHASES.slice(1).map(p => {
+        const a = (p.start * Math.PI * 2) - (Math.PI / 2);
+        const x = (50 + (Math.cos(a) * 45)).toFixed(2), y = (50 + (Math.sin(a) * 45)).toFixed(2);
+        return '<span class="p-tick" style="left:' + x + '%;top:' + y + '%;border-color:' + p.color + ';background:' + p.color + '"></span>';
+      }).join('');
+    }
+  }
+  const ticks = document.getElementById('tickMarks');
+  if (ticks) {
+    const tsig = PHASES.map(p => p.start + ':' + p.color).join('|');
+    if (ticks.dataset.sig !== tsig) {
+      ticks.dataset.sig = tsig;
+      ticks.innerHTML = PHASES.slice(1).map(p => {
+        const a = (p.start * Math.PI * 2) - (Math.PI / 2);
+        const x1 = (140 + (Math.cos(a) * 100)).toFixed(1), y1 = (140 + (Math.sin(a) * 100)).toFixed(1);
+        const x2 = (140 + (Math.cos(a) * 116)).toFixed(1), y2 = (140 + (Math.sin(a) * 116)).toFixed(1);
+        return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + p.color + '" stroke-width="2" opacity="0.55"/>';
+      }).join('');
+    }
+  }
   const marker = document.getElementById('phaseMarker');
   if (marker) {
     const angle = (cyclePosition * Math.PI * 2) - (Math.PI / 2);
@@ -3598,7 +3649,8 @@ function injectStableStyles() {
     select,input[type=date],input[type=time]{color-scheme:dark;background:#0e0e16!important;color:#eeeef5!important;border-color:rgba(0,212,255,.18)!important}select option{background:#0e0e16;color:#eeeef5}input[type=date]::-webkit-calendar-picker-indicator{filter:invert(78%) sepia(53%) saturate(1150%) hue-rotate(150deg);opacity:.9}
     .gn-custom-picker,.gn-custom-date{position:relative;width:100%;min-width:0}.gn-custom-picker-trigger,.gn-custom-date-trigger{width:100%;min-height:44px;padding:10px 14px 10px 12px;text-align:left;border:1px solid rgba(0,212,255,.55);background:linear-gradient(180deg,rgba(0,212,255,.07),rgba(0,0,0,.18));color:#eeeef5;font:600 16px var(--font-m,monospace);border-radius:4px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 0 0 0 rgba(0,212,255,0);transition:border-color .15s ease,background-color .15s ease,box-shadow .15s ease}.gn-custom-picker-trigger::after,.gn-custom-date-trigger::after{content:'⌄';float:right;color:#00d4ff;margin-left:8px}.gn-custom-picker-trigger:focus-visible,.gn-custom-date-trigger:focus-visible{outline:none;border-color:#00d4ff;box-shadow:0 0 0 2px rgba(0,212,255,.12)}.gn-custom-picker-menu,.gn-custom-date-popover{display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:640;padding:4px;background:#0e0e16;border:1px solid rgba(0,212,255,.28);border-radius:6px;box-shadow:0 16px 42px rgba(0,0,0,.72),0 0 18px rgba(0,212,255,.1)}.gn-custom-picker.open .gn-custom-picker-menu,.gn-custom-date.open .gn-custom-date-popover{display:grid}.gn-custom-picker-option{min-height:38px;padding:9px 10px;border:0;border-bottom:1px solid rgba(255,255,255,.05);background:transparent;color:#9898b0;text-align:left;font:600 .68rem var(--font-m,monospace);cursor:pointer}.gn-custom-picker-option:last-child{border-bottom:0}.gn-custom-picker-option:hover,.gn-custom-picker-option[aria-selected=true]{color:#00d4ff;background:rgba(0,212,255,.08);box-shadow:0 0 10px rgba(0,212,255,.18)}.gn-custom-date-popover{width:min(330px,calc(100vw - 38px));right:auto;padding:10px}.gn-custom-date-head{display:grid;grid-template-columns:34px 1fr 34px;align-items:center;gap:8px;margin-bottom:9px}.gn-custom-date-head button,.gn-custom-date-foot button{min-height:32px;border:1px solid rgba(0,212,255,.24);background:rgba(0,212,255,.06);color:#00d4ff;font:700 .6rem var(--font-d,monospace);cursor:pointer}.gn-custom-date-head strong{color:#eeeef5;text-align:center;font:700 .68rem var(--font-m,monospace);letter-spacing:1px}.gn-custom-date-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.gn-custom-date-dow{padding:3px 0;color:#8295a0;text-align:center;font:600 .48rem var(--font-m,monospace)}.gn-custom-date-blank{min-height:32px}.gn-custom-date-day{min-height:32px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025);color:#9898b0;font:600 .62rem var(--font-m,monospace);cursor:pointer}.gn-custom-date-day:hover,.gn-custom-date-day.selected{border-color:#00d4ff;color:#00d4ff;background:rgba(0,212,255,.12);box-shadow:0 0 10px rgba(0,212,255,.18)}.gn-custom-date-foot{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}.gn-custom-date-foot button:last-child{color:#9898b0;border-color:rgba(255,255,255,.14);background:transparent}
     .toast{max-width:90vw!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}.toast .gn-toast-message{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .phase-ring-svg-wrap .phase-segment-ring,.landing-phase-visual .phase-segment-ring{position:absolute;border-radius:50%;background:conic-gradient(from -90deg,#4fb8d8 0deg 72deg,#63b98b 72deg 144deg,#e57f9e 144deg 216deg,#c26674 216deg 288deg,#9898b0 288deg 360deg);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px));mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px));pointer-events:none;z-index:0;opacity:.5}
+    .phase-ring-svg-wrap .phase-segment-ring,.landing-phase-visual .phase-segment-ring{position:absolute;border-radius:50%;background:var(--gn-seg-ring,conic-gradient(from -90deg,rgba(128,140,150,.35) 0deg 360deg));-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px));mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px));pointer-events:none;z-index:0;opacity:.5}
+    .landing-phase-visual .phase-segment-ring{background:conic-gradient(from -90deg,#4fb8d8 0deg 72deg,#63b98b 72deg 144deg,#e57f9e 144deg 216deg,#c26674 216deg 288deg,#9898b0 288deg 360deg)}
     .phase-ring-svg-wrap .phase-segment-ring{inset:-4px}.phase-ring-svg-wrap .ring-svg{z-index:1}.phase-ring-svg-wrap .phase-nodes{z-index:3}.phase-ring-svg-wrap .ring-center{z-index:4}.phase-marker{position:absolute;width:9px;height:9px;border-radius:50%;transform:translate(-50%,-50%);z-index:5;box-shadow:0 0 0 2px rgba(0,0,0,.45);opacity:.95;pointer-events:none}.phase-marker[hidden]{display:none!important}
     .gn-phase-marker{animation:none}
     .page{transition:opacity .15s ease,visibility .15s ease}.page:not(.active){opacity:0;visibility:hidden;pointer-events:none}.page.active{opacity:1;visibility:visible}
@@ -3629,6 +3681,39 @@ let gnPendingCreds = null;
 let gnSkipKeyGateOnce = false;
 const OTP_EXPIRY_S = 600;
 const OTP_RESEND_S = 60;
+
+/* F2 (VISUALS MAX 2): post-auth return state. The inline detector in
+ * html/partials/01-head.html adds html.gn-auth-returning at first paint
+ * when the URL carries an auth response (or the return marker is
+ * fresh), so the landing shows an honest SIGNING YOU IN status
+ * (css/native/11-ux-states.css) instead of dead air while
+ * restoreSession exchanges the session and hydrates. Cleared exactly
+ * once: into the app (showApp), back to the signed-out landing/login on
+ * failure (the restore-settle check in the DOMContentLoaded handler),
+ * or by the backstop below. */
+let gnAuthReturnCleared = false;
+let gnAuthReturnTimer = null;
+function clearAuthReturnState() {
+  if (gnAuthReturnCleared) return;
+  gnAuthReturnCleared = true;
+  if (gnAuthReturnTimer) { clearTimeout(gnAuthReturnTimer); gnAuthReturnTimer = null; }
+  document.documentElement.classList.remove('gn-auth-returning');
+  try { sessionStorage.removeItem('gn_auth_return_v1'); } catch (_) {}
+  const el = document.getElementById('gnAuthReturn');
+  if (el) el.hidden = true;
+}
+function armAuthReturnBackstop() {
+  if (gnAuthReturnCleared || gnAuthReturnTimer) return;
+  if (!document.documentElement.classList.contains('gn-auth-returning')) return;
+  /* 6s from boot covers the 4.5s getSession timeout in getCloudSession
+   * (gridnode-core) plus hydration headroom. If the exchange has not
+   * resolved by then, the landing must not stay stuck behind a
+   * signing-in status: fall back to the signed-out landing. */
+  gnAuthReturnTimer = setTimeout(() => {
+    clearAuthReturnState();
+    if (!state.session) { authShell(); modules.showScreen('landing'); }
+  }, 6000);
+}
 
 function authShell() {
   const login = $('login');
@@ -4818,6 +4903,7 @@ async function completeCloudSession(session) {
 }
 
 function showApp() {
+  clearAuthReturnState(); /* F2: hydration entry reached — clear exactly once into the app */
   modules.showScreen('app');
   /* v0.15.42: explicit entry point — every session starts on HOME. */
   modules.showPage('Dash');
@@ -5292,6 +5378,7 @@ async function wireCloudAuthEvents() {
   const client = await getCloudClient();
   client?.auth?.onAuthStateChange((event) => {
     if (event !== 'PASSWORD_RECOVERY') return;
+    clearAuthReturnState(); /* F2: recovery is a login flow, not a signing-in wait */
     passwordRecoveryActive = true;
     authMode = 'recovery';
     authShell();
@@ -5391,6 +5478,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.closeSignOutModal = closeSignOutModal;
   window.confirmSignOut = confirmSignOut;
   wireGlobalEvents();
+  armAuthReturnBackstop();
   /* TRACK D perf: SW registration is not on the first-paint/first-entry
      path. Defer it to window load (idle callback as backstop) so boot
      longtasks and network contention stay focused on the entry flow.
@@ -5403,6 +5491,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   else window.addEventListener('load', deferSwRegister, { once: true });
   await wireCloudAuthEvents();
   await restoreSession();
+  /* F2: session restore has settled. If we did not land in the app, the
+   * post-auth return state (if any) ends here — a failed or parked
+   * exchange falls back to the normal signed-out landing/login instead
+   * of a stuck signing-in status. (restoreSession shows the landing as
+   * an intermediate step while the exchange is still in flight, so the
+   * clear belongs at this settle point, not on landing navigation.) */
+  if (!document.getElementById('app')?.classList.contains('active')) clearAuthReturnState();
   // Load the cloud library in the background so the local-first boot is immediate.
   loadCloudLibrary().catch(() => null);
 });

@@ -996,6 +996,15 @@
   /* ------------------------------------------------------------------ */
   function start(resume) {
     if (overlay || coach) return;
+    /* F3 queue (VISUALS MAX 2): never open over the whatsnew modal. Any
+       start (auto, replay, programmatic) while it is open waits for its
+       dismissal — gn:whatsnew-dismissed is the release. Previously
+       start() had no whatsnew check at all, so a start that resolved
+       while the changelog was open rendered the tour on top of it. */
+    if (document.getElementById('gnWhatsNewOverlay')) {
+      document.addEventListener('gn:whatsnew-dismissed', function () { start(resume); }, { once: true });
+      return;
+    }
     var startAt = 0;
     /* v0.15.40: only resume saved progress from this browser session.
        Stale localStorage progress (e.g. QA devices) used to drop fresh
@@ -1025,6 +1034,15 @@
     if (!inApp) { window.setTimeout(maybeAutoStart, 1200); return; }
     var wn = document.getElementById('gnWhatsNewOverlay');
     if (wn && (wn.classList.contains('active') || getComputedStyle(wn).display !== 'none')) { window.setTimeout(maybeAutoStart, 700); return; }
+    /* F3 queue: a whatsnew auto-show that is still PENDING (script
+       loaded, changelog unacknowledged, its boot timer not yet fired)
+       blocks the tour exactly like an open one. Without this, an early
+       gn:whatsnew-resolved (e.g. the chunk loader's re-dispatch) could
+       release the tour into the gap before the changelog renders, and
+       the changelog would then land on top of the tour. */
+    var wnPending = false;
+    try { wnPending = !!(window.GN_WHATS_NEW && window.GN_WHATS_NEW.shouldAutoShow && window.GN_WHATS_NEW.shouldAutoShow()); } catch (_) {}
+    if (wnPending) { window.setTimeout(maybeAutoStart, 700); return; }
     if (!whatsnewResolved) {
       window.setTimeout(function () { if (overlay) return; maybeAutoStart(); }, 900);
       return;

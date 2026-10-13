@@ -70,6 +70,7 @@
       '09-unified-components.css',
       '10-motion.css',
       '11-ux-states.css',
+      '12-legacy-externalized.css',
     ];
     files.forEach((file, index) => {
       const link = document.createElement('link');

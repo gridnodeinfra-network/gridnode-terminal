@@ -31,7 +31,10 @@
     lastShot: null,
     cycleStart: null,
     started: false,
-    wasEmpty: true
+    wasEmpty: true,
+    selectedMed: null,
+    lastState: null,
+    medMenuOpen: false
   };
 
   var SVGNS = 'http://www.w3.org/2000/svg';
@@ -60,23 +63,89 @@
     return String((record && record.med) || '');
   }
 
+  /* ---------------- medication selection (F6) ---------------- */
+
+  var MED_STORAGE_KEY = 'gn_phase_med_v1';
+
+  function medLabel(id) {
+    try {
+      if (window.GN_MEDICATION_IDENTITY && window.GN_MEDICATION_IDENTITY.label) {
+        var label = window.GN_MEDICATION_IDENTITY.label(id);
+        if (label) return label;
+      }
+    } catch (_) {}
+    return String(id || '');
+  }
+
+  // Distinct meds (normalized ids) that have at least one active shot.
+  function medsWithShots(shots) {
+    var seen = [];
+    (shots || []).forEach(function (r) {
+      var id = medIdOf(r);
+      if (id && seen.indexOf(id) === -1) seen.push(id);
+    });
+    return seen;
+  }
+
+  function storedMed() {
+    try { return sessionStorage.getItem(MED_STORAGE_KEY) || null; } catch (_) { return null; }
+  }
+  function persistMed(id) {
+    try {
+      if (id) sessionStorage.setItem(MED_STORAGE_KEY, id);
+      else sessionStorage.removeItem(MED_STORAGE_KEY);
+    } catch (_) {}
+  }
+
+  // Selection invariant: state.selectedMed is a med that currently has
+  // shots. Resolution order: live in-session selection -> persisted
+  // selection (sessionStorage, if that med still has shots) -> the
+  // latest-shot med (the historical default). A persisted selection whose
+  // med no longer has any shots falls back to the latest-shot med and
+  // storage is updated to match.
+  function resolveSelectedMed(shots) {
+    var meds = medsWithShots(shots);
+    if (!meds.length) { state.selectedMed = null; return null; }
+    if (state.selectedMed && meds.indexOf(state.selectedMed) !== -1) return state.selectedMed;
+    var stored = storedMed();
+    if (stored && meds.indexOf(stored) !== -1) {
+      state.selectedMed = stored;
+      return stored;
+    }
+    var latest = medIdOf(shots[shots.length - 1]);
+    state.selectedMed = latest;
+    if (stored && stored !== latest) persistMed(latest);
+    return latest;
+  }
+
   async function computeState() {
     var tpl = T();
     if (!tpl || !tpl.phaseState) return null;
     var shots = activeShots();
     if (!shots.length) return { empty: true };
 
+    var med = resolveSelectedMed(shots);
     var last = shots[shots.length - 1];
     var st = null;
     try {
-      st = await tpl.phaseState(medIdOf(last), shots, Date.now());
+      st = await tpl.phaseState(med, shots, Date.now());
     } catch (_) { st = null; }
-    if (!st) return null; // server unreachable: leave the current UI untouched
+    if (!st) {
+      // phaseState returns null in two cases: the privacy gate (no cloud
+      // session — nothing was transmitted, BY DESIGN) and a failed cloud
+      // fetch. Only the gated case gets the deliberate gated rendering;
+      // a failed fetch keeps the current UI untouched.
+      var cloudId = null;
+      try { cloudId = window.CU && window.CU.cloudId ? String(window.CU.cloudId) : null; } catch (_) {}
+      if (!cloudId) return { gated: true, shots: shots };
+      return null; // server unreachable: leave the current UI untouched
+    }
     if (st.empty) return { empty: true };
 
     return {
       empty: false,
       shots: shots,
+      med: med,
       last: last,
       template: st.template,
       cycleStart: st.cycleStart,
@@ -178,7 +247,12 @@
     var s = await computeState();
     if (seq !== renderSeq) return; // a newer render superseded this one
     if (!s) return; // server unreachable: keep the current UI untouched
+    if (s.gated) { renderGated(s); return; }
+    panel.classList.remove('gn-phase-gated');
+    var chipEl = $('reactorTemplateChip');
+    if (chipEl) chipEl.hidden = false;
     if (s.empty) {
+      state.lastState = null;
       panel.dataset.phase = 'empty';
       state.wasEmpty = true;
       state.template = null;
@@ -204,6 +278,7 @@
     var igniteBtn = $('reactorIgnite');
     if (igniteBtn) igniteBtn.hidden = true;
     panel.dataset.phase = 'active';
+    state.lastState = s;
 
     var templateChanged = !state.template || state.template.id !== s.template.id;
 
@@ -228,9 +303,38 @@
     updateTiming(s);
     updateGuidance(s);
     updateTimelineStates();
+    if (state.medMenuOpen) buildMedMenu();
 
     if (state.wasEmpty) state.wasEmpty = false;
     state.started = true;
+  }
+
+  // Deliberate local-mode state: phase state is cloud-gated BY DESIGN
+  // (nothing is computed locally and nothing is transmitted). Land in a
+  // framed state instead of bailing: panel frame + dimmed ring outline
+  // via the existing [data-phase="empty"] treatment, timing/guidance
+  // regions hidden by the gated class (no "--" husks), and the caption
+  // carries the existing LOCAL-FIRST READOUT key — no new copy.
+  function renderGated(s) {
+    var panel = $('phaseSpherePanel');
+    if (!panel) return;
+    closeMedMenu();
+    panel.dataset.phase = 'empty';
+    panel.classList.add('gn-phase-gated');
+    state.template = null;
+    state.lastState = null;
+    state.previewIndex = -1;
+    setText('reactorMetaLine', tx('phase.localFirstReadout', 'LOCAL-FIRST READOUT'));
+    var ignite = $('reactorIgnite');
+    if (ignite) ignite.hidden = true;
+    var chip = $('reactorTemplateChip');
+    if (chip) chip.hidden = true;
+    var arcs = $('reactorArcs');
+    if (arcs) arcs.innerHTML = '';
+    var nodes = $('reactorNodes');
+    if (nodes) nodes.innerHTML = '';
+    var tl = $('reactorTimeline');
+    if (tl) tl.innerHTML = '';
   }
 
   function updateArcs(s) {
@@ -382,28 +486,32 @@
 
   /* ---------------- interactions ---------------- */
 
+  // Synchronous refresh from the last server-computed state. Preview,
+  // tabs and RETURN TO LIVE are pure view changes over state.lastState.
+  // They must never call the async computeState() and treat its Promise
+  // as a state object: the Promise has no .template, updateCenter threw
+  // on s.template.phases, and updateGuidance — which rewrites the caption
+  // and shows/hides RETURN TO LIVE — never ran. That was the dead
+  // RETURN TO LIVE tap (and dead preview entry) on real devices.
+  function refreshFromCache() {
+    var s = state.lastState;
+    if (!s || s.empty || !s.template) { render(); return; }
+    updateArcs(s);
+    updateCenter(s);
+    updateGuidance(s);
+    updateTimelineStates();
+  }
+
   function enterPreview(idx) {
     if (!state.template) return;
     state.previewIndex = (state.previewIndex === idx) ? -1 : idx;
-    var s = computeState();
-    if (s && !s.empty) {
-      updateArcs(s);
-      updateCenter(s);
-      updateGuidance(s);
-      updateTimelineStates();
-    }
+    refreshFromCache();
   }
 
   function exitPreview() {
     if (state.previewIndex < 0) return;
     state.previewIndex = -1;
-    var s = computeState();
-    if (s && !s.empty) {
-      updateArcs(s);
-      updateCenter(s);
-      updateGuidance(s);
-      updateTimelineStates();
-    }
+    refreshFromCache();
   }
 
   function stepPhase(dir) {
@@ -412,13 +520,76 @@
     var cur = state.previewIndex >= 0 ? state.previewIndex : state.phaseIndex;
     var next = (cur + dir + n) % n;
     state.previewIndex = next;
-    var s = computeState();
-    if (s && !s.empty) {
-      updateArcs(s);
-      updateCenter(s);
-      updateGuidance(s);
-      updateTimelineStates();
+    refreshFromCache();
+  }
+
+  /* ---------------- medication switcher menu (F6) ---------------- */
+
+  function medMenuEl() { return $('reactorMedMenu'); }
+
+  function buildMedMenu() {
+    var panel = $('phaseSpherePanel');
+    if (!panel) return null;
+    var menu = medMenuEl();
+    if (!menu) {
+      menu = document.createElement('div');
+      menu.id = 'reactorMedMenu';
+      menu.className = 'gn-phase-med-menu';
+      menu.setAttribute('role', 'menu');
+      menu.hidden = true;
+      panel.appendChild(menu);
     }
+    var shots = activeShots();
+    var meds = medsWithShots(shots);
+    var current = state.selectedMed || resolveSelectedMed(shots);
+    menu.innerHTML = '';
+    meds.forEach(function (id) {
+      var item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'gn-phase-med-item';
+      item.setAttribute('role', 'menuitemradio');
+      item.setAttribute('aria-checked', String(id === current));
+      if (id === current) {
+        item.classList.add('current');
+        item.setAttribute('aria-current', 'true');
+      }
+      item.dataset.med = id;
+      item.textContent = medLabel(id);
+      item.addEventListener('click', function () { selectMed(id); });
+      menu.appendChild(item);
+    });
+    return menu;
+  }
+
+  function openMedMenu() {
+    var menu = buildMedMenu();
+    if (!menu || !menu.children.length) return;
+    menu.hidden = false;
+    state.medMenuOpen = true;
+    var chip = $('reactorTemplateChip');
+    if (chip) chip.setAttribute('aria-expanded', 'true');
+  }
+
+  function closeMedMenu() {
+    var menu = medMenuEl();
+    if (menu) menu.hidden = true;
+    state.medMenuOpen = false;
+    var chip = $('reactorTemplateChip');
+    if (chip) chip.setAttribute('aria-expanded', 'false');
+  }
+
+  function toggleMedMenu() {
+    if (state.medMenuOpen) closeMedMenu();
+    else openMedMenu();
+  }
+
+  function selectMed(id) {
+    if (id === state.selectedMed) { closeMedMenu(); return; }
+    state.selectedMed = id;
+    persistMed(id);
+    state.previewIndex = -1;
+    closeMedMenu();
+    render();
   }
 
   /* ---------------- wiring ---------------- */
@@ -428,7 +599,7 @@
     document.querySelectorAll('.gn-phase-tab').forEach(function (t) {
       t.addEventListener('click', function () {
         state.tab = t.dataset.rtab || 'now';
-        var s = computeState();
+        var s = state.lastState;
         if (s && !s.empty) updateGuidance(s);
       });
     });
@@ -437,11 +608,26 @@
     var ret = $('reactorReturn');
     if (ret) ret.addEventListener('click', exitPreview);
 
-    // Template chip -> scroll timeline into view
+    // Template chip -> medication selector (F6). The chip stays the
+    // template label; tapping it opens the med menu anchored to the panel.
     var chip = $('reactorTemplateChip');
-    if (chip) chip.addEventListener('click', function () {
-      var tl = $('reactorTimeline');
-      if (tl) tl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (chip) {
+      chip.setAttribute('aria-haspopup', 'true');
+      chip.setAttribute('aria-expanded', 'false');
+      chip.addEventListener('click', function () { toggleMedMenu(); });
+    }
+
+    // Med menu dismissal: Escape or any tap outside the menu/chip.
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && state.medMenuOpen) closeMedMenu();
+    });
+    document.addEventListener('pointerdown', function (e) {
+      if (!state.medMenuOpen) return;
+      var menu = medMenuEl();
+      var chipEl = $('reactorTemplateChip');
+      if (menu && (menu === e.target || menu.contains(e.target))) return;
+      if (chipEl && (chipEl === e.target || chipEl.contains(e.target))) return;
+      closeMedMenu();
     });
 
     // Why disclosure
