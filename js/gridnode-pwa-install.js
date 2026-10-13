@@ -49,23 +49,85 @@
     return Number(read(VISITS_KEY) || 0) >= 2;
   }
 
-  /* 1. Manifest shortcut actions (?action=log-shot / log-weight). */
+  /* 1. Manifest shortcut actions (?action=log-shot / log-weight).
+   *
+   * Queued intent (2026-10-12 fix): the modal must never fire over the
+   * landing / login screens. Entry completion has exactly one funnel in
+   * gridnode-app.js: showApp(), reached by enterLocalSession(),
+   * completeCloudSession() (Google / email / passkey) and restoreSession()
+   * (returning local or cloud user). showApp() calls
+   * modules.showScreen('app'), and showScreen() (01-shell.js) is the only
+   * place that activates a .screen: it removes .active from every screen,
+   * sets the target's display to flex, then adds .active on the next frame.
+   * So "#app.screen is .active and rendered" is a universal, storage-free
+   * entry-complete signal: it holds for local AND cloud entry (cloud
+   * sessions never write the local gn_session_v2 key, so a storage check
+   * would miss Google users), and it is false on landing, boot and login.
+   *
+   * Returning users: entry may not have happened yet when this runs at
+   * DOMContentLoaded (restoreSession is async), so "already entered" is
+   * not required up front; the queue below fires the moment #app activates,
+   * with no user interaction, exactly as the old immediate dispatch did.
+   * Fresh users: the action is held until they finish entry, however long
+   * that takes. If they never enter, nothing ever fires. */
+  function entryComplete() {
+    var app = $('app');
+    if (!app || !app.classList.contains('active')) return false;
+    try { return window.getComputedStyle(app).display !== 'none'; }
+    catch (_) { return app.style.display !== 'none'; }
+  }
+
   function handleActionParam() {
     var action = null;
     try { action = new URLSearchParams(location.search).get('action'); } catch (_) {}
     if (action !== 'log-shot' && action !== 'log-weight') return;
     try { history.replaceState(null, '', location.pathname); } catch (_) {}
-    var tries = 0;
-    var timer = window.setInterval(function () {
-      tries++;
+
+    var fired = false;
+    var observer = null;
+    var timer = null;
+
+    function cleanup() {
+      if (timer !== null) { window.clearInterval(timer); timer = null; }
+      if (observer) { try { observer.disconnect(); } catch (_) {} observer = null; }
+    }
+
+    function tryFire() {
+      if (fired) return;
+      /* Hard gate, re-checked at fire time: never over landing/login,
+       * not even if entry completed and the user signed back out while
+       * the lazy modal function was still loading. */
+      if (!entryComplete()) return;
       var mod = window.GNModules || {};
       var fn = action === 'log-shot' ? (mod.openLogModal || window.openLogModal)
                                      : (mod.openWeightModal || window.openWeightModal);
-      if (typeof fn === 'function') {
-        window.clearInterval(timer);
-        try { fn(); } catch (_) {}
-      } else if (tries > 20) window.clearInterval(timer);
-    }, 500);
+      if (typeof fn !== 'function') return; // poll/observer keep waiting
+      fired = true;
+      cleanup();
+      try { fn(); } catch (_) {}
+    }
+
+    /* Primary signal: MutationObserver on #app. showScreen() mutates
+     * #app's class (and inline display) on every screen switch, so entry
+     * is observed the frame it happens, with no polling latency. */
+    var appEl = $('app');
+    if (appEl && typeof window.MutationObserver === 'function') {
+      observer = new window.MutationObserver(tryFire);
+      try { observer.observe(appEl, { attributes: true, attributeFilter: ['class', 'style'] }); }
+      catch (_) { observer = null; }
+    }
+
+    /* Backstop + function-availability poll (the pre-fix 500 ms poll,
+     * kept as a component): covers a missed observer delivery and the
+     * post-code-split lazy stubs, which only exist once the chunk loader
+     * has run. Unlike the old poll it has no 20-try expiry: a queued
+     * intent has to outlive a fresh user reading the landing and clearing
+     * the legal gate. It stops on fire; if entry never completes it only
+     * ever re-checks a class list, and its lifetime is the page's. */
+    timer = window.setInterval(tryFire, 500);
+
+    /* Returning user whose entry already completed before this ran. */
+    tryFire();
   }
 
   /* 2. Install prompt driver. */
