@@ -8080,8 +8080,8 @@ body.gn-log-shot-picker-open .fab{
 #logOv .dose-pills{display:grid !important;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}
 #logOv .dose-pill{
   min-height:60px !important;border-radius:12px !important;
-  background:rgba(0,229,255,.05);border:1.5px solid rgba(0,229,255,.35) !important;
-  color:#dff6ff;font-size:1rem !important;font-weight:800;letter-spacing:.03em;
+  background:var(--bg2);border:1.5px solid rgba(0,229,255,.35) !important;
+  color:var(--text-1);font-size:1rem !important;font-weight:800;letter-spacing:.03em;
   display:flex;align-items:center;justify-content:center;
   transition:transform .12s ease, box-shadow .15s ease, background .15s ease;
   position:relative;

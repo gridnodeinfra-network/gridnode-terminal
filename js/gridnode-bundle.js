@@ -15,6 +15,12 @@ const CLOUD_CONFIG = Object.freeze({
   anonKey: 'sb_publishable_rWPuL8wGfe2zok4cYNENng_L6n2Qttu'
 });
 
+/* Dose upper bound at the cloud boundary: 1000 mg = 100x the largest preset
+ * pill (10 mg); rejects absurd/imported values like 100000 mg.
+ * Rejection, never clamping. */
+const MAX_DOSE_MG = 1000;
+function isDoseInRange(dose) { const value = Number(dose); return Number.isFinite(value) && value > 0 && value <= MAX_DOSE_MG; }
+
 const state = {
   session: null,
   accountKey: 'local',
@@ -23,6 +29,11 @@ const state = {
   cloudStatus: 'LOCAL_ONLY',
   listeners: new Set()
 };
+
+function cloudUploadsReady() {
+  if (!state.cloud) return false;
+  return typeof state.cloudHydration !== 'string' || state.cloudHydration === 'ok';
+}
 
 const SESSION_KEY = 'gn_session_v2';
 const LOCAL_CLOUD_OWNER_KEY = 'gn_local_cloud_owner_v1';
@@ -624,6 +635,7 @@ async function signOutCloud() {
 }
 
 function cloudShotPayload(record, userId) {
+  if (!isDoseInRange(record?.dose)) throw new Error('DOSE_OUT_OF_RANGE');
   const payload = {
     user_id: userId,
     date: record.date,
@@ -717,12 +729,16 @@ async function syncShot(record) {
       const index = all.findIndex(item => item.id === record.id);
       if (index >= 0) { all[index] = record; if (!S.set('shots', all)) console.warn('[GRID//NODE cloud shot sync] failed to persist cloudId'); }
     }
-    state.cloudStatus = 'CLOUD_SYNCED';
+    state.cloudStatus = syncPassFailed ? 'LOCAL_BACKUP' : 'CLOUD_SYNCED';
   } catch (error) {
-    state.cloudStatus = 'LOCAL_BACKUP';
-    syncPassFailed = true;
-    enqueueSync('shot', record);
-    console.warn('[GRID//NODE cloud shot sync]', error);
+    if (error?.message === 'DOSE_OUT_OF_RANGE') {
+      console.warn('[GRID//NODE cloud shot sync] dose out of range; sync permanently rejected', error);
+    } else {
+      state.cloudStatus = 'LOCAL_BACKUP';
+      syncPassFailed = true;
+      enqueueSync('shot', record);
+      console.warn('[GRID//NODE cloud shot sync]', error);
+    }
   } finally {
     syncInFlight.delete(`shot:${record.id}`);
   }
@@ -757,7 +773,7 @@ async function syncWeight(record) {
       const index = all.findIndex(item => item.id === record.id);
       if (index >= 0) { all[index] = record; if (!S.set('weights', all)) console.warn('[GRID//NODE cloud weight sync] failed to persist cloudId'); }
     }
-    state.cloudStatus = 'CLOUD_SYNCED';
+    state.cloudStatus = syncPassFailed ? 'LOCAL_BACKUP' : 'CLOUD_SYNCED';
   } catch (error) {
     state.cloudStatus = 'LOCAL_BACKUP';
     syncPassFailed = true;
@@ -781,9 +797,11 @@ async function syncProfile(profile) {
       updated_at: new Date().toISOString()
     }), 8000);
     if (error) throw error;
-    state.cloudStatus = 'CLOUD_SYNCED';
+    state.cloudStatus = syncPassFailed ? 'LOCAL_BACKUP' : 'CLOUD_SYNCED';
   } catch (error) {
     state.cloudStatus = 'LOCAL_BACKUP';
+    syncPassFailed = true;
+    enqueueSync('profile', profile);
     console.warn('[GRID//NODE cloud profile sync]', error);
   }
 }
@@ -801,7 +819,8 @@ function workspacePayload(userId) {
       inventory: S.get('inventory', []),
       loadouts: S.get('loadouts', []),
       eventLedger: S.get('eventLedger', []),
-      importQueue: S.get('importQueue', [])
+      importQueue: S.get('importQueue', []),
+      labTests: S.get('labTests', [])
     }
   };
   return {
@@ -822,9 +841,11 @@ async function syncWorkspace() {
   try {
     const { error } = await withTimeout(state.cloudClient.from('workspaces').upsert(workspacePayload(state.session.user.id)), 8000);
     if (error) throw error;
-    state.cloudStatus = 'CLOUD_SYNCED';
+    state.cloudStatus = syncPassFailed ? 'LOCAL_BACKUP' : 'CLOUD_SYNCED';
   } catch (error) {
     state.cloudStatus = 'LOCAL_BACKUP';
+    syncPassFailed = true;
+    enqueueSync('workspace');
     console.warn('[GRID//NODE cloud workspace sync]', error);
   }
 }
@@ -864,9 +885,13 @@ async function deleteCloudShot(record) {
 
 async function hydrateCloudData() {
   if (!state.cloud || !state.cloudClient || !state.session?.user?.id) return { ok: false, reason: 'LOCAL_ONLY' };
+  const sessionUserId = String(state.session.user.id);
+  const sessionAccountKey = state.accountKey;
+  const sessionIntact = () => Boolean(state.cloud && state.session?.user?.id && String(state.session.user.id) === sessionUserId && state.accountKey === sessionAccountKey);
   try {
     const userId = state.session.user.id;
     await flushCloudDeletes();
+    if (!sessionIntact()) return { ok: false, reason: 'SESSION_CHANGED' };
     const [profileResult, shotsResult, weightsResult, workspaceResult] = await Promise.all([
       withTimeout(state.cloudClient.from('profiles').select('*').eq('id', userId).maybeSingle(), 8000),
       withTimeout(state.cloudClient.from('shots').select('*').eq('user_id', userId).order('date', { ascending: true }), 8000),
@@ -877,6 +902,7 @@ async function hydrateCloudData() {
     if (shotsResult.error) throw shotsResult.error;
     if (weightsResult.error) throw weightsResult.error;
     if (workspaceResult.error) throw workspaceResult.error;
+    if (!sessionIntact()) return { ok: false, reason: 'SESSION_CHANGED' };
 
     const localShots = getAllShots();
     const cloudShots = (shotsResult.data || []).map(item => ({
@@ -914,6 +940,7 @@ async function hydrateCloudData() {
     });
     });
     const mergedWeights = mergeRecords(localWeights, cloudWeights.filter(item => !(item.cloudId && pendingDeleteIds.has(item.cloudId))), record => record.cloudId || record.id);
+    if (!sessionIntact()) return { ok: false, reason: 'SESSION_CHANGED' };
     if (mergedWeights.length) S.set('weights', mergedWeights);
 
     const remoteProfile = profileResult.data;
@@ -923,9 +950,11 @@ async function hydrateCloudData() {
       const mergedProfile = { ...cloudProfile, ...profile };
       mergedProfile.name = mergedProfile.name || remoteProfile.display_name || '';
       if (remoteProfile.dose_mg && !mergedProfile.dose) mergedProfile.dose = remoteProfile.dose_mg;
+      if (!sessionIntact()) return { ok: false, reason: 'SESSION_CHANGED' };
       S.set('profile', mergedProfile);
     }
 
+    if (!sessionIntact()) return { ok: false, reason: 'SESSION_CHANGED' };
     const remoteWorkspace = workspaceResult.data;
     if (remoteWorkspace) {
       S.set('results', mergeJsonRecords(S.get('results', []), remoteWorkspace.results_data || []));
@@ -949,6 +978,7 @@ async function hydrateCloudData() {
       S.set('loadouts', mergeJsonRecords(S.get('loadouts', []), remoteFoundation.loadouts || []));
       S.set('eventLedger', mergeJsonRecords(S.get('eventLedger', []), remoteFoundation.eventLedger || []));
       S.set('importQueue', mergeJsonRecords(S.get('importQueue', []), remoteFoundation.importQueue || []));
+      S.set('labTests', mergeJsonRecords(S.get('labTests', []), remoteFoundation.labTests || []));
     }
     state.cloudStatus = 'CLOUD_SYNCED';
     return {
@@ -1000,14 +1030,17 @@ const syncInFlight = new Set();
 
 async function syncAllCloudData() {
   if (!state.cloud) return;
+  if (!cloudUploadsReady()) { state.cloudStatus = 'LOCAL_BACKUP'; return { ok: false, reason: 'HYDRATION_NOT_OK' }; }
   syncPassFailed = false;
-  await flushCloudDeletes();
+  const deletesOk = await flushCloudDeletes();
+  if (!deletesOk) syncPassFailed = true;
   await Promise.all([
     ...getAllShots().map(record => syncShot(record)),
     ...getWeights().map(record => syncWeight(record)),
     syncProfile(getProfile()),
     syncWorkspace()
   ]);
+  state.cloudStatus = syncPassFailed ? 'LOCAL_BACKUP' : 'CLOUD_SYNCED';
   if (!syncPassFailed) {
     const queue = S.get('syncQueue', []);
     if (queue.length) S.set('syncQueue', []);
@@ -1015,6 +1048,11 @@ async function syncAllCloudData() {
 }
 
 function queueCloudSync(kind, record) {
+  if (state.cloud && !cloudUploadsReady()) {
+    enqueueSync(kind, record);
+    state.cloudStatus = 'LOCAL_BACKUP';
+    return Promise.resolve();
+  }
   const work = kind === 'shot' ? syncShot(record) : kind === 'weight' ? syncWeight(record) : kind === 'profile' ? syncProfile(record) : syncWorkspace();
   work.catch(error => console.warn('[GRID//NODE cloud queue]', error));
   return work;
@@ -2293,6 +2331,9 @@ async function retryCloudHydration() {
   } catch (_) {
     state.cloudHydration = 'failed';
   }
+  // Claim 2a companion: hydration now succeeded, so flush the records
+  // that stayed queued locally while sync was blocked.
+  if (state.cloudHydration === 'ok') await syncAllCloudData();
   if (typeof refreshAll === 'function') refreshAll();
   else renderDashboard();
 }
@@ -4739,8 +4780,15 @@ async function completeCloudSession(session) {
   // S1: honest empty states. Track hydration so the dashboard can tell
   // "still syncing" / "sync failed" apart from "genuinely no data".
   state.cloudHydration = 'pending';
-  const hydration = await hydrateCloudData();
+  let hydration = await hydrateCloudData();
   state.cloudHydration = hydration.ok ? 'ok' : 'failed';
+  if (!hydration.ok) {
+    // Claim 2a: one retry before deciding. Until hydration succeeds, local
+    // records must NOT be uploaded — they may be stale and would upsert
+    // over the (unread) cloud state.
+    hydration = await hydrateCloudData();
+    state.cloudHydration = hydration.ok ? 'ok' : 'failed';
+  }
   if (hydration.ok && localWorkspace && workspaceHasData(localWorkspace) && !workspaceHasData(accountWorkspace)) {
     const remote = hydration.remote || {};
     const migration = { ...localWorkspace };
@@ -4753,9 +4801,17 @@ async function completeCloudSession(session) {
     }
     restoreWorkspace(migration, { onlyEmpty: true });
   }
-  await syncAllCloudData();
-  if (hydration.ok && localWorkspace && workspaceHasData(localWorkspace) && state.cloudStatus === 'CLOUD_SYNCED') {
-    markLocalWorkspaceMigrated(targetUserId);
+  if (hydration.ok) {
+    await syncAllCloudData();
+    if (localWorkspace && workspaceHasData(localWorkspace) && state.cloudStatus === 'CLOUD_SYNCED') {
+      markLocalWorkspaceMigrated(targetUserId);
+    }
+  } else {
+    // Hydration still failed after the retry: skip the upload entirely.
+    // Records stay queued locally (core's sync gate backstops this) and
+    // the retry path (retryCloudHydration) flushes them once hydration
+    // succeeds.
+    state.cloudStatus = 'LOCAL_BACKUP';
   }
   showApp();
   return true;
@@ -5098,10 +5154,24 @@ async function startGridNode() {
     [tx('boot.line6', '> Loading local records'), 'warn', tx('boot.status6', 'LOCAL RECORDS')],
     [tx('boot.line7', '> Protocol workspace ready'), 'ok', tx('boot.status7', 'SYSTEM ONLINE')]
   ];
+  // Claim 6: the third kicker phase must not imply cloud sync for
+  // local-only sessions. At boot time state.session is not yet a reliable
+  // cloud signal (restoreSession resolves the Supabase session async),
+  // and gn_session_v2 is written for LOCAL sessions only — so the durable
+  // synchronous evidence of a stored cloud session is the Supabase JS
+  // persisted auth token (sb-<ref>-auth-token, the same key pattern the
+  // vault delete flow purges). state.cloud covers the already-activated
+  // in-memory case.
+  const hasStoredCloudSession = (() => {
+    try {
+      if (state.cloud && state.session?.user?.id) return true;
+      return Object.keys(localStorage).some(key => /^sb-.*-auth-token$/.test(key) && Boolean(localStorage.getItem(key)));
+    } catch (_) { return Boolean(state.cloud); }
+  })();
   const kickerStates = [
     tx('boot.statusInitializing', 'INITIALIZING'),
     tx('boot.statusCalibrating', 'CALIBRATING'),
-    tx('boot.statusSyncing', 'SYNCING'),
+    hasStoredCloudSession ? tx('boot.statusSyncing', 'SYNCING') : tx('boot.statusLoading', 'LOADING'),
     tx('boot.statusOnline', 'ONLINE')
   ];
   // kicker phase per line index (7 lines -> 4 phases)
@@ -5200,6 +5270,9 @@ async function confirmSignOut() {
   closeSignOutModal();
   await signOutCloud();
   clearSession();
+  // Claim 4: drop the server phase-state cache so a different account on
+  // this device never renders the previous account's phase state.
+  try { window.GNPhaseTemplates?.clearStateCache?.(); } catch (_) {}
   document.getElementById('gnPasskeysCard')?.remove();
   document.getElementById('gnPasskeyUpsell')?.remove();
   authShell();

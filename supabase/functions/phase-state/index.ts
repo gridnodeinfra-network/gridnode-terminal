@@ -168,14 +168,21 @@ serve(async (req) => {
 
   const med = String(body.med || "");
   const template = templateForMed(med);
-  const last = shots[shots.length - 1];
+
+  // Per-medication selection rule: phase state is computed ONLY from the
+  // requested medication's own shots. A med switch restarts that med's
+  // own cycle view; other meds' shots never anchor it, even when they
+  // share a template group (e.g. cjcipa-cycle, ghkcu-cycle) or were
+  // logged more recently. No med requested -> fall back to all shots.
+  const medId = normalizeMedId(med);
+  const ownShots = medId ? shots.filter((s) => normalizeMedId(s.med) === medId) : shots;
+  if (!ownShots.length) return json(req, { empty: true });
 
   let cycleStart;
   if (template.type === 'cycle') {
-    const matching = shots.filter((s) => templateForMed(s.med).id === template.id);
-    cycleStart = new Date((matching[0] || last).date).getTime();
+    cycleStart = new Date(ownShots[0].date).getTime();
   } else {
-    cycleStart = new Date(last.date).getTime();
+    cycleStart = new Date(ownShots[ownShots.length - 1].date).getTime();
   }
 
   const elapsedDays = Math.max(0, (now - cycleStart) / 86400000);

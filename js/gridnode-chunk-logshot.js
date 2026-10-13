@@ -146,7 +146,7 @@ function gnValidateStep1() {
   const time = getShotTime24($('sTime')?.value);
   const invalidFields = [];
   if (!med) invalidFields.push($('cpShotMed'));
-  if (!(Number.isFinite(dose) && dose > 0)) invalidFields.push($('sDose'));
+  if (!isDoseInRange(dose)) invalidFields.push($('sDose'));
   if (!date) invalidFields.push($('sDate'));
   if (!time) invalidFields.push($('sTime'));
   return { ok: invalidFields.length === 0, invalidFields, time };
@@ -162,7 +162,7 @@ function gnShotStepNext() {
     check.invalidFields.filter(Boolean).forEach(field => field.setAttribute('aria-invalid', 'true'));
     check.invalidFields.filter(Boolean).forEach(field => {
       if (field.id === 'cpShotMed') shotFieldError(field, 'gnShotErrMed', tx('shots.medRequiredPlain', 'Pick your medication from the list.'));
-      else if (field.id === 'sDose') shotFieldError(field, 'gnShotErrDose', tx('shots.doseRequiredPlain', 'Enter a dose greater than zero.'));
+      else if (field.id === 'sDose') shotFieldError(field, 'gnShotErrDose', Number.isFinite(Number($('sDose')?.value)) && Number($('sDose')?.value) > MAX_DOSE_MG ? tx('shots.doseTooLargePlain', 'Enter a dose of 1000 mg or less.') : tx('shots.doseRequiredPlain', 'Enter a dose greater than zero.'));
       else if (field.id === 'sDate') shotFieldError(field.closest('.form-group') || field, 'gnShotErrDate', tx('shots.dateRequiredPlain', 'Pick the date of this shot.'));
       else if (field.id === 'sTime') shotFieldError(field.closest('.form-group') || field, 'gnShotErrTime', tx('shots.timeRequired', 'Set the shot time and pick AM or PM.'));
     });
@@ -588,14 +588,14 @@ function saveShot(allowFuture = false) {
     clearShotFieldErrors();
     const invalidFields = [];
     if (!med) invalidFields.push($('cpShotMed'));
-    if (!(Number.isFinite(dose) && dose > 0)) invalidFields.push($('sDose'));
+    if (!isDoseInRange(dose)) invalidFields.push($('sDose'));
     if (!date) invalidFields.push($('sDate'));
     if (!time) invalidFields.push($('sTime'));
     if (!site) invalidFields.push($('logLocationAction'));
     if (invalidFields.length) {
       invalidFields.filter(Boolean).forEach(field => field.setAttribute('aria-invalid', 'true'));
       if (!med) shotFieldError($('cpShotMed'), 'gnShotErrMed', tx('shots.medRequiredPlain', 'Pick your medication from the list.'));
-      if (!(Number.isFinite(dose) && dose > 0)) shotFieldError($('sDose'), 'gnShotErrDose', tx('shots.doseRequiredPlain', 'Enter a dose greater than zero.'));
+      if (!isDoseInRange(dose)) shotFieldError($('sDose'), 'gnShotErrDose', Number.isFinite(dose) && dose > MAX_DOSE_MG ? tx('shots.doseTooLargePlain', 'Enter a dose of 1000 mg or less.') : tx('shots.doseRequiredPlain', 'Enter a dose greater than zero.'));
       if (!date) shotFieldError($('sDate')?.closest('.form-group') || $('sDate'), 'gnShotErrDate', tx('shots.dateRequiredPlain', 'Pick the date of this shot.'));
       if (!time) shotFieldError($('sTime')?.closest('.form-group') || $('sTime'), 'gnShotErrTime', tx('shots.timeRequired', 'Set the shot time and pick AM or PM.'));
       if (!site) shotFieldError($('logLocationAction')?.closest('.form-group') || $('logLocationAction'), 'gnShotErrSite', tx('shot.siteRequired', 'Pick an injection site to log the shot.'));
@@ -789,7 +789,7 @@ function quickLogShot() {
   const lastMedId = lastShot?.med ? normalizeMedicationId(lastShot.med) : null;
   const lastComplete = Boolean(lastShot)
     && lastMedId && Object.prototype.hasOwnProperty.call(MEDICATIONS, lastMedId)
-    && Number.isFinite(Number(lastShot.dose)) && Number(lastShot.dose) > 0
+    && isDoseInRange(lastShot.dose)
     && lastShot.site;
   if (lastComplete) { openQuickConfirm(lastShot, lastMedId); return; }
 
@@ -798,7 +798,7 @@ function quickLogShot() {
   if (!medId || !Object.prototype.hasOwnProperty.call(MEDICATIONS, medId)) { openLogModal(); return; }
   const dose = lastShot?.dose ?? profile.dose ?? '';
   const site = lastShot?.site || moduleState.selectedLocation;
-  if (!(Number.isFinite(Number(dose)) && Number(dose) > 0) || !site) { openLogModal(); return; }
+  if (!isDoseInRange(dose) || !site) { openLogModal(); return; }
   const now = new Date();
   moduleState.editingShotId = null;
   moduleState.selectedLocation = site;

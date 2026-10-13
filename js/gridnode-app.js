@@ -1371,8 +1371,15 @@ async function completeCloudSession(session) {
   // S1: honest empty states. Track hydration so the dashboard can tell
   // "still syncing" / "sync failed" apart from "genuinely no data".
   state.cloudHydration = 'pending';
-  const hydration = await hydrateCloudData();
+  let hydration = await hydrateCloudData();
   state.cloudHydration = hydration.ok ? 'ok' : 'failed';
+  if (!hydration.ok) {
+    // Claim 2a: one retry before deciding. Until hydration succeeds, local
+    // records must NOT be uploaded — they may be stale and would upsert
+    // over the (unread) cloud state.
+    hydration = await hydrateCloudData();
+    state.cloudHydration = hydration.ok ? 'ok' : 'failed';
+  }
   if (hydration.ok && localWorkspace && workspaceHasData(localWorkspace) && !workspaceHasData(accountWorkspace)) {
     const remote = hydration.remote || {};
     const migration = { ...localWorkspace };
@@ -1385,9 +1392,17 @@ async function completeCloudSession(session) {
     }
     restoreWorkspace(migration, { onlyEmpty: true });
   }
-  await syncAllCloudData();
-  if (hydration.ok && localWorkspace && workspaceHasData(localWorkspace) && state.cloudStatus === 'CLOUD_SYNCED') {
-    markLocalWorkspaceMigrated(targetUserId);
+  if (hydration.ok) {
+    await syncAllCloudData();
+    if (localWorkspace && workspaceHasData(localWorkspace) && state.cloudStatus === 'CLOUD_SYNCED') {
+      markLocalWorkspaceMigrated(targetUserId);
+    }
+  } else {
+    // Hydration still failed after the retry: skip the upload entirely.
+    // Records stay queued locally (core's sync gate backstops this) and
+    // the retry path (retryCloudHydration) flushes them once hydration
+    // succeeds.
+    state.cloudStatus = 'LOCAL_BACKUP';
   }
   showApp();
   return true;
@@ -1730,10 +1745,24 @@ async function startGridNode() {
     [tx('boot.line6', '> Loading local records'), 'warn', tx('boot.status6', 'LOCAL RECORDS')],
     [tx('boot.line7', '> Protocol workspace ready'), 'ok', tx('boot.status7', 'SYSTEM ONLINE')]
   ];
+  // Claim 6: the third kicker phase must not imply cloud sync for
+  // local-only sessions. At boot time state.session is not yet a reliable
+  // cloud signal (restoreSession resolves the Supabase session async),
+  // and gn_session_v2 is written for LOCAL sessions only — so the durable
+  // synchronous evidence of a stored cloud session is the Supabase JS
+  // persisted auth token (sb-<ref>-auth-token, the same key pattern the
+  // vault delete flow purges). state.cloud covers the already-activated
+  // in-memory case.
+  const hasStoredCloudSession = (() => {
+    try {
+      if (state.cloud && state.session?.user?.id) return true;
+      return Object.keys(localStorage).some(key => /^sb-.*-auth-token$/.test(key) && Boolean(localStorage.getItem(key)));
+    } catch (_) { return Boolean(state.cloud); }
+  })();
   const kickerStates = [
     tx('boot.statusInitializing', 'INITIALIZING'),
     tx('boot.statusCalibrating', 'CALIBRATING'),
-    tx('boot.statusSyncing', 'SYNCING'),
+    hasStoredCloudSession ? tx('boot.statusSyncing', 'SYNCING') : tx('boot.statusLoading', 'LOADING'),
     tx('boot.statusOnline', 'ONLINE')
   ];
   // kicker phase per line index (7 lines -> 4 phases)
@@ -1832,6 +1861,9 @@ async function confirmSignOut() {
   closeSignOutModal();
   await signOutCloud();
   clearSession();
+  // Claim 4: drop the server phase-state cache so a different account on
+  // this device never renders the previous account's phase state.
+  try { window.GNPhaseTemplates?.clearStateCache?.(); } catch (_) {}
   document.getElementById('gnPasskeysCard')?.remove();
   document.getElementById('gnPasskeyUpsell')?.remove();
   authShell();

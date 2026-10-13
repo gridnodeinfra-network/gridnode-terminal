@@ -99,7 +99,7 @@ export function openLabTool(tool) {
     calculators: ['labSegTabs', 'labSeg-draw', 'labSeg-recon', 'labSeg-supply', 'labSeg-assay', 'gnDoseProjection'].map($),
     research: [$('gnResearchSection')],
     inventory: [$('gnSupplySection')],
-    devices: [document.querySelector('.gn-device-vault')],
+    devices: [$('gnDeviceCard')],
     ledger: [$('gnLedgerSection')]
   }[tool]?.filter(Boolean) || [];
   if (!toolNodes.length) return;

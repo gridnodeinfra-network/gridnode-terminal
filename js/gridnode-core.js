@@ -13,6 +13,12 @@ export const CLOUD_CONFIG = Object.freeze({
   anonKey: 'sb_publishable_rWPuL8wGfe2zok4cYNENng_L6n2Qttu'
 });
 
+/* Dose upper bound at the cloud boundary: 1000 mg = 100x the largest preset
+ * pill (10 mg); rejects absurd/imported values like 100000 mg.
+ * Rejection, never clamping. */
+export const MAX_DOSE_MG = 1000;
+export function isDoseInRange(dose) { const value = Number(dose); return Number.isFinite(value) && value > 0 && value <= MAX_DOSE_MG; }
+
 export const state = {
   session: null,
   accountKey: 'local',
@@ -21,6 +27,11 @@ export const state = {
   cloudStatus: 'LOCAL_ONLY',
   listeners: new Set()
 };
+
+export function cloudUploadsReady() {
+  if (!state.cloud) return false;
+  return typeof state.cloudHydration !== 'string' || state.cloudHydration === 'ok';
+}
 
 export const SESSION_KEY = 'gn_session_v2';
 export const LOCAL_CLOUD_OWNER_KEY = 'gn_local_cloud_owner_v1';
@@ -622,6 +633,7 @@ export async function signOutCloud() {
 }
 
 export function cloudShotPayload(record, userId) {
+  if (!isDoseInRange(record?.dose)) throw new Error('DOSE_OUT_OF_RANGE');
   const payload = {
     user_id: userId,
     date: record.date,
@@ -715,12 +727,16 @@ export async function syncShot(record) {
       const index = all.findIndex(item => item.id === record.id);
       if (index >= 0) { all[index] = record; if (!S.set('shots', all)) console.warn('[GRID//NODE cloud shot sync] failed to persist cloudId'); }
     }
-    state.cloudStatus = 'CLOUD_SYNCED';
+    state.cloudStatus = syncPassFailed ? 'LOCAL_BACKUP' : 'CLOUD_SYNCED';
   } catch (error) {
-    state.cloudStatus = 'LOCAL_BACKUP';
-    syncPassFailed = true;
-    enqueueSync('shot', record);
-    console.warn('[GRID//NODE cloud shot sync]', error);
+    if (error?.message === 'DOSE_OUT_OF_RANGE') {
+      console.warn('[GRID//NODE cloud shot sync] dose out of range; sync permanently rejected', error);
+    } else {
+      state.cloudStatus = 'LOCAL_BACKUP';
+      syncPassFailed = true;
+      enqueueSync('shot', record);
+      console.warn('[GRID//NODE cloud shot sync]', error);
+    }
   } finally {
     syncInFlight.delete(`shot:${record.id}`);
   }
@@ -755,7 +771,7 @@ export async function syncWeight(record) {
       const index = all.findIndex(item => item.id === record.id);
       if (index >= 0) { all[index] = record; if (!S.set('weights', all)) console.warn('[GRID//NODE cloud weight sync] failed to persist cloudId'); }
     }
-    state.cloudStatus = 'CLOUD_SYNCED';
+    state.cloudStatus = syncPassFailed ? 'LOCAL_BACKUP' : 'CLOUD_SYNCED';
   } catch (error) {
     state.cloudStatus = 'LOCAL_BACKUP';
     syncPassFailed = true;
@@ -779,9 +795,11 @@ export async function syncProfile(profile) {
       updated_at: new Date().toISOString()
     }), 8000);
     if (error) throw error;
-    state.cloudStatus = 'CLOUD_SYNCED';
+    state.cloudStatus = syncPassFailed ? 'LOCAL_BACKUP' : 'CLOUD_SYNCED';
   } catch (error) {
     state.cloudStatus = 'LOCAL_BACKUP';
+    syncPassFailed = true;
+    enqueueSync('profile', profile);
     console.warn('[GRID//NODE cloud profile sync]', error);
   }
 }
@@ -799,7 +817,8 @@ export function workspacePayload(userId) {
       inventory: S.get('inventory', []),
       loadouts: S.get('loadouts', []),
       eventLedger: S.get('eventLedger', []),
-      importQueue: S.get('importQueue', [])
+      importQueue: S.get('importQueue', []),
+      labTests: S.get('labTests', [])
     }
   };
   return {
@@ -820,9 +839,11 @@ export async function syncWorkspace() {
   try {
     const { error } = await withTimeout(state.cloudClient.from('workspaces').upsert(workspacePayload(state.session.user.id)), 8000);
     if (error) throw error;
-    state.cloudStatus = 'CLOUD_SYNCED';
+    state.cloudStatus = syncPassFailed ? 'LOCAL_BACKUP' : 'CLOUD_SYNCED';
   } catch (error) {
     state.cloudStatus = 'LOCAL_BACKUP';
+    syncPassFailed = true;
+    enqueueSync('workspace');
     console.warn('[GRID//NODE cloud workspace sync]', error);
   }
 }
@@ -862,9 +883,13 @@ export async function deleteCloudShot(record) {
 
 export async function hydrateCloudData() {
   if (!state.cloud || !state.cloudClient || !state.session?.user?.id) return { ok: false, reason: 'LOCAL_ONLY' };
+  const sessionUserId = String(state.session.user.id);
+  const sessionAccountKey = state.accountKey;
+  const sessionIntact = () => Boolean(state.cloud && state.session?.user?.id && String(state.session.user.id) === sessionUserId && state.accountKey === sessionAccountKey);
   try {
     const userId = state.session.user.id;
     await flushCloudDeletes();
+    if (!sessionIntact()) return { ok: false, reason: 'SESSION_CHANGED' };
     const [profileResult, shotsResult, weightsResult, workspaceResult] = await Promise.all([
       withTimeout(state.cloudClient.from('profiles').select('*').eq('id', userId).maybeSingle(), 8000),
       withTimeout(state.cloudClient.from('shots').select('*').eq('user_id', userId).order('date', { ascending: true }), 8000),
@@ -875,6 +900,7 @@ export async function hydrateCloudData() {
     if (shotsResult.error) throw shotsResult.error;
     if (weightsResult.error) throw weightsResult.error;
     if (workspaceResult.error) throw workspaceResult.error;
+    if (!sessionIntact()) return { ok: false, reason: 'SESSION_CHANGED' };
 
     const localShots = getAllShots();
     const cloudShots = (shotsResult.data || []).map(item => ({
@@ -912,6 +938,7 @@ export async function hydrateCloudData() {
     });
     });
     const mergedWeights = mergeRecords(localWeights, cloudWeights.filter(item => !(item.cloudId && pendingDeleteIds.has(item.cloudId))), record => record.cloudId || record.id);
+    if (!sessionIntact()) return { ok: false, reason: 'SESSION_CHANGED' };
     if (mergedWeights.length) S.set('weights', mergedWeights);
 
     const remoteProfile = profileResult.data;
@@ -921,9 +948,11 @@ export async function hydrateCloudData() {
       const mergedProfile = { ...cloudProfile, ...profile };
       mergedProfile.name = mergedProfile.name || remoteProfile.display_name || '';
       if (remoteProfile.dose_mg && !mergedProfile.dose) mergedProfile.dose = remoteProfile.dose_mg;
+      if (!sessionIntact()) return { ok: false, reason: 'SESSION_CHANGED' };
       S.set('profile', mergedProfile);
     }
 
+    if (!sessionIntact()) return { ok: false, reason: 'SESSION_CHANGED' };
     const remoteWorkspace = workspaceResult.data;
     if (remoteWorkspace) {
       S.set('results', mergeJsonRecords(S.get('results', []), remoteWorkspace.results_data || []));
@@ -947,6 +976,7 @@ export async function hydrateCloudData() {
       S.set('loadouts', mergeJsonRecords(S.get('loadouts', []), remoteFoundation.loadouts || []));
       S.set('eventLedger', mergeJsonRecords(S.get('eventLedger', []), remoteFoundation.eventLedger || []));
       S.set('importQueue', mergeJsonRecords(S.get('importQueue', []), remoteFoundation.importQueue || []));
+      S.set('labTests', mergeJsonRecords(S.get('labTests', []), remoteFoundation.labTests || []));
     }
     state.cloudStatus = 'CLOUD_SYNCED';
     return {
@@ -998,14 +1028,17 @@ export const syncInFlight = new Set();
 
 export async function syncAllCloudData() {
   if (!state.cloud) return;
+  if (!cloudUploadsReady()) { state.cloudStatus = 'LOCAL_BACKUP'; return { ok: false, reason: 'HYDRATION_NOT_OK' }; }
   syncPassFailed = false;
-  await flushCloudDeletes();
+  const deletesOk = await flushCloudDeletes();
+  if (!deletesOk) syncPassFailed = true;
   await Promise.all([
     ...getAllShots().map(record => syncShot(record)),
     ...getWeights().map(record => syncWeight(record)),
     syncProfile(getProfile()),
     syncWorkspace()
   ]);
+  state.cloudStatus = syncPassFailed ? 'LOCAL_BACKUP' : 'CLOUD_SYNCED';
   if (!syncPassFailed) {
     const queue = S.get('syncQueue', []);
     if (queue.length) S.set('syncQueue', []);
@@ -1013,6 +1046,11 @@ export async function syncAllCloudData() {
 }
 
 export function queueCloudSync(kind, record) {
+  if (state.cloud && !cloudUploadsReady()) {
+    enqueueSync(kind, record);
+    state.cloudStatus = 'LOCAL_BACKUP';
+    return Promise.resolve();
+  }
   const work = kind === 'shot' ? syncShot(record) : kind === 'weight' ? syncWeight(record) : kind === 'profile' ? syncProfile(record) : syncWorkspace();
   work.catch(error => console.warn('[GRID//NODE cloud queue]', error));
   return work;

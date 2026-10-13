@@ -86,7 +86,7 @@ function normalizeBackupPayload(input) {
     const medication = normalizeMedicationId(record.medicationId || record.med);
     const dose = Number(record.dose);
     const optionalWeight = record.wt == null || record.wt === '' ? null : Number(record.wt);
-    if (!validBackupDate(record.date) || !medication || !Number.isFinite(dose) || dose <= 0 || (optionalWeight !== null && (!Number.isFinite(optionalWeight) || optionalWeight <= 0))) throw new Error(`BACKUP_SHOT_${index + 1}_INVALID`);
+    if (!validBackupDate(record.date) || !medication || !Number.isFinite(dose) || dose <= 0 || dose > MAX_DOSE_MG || (optionalWeight !== null && (!Number.isFinite(optionalWeight) || optionalWeight <= 0))) throw new Error(`BACKUP_SHOT_${index + 1}_INVALID`);
     return normalizeShotRecord({ ...record, id: record.id || createId('shot'), med: medication, dose, ...(optionalWeight === null ? {} : { wt: optionalWeight }) });
   });
   const validShotIds = new Set([...getAllShots(), ...shots].map(record => String(record?.id || '')).filter(Boolean));
@@ -425,7 +425,7 @@ function classifyCSVRows(rows, shots, weights) {
     const timestamp = new Date(row.date).getTime();
     const validDate = Boolean(row.date) && Number.isFinite(timestamp) && timestamp <= Date.now();
     const medicationId = normalizeMedicationId(row.medication);
-    const validValue = row.record_type === 'shot' ? Number.isFinite(row.dose_mg) && row.dose_mg > 0 && Object.prototype.hasOwnProperty.call(MEDICATIONS, medicationId) : Number.isFinite(row.weight_lb) && row.weight_lb > 0;
+    const validValue = row.record_type === 'shot' ? isDoseInRange(row.dose_mg) && Object.prototype.hasOwnProperty.call(MEDICATIONS, medicationId) : Number.isFinite(row.weight_lb) && row.weight_lb > 0;
     if (!validType || !validDate || !validValue) return { row, status: 'invalid' };
     const key = row.record_type === 'shot' ? csvShotKey(row) : csvWeightKey(row);
     const stored = row.record_type === 'shot' ? shotKeys : weightKeys;

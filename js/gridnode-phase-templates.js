@@ -210,7 +210,7 @@ const PHASE_TEXT = {
   /* Server-computed phase state                                         */
   /* ------------------------------------------------------------------ */
 
-  var _stateCache = {}; // normalized med -> { at, data }
+  var _stateCache = {}; // cloudId|normalized med -> { at, data }
   var CACHE_TTL_MS = 5 * 60 * 1000;
 
   function functionsBase() {
@@ -228,15 +228,18 @@ const PHASE_TEXT = {
   async function phaseState(medRaw, shots, now) {
     var ts = Number(now) || Date.now();
     var med = normalizeMedId(medRaw);
-    var cached = _stateCache[med];
-    if (cached && ts - cached.at < CACHE_TTL_MS) return cached.data;
-    var base = functionsBase();
-    if (!base) return null;
     /* Privacy gate (audit 2026-10-08): same as PK curve — never transmit
-     * health data without an active cloud session. */
+     * health data without an active cloud session. Resolved first so the
+     * cache is never consulted for a signed-out/local session and is
+     * scoped to the current account. */
     var cloudId = null;
     try { cloudId = (typeof window !== 'undefined' && window.CU && window.CU.cloudId) ? String(window.CU.cloudId) : null; } catch (_) {}
     if (!cloudId) return null;
+    var cacheKey = cloudId + '|' + med;
+    var cached = _stateCache[cacheKey];
+    if (cached && ts - cached.at < CACHE_TTL_MS) return cached.data;
+    var base = functionsBase();
+    if (!base) return null;
     var cleanShots = (Array.isArray(shots) ? shots : []).slice(0, 2000).map(function (s) {
       return { date: s && s.date ? String(s.date) : '', med: String((s && s.med) || '') };
     });
@@ -254,7 +257,7 @@ const PHASE_TEXT = {
       });
       if (!res.ok) return null;
       var data = await res.json();
-      if (data && !data.empty) _stateCache[med] = { at: ts, data: data };
+      if (data && !data.empty) _stateCache[cacheKey] = { at: ts, data: data };
       return data;
     } catch (_) {
       return null;
@@ -266,8 +269,15 @@ const PHASE_TEXT = {
   // Synchronous read of the last fetched state for a med (may be null on
   // first paint before the fetch resolves).
   function cachedState(medRaw) {
-    var c = _stateCache[normalizeMedId(medRaw)];
+    var cloudId = null;
+    try { cloudId = (typeof window !== 'undefined' && window.CU && window.CU.cloudId) ? String(window.CU.cloudId) : null; } catch (_) {}
+    if (!cloudId) return null;
+    var c = _stateCache[cloudId + '|' + normalizeMedId(medRaw)];
     return c ? c.data : null;
+  }
+
+  function clearStateCache() {
+    _stateCache = {};
   }
 
   /* ------------------------------------------------------------------ */
@@ -277,6 +287,7 @@ const PHASE_TEXT = {
   window.GNPhaseTemplates = Object.freeze({
     phaseState: phaseState,
     cachedState: cachedState,
+    clearStateCache: clearStateCache,
     phaseArc: phaseArc,
     phaseNode: phaseNode,
     progressPoint: progressPoint,

@@ -32,13 +32,15 @@ async function confirmDeleteCloudAccount() {
    * existing local data) so the records stay visible after sign-out. */
   const cloudKey = state.accountKey;
   if (cloudKey && cloudKey !== 'local') {
+    let copiedAny = false;
     for (const key of WORKSPACE_KEYS) {
       try {
         if (localStorage.getItem(`gn_local_${key}`) !== null) continue;
         const val = localStorage.getItem(`gn_${cloudKey}_${key}`);
-        if (val !== null) localStorage.setItem(`gn_local_${key}`, val);
+        if (val !== null) { localStorage.setItem(`gn_local_${key}`, val); copiedAny = true; }
       } catch (_) {}
     }
+    if (copiedAny) markLocalWorkspaceMigrated(cloudKey);
   }
   // The server-side user is gone, so the Supabase session token is dead.
   // Purge the provider session keys explicitly: they are not gn_-prefixed,

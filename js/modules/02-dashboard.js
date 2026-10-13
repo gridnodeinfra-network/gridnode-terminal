@@ -260,6 +260,9 @@ export async function retryCloudHydration() {
   } catch (_) {
     state.cloudHydration = 'failed';
   }
+  // Claim 2a companion: hydration now succeeded, so flush the records
+  // that stayed queued locally while sync was blocked.
+  if (state.cloudHydration === 'ok') await syncAllCloudData();
   if (typeof refreshAll === 'function') refreshAll();
   else renderDashboard();
 }
