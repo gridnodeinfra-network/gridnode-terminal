@@ -46,20 +46,26 @@
     return DEFAULT_LANG;
   }
 
-  async function loadCatalog(lang) {
-    if (catalogs[lang]) return catalogs[lang];
-    try {
-      const file = lang == 'es' ? 'es-419.json' : `${lang}.json`;
-      const res = await fetch(`./i18n/${file}`, { cache: 'no-cache' });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const data = await res.json();
-      catalogs[lang] = data;
-      return data;
-    } catch (err) {
-      console.warn('[i18n] failed to load catalog', lang, err);
-      catalogs[lang] = {};
-      return catalogs[lang];
-    }
+  const catalogLoads = {};
+
+  function loadCatalog(lang) {
+    if (catalogs[lang]) return Promise.resolve(catalogs[lang]);
+    if (catalogLoads[lang]) return catalogLoads[lang];
+    catalogLoads[lang] = (async () => {
+      try {
+        const file = lang == 'es' ? 'es-419.json' : `${lang}.json`;
+        const res = await fetch(`./i18n/${file}`, { cache: 'no-cache' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        catalogs[lang] = data;
+        return data;
+      } catch (err) {
+        console.warn('[i18n] failed to load catalog', lang, err);
+        catalogs[lang] = {};
+        return catalogs[lang];
+      }
+    })();
+    return catalogLoads[lang];
   }
 
   function interpolate(template, vars) {

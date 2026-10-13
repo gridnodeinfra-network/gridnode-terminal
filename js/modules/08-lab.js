@@ -1092,7 +1092,10 @@ export function saveMeasurements() {
   const preferences = S.get('preferences', {}); preferences.measurementUnit = unit; S.set('preferences', preferences);
   queueCloudSync('workspace');
   renderMeasurements();
-  renderResults();
+  /* Code-split: renderResults lives in the progress chunk, which a
+   * VAULT-first session may not have loaded yet; PROGRESS renders fresh on
+   * first navigation, so skipping here loses nothing. */
+  if (typeof renderResults === 'function') renderResults();
   actionFeedback(tx('vault.measurementsSaved', 'MEASUREMENTS SAVED'), tx('vault.measurementsSavedDetail', '{count} USER-ENTERED VALUE{plural} // TIMELINE UPDATED', { count: saved, plural: saved === 1 ? '' : 'S' }));
 }
 

@@ -1,0 +1,180 @@
+function ensureDestructiveDialogs() {
+  if ($('gnDeleteLocalOverlay')) return;
+  document.body.insertAdjacentHTML('beforeend', `<div class="gn-delete-overlay" id="gnDeleteLocalOverlay" role="dialog" aria-modal="true" aria-labelledby="gnDeleteLocalTitle"><div class="gn-delete-panel"><div class="gn-delete-kicker" data-i18n="deleteLocal.kicker">// VAULT CONTROL</div><h2 id="gnDeleteLocalTitle" data-i18n="deleteLocal.title">DELETE ALL LOCAL DATA?</h2><p data-i18n="deleteLocal.body">This removes all shots, weights, peptides, devices, and settings from this device. Cloud records will be restored on next sign-in. This action cannot be undone.</p><label><span data-i18n="deleteLocal.typeConfirm">TYPE DELETE TO CONFIRM</span><input id="gnDeleteLocalInput" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" oninput="updateDeleteLocalButton(this.value)"></label><div class="gn-delete-actions"><button type="button" class="btn-full btn-secondary" onclick="closeDeleteLocalData()" data-i18n="deleteLocal.cancel">CANCEL</button><button type="button" class="btn-full gn-delete-confirm" id="gnDeleteLocalConfirm" disabled onclick="confirmDeleteLocalData()" data-i18n="deleteLocal.confirm">DELETE LOCAL DATA</button></div></div></div><div class="gn-delete-overlay" id="gnDeleteCloudOverlay" role="dialog" aria-modal="true" aria-labelledby="gnDeleteCloudTitle"><div class="gn-delete-panel"><div class="gn-delete-kicker" data-i18n="deleteCloud.kicker">// CLOUD ACCOUNT CONTROL</div><h2 id="gnDeleteCloudTitle" data-i18n="deleteCloud.title">DELETE CLOUD ACCOUNT?</h2><p data-i18n="deleteCloud.body">This permanently removes all synced records from cloud storage. Local data on this device is not affected. You will be signed out.</p><p class="gn-delete-note" data-i18n="deleteCloud.note">A secure server request verifies the signed-in account before deletion. The browser never receives the server key.</p><div class="gn-delete-actions"><button type="button" class="btn-full btn-secondary" onclick="closeDeleteCloudAccount()" data-i18n="deleteCloud.cancel">CANCEL</button><button type="button" class="btn-full gn-delete-confirm" onclick="confirmDeleteCloudAccount()" data-i18n="deleteCloud.confirm">DELETE CLOUD ACCOUNT</button></div></div></div>`);
+    window.GN_I18N?.applyTo?.(document.getElementById('gnDeleteLocalOverlay'));
+    window.GN_I18N?.applyTo?.(document.getElementById('gnDeleteCloudOverlay'));
+}
+
+function clearLocalGridNodeData() {
+  Object.keys(localStorage).filter(key => key.startsWith('gn_')).forEach(key => localStorage.removeItem(key));
+  try { Object.keys(sessionStorage).filter(key => key.startsWith('gn_')).forEach(key => sessionStorage.removeItem(key)); } catch (_) {}
+}
+
+function openDeleteLocalData() { ensureDestructiveDialogs(); const input = $('gnDeleteLocalInput'); if (input) input.value = ''; $('gnDeleteLocalConfirm')?.setAttribute('disabled', ''); $('gnDeleteLocalOverlay')?.classList.add('active'); setTimeout(() => input?.focus(), 0); }
+function closeDeleteLocalData() { $('gnDeleteLocalOverlay')?.classList.remove('active'); }
+function updateDeleteLocalButton(value) { const confirm = $('gnDeleteLocalConfirm'); if (confirm) confirm.disabled = String(value || '').trim().toUpperCase() !== 'DELETE'; }
+async function confirmDeleteLocalData() {
+  if (String($('gnDeleteLocalInput')?.value || '').trim().toUpperCase() !== 'DELETE') return;
+  await signOutCloud();
+  clearLocalGridNodeData();
+  clearSession();
+  window.location.reload();
+}
+function openDeleteCloudAccount() { ensureDestructiveDialogs(); $('gnDeleteCloudOverlay')?.classList.add('active'); }
+function closeDeleteCloudAccount() { $('gnDeleteCloudOverlay')?.classList.remove('active'); }
+async function confirmDeleteCloudAccount() {
+  const result = await deleteCloudAccount();
+  closeDeleteCloudAccount();
+  if (!result?.ok) { actionFeedback(tx('auth.accountNotDeleted', 'CLOUD ACCOUNT NOT DELETED'), tx('auth.deletionFailed', 'ACCOUNT DELETION FAILED // LOCAL DATA UNCHANGED'), true); return; }
+  /* v1: the dialog promises local data is not affected, so the device keeps it.
+   * Cloud workspaces live under gn_<userId>_*, local sessions read gn_local_*:
+   * migrate this account's keys into the local namespace (without overwriting
+   * existing local data) so the records stay visible after sign-out. */
+  const cloudKey = state.accountKey;
+  if (cloudKey && cloudKey !== 'local') {
+    for (const key of WORKSPACE_KEYS) {
+      try {
+        if (localStorage.getItem(`gn_local_${key}`) !== null) continue;
+        const val = localStorage.getItem(`gn_${cloudKey}_${key}`);
+        if (val !== null) localStorage.setItem(`gn_local_${key}`, val);
+      } catch (_) {}
+    }
+  }
+  // The server-side user is gone, so the Supabase session token is dead.
+  // Purge the provider session keys explicitly: they are not gn_-prefixed,
+  // and a stale token would rehydrate a phantom "connected" account on reload.
+  try {
+    for (const store of [localStorage, sessionStorage]) {
+      Object.keys(store).filter(key => /^sb-.*-auth-token$/.test(key)).forEach(key => store.removeItem(key));
+    }
+  } catch (_) {}
+  // Drop the single-use grant: the account it was redeemed for no longer exists.
+  try { localStorage.removeItem('gn_nodekey_grant'); } catch (_) {}
+  await signOutCloud();
+  clearSession();
+  window.location.reload();
+}
+
+function renderProfile() {
+  ensureProfileHub();
+  try { if (typeof syncCloudOnlyButtons === 'function') syncCloudOnlyButtons(); } catch (_) {}
+  ensureProfileMeasurements();
+  ensureDestructiveDialogs();
+  syncIdentityAvatars();
+  const updateCard = $('gnSystemUpdateCard');
+  if (updateCard) updateCard.hidden = S.get('settings', {}).systemUpdateDismissed === APP_VERSION;
+  const profile = getProfile();
+  setText('profNameTxt', window.CU?.defaultName || profile.name || tx('profile.anonFallback', 'NODE_USER'));
+  setText('profEmail', sessionLabel());
+  setText('profMedTxt', normalizeMedicationId(profile.med) ? `// ${medicationLabel(profile.med).toUpperCase()}` : tx('profile.noMedicationSet', '// NO MEDICATION SET'));
+  const currentWeight = latestWeight()?.weight;
+  const height = profile.htFt ? `${profile.htFt}'${profile.htIn || 0}"` : tx('profile.heightNotEntered', 'Height not entered');
+  const medText = normalizeMedicationId(profile.med) ? `${medicationLabel(profile.med)}${profile.dose ? ` · ${profile.dose}mg` : ''}` : tx('vault.notEntered', 'Not entered');
+  setText('gnProfileMedication', medText);
+  setText('gnMedCardSummary', medText);
+  const summaryWeight = latestWeight()?.weight;
+  setText('gnProfileWeight', summaryWeight != null ? `${Number(summaryWeight).toFixed(1)} lb` : '—');
+  const syncPill = $('gnProfileSync');
+  if (syncPill) syncPill.classList.toggle('is-cloud', !!(typeof state !== 'undefined' && state && state.cloud));
+  setText('gnProfileBody', `${height}${currentWeight ? ` · ${Number(currentWeight).toFixed(1)} lb` : ''}`);
+  setText('gnProfileVersion', APP_VERSION);
+  setText('gnProfileHeroVersion', 'v' + APP_VERSION);
+  setText('gnProfileAccount', state.cloud ? `${state.session?.user?.app_metadata?.provider === 'google' ? tx('profile.signedInWithGoogle', 'Signed in with Google') : tx('vault.cloudConnected', 'Cloud account connected')} · ${state.session?.user?.email || sessionLabel()}` : tx('profile.localDeviceSession', 'Local device session'));
+  setText('gnProfileSync', nodeSyncLabel());
+  hydrateProfileFields(profile);
+  syncCustomPickers($('pageProfile') || document);
+  renderMeasurements();
+  let status = document.querySelector('.gn-cloud-status');
+  const hero = document.getElementById('gnVaultSummary') || $('profAvaWrap')?.closest('[style*="background:#0e0e16"]');
+  if (!status && hero) { status = document.createElement('div'); status.className = 'gn-cloud-status'; hero.parentElement.insertBefore(status, hero.nextSibling); }
+  if (status) status.innerHTML = `<span class="gn-cloud-dot ${state.cloud ? 'cloud' : 'local'}"></span><span>${tx('vault.vaultLabel', 'VAULT')}: ${safeText(nodeSyncLabel())} · ${state.cloud ? tx('vault.cloudConnected', 'Cloud account connected') : tx('vault.cloudLocal', 'Data stays on this device until you connect an account')}</span>`;
+  const badgesCard = $('gnBadgesCard');
+  const profileCards = $('gnVaultProfileCards');
+  if (badgesCard && profileCards && badgesCard.parentElement !== profileCards) profileCards.appendChild(badgesCard);
+  renderDeviceVault();
+  ensurePasskeySection();
+  renderGnHapticsState();
+}
+
+function dismissSystemUpdate() {
+  const settings = S.get('settings', {});
+  settings.systemUpdateDismissed = APP_VERSION;
+  S.set('settings', settings);
+  const card = $('gnSystemUpdateCard');
+  if (card) card.hidden = true;
+}
+
+function openSystemUpdate() {
+  if (window.GN_WHATS_NEW?.history) { window.GN_WHATS_NEW.history(); return; }
+  const card = $('gnSystemUpdateCard');
+  if (!card) return;
+  card.hidden = false;
+  const settings = S.get('settings', {});
+  if (settings.systemUpdateDismissed === APP_VERSION) {
+    delete settings.systemUpdateDismissed;
+    S.set('settings', settings);
+  }
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function exportCSV() {
+  const rows = [['record_type', 'date', 'medication', 'dose_mg', 'location', 'weight_lb', 'side_effects', 'notes', 'archived', 'measurement_type', 'measurement_value', 'measurement_unit']];
+  getAllShots().forEach(record => rows.push(['shot', record.date || '', medicationLabel(record.med), record.dose || '', record.site || '', record.wt || '', (record.se || []).map(sideEffectLabel).join('|'), record.notes || '', record.archived ? 'true' : 'false', '', '', '']));
+  getWeights().forEach(record => rows.push(['weight', record.date || '', '', '', '', record.weight || '', '', record.notes || '', 'false', '', '', '']));
+  S.get('measurements', []).forEach(record => rows.push(['measurement', record.date || '', '', '', '', '', '', '', 'false', record.type || '', record.value || '', record.unit || 'in']));
+  downloadFile('gridnode-records.csv', rows.map(row => row.map(csvCell).join(',')).join('\n'), 'text/csv;charset=utf-8');
+  showToast(tx('vault.csvExportReady', 'CSV export prepared.'));
+}
+
+function csvCell(value) {
+  let text = String(value ?? '');
+  if (/^[=+\-@]/.test(text)) text = `'${text}`;
+  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function exportBackup() {
+  const backup = { app: 'GRID//NODE', version: APP_VERSION, exportedAt: new Date().toISOString(), profile: getProfile(), shots: getAllShots(), weights: getWeights(), measurements: S.get('measurements', []), results: S.get('results', []), notes: S.get('notes', []), symptoms: S.get('symptoms', []), labs: S.get('labs', []), labTests: (typeof getAllLabTests === 'function' ? getAllLabTests() : []), preferences: S.get('preferences', {}), settings: S.get('settings', {}), arsenal: S.get('arsenal', []), researchRecords: S.get('researchRecords', []), devices: S.get('devices', []), inventory: S.get('inventory', []), loadouts: S.get('loadouts', []), eventLedger: S.get('eventLedger', []), selectedLocation: S.get('selectedLocation', ''), importQueue: S.get('importQueue', []), cloudDeletes: S.get('cloudDeletes', []), workspaces: S.get('workspaces', {}) };
+  downloadFile('gridnode-backup.json', JSON.stringify(backup, null, 2), 'application/json');
+  showToast(tx('vault.backupReady', 'VAULT backup prepared.'));
+}
+
+
+/* v0.15.42: dedicated bilingual privacy policy overlay, reachable from the
+ * landing footer and from VAULT → YOUR DATA. */
+window.openMedicalDisclaimer = openMedicalDisclaimer;
+function openPrivacyPolicy() {
+  const overlay = $('gnPrivacyOverlay');
+  if (!overlay) return;
+  overlay.classList.remove('gn-ownership');
+  window.GN_I18N?.applyTo?.(overlay);
+  overlay.classList.add('active');
+  overlay.querySelector('.gn-privacy-close')?.focus();
+}
+function openMedicalDisclaimer() {
+  showToast(tx('auth.medicalDisclaimerText', 'GRID//NODE is a personal tracking tool, not medical advice. Always consult your provider.'), false);
+}
+function closePrivacyPolicy() { $('gnPrivacyOverlay')?.classList.remove('active', 'gn-ownership'); }
+
+/* QA 2026-09-17: Data Ownership is its own focused destination. It reuses
+ * the policy overlay shell but, via the gn-ownership class, shows only the
+ * export/delete-rights sections under a DATA OWNERSHIP title. */
+function openDataOwnership() {
+  const overlay = $('gnPrivacyOverlay');
+  if (!overlay) return;
+  window.GN_I18N?.applyTo?.(overlay);
+  document.querySelector('#gnPrivacyTitle')?.replaceChildren(document.createTextNode(tx('vault.dataOwnershipTitle', 'DATA OWNERSHIP')));
+  overlay.classList.add('active', 'gn-ownership');
+  overlay.querySelector('.gn-privacy-close')?.focus();
+}
+
+/* v0.15.54: Terms of Service overlay. Interim text mirrors the existing
+ * landing TERMS OF USE copy; the full ToS text will be swapped in later. */
+function openTermsOfService() {
+  const overlay = $('gnTermsOverlay');
+  if (!overlay) return;
+  window.GN_I18N?.applyTo?.(overlay);
+  overlay.classList.add('active');
+  overlay.querySelector('.gn-privacy-close')?.focus();
+}
+function closeTermsOfService() { $('gnTermsOverlay')?.classList.remove('active'); }
+;(function(){var m={openDeleteLocalData:openDeleteLocalData,closeDeleteLocalData:closeDeleteLocalData,updateDeleteLocalButton:updateDeleteLocalButton,confirmDeleteLocalData:confirmDeleteLocalData,openDeleteCloudAccount:openDeleteCloudAccount,closeDeleteCloudAccount:closeDeleteCloudAccount,confirmDeleteCloudAccount:confirmDeleteCloudAccount,renderProfile:renderProfile,dismissSystemUpdate:dismissSystemUpdate,openSystemUpdate:openSystemUpdate,exportCSV:exportCSV,exportBackup:exportBackup,openPrivacyPolicy:openPrivacyPolicy,openMedicalDisclaimer:openMedicalDisclaimer,closePrivacyPolicy:closePrivacyPolicy,openDataOwnership:openDataOwnership,openTermsOfService:openTermsOfService,closeTermsOfService:closeTermsOfService};if(window.GNRegisterChunk){window.GNRegisterChunk('vault',m);}else if(window.GNModules){Object.assign(window.GNModules,m);}})();

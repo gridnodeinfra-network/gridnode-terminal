@@ -41,12 +41,18 @@ function bridge() {
     'dismissSystemUpdate', 'openSystemUpdate', 'setResultsView',
     'openPrivacyPolicy', 'closePrivacyPolicy', 'openDataOwnership', 'openTermsOfService', 'closeTermsOfService', 'replayGuidedTour'
   ];
-  names.forEach(name => { window[name] = modules[name]; });
+  /* Code-split (2026-10-12): for names whose module ships as a lazy chunk,
+   * modules[name] is undefined at bridge time. Do not clobber an existing
+   * function (the chunk loader's delegate-after-load stub, or a chunk that
+   * already registered) with undefined. */
+  names.forEach(name => { if (typeof modules[name] !== 'undefined' || typeof window[name] !== 'function') window[name] = modules[name]; });
   window.refreshAll = modules.refreshAll;
   /* ASSAY storage bridge (audit 2026-10-08): window.GNModules was never
    * assigned, so the standalone lab-tests IIFE silently no-oped on save/load.
-   * Expose the lab-test storage helpers here. */
-  window.GNModules = Object.assign(Object.create(null), modules, {
+   * Expose the lab-test storage helpers here. Code-split: assign INTO the
+   * bundle's live registry (window.GNModules === modules) instead of
+   * replacing it, so chunk registrations land in the same object. */
+  window.GNModules = Object.assign(window.GNModules || modules, modules, {
     getLabTests, getAllLabTests, setLabTests
   });
   window.GN_NATIVE?.bridgeReady?.();

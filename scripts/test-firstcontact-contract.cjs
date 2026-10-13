@@ -50,9 +50,25 @@ check('en.json has no onb.* keys', !/"onb\./.test(enJson));
 check('es-419.json has no onb.* keys', !/"onb\./.test(esJson));
 
 // --- New script is wired ------------------------------------------------
-check('index.html loads gridnode-firstcontact.js', indexHtml.includes('gridnode-firstcontact.js'));
+// 2026-10-12 code-split delivery change: gridnode-firstcontact.js is no
+// longer a script tag in index.html and is no longer precached in the sw.js
+// SHELL. It is lazy-loaded by js/gridnode-chunk-loader.js: 17-scripts.html
+// loads the loader (as does the built index.html), the loader manifest maps
+// `firstcontact` to the file, and its deferred post-boot batch awaits
+// GNLoadScript('firstcontact'). The lazy contract is asserted both ways:
+// present in the loader path, absent from the script tags and the SHELL,
+// and the built file still ships in dist/.
+const scripts17 = read('html/partials/17-scripts.html');
+const chunkLoader = read('js/gridnode-chunk-loader.js');
+check('17-scripts.html loads gridnode-chunk-loader.js', scripts17.includes('js/gridnode-chunk-loader.js'));
+check('index.html loads gridnode-chunk-loader.js', indexHtml.includes('js/gridnode-chunk-loader.js'));
+check('loader manifest includes gridnode-firstcontact.js', chunkLoader.includes("firstcontact: 'gridnode-firstcontact.js'"));
+check('loader deferred batch loads firstcontact', chunkLoader.includes("await GNLoadScript('firstcontact')"));
+check('firstcontact is not a script tag anymore', !/<script[^>]*gridnode-firstcontact\.js/.test(indexHtml) && !/<script[^>]*gridnode-firstcontact\.js/.test(scripts17));
 const sw = read('sw.js');
-check('sw.js precaches gridnode-firstcontact.js', sw.includes('js/gridnode-firstcontact.js'));
+const swShell = sw.slice(sw.indexOf('const SHELL = ['), sw.indexOf('];', sw.indexOf('const SHELL = [')));
+check('firstcontact is not in sw.js SHELL precache', swShell.length > 0 && !swShell.includes('gridnode-firstcontact'));
+check('dist ships gridnode-firstcontact.js', fs.existsSync(path.join(ROOT, 'dist/js/gridnode-firstcontact.js')));
 
 // --- Real-save event contract -------------------------------------------
 const modules = require('./read-modules-source.cjs');

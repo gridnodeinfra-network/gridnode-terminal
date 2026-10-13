@@ -259,5 +259,7 @@
       if (document.querySelector('#pageDash .gn-wanda-actions') || document.querySelector('#pageProfile [data-gn-profile-hub]')) schedule();
     }).observe(document.body, { childList: true, subtree: true });
   }
-  document.addEventListener('DOMContentLoaded', boot, { once: true });
+  /* Code-split (2026-10-12): loaded lazily after DOMContentLoaded — boot immediately when the document is already parsed. */
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
+  else boot();
 })();

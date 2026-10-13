@@ -40,11 +40,26 @@ assert.match(
   'setScannerMode must hide the navel keep-out legend on LEGS and ARMS views (CORE-only)'
 );
 
+// 2026-10-12 code-split delivery change: module 04 (scanner) no longer ships
+// in the core bundle; it is emitted as the lazy history chunk (modules 03+04)
+// in js/gridnode-chunk-history.js. Assert the keep-out legend gating there,
+// assert it is gone from the core bundle, and assert the build emits the
+// history chunk from modules 03+04.
 const bundleJs = fs.readFileSync(path.join(root, 'js/gridnode-bundle.js'), 'utf8');
+const historyChunkJs = fs.readFileSync(path.join(root, 'js/gridnode-chunk-history.js'), 'utf8');
 assert.match(
-  bundleJs,
+  historyChunkJs,
   /legend\.hidden = moduleState\.scannerMode !== 'core'/,
-  'served bundle must carry the CORE-only keep-out legend gating'
+  'served history chunk must carry the CORE-only keep-out legend gating'
+);
+assert.ok(
+  !/legend\.hidden = moduleState\.scannerMode !== 'core'/.test(bundleJs),
+  'core bundle must no longer carry the scanner keep-out legend gating (it ships in the history chunk)'
+);
+const buildBundle = fs.readFileSync(path.join(root, 'scripts/build-bundle.sh'), 'utf8');
+assert.ok(
+  buildBundle.includes('"history": ["03-shots-history.js", "04-scanner.js"]'),
+  'build must emit the history chunk from modules 03+04'
 );
 
 assert.ok(

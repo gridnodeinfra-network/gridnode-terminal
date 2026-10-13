@@ -48,6 +48,10 @@ const misc11 = read('js/modules/11-misc.js');
 const fc = read('js/gridnode-firstcontact.js');
 const scanner04 = read('js/modules/04-scanner.js');
 const bundle = read('js/gridnode-bundle.js');
+// 2026-10-12 code-split delivery change: module 05 (log-shot) no longer ships
+// in the core bundle; it is emitted as the lazy logshot chunk.
+const chunkLogshot = read('js/gridnode-chunk-logshot.js');
+const buildBundle = read('scripts/build-bundle.sh');
 const en = JSON.parse(read('i18n/en.json'));
 const es = JSON.parse(read('i18n/es-419.json'));
 
@@ -90,7 +94,15 @@ check('summary spans', logshot06.includes('id="gnShotSummaryMed"') && logshot06.
 check('fire button keeps saveShot hook', logshot06.includes('gn-shot-fire') && logshot06.includes('onclick="saveShot()"'));
 check('gear step header', logshot06.includes('data-gn-shot-step="gear"'));
 check('summary watcher in module', logshot05.includes('installShotSummaryWatcher') && logshot05.includes('gnRenderShotSummary'));
-check('summary watcher in bundle', bundle.includes('gnShotSummaryMed'));
+// 2026-10-12 code-split delivery change: the summary watcher (module 05)
+// moved out of the core bundle into js/gridnode-chunk-logshot.js. Assert it
+// there (same symbols the old bundle assertion guarded, plus the watcher
+// installer/renderer), assert it is gone from the core bundle, and assert
+// the build emits both lazy chunks from their source modules.
+check('summary watcher in logshot chunk', chunkLogshot.includes('gnShotSummaryMed') && chunkLogshot.includes('installShotSummaryWatcher') && chunkLogshot.includes('gnRenderShotSummary'));
+check('summary watcher not in core bundle', !bundle.includes('gnShotSummaryMed') && !bundle.includes('installShotSummaryWatcher'));
+check('build emits logshot chunk from module 05', buildBundle.includes('"logshot": ["05-log-shot.js"]'));
+check('build emits progress chunk from module 06', buildBundle.includes('"progress": ["06-results.js"]'));
 check('dose-pill hooks intact', logshot06.includes('id="dosePills"') && logshot06.includes('id="sDose"'));
 check('zone picker hooks intact', logshot06.includes('id="modalZonePicker"') && logshot06.includes('id="modalZoneModes"') && logshot06.includes('id="modalSelectedLocation"'));
 check('i18n stepGear en+es', en['shot.stepGear'] === '04 // GEAR' && es['shot.stepGear'] === '04 // EQUIPO');

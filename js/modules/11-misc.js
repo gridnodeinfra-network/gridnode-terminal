@@ -198,13 +198,19 @@ export function initModules() {
      (js/modules/05-log-shot.js), wired inline on the button. The old
      initModules one-liner double-toggled with it, so it is retired. */
   setTodayDefaults();
-  renderScanner();
+  /* Code-split: the scanner lives in the history chunk. This was the only
+   * boot-time scanner render and #pageLog is hidden at boot, so deferring
+   * it to the first Log navigation (showPage hook) loses nothing. */
+  if (typeof renderScanner === 'function') renderScanner();
 }
 
 
 /* v0.15.19 - install pointer handlers on first user interaction with scanner */
-document.addEventListener("DOMContentLoaded", () => { installScannerPointerHandlers(); installScannerDebugMode(); });
-window.addEventListener("load", () => { installScannerPointerHandlers(); installScannerDebugMode(); });
+/* Code-split: the installers live in the history chunk (04), which may not
+ * be loaded at DOMContentLoaded/load. Guarded here; the chunk loader calls
+ * them again when the history chunk registers. */
+document.addEventListener("DOMContentLoaded", () => { if (typeof installScannerPointerHandlers === 'function') installScannerPointerHandlers(); if (typeof installScannerDebugMode === 'function') installScannerDebugMode(); });
+window.addEventListener("load", () => { if (typeof installScannerPointerHandlers === 'function') installScannerPointerHandlers(); if (typeof installScannerDebugMode === 'function') installScannerDebugMode(); });
 
 /* ── S2: TRUST GRAMMAR helpers ──────────────────────────────────────────
    Semantics are structural (solid/dashed/outlined), never color-only.

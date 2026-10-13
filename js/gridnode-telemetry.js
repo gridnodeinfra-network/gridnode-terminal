@@ -448,5 +448,7 @@
     window.GN_TELEMETRY = Object.freeze({ refresh: scheduleRender, snapshot: sourceData });
   }
 
-  document.addEventListener('DOMContentLoaded', boot, { once: true });
+  /* Code-split (2026-10-12): loaded lazily after DOMContentLoaded — boot immediately when the document is already parsed. */
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
+  else boot();
 })();

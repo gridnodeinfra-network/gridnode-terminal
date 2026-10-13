@@ -35,6 +35,10 @@
 @keyframes gn-ux-shimmer {
   to { transform: translateX(100%); }
 }
+/* Code-split chunk loading host (01-shell showPage hook): spacing only;
+   the visuals are the .gn-skeleton / .gn-ux-sync-error patterns above. */
+.gn-chunk-loading { padding: var(--sp-2) 0; }
+.gn-chunk-loading .gn-ux-sync-error button { min-height: var(--ctl-h); }
 .gn-skeleton-line { height: 12px; margin-bottom: var(--sp-2); }
 .gn-skeleton-line.short { width: 45%; }
 .gn-skeleton-line.mid { width: 70%; }

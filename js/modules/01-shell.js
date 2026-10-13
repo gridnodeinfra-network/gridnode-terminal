@@ -27,16 +27,29 @@ export function showPage(name, navElement) {
     nav.classList.add('active');
     nav.setAttribute('aria-current', 'page');
   }
-  if (name === 'Log') renderShots();
-  if (name === 'Results') renderResults();
-  if (name === 'Lab') renderLab();
-  if (name === 'Profile') renderProfile();
+  /* Code-split (2026-10-12): page renderers live in lazy chunks. When the
+   * chunk is registered, render synchronously exactly as before. When it is
+   * not, show the 11-ux-states loading pattern, load via GNEnsurePage, and
+   * render on arrival only if this page is still the active one. */
+  const rendererName = { Log: 'renderShots', Results: 'renderResults', Lab: 'renderLab', Profile: 'renderProfile' }[name];
+  if (rendererName) {
+    const renderer = window.GNModules && window.GNModules[rendererName];
+    if (typeof renderer === 'function') renderer();
+    else if (typeof window.GNEnsurePage === 'function') {
+      showChunkLoading(page);
+      window.GNEnsurePage(name).then(() => {
+        hideChunkLoading(page);
+        const fn = window.GNModules && window.GNModules[rendererName];
+        if (page.classList.contains('active') && typeof fn === 'function') fn();
+      }).catch(() => showChunkError(page, name));
+    }
+  }
   /* MOBILE-FIRST perf: scroll after render to avoid double full-document layout */
   $('scrollBody')?.scrollTo({ top: 0, behavior: 'auto' });
   document.dispatchEvent(new CustomEvent('gn:pagechange', { detail: { name, previousPage } }));
 }
 
-document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.querySelector('.page.active')?.id === 'pageProfile') { closeProfileHub(); } });
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.querySelector('.page.active')?.id === 'pageProfile') { if (typeof window.closeProfileHub === 'function') window.closeProfileHub(); } });
 document.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target && typeof e.target.matches === 'function' && e.target.matches('.cp-group-minimized')) { e.preventDefault(); e.target.click(); } });
 /* TRACK 3 (2026-10-11): universal modal dismiss. This Escape handler is the
  * single registry for every modal/overlay surface — checked topmost-first so a
@@ -59,7 +72,7 @@ document.addEventListener('keydown', function (e) {
   var nativeLayer = e.target && e.target.closest ? e.target.closest('.overlay, .archive-confirm-overlay, .future-confirm-overlay, .gn-date-overlay, .csv-import-overlay, .gn-import-overlay, .gn-whatsnew-overlay, .gn-peptide-overlay, .gn-onb-overlay, .gn-lab-tool-overlay') : null;
   if (nativeLayer) return;
   var disc = document.getElementById('shotDiscardConfirmOv');
-  if (disc && (disc.classList.contains('active') || getComputedStyle(disc).display !== 'none')) { cancelShotDiscard(); return; }
+  if (disc && (disc.classList.contains('active') || getComputedStyle(disc).display !== 'none')) { if (typeof window.cancelShotDiscard === 'function') window.cancelShotDiscard(); return; }
   var chain = [
     ['#archiveConfirmOv', 'cancelArchiveShot'],
     ['#permanentDeleteConfirmOv', 'cancelPermanentDeleteShot'],
@@ -111,13 +124,52 @@ document.addEventListener('click', function (e) {
 });
 
 export function refreshAll() {
-  renderProfile();
+  /* Code-split: lazy page renderers are skipped until their chunk loads;
+   * each page renders fresh on first navigation via the showPage hook. */
+  if (typeof renderProfile === 'function') renderProfile();
   renderDashboard();
-  renderShots();
-  renderResults();
-  renderScanner();
-  renderLab();
+  if (typeof renderShots === 'function') renderShots();
+  if (typeof renderResults === 'function') renderResults();
+  if (typeof renderScanner === 'function') renderScanner();
+  if (typeof renderLab === 'function') renderLab();
   renderCalendar();
+}
+
+/* Chunk loading state (css/native/11-ux-states.css patterns): skeleton card
+ * inside a .gn-chunk-loading host + .gn-ux-syncing on the page; the error
+ * state reuses .gn-ux-sync-error with a RETRY that re-runs the page load.
+ * Page renderers write to their own containers and never touch this host;
+ * it is removed before the renderer runs. */
+function showChunkLoading(page) {
+  hideChunkLoading(page);
+  page.classList.add('gn-ux-syncing');
+  const host = document.createElement('div');
+  host.className = 'gn-chunk-loading';
+  host.setAttribute('role', 'status');
+  host.innerHTML = '<div class="gn-skeleton-card"><div class="gn-skeleton gn-skeleton-line mid"></div><div class="gn-skeleton gn-skeleton-line"></div><div class="gn-skeleton gn-skeleton-line short"></div></div>';
+  page.prepend(host);
+}
+function hideChunkLoading(page) {
+  page.classList.remove('gn-ux-syncing');
+  page.querySelectorAll('.gn-chunk-loading').forEach(el => el.remove());
+}
+function showChunkError(page, name) {
+  page.classList.remove('gn-ux-syncing');
+  let host = page.querySelector('.gn-chunk-loading');
+  if (!host) { host = document.createElement('div'); host.className = 'gn-chunk-loading'; page.prepend(host); }
+  host.innerHTML = '';
+  const box = document.createElement('div');
+  box.className = 'gn-ux-sync-error';
+  const title = document.createElement('b');
+  title.textContent = tx('runtime.chunkLoadFailedTitle', 'THIS SECTION COULD NOT LOAD');
+  const copy = document.createElement('span');
+  copy.textContent = tx('runtime.chunkLoadFailed', 'Check your connection and try again. Your data is safe on this device.');
+  const retry = document.createElement('button');
+  retry.type = 'button';
+  retry.textContent = tx('runtime.retry', 'RETRY');
+  retry.addEventListener('click', () => { if (typeof window.showPage === 'function') window.showPage(name); });
+  box.append(title, copy, retry);
+  host.append(box);
 }
 
 export function loadApp() {

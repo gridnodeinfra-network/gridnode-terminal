@@ -1,7 +1,11 @@
 export function showLabSeg(segment, button) {
   qa('[data-labseg-block]').forEach(block => block.style.display = block.dataset.labsegBlock === segment ? 'block' : 'none');
   qa('#labSegTabs .time-tab').forEach(item => item.classList.toggle('active', item === button || item.dataset.labseg === segment));
-  renderLab();
+  /* Code-split: renderLab lives in the lab chunk; the segment tabs only
+   * exist on the LAB page (loaded via the showPage hook), but never throw
+   * if a wrapped caller (lab-tests assay wrap) fires early. */
+  if (typeof renderLab === 'function') renderLab();
+  else if (typeof window.GNEnsurePage === 'function') window.GNEnsurePage('Lab');
 }
 export function showYouSeg(segment, button) {
   qa('[data-youseg-block]').forEach(block => block.style.display = block.dataset.yousegBlock === segment ? 'block' : 'none');

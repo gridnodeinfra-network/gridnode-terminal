@@ -29,6 +29,12 @@ const logshot05 = read('js/modules/05-log-shot.js');
 const dash02 = read('js/modules/02-dashboard.js');
 const appJs = read('js/gridnode-app.js');
 const bundle = read('js/gridnode-bundle.js');
+// 2026-10-12 code-split delivery change: module 05 (log-shot) no longer ships
+// in the core bundle; it is emitted as the lazy logshot chunk, loaded on
+// demand by js/gridnode-chunk-loader.js.
+const chunkLogshot = read('js/gridnode-chunk-logshot.js');
+const chunkLoader = read('js/gridnode-chunk-loader.js');
+const buildBundle = read('scripts/build-bundle.sh');
 const en = JSON.parse(read('i18n/en.json'));
 const es = JSON.parse(read('i18n/es-419.json'));
 
@@ -65,8 +71,27 @@ check('renderFirstShotMission handles sync-failed', dash02.includes("mode === 's
 check('retryCloudHydration exported', /export async function retryCloudHydration/.test(dash02));
 check('retry button wired', dash02.includes('onclick="retryCloudHydration()"'));
 
-// 6. Bundle carries the new code
-for (const fn of ['openQuickConfirm', 'confirmQuickShot', 'quickConfirmDetails', 'renderFirstShotMission', 'retryCloudHydration']) {
+// 6. Delivery carries the new code
+// 2026-10-12 code-split delivery change: the quick-confirm functions
+// (module 05) moved out of the core bundle into js/gridnode-chunk-logshot.js.
+// Assert them there as real function declarations, assert the chunk registers
+// them with GNRegisterChunk (so GNModules consumers can reach them), assert
+// they are gone from the core bundle, and assert the delivery wiring: the
+// build emits the logshot chunk from module 05 and the chunk loader has a
+// logshot manifest entry. The loader does NOT stub the quick-confirm names
+// directly (verified in the loader source); it stubs the logshot entry
+// points that gate them (openLogModal / handleShotFab / saveShot), which
+// load the logshot composite before the confirm UI can be reached, so
+// assert those stubs instead. The core-bundle functions stay in the bundle.
+for (const fn of ['openQuickConfirm', 'confirmQuickShot', 'quickConfirmDetails']) {
+  check('logshot chunk contains ' + fn, chunkLogshot.includes('function ' + fn));
+  check('logshot chunk registers ' + fn, chunkLogshot.includes(fn + ':' + fn) && chunkLogshot.includes("GNRegisterChunk('logshot'"));
+  check('core bundle no longer contains ' + fn, !bundle.includes('function ' + fn));
+}
+check('build emits logshot chunk from module 05', buildBundle.includes('"logshot": ["05-log-shot.js"]'));
+check('loader manifest has logshot entry', chunkLoader.includes("logshot: 'gridnode-chunk-logshot.js'"));
+check('loader stubs logshot entry points', chunkLoader.includes("logshot: ['openLogModal', 'handleShotFab', 'closeLog', 'saveShot'"));
+for (const fn of ['renderFirstShotMission', 'retryCloudHydration']) {
   check('bundle contains ' + fn, bundle.includes('function ' + fn));
 }
 

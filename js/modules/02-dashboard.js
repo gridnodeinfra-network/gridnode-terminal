@@ -194,7 +194,14 @@ function renderDashboard() {
   renderDeltaCards(shots, weights, lastShot, lastWeight);
   try { initDrilldown(); } catch (_) {}
   const phase = renderPhase(lastShot, shots);
-  renderProtocolCurve(shots, phase);
+  /* Code-split: renderProtocolCurve lives in the progress chunk (06).
+   * Extraction was rejected: its closure (renderProtocolCurve +
+   * drawCanvasChart) is small but drawCanvasChart is referenced by
+   * source-grep contract tests and order.json surgery risks more than it
+   * saves. Guard + the loader's deferred progress load (LAST in the batch)
+   * paints the real curve seconds after first paint; the chunk register
+   * hook re-renders TODAY when the progress chunk lands. */
+  if (typeof renderProtocolCurve === 'function') renderProtocolCurve(shots, phase);
   refreshNodeHeader({ lastShot, next, phase, currentWeight: lastWeight?.weight });
   renderWandaDashboard({ shots, weights, lastShot, lastWeight, profile, next, phase, weightMetrics, goalGap });
 }
