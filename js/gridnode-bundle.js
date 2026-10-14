@@ -1559,12 +1559,39 @@ function showToast(message, isError = false, undoCallback = null, detail = '') {
     const btn = toast.querySelector('.gn-toast-undo');
     if (btn) btn.addEventListener('click', doUndo);
     toast._timer = setTimeout(() => toast.classList.remove('active'), 5000);
+    installToastYield();
     return;
   }
   toast.innerHTML = `<span class="gn-toast-message">${safeText(`${prefix}${displayMessage}`)}</span>`;
   toast.className = `toast active${isError ? ' err' : ''}`;
   clearTimeout(toast._timer);
   toast._timer = setTimeout(() => toast.classList.remove('active'), 2000);
+  installToastYield();
+}
+
+/* CLARITY PASS (QA toast-layering attribution, 2026-10-14): the shot-save
+   toast (z-400, bottom-anchored) physically covered the weight modal's
+   SAVE button (sheet z-200) for its full 5s life — it delayed, never
+   trapped, but a toast must never cover a modal's primary action. Yield
+   discipline, same family as the onboarding guide's non-overlap rule:
+   (1) the toast body is pointer-events:none (CSS) so it can never block
+   a tap — only its own buttons stay live; (2) while any modal overlay
+   is active, syncToastYield docks the toast to the top of the screen,
+   clear of the bottom sheets and their action bars. */
+let gnToastYieldObserver = null;
+function syncToastYield() {
+  const toast = $('toastEl');
+  if (!toast) return;
+  const modalOpen = !!document.querySelector('.overlay.active, .gn-import-overlay.active, .gn-delete-overlay.active, .csv-import-overlay.active, .archive-confirm-overlay.active, .future-confirm-overlay.active, .gn-date-overlay.active, .gn-legal-modal.active');
+  toast.classList.toggle('gn-toast-yield', modalOpen);
+}
+function installToastYield() {
+  if (gnToastYieldObserver) { syncToastYield(); return; }
+  try {
+    gnToastYieldObserver = new MutationObserver(() => syncToastYield());
+    gnToastYieldObserver.observe(document.body, { attributes: true, attributeFilter: ['class'], subtree: true });
+  } catch (_) {}
+  syncToastYield();
 }
 
 function undoShot(id) {

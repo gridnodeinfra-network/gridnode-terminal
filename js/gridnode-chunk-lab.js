@@ -312,12 +312,32 @@ function renderInventory() {
   list.innerHTML = records.length ? `${visible.map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(inventoryTypeLabel(record.type))} · ${safeText(record.quantity ?? '—')} ${safeText(record.units || '')} · ${safeText(record.location || tx('lab.locationNotEntered', 'LOCATION NOT ENTERED'))}</small></div><span class="gn-record-state">${safeText(record.status === 'ARCHIVED' ? tx('research.archivedState', 'ARCHIVED') : tx('lab.active', 'ACTIVE'))}</span><div style="display:flex;gap:4px"><button type="button" class="gn-record-delete" data-inventory-edit="${safeText(record.id)}" aria-label="Edit inventory item" data-i18n-aria-label="lab.editInventoryAria">✎</button><button type="button" class="gn-record-delete" data-inventory-archive="${safeText(record.id)}" aria-label="Archive inventory item" data-i18n-aria-label="lab.archiveInventoryAria">×</button></div></article>`).join('')}${archived.length ? `<div class="gn-ledger-copy" style="margin-top:10px">${tx('research.archivedHeading', 'ARCHIVED RECORDS · Restore the record before editing.')}</div>${archived.map(record => `<article class="gn-record-row"><div><b>${safeText(record.name)}</b><small>${safeText(inventoryTypeLabel(record.type))} · ${tx('research.archivedPrefix', 'Archived')} ${safeText(formatDate(record.modifiedAt || record.createdAt))}</small></div><span class="gn-record-state">${tx('research.archivedState', 'ARCHIVED')}</span><button type="button" class="gn-record-delete gn-restore-edit" data-inventory-restore="${safeText(record.id)}" aria-label="Restore inventory item to edit" data-i18n-aria-label="lab.restoreInventoryAria">${tx('research.restoreToEdit', 'RESTORE TO EDIT')}</button></article>`).join('')}` : ''}` : `<div class="gn-empty-state"><span class="gn-icon gn-icon-md gn-accent-c"><svg><use href="#gn-archive-core"></use></svg></span><b>${tx('lab.inventoryReady', 'SAVED INVENTORY READY')}</b><span>${tx('lab.inventoryEmptyPlain', 'Nothing saved yet. Add your first supply item with the form above.')}</span><button type="button" class="btn-full btn-secondary empty-cta" onclick="document.getElementById('gnInventoryForm')?.scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('gnInventoryName')?.focus()">${tx('lab.addFirstItem', 'ADD YOUR FIRST ITEM')}</button></div>`;
 }
 
+/* QA chunk-boundary audit (2026-10-14, same family as the saveWt fix in
+   06-results): this chunk called shotFieldError, which lives in the logshot
+   chunk (05-log-shot.js) — no stub, no composite pulls logshot into lab.
+   Saving inventory/device records with an invalid name as a first LAB
+   action threw ReferenceError and the field error never showed. Local
+   fallback keeps this chunk self-contained. */
+function labFieldError(anchor, id, message) {
+  if (typeof shotFieldError === 'function') { shotFieldError(anchor, id, message); return; }
+  if (!anchor) return;
+  let el = document.getElementById(id);
+  if (!el) {
+    el = document.createElement('div');
+    el.id = id;
+    el.className = 'gn-field-error';
+    el.setAttribute('role', 'alert');
+    anchor.insertAdjacentElement('afterend', el);
+  }
+  el.textContent = message;
+}
+
 function saveInventoryRecord() {
   const name = $('gnInventoryName')?.value?.trim();
-  if (!name) { const nameInput = $('gnInventoryName'); nameInput?.setAttribute('aria-invalid', 'true'); shotFieldError(nameInput, 'gnInventoryNameError', tx('inventory.addNamePlain', 'Give the item a name so you can find it later.')); nameInput?.focus(); actionFeedback(tx('inventory.notSaved', 'INVENTORY NOT SAVED'), tx('inventory.addName', 'ADD AN ITEM NAME BEFORE COMMITTING'), true); return; }
+  if (!name) { const nameInput = $('gnInventoryName'); nameInput?.setAttribute('aria-invalid', 'true'); labFieldError(nameInput, 'gnInventoryNameError', tx('inventory.addNamePlain', 'Give the item a name so you can find it later.')); nameInput?.focus(); actionFeedback(tx('inventory.notSaved', 'INVENTORY NOT SAVED'), tx('inventory.addName', 'ADD AN ITEM NAME BEFORE COMMITTING'), true); return; }
   $('gnInventoryNameError')?.remove(); $('gnInventoryName')?.removeAttribute('aria-invalid');
   const qtyRaw = $('gnInventoryQuantity')?.value;
-  if (qtyRaw && Number(qtyRaw) < 0) { const qtyInput = $('gnInventoryQuantity'); qtyInput?.setAttribute('aria-invalid', 'true'); shotFieldError(qtyInput, 'gnInventoryQtyError', tx('inventory.qtyPlain', 'Quantity cannot be negative. Use 0 or more.')); qtyInput?.focus(); actionFeedback(tx('inventory.notSaved', 'INVENTORY NOT SAVED'), tx('inventory.qtyPlain', 'Quantity cannot be negative. Use 0 or more.'), true); return; }
+  if (qtyRaw && Number(qtyRaw) < 0) { const qtyInput = $('gnInventoryQuantity'); qtyInput?.setAttribute('aria-invalid', 'true'); labFieldError(qtyInput, 'gnInventoryQtyError', tx('inventory.qtyPlain', 'Quantity cannot be negative. Use 0 or more.')); qtyInput?.focus(); actionFeedback(tx('inventory.notSaved', 'INVENTORY NOT SAVED'), tx('inventory.qtyPlain', 'Quantity cannot be negative. Use 0 or more.'), true); return; }
   $('gnInventoryQtyError')?.remove(); $('gnInventoryQuantity')?.removeAttribute('aria-invalid');
   const records = S.get('inventory', []);
   const now = new Date().toISOString();
@@ -622,7 +642,7 @@ function pulseGnCapture(saveButton) {
 
 function saveDeviceRecord() {
   const name = $('gnDeviceName')?.value?.trim();
-  if (!name) { const nameInput = $('gnDeviceName'); nameInput?.setAttribute('aria-invalid', 'true'); shotFieldError(nameInput, 'gnDeviceNameError', tx('device.addNamePlain', 'Give the device a name so you can tell it apart.')); nameInput?.focus(); actionFeedback(tx('device.notRegistered', 'DEVICE NOT REGISTERED'), tx('device.addName', 'ADD A DEVICE NAME BEFORE COMMITTING'), true); return; }
+  if (!name) { const nameInput = $('gnDeviceName'); nameInput?.setAttribute('aria-invalid', 'true'); labFieldError(nameInput, 'gnDeviceNameError', tx('device.addNamePlain', 'Give the device a name so you can tell it apart.')); nameInput?.focus(); actionFeedback(tx('device.notRegistered', 'DEVICE NOT REGISTERED'), tx('device.addName', 'ADD A DEVICE NAME BEFORE COMMITTING'), true); return; }
   $('gnDeviceNameError')?.remove(); $('gnDeviceName')?.removeAttribute('aria-invalid');
   const devices = S.get('devices', []), now = new Date().toISOString(), id = moduleState.deviceEditId || createId('device'), existing = devices.find(item => item.id === id);
   const device = { ...(existing || {}), id, name, type: normalizeDeviceType($('gnDeviceType')?.value), status: $('gnDeviceStatus')?.value || 'NEEDS CHECKING', notes: $('gnDeviceNotes')?.value?.trim() || '', qrIdentity: existing?.qrIdentity || `GN-${Math.random().toString(36).slice(2, 10).toUpperCase()}`, source: existing?.source || 'manual', state: existing?.state || 'confirmed', archived: existing?.archived || false, createdAt: existing?.createdAt || now, modifiedAt: now };

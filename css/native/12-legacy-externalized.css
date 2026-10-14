@@ -655,6 +655,16 @@ html[data-theme="light"] .ring-pct{color:var(--brand-cyan)}
 .toast{position:fixed;bottom:calc(84px + var(--safe-bottom));left:14px;right:14px;z-index:400;background:var(--panel2);border:1px solid var(--green);border-left:3px solid var(--green);padding:13px 15px;font-family:var(--font-b);font-size:1rem;color:var(--green);box-shadow:0 4px 20px rgba(0,255,136,0.12);display:none;animation:slideUp 0.3s ease;border-radius:var(--r)}
 .toast.active{display:block}
 .toast.err{border-color:var(--red);color:var(--red)}
+/* CLARITY PASS (QA toast layering, 2026-10-14): the toast must never cover
+   a modal's primary action. The body never intercepts taps (its buttons
+   stay live), and while any modal overlay is active the toast docks to
+   the top of the screen (JS toggles .gn-toast-yield from 00-shared.js),
+   slimmed to one row, clear of the bottom sheets and their action bars.
+   !important is required: app.js injects competing .toast position rules. */
+.toast{pointer-events:none !important}
+.toast button{pointer-events:auto !important}
+.toast.gn-toast-yield{top:calc(var(--safe-top, 0px) + 8px) !important;bottom:auto !important;padding:7px 11px}
+.toast.gn-toast-yield .gn-toast-detail{display:none}
 
 /* FLASH */
 .flash{position:fixed;inset:0;z-index:500;pointer-events:none;opacity:0;background:rgba(255,59,59,0.12);transition:opacity 0.1s}

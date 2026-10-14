@@ -240,6 +240,11 @@
   installStub('deleteResearchRecord', 'lab');
   installStub('restoreArchivedShotToEdit', 'logshot');
   installStub('researchEnterCustomMode', 'logshot');
+  /* QA chunk-boundary audit (2026-10-14): 08-lab's research template calls
+     researchBackToLibrary() from an inline onclick; it lives in 05 and had
+     no stub, so the Back button was dead whenever the logshot chunk had
+     not loaded yet. Same family as the three names above. */
+  installStub('researchBackToLibrary', 'logshot');
   Object.keys(STUB_GROUPS).forEach(function (group) {
     STUB_GROUPS[group].forEach(function (name) { installStub(name, group); });
   });
