@@ -3313,6 +3313,8 @@ html[data-theme="light"] .gn-import-panel { box-shadow: var(--elev-3) !important
    then rests — a signal catching light, not a marquee. */
 .gn-runtime-banner[data-kind="update"]::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(100deg, transparent 42%, rgba(127,245,255,.13) 50%, transparent 58%); transform: translateX(-130%); animation: gnTxSweep 5.4s ease-in-out infinite; }
 @keyframes gnTxSweep { 0% { transform: translateX(-130%); } 32% { transform: translateX(130%); } 100% { transform: translateX(130%); } }
+.gn-runtime-rel { opacity: .55; }
+@media (max-width: 430px) { .gn-runtime-banner[data-kind="update"] .gn-runtime-rel { display: none; } }
 .gn-runtime-banner.gn-runtime-tappable { cursor: pointer; }
 .gn-runtime-banner.gn-runtime-tappable:hover { filter: brightness(1.14); }
 .gn-runtime-banner.gn-runtime-tappable:active { filter: brightness(1.24); }

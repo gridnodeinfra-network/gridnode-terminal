@@ -629,7 +629,22 @@
             if (rel && sessionStorage.getItem('gn_tx_deferred_release') === rel[1]) return;
           } catch (_) {}
           showStatus('update', copy('NEW TRANSMISSION', 'NUEVA TRANSMISIÓN') + releaseTag, { label: copy('UPDATE', 'ACTUALIZAR'), run: () => this.apply() });
-          if (rel) { try { runtimeBanner().dataset.release = rel[1]; } catch (_) {} }
+          if (rel) {
+            try {
+              const banner = runtimeBanner();
+              banner.dataset.release = rel[1];
+              /* The release tag rides in its own dimmable span: on narrow
+                 phones it drops away entirely instead of ellipsizing into
+                 a severed fragment — the full stamp is printed in the
+                 transmission the tap opens. */
+              const copyEl = banner.querySelector('.gn-runtime-copy');
+              const relSpan = document.createElement('span');
+              relSpan.className = 'gn-runtime-rel';
+              relSpan.textContent = ' · ' + rel[1];
+              copyEl.textContent = copy('NEW TRANSMISSION', 'NUEVA TRANSMISIÓN');
+              copyEl.appendChild(relSpan);
+            } catch (_) {}
+          }
         };
         if (registration.waiting) ready(registration.waiting);
         registration.addEventListener('updatefound', () => {
