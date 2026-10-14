@@ -3,7 +3,7 @@
  */
 
 import {
-  APP_VERSION, GOOGLE_OAUTH_CLIENT_ID, CLOUD_CONFIG, state, SESSION_KEY, LOCAL_CLOUD_OWNER_KEY, LEGACY_ACCOUNT_KEYS, WORKSPACE_KEYS, jsonParse, notify, subscribe, safeText, createId, accountStorageKey, legacyStorageKeys, STORAGE_TRANSACTION_SUFFIX, transactionStorageKey, readStorageTransaction, recoverPendingStorageTransaction, logicalStorageValue, S, normalizeLegacyText, normalizeShotRecord, getProfile, getProfileForEvidence, getShots, getAllShots, getWeights, getLabTests, getAllLabTests, setLabTests, readAccountValue, captureWorkspace, workspaceHasData, localWorkspaceMigrationAllowed, markLocalWorkspaceMigrated, restoreWorkspace, localSession, restoreLocalSession, activateSession, clearSession, withTimeout, cloudLoadPromise, cloudClientPromise, loadCloudLibrary, getCloudClient, getCloudSession, signInCloud, signUpCloud, resetPasswordCloud, updateCloudPassword, isCloudProviderEnabled, signInWithGoogle, signInWithGoogleIdToken, signOutCloud, sendSignInCode, verifySignInCode, cloudShotPayload, cloudWeightPayload, syncShot, syncWeight, syncProfile, workspacePayload, syncWorkspace, flushCloudDeletes, deleteCloudShot, hydrateCloudData, mergeRecords, mergeJsonRecords, syncPassFailed, syncInFlight, syncAllCloudData, queueCloudSync, enqueueSync, sessionLabel, deleteCloudAccount, migrateLegacyLocalData, repairStorageShapes, parseLocalDate, formatDate, formatDateTime, normalizeDateInput, todayISO, formatEditableDate, parseEditableDate, setHumanDateInput, readHumanDateInput, downloadFile
+  APP_VERSION, GOOGLE_OAUTH_CLIENT_ID, CLOUD_CONFIG, state, SESSION_KEY, LOCAL_CLOUD_OWNER_KEY, LEGACY_ACCOUNT_KEYS, WORKSPACE_KEYS, jsonParse, notify, subscribe, safeText, createId, accountStorageKey, legacyStorageKeys, STORAGE_TRANSACTION_SUFFIX, transactionStorageKey, readStorageTransaction, recoverPendingStorageTransaction, logicalStorageValue, S, normalizeLegacyText, normalizeShotRecord, getProfile, getProfileForEvidence, getShots, getAllShots, getWeights, getLabTests, getAllLabTests, setLabTests, readAccountValue, captureWorkspace, workspaceHasData, localWorkspaceMigrationAllowed, markLocalWorkspaceMigrated, restoreWorkspace, localSession, restoreLocalSession, activateSession, clearSession, withTimeout, cloudLoadPromise, cloudClientPromise, loadCloudLibrary, getCloudClient, getCloudSession, signInCloud, signUpCloud, resetPasswordCloud, updateCloudPassword, isCloudProviderEnabled, signInWithGoogle, signInWithGoogleIdToken, signOutCloud, sendSignInCode, verifySignInCode, cloudShotPayload, cloudWeightPayload, syncShot, syncWeight, syncProfile, workspacePayload, syncWorkspace, flushCloudDeletes, deleteCloudShot, hydrateCloudData, mergeRecords, mergeJsonRecords, syncPassFailed, syncInFlight, syncAllCloudData, queueCloudSync, enqueueSync, sessionStamp, sessionStampIntact, sessionLabel, deleteCloudAccount, migrateLegacyLocalData, repairStorageShapes, parseLocalDate, formatDate, formatDateTime, normalizeDateInput, todayISO, formatEditableDate, parseEditableDate, setHumanDateInput, readHumanDateInput, downloadFile
 } from './gridnode-core.js';
 import * as modules from './gridnode-modules.js';
 
@@ -65,7 +65,7 @@ function bridge() {
    * bundle's live registry (window.GNModules === modules) instead of
    * replacing it, so chunk registrations land in the same object. */
   window.GNModules = Object.assign(window.GNModules || modules, modules, {
-    getLabTests, getAllLabTests, setLabTests
+    getLabTests, getAllLabTests, setLabTests, queueCloudSync
   });
   window.GN_NATIVE?.bridgeReady?.();
 }
@@ -1473,19 +1473,32 @@ async function completeCloudSession(session) {
   const mayMigrateLocal = state.accountKey === 'local' && localWorkspaceMigrationAllowed(targetUserId);
   const localWorkspace = mayMigrateLocal ? captureWorkspace('local') : null;
   activateSession(session, true);
+  /* Session-generation guard (audit 2026-10-14, defect 3): if this login
+   * was superseded while hydration was in flight (sign-out, account
+   * switch — including back into the SAME account), this continuation
+   * must not set readiness, migrate, or sync for the new session. */
+  const sessionGen = sessionStamp();
   const accountWorkspace = captureWorkspace(state.accountKey);
   showApp();
   // S1: honest empty states. Track hydration so the dashboard can tell
   // "still syncing" / "sync failed" apart from "genuinely no data".
   state.cloudHydration = 'pending';
   let hydration = await hydrateCloudData();
+  if (!sessionStampIntact(sessionGen)) return false;
   state.cloudHydration = hydration.ok ? 'ok' : 'failed';
   if (!hydration.ok) {
     // Claim 2a: one retry before deciding. Until hydration succeeds, local
     // records must NOT be uploaded — they may be stale and would upsert
     // over the (unread) cloud state.
     hydration = await hydrateCloudData();
+    if (!sessionStampIntact(sessionGen)) return false;
     state.cloudHydration = hydration.ok ? 'ok' : 'failed';
+    if (!hydration.ok && hydration.reason === 'HYDRATION_PERSIST_FAILED') {
+      // Defect 1: the merged cloud state could not be durably saved on
+      // this device. Surface it; uploads stay blocked until a retry
+      // commits the merge (dashboard RETRY SYNC path).
+      showToast(tx('sync.storageError', 'Storage full or blocked. Cloud data could not be saved on this device. Nothing was uploaded.'), true);
+    }
   }
   if (hydration.ok && localWorkspace && workspaceHasData(localWorkspace) && !workspaceHasData(accountWorkspace)) {
     const remote = hydration.remote || {};
@@ -1501,6 +1514,7 @@ async function completeCloudSession(session) {
   }
   if (hydration.ok) {
     await syncAllCloudData();
+    if (!sessionStampIntact(sessionGen)) return false;
     if (localWorkspace && workspaceHasData(localWorkspace) && state.cloudStatus === 'CLOUD_SYNCED') {
       markLocalWorkspaceMigrated(targetUserId);
     }
@@ -2053,7 +2067,20 @@ window.GN = {
   version: APP_VERSION,
   state,
   S,
-  async syncNow() { await getCloudClient(); await hydrateCloudData(); await syncAllCloudData(); modules.refreshAll(); },
+  async syncNow() {
+    await getCloudClient();
+    if (!state.cloud) { modules.refreshAll(); return; }
+    /* Defect 3 (audit 2026-10-14): syncNow owns its hydration result for
+     * the CURRENT session generation. A failed fresh hydration blocks the
+     * upload even if an earlier session left cloudHydration at 'ok'. */
+    const stamp = sessionStamp();
+    state.cloudHydration = 'pending';
+    const hydration = await hydrateCloudData();
+    if (!sessionStampIntact(stamp)) return;
+    state.cloudHydration = hydration.ok ? 'ok' : 'failed';
+    if (hydration.ok) await syncAllCloudData();
+    modules.refreshAll();
+  },
   signOut: confirmSignOut,
   localMode: enterLocalSession
 };

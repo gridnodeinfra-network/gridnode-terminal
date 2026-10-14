@@ -268,12 +268,18 @@ function renderFirstShotMission(mode) {
 
 export async function retryCloudHydration() {
   if (!state.cloud || !state.session?.user?.id || !state.cloudClient) return;
+  /* Session-generation guard (audit 2026-10-14, defect 3): a retry that
+   * resolves after sign-out or an account switch must not stamp its
+   * readiness or status onto the new session. */
+  const stamp = sessionStamp();
   state.cloudHydration = 'pending';
   renderDashboard();
   try {
     const hydration = await hydrateCloudData();
+    if (!sessionStampIntact(stamp)) return;
     state.cloudHydration = hydration.ok ? 'ok' : 'failed';
   } catch (_) {
+    if (!sessionStampIntact(stamp)) return;
     state.cloudHydration = 'failed';
   }
   // Claim 2a companion: hydration now succeeded, so flush the records

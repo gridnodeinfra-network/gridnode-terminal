@@ -107,7 +107,26 @@ function normalizeBackupPayload(input) {
     const value = Number(profile[key]);
     if (!Number.isFinite(value) || value < 0 || ((key === 'heightIn' || key === 'htFt' || key === 'startWt' || key === 'goalWt') && value === 0)) throw new Error(`BACKUP_PROFILE_${key.toUpperCase()}_INVALID`);
   }
+  /* Defect 5 (audit 2026-10-14): an optional collection present in the
+   * wrong shape (object instead of array, array instead of object) must
+   * fail loudly BEFORE commit. confirmBackupImport merges only arrays
+   * and plain objects, so a malformed section would otherwise be skipped
+   * silently under a success message. This validation runs at file-load
+   * preview time, before anything is restored. */
+  for (const key of ['measurements', 'results', 'notes', 'symptoms', 'labs', 'labTests', 'arsenal', 'researchRecords', 'devices', 'inventory', 'loadouts', 'eventLedger']) {
+    if (input[key] !== undefined && input[key] !== null && !Array.isArray(input[key])) throw new Error(`BACKUP_COLLECTION_${key.toUpperCase()}_INVALID`);
+  }
+  for (const key of ['profile', 'preferences', 'settings']) {
+    if (input[key] !== undefined && input[key] !== null && (typeof input[key] !== 'object' || Array.isArray(input[key]))) throw new Error(`BACKUP_SECTION_${key.toUpperCase()}_INVALID`);
+  }
   return { ...input, shots, weights, ...(profile ? { profile } : {}) };
+}
+function backupErrorDetail(error) {
+  const message = String(error?.message || '');
+  const section = message.match(/^BACKUP_(?:COLLECTION|SECTION)_([A-Z]+)_INVALID$/);
+  if (section) return tx('backup.collectionInvalid', 'THE {section} SECTION OF THIS BACKUP IS DAMAGED. NOTHING WAS RESTORED', { section: section[1] });
+  if (message === 'BACKUP_FORMAT_NOT_RECOGNIZED') return tx('backup.notBackup', 'THIS FILE IS NOT A GRID//NODE BACKUP');
+  return tx('backup.couldNotRead', 'THE SELECTED BACKUP COULD NOT BE READ');
 }
 export function handleBackupImportFile(event) {
   const file = event.target.files?.[0]; if (!file) return;
@@ -121,7 +140,7 @@ export function handleBackupImportFile(event) {
       setText('csvImportTitle', tx('backup.previewTitle', 'GRID//NODE BACKUP PREVIEW')); setText('csvImportFormat', tx('backup.detectedFormat', 'DETECTED FORMAT // GRID//NODE BACKUP · {file}', { file: file.name })); setText('csvImportSummary', tx('backup.summary', '{shots} shots · {weights} weights · {measurements} measurements. Review before commit.', { shots: backup.shots.length, weights: backup.weights.length, measurements: (backup.measurements || []).length }));
       const confirm = $('csvImportConfirmBtn'); if (confirm) { confirm.disabled = false; confirm.textContent = tx('backup.restoreButton', 'RESTORE BACKUP'); confirm.setAttribute('onclick', 'confirmBackupImport()'); }
       $('csvImportOverlay')?.classList.add('active');
-    } catch (error) { actionFeedback(tx('backup.notOpened', 'BACKUP NOT OPENED'), error.message === 'BACKUP_FORMAT_NOT_RECOGNIZED' ? tx('backup.notBackup', 'THIS FILE IS NOT A GRID//NODE BACKUP') : tx('backup.couldNotRead', 'THE SELECTED BACKUP COULD NOT BE READ'), true); }
+    } catch (error) { actionFeedback(tx('backup.notOpened', 'BACKUP NOT OPENED'), backupErrorDetail(error), true); }
   };
   reader.onerror = () => actionFeedback(tx('backup.notOpened', 'BACKUP NOT OPENED'), tx('backup.couldNotRead', 'THE SELECTED BACKUP COULD NOT BE READ'), true);
   reader.readAsText(file); event.target.value = '';
@@ -130,11 +149,13 @@ export function confirmBackupImport() {
   if (!moduleState.pendingBackup) return;
   let backup;
   try { backup = normalizeBackupPayload(moduleState.pendingBackup); }
-  catch (_) {
+  catch (error) {
     moduleState.pendingBackup = null;
-    actionFeedback(tx('backup.notOpened', 'BACKUP NOT OPENED'), tx('backup.couldNotRead', 'THE SELECTED BACKUP COULD NOT BE READ'), true);
+    actionFeedback(tx('backup.notOpened', 'BACKUP NOT OPENED'), backupErrorDetail(error), true);
     return;
   }
+  const preShotIds = new Set(getAllShots().map(record => record.id));
+  const preWeightIds = new Set(getWeights().map(record => record.id));
   const ops = [];
   const merge = (key, incoming) => { if (Array.isArray(incoming)) ops.push({ key, value: mergeImportRecords(S.get(key, []), incoming) }); };
   merge('shots', backup.shots); merge('weights', backup.weights); merge('measurements', backup.measurements); merge('results', backup.results); merge('notes', backup.notes); merge('symptoms', backup.symptoms); merge('labs', backup.labs); merge('labTests', backup.labTests); merge('arsenal', backup.arsenal); merge('researchRecords', backup.researchRecords); merge('devices', backup.devices); merge('inventory', backup.inventory); merge('loadouts', backup.loadouts); merge('eventLedger', backup.eventLedger);
@@ -143,7 +164,13 @@ export function confirmBackupImport() {
   if (backup.settings && typeof backup.settings === 'object') ops.push({ key: 'settings', value: { ...S.get('settings', {}), ...backup.settings } });
   if (backup.selectedLocation) ops.push({ key: 'selectedLocation', value: backup.selectedLocation });
   if (!S.multiWrite(ops)) { actionFeedback(tx('backup.importRolledBack', 'IMPORT ROLLED BACK'), tx('backup.storageRejectedTransaction', 'LOCAL STORAGE DID NOT ACCEPT THE COMPLETE TRANSACTION'), true); return; }
-  appendEventLedger({ type: 'IMPORT', label: 'GRID//NODE BACKUP RESTORED', source: 'GRID//NODE Backup', state: 'Needs Review' }); queueCloudSync('workspace'); const count = (backup.shots?.length || 0) + (backup.weights?.length || 0); cancelCSVImport(); refreshAll(); actionFeedback(tx('backup.restored', 'BACKUP RESTORED'), tx('backup.restoredDetail', '{count} RECORD{plural} REVIEWED // LOCAL HISTORY UPDATED', { count, plural: count === 1 ? '' : 'S' }));
+  appendEventLedger({ type: 'IMPORT', label: 'GRID//NODE BACKUP RESTORED', source: 'GRID//NODE Backup', state: 'Needs Review' }); queueCloudSync('workspace');
+  /* Defect 4 (audit 2026-10-14): restored shots/weights queue for cloud
+   * sync individually, like every other record creation path — not just
+   * via the workspace payload. */
+  getAllShots().filter(record => !preShotIds.has(record.id)).forEach(record => queueCloudSync('shot', record));
+  getWeights().filter(record => !preWeightIds.has(record.id)).forEach(record => queueCloudSync('weight', record));
+  const count = (backup.shots?.length || 0) + (backup.weights?.length || 0); cancelCSVImport(); refreshAll(); actionFeedback(tx('backup.restored', 'BACKUP RESTORED'), tx('backup.restoredDetail', '{count} RECORD{plural} REVIEWED // LOCAL HISTORY UPDATED', { count, plural: count === 1 ? '' : 'S' }));
 }
 export function cancelCSVImport() { moduleState.pendingImport = null; moduleState.pendingImportMeta = null; moduleState.pendingBackup = null; const rowsHost = $('csvImportRows'); if (rowsHost) rowsHost.innerHTML = ''; const confirm = $('csvImportConfirmBtn'); if (confirm) { confirm.setAttribute('onclick', 'confirmCSVImport()'); confirm.textContent = tx('backup.importButton', 'IMPORT TO SHOTS HISTORY'); } setText('csvImportTitle', tx('backup.csvPreviewTitle', 'CSV IMPORT PREVIEW')); setText('csvImportFormat', tx('backup.csvReviewCopy', 'Review detected user-entered protocol records before appending them to SHOTS HISTORY.')); $('csvImportOverlay')?.classList.remove('active'); }
 export function confirmCSVImport() {

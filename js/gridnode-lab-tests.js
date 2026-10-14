@@ -68,6 +68,12 @@
     if (!draft.peptide) errors.push('peptide');
     if (!draft.vendor || !String(draft.vendor).trim()) errors.push('vendor');
     if (!draft.testDate) errors.push('testDate');
+    /* Form-defined ranges (audit 2026-10-14, defect 4): the purity input
+     * is min 0 / max 100 and the amount inputs are min 0; enforce them at
+     * save so out-of-range values cannot enter storage or a backup. */
+    if (draft.purityPct !== null && draft.purityPct !== undefined && (draft.purityPct < 0 || draft.purityPct > 100)) errors.push('purityRange');
+    if (draft.labelClaimMg !== null && draft.labelClaimMg !== undefined && draft.labelClaimMg < 0) errors.push('claimRange');
+    if (draft.measuredMg !== null && draft.measuredMg !== undefined && draft.measuredMg < 0) errors.push('measuredRange');
     return { ok: errors.length === 0, errors: errors };
   }
 
@@ -99,6 +105,13 @@
   }
   function persist(list) {
     try { var m = MOD(); return m.setLabTests ? m.setLabTests(list) : false; } catch (_) { return false; }
+  }
+  /* ASSAY mutations sync like every other record kind (audit 2026-10-14,
+   * defect 4): lab tests travel inside the workspace payload, so queue a
+   * workspace sync after every successful persist. queueCloudSync defers
+   * to the retry queue while hydration is not ready. */
+  function queueAssaySync() {
+    try { var m = MOD(); if (m.queueCloudSync) m.queueCloudSync('workspace'); } catch (_) { /* local mode or bridge unavailable */ }
   }
   function varianceOf(record) { return labTestVariance(record); }
   function bandOf(fraction) { return labTestVarianceBand(fraction); }
@@ -349,7 +362,14 @@
       notes: $('gnAssayNotes') ? $('gnAssayNotes').value.trim() : ''
     };
   }
-  function numOrNull(v) { var n = Number(v); return v !== '' && Number.isFinite(n) ? n : null; }
+  /* Blank stays unknown (audit 2026-10-14, defect 4): Number(null) is 0,
+   * which turned blank purity/quantities into measured zeros. Explicit
+   * 0 is a real measurement and stays 0. */
+  function numOrNull(v) {
+    if (v === null || v === undefined || v === '') return null;
+    var n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
 
   function saveAssayModal() {
     var draft = collectDraft();
@@ -357,7 +377,10 @@
     var err = $('gnAssayErr');
     if (!check.ok) {
       if (err) {
-        err.textContent = tx('assay.requiredErr', 'Peptide, vendor, and test date are required.');
+        var rangeOnly = check.errors.every(function (e) { return /Range$/.test(e); });
+        err.textContent = rangeOnly
+          ? tx('assay.rangeErr', 'Purity must be 0–100%. Amounts cannot be negative.')
+          : tx('assay.requiredErr', 'Peptide, vendor, and test date are required.');
         err.style.display = '';
       }
       return;
@@ -388,6 +411,7 @@
       if (err) { err.textContent = tx('assay.storageErr', 'Could not save — storage unavailable.'); err.style.display = ''; }
       return;
     }
+    queueAssaySync();
     closeAssayModal();
     state.editingId = null;
     renderAssay();
@@ -411,18 +435,18 @@
     if (!rec) return;
     var now = new Date().toISOString();
     rec.archived = true; rec.archivedAt = now; rec.modifiedAt = now;
-    if (persist(list)) renderAssay();
+    if (persist(list)) { queueAssaySync(); renderAssay(); }
   }
   function doRestore(id) {
     var list = allTests();
     var rec = list.find(function (r) { return r.id === id; });
     if (!rec) return;
     rec.archived = false; rec.archivedAt = null; rec.modifiedAt = new Date().toISOString();
-    if (persist(list)) renderAssay();
+    if (persist(list)) { queueAssaySync(); renderAssay(); }
   }
   function doDelete(id) {
     var list = allTests().filter(function (r) { return r.id !== id; });
-    if (persist(list)) { if (state.expandedId === id) state.expandedId = null; renderAssay(); }
+    if (persist(list)) { queueAssaySync(); if (state.expandedId === id) state.expandedId = null; renderAssay(); }
   }
 
   function onAction(action, id) {

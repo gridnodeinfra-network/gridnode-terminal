@@ -27,11 +27,43 @@ const state = {
   cloud: false,
   cloudClient: null,
   cloudStatus: 'LOCAL_ONLY',
+  sessionGeneration: 0,
   listeners: new Set()
 };
 
+/* Session stamp (data-integrity audit 2026-10-14, defect 3): every async
+ * cloud operation captures { userId, accountKey, generation } at entry and
+ * rechecks it after every await. Account-id equality alone cannot tell
+ * A → sign out → A apart; the monotonically increasing generation can.
+ * activateSession/clearSession bump the generation, so any continuation
+ * from a dead session instance fails the check and must touch nothing:
+ * no local writes, no queue mutations, no readiness or status changes. */
+function sessionStamp() {
+  return {
+    userId: state.cloud && state.session?.user?.id ? String(state.session.user.id) : '',
+    accountKey: state.accountKey,
+    generation: state.sessionGeneration
+  };
+}
+
+function sessionStampIntact(stamp) {
+  if (!stamp) return false;
+  if (state.accountKey !== stamp.accountKey) return false;
+  if (state.sessionGeneration !== stamp.generation) return false;
+  if (stamp.userId) return Boolean(state.cloud && state.session?.user?.id && String(state.session.user.id) === stamp.userId);
+  return true;
+}
+
+/* Result of the most recent hydration attempt, stamped with the session
+ * generation that ran it. cloudUploadsReady() requires a successful
+ * hydration for the CURRENT generation — a stale 'ok' string left over
+ * from a previous session can never authorize uploads on its own. */
+let lastHydration = null;
+
 function cloudUploadsReady() {
   if (!state.cloud) return false;
+  if (typeof state.cloudHydration === 'string' && state.cloudHydration !== 'ok') return false;
+  if (lastHydration) return lastHydration.ok && sessionStampIntact(lastHydration.stamp);
   return typeof state.cloudHydration !== 'string' || state.cloudHydration === 'ok';
 }
 
@@ -329,7 +361,12 @@ const LAB_TEST_ENDOTOXIN = Object.freeze(['pass', 'fail', 'untested']);
 
 function normalizeLabTest(record) {
   if (!record || typeof record !== 'object') return null;
+  /* Blank stays unknown (audit 2026-10-14, defect 4): Number(null) and
+   * Number('') are both 0, which fabricated measurements out of blanks.
+   * Null/undefined/blank-string preserve as null; explicit 0 stays 0. */
   const num = value => {
+    if (value === null || value === undefined) return null;
+    if (typeof value === 'string' && value.trim() === '') return null;
     const n = Number(value);
     return Number.isFinite(n) ? n : null;
   };
@@ -440,6 +477,8 @@ function restoreLocalSession() {
 }
 
 function activateSession(session, cloud = false) {
+  state.sessionGeneration += 1;
+  syncPassFailed = false;
   state.session = session;
   state.cloud = Boolean(cloud && session?.user?.id);
   state.accountKey = state.cloud ? String(session.user.id) : 'local';
@@ -460,6 +499,8 @@ function activateSession(session, cloud = false) {
 }
 
 function clearSession() {
+  state.sessionGeneration += 1;
+  syncPassFailed = false;
   state.session = null;
   state.cloud = false;
   state.accountKey = 'local';
@@ -700,11 +741,99 @@ function planPermanentShotDelete(record, weights = [], cloudDeletes = []) {
   };
 }
 
+/* ── Revision-aware sync (audit 2026-10-14, defects 2 + 3) ──────────────
+ * Every sync intent bumps a per-record revision. An intent that arrives
+ * while a request for the same record is in flight is marked dirty, not
+ * silently dropped; when the in-flight request settles, the latest
+ * persisted record is uploaded, so a response for an older revision can
+ * never acknowledge a newer edit. A record deleted locally while its
+ * upload was in flight gets its tombstone re-asserted and flushed AFTER
+ * the upload settles, so the deletion dominates the late upload.
+ * Every post-await effect (status, retry queue) is gated on the session
+ * stamp captured at entry: a dead generation's continuation touches
+ * nothing. */
+const syncRevisions = new Map();
+const syncDirty = new Set();
+
+function noteSyncIntent(kind, id) {
+  const key = `${kind}:${id}`;
+  const rev = (syncRevisions.get(key) || 0) + 1;
+  syncRevisions.set(key, rev);
+  return rev;
+}
+
+/* Remove retry-queue entries a successful delivery has acknowledged.
+ * Entries enqueued after the attempt started belong to newer intent and
+ * are preserved. Singleton kinds (profile/workspace) match on kind. */
+function dequeueSync(kind, id, throughTs = Date.now()) {
+  const queue = S.get('syncQueue', []);
+  if (!queue.length) return;
+  const singleton = kind === 'profile' || kind === 'workspace';
+  const next = queue.filter(item => !(item.kind === kind && (singleton || item.id === id) && (item.at || 0) <= throughTs));
+  if (next.length !== queue.length) {
+    S.set('syncQueue', next);
+    if (!next.length) syncPassFailed = false;
+  }
+}
+
+/* Status is derived, never asserted: CLOUD_SYNCED only when the current
+ * session has no failed pass, no queued retries, and no pending deletes. */
+function applyDerivedStatus(stamp) {
+  if (stamp && !sessionStampIntact(stamp)) return;
+  if (!state.cloud) { state.cloudStatus = 'LOCAL_ONLY'; return; }
+  const queue = S.get('syncQueue', []);
+  const deletes = S.get('cloudDeletes', []);
+  state.cloudStatus = (syncPassFailed || queue.length > 0 || deletes.length > 0) ? 'LOCAL_BACKUP' : 'CLOUD_SYNCED';
+}
+
+function afterSyncSettle(kind, record, rev, stamp) {
+  const key = `${kind}:${record.id}`;
+  if (!sessionStampIntact(stamp)) { syncDirty.delete(key); return; }
+  const table = kind === 'shot' ? 'shots' : 'weights';
+  const latest = kind === 'shot'
+    ? getAllShots().find(item => item.id === record.id)
+    : getWeights().find(item => item.id === record.id);
+  if (!latest) {
+    /* Deleted locally while the upload was in flight. The tombstone the
+     * delete flow queued may already have flushed against a row that did
+     * not exist yet; re-assert it now the upload has landed so the delete
+     * is ordered after the upload and the record stays deleted. */
+    syncDirty.delete(key);
+    if (record.cloudId) {
+      const pending = S.get('cloudDeletes', []);
+      if (!pending.some(item => item.table === table && item.id === record.cloudId)) {
+        pending.push({ table, id: record.cloudId });
+        S.set('cloudDeletes', pending);
+      }
+      flushCloudDeletes().catch(error => console.warn('[GRID//NODE cloud settle delete]', error));
+    }
+    return;
+  }
+  if (syncDirty.has(key) || (syncRevisions.get(key) || 0) > rev) {
+    syncDirty.delete(key);
+    const rerun = kind === 'shot' ? syncShot(latest) : syncWeight(latest);
+    rerun.catch(error => console.warn('[GRID//NODE cloud settle resync]', error));
+  }
+}
+
+function afterSingletonSettle(kind, stamp) {
+  if (!sessionStampIntact(stamp)) { syncDirty.delete(kind); return; }
+  if (!syncDirty.has(kind)) return;
+  syncDirty.delete(kind);
+  const rerun = kind === 'profile' ? syncProfile(getProfile()) : syncWorkspace();
+  rerun.catch(error => console.warn('[GRID//NODE cloud settle resync]', error));
+}
+
 async function syncShot(record) {
   if (!state.cloud || !state.cloudClient || !state.session?.user?.id) return;
   if (!normalizeMedicationId(record?.med)) { console.warn('[GRID//NODE cloud shot sync] invalid medication identity; sync skipped'); return; }
-  if (!record?.id || syncInFlight.has(`shot:${record.id}`)) return;
-  syncInFlight.add(`shot:${record.id}`);
+  if (!record?.id) return;
+  const key = `shot:${record.id}`;
+  const rev = noteSyncIntent('shot', record.id);
+  if (syncInFlight.has(key)) { syncDirty.add(key); return; }
+  syncInFlight.add(key);
+  const stamp = sessionStamp();
+  const startedAt = Date.now();
   try {
     const assignedCloudId = !record.cloudId;
     ensureCloudRecordId(record);
@@ -715,7 +844,7 @@ async function syncShot(record) {
       all[index] = record;
       if (!S.set('shots', all)) throw new Error('CLOUD_RECORD_ID_PERSIST_FAILED');
     }
-    const payload = cloudShotPayload(record, state.session.user.id);
+    const payload = cloudShotPayload(record, stamp.userId);
     let { data, error } = await withTimeout(state.cloudClient.from('shots').upsert(payload).select().single(), 8000);
     if (error && /updated_at|PGRST204|42703/i.test(`${error.code || ''} ${error.message || ''}`)) {
       const compatiblePayload = { ...payload };
@@ -723,31 +852,44 @@ async function syncShot(record) {
       ({ data, error } = await withTimeout(state.cloudClient.from('shots').upsert(compatiblePayload).select().single(), 8000));
     }
     if (error) throw error;
-    if (data?.id && !record.cloudId) {
+    if (!sessionStampIntact(stamp)) return;
+    if (data?.id) {
       record.cloudId = data.id;
       const all = getAllShots();
       const index = all.findIndex(item => item.id === record.id);
-      if (index >= 0) { all[index] = record; if (!S.set('shots', all)) console.warn('[GRID//NODE cloud shot sync] failed to persist cloudId'); }
+      if (index >= 0 && all[index].cloudId !== data.id) {
+        all[index] = { ...all[index], cloudId: data.id };
+        if (!S.set('shots', all)) console.warn('[GRID//NODE cloud shot sync] failed to persist cloudId');
+      }
     }
-    state.cloudStatus = syncPassFailed ? 'LOCAL_BACKUP' : 'CLOUD_SYNCED';
+    dequeueSync('shot', record.id, startedAt);
+    applyDerivedStatus(stamp);
   } catch (error) {
-    if (error?.message === 'DOSE_OUT_OF_RANGE') {
+    if (!sessionStampIntact(stamp)) {
+      console.warn('[GRID//NODE cloud shot sync] stale session continuation dropped', error);
+    } else if (error?.message === 'DOSE_OUT_OF_RANGE') {
       console.warn('[GRID//NODE cloud shot sync] dose out of range; sync permanently rejected', error);
     } else {
-      state.cloudStatus = 'LOCAL_BACKUP';
       syncPassFailed = true;
-      enqueueSync('shot', record);
+      enqueueSync('shot', record, stamp);
       console.warn('[GRID//NODE cloud shot sync]', error);
     }
+    applyDerivedStatus(stamp);
   } finally {
-    syncInFlight.delete(`shot:${record.id}`);
+    syncInFlight.delete(key);
+    afterSyncSettle('shot', record, rev, stamp);
   }
 }
 
 async function syncWeight(record) {
   if (!state.cloud || !state.cloudClient || !state.session?.user?.id) return;
-  if (!record?.id || syncInFlight.has(`weight:${record.id}`)) return;
-  syncInFlight.add(`weight:${record.id}`);
+  if (!record?.id) return;
+  const key = `weight:${record.id}`;
+  const rev = noteSyncIntent('weight', record.id);
+  if (syncInFlight.has(key)) { syncDirty.add(key); return; }
+  syncInFlight.add(key);
+  const stamp = sessionStamp();
+  const startedAt = Date.now();
   try {
     const assignedCloudId = !record.cloudId;
     ensureCloudRecordId(record);
@@ -758,7 +900,7 @@ async function syncWeight(record) {
       all[index] = record;
       if (!S.set('weights', all)) throw new Error('CLOUD_RECORD_ID_PERSIST_FAILED');
     }
-    const payload = cloudWeightPayload(record, state.session.user.id);
+    const payload = cloudWeightPayload(record, stamp.userId);
     let { data, error } = await withTimeout(state.cloudClient.from('weights').upsert(payload).select().single(), 8000);
     if (error && /shot_id|updated_at|PGRST204|42703/i.test(`${error.code || ''} ${error.message || ''}`)) {
       const compatiblePayload = { ...payload };
@@ -767,28 +909,43 @@ async function syncWeight(record) {
       ({ data, error } = await withTimeout(state.cloudClient.from('weights').upsert(compatiblePayload).select().single(), 8000));
     }
     if (error) throw error;
-    if (data?.id && !record.cloudId) {
+    if (!sessionStampIntact(stamp)) return;
+    if (data?.id) {
       record.cloudId = data.id;
       const all = getWeights();
       const index = all.findIndex(item => item.id === record.id);
-      if (index >= 0) { all[index] = record; if (!S.set('weights', all)) console.warn('[GRID//NODE cloud weight sync] failed to persist cloudId'); }
+      if (index >= 0 && all[index].cloudId !== data.id) {
+        all[index] = { ...all[index], cloudId: data.id };
+        if (!S.set('weights', all)) console.warn('[GRID//NODE cloud weight sync] failed to persist cloudId');
+      }
     }
-    state.cloudStatus = syncPassFailed ? 'LOCAL_BACKUP' : 'CLOUD_SYNCED';
+    dequeueSync('weight', record.id, startedAt);
+    applyDerivedStatus(stamp);
   } catch (error) {
-    state.cloudStatus = 'LOCAL_BACKUP';
-    syncPassFailed = true;
-    enqueueSync('weight', record);
-    console.warn('[GRID//NODE cloud weight sync]', error);
+    if (!sessionStampIntact(stamp)) {
+      console.warn('[GRID//NODE cloud weight sync] stale session continuation dropped', error);
+    } else {
+      syncPassFailed = true;
+      enqueueSync('weight', record, stamp);
+      console.warn('[GRID//NODE cloud weight sync]', error);
+    }
+    applyDerivedStatus(stamp);
   } finally {
-    syncInFlight.delete(`weight:${record.id}`);
+    syncInFlight.delete(key);
+    afterSyncSettle('weight', record, rev, stamp);
   }
 }
 
 async function syncProfile(profile) {
   if (!state.cloud || !state.cloudClient || !state.session?.user?.id) return;
+  noteSyncIntent('profile', 'profile');
+  if (syncInFlight.has('profile')) { syncDirty.add('profile'); return; }
+  syncInFlight.add('profile');
+  const stamp = sessionStamp();
+  const startedAt = Date.now();
   try {
     const { error } = await withTimeout(state.cloudClient.from('profiles').upsert({
-      id: state.session.user.id,
+      id: stamp.userId,
       display_name: profile.name || 'NODE_USER',
       weight_unit: profile.weightUnit || 'lbs',
       height_unit: 'ft/in',
@@ -797,12 +954,21 @@ async function syncProfile(profile) {
       updated_at: new Date().toISOString()
     }), 8000);
     if (error) throw error;
-    state.cloudStatus = syncPassFailed ? 'LOCAL_BACKUP' : 'CLOUD_SYNCED';
+    if (!sessionStampIntact(stamp)) return;
+    dequeueSync('profile', 'profile', startedAt);
+    applyDerivedStatus(stamp);
   } catch (error) {
-    state.cloudStatus = 'LOCAL_BACKUP';
-    syncPassFailed = true;
-    enqueueSync('profile', profile);
-    console.warn('[GRID//NODE cloud profile sync]', error);
+    if (!sessionStampIntact(stamp)) {
+      console.warn('[GRID//NODE cloud profile sync] stale session continuation dropped', error);
+    } else {
+      syncPassFailed = true;
+      enqueueSync('profile', profile, stamp);
+      console.warn('[GRID//NODE cloud profile sync]', error);
+    }
+    applyDerivedStatus(stamp);
+  } finally {
+    syncInFlight.delete('profile');
+    afterSingletonSettle('profile', stamp);
   }
 }
 
@@ -838,40 +1004,89 @@ function workspacePayload(userId) {
 
 async function syncWorkspace() {
   if (!state.cloud || !state.cloudClient || !state.session?.user?.id) return;
+  noteSyncIntent('workspace', 'workspace');
+  if (syncInFlight.has('workspace')) { syncDirty.add('workspace'); return; }
+  syncInFlight.add('workspace');
+  const stamp = sessionStamp();
+  const startedAt = Date.now();
   try {
-    const { error } = await withTimeout(state.cloudClient.from('workspaces').upsert(workspacePayload(state.session.user.id)), 8000);
+    const { error } = await withTimeout(state.cloudClient.from('workspaces').upsert(workspacePayload(stamp.userId)), 8000);
     if (error) throw error;
-    state.cloudStatus = syncPassFailed ? 'LOCAL_BACKUP' : 'CLOUD_SYNCED';
+    if (!sessionStampIntact(stamp)) return;
+    dequeueSync('workspace', 'workspace', startedAt);
+    applyDerivedStatus(stamp);
   } catch (error) {
-    state.cloudStatus = 'LOCAL_BACKUP';
-    syncPassFailed = true;
-    enqueueSync('workspace');
-    console.warn('[GRID//NODE cloud workspace sync]', error);
+    if (!sessionStampIntact(stamp)) {
+      console.warn('[GRID//NODE cloud workspace sync] stale session continuation dropped', error);
+    } else {
+      syncPassFailed = true;
+      enqueueSync('workspace', null, stamp);
+      console.warn('[GRID//NODE cloud workspace sync]', error);
+    }
+    applyDerivedStatus(stamp);
+  } finally {
+    syncInFlight.delete('workspace');
+    afterSingletonSettle('workspace', stamp);
   }
 }
 
-async function flushCloudDeletes() {
-  if (!state.cloud || !state.cloudClient || !state.session?.user?.id) return false;
-  const pending = S.get('cloudDeletes', []);
-  if (!pending.length) return true;
-  const remaining = [];
-  for (const item of pending) {
+/* Delete flushes are serialized and acknowledge only the exact entries
+ * they delivered (audit 2026-10-14, defect 3): the queue is re-read after
+ * the pass, so tombstones appended during the flush — and tombstones
+ * whose delete failed — survive; a snapshot taken at pass start can
+ * never overwrite newer work. The whole pass is scoped to the session
+ * stamp captured at entry: deletes use the captured user id, and a stale
+ * generation's continuation writes nothing back. */
+let flushDeletesPromise = null;
+let flushDeletesAgain = false;
+
+function flushCloudDeletes() {
+  if (!state.cloud || !state.cloudClient || !state.session?.user?.id) return Promise.resolve(false);
+  if (flushDeletesPromise) {
+    flushDeletesAgain = true;
+    return flushDeletesPromise;
+  }
+  flushDeletesPromise = (async () => {
     try {
-      const { error } = await withTimeout(state.cloudClient.from(item.table).delete().eq('id', item.id).eq('user_id', state.session.user.id), 8000);
+      return await flushCloudDeletesPass();
+    } finally {
+      flushDeletesPromise = null;
+      if (flushDeletesAgain) {
+        flushDeletesAgain = false;
+        flushCloudDeletes().catch(error => console.warn('[GRID//NODE cloud delete] reflush', error));
+      }
+    }
+  })();
+  return flushDeletesPromise;
+}
+
+async function flushCloudDeletesPass() {
+  const stamp = sessionStamp();
+  const userId = stamp.userId;
+  const pending = S.get('cloudDeletes', []);
+  if (!pending.length) { applyDerivedStatus(stamp); return true; }
+  const delivered = new Set();
+  for (const item of pending) {
+    if (!sessionStampIntact(stamp)) return false;
+    try {
+      const { error } = await withTimeout(state.cloudClient.from(item.table).delete().eq('id', item.id).eq('user_id', userId), 8000);
       if (error) throw error;
+      delivered.add(`${item.table}:${item.id}`);
     } catch (error) {
-      remaining.push(item);
       console.warn('[GRID//NODE cloud delete]', error);
     }
   }
-  if (remaining.length !== pending.length) {
+  if (!sessionStampIntact(stamp)) return false;
+  const current = S.get('cloudDeletes', []);
+  const remaining = current.filter(item => !delivered.has(`${item.table}:${item.id}`));
+  if (remaining.length !== current.length) {
     if (!S.set('cloudDeletes', remaining)) {
-      state.cloudStatus = 'LOCAL_BACKUP';
       console.warn('[GRID//NODE cloud delete] could not persist queue; retaining all pending tombstones');
+      applyDerivedStatus(stamp);
       return false;
     }
   }
-  state.cloudStatus = remaining.length ? 'LOCAL_BACKUP' : 'CLOUD_SYNCED';
+  applyDerivedStatus(stamp);
   return remaining.length === 0;
 }
 
@@ -885,11 +1100,12 @@ async function deleteCloudShot(record) {
 
 async function hydrateCloudData() {
   if (!state.cloud || !state.cloudClient || !state.session?.user?.id) return { ok: false, reason: 'LOCAL_ONLY' };
-  const sessionUserId = String(state.session.user.id);
-  const sessionAccountKey = state.accountKey;
-  const sessionIntact = () => Boolean(state.cloud && state.session?.user?.id && String(state.session.user.id) === sessionUserId && state.accountKey === sessionAccountKey);
+  /* Session stamp incl. generation (defect 3): A → sign out → A must not
+   * accept the old session's hydration results. */
+  const stamp = sessionStamp();
+  const sessionIntact = () => sessionStampIntact(stamp);
   try {
-    const userId = state.session.user.id;
+    const userId = stamp.userId;
     await flushCloudDeletes();
     if (!sessionIntact()) return { ok: false, reason: 'SESSION_CHANGED' };
     const [profileResult, shotsResult, weightsResult, workspaceResult] = await Promise.all([
@@ -918,9 +1134,15 @@ async function hydrateCloudData() {
       createdAt: item.created_at || item.date,
       modifiedAt: item.updated_at || item.created_at || item.date
     }));
+    /* Checked hydration persistence (defect 1): every merged value is
+     * computed first, then committed as ONE journaled multiWrite. If any
+     * write fails, the journal rolls the local snapshot back, hydration
+     * reports failure, and uploads stay prohibited — read success alone
+     * never marks hydration ready. */
+    const ops = [];
     const pendingDeleteIds = new Set(S.get('cloudDeletes', []).map(item => item.id));
     const mergedShots = mergeRecords(localShots, cloudShots.filter(item => !(item.cloudId && pendingDeleteIds.has(item.cloudId))), record => record.cloudId || record.id);
-    if (mergedShots.length) S.set('shots', mergedShots);
+    if (mergedShots.length) ops.push({ key: 'shots', value: mergedShots });
 
     const localWeights = getWeights();
     const cloudWeights = (weightsResult.data || []).map(item => {
@@ -941,7 +1163,7 @@ async function hydrateCloudData() {
     });
     const mergedWeights = mergeRecords(localWeights, cloudWeights.filter(item => !(item.cloudId && pendingDeleteIds.has(item.cloudId))), record => record.cloudId || record.id);
     if (!sessionIntact()) return { ok: false, reason: 'SESSION_CHANGED' };
-    if (mergedWeights.length) S.set('weights', mergedWeights);
+    if (mergedWeights.length) ops.push({ key: 'weights', value: mergedWeights });
 
     const remoteProfile = profileResult.data;
     if (remoteProfile) {
@@ -951,36 +1173,47 @@ async function hydrateCloudData() {
       mergedProfile.name = mergedProfile.name || remoteProfile.display_name || '';
       if (remoteProfile.dose_mg && !mergedProfile.dose) mergedProfile.dose = remoteProfile.dose_mg;
       if (!sessionIntact()) return { ok: false, reason: 'SESSION_CHANGED' };
-      S.set('profile', mergedProfile);
+      ops.push({ key: 'profile', value: mergedProfile });
     }
 
     if (!sessionIntact()) return { ok: false, reason: 'SESSION_CHANGED' };
     const remoteWorkspace = workspaceResult.data;
     if (remoteWorkspace) {
-      S.set('results', mergeJsonRecords(S.get('results', []), remoteWorkspace.results_data || []));
-      S.set('notes', mergeJsonRecords(S.get('notes', []), remoteWorkspace.notes_data || []));
-      S.set('symptoms', mergeJsonRecords(S.get('symptoms', []), remoteWorkspace.symptoms_data || []));
-      S.set('labs', mergeJsonRecords(S.get('labs', []), remoteWorkspace.labs_data || []));
-      S.set('arsenal', mergeJsonRecords(S.get('arsenal', []), remoteWorkspace.arsenal || []));
       const preferences = { ...(remoteWorkspace.preferences || {}), ...S.get('preferences', {}) };
       const remoteSettings = remoteWorkspace.settings || {};
       const localSettings = S.get('settings', {});
       const remoteFoundation = remoteSettings._gridnodeFoundation || {};
       const localFoundation = localSettings._gridnodeFoundation || {};
       const settings = { ...remoteSettings, ...localSettings, _gridnodeFoundation: { ...remoteFoundation, ...localFoundation } };
-      S.set('preferences', preferences);
-      S.set('settings', settings);
-      if (!S.get('selectedLocation', '') && preferences.selectedLocation) S.set('selectedLocation', preferences.selectedLocation);
-      S.set('researchRecords', mergeJsonRecords(S.get('researchRecords', []), remoteFoundation.researchRecords || []));
-      S.set('devices', mergeJsonRecords(S.get('devices', []), remoteFoundation.devices || []));
-      S.set('measurements', mergeJsonRecords(S.get('measurements', []), remoteFoundation.measurements || []));
-      S.set('inventory', mergeJsonRecords(S.get('inventory', []), remoteFoundation.inventory || []));
-      S.set('loadouts', mergeJsonRecords(S.get('loadouts', []), remoteFoundation.loadouts || []));
-      S.set('eventLedger', mergeJsonRecords(S.get('eventLedger', []), remoteFoundation.eventLedger || []));
-      S.set('importQueue', mergeJsonRecords(S.get('importQueue', []), remoteFoundation.importQueue || []));
-      S.set('labTests', mergeJsonRecords(S.get('labTests', []), remoteFoundation.labTests || []));
+      ops.push({ key: 'results', value: mergeJsonRecords(S.get('results', []), remoteWorkspace.results_data || []) });
+      ops.push({ key: 'notes', value: mergeJsonRecords(S.get('notes', []), remoteWorkspace.notes_data || []) });
+      ops.push({ key: 'symptoms', value: mergeJsonRecords(S.get('symptoms', []), remoteWorkspace.symptoms_data || []) });
+      ops.push({ key: 'labs', value: mergeJsonRecords(S.get('labs', []), remoteWorkspace.labs_data || []) });
+      ops.push({ key: 'arsenal', value: mergeJsonRecords(S.get('arsenal', []), remoteWorkspace.arsenal || []) });
+      ops.push({ key: 'preferences', value: preferences });
+      ops.push({ key: 'settings', value: settings });
+      if (!S.get('selectedLocation', '') && preferences.selectedLocation) ops.push({ key: 'selectedLocation', value: preferences.selectedLocation });
+      ops.push({ key: 'researchRecords', value: mergeJsonRecords(S.get('researchRecords', []), remoteFoundation.researchRecords || []) });
+      ops.push({ key: 'devices', value: mergeJsonRecords(S.get('devices', []), remoteFoundation.devices || []) });
+      ops.push({ key: 'measurements', value: mergeJsonRecords(S.get('measurements', []), remoteFoundation.measurements || []) });
+      ops.push({ key: 'inventory', value: mergeJsonRecords(S.get('inventory', []), remoteFoundation.inventory || []) });
+      ops.push({ key: 'loadouts', value: mergeJsonRecords(S.get('loadouts', []), remoteFoundation.loadouts || []) });
+      ops.push({ key: 'eventLedger', value: mergeJsonRecords(S.get('eventLedger', []), remoteFoundation.eventLedger || []) });
+      ops.push({ key: 'importQueue', value: mergeJsonRecords(S.get('importQueue', []), remoteFoundation.importQueue || []) });
+      ops.push({ key: 'labTests', value: mergeJsonRecords(S.get('labTests', []), remoteFoundation.labTests || []) });
     }
-    state.cloudStatus = 'CLOUD_SYNCED';
+    if (!sessionIntact()) return { ok: false, reason: 'SESSION_CHANGED' };
+    if (ops.length && !S.multiWrite(ops)) {
+      /* The journal preserved the pre-hydration local snapshot and the
+       * remote result can be re-fetched on retry; nothing was uploaded
+       * and nothing may be until a retry commits the full merge. */
+      lastHydration = { stamp, ok: false };
+      state.cloudStatus = 'LOCAL_BACKUP';
+      console.warn('[GRID//NODE cloud hydrate] merged result could not be persisted; uploads remain blocked');
+      return { ok: false, reason: 'HYDRATION_PERSIST_FAILED' };
+    }
+    lastHydration = { stamp, ok: true };
+    applyDerivedStatus(stamp);
     return {
       ok: true,
       remote: {
@@ -991,7 +1224,10 @@ async function hydrateCloudData() {
       }
     };
   } catch (error) {
-    state.cloudStatus = 'LOCAL_BACKUP';
+    if (sessionIntact()) {
+      lastHydration = { stamp, ok: false };
+      state.cloudStatus = 'LOCAL_BACKUP';
+    }
     console.warn('[GRID//NODE cloud hydrate]', error);
     return { ok: false, reason: error.message || 'CLOUD_READ_FAILED' };
   }
@@ -1031,8 +1267,14 @@ const syncInFlight = new Set();
 async function syncAllCloudData() {
   if (!state.cloud) return;
   if (!cloudUploadsReady()) { state.cloudStatus = 'LOCAL_BACKUP'; return { ok: false, reason: 'HYDRATION_NOT_OK' }; }
+  /* Stamp-captured (defect 3): if the session changes at any await, the
+   * continuation must not rewrite the queue or the status of whatever
+   * session is current by then. Sign-out during an awaited full sync can
+   * no longer leave CLOUD_SYNCED behind in local mode. */
+  const stamp = sessionStamp();
   syncPassFailed = false;
   const deletesOk = await flushCloudDeletes();
+  if (!sessionStampIntact(stamp)) return { ok: false, reason: 'SESSION_CHANGED' };
   if (!deletesOk) syncPassFailed = true;
   await Promise.all([
     ...getAllShots().map(record => syncShot(record)),
@@ -1040,11 +1282,19 @@ async function syncAllCloudData() {
     syncProfile(getProfile()),
     syncWorkspace()
   ]);
-  state.cloudStatus = syncPassFailed ? 'LOCAL_BACKUP' : 'CLOUD_SYNCED';
-  if (!syncPassFailed) {
-    const queue = S.get('syncQueue', []);
-    if (queue.length) S.set('syncQueue', []);
-  }
+  if (!sessionStampIntact(stamp)) return { ok: false, reason: 'SESSION_CHANGED' };
+  /* No blanket queue clear (defects 2 + 3): each sync acknowledges its
+   * own entries on delivery. Here we only prune entries whose record no
+   * longer exists locally (deleted records are owned by tombstones). */
+  const liveShotIds = new Set(getAllShots().map(record => record.id));
+  const liveWeightIds = new Set(getWeights().map(record => record.id));
+  const queueNow = S.get('syncQueue', []);
+  const remainingQueue = queueNow.filter(item =>
+    (item.kind !== 'shot' || liveShotIds.has(item.id)) &&
+    (item.kind !== 'weight' || liveWeightIds.has(item.id)));
+  if (remainingQueue.length !== queueNow.length) S.set('syncQueue', remainingQueue);
+  applyDerivedStatus(stamp);
+  return { ok: !syncPassFailed && remainingQueue.length === 0 };
 }
 
 function queueCloudSync(kind, record) {
@@ -1058,7 +1308,11 @@ function queueCloudSync(kind, record) {
   return work;
 }
 
-function enqueueSync(kind, record) {
+function enqueueSync(kind, record, stamp = null) {
+  /* Queue mutations from a dead session generation are refused: the
+   * read-modify-write would otherwise resurrect stale entries into (or
+   * drop live entries of) the current session. */
+  if (stamp && !sessionStampIntact(stamp)) return;
   const id = record?.id || record?.cloudId || kind;
   const queue = S.get('syncQueue', []);
   const entry = { kind, id, cloudId: record?.cloudId || null, at: Date.now() };
@@ -2366,12 +2620,18 @@ function renderFirstShotMission(mode) {
 
 async function retryCloudHydration() {
   if (!state.cloud || !state.session?.user?.id || !state.cloudClient) return;
+  /* Session-generation guard (audit 2026-10-14, defect 3): a retry that
+   * resolves after sign-out or an account switch must not stamp its
+   * readiness or status onto the new session. */
+  const stamp = sessionStamp();
   state.cloudHydration = 'pending';
   renderDashboard();
   try {
     const hydration = await hydrateCloudData();
+    if (!sessionStampIntact(stamp)) return;
     state.cloudHydration = hydration.ok ? 'ok' : 'failed';
   } catch (_) {
+    if (!sessionStampIntact(stamp)) return;
     state.cloudHydration = 'failed';
   }
   // Claim 2a companion: hydration now succeeded, so flush the records
@@ -3592,7 +3852,7 @@ function bridge() {
    * bundle's live registry (window.GNModules === modules) instead of
    * replacing it, so chunk registrations land in the same object. */
   window.GNModules = Object.assign(window.GNModules || modules, modules, {
-    getLabTests, getAllLabTests, setLabTests
+    getLabTests, getAllLabTests, setLabTests, queueCloudSync
   });
   window.GN_NATIVE?.bridgeReady?.();
 }
@@ -5000,19 +5260,32 @@ async function completeCloudSession(session) {
   const mayMigrateLocal = state.accountKey === 'local' && localWorkspaceMigrationAllowed(targetUserId);
   const localWorkspace = mayMigrateLocal ? captureWorkspace('local') : null;
   activateSession(session, true);
+  /* Session-generation guard (audit 2026-10-14, defect 3): if this login
+   * was superseded while hydration was in flight (sign-out, account
+   * switch — including back into the SAME account), this continuation
+   * must not set readiness, migrate, or sync for the new session. */
+  const sessionGen = sessionStamp();
   const accountWorkspace = captureWorkspace(state.accountKey);
   showApp();
   // S1: honest empty states. Track hydration so the dashboard can tell
   // "still syncing" / "sync failed" apart from "genuinely no data".
   state.cloudHydration = 'pending';
   let hydration = await hydrateCloudData();
+  if (!sessionStampIntact(sessionGen)) return false;
   state.cloudHydration = hydration.ok ? 'ok' : 'failed';
   if (!hydration.ok) {
     // Claim 2a: one retry before deciding. Until hydration succeeds, local
     // records must NOT be uploaded — they may be stale and would upsert
     // over the (unread) cloud state.
     hydration = await hydrateCloudData();
+    if (!sessionStampIntact(sessionGen)) return false;
     state.cloudHydration = hydration.ok ? 'ok' : 'failed';
+    if (!hydration.ok && hydration.reason === 'HYDRATION_PERSIST_FAILED') {
+      // Defect 1: the merged cloud state could not be durably saved on
+      // this device. Surface it; uploads stay blocked until a retry
+      // commits the merge (dashboard RETRY SYNC path).
+      showToast(tx('sync.storageError', 'Storage full or blocked. Cloud data could not be saved on this device. Nothing was uploaded.'), true);
+    }
   }
   if (hydration.ok && localWorkspace && workspaceHasData(localWorkspace) && !workspaceHasData(accountWorkspace)) {
     const remote = hydration.remote || {};
@@ -5028,6 +5301,7 @@ async function completeCloudSession(session) {
   }
   if (hydration.ok) {
     await syncAllCloudData();
+    if (!sessionStampIntact(sessionGen)) return false;
     if (localWorkspace && workspaceHasData(localWorkspace) && state.cloudStatus === 'CLOUD_SYNCED') {
       markLocalWorkspaceMigrated(targetUserId);
     }
@@ -5580,7 +5854,20 @@ window.GN = {
   version: APP_VERSION,
   state,
   S,
-  async syncNow() { await getCloudClient(); await hydrateCloudData(); await syncAllCloudData(); modules.refreshAll(); },
+  async syncNow() {
+    await getCloudClient();
+    if (!state.cloud) { modules.refreshAll(); return; }
+    /* Defect 3 (audit 2026-10-14): syncNow owns its hydration result for
+     * the CURRENT session generation. A failed fresh hydration blocks the
+     * upload even if an earlier session left cloudHydration at 'ok'. */
+    const stamp = sessionStamp();
+    state.cloudHydration = 'pending';
+    const hydration = await hydrateCloudData();
+    if (!sessionStampIntact(stamp)) return;
+    state.cloudHydration = hydration.ok ? 'ok' : 'failed';
+    if (hydration.ok) await syncAllCloudData();
+    modules.refreshAll();
+  },
   signOut: confirmSignOut,
   localMode: enterLocalSession
 };
