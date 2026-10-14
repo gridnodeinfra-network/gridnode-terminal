@@ -205,7 +205,7 @@
       }
     },
 
-    '__CURRENT_BUILD__': {
+    '20261014.1281dd7': {
       version: '1.0.0', title: 'OFFICIAL LAUNCH', date: '2026-09-14',
       en: {
         NEW: [
@@ -243,6 +243,55 @@
       }
     },
 
+    '__CURRENT_BUILD__': {
+      version: '1.1.0', title: 'THE OCTOBER UPDATE', date: '2026-10-14',
+      en: {
+        NEW: [
+          'A brand-new welcome: the intro is now a short story plus a visual guide that spotlights the real button, field, or dial at every step and moves on when you tap it. No walls of text. Replay it anytime from VAULT.',
+          'TODAY, simplified: a fresh day now opens with three clear doors, LOG SHOT, LOG WEIGHT, and VIEW HISTORY, instead of a wall of empty panels.'
+        ],
+        IMPROVED: [
+          'Readability pass: the small print across the logging flows is larger, and labels say what they mean. The syringe panel says NOT READY or OVER CAPACITY until your entries are actually valid.',
+          'Dose shortcuts are yours now: the quick-pick doses under a medication are your own recent doses for that medication, not a generic list.',
+          'Plain words on the everyday paths: fewer codes and console labels between you and the next action.'
+        ],
+        FIXED: [
+          'Local mode no longer talks about the cloud: no sync panels or cloud messages when you are using the app on this device only.',
+          'Google sign-in on a brand-new device or browser: after the NODE KEY pass, you land back on the Google button to finish. No more detour to a raw sign-in page.',
+          'LAB results keep blanks blank: an ASSAY value you leave empty stays empty instead of turning into 0.',
+          'A backup with a damaged section now stops and names the damage instead of silently skipping it.'
+        ],
+        MOBILE: [
+          'Body scanner: every zone is now a full-size tap target on phone screens.'
+        ],
+        SECURITY: [
+          'Cloud sync hardened end to end: signing in can no longer overwrite your cloud records with a partial merge, edits and deletes made while a sync is in flight are never lost, and accounts stay fully separated even across rapid sign-outs and sign-ins. Verified with a live cross-account isolation test against the production database.'
+        ]
+      },
+      es: {
+        NEW: [
+          'Una bienvenida completamente nueva: la introducción ahora es una historia corta junto a una guía visual que resalta el botón, campo o control real en cada paso y avanza cuando lo tocas. Nada de muros de texto. Repítela cuando quieras desde VAULT.',
+          'HOY, simplificado: un día nuevo ahora abre con tres puertas claras, REGISTRAR DOSIS, REGISTRAR PESO y VER HISTORIAL, en lugar de un muro de paneles vacíos.'
+        ],
+        IMPROVED: [
+          'Pase de legibilidad: la letra pequeña en los flujos de registro es más grande y las etiquetas dicen lo que significan. El panel de la jeringa dice NO LISTO o SOBRE CAPACIDAD hasta que tus entradas sean realmente válidas.',
+          'Los atajos de dosis ahora son tuyos: las dosis rápidas bajo un medicamento son tus propias dosis recientes para ese medicamento, no una lista genérica.',
+          'Palabras claras en los caminos de todos los días: menos códigos y etiquetas de consola entre tú y la siguiente acción.'
+        ],
+        FIXED: [
+          'El modo local ya no habla de la nube: sin paneles de sincronización ni mensajes de la nube cuando usas la app solo en este dispositivo.',
+          'Inicio de sesión con Google en un dispositivo o navegador nuevo: después de pasar tu NODE KEY, vuelves al botón de Google para terminar. Sin desvíos a una página de inicio de sesión sin formato.',
+          'Los resultados de LAB mantienen los espacios en blanco en blanco: un valor de ENSAYO que dejas vacío se queda vacío en lugar de convertirse en 0.',
+          'Una copia de seguridad con una sección dañada ahora se detiene y nombra el daño en lugar de omitirla en silencio.'
+        ],
+        MOBILE: [
+          'Escáner corporal: cada zona ahora es un objetivo táctil de tamaño completo en pantallas de teléfono.'
+        ],
+        SECURITY: [
+          'Sincronización en la nube reforzada de punta a punta: iniciar sesión ya no puede sobrescribir tus registros en la nube con una fusión parcial, las ediciones y eliminaciones hechas mientras una sincronización está en curso nunca se pierden, y las cuentas permanecen completamente separadas incluso entre cierres e inicios de sesión rápidos. Verificado con una prueba de aislamiento entre cuentas en vivo contra la base de datos de producción.'
+        ]
+      }
+    },
     '20260907.1': {
       version: '0.15.33', title: 'RELEASE INTEGRITY + DATA SAFETY', date: '2026-09-07',
       en: {
