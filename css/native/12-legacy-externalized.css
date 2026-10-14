@@ -668,6 +668,7 @@ html[data-theme="light"] .ring-pct{color:var(--brand-cyan)}
 .toast.gn-toast-yield .gn-toast-bar,
 .toast.gn-toast-yield .gn-toast-check{display:none}
 .toast.gn-toast-yield .gn-toast-undo{padding:6px 10px}
+.toast.gn-toast-yield .gn-toast-body{padding:0}
 
 /* FLASH */
 .flash{position:fixed;inset:0;z-index:500;pointer-events:none;opacity:0;background:rgba(255,59,59,0.12);transition:opacity 0.1s}
