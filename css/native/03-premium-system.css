@@ -84,6 +84,40 @@ html[data-theme="light"] .gn-dashboard-mission-kicker { color: #006f82; }
 html[data-theme="light"] .gn-dashboard-mission h2 { color: #18272d; }
 html[data-theme="light"] .gn-dashboard-mission p { color: #33484f; }
 
+/* CLARITY PASS (P3): empty dashboard = three starting actions, one primary.
+   The placeholder wanda grid + duplicate action row hide while empty. */
+.gn-mission-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+  margin-top: 6px;
+}
+.gn-mission-actions .gn-mission-primary { grid-column: 1 / -1; margin-top: 0; }
+.gn-dashboard-mission button.gn-mission-secondary {
+  margin-top: 0;
+  min-height: 48px;
+  background: rgba(0, 212, 255, .07);
+  border: 1px solid rgba(0, 212, 255, .42);
+  color: #dff6ff;
+  box-shadow: none;
+}
+html[data-theme="light"] .gn-dashboard-mission button.gn-mission-secondary {
+  background: rgba(0, 111, 130, .07);
+  border-color: rgba(0, 111, 130, .45);
+  color: #14343c;
+}
+#gnWandaDashboard.gn-wanda-empty .gn-wanda-grid,
+#gnWandaDashboard.gn-wanda-empty .gn-wanda-actions,
+#gnWandaDashboard.gn-wanda-empty .gn-streak-card { display: none !important; }
+/* Sync status shrinks to a status line: tighter card, one-line title. */
+.gn-dashboard-mission[data-mode="syncing"] { padding: 14px 18px; gap: 7px; }
+.gn-dashboard-mission .gn-mission-sync-title {
+  font-size: 1rem;
+  max-width: none;
+  letter-spacing: .04em;
+}
+
 /* Functional copy: decorative telemetry may stay small; controls and guidance may not. */
 .form-label,
 .cp-group-label,

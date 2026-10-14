@@ -85,7 +85,9 @@ function renderShotFilterOptions(records) {
    never see the first-run pitch or a fake "nothing logged" empty. */
 function historySyncMode(totalRecords) {
   if (totalRecords > 0) return null;
-  const cloudUser = Boolean(state.session?.user?.id && state.cloudClient);
+  /* CLARITY PASS (P1): gate on state.cloud, not session id + client
+     presence — both exist in local mode (see 02-dashboard). */
+  const cloudUser = Boolean(state.cloud && state.session?.user?.id);
   if (!cloudUser || state.cloudHydration === 'ok') return null;
   return state.cloudHydration === 'failed' ? 'failed' : 'syncing';
 }

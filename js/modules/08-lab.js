@@ -707,7 +707,15 @@ function positiveNumberField(id, label, maximum) {
   return { valid: true, value };
 }
 export function updateSyr() {
+  /* CLARITY PASS (P1): the STATUS cell is computed from the same validity
+     result as everything else on this card. It used to be a static "READY"
+     in the markup that no code ever updated — it read READY next to empty,
+     invalid, and over-capacity states. READY now means: valid dose, valid
+     concentration, result inside the barrel. Nothing else earns the word. */
+  const setSyrStatus = (stateName, text) => { const el = $('syrStatus'); if (el) { el.dataset.state = stateName; el.textContent = text; } };
   setText('syrUnits', '—'); setText('syrText', tx('lab.enterValidValues', 'ENTER VALID VALUES')); setText('syrML', '— mL'); setText('syrConcDisplay', '— mg/mL'); setText('syrResultLine', '—'); setText('syrVolResult', '— mL'); setDisplay('syrTarget', false);
+  setText('syrHeadroom', tx('lab.headroom', 'HEADROOM —'));
+  setSyrStatus('notready', tx('lab.statusNotReady', 'NOT READY'));
   $('syrFormula')?.setAttribute('data-valid', 'false');
   const doseField = positiveNumberField('cDose', tx('lab.userAmount', 'USER-ENTERED AMOUNT'), 1000), concentrationField = positiveNumberField('cConc', tx('lab.concentration', 'CONCENTRATION'), 10000);
   if (!doseField.valid || !concentrationField.valid) { setText('syrFormula', !doseField.valid ? doseField.message : concentrationField.message); return; }
@@ -718,11 +726,14 @@ export function updateSyr() {
    * over-capacity results instead of clamping the marker and reporting READY. */
   if (units > 100 || units < 0) {
     setText('syrFormula', tx('lab.overCapacity', 'OVER CAPACITY · RESULT EXCEEDS THE 0–100 UNIT BARREL'));
+    setSyrStatus('over', tx('lab.statusOverCapacity', 'OVER CAPACITY'));
     setDisplay('syrTarget', false);
     $('syrFormula')?.setAttribute('data-valid', 'false');
     return;
   }
   setText('syrUnits', `${units.toFixed(1)}u`); setText('syrText', tx('lab.drawToUnit', 'DRAW TO THE {units} UNIT LINE', { units: units.toFixed(1) })); setText('syrML', `${volume.toFixed(3)} mL`); setText('syrConcDisplay', `${concentration} mg/mL`); setText('syrResultLine', `${dose} mg`); setText('syrVolResult', `${volume.toFixed(3)} mL`); setText('syrFormula', `${dose} mg ÷ ${concentration} mg/mL = ${volume.toFixed(3)} mL = ${units.toFixed(1)} U-100 units. ${tx('lab.educationalMathOnly', 'Educational math only.')}`); $('syrFormula')?.setAttribute('data-valid', 'true'); setDisplay('syrTarget', true);
+  setText('syrHeadroom', tx('lab.headroomValue', 'HEADROOM {units}u', { units: (100 - units).toFixed(1) }));
+  setSyrStatus('ready', tx('lab.ready', 'READY'));
   const target = $('syrTarget'); if (target) target.style.left = `${units}%`;
 }
 export function updateRecon() {

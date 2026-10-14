@@ -16,6 +16,13 @@
    NOTE on --type-label: the contract sets .72rem; the old
    01-readability-floor override (.75rem) was retired, so labels using
    var(--type-label) render ~0.5px smaller. Intentional consolidation.
+   CLARITY PASS (P2, 2026-10-14): the small end of the type scale is
+   raised — Pipe's standing readability order. --type-label .72->.78rem
+   (12.5px), --type-caption .62->.72rem (11.5px), --type-micro .55->.68rem
+   (~11px); kicker size .625->.7rem and spacing 2.5px->1.6px so small
+   mono labels stop paying the wide-tracking tax. Display sizes and the
+   large-header spaced look are unchanged. Token names unchanged
+   (contract), values only.
    ═══════════════════════════════════════════════════════════════════ */
 :root {
   /* Brand (founder-locked) */
@@ -64,15 +71,15 @@
   --type-title: 1.1rem;
   --type-subtitle: .95rem;
   --type-body: .88rem;
-  --type-label: .72rem;
-  --type-caption: .62rem;
-  --type-micro: .55rem;
+  --type-label: .78rem;
+  --type-caption: .72rem;
+  --type-micro: .68rem;
 
   /* Kicker (signature brand element) */
   --kicker-font: 'Share Tech Mono', monospace;
-  --kicker-size: .625rem;
+  --kicker-size: .7rem;
   --kicker-weight: 700;
-  --kicker-spacing: 2.5px;
+  --kicker-spacing: 1.6px;
   --kicker-color: var(--brand-cyan);
 
   /* Controls */

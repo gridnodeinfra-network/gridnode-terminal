@@ -8097,6 +8097,9 @@ body.gn-log-shot-picker-open .fab{
 #logOv .gn-shot-scroll .form-group::after{bottom:-1px;right:-1px;border-left:none;border-top:none;border-radius:0 0 12px 0}
 /* Dose chips — unmissable selection (OnePlus QA lesson) */
 #logOv .dose-pills{display:grid !important;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}
+/* CLARITY PASS (P5): the pills are the user's own recent doses — the caption
+   says so, in plain words, so a shortcut never reads as a suggestion. */
+#logOv .dose-pills-caption{grid-column:1/-1;font-family:var(--font-m);font-size:var(--type-caption);font-weight:700;letter-spacing:.08em;color:var(--text-3);margin-bottom:-2px}
 #logOv .dose-pill{
   min-height:60px !important;border-radius:12px !important;
   background:var(--bg2);border:1.5px solid rgba(0,229,255,.35) !important;

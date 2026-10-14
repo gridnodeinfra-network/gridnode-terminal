@@ -85,7 +85,31 @@ export function gnMedRevealGroup(dropId, group) {
     block.style.display = '';
   });
 }
-export function updatePills() { const med = normalizeMedicationId(selectState.cpShotMed?.val); const dose = Number(getProfile().dose); const container = $('dosePills'); if (!container) return; const values = dose ? [dose] : [0.5, 1, 2.5, 5, 7.5, 10]; container.innerHTML = values.map(value => `<button type="button" class="dose-pill" data-dose="${value}">${value} mg</button>`).join(''); setText('profMedTxt', med ? `// ${medicationLabel(med).toUpperCase()}` : tx('profile.noMedicationSet', '// NO MEDICATION SET')); }
+export function updatePills() {
+  const med = normalizeMedicationId(selectState.cpShotMed?.val);
+  const container = $('dosePills'); if (!container) return;
+  /* CLARITY PASS (P5): dose shortcuts come ONLY from the user's own logged
+     doses for this medication, newest first — never from app presets. A
+     preset row reads as a recommended amount, and this product does not
+     recommend doses (release condition). No history -> no shortcuts, just
+     the input. The profile's stored dose is not used either: it is a
+     setting, not a logged entry. */
+  const recent = [];
+  if (med) {
+    const mine = (typeof getAllShots === 'function' ? getAllShots() : [])
+      .filter(s => s && !s.archived && normalizeMedicationId(s.med) === med)
+      .sort((a, b) => new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0));
+    for (const s of mine) {
+      const d = Number(s.dose);
+      if (Number.isFinite(d) && d > 0 && !recent.includes(d) && recent.length < 4) recent.push(d);
+    }
+  }
+  container.innerHTML = recent.length
+    ? `<div class="dose-pills-caption">${safeText(tx('shot.yourRecentDoses', 'YOUR RECENT DOSES'))}</div>` + recent.map(value => `<button type="button" class="dose-pill" data-dose="${value}">${value} mg</button>`).join('')
+    : '';
+  container.style.display = recent.length ? '' : 'none';
+  setText('profMedTxt', med ? `// ${medicationLabel(med).toUpperCase()}` : tx('profile.noMedicationSet', '// NO MEDICATION SET'));
+}
 export function selPill(button, dose) {
   const el = $('sDose');
   if (el) {

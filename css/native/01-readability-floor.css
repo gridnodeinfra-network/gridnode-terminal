@@ -122,6 +122,25 @@ html[data-theme="light"] #boot { background: #0b0f16 !important; }
   }
   .scanner-mode-btn { min-height: 44px !important; font-size: .76rem !important; }}
 
+/* CLARITY PASS (P2, 2026-10-14): task-path label floor, BOTH themes.
+   Measured on the v3 build (computed-style census, TODAY + log modal +
+   LAB): these classes hardcode 7.4–10.9px with up to 2.5px tracking —
+   the "tiny futuristic text" Pipe ordered enlarged. Floor: 12px
+   (.75rem) for sentence-carrying labels, 11.5px (.72rem) for dense HUD
+   tags, tracking capped at .05em. Display headers keep the wide-spaced
+   look; nothing here touches them. */
+.gn-telemetry-summary, .gn-console-sub, .t3-empty-cta {
+  font-size: .75rem !important;
+  letter-spacing: .04em !important;
+}
+.gn-instrument-code, .gn-data-quality, .gn-level-xp, .gn-shot-stepname,
+.gn-shot-summary-item, .gn-foundation-kicker, .gn-level-kicker,
+.gn-today-weight-kicker, .gn-delta-kicker, .gn-target-empty,
+.gn-chart-state, .gn-arc-empty, .gn-syr-result .k, .gn-syr-meta {
+  font-size: .72rem !important;
+  letter-spacing: .05em !important;
+}
+
 /* Served readability inventory closure. These are the remaining functional
    roles found by the rendered DAY OPS audit; all inherit the semantic colors
    above and keep a phone-readable floor without altering NIGHT GRID. */

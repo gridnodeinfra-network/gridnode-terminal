@@ -748,6 +748,14 @@ html[data-theme="light"] #pageLab .gn-research-notice strong { color: #3a2f15 !i
 #labSeg-draw .form-label, #labSeg-recon .form-label, #labSeg-supply .form-label { font-size: var(--type-label) !important; }
 html[data-theme="light"] .gn-syr-result { background: var(--surface-elevated, #ffffff) !important; border-color: rgba(20,60,70,.22) !important; }
 html[data-theme="light"] .gn-syr-result .v { color: var(--text-primary, #1c2b31) !important; }
+/* CLARITY PASS (P1): DRAW status color is a computed consequence of the
+   validity state updateSyr() writes to data-state — never decoration. */
+#pageLab #syrStatus[data-state="ready"] { color: var(--success, #00ff88) !important; }
+#pageLab #syrStatus[data-state="over"] { color: var(--danger, #FF3B3B) !important; }
+#pageLab #syrStatus[data-state="notready"] { color: var(--warning, #ffd166) !important; }
+html[data-theme="light"] #pageLab #syrStatus[data-state="ready"] { color: #0a7a4a !important; }
+html[data-theme="light"] #pageLab #syrStatus[data-state="over"] { color: #c81e1e !important; }
+html[data-theme="light"] #pageLab #syrStatus[data-state="notready"] { color: #8a5f00 !important; }
 
 /* ── 3. Dose Projection form hierarchy ── */
 #gnDoseProjection .form-label { font-size: var(--type-label) !important; }

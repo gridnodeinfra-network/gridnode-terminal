@@ -92,7 +92,8 @@ function renderResults() {
      state, not a fake "nothing logged yet" PROGRESS screen. */
   try {
     const page = $('pageResults');
-    const cloudUser = Boolean(state.session?.user?.id && state.cloudClient);
+    /* CLARITY PASS (P1): gate on state.cloud (see 02-dashboard). */
+    const cloudUser = Boolean(state.cloud && state.session?.user?.id);
     const syncMode = (shots.length === 0 && weights.length === 0 && cloudUser && state.cloudHydration !== 'ok')
       ? (state.cloudHydration === 'failed' ? 'failed' : 'syncing') : null;
     if (page) page.classList.toggle('gn-ux-syncing', syncMode === 'syncing');
