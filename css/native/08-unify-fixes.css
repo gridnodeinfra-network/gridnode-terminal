@@ -55,9 +55,12 @@
    * Aliased to --text-3 → 6.18:1 on --surface #0e0e16 (AA PASS). */
   --text-muted: var(--text-3);
   --kicker-font: 'Share Tech Mono', monospace;
-  --kicker-size: .625rem;
+  /* CLARITY PASS (P2, 2026-10-14): kicker raised .625rem->.7rem (11.2px)
+     and tracking tightened 2.5px->1.6px — small mono labels were the
+     hardest text in the app to scan. Mirrors 08-design-tokens.css. */
+  --kicker-size: .7rem;
   --kicker-weight: 700;
-  --kicker-spacing: 2.5px;
+  --kicker-spacing: 1.6px;
   --kicker-color: var(--brand-cyan);
 }
 html[data-theme="light"] {
@@ -66,8 +69,8 @@ html[data-theme="light"] {
 }
 
 /* ── §3 · Canonical kicker ──────────────────────────────────────────────
- * ONE kicker style (TOKEN-CONTRACT.md): Share Tech Mono, .625rem, 700,
- * 2.5px tracking, 1.2 line-height, uppercase, brand cyan. The color
+ * ONE kicker style (TOKEN-CONTRACT.md): Share Tech Mono, .7rem, 700,
+ * 1.6px tracking, 1.2 line-height, uppercase, brand cyan. The color
  * auto-adapts to #00677f in light theme via --brand-cyan, so no separate
  * light color rule is needed. Every legacy kicker class aliases to it —
  * usage sites are untouched. !important is required: the DAY OPS light

@@ -136,7 +136,8 @@ html[data-theme="light"] #boot { background: #0b0f16 !important; }
 .gn-instrument-code, .gn-data-quality, .gn-level-xp, .gn-shot-stepname,
 .gn-shot-summary-item, .gn-foundation-kicker, .gn-level-kicker,
 .gn-today-weight-kicker, .gn-delta-kicker, .gn-target-empty,
-.gn-chart-state, .gn-arc-empty, .gn-syr-result .k, .gn-syr-meta {
+.gn-chart-state, .gn-arc-empty, .gn-syr-result .k, .gn-syr-meta,
+.gn-telemetry-heading span, .gn-shot-summary-sep {
   font-size: .72rem !important;
   letter-spacing: .05em !important;
 }

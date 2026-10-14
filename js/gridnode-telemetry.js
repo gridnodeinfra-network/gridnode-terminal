@@ -117,7 +117,7 @@
       const section = document.createElement('section');
       section.id = 'gnTelemetrySignal';
       section.className = 'results-card gn-telemetry-module gn-telemetry-signal';
-      section.innerHTML = `<div class="gn-telemetry-heading"><div><span>// SIGNAL 03</span><h2>${safe(tr('telemetry.section', 'BIOLOGICAL TELEMETRY'))}</h2><p>${safe(tr('telemetry.sectionSub', 'User-entered records rendered as precision tracking instruments'))}</p></div>${rangeControls()}</div><div class="gn-telemetry-detail-grid">${instrumentMarkup('weight', false)}${instrumentMarkup('dose', false)}${instrumentMarkup('target', false)}</div>`;
+      section.innerHTML = `<div class="gn-telemetry-heading"><div><span>// 03</span><h2>${safe(tr('telemetry.section', 'BIOLOGICAL TELEMETRY'))}</h2><p>${safe(tr('telemetry.sectionSub', 'User-entered records rendered as precision tracking instruments'))}</p></div>${rangeControls()}</div><div class="gn-telemetry-detail-grid">${instrumentMarkup('weight', false)}${instrumentMarkup('dose', false)}${instrumentMarkup('target', false)}</div>`;
       const summary = results.querySelector('.results-card.summary');
       if (summary) summary.insertAdjacentElement('afterend', section); else results.querySelector('.results-ledger')?.prepend(section);
     }
