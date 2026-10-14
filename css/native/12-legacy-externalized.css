@@ -663,8 +663,11 @@ html[data-theme="light"] .ring-pct{color:var(--brand-cyan)}
    !important is required: app.js injects competing .toast position rules. */
 .toast{pointer-events:none !important}
 .toast button{pointer-events:auto !important}
-.toast.gn-toast-yield{top:calc(var(--safe-top, 0px) + 8px) !important;bottom:auto !important;padding:7px 11px}
-.toast.gn-toast-yield .gn-toast-detail{display:none}
+.toast.gn-toast-yield{top:calc(var(--safe-top, 0px) + 8px) !important;bottom:auto !important;padding:6px 10px}
+.toast.gn-toast-yield .gn-toast-detail,
+.toast.gn-toast-yield .gn-toast-bar,
+.toast.gn-toast-yield .gn-toast-check{display:none}
+.toast.gn-toast-yield .gn-toast-undo{padding:6px 10px}
 
 /* FLASH */
 .flash{position:fixed;inset:0;z-index:500;pointer-events:none;opacity:0;background:rgba(255,59,59,0.12);transition:opacity 0.1s}
