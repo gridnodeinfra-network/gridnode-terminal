@@ -23,6 +23,7 @@ function clearWtFieldErrors() {
   qa('#wtOv .gn-field-error').forEach(el => el.remove());
   $('wtVal')?.removeAttribute('aria-invalid');
   $('wtDate')?.removeAttribute('aria-invalid');
+  $('wtTime')?.removeAttribute('aria-invalid');
   setDisplay('wtError', false);
 }
 /* QA-CONFIRMED defect family (2026-10-14, verified at base c2e85c1 + v3):
@@ -66,19 +67,45 @@ function saveWt() {
   moduleState.savingWt = true;
   try {
     const raw = Number($('wtVal')?.value);
-    const date = readHumanDateInput($('wtDate'), true) || todayISO();
     clearWtFieldErrors();
     if (!Number.isFinite(raw) || raw <= 0) { $('wtVal')?.setAttribute('aria-invalid', 'true'); wtFieldError($('wtVal'), 'gnWtErrVal', tx('weight.invalidPlain', 'Enter your weight as a number greater than zero.')); $('wtVal')?.focus(); return; }
-    const dateTime = new Date(`${date}T${$('wtTime')?.value || '12:00'}`);
-    if (Number.isNaN(dateTime.getTime()) || dateTime > new Date()) { $('wtDate')?.setAttribute('aria-invalid', 'true'); wtFieldError($('wtDate')?.closest('.form-group') || $('wtDate'), 'gnWtErrDate', tx('weight.futurePlain', 'That date is in the future. Pick today or an earlier date.')); $('wtDate')?.focus(); return; }
+    /* Strict date (reliability audit 2026-10-14, item 6 T5): an
+     * unparseable typed date used to fall back to today via
+     * `|| todayISO()` — 02/31/2026 saved as a weight dated today with
+     * a success toast. Now: a field that holds text but yields no real
+     * calendar date is rejected visibly; only a genuinely untouched
+     * field (impossible in this modal — openWt always populates it)
+     * would default. */
+    const date = readHumanDateInput($('wtDate'), true);
+    if (!date) {
+      $('wtDate')?.setAttribute('aria-invalid', 'true');
+      wtFieldError($('wtDate')?.closest('.form-group') || $('wtDate'), 'gnWtErrDate', tx('weight.invalidDatePlain', 'Enter a real calendar date.'));
+      $('wtDate')?.focus();
+      return;
+    }
     const weight = moduleState.weightUnit === 'kg' ? raw * 2.2046226218 : raw;
     const previousWeight = sortedWeights().at(-1)?.weight;
     const milestone = weightMilestone(previousWeight, weight, getProfile());
     const now = new Date().toISOString();
     /* QA 2026-09-17: when the time field is left empty, store a date-only
-     * value instead of fabricating a noon timestamp. */
+     * value instead of fabricating a noon timestamp. Item 6 T1 extends
+     * the contract: WITH a time, the record stores an explicit instant
+     * (offset in force on that date), never offset-less local text; a
+     * wall time inside the spring DST gap is rejected visibly. */
     const wtTimeRaw = $('wtTime')?.value?.trim() || '';
-    const record = { id: createId('weight'), date: wtTimeRaw ? `${date}T${wtTimeRaw}` : date, weight, weightKg: moduleState.weightUnit === 'kg' ? raw : raw / 2.2046226218, unit: moduleState.weightUnit, notes: $('wtNotes')?.value?.trim() || null, source: 'manual', state: 'confirmed', createdAt: now, modifiedAt: now };
+    let stampedWeightDate = date;
+    if (wtTimeRaw) {
+      stampedWeightDate = stampLocalInstant(date, wtTimeRaw);
+      if (!stampedWeightDate) {
+        $('wtTime')?.setAttribute('aria-invalid', 'true');
+        wtFieldError($('wtTime')?.closest('.form-group') || $('wtTime'), 'gnWtErrTime', tx('weight.nonexistentTimePlain', 'That time does not exist on this date. The clock skips it for daylight saving. Pick a time outside the skipped hour.'));
+        $('wtTime')?.focus();
+        return;
+      }
+    }
+    const dateTime = new Date(stampedWeightDate.includes('T') ? stampedWeightDate : `${date}T${$('wtTime')?.value || '12:00'}`);
+    if (Number.isNaN(dateTime.getTime()) || dateTime > new Date()) { $('wtDate')?.setAttribute('aria-invalid', 'true'); wtFieldError($('wtDate')?.closest('.form-group') || $('wtDate'), 'gnWtErrDate', tx('weight.futurePlain', 'That date is in the future. Pick today or an earlier date.')); $('wtDate')?.focus(); return; }
+    const record = { id: createId('weight'), date: stampedWeightDate, weight, weightKg: moduleState.weightUnit === 'kg' ? raw : raw / 2.2046226218, unit: moduleState.weightUnit, notes: $('wtNotes')?.value?.trim() || null, source: 'manual', state: 'confirmed', createdAt: now, modifiedAt: now };
     if (state.cloud) ensureCloudRecordId(record);
     const weights = getWeights(); weights.push(record);
     if (!S.set('weights', weights)) { setText('wtError', tx('weight.storageUnavailable', 'STORAGE UNAVAILABLE — WEIGHT NOT SAVED')); setDisplay('wtError', true); return; }

@@ -643,29 +643,32 @@ export function saveShot(allowFuture = false) {
       notifyCoachSaveBlocked([$('cpShotMed')]);
       return;
     }
-    const dateTime = new Date(`${date}T${time}`);
-    if (!allowFuture && dateTime > new Date()) { moduleState.pendingFutureShot = true; $('futureTimestampConfirm')?.classList.add('active'); return; }
-    /* Timestamp fix (audit 2026-10-08): store with the local UTC offset so the
-     * instant is unambiguous in every parser. Naive "YYYY-MM-DDTHH:mm" strings
-     * caused ~7h display skew in Phase Engine. Slice(0,10) still yields the
-     * local date; legacy offset-less records keep parsing as local time. */
     const existing = moduleState.editingShotId ? getAllShots().find(item => item.id === moduleState.editingShotId) : null;
-    /* Offset preservation (audit 2026-10-08): on edit, keep the original
-     * record's UTC offset instead of stamping the current timezone. Replacing
-     * -04:00 with -07:00 shifts the instant by 3h even when wall-clock is
-     * unchanged. New records use the current timezone. */
-    var origOffset = null;
-    if (existing && existing.date) {
-      var om = String(existing.date).match(/([+-]\d{2}:\d{2}|Z)$/);
-      if (om) origOffset = om[1] === 'Z' ? '+00:00' : om[1];
+    /* Date/time semantics (reliability audit 2026-10-14, item 6; the
+     * 2026-10-08 offset work is the base this extends):
+     * - An edit that leaves date + wall time untouched preserves the
+     *   stored instant VERBATIM: its explicit offset AND its seconds
+     *   (saving 23:59:45 unchanged used to store 23:59:00).
+     * - Any real change re-stamps via stampLocalInstant: the wall time
+     *   is kept and the offset is recomputed for the (possibly new)
+     *   date in the device's IANA zone. The old code kept the ORIGINAL
+     *   record's offset on date edits, so moving a shot across a DST
+     *   boundary shifted its displayed hour by one.
+     * - A wall time that does not exist on the chosen date (the
+     *   spring DST gap) is rejected visibly below, never silently
+     *   shifted to a different hour. */
+    const existingWall = existing?.date ? String(existing.date).match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/) : null;
+    const unchangedInstant = !!(existingWall && existingWall[1] === date && `${existingWall[2]}:${existingWall[3]}` === time);
+    const stampedDate = unchangedInstant ? String(existing.date) : stampLocalInstant(date, time);
+    if (!stampedDate) {
+      $('sTime')?.setAttribute('aria-invalid', 'true');
+      shotFieldError($('sTime')?.closest('.form-group') || $('sTime'), 'gnShotErrTime', tx('shots.nonexistentTimePlain', 'That time does not exist on this date. The clock skips it for daylight saving. Pick a time outside the skipped hour.'));
+      $('sTime')?.focus();
+      showToast(tx('shots.nonexistentTimePlain', 'That time does not exist on this date. The clock skips it for daylight saving. Pick a time outside the skipped hour.'), true);
+      return;
     }
-    const tzSuffix = origOffset || (function () {
-      const tzMin = -dateTime.getTimezoneOffset();
-      const tzSign = tzMin >= 0 ? '+' : '-';
-      const tzAbs = Math.abs(tzMin);
-      return tzSign + String(Math.floor(tzAbs / 60)).padStart(2, '0') + ':' + String(tzAbs % 60).padStart(2, '0');
-    })();
-    const stampedDate = `${date}T${time}:00${tzSuffix}`;
+    const dateTime = new Date(stampedDate);
+    if (!allowFuture && dateTime > new Date()) { moduleState.pendingFutureShot = true; $('futureTimestampConfirm')?.classList.add('active'); return; }
     const record = {
       ...(existing || {}), id: existing?.id || createId('shot'), date: stampedDate,
       med, dose, site, deviceId: $('shotDeviceId')?.value || null, wt: weight,
@@ -693,12 +696,16 @@ export function saveShot(allowFuture = false) {
     ));
     if (record.wt !== null) {
       const linkedWeight = linkedIndex >= 0 ? weights[linkedIndex] : null;
-      weightRecord = {
+      /* Canonical weight (item 1): the spread used to carry the OLD
+       * record's cached weightKg while `weight` took the new value,
+       * and the cloud payload trusted the cache. Recompute the derived
+       * kg from the canonical pounds value on every rebuild. */
+      weightRecord = withCanonicalWeight({
         ...(linkedWeight || {}), id: linkedWeight?.id || createId('weight'), shotId: record.id,
         shotCloudId: record.cloudId || linkedWeight?.shotCloudId || null,
         date: record.date, weight: record.wt, notes: 'Logged with SHOT', source: 'shot',
         createdAt: linkedWeight?.createdAt || new Date().toISOString(), modifiedAt: record.modifiedAt
-      };
+      });
       if (state.cloud) ensureCloudRecordId(weightRecord);
       if (linkedIndex >= 0) weights[linkedIndex] = weightRecord; else weights.push(weightRecord);
       ops.push({ key: 'weights', value: weights });
@@ -719,11 +726,19 @@ export function saveShot(allowFuture = false) {
       return;
     }
     // Cloud sync ONLY after the local batch committed atomically.
-    const shotSync = queueCloudSync('shot', record);
+    queueCloudSync('shot', record);
     if (changed) queueCloudSync('workspace');
-    // Preserve the FK order once shot_id is available. The cloud functions
-    // remain fail-safe and queued if the shot upsert itself cannot complete.
-    if (weightRecord) shotSync.then(() => queueCloudSync('weight', weightRecord));
+    /* Item 1: the linked weight is queued directly, on par with a
+     * standalone weight edit. It used to ride on the shot sync's
+     * promise, which never fires when the shot sync is parked (local
+     * mode, hydration pending, offline) — the edit then reached local
+     * state and the workspace blob but never the weights table, and
+     * later syncs had no weight entry to deliver. Ordering is safe:
+     * the weight payload links shot_cloud_id only when the shot's
+     * cloud id already exists, and the restore path re-queues weights
+     * for shots skipped during hydration, so the link lands on the
+     * next pass at the latest. */
+    if (weightRecord) queueCloudSync('weight', weightRecord);
     if (queuedCloudDelete) flushCloudDeletes();
     appendEventLedger({ type: 'SHOT', recordId: record.id, date: record.date, label: existing ? 'SHOT UPDATED' : 'SHOT EVENT CONFIRMED' });
     moduleState.pendingFutureShot = false;

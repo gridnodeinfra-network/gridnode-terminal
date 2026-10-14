@@ -751,6 +751,20 @@ function updateSyr() {
     $('syrFormula')?.setAttribute('data-valid', 'false');
     return;
   }
+  /* Below display resolution (reliability audit 2026-10-14, item 6
+   * T7): a positive result smaller than the smallest displayable step
+   * (0.1 units / 0.001 mL) used to render as "0.0u" and "0.000 mL"
+   * while marked valid + READY — a valid-looking zero. It now gets
+   * its own honest state: not READY, not valid, and the formula line
+   * names the actual computed result. */
+  if (units < 0.05 || volume < 0.0005) {
+    setText('syrUnits', '—'); setText('syrText', tx('lab.belowResolution', 'BELOW DISPLAY RESOLUTION')); setText('syrML', '< 0.001 mL'); setText('syrConcDisplay', `${concentration} mg/mL`); setText('syrResultLine', `${dose} mg`); setText('syrVolResult', '< 0.001 mL');
+    setText('syrFormula', `${dose} mg ÷ ${concentration} mg/mL = ${volume} mL (${units} U-100 units) — ${tx('lab.belowResolutionNote', 'smaller than the smallest syringe mark this display can show (0.1 units / 0.001 mL). Educational math only.')}`);
+    setSyrStatus('belowres', tx('lab.statusBelowResolution', 'BELOW RESOLUTION'));
+    setDisplay('syrTarget', false);
+    $('syrFormula')?.setAttribute('data-valid', 'false');
+    return;
+  }
   setText('syrUnits', `${units.toFixed(1)}u`); setText('syrText', tx('lab.drawToUnit', 'DRAW TO THE {units} UNIT LINE', { units: units.toFixed(1) })); setText('syrML', `${volume.toFixed(3)} mL`); setText('syrConcDisplay', `${concentration} mg/mL`); setText('syrResultLine', `${dose} mg`); setText('syrVolResult', `${volume.toFixed(3)} mL`); setText('syrFormula', `${dose} mg ÷ ${concentration} mg/mL = ${volume.toFixed(3)} mL = ${units.toFixed(1)} U-100 units. ${tx('lab.educationalMathOnly', 'Educational math only.')}`); $('syrFormula')?.setAttribute('data-valid', 'true'); setDisplay('syrTarget', true);
   setText('syrHeadroom', tx('lab.headroomValue', 'HEADROOM {units}u', { units: (100 - units).toFixed(1) }));
   setSyrStatus('ready', tx('lab.ready', 'READY'));

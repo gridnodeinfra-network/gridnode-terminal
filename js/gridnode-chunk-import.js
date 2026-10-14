@@ -436,9 +436,22 @@ function normalizeImportDate(value) {
   const dateOnly = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (dateOnly) {
     const [, year, month, day] = dateOnly;
-    const parsed = new Date(Number(year), Number(month) - 1, Number(day), 12, 0, 0, 0);
-    if (parsed.getFullYear() !== Number(year) || parsed.getMonth() !== Number(month) - 1 || parsed.getDate() !== Number(day)) return '';
+    if (!isRealCalendarDate(year, month, day)) return '';
     return raw;
+  }
+  /* Datetime strings get the same strict calendar validation as
+   * date-only values — and the same strictness the backup validator
+   * (validBackupDate) already enforces (reliability audit item 6 T6):
+   * `new Date('2026-02-31T12:00:00-05:00')` ROLLS OVER to March 3 and
+   * parses fine, so an impossible datetime used to classify as a
+   * valid NEW record. The stated components must be a real calendar
+   * date and a real clock time before the string is trusted. */
+  const dateTime = raw.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?\s*(Z|[+-]\d{2}:?\d{2})?$/);
+  if (dateTime) {
+    const [, year, month, day, hour, minute, second] = dateTime;
+    if (!isRealCalendarDate(year, month, day)) return '';
+    if (Number(hour) > 23 || Number(minute) > 59 || Number(second || 0) > 59) return '';
+    return Number.isNaN(new Date(raw).getTime()) ? '' : raw;
   }
   return Number.isNaN(new Date(raw).getTime()) ? '' : raw;
 }

@@ -68,6 +68,61 @@ function weightMatchesFilters(record) {
   return true;
 }
 
+/* HISTORY render window (reliability audit 2026-10-14, item 7):
+ * HISTORY used to materialize EVERY record on every render — 5,000
+ * records cost ~5 s and ~47,000 DOM descendants on first navigation,
+ * and the hidden weight list was rebuilt inside the timeline render
+ * too. The views now render a bounded window (SHOW MORE grows it),
+ * the timeline projection is memoized per data signature, and the
+ * constellation reuses the render's own timeline instead of building
+ * a second one. Visible behavior at small histories is unchanged:
+ * everything fits in the first window. */
+const HISTORY_PAGE_SIZE = 50;
+
+function historyScopeKey() {
+  const f = moduleState.shotFilters;
+  return [moduleState.historyType, moduleState.shotHistoryView, f.medication, f.site, f.range, f.query].join('|');
+}
+
+function historyWindow(total) {
+  const scope = historyScopeKey();
+  if (moduleState.historyLimitScope !== scope) {
+    moduleState.historyLimitScope = scope;
+    moduleState.historyLimit = HISTORY_PAGE_SIZE;
+  }
+  return Math.min(moduleState.historyLimit, total);
+}
+
+function historyMoreHtml(shown, total) {
+  if (shown >= total) return '';
+  return `<div class="gn-history-more"><div class="gn-history-count">${tx('history.showingOf', 'SHOWING {shown} OF {total}', { shown, total })}</div><button type="button" class="btn-full btn-secondary" id="gnHistoryMore">${tx('history.showMore', 'SHOW MORE RECORDS')}</button></div>`;
+}
+
+function wireHistoryMore() {
+  $('gnHistoryMore')?.addEventListener('click', () => {
+    moduleState.historyLimit += HISTORY_PAGE_SIZE;
+    renderShots();
+  });
+}
+
+/* Constellation click-through: cards are keyed by timeline id, so a
+ * node reveals ITS record — growing the window first when the record
+ * sits beyond it. (The old index-based mapping pointed at the wrong
+ * card whenever the timeline exceeded the node count.) */
+function revealHistoryRecord(key, orderedEvents) {
+  const idx = orderedEvents.findIndex(event => event.id === key);
+  if (idx >= 0 && moduleState.historyLimit <= idx) {
+    moduleState.historyLimit = Math.ceil((idx + 1) / HISTORY_PAGE_SIZE) * HISTORY_PAGE_SIZE;
+    renderShots();
+  }
+  const card = document.querySelector(`#logList [data-history-key="${key}"]`);
+  if (card) {
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.style.outline = '2px solid #00d4ff';
+    setTimeout(() => { card.style.outline = ''; }, 1500);
+  }
+}
+
 function renderShotFilterOptions(records) {
   const filters = moduleState.shotFilters;
   const med = $('gnShotFilterMedication');
@@ -124,18 +179,24 @@ export function renderShots() {
   const visible = filterShots(all.filter(record => moduleState.shotHistoryView === 'archived' ? record.archived : !record.archived).sort((a, b) => new Date(b.date) - new Date(a.date)));
   renderShotFilterOptions(all);
   installCustomPickers(document);
-  document.addEventListener('gn:langchange', () => {
-    const shotDate = $('sDate');
-    const weightDate = $('wtDate');
-    if (shotDate?.dataset.isoDate) setHumanDateInput(shotDate, shotDate.dataset.isoDate);
-    if (weightDate?.dataset.isoDate) setHumanDateInput(weightDate, weightDate.dataset.isoDate, true);
-    window.requestAnimationFrame(() => {
-      installCustomPickers(document);
-      syncCustomPickers(document);
-      qa('.gn-custom-date').forEach(renderCustomDatePopover);
-      renderScanner();
+  /* Item 7 hygiene: this listener used to be registered AGAIN on
+   * every SHOTS render, stacking a full picker rebuild per render.
+   * It is render-independent — wire it once. */
+  if (!renderShots.langChangeWired) {
+    renderShots.langChangeWired = true;
+    document.addEventListener('gn:langchange', () => {
+      const shotDate = $('sDate');
+      const weightDate = $('wtDate');
+      if (shotDate?.dataset.isoDate) setHumanDateInput(shotDate, shotDate.dataset.isoDate);
+      if (weightDate?.dataset.isoDate) setHumanDateInput(weightDate, weightDate.dataset.isoDate, true);
+      window.requestAnimationFrame(() => {
+        installCustomPickers(document);
+        syncCustomPickers(document);
+        qa('.gn-custom-date').forEach(renderCustomDatePopover);
+        renderScanner();
+      });
     });
-  });
+  }
   syncCustomPickers($('gnShotFilters') || document);
   setText('shotHistoryHelper', moduleState.shotHistoryView === 'archived' ? tx('shots.archivedRetained', 'Archived records remain stored for review and can be restored.') : tx('shots.activeRecordsRetained', 'Active SHOT records are retained in your local VAULT.'));
   qa('[data-shot-history-view]').forEach(button => button.classList.toggle('active', button.dataset.shotHistoryView === moduleState.shotHistoryView));
@@ -161,11 +222,13 @@ export function renderShots() {
     $('gnShotFilterEmptyClear')?.addEventListener('click', () => { moduleState.shotFilters = { medication: '', site: '', range: 'all', query: '' }; renderShots(); });
     return;
   }
-  list.innerHTML = visible.map(record => shotCardHtml(record, Boolean(record.archived))).join('');
+  const windowSize = historyWindow(visible.length);
+  list.innerHTML = visible.slice(0, windowSize).map(record => shotCardHtml(record, Boolean(record.archived))).join('') + historyMoreHtml(windowSize, visible.length);
+  wireHistoryMore();
 }
 
 function shotCardHtml(record, archived) {
-    return `<article class="log-entry ${archived ? 'archived archived-record' : ''}">
+    return `<article class="log-entry ${archived ? 'archived archived-record' : ''}" data-history-key="shot:${safeText(record.id)}">
       <div class="log-main"><div><div class="log-date">${archived ? tx('shots.archivedPrefix', 'ARCHIVED') + ' ' : ''}${safeText(formatDateTime(record.date))}</div><div class="log-med">${safeText(medicationLabel(record.med))}</div></div>
       <div class="log-dose">${safeText(record.dose || '—')}mg</div></div>
       <div class="log-chips">${record.site ? `<span class="log-chip lc-site">${safeText(zoneLabel(record.site))}</span>` : ''}${record.deviceId ? `<span class="log-chip lc-site">${tx('shot.deviceUsed', 'DEVICE')}: ${safeText(deviceLabel(record.deviceId) || tx('runtime.notAvailable', 'NOT AVAILABLE'))}</span>` : ''}${record.wt ? `<span class="log-chip lc-wt">${safeText(record.wt)}lb</span>` : ''}${record.se?.length ? `<span class="log-chip lc-se">${safeText(record.se.map(sideEffectLabel).join(', '))}</span>` : ''}</div>
@@ -192,7 +255,7 @@ function weightCardHtml(record, datePrecision) {
   /* S5: never invent midnight — date-only weights render as dates, not datetimes. */
   const precision = datePrecision || (/T\d/.test(record.date || '') ? 'datetime' : 'day');
   const dateLabel = precision === 'day' ? formatDate(record.date) : formatDateTime(record.date);
-  return `<article class="log-entry gn-weight-entry">
+  return `<article class="log-entry gn-weight-entry" data-history-key="weight:${safeText(record.id)}">
       <div class="log-main"><div><div class="log-date">${safeText(dateLabel)}</div><div class="log-med">${tx('results.weight', 'WEIGHT')}</div></div>
       <div class="log-dose">${safeText(Number(record.weight).toFixed(1))}lb</div></div>
       <div class="log-chips"><span class="log-chip lc-wt">${loggedWithShot ? tx('history.loggedWithShot', 'LOGGED WITH SHOT') : tx('history.manualEntry', 'MANUAL ENTRY')}</span></div>
@@ -212,7 +275,9 @@ function renderWeightHistory() {
     list.innerHTML = `<div class="empty gn-first-run-card"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-biometric-gauge"></use></svg></span></span><b class="gn-first-run-title">${tx('history.noWeights', 'NO WEIGHT RECORDS')}</b><span class="gn-first-run-sub">${tx('history.noWeightsSub', 'Log your weight to start building your trend.')}</span><br><button class="btn-full btn-primary empty-cta" type="button" onclick="openWeightModal()">${tx('history.logWeight', 'LOG WEIGHT')}</button></div>`;
     return;
   }
-  list.innerHTML = weights.map(weightCardHtml).join('');
+  const windowSize = historyWindow(weights.length);
+  list.innerHTML = weights.slice(0, windowSize).map(record => weightCardHtml(record)).join('') + historyMoreHtml(windowSize, weights.length);
+  wireHistoryMore();
 }
 
 /* S5: TimelineEvent — presentation-level union of shots and weights.
@@ -248,22 +313,43 @@ function compareTimelineEvents(a, b) {
   return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }
 
+/* Memoized per data signature (item 7): one normalized/sorted
+ * timeline per data state, reused by the list render AND the
+ * constellation instead of a fresh full sort per consumer per render.
+ * The signature is (counts, newest modifiedAt, archived flag) — every
+ * mutation path stamps modifiedAt, so a stale memo cannot survive an
+ * edit, and undo/redo restore whole snapshots whose signature matches
+ * their own content. */
+let timelineCache = { sig: '', events: null };
+
 function buildTimeline(options = {}) {
   const includeArchived = Boolean(options.includeArchived);
-  const shots = getAllShots().filter(record => includeArchived || !record.archived);
-  const weights = validWeights();
-  return [
+  const allShots = getAllShots();
+  const allWeights = getWeights();
+  let maxModified = 0;
+  for (const record of allShots) { const ms = Date.parse(record?.modifiedAt || record?.createdAt || ''); if (Number.isFinite(ms) && ms > maxModified) maxModified = ms; }
+  for (const record of allWeights) { const ms = Date.parse(record?.modifiedAt || record?.createdAt || ''); if (Number.isFinite(ms) && ms > maxModified) maxModified = ms; }
+  const sig = `${includeArchived ? 'arch' : 'act'}|${allShots.length}|${allWeights.length}|${maxModified}`;
+  if (timelineCache.sig === sig && timelineCache.events) return timelineCache.events;
+  const shots = allShots.filter(record => includeArchived || !record.archived);
+  const weights = allWeights.filter(record => record && Number.isFinite(Number(record.weight)));
+  const events = [
     ...shots.map(record => toTimelineEvent(record, 'shot')),
     ...weights.map(record => toTimelineEvent(record, 'weight'))
   ].sort(compareTimelineEvents);
+  timelineCache = { sig, events };
+  return events;
 }
 
-/* Shot Constellation Timeline: visual event map above the history list */
-function renderConstellation() {
+/* Shot Constellation Timeline: visual event map above the history list.
+ * Item 7: consumes the render's own (memoized, filtered) timeline —
+ * no second buildTimeline() per render — and maps nodes to records by
+ * timeline id instead of by child index. */
+function renderConstellation(orderedEvents) {
   var el = document.getElementById('gnConstellation');
   if (!el) return;
   try {
-    var events = buildTimeline().slice().reverse(); // oldest first for left-to-right
+    var events = (orderedEvents || []).slice().reverse(); // oldest first for left-to-right
     if (events.length < 2) { el.hidden = true; return; }
     el.hidden = false;
     var nodes = document.getElementById('gnConstellationNodes');
@@ -272,18 +358,16 @@ function renderConstellation() {
     if (!times.length) { el.hidden = true; return; }
     var mn = Math.min.apply(null, times), mx = Math.max.apply(null, times), span = (mx - mn) || 1;
     // vertical lane by type: shots center, weights upper, labs lower
-    nodes.innerHTML = events.slice(-40).map(function(e, i){
+    nodes.innerHTML = events.slice(-40).map(function(e){
       var t = new Date(e.record.date || e.record.createdAt || 0).getTime();
       var x = ((t - mn) / span * 96 + 2).toFixed(2);
       var lane = e.type === 'shot' ? '50%' : (e.type === 'weight' ? '28%' : '72%');
       var cls = e.type === 'shot' ? 'shot' : (e.type === 'weight' ? 'weight' : 'lab');
-      return '<div class="gn-const-node ' + cls + '" style="left:' + x + '%;top:' + lane + '" data-const-idx="' + i + '" title="' + e.type + '" role="button" tabindex="0" aria-label="' + e.type + ' event"></div>';
+      return '<div class="gn-const-node ' + cls + '" style="left:' + x + '%;top:' + lane + '" data-const-key="' + e.id + '" title="' + e.type + '" role="button" tabindex="0" aria-label="' + e.type + ' event"></div>';
     }).join('');
     nodes.querySelectorAll('.gn-const-node').forEach(function(n){
       n.addEventListener('click', function(){
-        var idx = Number(n.dataset.constIdx);
-        var cards = document.querySelectorAll('#logList > *');
-        if (cards[idx]) { cards[idx].scrollIntoView({ behavior: 'smooth', block: 'center' }); cards[idx].style.outline = '2px solid #00d4ff'; setTimeout(function(){ cards[idx].style.outline = ''; }, 1500); }
+        revealHistoryRecord(n.dataset.constKey, orderedEvents);
       });
     });
   } catch (_) { el.hidden = true; }
@@ -308,10 +392,12 @@ function renderAllHistory() {
     list.innerHTML = `<div class="empty gn-first-run-card"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span><b class="gn-first-run-title">${tx('history.allEmptyTitle', 'NOTHING LOGGED YET')}</b><span class="gn-first-run-sub">${tx('history.allEmptySub', 'Log a shot or your weight to start your timeline.')}</span><br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>${tx('runtime.logShot', 'LOG SHOT')}</button><br><button class="gn-ux-empty-link" type="button" onclick="openWeightModal()">${tx('history.logWeightInstead', 'or log your weight instead')}</button></div>`;
     return;
   }
-  renderConstellation();
-  list.innerHTML = events.map(event => event.type === 'shot'
+  renderConstellation(events);
+  const windowSize = historyWindow(events.length);
+  list.innerHTML = events.slice(0, windowSize).map(event => event.type === 'shot'
     ? shotCardHtml(event.record, false)
-    : weightCardHtml(event.record, event.datePrecision)).join('');
+    : weightCardHtml(event.record, event.datePrecision)).join('') + historyMoreHtml(windowSize, events.length);
+  wireHistoryMore();
 }
 
 
