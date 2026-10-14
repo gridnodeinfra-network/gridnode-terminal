@@ -69,6 +69,11 @@ export function openLogModal(options = {}) {
     moduleState.meridiem = new Date().getHours() >= 12 ? 'PM' : 'AM';
   }
   updateMeridiemButtons();
+  /* CLARITY PASS (P5): refresh the recent-dose shortcuts for the med now
+     selected (profile med or restored draft) on every open — setSelect is
+     programmatic and never fires the picker's updatePills callback, so
+     without this the shortcuts only appeared after re-picking the med. */
+  try { if (typeof updatePills === 'function') updatePills(); } catch (_) {}
   cancelLogClose();
   closeQuickConfirm(); // S1: full console never inherits quick-repeat mode.
   gnSetShotStep(1, { instant: true }); // TRACK 2: every open starts on step 1.
