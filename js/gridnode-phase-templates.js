@@ -235,9 +235,16 @@ const PHASE_TEXT = {
     var cloudId = null;
     try { cloudId = (typeof window !== 'undefined' && window.CU && window.CU.cloudId) ? String(window.CU.cloudId) : null; } catch (_) {}
     if (!cloudId) return null;
+    /* Session generation (reliability audit 2026-10-14, item 5d): the
+     * account key alone cannot tell session instances apart — sign out
+     * and back in as the SAME account reuses the key. Core mirrors its
+     * generation counter on window.GN_SESSION_EPOCH; a fetch that was
+     * in flight across a session boundary must neither write the cache
+     * nor hand its data to the new session's render. */
+    var epochAtStart = sessionEpoch();
     var cacheKey = cloudId + '|' + med;
     var cached = _stateCache[cacheKey];
-    if (cached && ts - cached.at < CACHE_TTL_MS) return cached.data;
+    if (cached && cached.epoch === epochAtStart && ts - cached.at < CACHE_TTL_MS) return cached.data;
     var base = functionsBase();
     if (!base) return null;
     var cleanShots = (Array.isArray(shots) ? shots : []).slice(0, 2000).map(function (s) {
@@ -257,13 +264,23 @@ const PHASE_TEXT = {
       });
       if (!res.ok) return null;
       var data = await res.json();
-      if (data && !data.empty) _stateCache[cacheKey] = { at: ts, data: data };
+      /* Guard the continuation with the same account + generation it
+       * started under (item 5d): a response held across sign-out used
+       * to repopulate the cleared cache and render for the new session. */
+      var cloudIdNow = null;
+      try { cloudIdNow = (typeof window !== 'undefined' && window.CU && window.CU.cloudId) ? String(window.CU.cloudId) : null; } catch (_) {}
+      if (cloudIdNow !== cloudId || sessionEpoch() !== epochAtStart) return null;
+      if (data && !data.empty) _stateCache[cacheKey] = { at: ts, data: data, epoch: epochAtStart };
       return data;
     } catch (_) {
       return null;
     } finally {
       if (timer) clearTimeout(timer);
     }
+  }
+
+  function sessionEpoch() {
+    try { return (typeof window !== 'undefined' && typeof window.GN_SESSION_EPOCH === 'number') ? window.GN_SESSION_EPOCH : 0; } catch (_) { return 0; }
   }
 
   // Synchronous read of the last fetched state for a med (may be null on
@@ -273,7 +290,7 @@ const PHASE_TEXT = {
     try { cloudId = (typeof window !== 'undefined' && window.CU && window.CU.cloudId) ? String(window.CU.cloudId) : null; } catch (_) {}
     if (!cloudId) return null;
     var c = _stateCache[cloudId + '|' + normalizeMedId(medRaw)];
-    return c ? c.data : null;
+    return (c && c.epoch === sessionEpoch()) ? c.data : null;
   }
 
   function clearStateCache() {

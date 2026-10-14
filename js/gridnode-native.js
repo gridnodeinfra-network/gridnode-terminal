@@ -206,6 +206,7 @@
 
   function wireConnectivity() {
     let reconnectTimer = 0;
+    let recoveryInFlight = false;
     const offline = () => {
       clearTimeout(reconnectTimer);
       document.documentElement.classList.add('gn-offline');
@@ -213,12 +214,66 @@
     };
     const online = () => {
       document.documentElement.classList.remove('gn-offline');
-      showStatus('reconnecting', copy('RECONNECTING…', 'RECONECTANDO…'));
-      reconnectTimer = window.setTimeout(() => showStatus('synced', copy('CONNECTION RESTORED', 'CONEXIÓN RESTAURADA')), 650);
+      /* Reconnect recovery (reliability audit 2026-10-14, item 5a):
+       * coming back online used to only animate this banner — a queue
+       * parked by an offline failure stayed parked until some later
+       * edit happened to re-queue the same record. Recovery now
+       * flushes the persisted queue through core's account/generation
+       * bound recoverPendingSync, and the banner tells the truth
+       * meanwhile: SYNC PENDING stays up until the queue is acked;
+       * SYNCED appears only when it actually is. */
+      const recover = window.GNModules?.recoverPendingSync;
+      if (typeof recover !== 'function' || recoveryInFlight) {
+        showStatus('reconnecting', copy('RECONNECTING…', 'RECONECTANDO…'));
+        reconnectTimer = window.setTimeout(() => showStatus('synced', copy('CONNECTION RESTORED', 'CONEXIÓN RESTAURADA')), 650);
+        return;
+      }
+      recoveryInFlight = true;
+      showStatus('reconnecting', copy('BACK ONLINE · SYNC PENDING', 'CONEXIÓN RESTABLECIDA · SINCRONIZACIÓN PENDIENTE'));
+      /* Short delay so the network truly settles before the flush. */
+      reconnectTimer = window.setTimeout(() => {
+        Promise.resolve()
+          .then(() => recover())
+          .then(result => {
+            if (result?.ok) showStatus('synced', copy('ALL SYSTEMS SYNCED', 'TODOS LOS SISTEMAS SINCRONIZADOS'));
+            /* Not acked (still offline underneath, hydration pending,
+             * session changed): the pending banner stays — it is the
+             * honest state. */
+          })
+          .catch(() => {})
+          .finally(() => { recoveryInFlight = false; });
+      }, 650);
     };
     window.addEventListener('offline', offline);
     window.addEventListener('online', online);
     navigator.onLine ? document.documentElement.classList.remove('gn-offline') : offline();
+  }
+
+  /* Draft ownership (reliability audit 2026-10-14, items 2 + 3): the
+   * session draft is account-scoped. `owner` is the identity the app
+   * itself publishes for the live session (window.CU.id for cloud
+   * sessions, 'local' otherwise). A draft whose owner is not the
+   * current identity must never render — it is another account's
+   * in-progress medical entry. Legacy drafts (written before ownership
+   * existed) carry no owner: they restore only into the local identity
+   * they were most likely written under, never into a cloud account. */
+  function draftOwnerId() {
+    try { return window.CU?.id ? String(window.CU.id) : 'local'; } catch (_) { return 'local'; }
+  }
+
+  function readStoredDraft() {
+    try { return JSON.parse(sessionStorage.getItem(SHOT_DRAFT_KEY) || 'null'); } catch (_) { return null; }
+  }
+
+  function purgeSessionDraft() {
+    try { sessionStorage.removeItem(SHOT_DRAFT_KEY); } catch (_) {}
+  }
+
+  function guardSessionDraft() {
+    const draft = readStoredDraft();
+    if (!draft) return;
+    const owner = draft.owner ? String(draft.owner) : 'local';
+    if (owner !== draftOwnerId()) purgeSessionDraft();
   }
 
   function captureShotDraft() {
@@ -232,9 +287,14 @@
       dose: document.getElementById('sDose')?.value || '',
       date: document.getElementById('sDate')?.value || '',
       time: document.getElementById('sTime')?.value || '',
+      /* Item 2: the meridiem used to be dropped, so restore defaulted
+       * it from the CURRENT clock — a 9:15 AM draft came back as 9:15
+       * PM in the evening. Persist it; restore applies it exactly. */
+      meridiem: window.GNModules?.moduleState?.meridiem === 'PM' ? 'PM' : 'AM',
       wt: document.getElementById('sWt')?.value || '',
       notes: document.getElementById('sNotes')?.value || '',
       sideEffects: Array.from(modal.querySelectorAll('input[type="checkbox"]:checked')).map(input => input.value),
+      owner: draftOwnerId(),
       savedAt: Date.now()
     };
     try { sessionStorage.setItem(SHOT_DRAFT_KEY, JSON.stringify(draft)); } catch (_) {}
@@ -249,8 +309,13 @@
        snapshot, so skip instead of clobbering it. */
     const hadModuleDraft = !!(modal && modal.dataset.gnModuleDraft);
     if (modal) delete modal.dataset.gnModuleDraft;
-    let draft = null;
-    try { draft = JSON.parse(sessionStorage.getItem(SHOT_DRAFT_KEY) || 'null'); } catch (_) { draft = null; }
+    let draft = readStoredDraft();
+    /* Ownership gate (item 3): checked before ANY field is applied, on
+     * every restore. A foreign draft is purged, never rendered. */
+    if (draft) {
+      const owner = draft.owner ? String(draft.owner) : 'local';
+      if (owner !== draftOwnerId()) { purgeSessionDraft(); return; }
+    }
     if (hadModuleDraft) return;
     /* v0.15.38: the FIRST DOSE beat opens the log modal directly (not through
        quickLogShot, which clears the session draft). A draft saved BEFORE the
@@ -282,6 +347,12 @@
       window.GNModules.selectState.cpShotMed = { val: draft.med, label: draft.medLabel || draft.med };
       const value = document.getElementById('cpShotMedVal');
       if (value) { value.textContent = draft.medLabel || draft.med; value.classList.remove('placeholder'); }
+    }
+    /* Item 2: restore the draft's own meridiem exactly — the module's
+     * setter updates both the state and the AM/PM buttons. Drafts
+     * without a meridiem (legacy) keep the clock-derived default. */
+    if ((draft.meridiem === 'AM' || draft.meridiem === 'PM') && window.GNModules?.gnSetShotMeridiem) {
+      window.GNModules.gnSetShotMeridiem(draft.meridiem);
     }
     document.querySelectorAll('#logOv input[type="checkbox"]').forEach(input => { input.checked = (draft.sideEffects || []).includes(input.value); });
   }
@@ -703,6 +774,10 @@
   window.GN_NATIVE = Object.freeze({
     bridgeReady() { wireShotDraft(); wireNavigationStack(); },
     captureShotDraft,
+    /* Session-boundary hooks core calls: purge on session exit, drop a
+     * foreign owner's draft when a new session activates (item 3). */
+    purgeSessionDraft,
+    guardSessionDraft,
     currentPage: currentPageName
   });
 

@@ -449,6 +449,21 @@ export function markLocalWorkspaceMigrated(userId) {
   } catch { return false; }
 }
 
+/* Claim-before-migration (reliability audit 2026-10-14, item 4): the
+ * ownership mark used to be written AFTER the local workspace had been
+ * migrated and uploaded, and its failure was ignored — so when the write
+ * failed, the mark stayed absent and the NEXT account to sign in was
+ * still allowed to inherit the same local records. Claiming means the
+ * write landed AND reads back as this user; anything else fails closed
+ * and the caller must not move or upload the local records. */
+export function claimLocalWorkspaceOwner(userId) {
+  if (!userId) return false;
+  if (!markLocalWorkspaceMigrated(userId)) return false;
+  try {
+    return localStorage.getItem(LOCAL_CLOUD_OWNER_KEY) === String(userId);
+  } catch { return false; }
+}
+
 export function restoreWorkspace(snapshot, { onlyEmpty = true } = {}) {
   if (!snapshot) return;
   for (const key of WORKSPACE_KEYS) {
@@ -474,8 +489,21 @@ export function restoreLocalSession() {
   } catch { return null; }
 }
 
+/* Session-boundary bridges for the classic scripts (native shell, phase
+ * templates), which cannot import this module. window.CU already mirrors
+ * the account identity; GN_SESSION_EPOCH mirrors the generation so a
+ * continuation or cache write from a dead session instance can be told
+ * apart from the current one (A → sign out → A included). The native
+ * shell owns the session shot draft: it is told to purge the draft when
+ * the session ends and to drop a foreign draft when a new session starts
+ * (reliability audit 2026-10-14, items 3 + 5d). */
+function mirrorSessionEpoch() {
+  try { window.GN_SESSION_EPOCH = state.sessionGeneration; } catch {}
+}
+
 export function activateSession(session, cloud = false) {
   state.sessionGeneration += 1;
+  mirrorSessionEpoch();
   syncPassFailed = false;
   state.session = session;
   state.cloud = Boolean(cloud && session?.user?.id);
@@ -492,12 +520,19 @@ export function activateSession(session, cloud = false) {
   if (!state.cloud) {
     try { localStorage.setItem(SESSION_KEY, JSON.stringify(session || localSession())); } catch {}
   }
+  /* A draft captured under a different account must not survive into
+   * this session: the native shell drops it if its owner is foreign. */
+  try { window.GN_NATIVE?.guardSessionDraft?.(); } catch {}
   notify();
   return state;
 }
 
 export function clearSession() {
   state.sessionGeneration += 1;
+  mirrorSessionEpoch();
+  /* Session exit clears the session shot draft with it (audit item 3):
+   * an unsent draft is part of the session, not of the device. */
+  try { window.GN_NATIVE?.purgeSessionDraft?.(); } catch {}
   syncPassFailed = false;
   state.session = null;
   state.cloud = false;
@@ -698,11 +733,37 @@ export function ensureCloudRecordId(record, createUuid = () => globalThis.crypto
   return cloudId;
 }
 
+/* Canonical weight (reliability audit 2026-10-14, item 1): a weight
+ * record's canonical value is `weight`, ALWAYS stored in pounds (entry,
+ * import, and hydration all maintain it so). `weightKg` is a derived
+ * cache. The linked-shot edit path rebuilt the record from a spread and
+ * updated `weight` without recomputing the cache, and the payload used
+ * to prefer the cache — so an edit from 180 to 170 lb uploaded the old
+ * 81.6 kg forever. The payload now derives kg from the canonical value;
+ * the cache is only a fallback for legacy records that carry kg alone. */
+export const LB_PER_KG = 2.2046226218;
+
+export function canonicalWeightKg(record) {
+  const pounds = Number(record?.weight);
+  if (Number.isFinite(pounds)) return pounds / LB_PER_KG;
+  const kg = Number(record?.weightKg);
+  return Number.isFinite(kg) ? kg : 0;
+}
+
+/* Recompute the derived cache from the canonical value in place, for
+ * mutation sites that rebuild a weight record from user input. */
+export function withCanonicalWeight(record) {
+  if (record && Number.isFinite(Number(record.weight))) {
+    record.weightKg = Number(record.weight) / LB_PER_KG;
+  }
+  return record;
+}
+
 export function cloudWeightPayload(record, userId) {
   const payload = {
     user_id: userId,
     date: record.date,
-    weight_kg: Number(record.weightKg || (Number(record.weight) / 2.2046226218)) || 0,
+    weight_kg: canonicalWeightKg(record),
     notes: record.shotCloudId ? `GRIDNODE_LINKED_SHOT:${record.shotCloudId}` : record.notes || null,
     updated_at: record.modifiedAt || record.updatedAt || record.createdAt || record.date
   };
@@ -1000,15 +1061,45 @@ export function workspacePayload(userId) {
   };
 }
 
+/* Workspace write ordering (reliability audit 2026-10-14, item 5c):
+ * workspace upserts carry no per-record revision the server can order
+ * by, and the payload is a snapshot — so two writes whose transports
+ * complete out of order leave the OLDER snapshot on the server. Two
+ * ASSAY saves proved it: the newer write landed first, the older write
+ * landed last and won. The v5 dirty-mark machinery re-issues a fresher
+ * write after a settle, but a write abandoned by the 8 s timeout race
+ * is still in flight at the transport and can land after its own
+ * replacement. Workspace writes therefore run through a chain: a write
+ * issues only after the previous write's transport has ACTUALLY
+ * settled (bounded by a cap so a wedged transport cannot park the
+ * chain forever). Completion order now equals intent order, and the
+ * last write to land is always the newest snapshot. */
+let workspaceChain = Promise.resolve();
+const WORKSPACE_SETTLE_CAP_MS = 30000;
+
 export async function syncWorkspace() {
   if (!state.cloud || !state.cloudClient || !state.session?.user?.id) return;
   noteSyncIntent('workspace', 'workspace');
   if (syncInFlight.has('workspace')) { syncDirty.add('workspace'); return; }
   syncInFlight.add('workspace');
+  const run = workspaceChain.then(() => syncWorkspacePass());
+  workspaceChain = run.then(() => {}, () => {});
+  return run;
+}
+
+async function syncWorkspacePass() {
   const stamp = sessionStamp();
   const startedAt = Date.now();
+  let rawSettled = Promise.resolve();
   try {
-    const { error } = await withTimeout(state.cloudClient.from('workspaces').upsert(workspacePayload(stamp.userId)), 8000);
+    const query = state.cloudClient.from('workspaces').upsert(workspacePayload(stamp.userId));
+    /* Execute the builder exactly once and share the promise: the
+     * timeout race judges the result, the chain judges settlement. */
+    const raw = new Promise((resolve, reject) => {
+      try { query.then(resolve, reject); } catch (error) { reject(error); }
+    });
+    rawSettled = raw.then(() => {}, () => {});
+    const { error } = await withTimeout(raw, 8000);
     if (error) throw error;
     if (!sessionStampIntact(stamp)) return;
     dequeueSync('workspace', 'workspace', startedAt);
@@ -1023,6 +1114,10 @@ export async function syncWorkspace() {
     }
     applyDerivedStatus(stamp);
   } finally {
+    /* The in-flight slot (and with it any dirty rerun carrying a fresher
+     * snapshot) is released only when the transport has settled, so a
+     * timed-out write can never land after its replacement. */
+    await Promise.race([rawSettled, new Promise(resolve => setTimeout(resolve, WORKSPACE_SETTLE_CAP_MS))]);
     syncInFlight.delete('workspace');
     afterSingletonSettle('workspace', stamp);
   }
@@ -1295,6 +1390,56 @@ export async function syncAllCloudData() {
   return { ok: !syncPassFailed && remainingQueue.length === 0 };
 }
 
+/* Reconnect recovery (reliability audit 2026-10-14, item 5a): the
+ * native online handler used to only animate the status banner — a
+ * queue parked by an offline failure stayed parked until some later
+ * edit happened to queue the same record. Recovery is bounded (the
+ * persisted queue plus pending deletes, nothing else), bound to the
+ * account + session generation that asked for it, and obeys the same
+ * hydration gate as every other upload path: mid-hydration, uploads
+ * stay closed so remote state is never overwritten by stale local
+ * state. Returns the outcome so the caller can show honest pending
+ * state until the queue is acked. */
+export async function recoverPendingSync() {
+  if (!state.cloud || !state.cloudClient || !state.session?.user?.id) {
+    return { ok: false, pending: 0, reason: 'no-cloud-session' };
+  }
+  const stamp = sessionStamp();
+  const pendingCount = () => S.get('syncQueue', []).length;
+  if (state.cloudHydration !== 'ok') {
+    return { ok: false, pending: pendingCount(), reason: 'hydration-pending' };
+  }
+  /* Flush through the same per-record syncers a full sync uses — each
+   * acknowledges its own queue entries on delivery, under the same
+   * revision rules — but scoped to what is actually queued. */
+  const entries = [...S.get('syncQueue', [])];
+  const shotsById = new Map(getAllShots().map(record => [record.id, record]));
+  const weightsById = new Map(getWeights().map(record => [record.id, record]));
+  const jobs = [];
+  for (const entry of entries) {
+    if (entry.kind === 'shot') { const record = shotsById.get(entry.id); if (record) jobs.push(syncShot(record)); }
+    else if (entry.kind === 'weight') { const record = weightsById.get(entry.id); if (record) jobs.push(syncWeight(record)); }
+    else if (entry.kind === 'profile') jobs.push(syncProfile(getProfile()));
+    else if (entry.kind === 'workspace') jobs.push(syncWorkspace());
+  }
+  await Promise.all(jobs);
+  if (!sessionStampIntact(stamp)) {
+    return { ok: false, pending: pendingCount(), reason: 'session-changed' };
+  }
+  await flushCloudDeletes();
+  /* Prune entries whose record no longer exists locally — the same
+   * rule syncAllCloudData applies; tombstones own deleted records. */
+  const liveShotIds = new Set(getAllShots().map(record => record.id));
+  const liveWeightIds = new Set(getWeights().map(record => record.id));
+  const queueNow = S.get('syncQueue', []);
+  const remainingQueue = queueNow.filter(item =>
+    (item.kind !== 'shot' || liveShotIds.has(item.id)) &&
+    (item.kind !== 'weight' || liveWeightIds.has(item.id)));
+  if (remainingQueue.length !== queueNow.length) S.set('syncQueue', remainingQueue);
+  applyDerivedStatus(stamp);
+  return { ok: remainingQueue.length === 0, pending: remainingQueue.length, reason: 'flushed' };
+}
+
 export function queueCloudSync(kind, record) {
   if (state.cloud && !cloudUploadsReady()) {
     enqueueSync(kind, record);
@@ -1431,6 +1576,54 @@ export function normalizeDateInput(value) {
 
 export function todayISO(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+/* Date/time semantics (reliability audit 2026-10-14, item 6) — the
+ * contract every save path now follows:
+ * - A record with a time stores an explicit INSTANT: local wall time
+ *   plus the UTC offset in force on THAT date (`2026-03-07T23:30:00-05:00`).
+ * - A record without a time stores the bare calendar date, unchanged.
+ * - A wall time that does not exist (the spring DST gap) is NOT a
+ *   valid instant: stamping returns null and the caller must reject
+ *   visibly. `new Date(y, m, d, h)` silently shifts gap times to a
+ *   different wall time, so existence is proven by a round-trip check.
+ * - Editing the DATE of a timed record recomputes the offset for the
+ *   new date (the IANA zone is retained; the wall time is retained).
+ *   An edit that changes nothing preserves the stored instant verbatim,
+ *   offset and seconds included (handled by the save paths). */
+export function isRealCalendarDate(year, month, day) {
+  const y = Number(year), m = Number(month), d = Number(day);
+  if (!Number.isInteger(y) || !Number.isInteger(m) || !Number.isInteger(d)) return false;
+  if (m < 1 || m > 12 || d < 1 || d > 31) return false;
+  const probe = new Date(Date.UTC(y, m - 1, d));
+  return probe.getUTCFullYear() === y && probe.getUTCMonth() === m - 1 && probe.getUTCDate() === d;
+}
+
+function utcOffsetSuffix(date) {
+  const offsetMinutes = -date.getTimezoneOffset();
+  const sign = offsetMinutes < 0 ? '-' : '+';
+  const abs = Math.abs(offsetMinutes);
+  return `${sign}${String(Math.floor(abs / 60)).padStart(2, '0')}:${String(abs % 60).padStart(2, '0')}`;
+}
+
+/* Stamp a local wall date + time as an explicit instant string, or
+ * null when the wall time does not exist on that date (DST gap) or the
+ * input is not a real calendar date/time. Seconds default to 00: new
+ * entries have minute precision by design; preserved precision on
+ * no-change edits is the save paths' job, not this helper's. */
+export function stampLocalInstant(dateISO, timeHHMM) {
+  const dateParts = String(dateISO || '').split('-').map(Number);
+  const timeParts = String(timeHHMM || '').split(':').map(Number);
+  if (dateParts.length !== 3 || timeParts.length < 2) return null;
+  const [year, month, day] = dateParts;
+  const [hour, minute] = timeParts;
+  if (!isRealCalendarDate(year, month, day)) return null;
+  if (!Number.isInteger(hour) || !Number.isInteger(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+  const instant = new Date(year, month - 1, day, hour, minute, 0);
+  if (instant.getFullYear() !== year || instant.getMonth() !== month - 1 || instant.getDate() !== day
+    || instant.getHours() !== hour || instant.getMinutes() !== minute) return null;
+  const p2 = n => String(n).padStart(2, '0');
+  return `${year}-${p2(month)}-${p2(day)}T${p2(hour)}:${p2(minute)}:00${utcOffsetSuffix(instant)}`;
 }
 
 export function formatEditableDate(value) {

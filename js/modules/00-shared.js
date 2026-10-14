@@ -3,7 +3,7 @@
  */
 
 import {
-  APP_VERSION, GOOGLE_OAUTH_CLIENT_ID, CLOUD_CONFIG, state, MAX_DOSE_MG, isDoseInRange, cloudUploadsReady, SESSION_KEY, LOCAL_CLOUD_OWNER_KEY, LEGACY_ACCOUNT_KEYS, WORKSPACE_KEYS, jsonParse, notify, subscribe, safeText, createId, accountStorageKey, legacyStorageKeys, STORAGE_TRANSACTION_SUFFIX, transactionStorageKey, readStorageTransaction, recoverPendingStorageTransaction, logicalStorageValue, S, normalizeLegacyText, normalizeShotRecord, getProfile as coreGetProfile, getProfileForEvidence as coreGetProfileForEvidence, getShots, getAllShots, getWeights, readAccountValue, captureWorkspace, workspaceHasData, localWorkspaceMigrationAllowed, markLocalWorkspaceMigrated, restoreWorkspace, localSession, restoreLocalSession, activateSession, clearSession, withTimeout, cloudLoadPromise, cloudClientPromise, loadCloudLibrary, getCloudClient, getCloudSession, signInCloud, signUpCloud, resetPasswordCloud, updateCloudPassword, isCloudProviderEnabled, signInWithGoogle, signInWithGoogleIdToken, signOutCloud, cloudShotPayload, cloudWeightPayload, ensureCloudRecordId, planPermanentShotDelete, normalizeMedicationId, normalizeSideEffectId, parseLinkedShotCloudId, syncShot, syncWeight, syncProfile, workspacePayload, syncWorkspace, flushCloudDeletes, deleteCloudShot, hydrateCloudData, mergeRecords, mergeJsonRecords, syncPassFailed, syncInFlight, syncAllCloudData, queueCloudSync, enqueueSync, sessionStamp, sessionStampIntact, sessionLabel, deleteCloudAccount, migrateLegacyLocalData, repairStorageShapes, parseLocalDate, formatDate, formatDateTime, normalizeDateInput, todayISO, formatEditableDate, parseEditableDate, setHumanDateInput, readHumanDateInput, downloadFile
+  APP_VERSION, GOOGLE_OAUTH_CLIENT_ID, CLOUD_CONFIG, state, MAX_DOSE_MG, isDoseInRange, cloudUploadsReady, SESSION_KEY, LOCAL_CLOUD_OWNER_KEY, LEGACY_ACCOUNT_KEYS, WORKSPACE_KEYS, jsonParse, notify, subscribe, safeText, createId, accountStorageKey, legacyStorageKeys, STORAGE_TRANSACTION_SUFFIX, transactionStorageKey, readStorageTransaction, recoverPendingStorageTransaction, logicalStorageValue, S, normalizeLegacyText, normalizeShotRecord, getProfile as coreGetProfile, getProfileForEvidence as coreGetProfileForEvidence, getShots, getAllShots, getWeights, readAccountValue, captureWorkspace, workspaceHasData, localWorkspaceMigrationAllowed, markLocalWorkspaceMigrated, restoreWorkspace, localSession, restoreLocalSession, activateSession, clearSession, withTimeout, cloudLoadPromise, cloudClientPromise, loadCloudLibrary, getCloudClient, getCloudSession, signInCloud, signUpCloud, resetPasswordCloud, updateCloudPassword, isCloudProviderEnabled, signInWithGoogle, signInWithGoogleIdToken, signOutCloud, cloudShotPayload, cloudWeightPayload, canonicalWeightKg, withCanonicalWeight, stampLocalInstant, isRealCalendarDate, ensureCloudRecordId, planPermanentShotDelete, normalizeMedicationId, normalizeSideEffectId, parseLinkedShotCloudId, syncShot, syncWeight, syncProfile, workspacePayload, syncWorkspace, flushCloudDeletes, deleteCloudShot, hydrateCloudData, mergeRecords, mergeJsonRecords, syncPassFailed, syncInFlight, syncAllCloudData, queueCloudSync, enqueueSync, sessionStamp, sessionStampIntact, sessionLabel, deleteCloudAccount, migrateLegacyLocalData, repairStorageShapes, parseLocalDate, formatDate, formatDateTime, normalizeDateInput, todayISO, formatEditableDate, parseEditableDate, setHumanDateInput, readHumanDateInput, downloadFile
 } from './gridnode-core.js';
 
 export const getProfile = coreGetProfile;
@@ -79,6 +79,11 @@ export const moduleState = {
   editingShotId: null,
   shotHistoryView: 'active',
   historyType: 'all',
+  /* HISTORY render window (reliability audit item 7): how many records
+   * the current history view materializes; grows by a page per
+   * SHOW MORE tap and resets whenever the view's scope changes. */
+  historyLimit: 50,
+  historyLimitScope: '',
   pendingArchiveId: null,
   pendingPermanentDeleteId: null,
   shotFilters: { medication: '', site: '', range: 'all', query: '' },

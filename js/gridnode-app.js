@@ -3,7 +3,7 @@
  */
 
 import {
-  APP_VERSION, GOOGLE_OAUTH_CLIENT_ID, CLOUD_CONFIG, state, SESSION_KEY, LOCAL_CLOUD_OWNER_KEY, LEGACY_ACCOUNT_KEYS, WORKSPACE_KEYS, jsonParse, notify, subscribe, safeText, createId, accountStorageKey, legacyStorageKeys, STORAGE_TRANSACTION_SUFFIX, transactionStorageKey, readStorageTransaction, recoverPendingStorageTransaction, logicalStorageValue, S, normalizeLegacyText, normalizeShotRecord, getProfile, getProfileForEvidence, getShots, getAllShots, getWeights, getLabTests, getAllLabTests, setLabTests, readAccountValue, captureWorkspace, workspaceHasData, localWorkspaceMigrationAllowed, markLocalWorkspaceMigrated, restoreWorkspace, localSession, restoreLocalSession, activateSession, clearSession, withTimeout, cloudLoadPromise, cloudClientPromise, loadCloudLibrary, getCloudClient, getCloudSession, signInCloud, signUpCloud, resetPasswordCloud, updateCloudPassword, isCloudProviderEnabled, signInWithGoogle, signInWithGoogleIdToken, signOutCloud, sendSignInCode, verifySignInCode, cloudShotPayload, cloudWeightPayload, syncShot, syncWeight, syncProfile, workspacePayload, syncWorkspace, flushCloudDeletes, deleteCloudShot, hydrateCloudData, mergeRecords, mergeJsonRecords, syncPassFailed, syncInFlight, syncAllCloudData, queueCloudSync, enqueueSync, sessionStamp, sessionStampIntact, sessionLabel, deleteCloudAccount, migrateLegacyLocalData, repairStorageShapes, parseLocalDate, formatDate, formatDateTime, normalizeDateInput, todayISO, formatEditableDate, parseEditableDate, setHumanDateInput, readHumanDateInput, downloadFile
+  APP_VERSION, GOOGLE_OAUTH_CLIENT_ID, CLOUD_CONFIG, state, SESSION_KEY, LOCAL_CLOUD_OWNER_KEY, LEGACY_ACCOUNT_KEYS, WORKSPACE_KEYS, jsonParse, notify, subscribe, safeText, createId, accountStorageKey, legacyStorageKeys, STORAGE_TRANSACTION_SUFFIX, transactionStorageKey, readStorageTransaction, recoverPendingStorageTransaction, logicalStorageValue, S, normalizeLegacyText, normalizeShotRecord, getProfile, getProfileForEvidence, getShots, getAllShots, getWeights, getLabTests, getAllLabTests, setLabTests, readAccountValue, captureWorkspace, workspaceHasData, localWorkspaceMigrationAllowed, markLocalWorkspaceMigrated, claimLocalWorkspaceOwner, recoverPendingSync, restoreWorkspace, localSession, restoreLocalSession, activateSession, clearSession, withTimeout, cloudLoadPromise, cloudClientPromise, loadCloudLibrary, getCloudClient, getCloudSession, signInCloud, signUpCloud, resetPasswordCloud, updateCloudPassword, isCloudProviderEnabled, signInWithGoogle, signInWithGoogleIdToken, signOutCloud, sendSignInCode, verifySignInCode, cloudShotPayload, cloudWeightPayload, syncShot, syncWeight, syncProfile, workspacePayload, syncWorkspace, flushCloudDeletes, deleteCloudShot, hydrateCloudData, mergeRecords, mergeJsonRecords, syncPassFailed, syncInFlight, syncAllCloudData, queueCloudSync, enqueueSync, sessionStamp, sessionStampIntact, sessionLabel, deleteCloudAccount, migrateLegacyLocalData, repairStorageShapes, parseLocalDate, formatDate, formatDateTime, normalizeDateInput, todayISO, formatEditableDate, parseEditableDate, setHumanDateInput, readHumanDateInput, downloadFile
 } from './gridnode-core.js';
 import * as modules from './gridnode-modules.js';
 
@@ -65,7 +65,7 @@ function bridge() {
    * bundle's live registry (window.GNModules === modules) instead of
    * replacing it, so chunk registrations land in the same object. */
   window.GNModules = Object.assign(window.GNModules || modules, modules, {
-    getLabTests, getAllLabTests, setLabTests, queueCloudSync
+    getLabTests, getAllLabTests, setLabTests, queueCloudSync, recoverPendingSync
   });
   window.GN_NATIVE?.bridgeReady?.();
 }
@@ -209,6 +209,7 @@ function injectStableStyles() {
     .gn-streak-card{display:grid;gap:5px;margin:0 0 14px;padding:12px;border:1px solid rgba(0,212,255,.3);border-left:2px solid #00d4ff;background:linear-gradient(135deg,rgba(0,212,255,.08),rgba(0,0,0,.24));color:#eef6f8}.gn-streak-card[hidden]{display:none}.gn-streak-card b{color:#00d4ff;font:800 .7rem var(--font-d,monospace);letter-spacing:1.7px}.gn-streak-card span{color:#9fc7d4;font:.62rem/1.45 var(--font-m,monospace)}
     .gn-celebrate-particle{position:fixed;left:var(--x);bottom:40%;width:var(--size);height:var(--size);border-radius:50%;background:#00d4ff;box-shadow:0 0 8px #00d4ff;animation:gnCelebrate 2.2s ease-out forwards;animation-delay:var(--delay);pointer-events:none;z-index:9999}@keyframes gnCelebrate{0%{transform:translateY(0) translateX(0) scale(1);opacity:1}100%{transform:translateY(-80px) translateX(var(--drift)) scale(0);opacity:0}}
     .landing-phase-visual{position:absolute;right:-14%;bottom:12%;width:min(420px,44vw);aspect-ratio:1;opacity:.35;pointer-events:none;z-index:0;filter:drop-shadow(0 0 20px rgba(0,212,255,.16));animation:gnLandingRingRotate 8s linear infinite}.landing-phase-visual .phase-segment-ring{inset:0;opacity:.95}.landing-phase-core{position:absolute;inset:31%;display:grid;place-items:center;align-content:center;gap:8px;border:1px solid rgba(0,212,255,.28);border-radius:50%;color:#9fefff;text-align:center;background:rgba(5,5,8,.28)}.landing-phase-core span{font:700 .52rem var(--font-m,monospace);letter-spacing:2px}.landing-phase-core b{font:800 2.2rem var(--font-d,monospace);color:#eef6f8}@keyframes gnLandingRingRotate{to{transform:rotate(360deg)}}.landing-hero>:not(.landing-phase-visual){position:relative;z-index:1}
+    .gn-history-more{display:grid;gap:8px;margin:14px 0 4px}.gn-history-count{color:#9fc7d4;font:600 .62rem var(--font-m,monospace);letter-spacing:1.6px;text-align:center}
     @media(max-width:767px){.landing-phase-visual{display:none}}
     @media(prefers-reduced-motion:reduce){.gn-phase-marker,.landing-phase-visual,.gn-celebrate-particle{animation:none!important}.page{transition:none!important}}
   `;
@@ -1500,23 +1501,45 @@ async function completeCloudSession(session) {
       showToast(tx('sync.storageError', 'Storage full or blocked. Cloud data could not be saved on this device. Nothing was uploaded.'), true);
     }
   }
+  /* Claim before migration (reliability audit 2026-10-14, item 4): the
+   * local records may move into this account only after this account
+   * provably owns them on this device. The mark used to be written
+   * AFTER the upload, with its result ignored — when the write failed
+   * (storage fault), the mark stayed absent and the NEXT account to
+   * sign in inherited the same local records. Fail closed: no claim,
+   * no migration, no upload of local records; the user sees why and
+   * the claim is retried on the next sign-in. */
+  let migrationClaimFailed = false;
   if (hydration.ok && localWorkspace && workspaceHasData(localWorkspace) && !workspaceHasData(accountWorkspace)) {
-    const remote = hydration.remote || {};
-    const migration = { ...localWorkspace };
-    if (remote.shots) migration.shots = [];
-    if (remote.weights) migration.weights = [];
-    if (remote.profile) migration.profile = {};
-    if (remote.workspace) {
-      migration.results = []; migration.notes = []; migration.symptoms = []; migration.labs = [];
-      migration.preferences = {}; migration.settings = {}; migration.arsenal = []; migration.selectedLocation = '';
+    let recordedOwner = null;
+    try { recordedOwner = localStorage.getItem(LOCAL_CLOUD_OWNER_KEY); } catch {}
+    if (recordedOwner !== String(targetUserId) && !claimLocalWorkspaceOwner(targetUserId)) {
+      migrationClaimFailed = true;
     }
-    restoreWorkspace(migration, { onlyEmpty: true });
+    if (!migrationClaimFailed) {
+      const remote = hydration.remote || {};
+      const migration = { ...localWorkspace };
+      if (remote.shots) migration.shots = [];
+      if (remote.weights) migration.weights = [];
+      if (remote.profile) migration.profile = {};
+      if (remote.workspace) {
+        migration.results = []; migration.notes = []; migration.symptoms = []; migration.labs = [];
+        migration.preferences = {}; migration.settings = {}; migration.arsenal = []; migration.selectedLocation = '';
+      }
+      restoreWorkspace(migration, { onlyEmpty: true });
+    }
   }
   if (hydration.ok) {
     await syncAllCloudData();
     if (!sessionStampIntact(sessionGen)) return false;
-    if (localWorkspace && workspaceHasData(localWorkspace) && state.cloudStatus === 'CLOUD_SYNCED') {
+    if (!migrationClaimFailed && localWorkspace && workspaceHasData(localWorkspace) && state.cloudStatus === 'CLOUD_SYNCED') {
       markLocalWorkspaceMigrated(targetUserId);
+    }
+    if (migrationClaimFailed) {
+      /* The account's own cloud data synced normally; only the local
+       * device records stayed put, unmerged and unuploaded. */
+      state.cloudStatus = 'LOCAL_BACKUP';
+      showToast(tx('sync.ownerClaimError', "This device's records could not be claimed for your account because storage refused the ownership mark. Nothing from this device was merged or uploaded. Sign in again to retry."), true);
     }
   } else {
     // Hydration still failed after the retry: skip the upload entirely.
