@@ -1,8 +1,10 @@
 /* ONBOARDING REBORN contract (DESIGN §5.4): the scrap is complete,
  * the new engine is wired exactly where First Contact was, the compat
- * surface (alias, event, v2 mirrors, stamp) is intact, whatsnew is
- * byte-identical to base, and the visual guide's structural invariants
- * hold in source. Run: node scripts/test-onboarding-contract.cjs */
+ * surface (alias, event, v2 mirrors, stamp) is intact, whatsnew keeps
+ * its release-workflow contract (§5.4 re-pinned 2026-10-14: the
+ * byte-identity pin was retired with cause, see the §5.4 block below),
+ * and the visual guide's structural invariants hold in source.
+ * Run: node scripts/test-onboarding-contract.cjs */
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -143,15 +145,24 @@ async function main() {
   assert.match(modules, /querySelector\('\.gn-ob-guide'\)/, '§5.3.1: blocked-event guard must target .gn-ob-guide');
   assert.match(modules, /gn:coach-save-blocked/, 'blocked event name must be unchanged');
 
-  /* ---- whatsnew byte-identical to base (§5.4) ---- */
-  try {
-    const base = execSync('git show c2e85c1:js/gridnode-whatsnew.js', { cwd: root });
-    assert.ok(base.equals(fs.readFileSync(path.join(root, 'js/gridnode-whatsnew.js'))),
-      'gridnode-whatsnew.js must be byte-identical to base c2e85c1');
-  } catch (err) {
-    if (err && err.code === 'ERR_ASSERTION') throw err;
-    console.log('note: git base comparison unavailable, skipped:', String(err.message || err).split('\n')[0]);
-  }
+  /* ---- whatsnew release contract (§5.4, RE-PINNED 2026-10-14) ----
+   * The original §5.4 assertion pinned gridnode-whatsnew.js byte-identical
+   * to base c2e85c1: its intent was that the onboarding rebuild must not
+   * disturb the whatsnew consumer. That byte-pin collides with the
+   * whatsnew RELEASE WORKFLOW contract, which requires the current entry
+   * to be rewritten every release (first collision: c285e0a, changelog
+   * 1.1.0). Retired with cause by the QA desk (same treatment as the
+   * test-v01544 consoleSub retirement; see gridnode-qa regression-log.md)
+   * and re-pinned to release mechanics: the file must compile, carry the
+   * __CURRENT_BUILD__ release entry the build stamps, and keep emitting
+   * the gn:whatsnew-resolved event the onboarding engine defers on. */
+  const whatsnewSrc = read('js/gridnode-whatsnew.js');
+  assert.doesNotThrow(() => new (require('node:vm').Script)(whatsnewSrc),
+    'gridnode-whatsnew.js must compile');
+  assert.match(whatsnewSrc, /__CURRENT_BUILD__/,
+    'whatsnew must carry the __CURRENT_BUILD__ release entry (release workflow contract)');
+  assert.match(whatsnewSrc, /gn:whatsnew-resolved/,
+    'whatsnew must keep emitting gn:whatsnew-resolved (onboarding deferral contract)');
 
   /* ---- preserved consumers ---- */
   const native = read('js/gridnode-native.js');
