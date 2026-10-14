@@ -1,7 +1,7 @@
 {
   "name": "gridnode-terminal-qa",
   "private": true,
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "QA harness dependencies for GRID//NODE (mobile shell, contrast audits). No runtime deps \u2014 dev only.",
   "scripts": {
     "build": "node scripts/build.mjs",
@@ -10,6 +10,8 @@
     "preview": "vite preview",
     "test:integrity": "node scripts/test-record-integrity.cjs",
     "test:data-integrity": "node scripts/test-data-integrity.cjs",
+    "test:reliability": "node scripts/test-reliability-v8.cjs",
+    "test:reliability-browser": "node scripts/test-reliability-v8-browser.cjs",
     "test:picker": "node scripts/test-medication-picker-contract.cjs",
     "test:core-keepout": "node scripts/test-core-navel-keepout.cjs",
     "test:reminders": "node scripts/test-reminders-contract.cjs",

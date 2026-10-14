@@ -293,6 +293,33 @@
       }
     },
     '__CURRENT_BUILD__': {
+      version: '1.1.2', title: 'RELIABILITY', date: '2026-10-14',
+      en: {
+        IMPROVED: [
+          'Back online means caught up: when your connection returns, the app now finishes syncing anything that was waiting instead of just announcing it is back.',
+          'Very long histories open fast now. Your record list loads in pages with a SHOW MORE button instead of building every record at once.'
+        ],
+        FIXED: [
+          'Editing a shot\u2019s linked weight now syncs the new value to your cloud. Before, the old weight could be uploaded instead and the edit never arrived.',
+          'An unsent shot draft keeps its AM/PM, and it stays yours: drafts are tied to the account that wrote them and are cleared when you sign out, so one never appears in a different account.',
+          'Stricter dates: an impossible date is now rejected instead of silently saving as today, a time that does not exist on its date (the daylight-saving gap) is flagged instead of shifted, and editing a record keeps its exact time, seconds and all.',
+          'Tiny syringe results no longer pretend to be ready: a result smaller than the smallest syringe mark now says so instead of showing a valid-looking 0.0u.'
+        ]
+      },
+      es: {
+        IMPROVED: [
+          'Volver a conectarte significa quedar al día: cuando regresa tu conexión, la app ahora termina de sincronizar todo lo que estaba pendiente en vez de solo anunciarlo.',
+          'Los historiales muy largos ahora abren rápido. Tu lista de registros carga por páginas con un botón MOSTRAR MÁS en vez de construir cada registro de una vez.'
+        ],
+        FIXED: [
+          'Editar el peso vinculado de una dosis ahora sincroniza el valor nuevo a tu nube. Antes podía subirse el peso anterior y la edición nunca llegaba.',
+          'Un borrador de dosis sin enviar conserva su AM/PM y sigue siendo tuyo: los borradores están ligados a la cuenta que los escribió y se borran al cerrar sesión, así que nunca aparecen en otra cuenta.',
+          'Fechas más estrictas: una fecha imposible ahora se rechaza en vez de guardarse en silencio como hoy, una hora que no existe en su fecha (el salto del horario de verano) se marca en vez de moverse, y editar un registro conserva su hora exacta, con segundos y todo.',
+          'Los resultados diminutos de jeringa ya no fingen estar listos: un resultado más pequeño que la marca más pequeña de la jeringa ahora lo dice en vez de mostrar un 0.0u con aspecto válido.'
+        ]
+      }
+    },
+    '20261014.78f1075': {
       version: '1.1.1', title: 'TRANSMISSION', date: '2026-10-14',
       en: {
         NEW: [
