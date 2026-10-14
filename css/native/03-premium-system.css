@@ -3280,4 +3280,137 @@ html[data-theme="light"] .gn-lab-tool-panel,
 html[data-theme="light"] .gn-import-panel { box-shadow: var(--elev-3) !important; }
 .gn-runtime-banner { box-shadow: var(--elev-2); }
 #landing .landing-preview-frame { box-shadow: var(--elev-3); }
+
+/* ══ TRANSMISSION — update experience (v1.1.1) ═══════════════════════════
+ * The update-available banner and the What's New card become one surface:
+ * a transmission. Presentation only — the SW announce/apply machinery
+ * (gridnode-native.js) and the whatsnew ack/queue contract are untouched.
+ * All choreography is transform/opacity/background-size, and every piece
+ * of it is switched off under prefers-reduced-motion at the bottom of
+ * this section (final state is the base state, so nothing can get stuck
+ * invisible). Category colors follow the sanctioned tag palette:
+ * NEW mars red, FIXED green, A11Y amber, the rest tinted to family. */
+
+/* ── Banner: shared chrome additions ────────────────────────────────── */
+.gn-runtime-glyph { display: none; width: 15px; height: 15px; flex: 0 0 auto; color: #7ff5ff; }
+.gn-runtime-glyph svg { width: 100%; height: 100%; display: block; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.gn-runtime-action { display: inline-flex; align-items: center; gap: 6px; }
+.gn-runtime-action-ico { display: none; width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.gn-runtime-dismiss { width: 26px; height: 26px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; margin-left: -3px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: rgba(242,251,253,.55); cursor: pointer; }
+.gn-runtime-dismiss svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.gn-runtime-dismiss:hover { color: #f2fbfd; background: rgba(255,255,255,.08); }
+.gn-runtime-dismiss[hidden] { display: none; }
+
+/* ── Banner: the update state is a signal pill ──────────────────────── */
+.gn-runtime-banner[data-kind="update"] { overflow: hidden; border-color: rgba(0,212,255,.68); box-shadow: 0 12px 34px rgba(0,0,0,.42), 0 0 22px rgba(0,212,255,.16); }
+.gn-runtime-banner[data-kind="update"] .gn-runtime-glyph { display: inline-flex; }
+.gn-runtime-banner[data-kind="update"] .gn-runtime-action-ico { display: block; }
+.gn-runtime-banner[data-kind="update"] .gn-runtime-action { background: rgba(0,212,255,.14); border-color: rgba(0,212,255,.65); color: #aef7ff; }
+.gn-runtime-banner[data-kind="update"] .gn-runtime-copy { color: #eafcff; }
+.gn-runtime-banner[data-kind="update"] .gn-runtime-dot { color: var(--brand-cyan, #00d4ff); background: var(--brand-cyan, #00d4ff); animation: gnTxDotPulse 1.9s ease-out infinite; }
+@keyframes gnTxDotPulse { 0% { box-shadow: 0 0 0 0 rgba(0,212,255,.45), 0 0 10px rgba(0,212,255,.6); } 70% { box-shadow: 0 0 0 8px rgba(0,212,255,0), 0 0 10px rgba(0,212,255,.6); } 100% { box-shadow: 0 0 0 0 rgba(0,212,255,0), 0 0 10px rgba(0,212,255,.6); } }
+/* Light sweep: crosses the pill in the first stretch of a 5.4s cycle,
+   then rests — a signal catching light, not a marquee. */
+.gn-runtime-banner[data-kind="update"]::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(100deg, transparent 42%, rgba(127,245,255,.13) 50%, transparent 58%); transform: translateX(-130%); animation: gnTxSweep 5.4s ease-in-out infinite; }
+@keyframes gnTxSweep { 0% { transform: translateX(-130%); } 32% { transform: translateX(130%); } 100% { transform: translateX(130%); } }
+.gn-runtime-banner.gn-runtime-tappable { cursor: pointer; }
+.gn-runtime-banner.gn-runtime-tappable:hover { filter: brightness(1.14); }
+.gn-runtime-banner.gn-runtime-tappable:active { filter: brightness(1.24); }
+html[data-theme="light"] .gn-runtime-banner[data-kind="update"] { border-color: rgba(0,95,115,.6); box-shadow: 0 12px 34px rgba(43,58,62,.2), 0 0 18px rgba(0,95,115,.14); }
+html[data-theme="light"] .gn-runtime-banner[data-kind="update"] .gn-runtime-glyph { color: var(--text-accent); }
+html[data-theme="light"] .gn-runtime-banner[data-kind="update"] .gn-runtime-action { background: rgba(0,95,115,.1); border-color: rgba(0,95,115,.5); color: var(--text-accent); }
+html[data-theme="light"] .gn-runtime-banner[data-kind="update"] .gn-runtime-copy { color: var(--text-primary); }
+html[data-theme="light"] .gn-runtime-banner[data-kind="update"] .gn-runtime-dot { animation-name: gnTxDotPulseLight; }
+@keyframes gnTxDotPulseLight { 0% { box-shadow: 0 0 0 0 rgba(0,95,115,.35), 0 0 8px rgba(0,95,115,.4); } 70% { box-shadow: 0 0 0 8px rgba(0,95,115,0), 0 0 8px rgba(0,95,115,.4); } 100% { box-shadow: 0 0 0 0 rgba(0,95,115,0), 0 0 8px rgba(0,95,115,.4); } }
+html[data-theme="light"] .gn-runtime-banner[data-kind="update"]::after { background: linear-gradient(100deg, transparent 42%, rgba(0,95,115,.1) 50%, transparent 58%); }
+html[data-theme="light"] .gn-runtime-dismiss { color: rgba(28,43,49,.5); }
+html[data-theme="light"] .gn-runtime-dismiss:hover { color: var(--text-primary); background: rgba(0,95,115,.08); }
+
+/* ── What's New card: scan-in + charged top line ────────────────────── */
+#gnWhatsNewOverlay.gn-tx:not(.gn-tx-archive) .gn-whatsnew-card {
+  border-top-color: transparent;
+  background-image: linear-gradient(90deg, #00d4ff, rgba(0,212,255,.12));
+  background-size: 100% 2px;
+  background-position: top left;
+  background-repeat: no-repeat;
+  animation: gnTxCardIn .55s cubic-bezier(.22,1,.36,1) both, gnTxCharge .9s .1s ease-out both;
+}
+@keyframes gnTxCardIn { from { opacity: 0; transform: translateY(16px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes gnTxCharge { from { background-size: 0% 2px; } to { background-size: 100% 2px; } }
+/* One scan pass over the whole transmission as it lands. */
+#gnWhatsNewOverlay.gn-tx:not(.gn-tx-archive)::before {
+  content: ""; position: fixed; left: 0; right: 0; top: 0; height: 180px; z-index: 2; pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(0,212,255,.09) 55%, rgba(0,212,255,.22) 82%, rgba(127,245,255,.35) 100%);
+  transform: translateY(-190px);
+  animation: gnTxScan 1.05s .12s cubic-bezier(.4,0,.2,1) both;
+}
+@keyframes gnTxScan { from { transform: translateY(-190px); } to { transform: translateY(100vh); } }
+html[data-theme="light"] #gnWhatsNewOverlay.gn-tx:not(.gn-tx-archive) .gn-whatsnew-card { background-image: linear-gradient(90deg, rgba(0,111,130,.9), rgba(0,111,130,.15)); }
+html[data-theme="light"] #gnWhatsNewOverlay.gn-tx:not(.gn-tx-archive)::before { background: linear-gradient(180deg, transparent, rgba(0,111,130,.06) 55%, rgba(0,111,130,.14) 82%, rgba(0,111,130,.22) 100%); }
+
+/* ── Hero: the version is the moment ────────────────────────────────── */
+.gn-tx-hero { position: relative; padding: 16px !important; border-radius: 12px; }
+.gn-tx-hero-top { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.gn-tx-medallion { position: relative; flex: 0 0 auto; width: 54px; height: 54px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(0,212,255,.4); border-radius: 50%; background: rgba(0,212,255,.06); color: #7ff5ff; box-shadow: inset 0 0 16px rgba(0,212,255,.07), 0 0 14px rgba(0,212,255,.1); }
+.gn-tx-medallion svg { width: 27px; height: 27px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.gn-tx-medallion::after { content: ""; position: absolute; inset: -1px; border: 1px solid rgba(0,212,255,.45); border-radius: 50%; animation: gnTxRingPulse 3s ease-out infinite; }
+@keyframes gnTxRingPulse { 0% { transform: scale(1); opacity: .55; } 70% { transform: scale(1.22); opacity: 0; } 100% { transform: scale(1.22); opacity: 0; } }
+.gn-tx-hero-meta { min-width: 0; }
+.gn-tx-version { margin: 0 !important; font-size: 2rem !important; line-height: 1.05; letter-spacing: .5px; text-shadow: 0 0 22px rgba(0,212,255,.28); }
+.gn-tx-title { margin-top: 3px !important; font-size: .78rem !important; }
+.gn-tx-hero-meta .gn-whatsnew-date { margin: 4px 0 0; }
+html[data-theme="light"] .gn-tx-medallion { border-color: rgba(0,95,115,.4); background: rgba(0,95,115,.05); color: var(--text-accent); box-shadow: inset 0 0 16px rgba(0,95,115,.06), 0 0 12px rgba(0,95,115,.08); }
+html[data-theme="light"] .gn-tx-medallion::after { border-color: rgba(0,95,115,.4); }
+html[data-theme="light"] .gn-tx-version { text-shadow: none; }
+
+/* ── Categories: glyph chip + sanctioned tag, staggered rise ────────── */
+.gn-wn-cat-head { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.gn-wn-cat-chip { flex: 0 0 auto; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(0,212,255,.4); border-radius: 8px; background: rgba(0,212,255,.07); color: #7ff5ff; }
+.gn-wn-cat-chip svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.gn-wn-cat[data-cat="new"] .gn-wn-cat-chip { border-color: rgba(255,45,77,.45); background: rgba(255,45,77,.07); color: #FF5B5B; }
+.gn-wn-cat[data-cat="fixed"] .gn-wn-cat-chip { border-color: rgba(0,255,136,.4); background: rgba(0,255,136,.06); color: #00ff88; }
+.gn-wn-cat[data-cat="accessibility"] .gn-wn-cat-chip { border-color: rgba(255,209,102,.45); background: rgba(255,209,102,.06); color: #ffd166; }
+.gn-wn-cat[data-cat="improved"] .gn-wn-cat-chip { border-color: rgba(183,139,255,.45); background: rgba(183,139,255,.07); color: #b78bff; }
+.gn-wn-cat[data-cat="mobile"] .gn-wn-cat-chip { border-color: rgba(255,159,67,.45); background: rgba(255,159,67,.06); color: #ff9f43; }
+.gn-wn-cat[data-cat="security"] .gn-wn-cat-chip { border-color: rgba(157,184,255,.45); background: rgba(157,184,255,.06); color: #9db8ff; }
+.gn-wn-cat[data-cat="compatibility"] .gn-wn-cat-chip { border-color: rgba(127,178,201,.45); background: rgba(127,178,201,.06); color: #7fb2c9; }
+.gn-wn-cat[data-cat="improved"] .gn-wn-cat-tag { color: #b78bff; }
+.gn-wn-cat[data-cat="mobile"] .gn-wn-cat-tag { color: #ff9f43; }
+.gn-wn-cat[data-cat="security"] .gn-wn-cat-tag { color: #9db8ff; }
+.gn-wn-cat[data-cat="compatibility"] .gn-wn-cat-tag { color: #7fb2c9; }
+html[data-theme="light"] .gn-wn-cat-chip { border-color: rgba(0,95,115,.4); background: rgba(0,95,115,.05); color: var(--text-accent); }
+html[data-theme="light"] .gn-wn-cat[data-cat="new"] .gn-wn-cat-chip { border-color: rgba(163,15,46,.4); background: rgba(163,15,46,.05); color: #a30f2e; }
+html[data-theme="light"] .gn-wn-cat[data-cat="fixed"] .gn-wn-cat-chip { border-color: rgba(0,107,66,.4); background: rgba(0,107,66,.05); color: #006b42; }
+html[data-theme="light"] .gn-wn-cat[data-cat="accessibility"] .gn-wn-cat-chip { border-color: rgba(122,90,16,.45); background: rgba(122,90,16,.06); color: #7a5a10; }
+html[data-theme="light"] .gn-wn-cat[data-cat="improved"] .gn-wn-cat-chip { border-color: rgba(109,40,184,.4); background: rgba(109,40,184,.05); color: #6d28b8; }
+html[data-theme="light"] .gn-wn-cat[data-cat="mobile"] .gn-wn-cat-chip { border-color: rgba(154,91,0,.45); background: rgba(154,91,0,.05); color: #9a5b00; }
+html[data-theme="light"] .gn-wn-cat[data-cat="security"] .gn-wn-cat-chip { border-color: rgba(47,75,158,.4); background: rgba(47,75,158,.05); color: #2f4b9e; }
+html[data-theme="light"] .gn-wn-cat[data-cat="compatibility"] .gn-wn-cat-chip { border-color: rgba(64,103,124,.45); background: rgba(64,103,124,.05); color: #40677c; }
+html[data-theme="light"] .gn-wn-cat[data-cat="improved"] .gn-wn-cat-tag { color: #6d28b8; }
+html[data-theme="light"] .gn-wn-cat[data-cat="mobile"] .gn-wn-cat-tag { color: #9a5b00; }
+html[data-theme="light"] .gn-wn-cat[data-cat="security"] .gn-wn-cat-tag { color: #2f4b9e; }
+html[data-theme="light"] .gn-wn-cat[data-cat="compatibility"] .gn-wn-cat-tag { color: #40677c; }
+#gnWhatsNewOverlay.gn-tx:not(.gn-tx-archive) .gn-wn-cat-head,
+#gnWhatsNewOverlay.gn-tx:not(.gn-tx-archive) .gn-wn-cat li {
+  animation: gnTxRise .45s cubic-bezier(.22,1,.36,1) both;
+  animation-delay: min(calc(var(--i, 0) * 45ms), 500ms);
+}
+@keyframes gnTxRise { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── History: past transmissions, same language, quieter ───────────── */
+.gn-tx-past-title { margin: 1px 0 2px; }
+#gnWhatsNewOverlay.gn-tx-archive .gn-wn-release { border-left: 2px solid rgba(0,212,255,.16); padding-left: 12px; }
+#gnWhatsNewOverlay.gn-tx-archive .gn-wn-release.current { border-left: 1px solid rgba(0,212,255,.25); padding-left: 14px; }
+html[data-theme="light"] #gnWhatsNewOverlay.gn-tx-archive .gn-wn-release { border-left-color: rgba(0,95,115,.22); }
+
+/* ── Reduced motion: the transmission arrives, instantly, complete ──── */
+@media (prefers-reduced-motion: reduce) {
+  .gn-runtime-banner[data-kind="update"]::after,
+  .gn-runtime-banner[data-kind="update"] .gn-runtime-dot { animation: none !important; }
+  #gnWhatsNewOverlay.gn-tx .gn-whatsnew-card,
+  #gnWhatsNewOverlay.gn-tx::before,
+  #gnWhatsNewOverlay.gn-tx .gn-wn-cat-head,
+  #gnWhatsNewOverlay.gn-tx .gn-wn-cat li,
+  #gnWhatsNewOverlay.gn-tx .gn-tx-medallion::after { animation: none !important; }
+}
 html[data-theme="light"] #landing .landing-preview-frame { box-shadow: var(--elev-3); }

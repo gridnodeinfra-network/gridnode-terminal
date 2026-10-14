@@ -149,9 +149,38 @@
     banner.className = 'gn-runtime-banner';
     banner.setAttribute('role', 'status');
     banner.setAttribute('aria-live', 'polite');
-    banner.innerHTML = '<span class="gn-runtime-dot" aria-hidden="true"></span><span class="gn-runtime-copy"></span><button type="button" class="gn-runtime-action"></button>';
+    banner.innerHTML = '<span class="gn-runtime-dot" aria-hidden="true"></span>' +
+      '<span class="gn-runtime-glyph" aria-hidden="true"><svg><use href="#gn-signal"></use></svg></span>' +
+      '<span class="gn-runtime-copy"></span>' +
+      '<button type="button" class="gn-runtime-action"><svg class="gn-runtime-action-ico" aria-hidden="true"><use href="#gn-data-packet"></use></svg><span class="gn-runtime-action-label"></span></button>' +
+      '<button type="button" class="gn-runtime-dismiss" hidden><svg aria-hidden="true"><use href="#gn-close"></use></svg></button>';
+    /* TRANSMISSION (v1.1.1): in the update state the WHOLE pill is the
+       button — a tap anywhere on it (except the dismiss control) applies
+       the update, so the pill never reads as a passive notice. The action
+       button keeps its own onclick; the delegated handler covers the rest
+       of the pill surface and deliberately skips both buttons. */
+    banner.addEventListener('click', event => {
+      if (banner.dataset.kind !== 'update') return;
+      if (event.target.closest('.gn-runtime-dismiss')) return;
+      if (event.target.closest('.gn-runtime-action')) return;
+      const action = banner._gnAction;
+      if (action?.run) action.run();
+    });
+    banner.querySelector('.gn-runtime-dismiss').addEventListener('click', () => dismissUpdateBanner(banner));
     document.body.prepend(banner);
     return banner;
+  }
+
+  /* TRANSMISSION (v1.1.1): dismissing the update pill defers THIS release
+     to the next launch (a new session). The waiting worker is untouched, a
+     different release still announces normally, and an applied release
+     never re-nags (its worker is no longer waiting). */
+  function dismissUpdateBanner(banner) {
+    try {
+      const release = banner.dataset.release || '';
+      if (release) sessionStorage.setItem('gn_tx_deferred_release', release);
+    } catch (_) {}
+    banner.classList.remove('active');
   }
 
   function showStatus(kind, message, action) {
@@ -160,8 +189,17 @@
     banner.querySelector('.gn-runtime-copy').textContent = message;
     const button = banner.querySelector('.gn-runtime-action');
     button.hidden = !action;
-    button.textContent = action?.label || '';
+    button.querySelector('.gn-runtime-action-label').textContent = action?.label || '';
     button.onclick = action?.run || null;
+    banner._gnAction = action || null;
+    /* TRANSMISSION (v1.1.1): only the update state carries the dismiss
+       control and the tappable-pill affordance. */
+    const isUpdate = kind === 'update';
+    const dismiss = banner.querySelector('.gn-runtime-dismiss');
+    dismiss.hidden = !isUpdate;
+    if (isUpdate) dismiss.setAttribute('aria-label', copy('Dismiss until next launch', 'Descartar hasta el próximo inicio'));
+    if (!isUpdate) delete banner.dataset.release;
+    banner.classList.toggle('gn-runtime-tappable', isUpdate && Boolean(action));
     banner.classList.add('active');
     if (kind === 'synced') window.setTimeout(() => banner.dataset.kind === 'synced' && banner.classList.remove('active'), 1800);
   }
@@ -585,7 +623,13 @@
           // the old [0-9.]+ pattern truncated ids like 20260909.e32ad87).
           const rel = (worker.scriptURL || '').match(/[?&]v=([^&]+)/);
           const releaseTag = rel ? ' · ' + rel[1] : '';
-          showStatus('update', copy('UPDATE AVAILABLE · APPLY WHEN READY', 'ACTUALIZACIÓN DISPONIBLE · APLICA CUANDO ESTÉS LISTO') + releaseTag, { label: copy('UPDATE', 'ACTUALIZAR'), run: () => this.apply() });
+          // TRANSMISSION (v1.1.1): a release dismissed earlier this session
+          // stays deferred until the next launch — never re-nag in-session.
+          try {
+            if (rel && sessionStorage.getItem('gn_tx_deferred_release') === rel[1]) return;
+          } catch (_) {}
+          showStatus('update', copy('NEW TRANSMISSION', 'NUEVA TRANSMISIÓN') + releaseTag, { label: copy('UPDATE', 'ACTUALIZAR'), run: () => this.apply() });
+          if (rel) { try { runtimeBanner().dataset.release = rel[1]; } catch (_) {} }
         };
         if (registration.waiting) ready(registration.waiting);
         registration.addEventListener('updatefound', () => {
@@ -604,7 +648,18 @@
     },
     apply() {
       const worker = this.registration?.waiting;
-      if (!worker) { this.registration?.update(); return; }
+      if (!worker) {
+        this.registration?.update();
+        /* TRANSMISSION (v1.1.1): no worker is waiting at tap time, so the
+           new build is already active (e.g. applied from another tab).
+           Retire the pill and open the transmission directly — the
+           whatsnew module's own per-build ack decides whether the notes
+           actually show. */
+        const banner = document.getElementById('gnRuntimeBanner');
+        if (banner?.dataset.kind === 'update') banner.classList.remove('active');
+        try { if (window.GN_WHATS_NEW?.shouldAutoShow()) window.GN_WHATS_NEW.show(); } catch (_) {}
+        return;
+      }
       captureShotDraft();
       try { sessionStorage.setItem(PAGE_KEY, currentPageName()); } catch (_) {}
       this.applying = true;

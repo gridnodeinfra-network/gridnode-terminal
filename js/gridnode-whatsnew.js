@@ -243,7 +243,7 @@
       }
     },
 
-    '__CURRENT_BUILD__': {
+    '20261014.c285e0a': {
       version: '1.1.0', title: 'THE OCTOBER UPDATE', date: '2026-10-14',
       en: {
         NEW: [
@@ -289,6 +289,25 @@
         ],
         SECURITY: [
           'Sincronización en la nube reforzada de punta a punta: iniciar sesión ya no puede sobrescribir tus registros en la nube con una fusión parcial, las ediciones y eliminaciones hechas mientras una sincronización está en curso nunca se pierden, y las cuentas permanecen completamente separadas incluso entre cierres e inicios de sesión rápidos. Verificado con una prueba de aislamiento entre cuentas en vivo contra la base de datos de producción.'
+        ]
+      }
+    },
+    '__CURRENT_BUILD__': {
+      version: '1.1.1', title: 'TRANSMISSION', date: '2026-10-14',
+      en: {
+        NEW: [
+          'Updates now arrive as transmissions: when a new version is ready, a NEW TRANSMISSION signal appears at the top of your screen. Tap it and the app updates itself, then shows you what changed.'
+        ],
+        IMPROVED: [
+          'This What\'s New card was rebuilt as a transmission too: a proper hero for the new version, labeled sections with icons, and a calmer, more premium read in both themes, on any screen size.'
+        ]
+      },
+      es: {
+        NEW: [
+          'Las actualizaciones ahora llegan como transmisiones: cuando una nueva versión está lista, aparece una señal de NUEVA TRANSMISIÓN en la parte superior de tu pantalla. Tócala y la app se actualiza sola, y luego te muestra qué cambió.'
+        ],
+        IMPROVED: [
+          'Esta tarjeta de novedades también se reconstruyó como una transmisión: un encabezado digno para la nueva versión, secciones etiquetadas con íconos y una lectura más calmada y premium en ambos temas, en cualquier tamaño de pantalla.'
         ]
       }
     },
@@ -1341,13 +1360,26 @@
   }
   function hasCurrentNotes() { return Boolean(NOTES[VERSION.release]?.[lang()]); }
 
-  function categories(entry) {
+  /* TRANSMISSION (v1.1.1): category glyphs come from the app sprite
+     registry (html/partials/02-body-shell.html). The .gn-wn-cat-tag pill
+     the unify system already sanctions is finally emitted again, now
+     paired with its glyph chip; --i drives the staggered fade-up. */
+  const CAT_GLYPHS = {
+    NEW: 'gn-data-packet', IMPROVED: 'gn-trend-signal', FIXED: 'gn-check',
+    ACCESSIBILITY: 'gn-operator-profile', MOBILE: 'gn-command-grid',
+    COMPATIBILITY: 'gn-network-node', SECURITY: 'gn-vault-core'
+  };
+
+  function categories(entry, stagger) {
     const data = entry[lang()] || entry.en || {};
     const names = labels();
     return ORDER.map(category => {
       const items = data[category];
       if (!items?.length) return '';
-      return '<section class="gn-wn-cat" data-cat="' + category.toLowerCase() + '"><ul>' + items.map(item => '<li>' + item + '</li>').join('') + '</ul></section>';
+      const head = '<div class="gn-wn-cat-head" style="--i:' + (stagger.n++) + '">' +
+        '<span class="gn-wn-cat-chip" aria-hidden="true"><svg><use href="#' + (CAT_GLYPHS[category] || 'gn-signal') + '"></use></svg></span>' +
+        '<span class="gn-wn-cat-tag">' + names[category] + '</span></div>';
+      return '<section class="gn-wn-cat" data-cat="' + category.toLowerCase() + '">' + head + '<ul>' + items.map(item => '<li style="--i:' + (stagger.n++) + '">' + item + '</li>').join('') + '</ul></section>';
     }).join('');
   }
 
@@ -1356,10 +1388,24 @@
     // "// release 20260805.3" below. The release-title subtitle is removed.
     // Overnight polish (2026-08-09): date moves to its own dim line so the
     // version never wraps mid-token ("2026-\n08-09") on narrow cards.
-    return '<article class="gn-wn-release' + (current ? ' current' : '') + '">' +
+    // TRANSMISSION (v1.1.1): the current release gets a hero — signal
+    // medallion, the version as the big glyph moment, title and date —
+    // while history panels stay compact and gain the title line so the
+    // archive reads as past transmissions.
+    const stagger = { n: 0 };
+    if (current) {
+      return '<article class="gn-wn-release current gn-tx-hero">' +
+        '<div class="gn-tx-hero-top"><span class="gn-tx-medallion" aria-hidden="true"><svg><use href="#gn-signal"></use></svg></span>' +
+        '<div class="gn-tx-hero-meta"><div class="gn-whatsnew-version gn-tx-version">v' + entry.version + '</div>' +
+        '<div class="gn-whatsnew-title gn-tx-title">' + entry.title + '</div>' +
+        '<div class="gn-whatsnew-date">' + entry.date + ' · // release ' + release + '</div></div></div>' +
+        '<div class="gn-whatsnew-body">' + categories(entry, stagger) + '</div></article>';
+    }
+    return '<article class="gn-wn-release">' +
       '<div class="gn-wn-release-head"><div class="gn-whatsnew-version">GRID//NODE v' + entry.version + '</div><div class="gn-whatsnew-date">' + entry.date + '</div></div>' +
+      '<div class="gn-whatsnew-title gn-tx-past-title">' + entry.title + '</div>' +
       '<div class="gn-whatsnew-release">// release ' + release + '</div>' +
-      '<div class="gn-whatsnew-body">' + categories(entry) + '</div></article>';
+      '<div class="gn-whatsnew-body">' + categories(entry, stagger) + '</div></article>';
   }
 
   function show(options) {
@@ -1379,12 +1425,12 @@
     const releases = historyMode ? Object.keys(NOTES).sort().reverse() : [VERSION.release];
     const overlay = document.createElement('div');
     overlay.id = 'gnWhatsNewOverlay';
-    overlay.className = 'gn-whatsnew-overlay active';
+    overlay.className = 'gn-whatsnew-overlay active gn-tx' + (historyMode ? ' gn-tx-archive' : '');
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
     overlay.setAttribute('aria-labelledby', 'gnWhatsNewHeading');
     overlay.innerHTML = '<div class="gn-whatsnew-card">' +
-      '<div class="gn-whatsnew-kicker">// ' + tx('whatsnew.systemUpdate', 'SYSTEM UPDATE') + '</div>' +
+      '<div class="gn-whatsnew-kicker">// ' + (historyMode ? tx('whatsnew.archiveKicker', 'TRANSMISSION ARCHIVE') : tx('whatsnew.transmission', 'NEW TRANSMISSION')) + '</div>' +
       '<h2 id="gnWhatsNewHeading">' + (historyMode ? (lang() === 'es' ? 'HISTORIAL DE ACTUALIZACIONES' : 'UPDATE HISTORY') : tx('whatsnew.title', 'WHAT\'S NEW')) + '</h2>' +
       '<div class="gn-wn-history">' + releases.map(release => releasePanel(release, NOTES[release], release === VERSION.release)).join('') + '</div>' +
       '<div class="gn-whatsnew-actions">' + (!historyMode ? '<button type="button" class="gn-whatsnew-history">' + (lang() === 'es' ? 'VER HISTORIAL' : 'VIEW UPDATE HISTORY') + '</button>' : '') +
