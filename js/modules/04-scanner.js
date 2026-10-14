@@ -314,6 +314,21 @@ function hitTestScannerZone(svg, clientX, clientY) {
       try { if (p.isPointInFill(sp)) return p; } catch (e) {}
     }
   }
+  /* CLARITY PASS (P6, 2026-10-14): second pass — stroke expansion. Every
+     .zone-hit carries a transparent stroke-width sized so the smallest
+     zones reach a >=44px effective tap target at phone widths (core
+     Lower zones measured 22.6px high at 360px before this). The stroke
+     is never painted — every state visual lives on the .zone-visible
+     sibling — it only widens the tap area into the dead space around a
+     zone. Exact fill hits always win (pass 1 above), so no existing
+     hit changes; where two expansions contest dead space, DOM order
+     decides, same as the pre-existing fill overlaps. */
+  for (let i = 0; i < hitPaths.length; i++) {
+    const p = hitPaths[i];
+    if (typeof p.isPointInStroke === "function") {
+      try { if (p.isPointInStroke(sp)) return p; } catch (e) {}
+    }
+  }
   /* Fallback: nearest zone by distance (should never trigger on real devices) */
   return null;
 }
