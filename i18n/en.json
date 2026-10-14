@@ -91,6 +91,7 @@
   "auth.googleAuthDisabled": "GOOGLE_AUTH_DISABLED",
   "auth.googleAuthIsNotEnabled": "// GOOGLE SIGN-IN IS NOT ENABLED YET — USE EMAIL OR CONTINUE LOCALLY",
   "auth.googleCouldNotComplete": "// GOOGLE SIGN-IN COULD NOT COMPLETE — RETRY OR USE EMAIL",
+  "auth.googleDidNotComplete": "// GOOGLE SIGN-IN DIDN'T COMPLETE — TRY AGAIN, USE AN EMAIL CODE, OR CONTINUE ON THIS DEVICE",
   "auth.googleCouldNotLoad": "// GOOGLE SIGN-IN COULD NOT LOAD — USE EMAIL OR CONTINUE LOCALLY",
   "auth.googleCouldNotStart": "// GOOGLE AUTH COULD NOT START — RETRY OR USE EMAIL",
   "auth.googleLibraryUnavailable": "GOOGLE_LIBRARY_UNAVAILABLE",

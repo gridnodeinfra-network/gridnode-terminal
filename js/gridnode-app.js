@@ -12,6 +12,18 @@ let authMode = 'signin';
 let passwordRecoveryActive = false;
 let googleIdentityPromise = null;
 let googleIdentityInitialized = false;
+/* QA WebKit hardening (2026-10-14): GIS popup failure surfacing state.
+   With ux_mode 'popup', a failed popup (e.g. origin_mismatch on an
+   unregistered origin in Safari/WebKit) or a popup closed without
+   signing in never invokes the credential callback — the app showed
+   nothing and the button read as dead. The watchdog below arms when
+   focus moves into the GIS iframe (a real click/keyboard activation
+   of the Google button) and, if focus returns with no credential
+   delivered, surfaces auth.googleDidNotComplete once. The happy path
+   is untouched: handleGoogleCredential disarms before anything else. */
+let googlePopupWatchInstalled = false;
+let googlePopupAttemptAt = 0;
+let googleCredentialSeen = false;
 
 function bridge() {
   const names = [
@@ -1085,6 +1097,7 @@ async function renderGoogleIdentityButton() {
       width: Math.min(336, Math.max(260, host.clientWidth || 336)),
       locale: document.documentElement.lang === 'es' ? 'es' : 'en'
     });
+    installGooglePopupWatch(host);
   } catch (error) {
     console.warn('[GRID//NODE Google identity]', error);
     /* F1 flow steering: GIS is the branded road, but when the GIS library
@@ -1107,7 +1120,36 @@ async function renderGoogleIdentityButton() {
   }
 }
 
+function installGooglePopupWatch(host) {
+  if (googlePopupWatchInstalled || !host) return;
+  googlePopupWatchInstalled = true;
+  window.addEventListener('blur', () => {
+    /* Focus moving into the GIS iframe is the only reliable parent-side
+       signal that the user actually activated the Google button (clicks
+       inside the cross-origin iframe never reach parent listeners). */
+    const frame = host.querySelector('iframe');
+    if (frame && document.activeElement === frame) {
+      googlePopupAttemptAt = Date.now();
+      googleCredentialSeen = false;
+    }
+  });
+  window.addEventListener('focus', () => {
+    if (!googlePopupAttemptAt || googleCredentialSeen) return;
+    if (Date.now() - googlePopupAttemptAt > 10 * 60 * 1000) { googlePopupAttemptAt = 0; return; }
+    const attemptAt = googlePopupAttemptAt;
+    /* Grace period: on success the credential callback lands within
+       moments of the popup closing; only surface the note if it didn't. */
+    setTimeout(() => {
+      if (googleCredentialSeen || googlePopupAttemptAt !== attemptAt) return;
+      googlePopupAttemptAt = 0;
+      setAuthMessage(tx('auth.googleDidNotComplete', "// GOOGLE SIGN-IN DIDN'T COMPLETE — TRY AGAIN, USE AN EMAIL CODE, OR CONTINUE ON THIS DEVICE"), true);
+    }, 1200);
+  });
+}
+
 async function handleGoogleCredential(response) {
+  googleCredentialSeen = true;
+  googlePopupAttemptAt = 0;
   const host = $('gnGoogleButtonMount');
   if (!legalAccepted()) { requestLegalAccept(() => handleGoogleCredential(response)); return; }
   requireNodeKeyForGoogle(() => doGoogleCredential(response));
