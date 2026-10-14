@@ -25,6 +25,41 @@ function clearWtFieldErrors() {
   $('wtDate')?.removeAttribute('aria-invalid');
   setDisplay('wtError', false);
 }
+/* QA-CONFIRMED defect family (2026-10-14, verified at base c2e85c1 + v3):
+   saveWt called shotFieldError / addToastNextStep, which live in the
+   log-shot chunk (05-log-shot.js) with no import. When that chunk has not
+   loaded yet (weight saved as the first action), both throw ReferenceError:
+   invalid saves aborted instead of showing the field error, and the
+   post-save VIEW PROGRESS toast action never attached. These local
+   fallbacks keep this chunk self-contained; the shared helpers are still
+   used when they are present. */
+function wtFieldError(anchor, id, message) {
+  if (typeof shotFieldError === 'function') { shotFieldError(anchor, id, message); return; }
+  if (!anchor) return;
+  let el = document.getElementById(id);
+  if (!el) {
+    el = document.createElement('div');
+    el.id = id;
+    el.className = 'gn-field-error';
+    el.setAttribute('role', 'alert');
+    anchor.insertAdjacentElement('afterend', el);
+  }
+  el.textContent = message;
+}
+function wtToastNextStep(label, onClick) {
+  if (typeof addToastNextStep === 'function') { addToastNextStep(label, onClick); return; }
+  const toast = $('toastEl');
+  if (!toast || !toast.classList.contains('undoable') || toast.querySelector('.gn-toast-view')) return;
+  const body = toast.querySelector('.gn-toast-body');
+  const undo = toast.querySelector('.gn-toast-undo');
+  if (!body || !undo) return;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'gn-toast-view';
+  btn.textContent = label;
+  btn.addEventListener('click', () => { clearTimeout(toast._timer); toast.classList.remove('active'); onClick(); });
+  body.insertBefore(btn, undo);
+}
 
 function saveWt() {
   if (moduleState.savingWt) return;
@@ -33,9 +68,9 @@ function saveWt() {
     const raw = Number($('wtVal')?.value);
     const date = readHumanDateInput($('wtDate'), true) || todayISO();
     clearWtFieldErrors();
-    if (!Number.isFinite(raw) || raw <= 0) { $('wtVal')?.setAttribute('aria-invalid', 'true'); shotFieldError($('wtVal'), 'gnWtErrVal', tx('weight.invalidPlain', 'Enter your weight as a number greater than zero.')); $('wtVal')?.focus(); return; }
+    if (!Number.isFinite(raw) || raw <= 0) { $('wtVal')?.setAttribute('aria-invalid', 'true'); wtFieldError($('wtVal'), 'gnWtErrVal', tx('weight.invalidPlain', 'Enter your weight as a number greater than zero.')); $('wtVal')?.focus(); return; }
     const dateTime = new Date(`${date}T${$('wtTime')?.value || '12:00'}`);
-    if (Number.isNaN(dateTime.getTime()) || dateTime > new Date()) { $('wtDate')?.setAttribute('aria-invalid', 'true'); shotFieldError($('wtDate')?.closest('.form-group') || $('wtDate'), 'gnWtErrDate', tx('weight.futurePlain', 'That date is in the future. Pick today or an earlier date.')); $('wtDate')?.focus(); return; }
+    if (Number.isNaN(dateTime.getTime()) || dateTime > new Date()) { $('wtDate')?.setAttribute('aria-invalid', 'true'); wtFieldError($('wtDate')?.closest('.form-group') || $('wtDate'), 'gnWtErrDate', tx('weight.futurePlain', 'That date is in the future. Pick today or an earlier date.')); $('wtDate')?.focus(); return; }
     const weight = moduleState.weightUnit === 'kg' ? raw * 2.2046226218 : raw;
     const previousWeight = sortedWeights().at(-1)?.weight;
     const milestone = weightMilestone(previousWeight, weight, getProfile());
@@ -55,7 +90,7 @@ function saveWt() {
     refreshAll();
     if (milestone) celebrateMilestone(milestone.type, milestone.value);
     showToast(tx('toast.weightLogged', 'Peso registrado'), false, () => undoWeight(record.id), `${raw} ${moduleState.weightUnit === 'kg' ? 'kg' : 'lb'}`);
-    addToastNextStep(tx('toast.viewProgress', 'VIEW PROGRESS'), () => showPage('Results', document.getElementById('navRes')));
+    wtToastNextStep(tx('toast.viewProgress', 'VIEW PROGRESS'), () => showPage('Results', document.getElementById('navRes')));
   } finally {
     moduleState.savingWt = false;
   }
