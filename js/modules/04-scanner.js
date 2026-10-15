@@ -1,132 +1,3 @@
-/* v0.15.43: unified sound — scanner audio follows the single gn_sound_v1 key (topbar SOUND toggle). */
-const GN_SCANNER_AUDIO_STORAGE_KEY = 'gn_sound_v1';
-const GN_SCANNER_AUDIO_MASTER_GAIN = 0.6;
-const GN_SCANNER_AUDIO_CONTACT_THROTTLE_MS = 45;
-const gnScannerAudioGesture = (() => {
-  const token = Symbol('GNScannerAudioGesture');
-  return Object.freeze({
-    fromEvent(event) { return event?.isTrusted === true ? token : null; },
-    accepts(candidate) { return candidate === token; }
-  });
-})();
-/* v0.15.43: scanner audio follows the unified gn_sound_v1 key live (no separate cache). */
-function gnScannerAudioEnabled() { try { return localStorage.getItem(GN_SCANNER_AUDIO_STORAGE_KEY) === '1'; } catch (_) { return false; } }
-let gnScannerAudioContext = null;
-let gnScannerAudioMaster = null;
-let gnScannerAudioLastContactAt = -Infinity;
-const gnScannerAudioVoices = new Set();
-
-function gnScannerAudioStoredPreference() {
-  try { return localStorage.getItem(GN_SCANNER_AUDIO_STORAGE_KEY) === '1'; } catch (_) { return false; }
-}
-
-function gnScannerAudioContextForGesture(gestureToken = null) {
-  if (!gnScannerAudioEnabled() || !gnScannerAudioGesture.accepts(gestureToken)) return null;
-  try {
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) return null;
-    if (!gnScannerAudioContext) {
-      gnScannerAudioContext = new AudioContextClass();
-      gnScannerAudioMaster = gnScannerAudioContext.createGain();
-      gnScannerAudioMaster.gain.setValueAtTime(GN_SCANNER_AUDIO_MASTER_GAIN, gnScannerAudioContext.currentTime);
-      gnScannerAudioMaster.connect(gnScannerAudioContext.destination);
-    }
-    if (gnScannerAudioContext.state === 'suspended') {
-      Promise.resolve(gnScannerAudioContext.resume()).catch(() => {});
-    }
-    return gnScannerAudioContext;
-  } catch (_) { return null; }
-}
-
-function gnScannerAudioDisconnectVoice(voice) {
-  try { voice.oscillator.disconnect(); } catch (_) {}
-  try { voice.filter.disconnect(); } catch (_) {}
-  try { voice.gain.disconnect(); } catch (_) {}
-  gnScannerAudioVoices.delete(voice);
-}
-
-function gnScannerAudioStopVoices() {
-  const stopTime = gnScannerAudioContext?.currentTime || 0;
-  for (const voice of Array.from(gnScannerAudioVoices)) {
-    try {
-      voice.gain.gain.cancelScheduledValues(stopTime);
-      voice.gain.gain.setValueAtTime(0, stopTime);
-    } catch (_) {}
-    try { voice.oscillator.stop(stopTime); } catch (_) {}
-    gnScannerAudioDisconnectVoice(voice);
-  }
-  gnScannerAudioVoices.clear();
-}
-
-function gnScannerAudioTone(durationSeconds, frequency, peak, offsetSeconds = 0) {
-  const context = gnScannerAudioContext;
-  if (!context || !gnScannerAudioMaster) return;
-  let voice = null;
-  try {
-    const start = context.currentTime + offsetSeconds;
-    const oscillator = context.createOscillator();
-    const filter = context.createBiquadFilter();
-    const gain = context.createGain();
-    voice = { oscillator, filter, gain };
-    oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(frequency, start);
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(Math.min(frequency * 2, 2200), start);
-    gain.gain.setValueAtTime(0.0001, start);
-    gain.gain.linearRampToValueAtTime(Math.min(peak, GN_SCANNER_AUDIO_MASTER_GAIN), start + 0.008);
-    gain.gain.exponentialRampToValueAtTime(0.0001, start + durationSeconds);
-    oscillator.connect(filter);
-    filter.connect(gain);
-    gain.connect(gnScannerAudioMaster);
-    oscillator.onended = () => gnScannerAudioDisconnectVoice(voice);
-    oscillator.start(start);
-    oscillator.stop(start + durationSeconds + 0.02);
-    gnScannerAudioVoices.add(voice);
-  } catch (_) {
-    if (voice) gnScannerAudioDisconnectVoice(voice);
-  }
-}
-
-function gnScannerAudioPlayContact(gestureToken) {
-  if (!gnScannerAudioEnabled) return;
-  const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
-  if (now - gnScannerAudioLastContactAt < GN_SCANNER_AUDIO_CONTACT_THROTTLE_MS) return;
-  gnScannerAudioLastContactAt = now;
-  const context = gnScannerAudioContextForGesture(gestureToken);
-  if (!context) return;
-  // 24ms high-frequency tap (sine, 920Hz, fast decay)
-  gnScannerAudioTone(0.024, 920, 0.5);
-}
-
-function gnScannerAudioPlayLock(gestureToken) {
-  if (!gnScannerAudioEnabled) return;
-  const context = gnScannerAudioContextForGesture(gestureToken);
-  if (!context) return;
-  // 110ms descending confirmation tone (sine, 320->96Hz, slow decay)
-  gnScannerAudioTone(0.11, 320, 0.45, 0);
-  gnScannerAudioTone(0.11, 96, 0.45, 0.11);
-}
-
-function gnScannerAudioToggle() {
-  const next = !gnScannerAudioEnabled();
-  try { localStorage.setItem(GN_SCANNER_AUDIO_STORAGE_KEY, next ? '1' : '0'); } catch (_) {}
-  return next;
-}
-
-window.GNScannerAudio = Object.freeze({
-  isEnabled: () => gnScannerAudioEnabled(),
-  setEnabled: (value) => {
-    try { localStorage.setItem(GN_SCANNER_AUDIO_STORAGE_KEY, value ? '1' : '0'); } catch (_) {}
-    return gnScannerAudioEnabled();
-  },
-  toggle: () => gnScannerAudioToggle(),
-  playContact: gnScannerAudioPlayContact,
-  playLock: gnScannerAudioPlayLock,
-});
-
-
-/* GN_SCANNER_AUDIO_CONTROLLER_V1_END */
-
 /* v0.15.19 SKIN TONE REMOVED - synthetic biotech scanner, single body per mode */
 export function scannerSkinTone() { return null; }
 
@@ -186,7 +57,7 @@ export function setScannerMode(mode, button) {
 
 
 export function selectScannerLocation(label, options = {}) {
-  const { source = 'programmatic', feedback = source !== 'programmatic', gestureToken = null } = options;
+  const { source = 'programmatic', feedback = source !== 'programmatic' } = options;
   try {
     localStorage.setItem('gn_scanner_hint_shown', '1');
     const cap = document.querySelector('.gn-zone-hint-caption');
@@ -226,7 +97,6 @@ export function selectScannerLocation(label, options = {}) {
     }
   });
   if (feedback) {
-    try { window.GNScannerAudio?.playLock?.(gestureToken); } catch (_) {}
     try { gnHaptics.lock(); } catch (_) {}
   }
   if ($('logOv')?.classList.contains('active')) {
@@ -363,7 +233,6 @@ function installScannerPointerHandlers() {
       };
       scannerPointerStates.set(svg, state);
       if (candidate) {
-        try { window.GNScannerAudio?.playContact?.(gnScannerAudioGesture.fromEvent(e)); } catch (_) {}
         try { svg.setPointerCapture(e.pointerId); } catch (_) {}
         candidate.classList.add("pressed");
       }
@@ -385,7 +254,7 @@ function installScannerPointerHandlers() {
       const validTap = !state.cancelled && candidate && endpoint === candidate;
       const site = validTap ? candidate.getAttribute("data-site") : '';
       clearPointerState();
-      if (site) selectScannerLocation(site, { source: 'pointer', gestureToken: gnScannerAudioGesture.fromEvent(e) });
+      if (site) selectScannerLocation(site, { source: 'pointer' });
     }
     svg.addEventListener("pointerup", endPointer, { passive: true });
     svg.addEventListener("pointercancel", () => clearPointerState(), { passive: true });
@@ -399,7 +268,7 @@ function installScannerPointerHandlers() {
           e.preventDefault();
           const site = zp.getAttribute("data-site");
           if (site) {
-            selectScannerLocation(site, { source: 'keyboard', gestureToken: gnScannerAudioGesture.fromEvent(e) });
+            selectScannerLocation(site, { source: 'keyboard' });
           }
         }
       });

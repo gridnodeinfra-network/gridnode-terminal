@@ -49,8 +49,7 @@
     progress: 'gridnode-chunk-progress.js',
     lab: 'gridnode-chunk-lab.js',
     vault: 'gridnode-chunk-vault.js',
-    import: 'gridnode-chunk-import.js',
-    ambience: 'gridnode-chunk-ambience.js'
+    import: 'gridnode-chunk-import.js'
   };
 
   var loadPromises = Object.create(null);   // key -> Promise (memoized; cleared on failure)
@@ -113,9 +112,6 @@
       case 'import':
         promise = GNLoadScript('import');
         break;
-      case 'ambience':
-        promise = GNLoadScript('ambience');
-        break;
       default:
         promise = GNLoadScript(key);
     }
@@ -135,7 +131,7 @@
     loaded: loaded,
     has: function (key) { return loaded.has(key); },
     ready: function (key) {
-      return (key in PAGE_KEYS || key === 'logshot' || key === 'import' || key === 'ambience')
+      return (key in PAGE_KEYS || key === 'logshot' || key === 'import')
         ? loadComposite(key)
         : GNLoadScript(key);
     }
@@ -249,27 +245,9 @@
     STUB_GROUPS[group].forEach(function (name) { installStub(name, group); });
   });
 
-  /* GN_AMBIENCE stub: only when the soundtrack chunk has not defined it.
-     `enabled` is a boolean property on the real object (13-haptics reads it
-     as a value), so the stub exposes a false-valued getter, not a function. */
-  if (typeof window.GN_AMBIENCE === 'undefined') {
-    var ambienceStub = {
-      toggle: function () {
-        return loadComposite('ambience').then(function () {
-          if (window.GN_AMBIENCE && window.GN_AMBIENCE !== ambienceStub) window.GN_AMBIENCE.toggle();
-        });
-      }
-    };
-    Object.defineProperty(ambienceStub, 'enabled', { get: function () { return false; } });
-    window.GN_AMBIENCE = ambienceStub;
-    /* Left-on resume: if sound was left on, load the ambience chunk on the
-       first gesture so its own boot-arm can start playback (Analysis A §1.9). */
-    document.addEventListener('pointerdown', function () {
-      var on = false;
-      try { on = localStorage.getItem('gn_sound_v1') === '1'; } catch (_) {}
-      if (on && !loaded.has('ambience')) loadComposite('ambience').catch(function () {});
-    });
-  }
+  /* Sound feature removed in 1.1.3 (founder direction, 2026-10-15): one-time
+     cleanup so upgraded users do not keep the dead preference key. */
+  try { localStorage.removeItem('gn_sound_v1'); } catch (_) {}
 
   /* ---- page triggers for the separate-file lazies ----
      showPage dispatches gn:pagechange synchronously on every navigation

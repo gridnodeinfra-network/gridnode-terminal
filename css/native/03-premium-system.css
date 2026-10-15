@@ -3154,23 +3154,6 @@ html[data-theme="light"] .gn-assay-chip.green, html[data-theme="light"] .gn-assa
 html[data-theme="light"] .gn-assay-chip.amber, html[data-theme="light"] .gn-assay-varpreview.amber{color:#8a5b00;border-color:rgba(138,91,0,.5)}
 html[data-theme="light"] .gn-assay-chip.red, html[data-theme="light"] .gn-assay-varpreview.red, html[data-theme="light"] .gn-assay-drow .v.red, html[data-theme="light"] .gn-assay-err{color:#c81e1e;border-color:rgba(200,30,30,.5)}
 
-/* GRID//NODE soundtrack dock (YouTube IFrame player, opt-in via SOUND switch).
- * Small floating player, bottom-right above the nav. z 900 keeps it under
- * toasts (1000) and the onboarding coach (9500). */
-.gn-st-dock{position:fixed;right:10px;bottom:96px;z-index:900;width:212px;background:#0a1016;border:1px solid rgba(0,212,255,.45);border-top:2px solid #00d4ff;border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.55)}
-.gn-st-dock[hidden]{display:none}
-.gn-st-head{display:flex;align-items:center;gap:6px;padding:6px 8px;cursor:pointer;user-select:none}
-.gn-st-dot{width:7px;height:7px;border-radius:50%;background:#ff3b5c;box-shadow:0 0 6px #ff3b5c;flex:none;animation:gnStPulse 1.6s ease-in-out infinite}
-@keyframes gnStPulse{0%,100%{opacity:1}50%{opacity:.35}}
-.gn-st-title{flex:1;font:700 .6rem var(--font-d,monospace);letter-spacing:1px;color:#9fd8e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.gn-st-min{flex:none;width:22px;height:22px;border:1px solid rgba(0,212,255,.4);border-radius:6px;background:transparent;color:#00d4ff;font-size:.8rem;line-height:1;cursor:pointer}
-.gn-st-body{width:100%;aspect-ratio:16/9;background:#000}
-.gn-st-host{width:100%;height:100%}
-.gn-st-dock.gn-st-min .gn-st-body{display:none}
-html[data-theme="light"] .gn-st-dock{background:#f4f1e8;border-color:rgba(139,91,8,.5);border-top-color:#8b5b08}
-html[data-theme="light"] .gn-st-title{color:#5b4a12}
-html[data-theme="light"] .gn-st-min{color:#8b5b08;border-color:rgba(139,91,8,.4)}
-
 /* ─────────────────────────────────────────────────────────────────────
    Meet PREEM band (2026-09-20) — PREEM is the face of GRID//NODE.
    Portrait in a HUD frame beside the intro copy. Stacks on mobile.

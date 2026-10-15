@@ -293,6 +293,19 @@
       }
     },
     '__CURRENT_BUILD__': {
+      version: '1.1.3', title: 'SOUNDTRACK REMOVED', date: '2026-10-15',
+      en: {
+        FIXED: [
+          'The soundtrack is gone. The SOUND switch in the top bar, the floating music video window, and the streamed music have all been removed. GRID//NODE no longer plays music.'
+        ]
+      },
+      es: {
+        FIXED: [
+          'La banda sonora fue eliminada. El interruptor de SONIDO de la barra superior, la ventana flotante de video musical y la música por streaming ya no están. GRID//NODE ya no reproduce música.'
+        ]
+      }
+    },
+    '20261015.5049e85': {
       version: '1.1.2', title: 'RELIABILITY', date: '2026-10-14',
       en: {
         IMPROVED: [

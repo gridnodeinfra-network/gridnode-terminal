@@ -1,4 +1,4 @@
-/* GRID//NODE — haptic wiring for HUD taps, sound toggle, dose-save (prototype).
+/* GRID//NODE — haptic wiring for HUD taps, dose-save (prototype).
  *
  * Thin adapter over the canonical window.gnHaptics module (js/modules/08-lab.js,
  * added 2026-09-06 in 6e1dcca "premium feel pass + opt-in tactile feedback").
@@ -45,21 +45,14 @@ window.GN_HAPTICS = {
   get supported() { try { const h = gnHap(); return !!(h && h.supported()); } catch (_) { return false; } },
 };
 
-/* Mirror the SFX tap delegation: same HUD controls, minus the sound toggle
- * (it gets its own on/off pattern below). Button handlers run before
- * document-level bubbling listeners, so the toggle state read here is fresh. */
+/* Mirror the SFX tap delegation: same HUD controls. Button handlers run
+ * before document-level bubbling listeners. */
 document.addEventListener('click', (e) => {
   if (!e.isTrusted) return;
   const t = e.target && e.target.closest ? e.target : null;
   if (!t) return;
   const h = gnHap();
   if (!h) return;
-  if (t.closest('#gnSoundToggle')) {
-    let on = false;
-    try { on = !!(window.GN_AMBIENCE && window.GN_AMBIENCE.enabled); } catch (_) {}
-    try { h.fire(on ? [12, 40, 12] : [16]); } catch (_) {}
-    return;
-  }
   if (t.closest('.btn,.btn-primary,.btn-full,.sec-act,.time-tab,.topbar-btn,.scanner-mode-btn,.phase-sphere-action,.gn-peptide-expand')) gnHapticTick();
 });
 

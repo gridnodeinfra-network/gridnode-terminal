@@ -3845,7 +3845,7 @@ function initModules() {
      breaking dose pills, shot actions, calendar days, etc. */
   document.addEventListener('click', event => {
     const zone = event.target.closest('[data-stable-zone]');
-    if (zone) selectScannerLocation(zone.dataset.stableZone, { source: 'fallback', gestureToken: gnScannerAudioGesture.fromEvent(event) });
+    if (zone) selectScannerLocation(zone.dataset.stableZone, { source: 'fallback' });
     const historyButton = event.target.closest('[data-shot-history-view]');
     if (historyButton) setShotHistoryView(historyButton.dataset.shotHistoryView);
     const historyTypeButton = event.target.closest('[data-history-type]');
@@ -3964,7 +3964,7 @@ function approxNum(value, unit) {
   const rounded = n >= 100 ? Math.round(n / 5) * 5 : Math.round(n * 10) / 10;
   return '~' + rounded + (unit ? ' ' + unit : '');
 }
-/* GRID//NODE — haptic wiring for HUD taps, sound toggle, dose-save (prototype).
+/* GRID//NODE — haptic wiring for HUD taps, dose-save (prototype).
  *
  * Thin adapter over the canonical window.gnHaptics module (js/modules/08-lab.js,
  * added 2026-09-06 in 6e1dcca "premium feel pass + opt-in tactile feedback").
@@ -4011,21 +4011,14 @@ window.GN_HAPTICS = {
   get supported() { try { const h = gnHap(); return !!(h && h.supported()); } catch (_) { return false; } },
 };
 
-/* Mirror the SFX tap delegation: same HUD controls, minus the sound toggle
- * (it gets its own on/off pattern below). Button handlers run before
- * document-level bubbling listeners, so the toggle state read here is fresh. */
+/* Mirror the SFX tap delegation: same HUD controls. Button handlers run
+ * before document-level bubbling listeners. */
 document.addEventListener('click', (e) => {
   if (!e.isTrusted) return;
   const t = e.target && e.target.closest ? e.target : null;
   if (!t) return;
   const h = gnHap();
   if (!h) return;
-  if (t.closest('#gnSoundToggle')) {
-    let on = false;
-    try { on = !!(window.GN_AMBIENCE && window.GN_AMBIENCE.enabled); } catch (_) {}
-    try { h.fire(on ? [12, 40, 12] : [16]); } catch (_) {}
-    return;
-  }
   if (t.closest('.btn,.btn-primary,.btn-full,.sec-act,.time-tab,.topbar-btn,.scanner-mode-btn,.phase-sphere-action,.gn-peptide-expand')) gnHapticTick();
 });
 

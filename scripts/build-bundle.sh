@@ -101,7 +101,6 @@ CHUNKS = {
     "lab": ["08-lab.js"],
     "vault": ["09-vault.js"],
     "import": ["10-importer.js"],
-    "ambience": ["12-soundtrack.js"],
 }
 chunked_files = [f for files in CHUNKS.values() for f in files]
 if sorted(CORE_MODULE_FILES + chunked_files) != sorted(MODULE_FILES):

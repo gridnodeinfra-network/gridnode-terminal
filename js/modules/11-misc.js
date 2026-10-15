@@ -144,7 +144,7 @@ export function initModules() {
      breaking dose pills, shot actions, calendar days, etc. */
   document.addEventListener('click', event => {
     const zone = event.target.closest('[data-stable-zone]');
-    if (zone) selectScannerLocation(zone.dataset.stableZone, { source: 'fallback', gestureToken: gnScannerAudioGesture.fromEvent(event) });
+    if (zone) selectScannerLocation(zone.dataset.stableZone, { source: 'fallback' });
     const historyButton = event.target.closest('[data-shot-history-view]');
     if (historyButton) setShotHistoryView(historyButton.dataset.shotHistoryView);
     const historyTypeButton = event.target.closest('[data-history-type]');

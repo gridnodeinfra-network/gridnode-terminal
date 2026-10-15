@@ -399,6 +399,3 @@ function renderAllHistory() {
     : weightCardHtml(event.record, event.datePrecision)).join('') + historyMoreHtml(windowSize, events.length);
   wireHistoryMore();
 }
-
-
-/* GN_SCANNER_AUDIO_CONTROLLER_V1_START */

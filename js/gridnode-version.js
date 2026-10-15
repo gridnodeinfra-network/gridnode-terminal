@@ -6,11 +6,11 @@
 (function () {
   'use strict';
   window.GN_VERSION = Object.freeze({
-    APP_VERSION: '1.1.2',
+    APP_VERSION: '1.1.3',
     APP_BUILD: '20260907.1',
-    semver: '1.1.2',
+    semver: '1.1.3',
     release: '20260907.1',
-    title: 'V1.1.2 — RELIABILITY',
-    date: '2026-10-14'
+    title: 'V1.1.3 — SOUNDTRACK REMOVED',
+    date: '2026-10-15'
   });
 })();
