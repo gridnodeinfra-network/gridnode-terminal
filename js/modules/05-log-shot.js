@@ -474,7 +474,7 @@ function restoreArchivedShotToEdit(id) {
   editShot(id);
 }
 
-export function openPermanentDeleteConfirm(id) { moduleState.pendingPermanentDeleteId = id; $('permanentDeleteConfirmOv')?.classList.add('active'); }
+export function openPermanentDeleteConfirm(id) { moduleState.pendingPermanentDeleteId = id; $('permanentDeleteConfirmOv')?.classList.add('active'); /* v1.1.4 — destructive-action warning signature as the confirm opens. */ try { window.GN_HAPTICS?.fire('warn'); } catch (_) {} }
 export function cancelPermanentDeleteShot() { moduleState.pendingPermanentDeleteId = null; $('permanentDeleteConfirmOv')?.classList.remove('active'); }
 export async function confirmPermanentDeleteShot() {
   const id = moduleState.pendingPermanentDeleteId;
@@ -746,6 +746,10 @@ export function saveShot(allowFuture = false) {
     closeLog(true);
     refreshAll();
     try { document.dispatchEvent(new CustomEvent('gn:shot-saved', { detail: { record: record, isNew: !existing } })); } catch (_) {}
+    /* v1.1.4 — save signature from the tactile engine, fired directly in
+       the save path (the old build listened for gn:shot-saved through an
+       adapter layered over a no-op; the engine is called, not overheard). */
+    try { window.GN_HAPTICS?.fire('confirm'); } catch (_) {}
     const shotTimeLabel = formatTime12(new Date(record.date));
     const shotDetail = `${record.dose} mg ${medicationLabel(normalizeMedicationId(record.med))} · ${zoneLabel(record.site)}`;
     showToast(`${tx('toast.shotLogged', 'Dosis registrada')} · ${shotTimeLabel}`, false, () => undoShot(record.id), shotDetail);

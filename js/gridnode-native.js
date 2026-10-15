@@ -671,10 +671,11 @@
   }
 
   function wireTouchFeedback() {
-    // B14 (2026-08-08): 15ms haptic on pointerdown + 100ms punch animation
-    // on the four bottom-nav tabs. Reduced-motion kills both; iOS falls back
-    // to the visual punch only.
-    // v0.15.41 — vibration removed at founder direction. Visual punch only.
+    // B14 (2026-08-08): 100ms punch animation on the four bottom-nav tabs
+    // and the primary save controls. Visual only — tactile feedback is
+    // owned by the GN_HAPTICS engine (js/modules/13-tactile.js, v1.1.4),
+    // which fires semantically from the action handlers themselves.
+    // Reduced-motion kills the animation.
     const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
     document.addEventListener('pointerdown', event => {
       const control = event.target?.closest?.('.nav-item,.fab,[onclick*="saveShot"],[onclick*="saveWt"]');

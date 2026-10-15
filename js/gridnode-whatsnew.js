@@ -293,6 +293,19 @@
       }
     },
     '__CURRENT_BUILD__': {
+      version: '1.1.4', title: 'PREMIUM TACTILE', date: '2026-10-15',
+      en: {
+        NEW: [
+          'Premium vibration, rebuilt from scratch: a new tactile engine gives saves, scanner locks, selections, warnings, and milestones a short, distinct touch signature, tuned per action instead of one generic buzz. It works on Android and on iPhone, fires exactly with your tap, and still honors the Haptics setting in your VAULT preferences.'
+        ]
+      },
+      es: {
+        NEW: [
+          'Vibración premium, reconstruida desde cero: un nuevo motor táctil da a los guardados, bloqueos del escáner, selecciones, avisos e hitos una firma táctil breve y distinta, ajustada por acción en vez de un solo zumbido genérico. Funciona en Android y en iPhone, se activa exactamente con tu toque y sigue respetando el ajuste de Hápticos en tus preferencias.'
+        ]
+      }
+    },
+    '20261015.fa6f7a4': {
       version: '1.1.3', title: 'SOUNDTRACK REMOVED', date: '2026-10-15',
       en: {
         FIXED: [

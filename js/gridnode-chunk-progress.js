@@ -117,6 +117,10 @@ function saveWt() {
     refreshAll();
     if (milestone) celebrateMilestone(milestone.type, milestone.value);
     showToast(tx('toast.weightLogged', 'Peso registrado'), false, () => undoWeight(record.id), `${raw} ${moduleState.weightUnit === 'kg' ? 'kg' : 'lb'}`);
+    /* v1.1.4 — save signature from the tactile engine. A milestone save
+       already fired the milestone signature inside celebrateMilestone;
+       the plain confirm would only talk over it, so it yields. */
+    if (!milestone) { try { window.GN_HAPTICS?.fire('confirm'); } catch (_) {} }
     wtToastNextStep(tx('toast.viewProgress', 'VIEW PROGRESS'), () => showPage('Results', document.getElementById('navRes')));
   } finally {
     moduleState.savingWt = false;
@@ -861,6 +865,6 @@ function renderProtocolCurve(shots, phase) {
   drawCanvasChart(canvas, values, phase?.color || '#00d4ff');
 }
 
-function setRange(button, range) { moduleState.medRange = range; qa('#pageDash .time-tab').forEach(item => item.classList.toggle('active', item === button)); renderDashboard(); }
-function setWtRange(button, range) { moduleState.weightRange = range; qa('#pageResults .time-tab').forEach(item => item.classList.toggle('active', item === button)); renderResults(); }
+function setRange(button, range) { moduleState.medRange = range; qa('#pageDash .time-tab').forEach(item => item.classList.toggle('active', item === button)); try { window.GN_HAPTICS?.fire('tick'); } catch (_) {} renderDashboard(); }
+function setWtRange(button, range) { moduleState.weightRange = range; qa('#pageResults .time-tab').forEach(item => item.classList.toggle('active', item === button)); try { window.GN_HAPTICS?.fire('tick'); } catch (_) {} renderResults(); }
 ;(function(){var m={openWeightModal:openWeightModal,closeWt:closeWt,setWeightUnit:setWeightUnit,saveWt:saveWt,renderResults:renderResults,setResultsView:setResultsView,setRange:setRange,setWtRange:setWtRange};if(window.GNRegisterChunk){window.GNRegisterChunk('progress',m);}else if(window.GNModules){Object.assign(window.GNModules,m);}})();

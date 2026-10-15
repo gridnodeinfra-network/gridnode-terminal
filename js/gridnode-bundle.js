@@ -2146,6 +2146,9 @@ function celebrateMilestone(type, value) {
     }
   }
   showToast(type === 'goal' ? 'GOAL REACHED' : `${value} LBS DOWN`);
+  /* v1.1.4 — milestone signature; celebrateMilestone only runs from the
+     weight-save gesture path, so this lands with the user's tap. */
+  try { window.GN_HAPTICS?.fire('milestone'); } catch (_) {}
 }
 
 function weightMilestone(previousWeight, nextWeight, profile) {
@@ -2220,16 +2223,12 @@ function actionFeedback(title, detail, isError = false) {
   toast.className = `toast active${isError ? ' err' : ''}`;
   clearTimeout(toast._timer);
   toast._timer = setTimeout(() => toast.classList.remove('active'), 2000);
-  /* v0.15.32 — premium vibration feedback. actionFeedback is only called
-     from user-initiated success/error paths (Save / Scanner lock) and
-     those paths already show a visible toast. Bypass the focus gate
-     entirely via gnHaptics.fire() so the haptic actually lands even when
-     focus is inside a form input. The focus gate is preserved for
-     ambient calls (tap / mode / select) which fire from typing. */
-  try {
-    const live = window.gnHaptics || (typeof gnHaptics !== 'undefined' ? gnHaptics : null);
-    if (live) { if (isError) live.fire([4, 30, 4, 30, 4]); else live.fire([8, 30, 12]); }
-  } catch (_) {}
+  /* v1.1.4 — tactile engine (js/modules/13-tactile.js). actionFeedback is
+     only reached from user-initiated success/error paths (saves, imports,
+     account actions), inside the acting gesture's call stack, so this
+     call lands synchronously with the user's action — no gates, no
+     taggers, no indirection. */
+  try { window.GN_HAPTICS?.fire(isError ? 'error' : 'confirm'); } catch (_) {}
 }
 
 function nodeSyncLabel() {
@@ -3471,6 +3470,7 @@ if (typeof document !== 'undefined' && !window.__gnFirstShotCelebrateListener) {
   });
 }
 function showLabSeg(segment, button) {
+  try { window.GN_HAPTICS?.fire('tick'); } catch (_) {}
   qa('[data-labseg-block]').forEach(block => block.style.display = block.dataset.labsegBlock === segment ? 'block' : 'none');
   qa('#labSegTabs .time-tab').forEach(item => item.classList.toggle('active', item === button || item.dataset.labseg === segment));
   /* Code-split: renderLab lives in the lab chunk; the segment tabs only
@@ -3480,6 +3480,7 @@ function showLabSeg(segment, button) {
   else if (typeof window.GNEnsurePage === 'function') window.GNEnsurePage('Lab');
 }
 function showYouSeg(segment, button) {
+  try { window.GN_HAPTICS?.fire('tick'); } catch (_) {}
   qa('[data-youseg-block]').forEach(block => block.style.display = block.dataset.yousegBlock === segment ? 'block' : 'none');
   qa('#youSegTabs .time-tab').forEach(item => item.classList.toggle('active', item === button || item.dataset.youseg === segment));
 }
@@ -3719,7 +3720,7 @@ function calDayClick(day) { moduleState.selectedCalendarDay = day; renderCalenda
 function openArsenalMod(type = 'compound', editId = null) { moduleState.arsenalEditId = editId; $('arsTitle')?.replaceChildren(document.createTextNode(editId ? tx('shots.editContext', 'EDIT CONTEXT') : tx('shots.addContext', 'ADD CONTEXT'))); $('arsOv')?.classList.add('active'); }
 function closeArs() { $('arsOv')?.classList.remove('active'); moduleState.arsenalEditId = null; }
 function saveArs() { const items = S.get('arsenal', []); const record = { id: moduleState.arsenalEditId || createId('context'), name: $('aName')?.value?.trim(), concentration: Number($('aConc')?.value) || null, volume: Number($('aVol')?.value) || null, quantity: Number($('aQty')?.value) || 1, reviewDate: $('aExpiry')?.value || '' }; if (!record.name) { showToast(tx('shots.contextNameRequired', 'Enter a context name.'), true); return; } const index = items.findIndex(item => item.id === record.id); if (index >= 0) items[index] = record; else items.push(record); S.set('arsenal', items); queueCloudSync('workspace'); closeArs(); showToast(tx('lab.saveContext', 'VAULT context saved.')); }
-function requestLoadoutRemove(id) { moduleState.pendingArsenalId = id; $('loadoutRemoveOverlay')?.classList.add('active'); }
+function requestLoadoutRemove(id) { moduleState.pendingArsenalId = id; $('loadoutRemoveOverlay')?.classList.add('active'); /* v1.1.4 — destructive-action warning signature as the confirm opens. */ try { window.GN_HAPTICS?.fire('warn'); } catch (_) {} }
 function cancelLoadoutRemove() { moduleState.pendingArsenalId = null; $('loadoutRemoveOverlay')?.classList.remove('active'); }
 function confirmLoadoutRemove() { const next = S.get('arsenal', []).filter(item => item.id !== moduleState.pendingArsenalId); S.set('arsenal', next); queueCloudSync('workspace'); cancelLoadoutRemove(); showToast(tx('shots.contextRemoved', 'Context removed.')); }
 
@@ -3964,69 +3965,157 @@ function approxNum(value, unit) {
   const rounded = n >= 100 ? Math.round(n / 5) * 5 : Math.round(n * 10) / 10;
   return '~' + rounded + (unit ? ' ' + unit : '');
 }
-/* GRID//NODE — haptic wiring for HUD taps, dose-save (prototype).
+/* GRID//NODE — tactile engine. v1.1.4 (2026-10-15), built from scratch at
+ * founder direction ("premium vibrations, iOS + Android; clean the old
+ * code out and redesign it"). It replaces the entire September stack:
+ * the gnHaptics module with its focus gates and 250ms gesture window,
+ * the capture-phase click tagger, the 13-haptics.js adapter with its
+ * delegated HUD-tap listener, the settings-row probe, and every
+ * scattered direct call — all deleted. One engine, one API:
  *
- * Thin adapter over the canonical window.gnHaptics module (js/modules/08-lab.js,
- * added 2026-09-06 in 6e1dcca "premium feel pass + opt-in tactile feedback").
- * v0.15.41 — VIBRATION REMOVED at founder direction (2026-09-12). The canonical
- * module is now a hard no-op for vibration, so every trigger wired below is
- * silently inert. This file is kept so the wiring (throttle, event listeners)
- * stays intact if vibration ever returns under a new directive; no vibration
- * fires from it today, regardless of stored preferences.
- * Original wiring notes (pre-removal):
- *   - light tick on HUD button taps (delegated, throttled)
- *   - double-tick when the SOUND switch turns on, single tick when off
- *   - success nudge on gn:shot-saved (dose-save has no actionFeedback path,
- *     so there is no double-fire with the existing confirm vibration)
+ *   window.GN_HAPTICS.fire('confirm')
+ *
+ * Nothing else in the codebase may touch navigator.vibrate.
+ *
+ * ANDROID — navigator.vibrate(pattern), called SYNCHRONOUSLY inside the
+ * caller's own user-gesture handler. No promises, no timers, no focus
+ * gates, no tagger indirection between the tap and the motor: that
+ * indirection chain (and a year of the motor being no-oped out) is why
+ * the old system felt dead on real devices.
+ *
+ * iPHONE — Safari has no Vibration API. The engine uses the platform's
+ * switch-input Taptic response: toggling an <input type="checkbox"
+ * switch> makes iOS emit a genuine haptic tick. The input is created
+ * lazily on first use, parked off-screen and fully transparent, and is
+ * only ever toggled from inside fire(). A pattern becomes that pattern's
+ * pulse count at the pattern's own timings. Where the platform does not
+ * respond (older iOS, desktop browsers), the result is silence — never
+ * an error, never a visible artifact.
+ *
+ * PATTERN LANGUAGE — premium is restraint. Seven short signatures, each
+ * under a quarter second, each mapped to a meaning, fired only from the
+ * semantic action handlers (never from renders, timers, network events,
+ * or a delegated "something was tapped" listener):
+ *
+ *   tick       [8]                  selection: range / segment / scanner-mode taps
+ *   toggle     [12]                 theme + setting flips: one firmer click
+ *   confirm    [10, 60, 20]         save success: a soft two-beat
+ *   lock       [10, 50, 16]         scanner site lock: a latch closing
+ *   warn       [30, 60, 30]         a destructive confirm just opened
+ *   error      [40, 60, 40, 60, 40] failure: three heavy beats
+ *   milestone  [12, 50, 12, 50, 24] goal / celebration: a rising triple
+ *
+ * SETTING — the user's tactile preference is preserved verbatim:
+ * localStorage 'gn_haptics_v1' = 'on' | 'off' (default on), the same key
+ * and the same VAULT row the old system used, so an existing user's
+ * choice carries over untouched. Off means off — checked on every fire.
+ * prefers-reduced-motion suppresses every non-essential pattern; 'warn'
+ * and 'error' still land, because they are information, not decoration.
  */
 
-const GN_HAPTIC_TAP_THROTTLE_MS = 70;
-
-let gnLastTapAt = 0;
-
-function gnHap() {
-  try { return window.gnHaptics || null; }
-  catch (_) { return null; }
-}
-
-/* Light tick for HUD taps — the "premium" micro feedback. Throttled. */
-function gnHapticTick() {
-  const now = Date.now();
-  if (now - gnLastTapAt < GN_HAPTIC_TAP_THROTTLE_MS) return;
-  gnLastTapAt = now;
-  const h = gnHap();
-  if (h) { try { h.tap(); } catch (_) {} }
-}
-
-function gnHapticSetEnabled(on) {
-  const h = gnHap();
-  if (h) { try { h.setEnabled(!!on); } catch (_) {} }
-}
-
-window.GN_HAPTICS = {
-  tick: gnHapticTick,
-  success() { const h = gnHap(); if (h) { try { h.fire([10, 60, 20]); } catch (_) {} } },
-  setEnabled: gnHapticSetEnabled,
-  get enabled() { try { const h = gnHap(); return !!(h && h.enabled()); } catch (_) { return false; } },
-  get supported() { try { const h = gnHap(); return !!(h && h.supported()); } catch (_) { return false; } },
-};
-
-/* Mirror the SFX tap delegation: same HUD controls. Button handlers run
- * before document-level bubbling listeners. */
-document.addEventListener('click', (e) => {
-  if (!e.isTrusted) return;
-  const t = e.target && e.target.closest ? e.target : null;
-  if (!t) return;
-  const h = gnHap();
-  if (!h) return;
-  if (t.closest('.btn,.btn-primary,.btn-full,.sec-act,.time-tab,.topbar-btn,.scanner-mode-btn,.phase-sphere-action,.gn-peptide-expand')) gnHapticTick();
+const GN_TACTILE_PATTERNS = Object.freeze({
+  tick: [8],
+  toggle: [12],
+  confirm: [10, 60, 20],
+  lock: [10, 50, 16],
+  warn: [30, 60, 30],
+  error: [40, 60, 40, 60, 40],
+  milestone: [12, 50, 12, 50, 24]
 });
 
-/* Dose-logged success nudge — listens, does not touch 05-log-shot.js. */
-document.addEventListener('gn:shot-saved', () => {
-  const h = gnHap();
-  if (h) { try { h.fire([10, 60, 20]); } catch (_) {} }
-});
+const GN_TACTILE_ESSENTIAL = Object.freeze({ warn: true, error: true });
+
+(function gnTactileEngine() {
+  'use strict';
+
+  const KEY = 'gn_haptics_v1';
+
+  let enabled = (() => {
+    try { return localStorage.getItem(KEY) !== 'off'; } catch (_) { return true; }
+  })();
+
+  const hasVibrate = () => {
+    try { return typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function'; }
+    catch (_) { return false; }
+  };
+
+  const isIOS = () => {
+    try {
+      const ua = navigator.userAgent || '';
+      if (/iPhone|iPad|iPod/.test(ua)) return true;
+      /* iPadOS reports as desktop Safari; touch points give it away. */
+      return navigator.platform === 'MacIntel' && (navigator.maxTouchPoints || 0) > 1;
+    } catch (_) { return false; }
+  };
+
+  const platform = () => (hasVibrate() ? 'vibrate' : (isIOS() ? 'ios-taptic' : 'none'));
+  const supported = () => platform() !== 'none';
+
+  const reducedMotion = () => {
+    try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+    catch (_) { return false; }
+  };
+
+  /* ── iOS Taptic via switch input ─────────────────────────────────── */
+  let iosSwitch = null;
+  const ensureIosSwitch = () => {
+    if (iosSwitch && iosSwitch.isConnected) return iosSwitch;
+    try {
+      if (typeof document === 'undefined' || !document.body) return null;
+      const el = document.createElement('input');
+      el.type = 'checkbox';
+      el.setAttribute('switch', '');
+      el.setAttribute('aria-hidden', 'true');
+      el.tabIndex = -1;
+      el.style.cssText = 'position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;';
+      document.body.appendChild(el);
+      iosSwitch = el;
+      return el;
+    } catch (_) { return null; }
+  };
+  const iosTick = () => { const el = ensureIosSwitch(); if (el) { try { el.click(); } catch (_) {} } };
+
+  /* ── the one door ────────────────────────────────────────────────── */
+  const fire = (name) => {
+    try {
+      const pattern = GN_TACTILE_PATTERNS[name];
+      if (!pattern) return false;
+      if (!enabled) return false;
+      if (reducedMotion() && !GN_TACTILE_ESSENTIAL[name]) return false;
+      const path = platform();
+      if (path === 'vibrate') {
+        navigator.vibrate(pattern.slice());
+        return true;
+      }
+      if (path === 'ios-taptic') {
+        const pulses = Math.ceil(pattern.length / 2);
+        iosTick();
+        for (let i = 1; i < pulses; i += 1) {
+          const at = pattern.slice(0, i * 2).reduce((sum, ms) => sum + ms, 0);
+          setTimeout(iosTick, at);
+        }
+        return true;
+      }
+      return false;
+    } catch (_) { return false; }
+  };
+
+  const setEnabled = (next) => {
+    enabled = !!next;
+    try { localStorage.setItem(KEY, enabled ? 'on' : 'off'); } catch (_) {}
+  };
+
+  try {
+    window.GN_HAPTICS = Object.freeze({
+      fire,
+      enabled: () => enabled,
+      setEnabled,
+      supported,
+      platform,
+      patterns: GN_TACTILE_PATTERNS
+    });
+  } catch (_) {}
+})();
 
 window.GNModules={getProfile:getProfile,getProfileForEvidence:getProfileForEvidence,selectState:selectState,moduleState:moduleState,refreshNodeHeader:refreshNodeHeader,showScreen:showScreen,showPage:showPage,refreshAll:refreshAll,loadApp:loadApp,computeTotalChange:computeTotalChange,resetShotFormState:resetShotFormState,saveProfileMed:saveProfileMed,saveProfileMetrics:saveProfileMetrics,calcAndShowBMI:calcAndShowBMI,toggleSelect:toggleSelect,selectOpt:selectOpt,retryCloudHydration:retryCloudHydration,showPhasesModal:showPhasesModal,closePhases:closePhases,showLabSeg:showLabSeg,showYouSeg:showYouSeg,renderCalendar:renderCalendar,calPrev:calPrev,calNext:calNext,calDayClick:calDayClick,openArsenalMod:openArsenalMod,closeArs:closeArs,saveArs:saveArs,requestLoadoutRemove:requestLoadoutRemove,cancelLoadoutRemove:cancelLoadoutRemove,confirmLoadoutRemove:confirmLoadoutRemove,formatTime24:formatTime24,formatTime12:formatTime12,gnSetShotMeridiem:gnSetShotMeridiem,gnShotClockLiveFormat:gnShotClockLiveFormat,gnNormalizeShotClockField:gnNormalizeShotClockField,gnWeightDateInput:gnWeightDateInput,gnWeightTimeInput:gnWeightTimeInput,gnOpenShotDatePicker:gnOpenShotDatePicker,gnCloseShotDatePicker:gnCloseShotDatePicker,gnDatePickerMove:gnDatePickerMove,gnSelectPickerDate:gnSelectPickerDate,gnSetShotDateFromPicker:gnSetShotDateFromPicker,gnSetShotDateValue:gnSetShotDateValue,gnSetShotTimeValue:gnSetShotTimeValue,gnMedRevealGroup:gnMedRevealGroup,updatePills:updatePills,selPill:selPill,initModules:initModules,trustBadge:trustBadge,approxPct:approxPct,approxNum:approxNum};
 

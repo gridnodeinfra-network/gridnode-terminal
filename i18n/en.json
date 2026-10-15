@@ -1797,7 +1797,7 @@
   "vault.hapticsTitle": "Haptics",
   "vault.hapticsStateOn": "ON",
   "vault.hapticsStateOff": "OFF",
-  "vault.hapticsUnsupported": "Not supported on this device. Tap to run a vibration probe.",
+  "vault.hapticsUnsupported": "Not supported on this device.",
   "vault.hip": "HIP CIRCUMFERENCE",
   "vault.hubAria": "Node settings",
   "vault.hubTitle": "YOUR NODE",

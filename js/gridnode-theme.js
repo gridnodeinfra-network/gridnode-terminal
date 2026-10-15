@@ -166,6 +166,9 @@
     if (!opt) return;
     const next = opt.dataset.themeOpt === LIGHT ? LIGHT : DARK;
     applyTheme(next, true);
+    /* v1.1.4 — toggle signature from the tactile engine, inside the tap.
+       Guarded: the theme script can run before the engine module loads. */
+    try { window.GN_HAPTICS?.fire('toggle'); } catch (_) {}
   });
   document.addEventListener('gn:langchange', () => queueMicrotask(() => { updateControls(); syncLangControls(); }));
   document.addEventListener('DOMContentLoaded', mountControls, { once: true });

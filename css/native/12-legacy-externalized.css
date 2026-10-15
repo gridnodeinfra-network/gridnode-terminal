@@ -3909,15 +3909,6 @@ html[data-theme="light"] .csv-import-notimported{border-color:rgba(0,111,130,.25
 #shotsRegionScanner .zone-visible { vector-effect:non-scaling-stroke; transform-box:fill-box; transform-origin:center; transition:fill 120ms ease,stroke 120ms ease,stroke-width 120ms ease,opacity 120ms ease,filter 120ms ease; }
 #shotsRegionScanner .scanner-selected-panel { position:relative; overflow:hidden; scroll-margin-bottom:calc(92px + var(--safe-bottom)); }
 #shotsRegionScanner .shots-scanner-head > div { flex:1 1 auto; min-width:0; }
-#shotsRegionScanner .scanner-audio-switch { flex:0 0 104px; min-width:104px; min-height:44px; padding:5px 7px; display:grid; grid-template-columns:minmax(0,1fr) 36px; grid-template-areas:"label track" "state track"; align-items:center; column-gap:6px; row-gap:1px; border:1px solid rgba(6,187,227,.42); border-radius:9px; background:rgba(5,7,8,.78); color:#9ab4ba; text-align:left; cursor:pointer; }
-#shotsRegionScanner .scanner-audio-label { grid-area:label; font:700 12px/1 var(--font-m,monospace); letter-spacing:.6px; white-space:nowrap; }
-#shotsRegionScanner .scanner-audio-state { grid-area:state; font:700 10px/1 var(--font-m,monospace); letter-spacing:1px; opacity:.82; }
-#shotsRegionScanner .scanner-audio-track { grid-area:track; position:relative; width:36px; height:20px; border:1px solid rgba(154,180,186,.48); border-radius:999px; background:rgba(154,180,186,.14); box-shadow:inset 0 1px 3px rgba(0,0,0,.42); }
-#shotsRegionScanner .scanner-audio-thumb { position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:#9ab4ba; box-shadow:0 1px 3px rgba(0,0,0,.52); transition:transform 140ms ease,background 140ms ease,box-shadow 140ms ease; }
-#shotsRegionScanner .scanner-audio-switch[aria-checked="true"] { border-color:#06BBE3; background:rgba(6,187,227,.12); color:#EAFDFF; box-shadow:0 0 10px rgba(6,187,227,.16); }
-#shotsRegionScanner .scanner-audio-switch[aria-checked="true"] .scanner-audio-track { border-color:#06BBE3; background:rgba(6,187,227,.24); }
-#shotsRegionScanner .scanner-audio-switch[aria-checked="true"] .scanner-audio-thumb { transform:translateX(16px); background:#06BBE3; box-shadow:0 0 8px rgba(6,187,227,.72); }
-#shotsRegionScanner .scanner-audio-switch:focus-visible { outline:2px solid #FCEE0A; outline-offset:2px; }
 #shotsRegionScanner .zone-hit.pressed + .zone-visible { stroke:#FCEE0A; stroke-width:4; fill:rgba(234,9,23,.24); filter:drop-shadow(0 0 6px rgba(252,238,10,.42)); opacity:1; transition:none; }
 #shotsRegionScanner .zone-hit.zone-acquiring + .zone-visible { stroke:#06BBE3; stroke-width:4; fill:rgba(234,9,23,.20); stroke-dasharray:18 11; animation:gn-scanner-acquire 420ms cubic-bezier(.2,.75,.25,1) both; }
 #shotsRegionScanner .zone-hit.selected.selected-active + .zone-visible { stroke:#06BBE3; stroke-width:3.5; stroke-dasharray:none; fill:rgba(234,9,23,.22); filter:drop-shadow(0 0 7px rgba(6,187,227,.42)); opacity:1; }
@@ -3934,8 +3925,6 @@ html[data-theme="light"] .csv-import-notimported{border-color:rgba(0,111,130,.25
 html[data-theme="light"] #shotsRegionScanner .zone-visible { filter:none; }
 html[data-theme="light"] #shotsRegionScanner .zone-hit.selected.selected-active + .zone-visible { stroke:#06BBE3; fill:rgba(234,9,23,.16); filter:none; }
 html[data-theme="light"] #shotsRegionScanner .scanner-selected-panel .gn-location-lock.is-on { color:#050708; border-color:rgba(6,187,227,.52); border-left-color:#06BBE3; background:rgba(255,255,255,.94); box-shadow:none; }
-html[data-theme="light"] #shotsRegionScanner .scanner-audio-switch { background:rgba(255,255,255,.94); color:#31545b; }
-html[data-theme="light"] #shotsRegionScanner .scanner-audio-switch[aria-checked="true"] { color:#003C4C; }
 @media (max-width:430px) {
   #shotsRegionScanner { padding:12px; }
   #shotsRegionScanner .shots-scanner-head { gap:8px; }
@@ -3947,10 +3936,6 @@ html[data-theme="light"] #shotsRegionScanner .scanner-audio-switch[aria-checked=
   #shotsRegionScanner .shots-scanner-head { display:grid; grid-template-columns:minmax(0,1fr) 48px; }
   #shotsRegionScanner .shots-scanner-head > div { grid-column:1; grid-row:1; }
   #shotsRegionScanner .gn-scanner-badge { grid-column:2; grid-row:1; }
-  #shotsRegionScanner .scanner-audio-switch { grid-column:2; grid-row:2; justify-self:end; }
-}
-@media (prefers-reduced-motion:reduce) {
-  #shotsRegionScanner .scanner-audio-thumb { transition:none; }
 }
 /* ============ PHASE ENGINE — REFINED HERO (v0.15.52) ============
  * Premium = restraint. Thin arcs, muted jewel tones, generous whitespace,

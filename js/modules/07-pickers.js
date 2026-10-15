@@ -1,4 +1,5 @@
 export function showLabSeg(segment, button) {
+  try { window.GN_HAPTICS?.fire('tick'); } catch (_) {}
   qa('[data-labseg-block]').forEach(block => block.style.display = block.dataset.labsegBlock === segment ? 'block' : 'none');
   qa('#labSegTabs .time-tab').forEach(item => item.classList.toggle('active', item === button || item.dataset.labseg === segment));
   /* Code-split: renderLab lives in the lab chunk; the segment tabs only
@@ -8,6 +9,7 @@ export function showLabSeg(segment, button) {
   else if (typeof window.GNEnsurePage === 'function') window.GNEnsurePage('Lab');
 }
 export function showYouSeg(segment, button) {
+  try { window.GN_HAPTICS?.fire('tick'); } catch (_) {}
   qa('[data-youseg-block]').forEach(block => block.style.display = block.dataset.yousegBlock === segment ? 'block' : 'none');
   qa('#youSegTabs .time-tab').forEach(item => item.classList.toggle('active', item === button || item.dataset.youseg === segment));
 }

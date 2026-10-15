@@ -1762,7 +1762,7 @@
   "vault.hapticsTitle": "Hápticos",
   "vault.hapticsStateOn": "ON",
   "vault.hapticsStateOff": "OFF",
-  "vault.hapticsUnsupported": "No compatible con este dispositivo. Toca para probar la vibración.",
+  "vault.hapticsUnsupported": "No compatible con este dispositivo.",
   "vault.hip": "CIRCUNFERENCIA DE CADERA",
   "vault.hubAria": "Ajustes del nodo",
   "vault.hubTitle": "TU NODO",

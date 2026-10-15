@@ -412,6 +412,8 @@ function scannerIntensityForMode(mode) { return null; }
 
 function setScannerMode(mode, button) {
   moduleState.scannerMode = ZONES[mode] ? mode : 'core';
+  /* v1.1.4 — selection tick from the tactile engine, inside the tap. */
+  try { window.GN_HAPTICS?.fire('tick'); } catch (_) {}
   /* v0.15.19 - drive .biotech-stage SVG architecture */
   qa('.scanner-mode-btn').forEach(item => {
     const active = item === button || item.dataset.mode === moduleState.scannerMode;
@@ -497,7 +499,9 @@ function selectScannerLocation(label, options = {}) {
     }
   });
   if (feedback) {
-    try { gnHaptics.lock(); } catch (_) {}
+    /* v1.1.4 — site lock signature from the tactile engine, fired
+       synchronously inside the zone-tap handler. */
+    try { window.GN_HAPTICS?.fire('lock'); } catch (_) {}
   }
   if ($('logOv')?.classList.contains('active')) {
     setText('modalSelectedLocation', zoneLabel(label));

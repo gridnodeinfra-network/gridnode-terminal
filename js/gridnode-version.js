@@ -6,11 +6,11 @@
 (function () {
   'use strict';
   window.GN_VERSION = Object.freeze({
-    APP_VERSION: '1.1.3',
+    APP_VERSION: '1.1.4',
     APP_BUILD: '20260907.1',
-    semver: '1.1.3',
+    semver: '1.1.4',
     release: '20260907.1',
-    title: 'V1.1.3 — SOUNDTRACK REMOVED',
+    title: 'V1.1.4 — PREMIUM TACTILE',
     date: '2026-10-15'
   });
 })();

@@ -167,27 +167,6 @@ window.addEventListener('popstate', function (event) {
   }
 });
 
-/* v0.15.32 — global gesture tagger. Wraps the document so EVERY click anywhere
-   in the app is captured at the very first moment and registers as a
-   "user gesture element" with gnHaptics. This means the focus-gate
-   permits confirm/error haptic for the next 250ms — fixing the
-   Android Chrome case where tapping Save leaves focus on the save
-   button and the focus-gate would otherwise suppress the success pulse. */
-if (typeof document !== 'undefined' && !document.documentElement.dataset.gnGestureTagger) {
-  document.documentElement.dataset.gnGestureTagger = '1';
-  document.addEventListener('click', (event) => {
-    const target = event.target;
-    if (!target || typeof target.closest !== 'function') return;
-    /* Tag the most-actionable ancestor — the clickable thing. */
-    const actionable = target.closest('button, a, summary, [role="button"], label, [tabindex]:not([tabindex="-1"])');
-    /* Note: gnHaptics const declaration lives below this block; we read
-       via window.gnHaptics (exposed by try { window.gnHaptics = gnHaptics; } further down)
-       to avoid a Temporal Dead Zone ReferenceError on initial top-level execution. */
-    if (actionable && typeof window.gnHaptics !== 'undefined' && window.gnHaptics.markUserGesture) {
-      window.gnHaptics.markUserGesture(actionable);
-    }
-  }, true /* capture phase — runs before any handler */);
-}
 
 function announceLabToolStatus(label, detail) {
   const banner = document.getElementById('gnLabToolBanner');
@@ -197,88 +176,6 @@ function announceLabToolStatus(label, detail) {
   requestAnimationFrame(() => { banner.textContent = combined; });
 }
 
-/* v0.15.30 — premium vibration feedback (additive). Gated by user pref + reduced-motion
-   + input focus (unless the focus belongs to the element that just dispatched the action).
-   v0.15.41 — VIBRATION REMOVED at founder direction (2026-09-12). The module is
-   now a hard no-op for vibration: play() returns immediately, so NO vibration
-   fires regardless of the stored gn_haptics_v1 preference ('on' or missing).
-   The API surface is kept intact so existing call sites don't break. */
-const gnHaptics = (() => {
-  const KEY = 'gn_haptics_v1';
-  let enabled = (() => {
-    try {
-      const stored = localStorage.getItem(KEY);
-      if (stored === 'on' || stored === 'off') return stored === 'on';
-    } catch (_) {}
-    return true;
-  })();
-  const reduceMotion = () => typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const supported = () => typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
-
-  /* v0.15.32 — gesture-tag: gesture handlers register the element that
-     received the user gesture (e.g. a Save button). The focus gate allows
-     the haptic through for 250ms even if focus happens to be on that
-     element (clicking a button leaves focus on the button). */
-  let lastGestureEl = null;
-  let lastGestureAt = 0;
-  const markUserGesture = (el) => {
-    lastGestureEl = el || null;
-    lastGestureAt = Date.now();
-  };
-  const gestureTarget = (el) => markUserGesture(el);
-
-  const focusInsideField = () => {
-    const el = document.activeElement;
-    if (!el) return false;
-    const tag = el.tagName;
-    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
-  };
-  const shouldSuppressForFocus = () => {
-    if (!focusInsideField()) return false;
-    /* v0.15.32 — gesture window: if the user just dispatched a gesture on
-       this same element within the last 250ms, allow the haptic. Real world
-       fix for the Android-Chrome-WebView case where tapping Save briefly
-       leaves focus on the Save button (or a submit input inside the form)
-       and the focus-gate was suppressing the success pulse. */
-    const el = document.activeElement;
-    if (lastGestureEl === el && Date.now() - lastGestureAt < 250) return false;
-    return true;
-  };
-  const play = (pattern, opts = {}) => {
-    /* v0.15.41 — vibration removed at founder direction. Hard no-op:
-       nothing vibrates, whatever the stored preference says. The old
-       gate/probe machinery was deleted; this stub keeps call sites working. */
-    return;
-  };
-  const setEnabled = (next) => {
-    enabled = !!next;
-    try { localStorage.setItem(KEY, enabled ? 'on' : 'off'); } catch (_) {}
-  };
-  /* v0.15.32 — direct-fire API used by actionFeedback: passes the gesture
-     gate ONLY if a gesture was just registered. */
-  const confirmNow = (gestureEl) => { if (gestureEl) markUserGesture(gestureEl); play([8, 30, 12]); };
-  const errorNow = (gestureEl) => { if (gestureEl) markUserGesture(gestureEl); play([4, 30, 4, 30, 4]); };
-  const lockNow = (gestureEl) => { if (gestureEl) markUserGesture(gestureEl); play([4, 18, 10]); };
-  return {
-    supported,
-    enabled: () => enabled,
-    setEnabled,
-    markUserGesture,
-    gestureTarget,
-    confirmNow,
-    errorNow,
-    lockNow,
-    tap: () => play(6),
-    confirm: () => play([8, 30, 12]),
-    error: () => play([4, 30, 4, 30, 4]),
-    lock: () => play([4, 18, 10]),
-    mode: () => play([6, 30, 6]),
-    select: () => play([10, 24, 6]),
-    fire: (pattern) => play(pattern, { skipFocus: true })
-  };
-})();
-
-try { window.gnHaptics = gnHaptics; } catch (_) {}
 
 function renderLabFoundations() {
   syncLabRecordsPill();
@@ -594,12 +491,14 @@ function renderDeviceVault() {
   list.innerHTML = devices.length ? `${active.slice().reverse().map(device => `<article class="gn-record-row"><div><b>${safeText(device.name)}</b><small>${safeText(deviceTypeLabel(device.type))} · ${tx('vault.privateId', 'PRIVATE ID')} ${safeText(device.qrIdentity || tx('vault.devicePending', 'PENDING'))}</small></div><span class="gn-record-state">${safeText(deviceStatusLabel(device.status))}</span><div style="display:flex;gap:4px"><button type="button" class="gn-record-delete" data-device-edit="${safeText(device.id)}" aria-label="${tx('vault.editDevice', 'Edit device')}">✎</button><button type="button" class="gn-record-delete" data-device-retire="${safeText(device.id)}" aria-label="${tx('vault.retireDevice', 'Retire device')}">×</button></div></article>`).join('')}${archived.length ? `<div class="gn-ledger-copy" style="margin-top:10px">${tx('vault.deviceArchived', 'RETIRED / ARCHIVED DEVICES')}</div>${archived.slice().reverse().map(device => `<article class="gn-record-row"><div><b>${safeText(device.name)}</b><small>${safeText(deviceTypeLabel(device.type))} · ${tx('vault.privateIdentityPreserved', 'Private identity preserved')}</small></div><span class="gn-record-state">${safeText(deviceStatusLabel(device.status || 'RETIRED'))}</span><button type="button" class="gn-record-delete" data-device-restore="${safeText(device.id)}" aria-label="${tx('vault.restoreDevice', 'Restore device')}">↺</button></article>`).join('')}` : ''}` : `<div class="gn-empty-state"><span class="gn-icon gn-icon-md gn-accent-y"><svg><use href="#gn-vault-core"></use></svg></span><b>${tx('vault.deviceReadyEmpty', 'DEVICE REGISTRY READY')}</b><span>${tx('vault.deviceReadyEmptyHelp', 'Register a physical object when you want its identity and lifecycle preserved.')}</span></div>`;
 }
 
+/* v1.1.4 — VAULT tactile row, wired to the GN_HAPTICS engine
+ * (js/modules/13-tactile.js). Same storage key, same row, new engine. */
 function renderGnHapticsState() {
   const stateEl = $('gnHapticsState');
   const helpEl = $('gnHapticsHelp');
   if (!stateEl) return;
-  const supported = window.gnHaptics?.supported?.();
-  const enabled = window.gnHaptics?.enabled?.();
+  const supported = window.GN_HAPTICS?.supported?.();
+  const enabled = window.GN_HAPTICS?.enabled?.();
   if (!supported) {
     stateEl.textContent = '—';
     if (helpEl) helpEl.textContent = tx('vault.hapticsUnsupported', 'Not supported on this device.');
@@ -611,25 +510,14 @@ function renderGnHapticsState() {
 }
 
 function toggleGnHaptics() {
-  if (!window.gnHaptics?.supported?.()) {
-    probeGnHaptics();
-    return;
-  }
-  window.gnHaptics.setEnabled(!window.gnHaptics.enabled());
+  const engine = window.GN_HAPTICS;
+  if (!engine || !engine.supported()) return;
+  const next = !engine.enabled();
+  engine.setEnabled(next);
   renderGnHapticsState();
-  try { window.gnHaptics.tap(); } catch (_) {}
-}
-
-/* Live vibration probe — v0.15.41: vibration removed at founder direction, so the
- * probe no longer fires a test pulse. It only reports API presence for
- * diagnostics; the verdict can never re-enable vibration. */
-function probeGnHaptics() {
-  const helpEl = $('gnHapticsHelp');
-  let apiType = 'unknown';
-  try { apiType = typeof navigator !== 'undefined' ? typeof navigator.vibrate : 'no navigator'; } catch (_) {}
-  const callResult = 'not attempted (vibration disabled in v0.15.41)';
-  try { console.info('[GRID//NODE haptics probe]', 'vibrate typeof:', apiType, '| test pulse:', callResult); } catch (_) {}
-  if (helpEl) helpEl.textContent = 'Probe: vibrate API is ' + apiType + '; ' + callResult + '.';
+  /* Turning it on answers with the toggle signature, so the user feels
+   * the new state land; turning it off is silent by definition. */
+  if (next) { try { engine.fire('toggle'); } catch (_) {} }
 }
 
 function pulseGnCapture(saveButton) {

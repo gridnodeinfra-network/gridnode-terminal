@@ -469,6 +469,9 @@ function celebrateMilestone(type, value) {
     }
   }
   showToast(type === 'goal' ? 'GOAL REACHED' : `${value} LBS DOWN`);
+  /* v1.1.4 — milestone signature; celebrateMilestone only runs from the
+     weight-save gesture path, so this lands with the user's tap. */
+  try { window.GN_HAPTICS?.fire('milestone'); } catch (_) {}
 }
 
 function weightMilestone(previousWeight, nextWeight, profile) {
@@ -543,16 +546,12 @@ function actionFeedback(title, detail, isError = false) {
   toast.className = `toast active${isError ? ' err' : ''}`;
   clearTimeout(toast._timer);
   toast._timer = setTimeout(() => toast.classList.remove('active'), 2000);
-  /* v0.15.32 — premium vibration feedback. actionFeedback is only called
-     from user-initiated success/error paths (Save / Scanner lock) and
-     those paths already show a visible toast. Bypass the focus gate
-     entirely via gnHaptics.fire() so the haptic actually lands even when
-     focus is inside a form input. The focus gate is preserved for
-     ambient calls (tap / mode / select) which fire from typing. */
-  try {
-    const live = window.gnHaptics || (typeof gnHaptics !== 'undefined' ? gnHaptics : null);
-    if (live) { if (isError) live.fire([4, 30, 4, 30, 4]); else live.fire([8, 30, 12]); }
-  } catch (_) {}
+  /* v1.1.4 — tactile engine (js/modules/13-tactile.js). actionFeedback is
+     only reached from user-initiated success/error paths (saves, imports,
+     account actions), inside the acting gesture's call stack, so this
+     call lands synchronously with the user's action — no gates, no
+     taggers, no indirection. */
+  try { window.GN_HAPTICS?.fire(isError ? 'error' : 'confirm'); } catch (_) {}
 }
 
 function nodeSyncLabel() {
