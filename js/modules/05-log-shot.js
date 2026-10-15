@@ -747,7 +747,7 @@ export function saveShot(allowFuture = false) {
     refreshAll();
     try { document.dispatchEvent(new CustomEvent('gn:shot-saved', { detail: { record: record, isNew: !existing } })); } catch (_) {}
     /* v1.1.4 — save signature from the tactile engine, fired directly in
-       the save path (the old build listened for gn:shot-saved through an
+       the save path (the old build overheard this event through an
        adapter layered over a no-op; the engine is called, not overheard). */
     try { window.GN_HAPTICS?.fire('confirm'); } catch (_) {}
     const shotTimeLabel = formatTime12(new Date(record.date));
