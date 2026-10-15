@@ -16,6 +16,15 @@
   let consumeInternalHistoryPop = false;
   let navigationWired = false;
   let shotDraftEventsWired = false;
+  /* v8.1: set while a drawer open's session-draft restore is queued.
+   * captureShotDraft must not run in that window: openLogModal first
+   * fills the pristine form with today/now defaults, and a capture
+   * landing before the restore tick (e.g. the lifecycle handler firing
+   * on a visibility flip) overwrote the stored owner draft with those
+   * defaults, so the same owner's draft silently failed to restore
+   * after reload. The restore clears the flag when it runs; genuine
+   * input after that captures normally. */
+  let shotDraftRestorePending = false;
 
   function layerIsOpen(layer) {
     if (!layer) return false;
@@ -276,9 +285,29 @@
     if (owner !== draftOwnerId()) purgeSessionDraft();
   }
 
+  /* v8.1 session boundary (QA gate G2b): purging the stored draft is not
+   * enough — the drawer DOM and the module form state that render it
+   * also carry the previous account's values. Core calls this from
+   * clearSession() and activateSession(); the module side resets every
+   * form field the draft contract touches. Never touches the stored
+   * draft itself (owner-guarded separately, above). */
+  function resetSessionShotForm() {
+    try { window.GNModules?.resetShotFormState?.(); } catch (_) {}
+  }
+
   function captureShotDraft() {
+    if (shotDraftRestorePending) return null;
     const modal = document.getElementById('logOv');
     if (!modal) return null;
+    /* v8.1: the AUTOMATIC capture paths (the input/change listeners
+     * and the lifecycle capture-on-hide, below) only fire while the
+     * drawer is open. A closed drawer holds residue, not a composition
+     * — boot fills it with today/now defaults (setTodayDefaults), and
+     * a lifecycle capture landing mid-boot overwrote the owner's
+     * stored draft with those defaults, so it silently never restored
+     * after reload (proven by instrumented drive). Explicit callers
+     * (the preserve-on-dismiss path, the public bridge) keep the
+     * long-standing semantics and are not gated here. */
     const selectState = window.GNModules?.selectState || {};
     const medState = selectState.cpShotMed;
     const medLabel = document.getElementById('cpShotMedVal')?.textContent?.trim() || '';
@@ -302,6 +331,7 @@
   }
 
   function restoreShotDraft() {
+    shotDraftRestorePending = false;
     if (window.GNModules?.moduleState?.editingShotId) return;
     const modal = document.getElementById('logOv');
     /* v0.15.37: the module draft just restored every field (location round
@@ -360,8 +390,8 @@
   function wireShotDraft() {
     if (!shotDraftEventsWired) {
       shotDraftEventsWired = true;
-      document.addEventListener('input', event => { if (event.target?.closest?.('#logOv')) captureShotDraft(); }, { passive: true });
-      document.addEventListener('change', event => { if (event.target?.closest?.('#logOv')) captureShotDraft(); }, { passive: true });
+      document.addEventListener('input', event => { if (event.target?.closest?.('#logOv') && document.getElementById('logOv')?.classList.contains('active')) captureShotDraft(); }, { passive: true });
+      document.addEventListener('change', event => { if (event.target?.closest?.('#logOv') && document.getElementById('logOv')?.classList.contains('active')) captureShotDraft(); }, { passive: true });
     }
     const originalSave = window.saveShot;
     if (typeof originalSave === 'function' && !originalSave.gnNativeWrapped) {
@@ -492,7 +522,7 @@
       const id = layer.id || 'layer';
       if (active && !layer.dataset.gnHistoryOpen) {
         layer.dataset.gnHistoryOpen = 'true';
-        if (id === 'logOv') window.setTimeout(restoreShotDraft, 0);
+        if (id === 'logOv') { shotDraftRestorePending = true; window.setTimeout(restoreShotDraft, 0); }
         pushLayerHistory(layer, id);
       } else if (!active && layer.dataset.gnHistoryOpen) {
         delete layer.dataset.gnHistoryOpen;
@@ -778,6 +808,7 @@
      * foreign owner's draft when a new session activates (item 3). */
     purgeSessionDraft,
     guardSessionDraft,
+    resetSessionShotForm,
     currentPage: currentPageName
   });
 
@@ -785,7 +816,7 @@
     const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
     document.documentElement.classList.toggle('gn-standalone', standalone);
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState !== 'visible') { captureShotDraft(); return; }
+      if (document.visibilityState !== 'visible') { if (document.getElementById('logOv')?.classList.contains('active')) captureShotDraft(); return; }
       syncViewport();
       swManager.registration?.update().catch(() => null);
       document.dispatchEvent(new CustomEvent('gn:resume'));

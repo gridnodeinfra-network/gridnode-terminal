@@ -523,6 +523,9 @@ export function activateSession(session, cloud = false) {
   /* A draft captured under a different account must not survive into
    * this session: the native shell drops it if its owner is foreign. */
   try { window.GN_NATIVE?.guardSessionDraft?.(); } catch {}
+  /* v8.1: the rendered drawer form state gets the same boundary —
+   * a new session must never inherit the previous session's form. */
+  try { window.GN_NATIVE?.resetSessionShotForm?.(); } catch {}
   notify();
   return state;
 }
@@ -533,6 +536,10 @@ export function clearSession() {
   /* Session exit clears the session shot draft with it (audit item 3):
    * an unsent draft is part of the session, not of the device. */
   try { window.GN_NATIVE?.purgeSessionDraft?.(); } catch {}
+  /* v8.1: session exit also resets the rendered LOG SHOT form state
+   * (drawer DOM + module state), which otherwise carries the exiting
+   * account's med/dose/notes into the next account on the same tab. */
+  try { window.GN_NATIVE?.resetSessionShotForm?.(); } catch {}
   syncPassFailed = false;
   state.session = null;
   state.cloud = false;

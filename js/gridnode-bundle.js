@@ -525,6 +525,9 @@ function activateSession(session, cloud = false) {
   /* A draft captured under a different account must not survive into
    * this session: the native shell drops it if its owner is foreign. */
   try { window.GN_NATIVE?.guardSessionDraft?.(); } catch {}
+  /* v8.1: the rendered drawer form state gets the same boundary —
+   * a new session must never inherit the previous session's form. */
+  try { window.GN_NATIVE?.resetSessionShotForm?.(); } catch {}
   notify();
   return state;
 }
@@ -535,6 +538,10 @@ function clearSession() {
   /* Session exit clears the session shot draft with it (audit item 3):
    * an unsent draft is part of the session, not of the device. */
   try { window.GN_NATIVE?.purgeSessionDraft?.(); } catch {}
+  /* v8.1: session exit also resets the rendered LOG SHOT form state
+   * (drawer DOM + module state), which otherwise carries the exiting
+   * account's med/dose/notes into the next account on the same tab. */
+  try { window.GN_NATIVE?.resetSessionShotForm?.(); } catch {}
   syncPassFailed = false;
   state.session = null;
   state.cloud = false;
@@ -2587,6 +2594,50 @@ function setTodayDefaults() {
   syncCustomPickers(document);
 }
 
+/* v8.1 session boundary (QA gate G2b): the LOG SHOT drawer is persistent
+ * DOM and moduleState outlives any single session, and no sign-out path
+ * used to clear them — on a same-tab logout → login the next account's
+ * drawer opened pre-filled with the previous account's med, dose and
+ * notes, even though the session-storage draft was correctly purged.
+ * Core calls this via GN_NATIVE.resetSessionShotForm() from
+ * clearSession() (session end) and activateSession() (session start),
+ * so a drawer opened under a new owner is pristine. FORM STATE ONLY:
+ * the stored session draft is owner-guarded separately, and the same
+ * owner's draft still restores on the next open. Every field the draft
+ * contract touches is reset: med selection, dose, date, time/meridiem,
+ * weight, notes, side-effect checkboxes, device, location, edit and
+ * quick-confirm state. */
+function resetShotFormState() {
+  moduleState.shotDraft = null;
+  moduleState.pendingLocationDraft = false;
+  moduleState.editingShotId = null;
+  moduleState.quickConfirmShot = null;
+  moduleState.selectedLocation = '';
+  delete selectState.cpShotMed;
+  const modal = $('logOv');
+  if (modal) {
+    delete modal.dataset.gnModuleDraft;
+    modal.classList.remove('gn-quick-mode');
+    $('gnQuickConfirm')?.classList.add('gn-hidden');
+    const medValue = $('cpShotMedVal');
+    if (medValue) { medValue.textContent = tx('shot.selectMedication', 'Select medication'); medValue.classList.add('placeholder'); }
+    qa('#cpShotMedDrop .cp-option').forEach(option => { option.classList.remove('selected'); option.setAttribute('aria-selected', 'false'); });
+    if ($('sDose')) $('sDose').value = '';
+    if ($('sWt')) $('sWt').value = '';
+    if ($('sNotes')) $('sNotes').value = '';
+    if ($('sTime')) $('sTime').value = '';
+    const date = $('sDate');
+    if (date) { date.value = ''; delete date.dataset.isoDate; delete date.dataset.dateDisplay; }
+    qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = false; });
+    if ($('shotDeviceId')) $('shotDeviceId').value = '';
+    setText('modalSelectedLocation', tx('shot.noInjectionSite', 'No injection site selected'));
+    syncCustomPickers(modal);
+  }
+  const now = new Date();
+  moduleState.meridiem = now.getHours() >= 12 ? 'PM' : 'AM';
+  updateMeridiemButtons();
+}
+
 function hydrateProfileFields(profile) {
   const fields = {
     profDose: profile.dose, profHtFt: profile.htFt, profHtIn: profile.htIn,
@@ -3984,7 +4035,7 @@ document.addEventListener('gn:shot-saved', () => {
   if (h) { try { h.fire([10, 60, 20]); } catch (_) {} }
 });
 
-window.GNModules={getProfile:getProfile,getProfileForEvidence:getProfileForEvidence,selectState:selectState,moduleState:moduleState,refreshNodeHeader:refreshNodeHeader,showScreen:showScreen,showPage:showPage,refreshAll:refreshAll,loadApp:loadApp,computeTotalChange:computeTotalChange,saveProfileMed:saveProfileMed,saveProfileMetrics:saveProfileMetrics,calcAndShowBMI:calcAndShowBMI,toggleSelect:toggleSelect,selectOpt:selectOpt,retryCloudHydration:retryCloudHydration,showPhasesModal:showPhasesModal,closePhases:closePhases,showLabSeg:showLabSeg,showYouSeg:showYouSeg,renderCalendar:renderCalendar,calPrev:calPrev,calNext:calNext,calDayClick:calDayClick,openArsenalMod:openArsenalMod,closeArs:closeArs,saveArs:saveArs,requestLoadoutRemove:requestLoadoutRemove,cancelLoadoutRemove:cancelLoadoutRemove,confirmLoadoutRemove:confirmLoadoutRemove,formatTime24:formatTime24,formatTime12:formatTime12,gnSetShotMeridiem:gnSetShotMeridiem,gnShotClockLiveFormat:gnShotClockLiveFormat,gnNormalizeShotClockField:gnNormalizeShotClockField,gnWeightDateInput:gnWeightDateInput,gnWeightTimeInput:gnWeightTimeInput,gnOpenShotDatePicker:gnOpenShotDatePicker,gnCloseShotDatePicker:gnCloseShotDatePicker,gnDatePickerMove:gnDatePickerMove,gnSelectPickerDate:gnSelectPickerDate,gnSetShotDateFromPicker:gnSetShotDateFromPicker,gnSetShotDateValue:gnSetShotDateValue,gnSetShotTimeValue:gnSetShotTimeValue,gnMedRevealGroup:gnMedRevealGroup,updatePills:updatePills,selPill:selPill,initModules:initModules,trustBadge:trustBadge,approxPct:approxPct,approxNum:approxNum};
+window.GNModules={getProfile:getProfile,getProfileForEvidence:getProfileForEvidence,selectState:selectState,moduleState:moduleState,refreshNodeHeader:refreshNodeHeader,showScreen:showScreen,showPage:showPage,refreshAll:refreshAll,loadApp:loadApp,computeTotalChange:computeTotalChange,resetShotFormState:resetShotFormState,saveProfileMed:saveProfileMed,saveProfileMetrics:saveProfileMetrics,calcAndShowBMI:calcAndShowBMI,toggleSelect:toggleSelect,selectOpt:selectOpt,retryCloudHydration:retryCloudHydration,showPhasesModal:showPhasesModal,closePhases:closePhases,showLabSeg:showLabSeg,showYouSeg:showYouSeg,renderCalendar:renderCalendar,calPrev:calPrev,calNext:calNext,calDayClick:calDayClick,openArsenalMod:openArsenalMod,closeArs:closeArs,saveArs:saveArs,requestLoadoutRemove:requestLoadoutRemove,cancelLoadoutRemove:cancelLoadoutRemove,confirmLoadoutRemove:confirmLoadoutRemove,formatTime24:formatTime24,formatTime12:formatTime12,gnSetShotMeridiem:gnSetShotMeridiem,gnShotClockLiveFormat:gnShotClockLiveFormat,gnNormalizeShotClockField:gnNormalizeShotClockField,gnWeightDateInput:gnWeightDateInput,gnWeightTimeInput:gnWeightTimeInput,gnOpenShotDatePicker:gnOpenShotDatePicker,gnCloseShotDatePicker:gnCloseShotDatePicker,gnDatePickerMove:gnDatePickerMove,gnSelectPickerDate:gnSelectPickerDate,gnSetShotDateFromPicker:gnSetShotDateFromPicker,gnSetShotDateValue:gnSetShotDateValue,gnSetShotTimeValue:gnSetShotTimeValue,gnMedRevealGroup:gnMedRevealGroup,updatePills:updatePills,selPill:selPill,initModules:initModules,trustBadge:trustBadge,approxPct:approxPct,approxNum:approxNum};
 
 const modules=window.GNModules;
 
@@ -5495,13 +5546,29 @@ async function completeCloudSession(session) {
    * no migration, no upload of local records; the user sees why and
    * the claim is retried on the next sign-in. */
   let migrationClaimFailed = false;
-  if (hydration.ok && localWorkspace && workspaceHasData(localWorkspace) && !workspaceHasData(accountWorkspace)) {
+  /* v8.1 (QA gate G3): the claim is attempted whenever unclaimed local
+   * records remain — it is no longer gated on the account workspace
+   * looking empty. Hydration persists the account's cloud profile into
+   * the account namespace during a FAILED-claim sign-in, so on the
+   * retry sign-in the account workspace "had data", the v8 gate skipped
+   * the whole block, and the post-sync mark below still fired: the
+   * promised retry never ran and the local records stayed stranded in
+   * the local namespace. Fail-closed is preserved: localWorkspace was
+   * captured only when localWorkspaceMigrationAllowed (owner absent or
+   * this user), and nothing migrates or uploads before
+   * claimLocalWorkspaceOwner's write verifies by read-back. The
+   * migration body itself is unchanged and runs when this sign-in
+   * claimed the records, or when the account workspace is still empty
+   * (the original first-claim path, ownership already recorded). */
+  let migrationClaimedThisSignIn = false;
+  if (hydration.ok && localWorkspace && workspaceHasData(localWorkspace)) {
     let recordedOwner = null;
     try { recordedOwner = localStorage.getItem(LOCAL_CLOUD_OWNER_KEY); } catch {}
-    if (recordedOwner !== String(targetUserId) && !claimLocalWorkspaceOwner(targetUserId)) {
-      migrationClaimFailed = true;
+    if (recordedOwner !== String(targetUserId)) {
+      if (claimLocalWorkspaceOwner(targetUserId)) migrationClaimedThisSignIn = true;
+      else migrationClaimFailed = true;
     }
-    if (!migrationClaimFailed) {
+    if (!migrationClaimFailed && (migrationClaimedThisSignIn || !workspaceHasData(accountWorkspace))) {
       const remote = hydration.remote || {};
       const migration = { ...localWorkspace };
       if (remote.shots) migration.shots = [];

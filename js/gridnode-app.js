@@ -1510,13 +1510,29 @@ async function completeCloudSession(session) {
    * no migration, no upload of local records; the user sees why and
    * the claim is retried on the next sign-in. */
   let migrationClaimFailed = false;
-  if (hydration.ok && localWorkspace && workspaceHasData(localWorkspace) && !workspaceHasData(accountWorkspace)) {
+  /* v8.1 (QA gate G3): the claim is attempted whenever unclaimed local
+   * records remain — it is no longer gated on the account workspace
+   * looking empty. Hydration persists the account's cloud profile into
+   * the account namespace during a FAILED-claim sign-in, so on the
+   * retry sign-in the account workspace "had data", the v8 gate skipped
+   * the whole block, and the post-sync mark below still fired: the
+   * promised retry never ran and the local records stayed stranded in
+   * the local namespace. Fail-closed is preserved: localWorkspace was
+   * captured only when localWorkspaceMigrationAllowed (owner absent or
+   * this user), and nothing migrates or uploads before
+   * claimLocalWorkspaceOwner's write verifies by read-back. The
+   * migration body itself is unchanged and runs when this sign-in
+   * claimed the records, or when the account workspace is still empty
+   * (the original first-claim path, ownership already recorded). */
+  let migrationClaimedThisSignIn = false;
+  if (hydration.ok && localWorkspace && workspaceHasData(localWorkspace)) {
     let recordedOwner = null;
     try { recordedOwner = localStorage.getItem(LOCAL_CLOUD_OWNER_KEY); } catch {}
-    if (recordedOwner !== String(targetUserId) && !claimLocalWorkspaceOwner(targetUserId)) {
-      migrationClaimFailed = true;
+    if (recordedOwner !== String(targetUserId)) {
+      if (claimLocalWorkspaceOwner(targetUserId)) migrationClaimedThisSignIn = true;
+      else migrationClaimFailed = true;
     }
-    if (!migrationClaimFailed) {
+    if (!migrationClaimFailed && (migrationClaimedThisSignIn || !workspaceHasData(accountWorkspace))) {
       const remote = hydration.remote || {};
       const migration = { ...localWorkspace };
       if (remote.shots) migration.shots = [];

@@ -37,6 +37,50 @@ function setTodayDefaults() {
   syncCustomPickers(document);
 }
 
+/* v8.1 session boundary (QA gate G2b): the LOG SHOT drawer is persistent
+ * DOM and moduleState outlives any single session, and no sign-out path
+ * used to clear them — on a same-tab logout → login the next account's
+ * drawer opened pre-filled with the previous account's med, dose and
+ * notes, even though the session-storage draft was correctly purged.
+ * Core calls this via GN_NATIVE.resetSessionShotForm() from
+ * clearSession() (session end) and activateSession() (session start),
+ * so a drawer opened under a new owner is pristine. FORM STATE ONLY:
+ * the stored session draft is owner-guarded separately, and the same
+ * owner's draft still restores on the next open. Every field the draft
+ * contract touches is reset: med selection, dose, date, time/meridiem,
+ * weight, notes, side-effect checkboxes, device, location, edit and
+ * quick-confirm state. */
+export function resetShotFormState() {
+  moduleState.shotDraft = null;
+  moduleState.pendingLocationDraft = false;
+  moduleState.editingShotId = null;
+  moduleState.quickConfirmShot = null;
+  moduleState.selectedLocation = '';
+  delete selectState.cpShotMed;
+  const modal = $('logOv');
+  if (modal) {
+    delete modal.dataset.gnModuleDraft;
+    modal.classList.remove('gn-quick-mode');
+    $('gnQuickConfirm')?.classList.add('gn-hidden');
+    const medValue = $('cpShotMedVal');
+    if (medValue) { medValue.textContent = tx('shot.selectMedication', 'Select medication'); medValue.classList.add('placeholder'); }
+    qa('#cpShotMedDrop .cp-option').forEach(option => { option.classList.remove('selected'); option.setAttribute('aria-selected', 'false'); });
+    if ($('sDose')) $('sDose').value = '';
+    if ($('sWt')) $('sWt').value = '';
+    if ($('sNotes')) $('sNotes').value = '';
+    if ($('sTime')) $('sTime').value = '';
+    const date = $('sDate');
+    if (date) { date.value = ''; delete date.dataset.isoDate; delete date.dataset.dateDisplay; }
+    qa('#logOv input[type="checkbox"]').forEach(input => { input.checked = false; });
+    if ($('shotDeviceId')) $('shotDeviceId').value = '';
+    setText('modalSelectedLocation', tx('shot.noInjectionSite', 'No injection site selected'));
+    syncCustomPickers(modal);
+  }
+  const now = new Date();
+  moduleState.meridiem = now.getHours() >= 12 ? 'PM' : 'AM';
+  updateMeridiemButtons();
+}
+
 function hydrateProfileFields(profile) {
   const fields = {
     profDose: profile.dose, profHtFt: profile.htFt, profHtIn: profile.htIn,
