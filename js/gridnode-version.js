@@ -6,11 +6,11 @@
 (function () {
   'use strict';
   window.GN_VERSION = Object.freeze({
-    APP_VERSION: '1.2.1',
+    APP_VERSION: '1.2.2',
     APP_BUILD: '20260907.1',
-    semver: '1.2.1',
+    semver: '1.2.2',
     release: '20260907.1',
-    title: 'V1.2.1 — CANONICAL NODKI',
+    title: 'V1.2.2 — CANONICAL NODKI',
     date: '2026-10-17'
   });
 })();
