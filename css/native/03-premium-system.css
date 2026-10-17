@@ -3155,7 +3155,9 @@ html[data-theme="light"] .gn-assay-chip.amber, html[data-theme="light"] .gn-assa
 html[data-theme="light"] .gn-assay-chip.red, html[data-theme="light"] .gn-assay-varpreview.red, html[data-theme="light"] .gn-assay-drow .v.red, html[data-theme="light"] .gn-assay-err{color:#c81e1e;border-color:rgba(200,30,30,.5)}
 
 /* ─────────────────────────────────────────────────────────────────────
-   Meet PREEM band (2026-09-20) — PREEM is the face of GRID//NODE.
+   Meet NODKI band (2026-09-20, mascot swapped 2026-10-16) — NODKI, the
+   Grid Operator, is the face of GRID//NODE. Class names keep the legacy
+   landing-preem prefix (internal identifiers only).
    Portrait in a HUD frame beside the intro copy. Stacks on mobile.
    ───────────────────────────────────────────────────────────────────── */
 #landing .landing-preem {

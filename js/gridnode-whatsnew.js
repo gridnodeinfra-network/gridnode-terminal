@@ -293,6 +293,21 @@
       }
     },
     '__CURRENT_BUILD__': {
+      version: '1.2.0', title: 'MEET NODKI', date: '2026-10-16',
+      en: {
+        NEW: [
+          'Meet NODKI, the Grid Operator: the little robot who runs your corner of the grid is now the face of GRID//NODE, on the landing page and standing watch over your protocol. Intelligent, observant, supportive, and never smug.',
+          'Your body. Your data. Your grid. NODKI keeps the connection alive: he sees the dose get logged, watches the phase curve move, and keeps the record straight.'
+        ]
+      },
+      es: {
+        NEW: [
+          'Conoce a NODKI, el Operador del Grid: el pequeño robot que opera tu rincón del grid ahora es la cara de GRID//NODE, en la página inicial y vigilando tu protocolo. Inteligente, observador, solidario y nunca engreído.',
+          'Tu cuerpo. Tus datos. Tu grid. NODKI mantiene viva la conexión: ve cada dosis registrada, sigue el movimiento de tu curva de fase y mantiene el registro en orden.'
+        ]
+      }
+    },
+    '20261015.a648b59': {
       version: '1.1.4', title: 'PREMIUM TACTILE', date: '2026-10-15',
       en: {
         NEW: [

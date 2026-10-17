@@ -6,11 +6,11 @@
 (function () {
   'use strict';
   window.GN_VERSION = Object.freeze({
-    APP_VERSION: '1.1.4',
+    APP_VERSION: '1.2.0',
     APP_BUILD: '20260907.1',
-    semver: '1.1.4',
+    semver: '1.2.0',
     release: '20260907.1',
-    title: 'V1.1.4 — PREMIUM TACTILE',
-    date: '2026-10-15'
+    title: 'V1.2.0 — MEET NODKI',
+    date: '2026-10-16'
   });
 })();
