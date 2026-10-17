@@ -216,13 +216,6 @@ export function renderShots() {
      * not a first run — show a neutral archived state, never the
      * "log your first shot" pitch. */
     if (!activeFilters && moduleState.shotHistoryView === 'archived' && all.some(record => !record.archived)) {
-      /* NODKI empty-state host: his welcome pose replaces the generic icon on
- * first-run empties while the companion is enabled (gn_nodki_v1). */
-function nodkiEmptyIcon() {
-  let on = true;
-  try { on = localStorage.getItem('gn_nodki_v1') !== 'off'; } catch (_) {}
-  return on ? '<img class="gn-nodki-empty" src="assets/mascot/nodki-pose-welcome.webp" alt="" width="72" height="72" decoding="async">' : '<span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span>';
-}
 list.innerHTML = `<div class="empty gn-first-run-card">${nodkiEmptyIcon()}<b class="gn-first-run-title">${tx('shots.noArchivedShots', 'NO ARCHIVED SHOTS')}</b><span class="gn-first-run-sub">${tx('shots.noArchivedHint', 'Archived shots rest here. Archive a shot from your active history to tuck it away without deleting it.')}</span><br><button class="btn-full btn-secondary empty-cta" type="button" data-shot-history-view="active">${tx('shots.viewActive', 'VIEW ACTIVE SHOTS')}</button></div>`;
       return;
     }
