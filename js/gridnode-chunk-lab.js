@@ -386,6 +386,7 @@ function ensureProfileHub() {
         <button type="button" class="gn-vault-row" onclick="replayGuidedTour()">${ico('gn-signal')}<span class="gn-vault-row-txt"><b data-i18n="vault.replayTour">Replay Tour</b><small data-i18n="vault.replayTourHelp">Restart the guided tour</small></span>${chev}</button>
         <div class="gn-vault-row gn-vault-row-static">${ico('gn-phase-ring')}<span class="gn-vault-row-txt"><b data-i18n="vault.theme">Theme</b><small data-i18n="vault.themeHelp">Dark or light display</small></span><span class="gn-theme-toggle-host" role="group" aria-label="THEME"></span></div>
         <button type="button" class="gn-vault-row" onclick="toggleGnHaptics()"><span class="gn-vault-row-txt"><b data-i18n="vault.hapticsTitle">Haptics</b><small id="gnHapticsHelp"></small></span><span id="gnHapticsState" class="gn-vault-haptics-state" aria-hidden="true"></span></button>
+        <button type="button" class="gn-vault-row" onclick="toggleGnNodki()"><span class="gn-vault-row-txt"><b data-i18n="vault.nodkiTitle">NODKI companion</b><small id="gnNodkiHelp"></small></span><span id="gnNodkiState" class="gn-vault-haptics-state" aria-hidden="true"></span></button>
       </div>
     </div>
     <div class="gn-vault-group" data-gn-vault-group="devices">
@@ -449,6 +450,7 @@ function ensureProfileHub() {
   renderDeviceVault();
   ensurePasskeySection();
   renderGnHapticsState();
+  renderGnNodkiState();
   syncCloudOnlyButtons();
 }
 
@@ -518,6 +520,24 @@ function toggleGnHaptics() {
   /* Turning it on answers with the toggle signature, so the user feels
    * the new state land; turning it off is silent by definition. */
   if (next) { try { engine.fire('toggle'); } catch (_) {} }
+}
+
+
+function renderGnNodkiState() {
+  const stateEl = $('gnNodkiState');
+  const helpEl = $('gnNodkiHelp');
+  if (!stateEl) return;
+  const on = !window.GN_NODKI || window.GN_NODKI.enabled();
+  stateEl.textContent = on ? tx('vault.nodkiStateOn', 'ON') : tx('vault.nodkiStateOff', 'OFF');
+  if (helpEl) helpEl.textContent = on ? tx('vault.nodkiOn', 'ON — NODKI appears on TODAY and in empty states.') : tx('vault.nodkiOff', 'OFF — NODKI stays out of the app. Tap to enable.');
+}
+
+function toggleGnNodki() {
+  const next = !(window.GN_NODKI ? window.GN_NODKI.enabled() : true);
+  if (window.GN_NODKI) window.GN_NODKI.setEnabled(next);
+  else { try { localStorage.setItem('gn_nodki_v1', next ? 'on' : 'off'); } catch (_) {} }
+  renderGnNodkiState();
+  if (next) { try { window.GN_HAPTICS?.fire('toggle'); } catch (_) {} }
 }
 
 function pulseGnCapture(saveButton) {
