@@ -1975,6 +1975,19 @@ function scrollLandingTo(id) {
         <div class="gn-today-lastshot-sub" id="gnTodayLastShotSub">—</div>
       </div>
 
+      <!-- NODKI companion card: reserved slot, static by default; the
+           14-nodki module fills pose + line from real app state. -->
+      <div class="gn-nodki-card" id="gnNodkiCard" hidden>
+        <button type="button" class="gn-nodki-face" id="gnNodkiFace" onclick="gnNodkiTap()" aria-label="NODKI">
+          <img id="gnNodkiImg" alt="" width="56" height="56" decoding="async">
+        </button>
+        <div class="gn-nodki-body">
+          <div class="gn-nodki-kicker" data-i18n="nodki.kicker">NODKI // GRID OPERATOR</div>
+          <div class="gn-nodki-line" id="gnNodkiLine"></div>
+          <button type="button" class="gn-nodki-cta" id="gnNodkiCta" onclick="gnNodkiCta()" data-i18n="nodki.firstCta" hidden>LOG YOUR FIRST SHOT</button>
+        </div>
+      </div>
+
       <div class="sec-hdr" id="phaseEngineHdr">
         <div class="sec-title" data-i18n-html="dashboard.sectionPhase">// <span class="a">PHASE ENGINE</span></div>
         <button class="sec-act" type="button" data-i18n="phase.allPhases" onclick="showPhasesModal()">ALL PHASES →</button>

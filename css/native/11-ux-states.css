@@ -232,3 +232,20 @@ html.gn-auth-returning .gn-auth-return {
   cursor: pointer;
   white-space: nowrap;
 }
+
+/* NODKI companion (v1.3.0 prototype): reserved-slot dashboard card.
+ * Static by default; the only animation is a one-shot transform/opacity
+ * pop on state celebrations, disabled under prefers-reduced-motion. */
+.gn-nodki-card { display:flex; gap:12px; align-items:center; margin:10px 0 4px; padding:10px 12px; border:1px solid rgba(6,187,227,.42); border-radius:12px; background:rgba(5,7,8,.78); }
+.gn-nodki-card[hidden] { display:none; }
+.gn-nodki-face { flex:0 0 56px; width:56px; height:56px; padding:0; border:none; background:none; cursor:pointer; border-radius:10px; }
+.gn-nodki-face img { width:56px; height:56px; object-fit:contain; display:block; }
+.gn-nodki-body { min-width:0; }
+.gn-nodki-kicker { font-size:10px; letter-spacing:.14em; color:#06BBE3; }
+.gn-nodki-line { margin-top:2px; font-size:14px; line-height:1.35; color:#EAFDFF; }
+.gn-nodki-cta { margin-top:8px; min-height:44px; padding:8px 14px; border:1px solid #06BBE3; border-radius:9px; background:rgba(6,187,227,.14); color:#EAFDFF; font-weight:700; letter-spacing:.06em; cursor:pointer; }
+.gn-nodki-cta[hidden] { display:none; }
+.gn-nodki-empty { width:72px; height:72px; object-fit:contain; }
+@keyframes gnNodkiPop { 0% { transform:scale(1); } 35% { transform:scale(1.035); } 100% { transform:scale(1); } }
+.gn-nodki-pop { animation:gnNodkiPop .9s ease-out 1; }
+@media (prefers-reduced-motion: reduce) { .gn-nodki-pop { animation:none; } }

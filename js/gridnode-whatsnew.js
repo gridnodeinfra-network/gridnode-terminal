@@ -292,7 +292,30 @@
         ]
       }
     },
-    '__CURRENT_BUILD__': {
+        '__CURRENT_BUILD__': {
+      version: '1.3.0', title: 'NODKI, ACTIVE', date: '2026-10-17',
+      en: {
+        NEW: [
+          'NODKI moves in. Your grid operator now lives on TODAY: a status card that reflects your real grid — first log, logged today, or a quiet welcome back.',
+          'He hosts the empty states, celebrates real milestones (7, 25, 50 doses on the grid), and answers taps with operator notes.',
+          'He only narrates your app state. Never advice, never guilt, never in your way during a log or a scan.'
+        ],
+        FIXED: [
+          'A VAULT switch turns the companion fully off, and the setting sticks.'
+        ]
+      },
+      es: {
+        NEW: [
+          'NODKI se muda a la app. Tu operador de la red ahora vive en HOY: una tarjeta de estado que refleja tu red real: primer registro, registrado hoy, o una bienvenida tranquila.',
+          'Es el anfitrión de los estados vacíos, celebra hitos reales (7, 25, 50 dosis en la red) y responde a tus toques con notas de operador.',
+          'Solo narra el estado de tu app. Nunca consejos, nunca culpa, nunca estorba durante un registro o un escaneo.'
+        ],
+        FIXED: [
+          'Un interruptor en la BÓVEDA apaga el compañero por completo, y el ajuste se queda guardado.'
+        ]
+      }
+    },
+'20261017.5361578': {
       version: '1.2.0', title: 'MEET NODKI', date: '2026-10-16',
       en: {
         NEW: [
