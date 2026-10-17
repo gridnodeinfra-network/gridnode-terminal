@@ -139,6 +139,14 @@ function renderShotFilterOptions(records) {
 /* TRACK C: HISTORY gets the same honest sync states as TODAY (S1 in
    02-dashboard). A cloud user whose records have not arrived yet must
    never see the first-run pitch or a fake "nothing logged" empty. */
+/* NODKI empty-state host: his welcome pose replaces the generic icon on
+ * first-run empties while the companion is enabled (gn_nodki_v1). */
+function nodkiEmptyIcon() {
+  let on = true;
+  try { on = localStorage.getItem('gn_nodki_v1') !== 'off'; } catch (_) {}
+  return on ? '<img class="gn-nodki-empty" src="assets/mascot/nodki-pose-welcome.webp" alt="" width="72" height="72" decoding="async">' : '<span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span>';
+}
+
 function historySyncMode(totalRecords) {
   if (totalRecords > 0) return null;
   /* CLARITY PASS (P1): gate on state.cloud, not session id + client
