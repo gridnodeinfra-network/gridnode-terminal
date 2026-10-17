@@ -292,30 +292,51 @@
         ]
       }
     },
-        '__CURRENT_BUILD__': {
-      version: '1.3.0', title: 'NODKI, ACTIVE', date: '2026-10-17',
+    '__CURRENT_BUILD__': {
+      version: '1.2.2', title: 'CANONICAL NODKI', date: '2026-10-17',
       en: {
         NEW: [
-          'NODKI moves in. Your grid operator now lives on TODAY: a status card that reflects your real grid — first log, logged today, or a quiet welcome back.',
-          'He hosts the empty states, celebrates real milestones (7, 25, 50 doses on the grid), and answers taps with operator notes.',
-          'He only narrates your app state. Never advice, never guilt, never in your way during a log or a scan.'
+          'The slash in the GN emblem on NODKI\'s cap and chest is Cyberpunk 2077 yellow: his one signature accent, slim, short, and contained.'
+        ],
+        IMPROVED: [
+          'The Terms of Service now name NODKI as the GRID//NODE character in the intellectual property section.'
         ],
         FIXED: [
-          'A VAULT switch turns the companion fully off, and the setting sticks.'
+          'NODKI now matches his canonical master design exactly: the hero on the landing, every pose, and every expression are the official artwork, pixel for pixel.'
         ]
       },
       es: {
         NEW: [
-          'NODKI se muda a la app. Tu operador de la red ahora vive en HOY: una tarjeta de estado que refleja tu red real: primer registro, registrado hoy, o una bienvenida tranquila.',
-          'Es el anfitrión de los estados vacíos, celebra hitos reales (7, 25, 50 dosis en la red) y responde a tus toques con notas de operador.',
-          'Solo narra el estado de tu app. Nunca consejos, nunca culpa, nunca estorba durante un registro o un escaneo.'
+          'La barra del emblema GN en la gorra y el pecho de NODKI es amarillo Cyberpunk 2077: su único acento distintivo, fina, corta y contenida.'
+        ],
+        IMPROVED: [
+          'Los Términos de Servicio ahora nombran a NODKI como el personaje de GRID//NODE en la sección de propiedad intelectual.'
         ],
         FIXED: [
-          'Un interruptor en la BÓVEDA apaga el compañero por completo, y el ajuste se queda guardado.'
+          'NODKI ahora coincide exactamente con su diseño maestro canónico: el héroe de la página inicial, cada pose y cada expresión son el arte oficial, píxel por píxel.'
         ]
       }
     },
-'20261017.5361578': {
+    '20261017.ded25bb': {
+      version: '1.2.1', title: 'CANONICAL NODKI', date: '2026-10-17',
+      en: {
+        FIXED: [
+          'NODKI now matches his canonical master design exactly: the hero on the landing, every pose, and every expression are the official artwork, pixel for pixel.'
+        ],
+        NEW: [
+          'The slash in the GN emblem on his cap and chest is now Cyberpunk 2077 yellow: his one signature accent, slim, short, and contained.'
+        ]
+      },
+      es: {
+        FIXED: [
+          'NODKI ahora coincide exactamente con su diseño maestro canónico: el héroe de la página inicial, cada pose y cada expresión son el arte oficial, píxel por píxel.'
+        ],
+        NEW: [
+          'La barra del emblema GN en su gorra y su pecho ahora es amarillo Cyberpunk 2077: su único acento distintivo, fina, corta y contenida.'
+        ]
+      }
+    },
+    '20261017.5361578': {
       version: '1.2.0', title: 'MEET NODKI', date: '2026-10-16',
       en: {
         NEW: [
