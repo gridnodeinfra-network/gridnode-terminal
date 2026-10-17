@@ -293,6 +293,25 @@
       }
     },
     '__CURRENT_BUILD__': {
+      version: '1.2.1', title: 'CANONICAL NODKI', date: '2026-10-17',
+      en: {
+        FIXED: [
+          'NODKI now matches his canonical master design exactly: the hero on the landing, every pose, and every expression are the official artwork, pixel for pixel.'
+        ],
+        NEW: [
+          'The slash in the GN emblem on his cap and chest is now Cyberpunk 2077 yellow: his one signature accent, slim, short, and contained.'
+        ]
+      },
+      es: {
+        FIXED: [
+          'NODKI ahora coincide exactamente con su diseño maestro canónico: el héroe de la página inicial, cada pose y cada expresión son el arte oficial, píxel por píxel.'
+        ],
+        NEW: [
+          'La barra del emblema GN en su gorra y su pecho ahora es amarillo Cyberpunk 2077: su único acento distintivo, fina, corta y contenida.'
+        ]
+      }
+    },
+    '20261017.5361578': {
       version: '1.2.0', title: 'MEET NODKI', date: '2026-10-16',
       en: {
         NEW: [
