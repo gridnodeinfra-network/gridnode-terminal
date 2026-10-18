@@ -293,6 +293,31 @@
       }
     },
     '__CURRENT_BUILD__': {
+      version: '1.3.0', title: 'YOUR OPERATOR', date: '2026-10-17',
+      en: {
+        NEW: [
+          'NODKI hosts your intro now. He walks you through setting your shot day, logging your first real shot, seeing your phase, and meeting the scanner, one real step at a time. Your progress saves as you go, and the whole guide replays any time from the Operator\'s manual in your VAULT.',
+          'Tips and field notes, on his schedule, not yours: every so often NODKI leaves one useful note on his card on TODAY, about using the grid or a general fact worth knowing. They never pop up, never interrupt a log or a scan, and every line you have seen is kept in Operator\'s notes in VAULT.',
+          'His card on TODAY keeps you posted: what is due, what you logged, and a tap on his face any time you want more from him. Every message wears the expression it deserves, and he never repeats the same face twice in a row.'
+        ],
+        IMPROVED: [
+          'You control the volume: Tips & facts has its own switch in VAULT (separate from the mascot switch), with Normal, Quiet, and Pull-only levels. Turning NODKI off turns everything off, and it sticks.',
+          'Bigger, calmer type on his card and guide lines, built from the same cards and colors as the rest of the grid.'
+        ]
+      },
+      es: {
+        NEW: [
+          'NODKI ahora presenta tu intro. Te acompaña a ajustar tu día de inyección, registrar tu primera inyección real, ver tu fase y conocer el escáner, un paso real a la vez. Tu progreso se guarda sobre la marcha, y la guía completa se repite cuando quieras desde el Manual del operador en tu VAULT.',
+          'Consejos y notas de campo, a su ritmo, no al tuyo: de vez en cuando NODKI deja una nota útil en su tarjeta en HOY, sobre cómo usar la red o un dato general que vale la pena saber. Nunca aparecen de golpe, nunca interrumpen un registro ni un escaneo, y cada línea que has visto se guarda en Notas del operador en VAULT.',
+          'Su tarjeta en HOY te mantiene al tanto: qué toca, qué registraste, y un toque en su cara cuando quieras más de él. Cada mensaje lleva la expresión que merece, y nunca repite la misma cara dos veces seguidas.'
+        ],
+        IMPROVED: [
+          'Tú controlas el volumen: Consejos y datos tiene su propio interruptor en VAULT (aparte del interruptor del personaje), con niveles Normal, Tranquilo y Solo al tocar. Apagar a NODKI apaga todo, y se queda así.',
+          'Letra más grande y tranquila en su tarjeta y en las líneas de la guía, construida con las mismas tarjetas y colores del resto de la red.'
+        ]
+      }
+    },
+    '20261017.bd8b8c0': {
       version: '1.2.2', title: 'CANONICAL NODKI', date: '2026-10-17',
       en: {
         NEW: [

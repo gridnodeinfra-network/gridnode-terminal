@@ -27,8 +27,10 @@
   var LEGACY_STATE_KEY = 'gn_onboarding_v2';
   var LEGACY_DISMISSED_KEY = 'gn_onboarding_dismissed_v2';
   var SESSION_KEY = 'gn_ob_session_v1';
+  var PROGRESS_KEY = 'gn_onboarding_progress_v1';
+  var METRICS_KEY = 'gn_onboarding_metrics_v1';
   var ENTRY_SEL = '#gnFirstShotMission button, .gn-wanda-actions button, .fab, .gn-empty-cta';
-  var TOTAL = 7;
+  var TOTAL = 6;
 
   /* Final copy (DESIGN Part 3) as in-code fallbacks; the i18n catalogs
    * are normative and GN_I18N.t() wins whenever it resolves. */
@@ -80,6 +82,28 @@
     'ob.done.title': 'Log the shot. Read the curve. Run your protocol.',
     'ob.done.body': 'That is all there is to it. Welcome to GRID//NODE.',
     'ob.done.cta': 'Enter GRID//NODE',
+    'nodki.host.start': 'Start', 'nodki.host.beatOf': 'Beat {n} of {total}',
+    'nodki.host.b0': "I'm NODKI, your grid operator.",
+    'nodki.host.b1': 'First, your rhythm. This is the day your shot lands each week.',
+    'nodki.host.beat1Cta': 'Set my shot day',
+    'nodki.host.b1Guide': 'Pick the day your shot lands. Saving it moves us on.',
+    'nodki.host.starterCta': 'Use a starter schedule',
+    'nodki.host.b2': 'Now the real thing. Log a dose you already took. I will step out while you fill the form.',
+    'nodki.host.b3': 'That curve is yours. It is drawn from the shot you just logged.',
+    'nodki.host.b4': 'One last stop: the scanner. It maps where shots go.',
+    'nodki.host.b4k': 'THE SCANNER', 'nodki.host.b4t': 'Meet the scanner.',
+    'nodki.host.b4b': 'Tap one site on the body map. No camera, nothing is captured. Just the map.',
+    'nodki.host.beat4Cta': 'Try the scanner',
+    'nodki.host.b4Guide': 'Tap one site on the map. That is the whole cameo.',
+    'nodki.host.later': 'Later',
+    'nodki.host.b5': 'You run the grid now. Three controls are yours forever:',
+    'nodki.host.b5a': "Replay this guide any time: VAULT, Operator's manual.",
+    'nodki.host.b5b': 'Tips and facts: on, quiet, or pull-only, in VAULT.',
+    'nodki.host.b5c': 'Me: if I ever get in the way, VAULT turns me off. It sticks.',
+    'nodki.host.continuity': "Grid's live. I'll flag what's due, here.",
+    'nodki.host.exitLine': "Guide's in the VAULT whenever you want it.",
+    'nodki.host.resumeOffer': 'Your intro is still open. Pick it up where you left off, any time.',
+    'nodki.host.resumeCta': 'RESUME',
     'nav.home': 'TODAY', 'nav.shots': 'HISTORY', 'nav.results': 'PROGRESS', 'nav.lab': 'LAB', 'nav.vault': 'VAULT',
     'lang.english': 'EN', 'lang.spanish': 'ES',
     'lang.switcherAria': 'Language selector'
@@ -117,6 +141,55 @@
     if (value === 'complete') lsSet(LEGACY_STATE_KEY, 'complete');
     if (value === 'skipped') lsSet(LEGACY_DISMISSED_KEY, '1');
   }
+  /* Spec A: progress persists across sessions (resume at the same
+   * beat, never restart) and per-beat metrics stay on-device. */
+  var runStartAt = 0;
+  var beatEnterAt = 0;
+  function readProgress() {
+    try { return JSON.parse(lsGet(PROGRESS_KEY) || 'null'); } catch (e) { return null; }
+  }
+  function writeProgress(beat, complete) {
+    var p = readProgress() || { beats: {}, done: false };
+    p.beats = p.beats || {};
+    if (typeof beat === 'number' && beat >= 0) {
+      p.beat = beat;
+      p.beats[beat] = p.beats[beat] || {};
+      p.beats[beat].seen = true;
+      if (complete) p.beats[beat].complete = true;
+    }
+    if (complete && beat === TOTAL - 1) p.done = true;
+    p.lastAt = Date.now();
+    lsSet(PROGRESS_KEY, JSON.stringify(p));
+  }
+  function metricsUpdate(fn) {
+    var m = null;
+    try { m = JSON.parse(lsGet(METRICS_KEY) || 'null'); } catch (e) { /* fresh */ }
+    if (!m || typeof m !== 'object') m = { beats: {} };
+    m.beats = m.beats || {};
+    fn(m);
+    lsSet(METRICS_KEY, JSON.stringify(m));
+  }
+  function beatEnter(i) {
+    beatEnterAt = Date.now();
+    metricsUpdate(function (m) {
+      var b = m.beats[i] = m.beats[i] || { enter: 0, complete: 0, skip: 0, timeMs: 0 };
+      b.enter += 1;
+    });
+    writeProgress(i, false);
+  }
+  function beatExit(i, how) {
+    if (i < 0) return;
+    var dt = beatEnterAt ? Date.now() - beatEnterAt : 0;
+    beatEnterAt = 0;
+    metricsUpdate(function (m) {
+      var b = m.beats[i] = m.beats[i] || { enter: 0, complete: 0, skip: 0, timeMs: 0 };
+      b.timeMs += dt;
+      if (how === 'complete') b.complete += 1;
+      if (how === 'skip') b.skip += 1;
+    });
+    if (how === 'complete') writeProgress(i, true);
+  }
+
   function shotCount() {
     var count = 0;
     try {
@@ -247,87 +320,129 @@
 
   /* ---------------- screen renderers ---------------- */
 
-  var SCREENS = [
-    function renderWelcome() {
-      primarySpec = { label: t('ob.begin'), act: function () { navTo(1); } };
-      return '<div class="gn-ob-theme-host gn-theme-toggle-host"></div>' +
-        '<div class="gn-ob-visual gn-ob-visual-hero"><figure class="ob-piece" style="margin:0">' + heroSvg() + '</figure></div>' +
-        copyBlock('ob.welcome.kicker', 'ob.welcome.title', 'ob.welcome.body') +
-        '<p class="gn-ob-note">' + esc(t(isCloudSession() ? 'ob.welcome.cloudNote' : 'ob.welcome.localNote')) + '</p>' +
-        '<div class="gn-ob-langrow">' + langSegHtml() + '</div>';
-    },
-    function renderLoop() {
-      primarySpec = { label: t('ob.next'), act: function () { navTo(2); } };
-      var steps = [
-        ['gn-protocol-event', 'ob.loop.step1'], ['gn-trend-signal', 'ob.loop.step2'], ['gn-command-grid', 'ob.loop.step3']
-      ];
-      var medallions = steps.map(function (s, i) {
-        return (i ? '<span class="gn-ob-thread-seg" aria-hidden="true"></span>' : '') +
-          '<div class="gn-ob-medallion ob-enter" style="--ob-delay:' + (i * 80) + 'ms">' + iconUse(s[0]) +
-          '<span class="gn-ob-medallion-label">' + esc(t(s[1])) + '</span></div>';
-      }).join('');
-      return '<div class="gn-ob-visual"><div class="gn-ob-loop">' + medallions + '</div></div>' +
-        copyBlock('ob.loop.kicker', 'ob.loop.title', 'ob.loop.body');
-    },
-    function renderMap() {
-      primarySpec = { label: t('ob.next'), act: function () { navTo(3); } };
-      var zones = [
-        ['gn-command-grid', 'nav.home', 'ob.zones.todayBody'],
-        ['gn-protocol-event', 'nav.shots', 'ob.zones.historyBody'],
-        ['gn-trend-signal', 'nav.results', 'ob.zones.progressBody'],
-        ['gn-lab-vessel', 'nav.lab', 'ob.zones.labBody'],
-        ['gn-vault-core', 'nav.vault', 'ob.zones.vaultBody']
-      ];
-      var rows = zones.map(function (z, i) {
-        var name = t(z[1]); var body = t(z[2]);
-        return '<div class="gn-ob-zone ob-enter" style="--ob-delay:' + (i * 40) + 'ms" role="img" aria-label="' + esc(name + '. ' + body) + '">' +
-          iconUse(z[0]) + '<span class="gn-ob-zone-text"><span class="gn-ob-zone-name">' + esc(name) + '</span>' +
-          '<span class="gn-ob-zone-body">' + esc(body) + '</span></span></div>';
-      }).join('');
-      return '<p class="gn-ob-kicker">' + esc(t('ob.zones.kicker')) + '</p>' +
-        '<h2 class="gn-ob-title" data-ob-title tabindex="-1">' + esc(t('ob.zones.title')) + '</h2>' +
-        '<div class="gn-ob-zones">' + rows + '</div>';
-    },
-    function renderShot() {
-      if (shotDegraded) {
-        primarySpec = { label: t('ob.guide.openLog'), act: degradedOpenLog };
-      } else {
-        primarySpec = { label: t(hasAnyShot() ? 'ob.shot.ctaAgain' : 'ob.shot.cta'), act: beginGuide };
-      }
-      return '<div class="gn-ob-visual gn-ob-visual-wheel">' + wheelSvg('one-lit') + '</div>' +
-        '<p class="gn-ob-kicker">' + esc(t('ob.shot.kicker')) + '</p>' +
-        '<h2 class="gn-ob-title" data-ob-title tabindex="-1">' + esc(t('ob.shot.title')) + '</h2>' +
-        '<p class="gn-ob-body">' + esc(t(shotDegraded ? 'ob.guide.openFailed' : 'ob.shot.body')) + '</p>' +
-        '<button type="button" class="gn-ob-later" data-ob-later>' + esc(t('ob.shot.later')) + '</button>';
-    },
-    function renderPayoff() {
-      primarySpec = { label: t('ob.curve.cta'), act: function () { navTo(5); } };
-      if (payoffVariant === 'empty') {
-        return '<div class="gn-ob-visual gn-ob-visual-wheel">' + wheelSvg('plain') + '</div>' +
-          '<p class="gn-ob-kicker">' + esc(t('ob.curve.kicker')) + '</p>' +
-          '<h2 class="gn-ob-title" data-ob-title tabindex="-1">' + esc(t('ob.curve.emptyTitle')) + '</h2>' +
-          '<p class="gn-ob-body">' + esc(t('ob.curve.emptyBody')) + '</p>';
-      }
-      var titleKey = shotCount() > 1 ? 'ob.curve.titleAgain' : 'ob.curve.title';
-      return '<div class="gn-ob-visual gn-ob-visual-wheel">' + wheelSvg('filled') + '</div>' +
-        '<p class="gn-ob-kicker">' + esc(t('ob.curve.kicker')) + '</p>' +
-        '<h2 class="gn-ob-title" data-ob-title tabindex="-1">' + esc(t(titleKey)) + '</h2>' +
-        '<p class="gn-ob-body">' + esc(t(isCloudSession() ? 'ob.curve.cloudBody' : 'ob.curve.localBody')) + '</p>';
-    },
-    function renderComfort() {
-      primarySpec = { label: t('ob.comfort.done'), act: function () { navTo(6); } };
-      return copyBlock('ob.comfort.kicker', 'ob.comfort.title', 'ob.comfort.body') +
-        '<div class="gn-ob-comfort">' +
-        themeCard('dark', 'ob.comfort.darkName', '--pv-surface:#0e0e16;--pv-panel:#12121e;--pv-text:#eef6f8;--pv-sub:#b7c7d3;--pv-accent:#00d4ff') +
-        themeCard('light', 'ob.comfort.lightName', '--pv-surface:#f8f5ed;--pv-panel:#fffdf8;--pv-text:#1c2b31;--pv-sub:#3f535a;--pv-accent:#00677f') +
-        '</div><div class="gn-ob-langrow">' + langSegHtml() + '</div>';
-    },
-    function renderDone() {
-      primarySpec = { label: t('ob.done.cta'), act: function () { dismiss(true); } };
-      return '<div class="gn-ob-visual gn-ob-visual-wheel-sm">' + wheelSvg(payoffVariant === 'saved' || hasAnyShot() ? 'one-lit' : 'plain') + '</div>' +
-        copyBlock('ob.done.kicker', 'ob.done.title', 'ob.done.body');
+  /* Spec A (1.3.0): six hosted beats composed from the seven story
+   * renderers. 0 cold open / 1 schedule (loop medallions + the real
+   * profile control) / 2 first log (the playable beat) / 3 phase
+   * payoff / 4 scanner cameo (comfort slot, rewritten) / 5 handoff
+   * (done + map rows + the three forever-controls). */
+
+  function mascotOff() { try { return window.localStorage.getItem('gn_nodki_v1') === 'off'; } catch (e) { return false; } }
+  var HOST_IMG = {
+    welcome: 'nodki-pose-welcome', tablet: 'nodki-pose-tablet', approve: 'nodki-pose-approve',
+    celebrate: 'nodki-pose-celebrate', neutral: 'nodki-pose-neutral',
+    focused: 'nodki-expr-focused', thinking: 'nodki-expr-thinking', default: 'nodki-expr-default'
+  };
+  /* The host layer: NODKI in a reserved in-flow slot, one whole line at
+   * a time (no typing effect). With the mascot off the same panel runs
+   * text-only: the character is a presentation layer, never a dependency. */
+  function hostHtml(expr, lineKey) {
+    var img = mascotOff() ? '' :
+      '<img class="gn-ob-host-img" src="assets/mascot/' + HOST_IMG[expr] + '.webp" alt="" width="72" height="72" decoding="async">';
+    return '<div class="gn-ob-host">' + img +
+      '<div class="gn-ob-host-body"><p class="gn-ob-host-kicker">NODKI</p>' +
+      '<p class="gn-ob-host-line" aria-live="polite">' + esc(t(lineKey)) + '</p></div></div>';
+  }
+
+  function renderWelcome() {
+    primarySpec = { label: t('nodki.host.start'), act: function () { navTo(1); } };
+    return '<div class="gn-ob-theme-host gn-theme-toggle-host"></div>' +
+      hostHtml('welcome', 'nodki.host.b0') +
+      '<div class="gn-ob-visual gn-ob-visual-hero"><figure class="ob-piece" style="margin:0">' + heroSvg() + '</figure></div>' +
+      copyBlock('ob.welcome.kicker', 'ob.welcome.title', 'ob.welcome.body') +
+      '<p class="gn-ob-note">' + esc(t(isCloudSession() ? 'ob.welcome.cloudNote' : 'ob.welcome.localNote')) + '</p>' +
+      '<div class="gn-ob-langrow">' + langSegHtml() + '</div>' +
+      '<div class="gn-ob-equalrow"><button type="button" class="gn-ob-eq gn-auth-primary" data-ob-start>' + esc(t('nodki.host.start')) + '</button>' +
+      '<button type="button" class="gn-ob-eq" data-ob-skipeq>' + esc(t('ob.skip')) + '</button></div>';
+  }
+  function renderLoop() {
+    primarySpec = { label: t('ob.next'), act: function () { navTo(2); } };
+    var steps = [
+      ['gn-protocol-event', 'ob.loop.step1'], ['gn-trend-signal', 'ob.loop.step2'], ['gn-command-grid', 'ob.loop.step3']
+    ];
+    var medallions = steps.map(function (s, i) {
+      return (i ? '<span class="gn-ob-thread-seg" aria-hidden="true"></span>' : '') +
+        '<div class="gn-ob-medallion ob-enter" style="--ob-delay:' + (i * 80) + 'ms">' + iconUse(s[0]) +
+        '<span class="gn-ob-medallion-label">' + esc(t(s[1])) + '</span></div>';
+    }).join('');
+    return '<div class="gn-ob-visual"><div class="gn-ob-loop">' + medallions + '</div></div>' +
+      copyBlock('ob.loop.kicker', 'ob.loop.title', 'ob.loop.body');
+  }
+  function zoneRowsHtml() {
+    var zones = [
+      ['gn-command-grid', 'nav.home', 'ob.zones.todayBody'],
+      ['gn-protocol-event', 'nav.shots', 'ob.zones.historyBody'],
+      ['gn-trend-signal', 'nav.results', 'ob.zones.progressBody'],
+      ['gn-lab-vessel', 'nav.lab', 'ob.zones.labBody'],
+      ['gn-vault-core', 'nav.vault', 'ob.zones.vaultBody']
+    ];
+    return zones.map(function (z, i) {
+      var name = t(z[1]); var body = t(z[2]);
+      return '<div class="gn-ob-zone ob-enter" style="--ob-delay:' + (i * 40) + 'ms" role="img" aria-label="' + esc(name + '. ' + body) + '">' +
+        iconUse(z[0]) + '<span class="gn-ob-zone-text"><span class="gn-ob-zone-name">' + esc(name) + '</span>' +
+        '<span class="gn-ob-zone-body">' + esc(body) + '</span></span></div>';
+    }).join('');
+  }
+  function renderMap() {
+    primarySpec = { label: t('ob.next'), act: function () { navTo(3); } };
+    return '<p class="gn-ob-kicker">' + esc(t('ob.zones.kicker')) + '</p>' +
+      '<h2 class="gn-ob-title" data-ob-title tabindex="-1">' + esc(t('ob.zones.title')) + '</h2>' +
+      '<div class="gn-ob-zones">' + zoneRowsHtml() + '</div>';
+  }
+  function renderScheduleBeat() {
+    var html = renderLoop(); // medallions + loop copy; primary overridden below
+    primarySpec = { label: t('nodki.host.beat1Cta'), act: beginScheduleGuide };
+    return hostHtml('focused', 'nodki.host.b1') + html;
+  }
+  function renderShot() {
+    if (shotDegraded) {
+      primarySpec = { label: t('ob.guide.openLog'), act: degradedOpenLog };
+    } else {
+      primarySpec = { label: t(hasAnyShot() ? 'ob.shot.ctaAgain' : 'ob.shot.cta'), act: beginGuide };
     }
-  ];
+    return hostHtml('tablet', 'nodki.host.b2') +
+      '<div class="gn-ob-visual gn-ob-visual-wheel">' + wheelSvg('one-lit') + '</div>' +
+      '<p class="gn-ob-kicker">' + esc(t('ob.shot.kicker')) + '</p>' +
+      '<h2 class="gn-ob-title" data-ob-title tabindex="-1">' + esc(t('ob.shot.title')) + '</h2>' +
+      '<p class="gn-ob-body">' + esc(t(shotDegraded ? 'ob.guide.openFailed' : 'ob.shot.body')) + '</p>' +
+      '<button type="button" class="gn-ob-later" data-ob-later>' + esc(t('ob.shot.later')) + '</button>';
+  }
+  function renderPayoff() {
+    primarySpec = { label: t('ob.curve.cta'), act: function () { navTo(4); } };
+    if (payoffVariant === 'empty') {
+      return hostHtml('thinking', 'nodki.host.b3') +
+        '<div class="gn-ob-visual gn-ob-visual-wheel">' + wheelSvg('plain') + '</div>' +
+        '<p class="gn-ob-kicker">' + esc(t('ob.curve.kicker')) + '</p>' +
+        '<h2 class="gn-ob-title" data-ob-title tabindex="-1">' + esc(t('ob.curve.emptyTitle')) + '</h2>' +
+        '<p class="gn-ob-body">' + esc(t('ob.curve.emptyBody')) + '</p>';
+    }
+    var titleKey = shotCount() > 1 ? 'ob.curve.titleAgain' : 'ob.curve.title';
+    return hostHtml('thinking', 'nodki.host.b3') +
+      '<div class="gn-ob-visual gn-ob-visual-wheel">' + wheelSvg('filled') + '</div>' +
+      '<p class="gn-ob-kicker">' + esc(t('ob.curve.kicker')) + '</p>' +
+      '<h2 class="gn-ob-title" data-ob-title tabindex="-1">' + esc(t(titleKey)) + '</h2>' +
+      '<p class="gn-ob-body">' + esc(t(isCloudSession() ? 'ob.curve.cloudBody' : 'ob.curve.localBody')) + '</p>';
+  }
+  function renderComfort() {
+    /* Beat 4 (Spec A): the scanner cameo briefing. The 1.1.0 theme
+     * picker moved to VAULT (Preferences) in this restructure; the
+     * renderer keeps its name and slot. */
+    primarySpec = { label: t('nodki.host.beat4Cta'), act: beginScannerCameo };
+    return hostHtml('focused', 'nodki.host.b4') +
+      '<p class="gn-ob-kicker">' + esc(t('nodki.host.b4k')) + '</p>' +
+      '<h2 class="gn-ob-title" data-ob-title tabindex="-1">' + esc(t('nodki.host.b4t')) + '</h2>' +
+      '<p class="gn-ob-body">' + esc(t('nodki.host.b4b')) + '</p>' +
+      '<button type="button" class="gn-ob-later" data-ob-later2>' + esc(t('nodki.host.later')) + '</button>';
+  }
+  function renderDone() {
+    primarySpec = { label: t('ob.done.cta'), act: function () { dismiss(true); } };
+    return hostHtml('welcome', 'nodki.host.b5') +
+      '<div class="gn-ob-visual gn-ob-visual-wheel-sm">' + wheelSvg(payoffVariant === 'saved' || hasAnyShot() ? 'one-lit' : 'plain') + '</div>' +
+      copyBlock('ob.done.kicker', 'ob.done.title', 'ob.done.body') +
+      '<ul class="gn-ob-forever"><li>' + esc(t('nodki.host.b5a')) + '</li><li>' + esc(t('nodki.host.b5b')) + '</li><li>' + esc(t('nodki.host.b5c')) + '</li></ul>' +
+      '<div class="gn-ob-zones">' + zoneRowsHtml() + '</div>';
+  }
+
+  var SCREENS = [renderWelcome, renderScheduleBeat, renderShot, renderPayoff, renderComfort, renderDone];
 
   /* ---------------- story surface ---------------- */
 
@@ -378,7 +493,10 @@
         refreshComfortCards();
         return;
       }
-      if (e.target.closest('[data-ob-later]')) { payoffVariant = 'empty'; navTo(4); }
+      if (e.target.closest('[data-ob-later]')) { payoffVariant = 'empty'; navTo(3); }
+      if (e.target.closest('[data-ob-later2]')) { navTo(5); }
+      if (e.target.closest('[data-ob-start]')) { navTo(1); }
+      if (e.target.closest('[data-ob-skipeq]')) { dismiss(false); }
     });
     overlay.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') { e.preventDefault(); dismiss(false); return; }
@@ -431,17 +549,32 @@
     if (!overlay) buildOverlay();
     current = i;
     markState(String(i));
-    overlay.querySelector('.gn-ob-count').textContent =
-      String(i + 1).padStart(2, '0') + ' / ' + String(TOTAL).padStart(2, '0');
+    beatEnter(i);
+    /* Spec A: "Beat n of 5" with Beat 0 pre-filled (endowed progress:
+     * the thread lights its first node at progress 0). */
+    overlay.querySelector('.gn-ob-count').textContent = t('nodki.host.beatOf', { n: i, total: TOTAL - 1 });
     var bar = overlay.querySelector('.gn-ob-progress');
     bar.setAttribute('aria-valuenow', String(i + 1));
     bar.setAttribute('aria-label', t('ob.progress', { n: i + 1, total: TOTAL }));
     bar.innerHTML = threadSvg(i / (TOTAL - 1));
-    overlay.querySelector('.gn-ob-skip').style.display = i === 6 ? 'none' : '';
-    var showBack = shown.length > 1 && !(i === 4 && payoffVariant === 'saved');
+    overlay.querySelector('.gn-ob-skip').style.display = (i === 0 || i === TOTAL - 1) ? 'none' : '';
+    overlay.querySelector('.gn-ob-foot').style.display = i === 0 ? 'none' : '';
+    var showBack = shown.length > 1 && !(i === 3 && payoffVariant === 'saved');
     overlay.querySelector('.gn-ob-back').style.visibility = showBack ? 'visible' : 'hidden';
     var main = overlay.querySelector('[data-ob-main]');
     main.innerHTML = SCREENS[i]();
+    if (i === 3) {
+      /* Beat 3 advances on one scrub/tap on the real curve visual
+       * (the footer primary remains the keyboard equivalent). */
+      var vis = main.querySelector('.gn-ob-visual');
+      if (vis) {
+        vis.style.cursor = 'pointer';
+        vis.addEventListener('pointerdown', function h() {
+          vis.removeEventListener('pointerdown', h);
+          navTo(4);
+        });
+      }
+    }
     overlay.querySelector('[data-ob-primary]').textContent = primarySpec ? primarySpec.label : '';
     main.classList.remove('gn-ob-in-f', 'gn-ob-in-b');
     void main.offsetWidth;
@@ -455,6 +588,7 @@
   }
 
   function navTo(i) {
+    if (current >= 0 && i > current) beatExit(current, 'complete');
     if (shown[shown.length - 1] !== i) shown.push(i);
     renderScreen(i, 'fwd');
   }
@@ -470,15 +604,28 @@
     payoffVariant = 'saved';
     shotDegraded = false;
     shown = [];
+    runStartAt = Date.now();
     navTo(Math.max(0, Math.min(TOTAL - 1, startIndex | 0)));
   }
 
   function dismiss(complete, opts) {
     opts = opts || {};
+    var wasRun = !!overlay || !!guide;
+    var lastBeat = current;
     teardownGuide();
     stopStackWatch();
     if (overlay) { overlay.remove(); overlay = null; }
     shown = []; current = -1;
+    if (wasRun && replayRestore === null) {
+      /* Spec A: persist progress + the ambient quiet window; a clean
+       * finish hands the dashboard card a continuity line, an exit
+       * hands it the neutral VAULT line. No guilt either way. */
+      if (lastBeat >= 0) beatExit(lastBeat, complete ? 'complete' : 'skip');
+      if (complete) writeProgress(TOTAL - 1, true);
+      lsSet('gn_nodki_ob_done_at', String(Date.now()));
+      if (complete) ssSet('gn_nodki_continuity', '1');
+      else ssSet('gn_nodki_guide_exit', '1');
+    }
     if (!opts.keepStamp) clearDoseStamp();
     if (replayRestore !== null) {
       replayRestore = null; // stored state was never overwritten (markState guard)
@@ -514,7 +661,8 @@
 
   var GUIDE_LINES = {
     G1: 'ob.guide.stepLog', G2a: 'ob.guide.stepMed', G2b: 'ob.guide.stepDose',
-    G2c: 'ob.guide.stepContinue', G2d: 'ob.guide.stepSite', G2e: 'ob.guide.stepSave'
+    G2c: 'ob.guide.stepContinue', G2d: 'ob.guide.stepSite', G2e: 'ob.guide.stepSave',
+    S1: 'nodki.host.b1Guide', C1: 'nodki.host.b4Guide'
   };
   var YIELD_SEL = '#futureTimestampConfirm, #arsOv, #phasesOv, #gnDatePickerOverlay, #csvImportOverlay, #loadoutRemoveOverlay, #logOv .cp-dropdown.open';
 
@@ -533,6 +681,14 @@
   }
   function resolveStepTarget(step) {
     var i, candidates;
+    if (step === 'S1') {
+      var sd = document.getElementById('cpShotDayProf');
+      return hasRect(sd) ? sd : null;
+    }
+    if (step === 'C1') {
+      var sc = document.querySelector('#shotsRegionScanner .site-scanner');
+      return hasRect(sc) ? sc : null;
+    }
     if (step === 'G1') {
       candidates = ENTRY_SEL.split(', ');
       for (i = 0; i < candidates.length; i++) {
@@ -625,9 +781,11 @@
       '<div class="gn-ob-scrim" data-pane="right" aria-hidden="true"></div>' +
       '<div class="gn-ob-ring" aria-hidden="true"></div>' +
       '<div class="gn-ob-callout"><p class="gn-ob-callout-line" aria-live="polite"></p>' +
-      '<button type="button" class="gn-ob-callout-skip">' + esc(t('ob.guide.skip')) + '</button></div>';
+      '<button type="button" class="gn-ob-callout-skip">' + esc(t('ob.guide.skip')) + '</button>' +
+      '<button type="button" class="gn-ob-callout-starter" hidden>' + esc(t('nodki.host.starterCta')) + '</button></div>';
     document.body.appendChild(rootEl);
     rootEl.querySelector('.gn-ob-callout-skip').addEventListener('click', function () { skipGuide(); });
+    rootEl.querySelector('.gn-ob-callout-starter').addEventListener('click', function () { starterSchedule(); });
     return rootEl;
   }
 
@@ -638,6 +796,7 @@
       step: null, root: rootEl, target: null, tries: 0, tick: null, placeTimer: null,
       blocked: null, yielded: false, yieldSince: 0, closedAt: 0, tapped: false,
       torn: false, docked: false, scrolledStep: '',
+      s1Picked: false, s1WasOpen: false, backouts: 0,
       panes: {
         top: rootEl.querySelector('[data-pane="top"]'), bottom: rootEl.querySelector('[data-pane="bottom"]'),
         left: rootEl.querySelector('[data-pane="left"]'), right: rootEl.querySelector('[data-pane="right"]')
@@ -645,7 +804,8 @@
       ring: rootEl.querySelector('.gn-ob-ring'),
       callout: rootEl.querySelector('.gn-ob-callout'),
       calloutLine: rootEl.querySelector('.gn-ob-callout-line'),
-      calloutSkip: rootEl.querySelector('.gn-ob-callout-skip')
+      calloutSkip: rootEl.querySelector('.gn-ob-callout-skip'),
+      starterBtn: rootEl.querySelector('.gn-ob-callout-starter')
     };
     guide.tick = window.setInterval(guideTick, 250);
     document.addEventListener('click', guideDocClick, true);
@@ -678,6 +838,10 @@
     guide.tapped = false;
     guide.blocked = null;
     guide.closedAt = 0;
+    guide.s1Picked = false;
+    guide.s1WasOpen = false;
+    guide.backouts = 0;
+    if (guide.starterBtn) guide.starterBtn.hidden = true;
     undockCallout();
     setCalloutLine(t(GUIDE_LINES[step]), false);
     guide.callout.classList.remove('gn-ob-callout-in');
@@ -706,10 +870,14 @@
     guide.tries += 1;
     /* §2.7.2/§2.7.7 budgets: G1 gets the old 6 x 500 ms retry budget
      * before degrading; an in-modal target gets one re-resolve before
-     * the guide exits silently. */
-    var limit = guide.step === 'G1' ? 6 : 1;
+     * the guide exits silently. Spec A steps (S1/C1) never dead-end:
+     * S1 degrades forward to the log beat, C1 back to its briefing. */
+    var limit = (guide.step === 'G1' || guide.step === 'S1' || guide.step === 'C1') ? 6 : 1;
     if (guide.tries > limit) {
-      if (guide.step === 'G1') degradeGuide(); else silentExitGuide();
+      if (guide.step === 'G1') degradeGuide();
+      else if (guide.step === 'S1') { teardownGuide(); showOverlay(); navTo(2); }
+      else if (guide.step === 'C1') { teardownGuide(); showOverlay(); }
+      else silentExitGuide();
       return;
     }
     placeGuide();
@@ -830,6 +998,12 @@
     if (guide.target && (e.target === guide.target || (guide.target.contains && guide.target.contains(e.target)))) {
       guide.tapped = true;
     }
+    if (guide.step === 'S1' && e.target && e.target.closest && e.target.closest('#cpShotDayProf .cp-option')) {
+      guide.s1Picked = true; // the option's own handler fires saveProfileMed: this click IS the save event
+    }
+    if (guide.step === 'C1' && e.target && e.target.closest && e.target.closest('#shotsRegionScanner .biotech-zones [data-site]')) {
+      completeCameo();
+    }
   }
 
   function guideDocKey(e) {
@@ -864,8 +1038,60 @@
     else if (guide.step === 'G2d' && probeSite()) setGuideStep('G2e');
   }
 
+  /* Spec A beat 1: the schedule step completes on the real save event
+   * (an option pick fires saveProfileMed). Backing out twice without
+   * picking surfaces the one-tap starter escape hatch. Never a dead end. */
+  function s1DropdownOpen() {
+    var drop = document.getElementById('cpShotDayProfDrop');
+    if (!drop) return false;
+    if (drop.classList.contains('open')) return true;
+    return window.getComputedStyle(drop).display !== 'none' && drop.getBoundingClientRect().height > 0;
+  }
+  function s1Tick() {
+    if (!guide || guide.torn) return;
+    if (guide.s1Picked) {
+      if (!s1DropdownOpen()) completeSchedule();
+      return;
+    }
+    var open = s1DropdownOpen();
+    if (guide.s1WasOpen && !open) {
+      guide.backouts += 1;
+      if (guide.backouts >= 2 && guide.starterBtn) guide.starterBtn.hidden = false;
+    }
+    guide.s1WasOpen = open;
+  }
+  function completeSchedule() {
+    teardownGuide();
+    showOverlay();
+    navTo(2);
+  }
+  function applyStarterSchedule() {
+    var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    var idx = new Date().getDay();
+    try {
+      if (typeof window.selectOpt === 'function' && typeof window.saveProfileMed === 'function') {
+        window.selectOpt('cpShotDayProf', String(idx), days[idx], window.saveProfileMed);
+        return true;
+      }
+    } catch (e) { /* fall through: the beat still completes */ }
+    return false;
+  }
+  function starterSchedule() {
+    applyStarterSchedule();
+    completeSchedule();
+  }
+  /* Spec A beat 4: one site tap on the real scanner completes the cameo. */
+  function completeCameo() {
+    if (!guide || guide.torn) return;
+    teardownGuide();
+    showOverlay();
+    navTo(5);
+  }
+
   function guideTick() {
     if (!guide || guide.torn) return;
+    if (guide.step === 'S1') { s1Tick(); if (guide && !guide.torn) placeGuide(); return; }
+    if (guide.step === 'C1') { placeGuide(); return; }
     /* §2.7.6 yield: an overlay the modal spawned hides the guide whole */
     var spawned = spawnedOverlayOpen();
     if (spawned) {
@@ -932,7 +1158,10 @@
     if (!guide || guide.torn || guide.step === 'G1') return;
     teardownGuide();
     payoffVariant = 'saved';
-    whenClear(function () { showOverlay(); navTo(4); });
+    metricsUpdate(function (m) {
+      if (!m.firstLogAt) { m.firstLogAt = Date.now(); m.firstLogMs = runStartAt ? Date.now() - runStartAt : null; }
+    });
+    whenClear(function () { showOverlay(); navTo(3); });
   }
 
   /* §2.9 serialization: advance only once celebrate + modals are gone.
@@ -950,13 +1179,15 @@
 
   function skipGuide() {
     if (!guide) return;
+    if (guide.step === 'S1') { completeSchedule(); return; } // skipping the beat moves forward
+    if (guide.step === 'C1') { completeCameo(); return; }
     if (guide.step === 'G1') {
       /* §2.7.5 G1: back to the story surface at the payoff-empty screen */
       teardownGuide();
       clearDoseStamp();
       payoffVariant = 'empty';
       showOverlay();
-      navTo(4);
+      navTo(3);
     } else {
       /* §2.7.5 G2: the guide exits; the modal stays exactly as left */
       dismiss(false, { keepStamp: true });
@@ -975,17 +1206,18 @@
     teardownGuide();
     shotDegraded = true;
     showOverlay();
-    renderScreen(3, 'fwd');
+    renderScreen(2, 'fwd');
   }
   function silentExitGuide() {
     teardownGuide();
-    markState('3');
+    markState('2');
   }
 
   function refreshGuideCopy() {
     if (!guide) return;
     guide.root.setAttribute('aria-label', t('ob.guide.barLabel'));
     guide.calloutSkip.textContent = t('ob.guide.skip');
+    if (guide.starterBtn) guide.starterBtn.textContent = t('nodki.host.starterCta');
     if (guide.blocked) {
       var names = guide.blocked.fields.map(function (f) { return t('ob.guide.field.' + f); }).join(', ');
       setCalloutLine(t('ob.guide.blocked', { fields: names }), true);
@@ -994,7 +1226,43 @@
     }
   }
 
-  /* ---------------- hand-off (screen 3 -> guide) ---------------- */
+  /* ---------------- hand-offs (beats -> real surfaces) ---------------- */
+
+  /* Beat 1: spotlight the real SHOT DAY control on the profile page.
+   * Completion is the save event itself (see s1Tick). */
+  function beginScheduleGuide() {
+    markState('guide');
+    hideOverlay();
+    try {
+      if (typeof window.showPage === 'function') {
+        window.showPage('Profile', document.getElementById('navVault'));
+      }
+    } catch (e) { /* resolution below degrades forward */ }
+    var sb = document.getElementById('scrollBody');
+    if (sb) sb.scrollTop = 0;
+    window.setTimeout(function () {
+      var el = document.getElementById('cpShotDayProf');
+      if (el) { try { el.scrollIntoView({ block: 'center' }); } catch (e) { /* ignore */ } }
+      startGuide('S1');
+    }, 450);
+  }
+
+  /* Beat 4: the scanner cameo on the real HISTORY scanner. No camera,
+   * no capture: one site tap (or Skip / Later) completes it. */
+  function beginScannerCameo() {
+    markState('guide');
+    hideOverlay();
+    try {
+      if (typeof window.showPage === 'function') {
+        window.showPage('History', document.getElementById('navLog'));
+      }
+    } catch (e) { /* resolution below degrades back to the briefing */ }
+    window.setTimeout(function () {
+      var r = document.getElementById('shotsRegionScanner');
+      if (r) { try { r.scrollIntoView({ block: 'center' }); } catch (e) { /* ignore */ } }
+      startGuide('C1');
+    }, 450);
+  }
 
   function beginGuide() {
     stampDoseStart();
@@ -1068,11 +1336,15 @@
   }
 
   function resumeIndex(raw) {
-    if (raw === 'guide') return 3; // §2.10: never resume into a live spotlight
+    /* Spec A (1.3.0): progress persists across sessions — resume at the
+     * same beat, never restart. The persisted progress store is the
+     * authority; the v3 state string mirrors it. */
+    var prog = readProgress();
+    var pb = prog && typeof prog.beat === 'number' ? prog.beat : null;
+    if (raw === 'guide') return pb !== null ? pb : 2; // never resume into a live spotlight
     var idx = parseInt(raw, 10);
-    if (!isNaN(idx) && idx >= 0 && idx < TOTAL) {
-      return ssGet(SESSION_KEY) === '1' ? idx : 0; // same-session resume only
-    }
+    if (!isNaN(idx) && idx >= 0 && idx < TOTAL) return idx;
+    if (pb !== null && pb >= 0 && pb < TOTAL) return pb;
     return 0;
   }
 
@@ -1082,7 +1354,12 @@
     if (isTerminal(raw)) return;
     if (isTerminal(lsGet(LEGACY_STATE_KEY)) || lsGet(LEGACY_STATE_KEY) === 'complete') return;
     if (lsGet(LEGACY_DISMISSED_KEY) === '1') return;
-    if (hasAnyShot()) return;
+    if (hasAnyShot()) {
+      /* A run that already banked its first log resumes at its payoff
+       * beats instead of dying silently; earlier beats stay gated. */
+      var prog = readProgress();
+      if (!(prog && !prog.done && typeof prog.beat === 'number' && prog.beat >= 3)) return;
+    }
     if (!inApp()) return;
     startWhenWhatsNewClears(function () {
       if (isActive() || !inApp()) return;
@@ -1113,13 +1390,26 @@
       startRun(0);
     });
   }
+  function apiResume() {
+    if (isActive() || !inApp()) return;
+    var raw = readState();
+    if (isTerminal(raw)) return;
+    startWhenWhatsNewClears(function () {
+      if (isActive() || !inApp()) return;
+      ssSet(SESSION_KEY, '1');
+      startRun(resumeIndex(raw));
+    });
+  }
   function apiState() { return { raw: readState(), screen: current, active: isActive() }; }
 
   window.GN_ONBOARDING = Object.freeze({
     start: apiStart,
     restart: apiRestart,
+    resume: apiResume,
     dismiss: function () { dismiss(false); },
     state: apiState,
+    progress: function () { return readProgress(); },
+    metrics: function () { try { return JSON.parse(lsGet(METRICS_KEY) || 'null'); } catch (e) { return null; } },
     screen: function () { return current; },
     active: isActive
   });

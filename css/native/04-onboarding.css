@@ -293,3 +293,44 @@
   .gn-ob-in-f, .gn-ob-in-b, .gn-ob-callout-in, .gn-ob-check { animation: none; }
   .gn-ob-ring { transition: none; }
 }
+
+/* NODKI host layer (Spec A, 1.3.0): reserved in-flow slot framing each
+ * beat. Built from the site's own card tokens (surface, border, radius,
+ * elevation, spacing) — no new colors, radii, or shadows. Host line
+ * meets the Spec C.4 readability floor: >=17px, line-height >=1.5,
+ * sentence case, flat surface behind the text, art beside it. */
+.gn-ob-host {
+  display: flex; gap: var(--sp-3); align-items: flex-start; width: 100%;
+  background: var(--surface-2); border: 1px solid var(--border-1);
+  border-radius: var(--radius-card); box-shadow: var(--elev-1);
+  padding: var(--sp-3); margin-bottom: var(--sp-3);
+}
+.gn-ob-host-img { flex: 0 0 72px; width: 72px; height: 72px; object-fit: contain; display: block; }
+.gn-ob-host-body { min-width: 0; }
+.gn-ob-host-kicker {
+  margin: 0 0 2px; font-size: var(--type-caption); letter-spacing: .14em;
+  color: var(--brand-cyan); font-family: var(--font-body);
+}
+.gn-ob-host-line { margin: 0; font-size: 17px; line-height: 1.5; color: var(--text-1); font-family: var(--font-body); }
+/* Beat 0: Start / Skip at equal weight and size. */
+.gn-ob-equalrow { display: flex; gap: var(--sp-3); width: 100%; margin-top: var(--sp-3); }
+.gn-ob-eq {
+  flex: 1 1 0; min-height: 52px; padding: 0 var(--sp-3); cursor: pointer;
+  border-radius: var(--radius-card); font-family: var(--font-body);
+  font-size: var(--type-body); font-weight: 600;
+  background: var(--surface-2); border: 1px solid var(--border-1); color: var(--text-1);
+}
+.gn-ob-eq.gn-auth-primary { background: var(--brand-cyan); border-color: var(--brand-cyan); color: var(--surface-1); }
+/* Beat 5 forever-controls list. */
+.gn-ob-forever { margin: var(--sp-3) 0 0; padding-left: var(--sp-4); color: var(--text-1); font-size: 17px; line-height: 1.5; font-family: var(--font-body); }
+.gn-ob-forever li { margin-bottom: var(--sp-2); }
+/* Guide callout starter escape hatch (Beat 1): same chrome as Skip. */
+.gn-ob-callout-starter {
+  display: block; margin-left: auto; min-height: 48px; padding: 0 4px;
+  background: none; border: 0; cursor: pointer;
+  font-family: var(--font-body); font-size: var(--type-caption); color: var(--brand-cyan);
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.gn-ob-callout-starter[hidden] { display: none; }
+/* The guide callout carries NODKI lines in 1.3.0: C.4 floor applies. */
+.gn-ob-callout-line { font-size: 17px; line-height: 1.5; }

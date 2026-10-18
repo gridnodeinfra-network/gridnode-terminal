@@ -38,9 +38,15 @@
           <img id="gnNodkiImg" alt="" width="56" height="56" decoding="async">
         </button>
         <div class="gn-nodki-body">
-          <div class="gn-nodki-kicker" data-i18n="nodki.kicker">NODKI // GRID OPERATOR</div>
+          <div class="gn-nodki-top">
+            <div class="gn-nodki-kicker" id="gnNodkiKicker" data-i18n="nodki.kicker">NODKI // GRID OPERATOR</div>
+            <button type="button" class="gn-nodki-dismiss" id="gnNodkiDismiss" onclick="gnNodkiDismiss()" data-i18n-aria-label="nodki.dismiss" aria-label="Dismiss" hidden>×</button>
+          </div>
           <div class="gn-nodki-line" id="gnNodkiLine"></div>
-          <button type="button" class="gn-nodki-cta" id="gnNodkiCta" onclick="gnNodkiCta()" data-i18n="nodki.firstCta" hidden>LOG YOUR FIRST SHOT</button>
+          <div class="gn-nodki-actions">
+            <button type="button" class="gn-nodki-cta" id="gnNodkiCta" onclick="gnNodkiCta()" data-i18n="nodki.firstCta" hidden>LOG YOUR FIRST SHOT</button>
+            <button type="button" class="gn-nodki-more" id="gnNodkiMore" onclick="gnNodkiTap()" data-i18n="nodki.more">MORE FROM NODKI</button>
+          </div>
         </div>
       </div>
 

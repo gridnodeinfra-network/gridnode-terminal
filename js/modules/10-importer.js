@@ -172,8 +172,9 @@ export function confirmBackupImport() {
   getWeights().filter(record => !preWeightIds.has(record.id)).forEach(record => queueCloudSync('weight', record));
   const count = (backup.shots?.length || 0) + (backup.weights?.length || 0); cancelCSVImport(); refreshAll(); actionFeedback(tx('backup.restored', 'BACKUP RESTORED'), tx('backup.restoredDetail', '{count} RECORD{plural} REVIEWED // LOCAL HISTORY UPDATED', { count, plural: count === 1 ? '' : 'S' }));
 }
-export function cancelCSVImport() { moduleState.pendingImport = null; moduleState.pendingImportMeta = null; moduleState.pendingBackup = null; const rowsHost = $('csvImportRows'); if (rowsHost) rowsHost.innerHTML = ''; const confirm = $('csvImportConfirmBtn'); if (confirm) { confirm.setAttribute('onclick', 'confirmCSVImport()'); confirm.textContent = tx('backup.importButton', 'IMPORT TO SHOTS HISTORY'); } setText('csvImportTitle', tx('backup.csvPreviewTitle', 'CSV IMPORT PREVIEW')); setText('csvImportFormat', tx('backup.csvReviewCopy', 'Review detected user-entered protocol records before appending them to SHOTS HISTORY.')); $('csvImportOverlay')?.classList.remove('active'); }
+export function cancelCSVImport() { try { window.GN_NODKI_WAIT && window.GN_NODKI_WAIT.stop(); } catch (e) { /* ambient layer optional */ } moduleState.pendingImport = null; moduleState.pendingImportMeta = null; moduleState.pendingBackup = null; const rowsHost = $('csvImportRows'); if (rowsHost) rowsHost.innerHTML = ''; const confirm = $('csvImportConfirmBtn'); if (confirm) { confirm.setAttribute('onclick', 'confirmCSVImport()'); confirm.textContent = tx('backup.importButton', 'IMPORT TO SHOTS HISTORY'); } setText('csvImportTitle', tx('backup.csvPreviewTitle', 'CSV IMPORT PREVIEW')); setText('csvImportFormat', tx('backup.csvReviewCopy', 'Review detected user-entered protocol records before appending them to SHOTS HISTORY.')); $('csvImportOverlay')?.classList.remove('active'); }
 export function confirmCSVImport() {
+  try { window.GN_NODKI_WAIT && window.GN_NODKI_WAIT.start('import'); } catch (e) { /* ambient layer optional */ }
   const pending = moduleState.pendingImport || [];
   const forced = new Set(pending.map((item, index) => item && item.forced ? index : -1).filter(index => index >= 0));
   const rechecked = classifyCSVRows(pending.map(item => item.row || item), getAllShots(), getWeights());
@@ -209,6 +210,8 @@ export function confirmCSVImport() {
     queueCloudSync('workspace');
   }
   const count = additions.length; cancelCSVImport(); refreshAll(); actionFeedback(tx('backup.importSaved', 'IMPORT SAVED'), tx('backup.importSavedDetail', '{count} NEW RECORD{plural} // REVIEW STATE PRESERVED', { count, plural: count === 1 ? '' : 'S' }));
+  try { window.GN_NODKI_WAIT && window.GN_NODKI_WAIT.stop(); } catch (e) { /* ambient layer optional */ }
+  try { window.GN_NODKI_AMBIENT && window.GN_NODKI_AMBIENT.queueEvent('importDone'); } catch (e) { /* ambient layer optional */ }
 }
 /* ── BRING YOUR HISTORY: Shotsy JSON import + shared preview ──
  * Shotsy JSON (.shotsyjson) is the primary import path: typed doses, unix

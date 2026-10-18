@@ -94,6 +94,8 @@ CORE_MODULE_FILES = [
     "11-misc.js",
     "13-tactile.js",
     "14-nodki.js",
+    "15-nodki-library.js",
+    "16-nodki-ambient.js",
 ]
 CHUNKS = {
     "history": ["03-shots-history.js", "04-scanner.js"],

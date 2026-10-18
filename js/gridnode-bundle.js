@@ -4116,28 +4116,54 @@ const GN_TACTILE_ESSENTIAL = Object.freeze({ warn: true, error: true });
     });
   } catch (_) {}
 })();
-/* GRID//NODE — NODKI companion (v1.3.0 prototype).
+/* GRID//NODE — NODKI companion (1.3.0).
  * A contextual, static-by-default voice for systems that already work.
- * Design law (research synthesis, 2026-10-17): narrate app state only —
- * never medical advice, never guilt, never interruption. No timers, no
- * polling, no proactive appearances: the card recomputes on real state
- * changes (boot, navigation, a saved record, a settings flip) and on
- * user taps. Animation is one-shot transform/opacity, disabled under
- * prefers-reduced-motion. The user can fire him completely from the
- * VAULT (gn_nodki_v1) and the setting is sticky. */
+ * Design law (Mission 13 + Specs A/B, 2026-10-17): narrate app state
+ * only — never medical advice, never guilt, never interruption. The
+ * card recomputes on real state changes (boot, navigation, a saved
+ * record, a settings flip) and on user taps. Every line renders with
+ * an expression from its approved pairing (15-nodki-library.js
+ * PAIRING MAP); consecutive appearances on this surface never repeat
+ * the same expression when an approved alternate exists (persisted in
+ * gn_nodki_expr_v1). Proactive appearances share one session budget
+ * (<=2: state narration + celebrations + ambient tips), owned here and
+ * spent by 16-nodki-ambient through GN_NODKI.budget. The user can fire
+ * him completely from the VAULT (gn_nodki_v1) and it sticks. */
 (function () {
   'use strict';
   var KEY = 'gn_nodki_v1';
   var SEEN_KEY = 'gn_nodki_milestones_seen';
+  var EXPR_KEY = 'gn_nodki_expr_v1';
+  var BUDGET_KEY = 'gn_nodki_budget_v1';
   var MILESTONES = [7, 25, 50, 100, 200, 365, 500, 1000];
-  var POSES = {
+  var FALLBACK_ASSETS = {
     welcome: 'assets/mascot/nodki-pose-welcome.webp',
     neutral: 'assets/mascot/nodki-pose-neutral.webp',
     approve: 'assets/mascot/nodki-pose-approve.webp',
     celebrate: 'assets/mascot/nodki-pose-celebrate.webp',
-    tablet: 'assets/mascot/nodki-pose-tablet.webp'
+    tablet: 'assets/mascot/nodki-pose-tablet.webp',
+    analyze: 'assets/mascot/nodki-pose-analyze.webp',
+    default: 'assets/mascot/nodki-expr-default.webp',
+    happy: 'assets/mascot/nodki-expr-happy.webp',
+    focused: 'assets/mascot/nodki-expr-focused.webp',
+    cheeky: 'assets/mascot/nodki-expr-cheeky.webp',
+    thinking: 'assets/mascot/nodki-expr-thinking.webp',
+    concerned: 'assets/mascot/nodki-expr-concerned.webp'
   };
-  var state = { pose: null, tipIdx: 0, revertTimer: 0 };
+  var FALLBACK_STATE_EXPR = {
+    firstRun: { expr: 'welcome', alts: [] },
+    loggedToday: { expr: 'approve', alts: ['happy'] },
+    returning: { expr: 'default', alts: ['neutral'] },
+    dueToday: { expr: 'focused', alts: ['default'] },
+    afterLog: { expr: 'celebrate', alts: ['happy'] },
+    milestone: { expr: 'celebrate', alts: ['happy'] },
+    tablet: { expr: 'tablet', alts: ['thinking'] }
+  };
+  var state = { expr: null, tipIdx: 0, revertTimer: 0, ctaMode: 'log', ambientCbs: null, ambientShownAt: 0 };
+
+  function lib() { return window.GN_NODKI_LIBRARY || null; }
+  function exprAssets() { var l = lib(); return (l && l.exprAssets) || FALLBACK_ASSETS; }
+  function stateExpr(name) { var l = lib(); return (l && l.stateExpr && l.stateExpr[name]) || FALLBACK_STATE_EXPR[name] || { expr: 'default', alts: [] }; }
 
   function enabled() {
     try { return localStorage.getItem(KEY) !== 'off'; } catch (_) { return true; }
@@ -4174,46 +4200,112 @@ const GN_TACTILE_ESSENTIAL = Object.freeze({ warn: true, error: true });
       return new Intl.DateTimeFormat(lang(), { weekday: 'short' }).format(d);
     } catch (_) { return ''; }
   }
+
+  /* ---------------- shared proactive budget (Spec B) ---------------- */
+  function budget() {
+    try { return JSON.parse(sessionStorage.getItem(BUDGET_KEY) || 'null') || { count: 0, narrated: false, ambient: 0 }; }
+    catch (_) { return { count: 0, narrated: false, ambient: 0 }; }
+  }
+  function saveBudget(b) { try { sessionStorage.setItem(BUDGET_KEY, JSON.stringify(b)); } catch (_) {} }
+  var GN_BUDGET = {
+    canProactive: function () { return budget().count < 2; },
+    canAmbient: function () { var b = budget(); return b.count < 2 && b.ambient < 1; },
+    spendNarration: function () { var b = budget(); if (!b.narrated) { b.narrated = true; b.count += 1; saveBudget(b); } },
+    spendProactive: function () { var b = budget(); b.count += 1; saveBudget(b); },
+    spendAmbient: function () { var b = budget(); b.count += 1; b.ambient += 1; saveBudget(b); }
+  };
+
+  /* ---------------- expression pairing + anti-repetition ------------ */
+  function lastExpr(surface) {
+    try { return (JSON.parse(localStorage.getItem(EXPR_KEY) || '{}') || {})[surface] || null; } catch (_) { return null; }
+  }
+  function saveExpr(surface, expr) {
+    try {
+      var m = JSON.parse(localStorage.getItem(EXPR_KEY) || '{}') || {};
+      m[surface] = expr;
+      localStorage.setItem(EXPR_KEY, JSON.stringify(m));
+    } catch (_) {}
+  }
+  function pickExpr(primary, alts, surface) {
+    var last = lastExpr(surface || 'card');
+    var chosen = primary;
+    if (last === primary && alts && alts.length) {
+      for (var i = 0; i < alts.length; i++) { if (alts[i] !== last) { chosen = alts[i]; break; } }
+    }
+    saveExpr(surface || 'card', chosen);
+    return chosen;
+  }
+
   function computeState() {
     var all = shots();
-    if (!all.length) return { pose: 'welcome', key: 'nodki.firstRun', vars: {}, cta: true };
+    if (!all.length) return { name: 'firstRun', key: 'nodki.firstRun', vars: {}, cta: true };
     var sorted = all.slice().sort(function (a, b) { return String(a.date || '').localeCompare(String(b.date || '')); });
     var last = sorted[sorted.length - 1];
     var lastD = new Date(last.date);
     var now = new Date();
-    if (dayKey(lastD) === dayKey(now)) return { pose: 'approve', key: 'nodki.loggedToday', vars: {}, cta: false };
-    var gapDays = Math.floor((dayKey(now) - dayKey(lastD)) / 1); // calendar-day difference via key math below
-    gapDays = Math.round((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(lastD.getFullYear(), lastD.getMonth(), lastD.getDate())) / 864e5);
-    if (gapDays >= 3) return { pose: 'neutral', key: 'nodki.returning', vars: { day: dayName(last.date) }, cta: false };
-    return { pose: 'neutral', key: 'nodki.dueToday', vars: { day: dayName(last.date) }, cta: false };
+    if (dayKey(lastD) === dayKey(now)) return { name: 'loggedToday', key: 'nodki.loggedToday', vars: {}, cta: false };
+    var gapDays = Math.round((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(lastD.getFullYear(), lastD.getMonth(), lastD.getDate())) / 864e5);
+    if (gapDays >= 3) return { name: 'returning', key: 'nodki.returning', vars: { day: dayName(last.date) }, cta: false };
+    return { name: 'dueToday', key: 'nodki.dueToday', vars: { day: dayName(last.date) }, cta: false };
   }
   function els() {
     return {
       card: document.getElementById('gnNodkiCard'),
       img: document.getElementById('gnNodkiImg'),
       line: document.getElementById('gnNodkiLine'),
-      cta: document.getElementById('gnNodkiCta')
+      cta: document.getElementById('gnNodkiCta'),
+      kicker: document.getElementById('gnNodkiKicker'),
+      dismiss: document.getElementById('gnNodkiDismiss'),
+      more: document.getElementById('gnNodkiMore')
     };
   }
-  function applyPose(pose) {
-    var e = els(); if (!e.img || state.pose === pose) { if (e.img) state.pose = pose; }
-    if (e.img && POSES[pose] && e.img.getAttribute('src') !== POSES[pose]) {
-      e.img.setAttribute('src', POSES[pose]);
+  function applyExpr(expr) {
+    var e = els(); var assets = exprAssets();
+    if (e.img && assets[expr] && e.img.getAttribute('src') !== assets[expr]) {
+      e.img.setAttribute('src', assets[expr]);
     }
-    state.pose = pose;
+    state.expr = expr;
   }
+  function setKicker(text) { var e = els(); if (e.kicker) e.kicker.textContent = text; }
   function render() {
     var e = els(); if (!e.card) return;
     if (!enabled()) { e.card.hidden = true; return; }
     e.card.hidden = false;
+    state.ctaMode = 'log'; state.ambientCbs = null;
+    if (e.dismiss) e.dismiss.hidden = true;
+    if (e.more) { var ambOn = false; try { ambOn = !!(window.GN_NODKI_AMBIENT && window.GN_NODKI_AMBIENT.state.active()); } catch (_) {} e.more.hidden = !ambOn; }
+    setKicker(tx('nodki.kicker', null, 'NODKI // GRID OPERATOR'));
+    // Spec A continuity / guide-exit / resume re-offer lines outrank
+    // plain state narration (decided by the ambient module).
+    var amb = window.GN_NODKI_AMBIENT;
+    var ov = null;
+    try { ov = amb && amb.cardOverride ? amb.cardOverride() : null; } catch (_) { ov = null; }
+    GN_BUDGET.spendNarration();
+    if (ov) {
+      var pair = { expr: ov.expr, alts: ov.alts || [] };
+      applyExpr(pickExpr(pair.expr, pair.alts, 'card'));
+      if (e.line) e.line.textContent = tx(ov.key, ov.vars || {}, ov.fallback || '');
+      if (e.cta) {
+        if (ov.cta === 'resume') { state.ctaMode = 'resume'; e.cta.hidden = false; e.cta.textContent = tx('nodki.host.resumeCta', null, 'RESUME'); }
+        else e.cta.hidden = true;
+      }
+      return;
+    }
     var s = computeState();
-    applyPose(s.pose);
+    var p = stateExpr(s.name);
+    applyExpr(pickExpr(p.expr, p.alts, 'card'));
     if (e.line) e.line.textContent = tx(s.key, s.vars, '');
-    if (e.cta) e.cta.hidden = !s.cta;
+    if (e.cta) { e.cta.hidden = !s.cta; if (s.cta) e.cta.textContent = tx('nodki.firstCta', null, 'LOG YOUR FIRST SHOT'); }
   }
-  function flash(pose, key, vars, ms) {
+  function flash(pairName, key, vars, ms) {
     var e = els(); if (!e.card || !enabled()) return;
-    applyPose(pose);
+    if (!GN_BUDGET.canProactive()) { render(); return; } // budget spent: narration outranks
+    GN_BUDGET.spendProactive();
+    var p = stateExpr(pairName);
+    applyExpr(pickExpr(p.expr, p.alts, 'card'));
+    setKicker(tx('nodki.kicker', null, 'NODKI // GRID OPERATOR'));
+    if (e.dismiss) e.dismiss.hidden = true;
+    state.ctaMode = 'log'; state.ambientCbs = null;
     if (e.line) e.line.textContent = tx(key, vars, '');
     if (e.cta) e.cta.hidden = true;
     if (!reducedMotion() && e.card) {
@@ -4221,10 +4313,37 @@ const GN_TACTILE_ESSENTIAL = Object.freeze({ warn: true, error: true });
       void e.card.offsetWidth;
       e.card.classList.add('gn-nodki-pop');
     }
-    try { window.GN_HAPTICS && window.GN_HAPTICS.fire(pose === 'celebrate' ? 'confirm' : 'tick'); } catch (_) {}
+    try { window.GN_HAPTICS && window.GN_HAPTICS.fire(pairName === 'milestone' || pairName === 'afterLog' ? 'confirm' : 'tick'); } catch (_) {}
     clearTimeout(state.revertTimer);
     state.revertTimer = setTimeout(render, ms || 5200);
   }
+  /* Ambient surface API: 16-nodki-ambient renders library lines here.
+   * Returns false when the surface is unavailable (mascot off). */
+  function showAmbient(spec, cbs) {
+    var e = els(); if (!e.card || !enabled()) return false;
+    e.card.hidden = false;
+    clearTimeout(state.revertTimer);
+    applyExpr(pickExpr(spec.expr, spec.alts || [], 'card'));
+    setKicker(spec.label || tx('nodki.kicker', null, 'NODKI // GRID OPERATOR'));
+    if (e.line) e.line.textContent = spec.text || '';
+    state.ambientCbs = cbs || null;
+    state.ambientShownAt = Date.now();
+    state.ctaMode = 'ambient';
+    if (e.dismiss) e.dismiss.hidden = false;
+    if (e.cta) {
+      if (spec.cta) { e.cta.hidden = false; e.cta.textContent = spec.cta; }
+      else e.cta.hidden = true;
+    }
+    return true;
+  }
+  function dismissAmbient() {
+    var cbs = state.ambientCbs;
+    var dwell = Date.now() - (state.ambientShownAt || Date.now());
+    state.ambientCbs = null;
+    if (cbs && cbs.onDismiss) { try { cbs.onDismiss(dwell); } catch (_) {} }
+    render();
+  }
+
   function milestoneCrossed(prev, now) {
     var seen = [];
     try { seen = JSON.parse(localStorage.getItem(SEEN_KEY) || '[]'); } catch (_) {}
@@ -4243,10 +4362,10 @@ const GN_TACTILE_ESSENTIAL = Object.freeze({ warn: true, error: true });
     var now = shots().length;
     var prev = Math.max(0, now - 1);
     var m = milestoneCrossed(prev, now);
-    if (m) { flash('celebrate', 'nodki.milestone', { n: m }, 7000); return; }
+    if (m) { flash('milestone', 'nodki.milestone', { n: m }, 7000); return; }
     var rec = (ev && ev.detail && ev.detail.record) || {};
-    if (rec.site) flash('celebrate', 'nodki.afterLog', { site: rec.site }, 5200);
-    else flash('celebrate', 'nodki.afterLogPlain', {}, 5200);
+    if (rec.site) flash('afterLog', 'nodki.afterLog', { site: rec.site }, 5200);
+    else flash('afterLog', 'nodki.afterLogPlain', {}, 5200);
   });
   document.addEventListener('gn:nodki-setting', render);
   document.addEventListener('click', function (ev) {
@@ -4255,19 +4374,807 @@ const GN_TACTILE_ESSENTIAL = Object.freeze({ warn: true, error: true });
   });
   document.addEventListener('visibilitychange', function () { if (!document.hidden) render(); });
 
-  window.GN_NODKI = { enabled: enabled, setEnabled: setEnabled, render: render };
+  window.GN_NODKI = {
+    enabled: enabled, setEnabled: setEnabled, render: render,
+    budget: GN_BUDGET, pickExpr: pickExpr, showAmbient: showAmbient,
+    dismissAmbient: dismissAmbient, stateExpr: stateExpr
+  };
   window.gnNodkiTap = function () {
     if (!enabled()) return;
+    var amb = window.GN_NODKI_AMBIENT;
+    if (amb && amb.pull) { amb.pull(); return; }
     var tips = ['nodki.tip1', 'nodki.tip2', 'nodki.tip3', 'nodki.tip4'];
     var key = tips[state.tipIdx % tips.length]; state.tipIdx += 1;
-    flash(state.pose === 'celebrate' ? 'celebrate' : 'tablet', key, {}, 6000);
+    flash('tablet', key, {}, 6000);
   };
   window.gnNodkiCta = function () {
+    if (state.ctaMode === 'resume') {
+      try { if (window.GN_ONBOARDING && window.GN_ONBOARDING.resume) window.GN_ONBOARDING.resume(); } catch (_) {}
+      return;
+    }
+    if (state.ctaMode === 'ambient' && state.ambientCbs && state.ambientCbs.onCta) {
+      var cbs = state.ambientCbs; state.ambientCbs = null;
+      try { cbs.onCta(); } catch (_) {}
+      setTimeout(render, 350);
+      return;
+    }
     try { if (typeof window.handleShotFab === 'function') window.handleShotFab(); } catch (_) {}
   };
+  window.gnNodkiDismiss = function () { dismissAmbient(); };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render);
   else render();
   setTimeout(render, 1600); // after boot hydration settles; a render is idempotent and cheap
+})();
+/* GRID//NODE — NODKI lines library (Spec B, 1.3.0).
+ * The finite, auditable line library for ambient tips (TIP) and facts
+ * (FIELD NOTE). Every line declares its expression pairing (Pipe,
+ * 2026-10-17): a primary expression + approved alternates, chosen by
+ * meaning from the pairing map below. A line may never render with an
+ * expression outside its approved pair. Facts obey Spec B.5: general
+ * domain only, never about the user or their protocol, no effect verbs
+ * on compounds, mandatory named source + two-question risk review,
+ * enforced by scripts/lint-nodki-library.cjs.
+ *
+ * PAIRING MAP (content class -> expressions):
+ *   state: dose due      -> focused  [default]
+ *   state: logged today  -> approve  [happy]
+ *   state: returning     -> default  [neutral]
+ *   state: first run     -> welcome  []
+ *   celebration          -> celebrate [happy]
+ *   support / errors     -> concerned [concerned]  (always; no grin)
+ *   tip: scanner/how-to  -> focused  [default]
+ *   tip: planning        -> thinking [focused|default]
+ *   tip: light feature   -> default  [thinking]
+ *   tip: playful         -> cheeky   [default]   (sparing, by kind)
+ *   fact (FIELD NOTE)    -> thinking [default]
+ *   wait                 -> thinking [focused]
+ *   onboarding beats     -> per Spec A (welcome/focused/tablet/thinking)
+ */
+(function () {
+  'use strict';
+
+  var EXPR_ASSETS = {
+    welcome: 'assets/mascot/nodki-pose-welcome.webp',
+    neutral: 'assets/mascot/nodki-pose-neutral.webp',
+    approve: 'assets/mascot/nodki-pose-approve.webp',
+    celebrate: 'assets/mascot/nodki-pose-celebrate.webp',
+    tablet: 'assets/mascot/nodki-pose-tablet.webp',
+    analyze: 'assets/mascot/nodki-pose-analyze.webp',
+    default: 'assets/mascot/nodki-expr-default.webp',
+    happy: 'assets/mascot/nodki-expr-happy.webp',
+    focused: 'assets/mascot/nodki-expr-focused.webp',
+    cheeky: 'assets/mascot/nodki-expr-cheeky.webp',
+    thinking: 'assets/mascot/nodki-expr-thinking.webp',
+    concerned: 'assets/mascot/nodki-expr-concerned.webp'
+  };
+
+  /* State lines for the companion card (Spec A continuity + state
+   * narration). i18n keys live in the catalogs (nodki.*); these are the
+   * expression pairings for each state, shared by 14-nodki. */
+  var STATE_EXPR = {
+    firstRun: { expr: 'welcome', alts: [] },
+    loggedToday: { expr: 'approve', alts: ['happy'] },
+    returning: { expr: 'default', alts: ['neutral'] },
+    dueToday: { expr: 'focused', alts: ['default'] },
+    afterLog: { expr: 'celebrate', alts: ['happy'] },
+    milestone: { expr: 'celebrate', alts: ['happy'] },
+    continuity: { expr: 'welcome', alts: ['default'] },
+    guideExit: { expr: 'default', alts: ['thinking'] },
+    resumeOffer: { expr: 'thinking', alts: ['default'] },
+    wait: { expr: 'thinking', alts: ['focused'] },
+    support: { expr: 'concerned', alts: ['concerned'] },
+    tablet: { expr: 'tablet', alts: ['thinking'] }
+  };
+
+  var EXP = '2027-04-15'; // 180-day default expiry from 2026-10-17
+  var RV = { by: 'PIP-01 research desk', date: '2026-10-17', status: 'pass', q1: true, q2: true };
+
+  var LINES = [
+    /* ---------------- TIPS: scanner / how-to (focused) ---------------- */
+    { id: 't-scan-rotate', cat: 'tip', kind: 'scanner', expr: 'focused', alts: ['default'], trigger: { type: 'state' }, requires: ['hasShots'], surfaces: ['card', 'pull'], cta: 'scanner', priority: 60, cooldown: 30, once: false, expires: EXP, tenure: 0,
+      en: 'Rotate your sites. The scanner keeps your map, and HISTORY shows which sites you use most.',
+      es: 'Rota tus sitios. El escáner guarda tu mapa, y el HISTORIAL muestra qué sitios usas más.' },
+    { id: 't-scan-tap', cat: 'tip', kind: 'scanner', expr: 'focused', alts: ['default'], trigger: { type: 'state' }, requires: ['hasShots'], surfaces: ['card', 'pull'], cta: 'scanner', priority: 55, cooldown: 30, once: false, expires: EXP, tenure: 0,
+      en: 'Tap a site on the scanner to select it. The panel confirms your pick before you log.',
+      es: 'Toca un sitio en el escáner para elegirlo. El panel confirma tu elección antes de registrar.' },
+    { id: 't-scan-views', cat: 'tip', kind: 'scanner', expr: 'focused', alts: ['thinking'], trigger: { type: 'state' }, requires: ['fewShots'], surfaces: ['card', 'pull'], cta: 'scanner', priority: 40, cooldown: 30, once: false, expires: EXP, tenure: 0,
+      en: 'The scanner has three views: Core, Upper, and Lower. Together they cover the full map.',
+      es: 'El escáner tiene tres vistas: Central, Superior e Inferior. Juntas cubren todo el mapa.' },
+    { id: 't-scan-before', cat: 'tip', kind: 'scanner', expr: 'focused', alts: ['default'], trigger: { type: 'idle' }, requires: ['due'], surfaces: ['card'], cta: 'scanner', priority: 65, cooldown: 30, once: false, expires: EXP, tenure: 0,
+      en: 'Dose due? Check the scanner first and pick a site you have not used in a while.',
+      es: '¿Dosis pendiente? Revisa primero el escáner y elige un sitio que no uses hace tiempo.' },
+    /* ---------------- TIPS: planning (thinking) ---------------- */
+    { id: 't-sched-day', cat: 'tip', kind: 'planning', expr: 'thinking', alts: ['focused'], trigger: { type: 'state' }, requires: ['firstrun'], surfaces: ['card', 'pull'], cta: 'profile', priority: 45, cooldown: 30, once: false, expires: EXP, tenure: 0,
+      en: 'Your shot day lives in your profile, under SHOT DAY. Set it once and the grid plans around it.',
+      es: 'Tu día de inyección está en tu perfil, en DÍA DE INYECCIÓN. Ajústalo una vez y la red planifica.' },
+    { id: 't-sched-phase', cat: 'tip', kind: 'planning', expr: 'thinking', alts: ['default'], trigger: { type: 'state' }, requires: ['hasShots'], surfaces: ['card', 'pull'], cta: 'results', priority: 55, cooldown: 30, once: false, expires: EXP, tenure: 0,
+      en: 'Your phase is read from your logged shots. Regular logs keep your curve honest.',
+      es: 'Tu fase se calcula de tus registros. Registrar seguido mantiene tu curva fiel.' },
+    { id: 't-sched-week', cat: 'tip', kind: 'planning', expr: 'thinking', alts: ['focused'], trigger: { type: 'state' }, requires: ['hasShots'], surfaces: ['card', 'pull'], cta: 'results', priority: 50, cooldown: 30, once: false, expires: EXP, tenure: 0,
+      en: 'Plan the week from PROGRESS: your phase, your trends, and your next steps in one place.',
+      es: 'Planifica la semana desde PROGRESO: tu fase, tus tendencias y tus próximos pasos en un lugar.' },
+    { id: 't-sched-rhythm', cat: 'tip', kind: 'planning', expr: 'thinking', alts: ['default'], trigger: { type: 'state' }, requires: ['manyShots'], surfaces: ['card', 'pull'], cta: 'history', priority: 45, cooldown: 45, once: false, expires: EXP, tenure: 0,
+      en: 'A steady rhythm reads better than a perfect one. Consistency is the signal.',
+      es: 'Un ritmo constante se lee mejor que uno perfecto. La constancia es la señal.' },
+    /* ---------------- TIPS: logging ---------------- */
+    { id: 't-log-fast', cat: 'tip', kind: 'log', expr: 'default', alts: ['focused'], trigger: { type: 'state' }, requires: ['fewShots'], surfaces: ['card', 'pull'], cta: 'log', priority: 60, cooldown: 30, once: false, expires: EXP, tenure: 0,
+      en: 'Logging takes about 20 seconds: med, dose, site, save. That is the whole form.',
+      es: 'Registrar toma unos 20 segundos: fármaco, dosis, sitio, guardar. Eso es todo el formulario.' },
+    { id: 't-log-backdate', cat: 'tip', kind: 'log', expr: 'focused', alts: ['default'], trigger: { type: 'state' }, requires: ['any'], surfaces: ['card', 'pull'], cta: 'log', priority: 50, cooldown: 30, once: false, expires: EXP, tenure: 0,
+      en: 'Forgot to log? Set the date and time on the form to when the shot actually happened.',
+      es: '¿Olvidaste registrar? Ajusta la fecha y la hora del formulario al momento real de la inyección.' },
+    { id: 't-log-timeline', cat: 'tip', kind: 'log', expr: 'default', alts: ['thinking'], trigger: { type: 'state' }, requires: ['hasShots'], surfaces: ['card', 'pull'], cta: 'history', priority: 40, cooldown: 30, once: false, expires: EXP, tenure: 0,
+      en: 'A saved shot lands on your timeline right away. Open HISTORY to see it in order.',
+      es: 'Una inyección guardada aparece en tu línea de tiempo al instante. Abre HISTORIAL para verla.' },
+    { id: 't-log-return', cat: 'tip', kind: 'log', expr: 'focused', alts: ['default'], trigger: { type: 'state' }, requires: ['returning'], surfaces: ['card', 'pull'], cta: 'log', priority: 55, cooldown: 30, once: false, expires: EXP, tenure: 0,
+      en: 'Missed a day? Log it when you remember and set the time back. Your curve uses the time you enter.',
+      es: '¿Perdiste un día? Regístralo cuando recuerdes y ajusta la hora. Tu curva usa la hora que ingresas.' },
+    /* ---------------- TIPS: data / VAULT ---------------- */
+    { id: 't-vault-csv', cat: 'tip', kind: 'data', expr: 'default', alts: ['thinking'], trigger: { type: 'state' }, requires: ['hasShots'], surfaces: ['card', 'pull'], cta: 'vault', priority: 45, cooldown: 45, once: false, expires: EXP, tenure: 0,
+      en: 'Export a CSV of your shots from VAULT any time. Your records, in a file you own.',
+      es: 'Exporta un CSV de tus inyecciones desde VAULT cuando quieras. Tus registros, en un archivo tuyo.' },
+    { id: 't-vault-backup', cat: 'tip', kind: 'data', expr: 'thinking', alts: ['default'], trigger: { type: 'state' }, requires: ['hasShots'], surfaces: ['card', 'pull'], cta: 'vault', priority: 45, cooldown: 45, once: false, expires: EXP, tenure: 0,
+      en: 'A full backup lives in VAULT. Save one somewhere safe, off this device too.',
+      es: 'Una copia completa vive en VAULT. Guarda una en un lugar seguro, también fuera de este equipo.' },
+    { id: 't-vault-import', cat: 'tip', kind: 'data', expr: 'default', alts: ['focused'], trigger: { type: 'state' }, requires: ['any'], surfaces: ['card', 'pull'], cta: 'vault', priority: 35, cooldown: 45, once: false, expires: EXP, tenure: 0,
+      en: 'Bringing history from a file? VAULT imports CSV and rebuilds your timeline.',
+      es: '¿Traes historial en un archivo? VAULT importa CSV y reconstruye tu línea de tiempo.' },
+    { id: 't-vault-ownership', cat: 'tip', kind: 'data', expr: 'default', alts: ['thinking'], trigger: { type: 'pull' }, requires: ['any'], surfaces: ['pull'], cta: 'vault', priority: 30, cooldown: 45, once: false, expires: EXP, tenure: 0,
+      en: 'Your data stays yours: export it, back it up, or delete it, whenever you want.',
+      es: 'Tus datos siguen siendo tuyos: expórtalos, respáldalos o bórralos cuando quieras.' },
+    { id: 't-vault-sync', cat: 'tip', kind: 'data', expr: 'thinking', alts: ['default'], trigger: { type: 'state' }, requires: ['localOnly'], surfaces: ['card', 'pull'], cta: 'vault', priority: 55, cooldown: 45, once: false, expires: EXP, tenure: 0,
+      en: 'On this device only? Connect Google in VAULT and your grid syncs across your devices.',
+      es: '¿Solo en este equipo? Conecta Google en VAULT y tu red se sincroniza entre tus dispositivos.' },
+    /* ---------------- TIPS: phase ---------------- */
+    { id: 't-phase-today', cat: 'tip', kind: 'phase', expr: 'thinking', alts: ['default'], trigger: { type: 'state' }, requires: ['hasShots'], surfaces: ['card', 'pull'], cta: 'dash', priority: 40, cooldown: 30, once: false, expires: EXP, tenure: 0,
+      en: 'Your current phase sits on TODAY, right under my card. One glance tells you where you are.',
+      es: 'Tu fase actual está en HOY, justo bajo mi tarjeta. Un vistazo te dice dónde estás.' },
+    { id: 't-phase-grows', cat: 'tip', kind: 'phase', expr: 'default', alts: ['thinking'], trigger: { type: 'state' }, requires: ['fewShots'], surfaces: ['card', 'pull'], cta: 'results', priority: 50, cooldown: 30, once: false, expires: EXP, tenure: 0,
+      en: 'Every log grows your curve. A few more shots and the phase picture gets much sharper.',
+      es: 'Cada registro hace crecer tu curva. Con unas inyecciones más, la fase se verá mucho más clara.' },
+    { id: 't-phase-sphere', cat: 'tip', kind: 'phase', expr: 'thinking', alts: ['focused'], trigger: { type: 'state' }, requires: ['hasShots'], surfaces: ['card', 'pull'], cta: 'results', priority: 40, cooldown: 30, once: false, expires: EXP, tenure: 0,
+      en: 'The phase sphere in PROGRESS turns your logs into a position you can read at a glance.',
+      es: 'La esfera de fase en PROGRESO convierte tus registros en una posición que se lee de un vistazo.' },
+    /* ---------------- TIPS: history ---------------- */
+    { id: 't-history-order', cat: 'tip', kind: 'history', expr: 'default', alts: ['thinking'], trigger: { type: 'state' }, requires: ['hasShots'], surfaces: ['card', 'pull'], cta: 'history', priority: 35, cooldown: 45, once: false, expires: EXP, tenure: 0,
+      en: 'HISTORY keeps every shot in order: med, dose, site, and time, all in one ledger.',
+      es: 'HISTORIAL guarda cada inyección en orden: fármaco, dosis, sitio y hora, en un solo registro.' },
+    { id: 't-history-review', cat: 'tip', kind: 'history', expr: 'default', alts: ['focused'], trigger: { type: 'pull' }, requires: ['hasShots'], surfaces: ['pull'], cta: 'history', priority: 30, cooldown: 45, once: false, expires: EXP, tenure: 0,
+      en: 'Your full record for each shot lives in HISTORY. Nothing is hidden behind menus.',
+      es: 'El registro completo de cada inyección vive en HISTORIAL. Nada queda escondido en menús.' },
+    /* ---------------- TIPS: LAB ---------------- */
+    { id: 't-lab-draw', cat: 'tip', kind: 'lab', expr: 'focused', alts: ['default'], trigger: { type: 'state' }, requires: ['hasShots'], surfaces: ['card', 'pull'], cta: 'lab', priority: 40, cooldown: 45, once: false, expires: EXP, tenure: 0,
+      en: 'Dose math lives in LAB: how much to draw, worked out from your vial and your dose.',
+      es: 'El cálculo de dosis vive en LAB: cuánto extraer, calculado de tu vial y tu dosis.' },
+    { id: 't-lab-mix', cat: 'tip', kind: 'lab', expr: 'focused', alts: ['thinking'], trigger: { type: 'state' }, requires: ['hasShots'], surfaces: ['card', 'pull'], cta: 'lab', priority: 35, cooldown: 45, once: false, expires: EXP, tenure: 0,
+      en: 'Mixing math is in LAB too. Volumes and ratios, without the napkin calculations.',
+      es: 'El cálculo de mezclas también está en LAB. Volúmenes y proporciones, sin cuentas en servilletas.' },
+    { id: 't-lab-stock', cat: 'tip', kind: 'lab', expr: 'thinking', alts: ['focused'], trigger: { type: 'state' }, requires: ['any'], surfaces: ['card', 'pull'], cta: 'lab', priority: 35, cooldown: 45, once: false, expires: EXP, tenure: 0,
+      en: 'Track your stock in LAB so a low vial never surprises you mid-week.',
+      es: 'Controla tu inventario en LAB para que un vial bajo no te sorprenda a mitad de semana.' },
+    /* ---------------- TIPS: comfort / settings ---------------- */
+    { id: 't-set-theme', cat: 'tip', kind: 'comfort', expr: 'default', alts: ['thinking'], trigger: { type: 'state' }, requires: ['any'], surfaces: ['card', 'pull'], cta: 'vault', priority: 30, cooldown: 60, once: false, expires: EXP, tenure: 0,
+      en: 'Two lights, one grid: Night and Dusk themes live in VAULT, under Preferences.',
+      es: 'Dos luces, una red: los temas Noche y Atardecer viven en VAULT, en Preferencias.' },
+    { id: 't-set-lang', cat: 'tip', kind: 'comfort', expr: 'default', alts: ['thinking'], trigger: { type: 'state' }, requires: ['any'], surfaces: ['card', 'pull'], cta: 'vault', priority: 30, cooldown: 60, once: false, expires: EXP, tenure: 0,
+      en: 'GRID//NODE speaks English and Spanish. Switch any time in VAULT or on the intro.',
+      es: 'GRID//NODE habla inglés y español. Cambia cuando quieras en VAULT o en la intro.' },
+    { id: 't-set-haptics', cat: 'tip', kind: 'comfort', expr: 'default', alts: ['focused'], trigger: { type: 'state' }, requires: ['any'], surfaces: ['card', 'pull'], cta: 'vault', priority: 30, cooldown: 60, once: false, expires: EXP, tenure: 0,
+      en: 'Subtle taps confirm your actions. Tune haptics in VAULT if you want them quieter.',
+      es: 'Toques sutiles confirman tus acciones. Ajusta la vibración en VAULT si la quieres más suave.' },
+    { id: 't-set-off', cat: 'tip', kind: 'comfort', expr: 'default', alts: ['thinking'], trigger: { type: 'pull' }, requires: ['any'], surfaces: ['pull'], cta: 'vault', priority: 25, cooldown: 60, once: false, expires: EXP, tenure: 0,
+      en: 'I work for you. If I ever get in the way, VAULT turns me, or just my tips, off.',
+      es: 'Trabajo para ti. Si algún día estorbo, VAULT me apaga a mí, o solo mis consejos.' },
+    { id: 't-set-manual', cat: 'tip', kind: 'comfort', expr: 'thinking', alts: ['default'], trigger: { type: 'state' }, requires: ['hasShots'], surfaces: ['card', 'pull'], cta: 'vault', priority: 35, cooldown: 60, once: false, expires: EXP, tenure: 0,
+      en: "The Operator's manual in VAULT replays any part of the intro, whenever you want.",
+      es: 'El manual del Operador en VAULT repite cualquier parte de la intro, cuando quieras.' },
+    /* ---------------- TIPS: pull / playful (cheeky, sparing) ---------------- */
+    { id: 't-pull-cheeky1', cat: 'tip', kind: 'playful', expr: 'cheeky', alts: ['default'], trigger: { type: 'pull' }, requires: ['any'], surfaces: ['pull'], cta: null, priority: 20, cooldown: 90, once: false, expires: EXP, tenure: 0,
+      en: 'I run the grid. You run the protocol. Good split, if you ask me.',
+      es: 'Yo opero la red. Tú llevas el protocolo. Buen reparto, si me preguntas.' },
+    { id: 't-pull-cheeky2', cat: 'tip', kind: 'playful', expr: 'cheeky', alts: ['default'], trigger: { type: 'pull' }, requires: ['returning'], surfaces: ['pull'], cta: null, priority: 20, cooldown: 90, once: false, expires: EXP, tenure: 0,
+      en: 'Somewhere, a spreadsheet is jealous of this grid. Let it be.',
+      es: 'En algún lugar, una hoja de cálculo envidia esta red. Que envidie.' },
+    { id: 't-pull-open', cat: 'tip', kind: 'pull', expr: 'default', alts: ['thinking'], trigger: { type: 'pull' }, requires: ['any'], surfaces: ['pull'], cta: null, priority: 20, cooldown: 30, once: false, expires: EXP, tenure: 0,
+      en: 'Tap my face any time. I keep the notes so your head stays clear.',
+      es: 'Toca mi cara cuando quieras. Yo guardo las notas para que tu cabeza quede libre.' },
+    { id: 't-pull-vault', cat: 'tip', kind: 'pull', expr: 'thinking', alts: ['default'], trigger: { type: 'pull' }, requires: ['any'], surfaces: ['pull'], cta: 'vault', priority: 20, cooldown: 30, once: false, expires: EXP, tenure: 0,
+      en: 'VAULT is mission control: exports, settings, backups, and my manual in one room.',
+      es: 'VAULT es el control de misión: exportaciones, ajustes, copias y mi manual en un solo lugar.' },
+    /* ---------------- TIPS: completed-event ---------------- */
+    { id: 't-event-export', cat: 'tip', kind: 'data', expr: 'default', alts: ['thinking'], trigger: { type: 'event', key: 'firstExport' }, requires: [], surfaces: ['card'], cta: 'vault', priority: 70, cooldown: 90, once: true, expires: EXP, tenure: 0,
+      en: 'Backup saved. Keep a copy somewhere safe, off this device too.',
+      es: 'Copia guardada. Guarda otra en un lugar seguro, también fuera de este equipo.' },
+    { id: 't-event-scanner', cat: 'tip', kind: 'scanner', expr: 'focused', alts: ['default'], trigger: { type: 'event', key: 'firstScanner' }, requires: [], surfaces: ['card'], cta: 'scanner', priority: 70, cooldown: 90, once: true, expires: EXP, tenure: 0,
+      en: 'First site pinned on the scanner. Your rotation map has officially started.',
+      es: 'Primer sitio fijado en el escáner. Tu mapa de rotación empezó oficialmente.' },
+    { id: 't-event-import', cat: 'tip', kind: 'data', expr: 'default', alts: ['thinking'], trigger: { type: 'event', key: 'importDone' }, requires: [], surfaces: ['card'], cta: 'history', priority: 70, cooldown: 90, once: true, expires: EXP, tenure: 0,
+      en: 'Import complete. Your history is on the grid and your curve can read it.',
+      es: 'Importación completa. Tu historial está en la red y tu curva ya puede leerlo.' },
+    /* ---------------- TIPS: state moments ---------------- */
+    { id: 't-state-due', cat: 'tip', kind: 'log', expr: 'focused', alts: ['default'], trigger: { type: 'state' }, requires: ['due'], surfaces: ['card'], cta: 'log', priority: 65, cooldown: 14, once: false, expires: EXP, tenure: 0,
+      en: "A dose is on today's board. The log button lives on TODAY, one tap away.",
+      es: 'Hay una dosis en el tablero de hoy. El botón de registro está en HOY, a un toque.' },
+    { id: 't-state-return', cat: 'tip', kind: 'support', expr: 'concerned', alts: ['concerned'], trigger: { type: 'state' }, requires: ['stale7'], surfaces: ['card', 'pull'], cta: 'log', priority: 60, cooldown: 30, once: false, expires: EXP, tenure: 0,
+      en: 'Back on the grid. One fresh log brings your curve up to date.',
+      es: 'De vuelta en la red. Un registro nuevo pone tu curva al día.' },
+    { id: 't-state-first', cat: 'tip', kind: 'log', expr: 'focused', alts: ['default'], trigger: { type: 'state' }, requires: ['firstrun'], surfaces: ['card'], cta: 'log', priority: 65, cooldown: 14, once: false, expires: EXP, tenure: 0,
+      en: 'Your first log starts the whole grid: timeline, curve, phase. Twenty seconds.',
+      es: 'Tu primer registro enciende toda la red: línea de tiempo, curva, fase. Veinte segundos.' }
+  ];
+
+  /* ---------------- FACTS (FIELD NOTE): general domain only, Spec B.5.
+   * Each passed the two-question test at review: (1) about people /
+   * the world in general, zero reference to this user, their data, or
+   * their protocol; (2) textbook-true with the named source below. */
+  var FACTS = [
+    { id: 'f-nobel-circadian', kind: 'science', en: 'In 2017, the Nobel Prize in Medicine went to researchers who found the genes behind the body clock.', es: 'En 2017, el Nobel de Medicina premió a quienes hallaron los genes detrás del reloj biológico.', source: { label: 'The Nobel Prize in Physiology or Medicine 2017', ref: 'nobelprize.org — Hall, Rosbash and Young, circadian rhythm mechanisms' } },
+    { id: 'f-barcode', kind: 'history', en: 'The first barcode ever scanned was on a pack of gum, in Ohio, in 1974.', es: 'El primer código de barras se escaneó en un paquete de chicles, en Ohio, en 1974.', source: { label: 'Smithsonian Magazine', ref: 'Smithsonian Magazine — history of the first UPC barcode scan, 1974' } },
+    { id: 'f-cells', kind: 'science', en: 'Scientists estimate the human body holds about 37 trillion cells.', es: 'Los científicos estiman que el cuerpo humano tiene unos 37 billones de células.', source: { label: 'Annals of Human Biology (2013)', ref: 'Bianconi et al., "Estimation of the number of cells in the human body", Annals of Human Biology, 2013' } },
+    { id: 'f-honey', kind: 'history', en: 'Archaeologists have tasted 3,000-year-old honey from Egyptian tombs and found it still edible.', es: 'Arqueólogos probaron miel de 3.000 años de tumbas egipcias y seguía comestible.', source: { label: 'Smithsonian Magazine', ref: 'Smithsonian Magazine — ancient Egyptian tomb honey' } },
+    { id: 'f-moth', kind: 'history', en: "The first computer 'bug' was a real moth, found in a Harvard machine in 1947.", es: 'El primer «bug» informático fue una polilla real, hallada en una máquina de Harvard en 1947.', source: { label: 'Smithsonian National Museum of American History', ref: 'NMAH — Harvard Mark II logbook, 1947' } },
+    { id: 'f-octopus', kind: 'world', en: 'An octopus has three hearts, and two of them stop when it swims.', es: 'Un pulpo tiene tres corazones, y dos de ellos se detienen cuando nada.', source: { label: 'Smithsonian Ocean', ref: 'Smithsonian Ocean Portal — octopus anatomy' } },
+    { id: 'f-berries', kind: 'science', en: 'Botanically, bananas are berries, but strawberries are not.', es: 'Botánicamente, las bananas son bayas, pero las fresas no.', source: { label: 'Encyclopaedia Britannica', ref: 'Encyclopaedia Britannica — berry, botanical definition' } },
+    { id: 'f-eiffel', kind: 'world', en: 'The Eiffel Tower grows about 15 centimeters taller in summer as the iron expands.', es: 'La Torre Eiffel crece unos 15 centímetros en verano cuando el hierro se expande.', source: { label: 'La Tour Eiffel (official site)', ref: 'toureiffel.paris — the tower in summer, thermal expansion' } },
+    { id: 'f-otters', kind: 'world', en: 'Sea otters hold hands while they sleep, so they do not drift apart.', es: 'Las nutrias marinas se toman de las manos al dormir, para no separarse.', source: { label: 'Monterey Bay Aquarium', ref: 'Monterey Bay Aquarium — sea otter natural history' } },
+    { id: 'f-tittle', kind: 'world', en: 'The dot over the letter i has a name: it is called a tittle.', es: 'El punto sobre la i tiene nombre propio: en inglés se le dice «tittle».', source: { label: 'Oxford English Dictionary', ref: 'Oxford English Dictionary — "tittle", the dot over i and j' } },
+    { id: 'f-wombat', kind: 'science', en: 'Wombats produce cube-shaped droppings, a puzzle physicists solved in 2018.', es: 'Los wombats producen excrementos cúbicos, un misterio que la física resolvió en 2018.', source: { label: 'Bulletin of the American Physical Society (2018)', ref: 'Georgia Tech / APS 2018 — mechanics of wombat cube droppings' } },
+    { id: 'f-sound-water', kind: 'science', en: 'Sound travels about 4.3 times faster in water than in air.', es: 'El sonido viaja unas 4,3 veces más rápido en el agua que en el aire.', source: { label: 'Encyclopaedia Britannica', ref: 'Encyclopaedia Britannica — speed of sound in water vs air' } },
+    { id: 'f-oranges', kind: 'history', en: 'The first oranges grown in warm climates stayed green. The orange color came with cooler nights.', es: 'Las primeras naranjas de climas cálidos quedaban verdes. El color naranja llegó con las noches frescas.', source: { label: 'Smithsonian Magazine', ref: 'Smithsonian Magazine — why oranges are orange' } },
+    { id: 'f-sharks', kind: 'science', en: 'Sharks are older than trees: they appear in the fossil record about 50 million years earlier.', es: 'Los tiburones son más viejos que los árboles: aparecen en el registro fósil unos 50 millones de años antes.', source: { label: 'Smithsonian Ocean', ref: 'Smithsonian Ocean Portal — shark evolution' } },
+    { id: 'f-venus', kind: 'science', en: 'A single day on Venus lasts longer than its whole year.', es: 'Un solo día en Venus dura más que todo su año.', source: { label: 'NASA', ref: 'NASA — Venus facts: rotation period vs orbital period' } },
+    { id: 'f-smells', kind: 'science', en: 'A 2014 study in Science estimated the human nose can tell apart over a trillion smells.', es: 'Un estudio de 2014 en Science estimó que la nariz humana distingue más de un billón de olores.', source: { label: 'Science (2014)', ref: 'Bushdid et al., "Humans Can Discriminate More than 1 Trillion Olfactory Stimuli", Science, 2014' } },
+    { id: 'f-mm', kind: 'history', en: "M&M's are named after their inventors: Forrest Mars and Bruce Murrie.", es: 'Los M&M\'s llevan el nombre de sus inventores: Forrest Mars y Bruce Murrie.', source: { label: 'Smithsonian Magazine', ref: 'Smithsonian Magazine — the story behind M&M\'s' } },
+    { id: 'f-unicorn', kind: 'world', en: 'The unicorn is the national animal of Scotland.', es: 'El unicornio es el animal nacional de Escocia.', source: { label: 'National Records of Scotland', ref: 'National Records of Scotland — Scotland\'s national animal' } },
+    { id: 'f-niagara', kind: 'history', en: 'The first person to survive Niagara Falls in a barrel was a 63-year-old schoolteacher, in 1901.', es: 'La primera persona que sobrevivió las cataratas del Niágara en un barril fue una maestra de 63 años, en 1901.', source: { label: 'Encyclopaedia Britannica', ref: 'Encyclopaedia Britannica — Annie Edson Taylor, 1901' } },
+    { id: 'f-rbc', kind: 'science', en: 'A red blood cell lives about 120 days before the body recycles it.', es: 'Un glóbulo rojo vive unos 120 días antes de que el cuerpo lo recicle.', source: { label: 'American Society of Hematology', ref: 'American Society of Hematology — blood basics' } },
+    { id: 'f-apollo', kind: 'history', en: "The Apollo 11 guidance computer ran at 0.043 MHz, slower than a modern toaster's chip.", es: 'La computadora de guía del Apolo 11 corría a 0,043 MHz, más lenta que el chip de una tostadora moderna.', source: { label: 'NASA History Office', ref: 'NASA History — Apollo Guidance Computer specifications' } },
+    { id: 'f-bees', kind: 'science', en: 'Honeybees can learn to recognize human faces, a 2010 study showed.', es: 'Las abejas pueden aprender a reconocer rostros humanos, según un estudio de 2010.', source: { label: 'Journal of Experimental Biology (2010)', ref: 'Dyer et al. — honeybee face recognition, Journal of Experimental Biology, 2010' } },
+    { id: 'f-seacuke', kind: 'world', en: 'Sea cucumbers breathe through their rear end.', es: 'Los pepinos de mar respiran por el extremo trasero.', source: { label: 'Smithsonian Ocean', ref: 'Smithsonian Ocean Portal — sea cucumber anatomy' } },
+    { id: 'f-whale', kind: 'world', en: "A blue whale's heart can weigh as much as a small car.", es: 'El corazón de una ballena azul puede pesar como un auto pequeño.', source: { label: 'Encyclopaedia Britannica', ref: 'Encyclopaedia Britannica — blue whale' } }
+  ];
+  FACTS.forEach(function (f) {
+    f.cat = 'fact'; f.expr = 'thinking'; f.alts = ['default'];
+    f.trigger = { type: 'pull' }; f.requires = ['any']; f.surfaces = ['card', 'pull'];
+    f.cta = null; f.priority = 30; f.cooldown = 90; f.once = false;
+    f.expires = EXP; f.tenure = 0; f.review = RV; f.kind = f.kind || 'science';
+    LINES.push(f);
+  });
+
+  /* Wait lines (genuine waits > 3s): same library, pull-surface only in
+   * practice; the ambient engine borrows them for the wait slot. */
+  var WAITS = [
+    { id: 'w-sync', en: 'Sync on the grid takes a moment. Your records are worth the wait.', es: 'La sincronización toma un momento. Tus registros valen la espera.' },
+    { id: 'w-import', en: 'Reading your file line by line. Careful beats fast here.', es: 'Leyendo tu archivo línea por línea. Aquí, cuidado vale más que rápido.' },
+    { id: 'w-export', en: 'Packing your records into one file. Almost there.', es: 'Empacando tus registros en un archivo. Ya casi.' },
+    { id: 'w-generic', en: 'Working on it. The grid does not rush good records.', es: 'En eso estoy. La red no apura los buenos registros.' }
+  ];
+
+  window.GN_NODKI_LIBRARY = {
+    lines: LINES,
+    waits: WAITS,
+    exprAssets: EXPR_ASSETS,
+    stateExpr: STATE_EXPR,
+    byId: function (id) {
+      for (var i = 0; i < LINES.length; i++) if (LINES[i].id === id) return LINES[i];
+      return null;
+    }
+  };
+})();
+/* GRID//NODE — NODKI ambient layer (Spec B, 1.3.0).
+ * Tips (TIP) and facts (FIELD NOTE) from the finite library in
+ * 15-nodki-library.js. One proactive surface only: the dashboard
+ * companion card slot. Everything else is pull (tap his face / More),
+ * empty states, or a static line on a genuine wait. Caps, cooldowns,
+ * self-throttle, and kill metrics per Spec B; the shared proactive
+ * budget (<=2/session, state narration outranks tips) is owned by
+ * 14-nodki and spent through GN_NODKI.budget. No polling: triggers are
+ * real events (dashboard arrival, completed app events, one resettable
+ * idle timeout scoped to the dashboard, user taps). */
+(function () {
+  'use strict';
+  var TIPS_KEY = 'gn_nodki_tips_v1';        // {enabled, freq: normal|quiet|pull}
+  var SEEN_KEY = 'gn_nodki_tips_seen_v1';   // {id: {shown, last, dismissed, fast, ignored, acted, banned}}
+  var METRICS_KEY = 'gn_nodki_metrics_v1'; // {events: [{t, fast}]} rolling, last 200
+  var THROTTLE_KEY = 'gn_nodki_throttle_v1';// {until}
+  var EVENTS_KEY = 'gn_nodki_events_v1';   // {firstExport, firstScanner, importDone} (persisted flags)
+  var PENDING_KEY = 'gn_nodki_pending_v1';  // queued event line ids for next dashboard arrival
+  var SESS_COUNT_KEY = 'gn_nodki_sessions_v1';
+  var FIRST_KEY = 'gn_nodki_first_v1';
+  var OFFER_KEY = 'gn_nodki_resume_offered_v1';
+  var DAY = 864e5;
+
+  function lsGet(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { window.localStorage.setItem(k, v); } catch (e) {} }
+  function ssGet(k) { try { return window.sessionStorage.getItem(k); } catch (e) { return null; } }
+  function ssSet(k, v) { try { window.sessionStorage.setItem(k, v); } catch (e) {} }
+  function jGet(k, dflt) { try { var v = JSON.parse(lsGet(k) || 'null'); return v == null ? dflt : v; } catch (e) { return dflt; } }
+  function jSet(k, v) { lsSet(k, JSON.stringify(v)); }
+  function tx(key, vars, fallback) {
+    try {
+      if (window.GN_I18N && typeof window.GN_I18N.t === 'function') {
+        var v = window.GN_I18N.t(key, vars || {});
+        if (v && v !== key) return v;
+      }
+    } catch (e) {}
+    var s = fallback || key;
+    if (vars) Object.keys(vars).forEach(function (k) { s = s.split('{' + k + '}').join(String(vars[k])); });
+    return s;
+  }
+  function lang() {
+    try { return (document.documentElement.lang || 'en').indexOf('es') === 0 ? 'es' : 'en'; } catch (e) { return 'en'; }
+  }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+  /* ---------------- settings ---------------- */
+  function settings() {
+    var s = jGet(TIPS_KEY, null);
+    if (!s || typeof s !== 'object') s = { enabled: true, freq: 'normal' };
+    if (typeof s.enabled !== 'boolean') s.enabled = true;
+    if (['normal', 'quiet', 'pull'].indexOf(s.freq) < 0) s.freq = 'normal';
+    return s;
+  }
+  function saveSettings(s) { jSet(TIPS_KEY, s); try { document.dispatchEvent(new CustomEvent('gn:nodki-tips-setting')); } catch (e) {} renderPanel(); }
+  function mascotOn() { try { return window.GN_NODKI && window.GN_NODKI.enabled(); } catch (e) { return lsGet('gn_nodki_v1') !== 'off'; } }
+  function tipsOn() { return settings().enabled; }
+  function active() { return mascotOn() && tipsOn(); }
+
+  /* ---------------- session / tenure ---------------- */
+  (function sessionInit() {
+    if (!ssGet('gn_nodki_sess_v1')) {
+      ssSet('gn_nodki_sess_v1', '1');
+      var n = parseInt(lsGet(SESS_COUNT_KEY) || '0', 10) || 0;
+      lsSet(SESS_COUNT_KEY, String(n + 1));
+    }
+    if (!lsGet(FIRST_KEY)) lsSet(FIRST_KEY, String(Date.now()));
+  })();
+  function sessionCount() { return parseInt(lsGet(SESS_COUNT_KEY) || '1', 10) || 1; }
+  function tenureDays() { var f = parseInt(lsGet(FIRST_KEY) || String(Date.now()), 10); return Math.floor((Date.now() - f) / DAY); }
+
+  /* ---------------- user state predicates ---------------- */
+  function shots() { try { return typeof window.getAllShots === 'function' ? window.getAllShots() || [] : []; } catch (e) { return []; } }
+  function gapDays() {
+    var all = shots(); if (!all.length) return 999;
+    var sorted = all.slice().sort(function (a, b) { return String(a.date || '').localeCompare(String(b.date || '')); });
+    var last = new Date(sorted[sorted.length - 1].date);
+    var now = new Date();
+    return Math.round((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(last.getFullYear(), last.getMonth(), last.getDate())) / DAY);
+  }
+  function isCloud() {
+    try { var s = JSON.parse(lsGet('gn_session_v2') || 'null'); return !!(s && s.user && s.user.id && s.type !== 'local'); } catch (e) { return false; }
+  }
+  var PRED = {
+    any: function () { return true; },
+    firstrun: function () { return shots().length === 0; },
+    hasShots: function () { return shots().length > 0; },
+    fewShots: function () { var n = shots().length; return n >= 1 && n <= 9; },
+    manyShots: function () { return shots().length >= 10; },
+    due: function () { var g = gapDays(); return shots().length > 0 && g >= 1 && g < 3; },
+    loggedToday: function () { return gapDays() === 0 && shots().length > 0; },
+    returning: function () { var g = gapDays(); return shots().length > 0 && g >= 3; },
+    stale7: function () { return gapDays() >= 7 && shots().length > 0; },
+    localOnly: function () { return !isCloud(); }
+  };
+  function stateOk(line) {
+    var req = line.requires || ['any'];
+    for (var i = 0; i < req.length; i++) { var p = PRED[req[i]]; if (!p || !p()) return false; }
+    return true;
+  }
+
+  /* ---------------- history / metrics / kill rules ---------------- */
+  function seen() { return jGet(SEEN_KEY, {}); }
+  function saveSeen(s) { jSet(SEEN_KEY, s); }
+  function lineStats(id) { var s = seen(); return s[id] || { shown: 0, last: 0, dismissed: 0, fast: 0, ignored: 0, acted: false, banned: false }; }
+  function metrics() { return jGet(METRICS_KEY, { events: [] }); }
+  function logMetric(fast) {
+    var m = metrics(); m.events.push({ t: Date.now(), fast: !!fast });
+    if (m.events.length > 200) m.events = m.events.slice(-200);
+    jSet(METRICS_KEY, m);
+  }
+  function globalFactor() {
+    var m = metrics(); var cut = Date.now() - 7 * DAY;
+    var ev = m.events.filter(function (e) { return e.t >= cut; });
+    if (ev.length < 10) return 1;
+    var fast = ev.filter(function (e) { return e.fast; }).length / ev.length;
+    if (fast > 0.40) return 0;
+    if (fast > 0.25) return 0.5;
+    return 1;
+  }
+  function throttled() { var u = parseInt(lsGet(THROTTLE_KEY) || '0', 10); return u && Date.now() < u; }
+  var fastStreak = 0; // consecutive sub-1s dismissals (this install, persisted via seen log below)
+  function noteDismiss(id, dwellMs) {
+    var s = seen(); var st = s[id] || { shown: 0, last: 0, dismissed: 0, fast: 0, ignored: 0, acted: false, banned: false };
+    st.dismissed += 1;
+    var fast = dwellMs < 1000;
+    if (fast) st.fast += 1;
+    s[id] = st; saveSeen(s);
+    logMetric(fast);
+    var m = metrics();
+    var recent = m.events.slice(-2);
+    if (recent.length === 2 && recent[0].fast && recent[1].fast) {
+      lsSet(THROTTLE_KEY, String(Date.now() + 14 * DAY)); // silent self-throttle to pull-only
+    }
+  }
+  function noteShow(id) {
+    var s = seen(); var st = s[id] || { shown: 0, last: 0, dismissed: 0, fast: 0, ignored: 0, acted: false, banned: false };
+    st.shown += 1; st.last = Date.now(); s[id] = st; saveSeen(s);
+  }
+  function noteIgnore(id) {
+    var s = seen(); var st = s[id]; if (!st) return;
+    st.ignored += 1; s[id] = st; saveSeen(s);
+  }
+  function benched(id) {
+    var st = lineStats(id);
+    if (st.banned) return true;
+    if (st.shown >= 50 && st.fast / st.shown > 0.35) return true;  // fast-dismiss bench
+    if (st.shown >= 20 && st.ignored / st.shown > 0.70) return true; // blindness retire (proxy denominator)
+    return false;
+  }
+
+  /* ---------------- eligibility + picking ---------------- */
+  function onboardingQuiet() {
+    var doneAt = parseInt(lsGet('gn_nodki_ob_done_at') || '0', 10);
+    return doneAt && (Date.now() - doneAt) < DAY; // none within 24h of onboarding end/skip
+  }
+  function shownLast7d() {
+    var s = seen(); var cut = Date.now() - 7 * DAY; var n = 0;
+    Object.keys(s).forEach(function (id) { if (s[id].last >= cut) n += 1; });
+    return n;
+  }
+  function freqMode() {
+    var s = settings();
+    if (throttled()) return 'pull';
+    if (globalFactor() === 0) return 'pull';
+    return s.freq;
+  }
+  function proactiveAllowed(line, surface) {
+    if (!active()) return false;
+    if (sessionCount() <= 1) return false;                    // none in the user's first session
+    if (onboardingQuiet()) return false;                      // 24h post-onboarding quiet
+    if ((line.tenure || 0) > tenureDays()) return false;
+    if (line.expires && Date.now() > Date.parse(line.expires)) return false;
+    if (benched(line.id)) return false;
+    if (surface !== 'pull') {
+      var mode = freqMode();
+      if (mode === 'pull') return false;
+      if (mode === 'quiet' && line.trigger.type !== 'state') return false;
+      var cap = globalFactor() === 0.5 ? 1 : 3;
+      if (shownLast7d() >= cap) return false;                 // <=3 per rolling 7 days
+      if (!window.GN_NODKI || !window.GN_NODKI.budget || !window.GN_NODKI.budget.canAmbient()) return false;
+      var st = lineStats(line.id);
+      var nowMs = Date.now();
+      if (line.once) {
+        // once-ever until acted on, or 90 days pass (Spec B)
+        if (st.acted) { if (st.last && nowMs - st.last < (line.cooldown || 30) * DAY) return false; }
+        else if (st.shown > 0 && nowMs - st.last < 90 * DAY) return false;
+      } else if (st.last && nowMs - st.last < (line.cooldown || 30) * DAY) return false;
+      if (line.cat === 'fact' && st.last && nowMs - st.last < 90 * DAY) return false; // facts: no repeat in 90d
+      // 48h per-category (kind) cooldown
+      var s = seen(); var cut = Date.now() - 2 * DAY;
+      var lib = window.GN_NODKI_LIBRARY;
+      for (var id in s) {
+        if (!Object.prototype.hasOwnProperty.call(s, id)) continue;
+        var other = lib.byId(id);
+        if (other && other.kind === line.kind && s[id].last >= cut && id !== line.id) return false;
+      }
+    }
+    return true;
+  }
+  function pickLine(want) {
+    var lib = window.GN_NODKI_LIBRARY; if (!lib) return null;
+    var mode = freqMode();
+    var cands = lib.lines.filter(function (l) {
+      if (want.cat && l.cat !== want.cat) return false;
+      if (want.eventKey) return l.trigger.type === 'event' && l.trigger.key === want.eventKey;
+      if (want.pull) return l.surfaces.indexOf('pull') >= 0 && stateOk(l);
+      if (l.trigger.type === 'event') return false;
+      if (want.idle) return l.trigger.type === 'idle' && stateOk(l);
+      return l.trigger.type === 'state' && stateOk(l);
+    });
+    cands = cands.filter(function (l) { return proactiveAllowed(l, want.pull ? 'pull' : 'card'); });
+    if (!cands.length) return null;
+    // mix control: facts are the minority; among state candidates prefer
+    // the requested cat, then priority, then least recently shown.
+    cands.sort(function (a, b) {
+      if (b.priority !== a.priority) return b.priority - a.priority;
+      return lineStats(a.id).last - lineStats(b.id).last;
+    });
+    return cands[0];
+  }
+
+  /* ---------------- showing ---------------- */
+  var currentShow = null; // {id, at}
+  function settleCurrent() {
+    if (!currentShow) return;
+    var dwell = Date.now() - currentShow.at;
+    if (dwell < 800) noteIgnore(currentShow.id);
+    currentShow = null;
+  }
+  function showLine(line, via) {
+    if (!window.GN_NODKI || !window.GN_NODKI.showAmbient) return false;
+    settleCurrent();
+    var text = line[lang()] || line.en;
+    var framed = false;
+    if (line.cat === 'fact') {
+      var s = seen();
+      var anyFact = Object.keys(s).some(function (id) { var l = window.GN_NODKI_LIBRARY.byId(id); return l && l.cat === 'fact' && s[id].shown > 0; });
+      if (!anyFact) { text = tx('nodki.factFrame', null, 'General information only — not medical advice.') + ' ' + text; framed = true; }
+    }
+    var ok = window.GN_NODKI.showAmbient({
+      id: line.id,
+      label: line.cat === 'fact' ? tx('nodki.factLabel', null, 'FIELD NOTE') : tx('nodki.tipLabel', null, 'TIP'),
+      text: text,
+      expr: line.expr, alts: line.alts || [],
+      cta: line.cta ? tx('nodki.open', null, 'OPEN') : null,
+      proactive: via !== 'pull'
+    }, {
+      onDismiss: function (dwellMs) { noteDismiss(line.id, dwellMs); currentShow = null; },
+      onCta: function () {
+        var s = seen(); var st = s[line.id] || { shown: 0, last: 0, dismissed: 0, fast: 0, ignored: 0, acted: false, banned: false };
+        st.acted = true; s[line.id] = st; saveSeen(s);
+        ctaGo(line.cta);
+      }
+    });
+    if (ok) {
+      noteShow(line.id);
+      currentShow = { id: line.id, at: Date.now() };
+      if (via !== 'pull' && window.GN_NODKI.budget) window.GN_NODKI.budget.spendAmbient();
+      if (framed) { /* framing counts as the first fact's show; recorded above */ }
+    }
+    return ok;
+  }
+  function ctaGo(target) {
+    try {
+      var nav = { dash: 'navDash', history: 'navLog', results: 'navRes', lab: 'navLab', vault: 'navVault', profile: 'navVault', scanner: 'navLog' };
+      var page = { dash: 'Dash', history: 'History', results: 'Results', lab: 'Lab', vault: 'Profile', profile: 'Profile', scanner: 'History' };
+      if (target === 'log') {
+        if (typeof window.handleShotFab === 'function') window.handleShotFab();
+        else if (typeof window.openLogModal === 'function') window.openLogModal();
+        return;
+      }
+      var el = document.getElementById(nav[target] || 'navDash');
+      if (typeof window.showPage === 'function') window.showPage(page[target] || 'Dash', el);
+      if (target === 'scanner') {
+        window.setTimeout(function () {
+          var r = document.getElementById('shotsRegionScanner');
+          if (r) r.scrollIntoView({ block: 'center' });
+        }, 480);
+      }
+    } catch (e) {}
+  }
+
+  /* ---------------- triggers ---------------- */
+  var idleTimer = 0;
+  function clearIdle() { if (idleTimer) { window.clearTimeout(idleTimer); idleTimer = 0; } }
+  function armIdle() {
+    clearIdle();
+    if (!active() || freqMode() === 'pull') return;
+    idleTimer = window.setTimeout(function () {
+      idleTimer = 0;
+      if (!dashboardVisible()) return;
+      var line = pickLine({ idle: true });
+      if (!line) line = pickLine({ cat: null });
+      if (line) showLine(line, 'idle');
+    }, 20000);
+  }
+  function dashboardVisible() {
+    var p = document.getElementById('pageDash');
+    return !!p && p.offsetParent !== null;
+  }
+  function onDashboardArrival() {
+    if (!active()) return;
+    // completed-event lines outrank state/idle tips
+    var pending = jGet(PENDING_KEY, []);
+    if (pending.length) {
+      var lib = window.GN_NODKI_LIBRARY;
+      for (var i = 0; i < pending.length; i++) {
+        var l = lib && lib.byId(pending[i]);
+        if (l && proactiveAllowed(l, 'card')) {
+          jSet(PENDING_KEY, pending.slice(i + 1));
+          if (showLine(l, 'event')) return;
+        }
+      }
+      jSet(PENDING_KEY, []);
+    }
+    var line = pickLine({});
+    if (line) { showLine(line, 'state'); return; }
+    armIdle();
+  }
+  function queueEvent(key) {
+    var lib = window.GN_NODKI_LIBRARY; if (!lib) return;
+    var line = null;
+    lib.lines.forEach(function (l) { if (l.trigger.type === 'event' && l.trigger.key === key) line = l; });
+    if (!line) return;
+    var flags = jGet(EVENTS_KEY, {});
+    if (key === 'firstExport' && flags.firstExport) return;
+    if (key === 'firstScanner' && flags.firstScanner) return;
+    flags[key] = true; jSet(EVENTS_KEY, flags);
+    var pending = jGet(PENDING_KEY, []);
+    if (pending.indexOf(line.id) < 0) { pending.push(line.id); jSet(PENDING_KEY, pending); }
+  }
+
+  /* pull: uncapped, user-initiated; rotates least-recently-shown */
+  function pull() {
+    if (!active()) return;
+    var lib = window.GN_NODKI_LIBRARY; if (!lib) return;
+    var fact = (pullCount % 3 === 2); // ~2:1 tips:facts across pulls too
+    pullCount += 1;
+    var line = pickLine({ pull: true, cat: fact ? 'fact' : 'tip' }) || pickLine({ pull: true });
+    if (line) showLine(line, 'pull');
+  }
+  var pullCount = 0;
+
+  /* ---------------- card override lines (continuity / exit / resume) -- */
+  function cardOverride() {
+    if (ssGet('gn_nodki_continuity') === '1') {
+      ssSet('gn_nodki_continuity', '0');
+      return { key: 'nodki.host.continuity', fallback: "Grid's live. I'll flag what's due, here.", expr: 'welcome', alts: ['default'], cta: null };
+    }
+    if (ssGet('gn_nodki_guide_exit') === '1') {
+      ssSet('gn_nodki_guide_exit', '0');
+      return { key: 'nodki.host.exitLine', fallback: "Guide's in the VAULT whenever you want it.", expr: 'default', alts: ['thinking'], cta: null };
+    }
+    // one resume re-offer: guide <50% complete, >=24h since last beat
+    try {
+      if (lsGet(OFFER_KEY) === '1') return null;
+      var prog = jGet('gn_onboarding_progress_v1', null);
+      if (!prog || prog.done || !prog.beats) return null;
+      var total = 6; var doneCount = Object.keys(prog.beats).filter(function (b) { return prog.beats[b] && prog.beats[b].complete; }).length;
+      if (doneCount / total >= 0.5) return null;
+      if (!prog.lastAt || Date.now() - prog.lastAt < DAY) return null;
+      lsSet(OFFER_KEY, '1');
+      return { key: 'nodki.host.resumeOffer', fallback: 'Your intro is still open. Pick it up where you left off, any time.', expr: 'thinking', alts: ['default'], cta: 'resume' };
+    } catch (e) { return null; }
+  }
+
+  /* ---------------- waits ---------------- */
+  var waitTimer = 0;
+  function waitLineEl() {
+    var ov = document.getElementById('csvImportOverlay');
+    if (!ov) return null;
+    var el = ov.querySelector('.gn-nodki-wait-line');
+    if (!el) {
+      el = document.createElement('p');
+      el.className = 'gn-nodki-wait-line';
+      el.hidden = true;
+      ov.appendChild(el);
+    }
+    return el;
+  }
+  var GN_NODKI_WAIT = {
+    start: function (kind) {
+      if (!active()) return;
+      window.clearTimeout(waitTimer);
+      waitTimer = window.setTimeout(function () {
+        var ov = document.getElementById('csvImportOverlay');
+        if (!ov || !ov.classList.contains('active')) return;
+        var lib = window.GN_NODKI_LIBRARY; if (!lib) return;
+        var w = lib.waits.filter(function (x) { return x.id === 'w-' + kind; })[0] || lib.waits[3];
+        var el = waitLineEl(); if (!el) return;
+        el.textContent = w[lang()] || w.en;
+        el.hidden = false;
+      }, 3000);
+    },
+    stop: function () {
+      window.clearTimeout(waitTimer);
+      var el = null;
+      try { el = document.querySelector('.gn-nodki-wait-line'); } catch (e) {}
+      if (el) el.hidden = true;
+    }
+  };
+  window.GN_NODKI_WAIT = GN_NODKI_WAIT;
+
+  /* ---------------- VAULT panel: settings + manual + archive -------- */
+  function beatDone(n) {
+    var prog = jGet('gn_onboarding_progress_v1', null);
+    return !!(prog && prog.beats && prog.beats[n] && prog.beats[n].complete);
+  }
+  function renderPanel() {
+    var host = document.getElementById('gnNodkiPanel');
+    if (!host) return;
+    var s = settings();
+    var freqBtn = function (val, key, fb) {
+      return '<button type="button" class="gn-nodki-freq-btn' + (s.freq === val ? ' is-on' : '') + '" data-gn-freq="' + val + '" aria-pressed="' + String(s.freq === val) + '">' + esc(tx(key, null, fb)) + '</button>';
+    };
+    var manual = [
+      [0, 'nodki.manual.b0', 'Welcome from your operator'],
+      [1, 'nodki.manual.b1', 'Set your shot day'],
+      [2, 'nodki.manual.b2', 'Log your first shot'],
+      [3, 'nodki.manual.b3', 'See your phase'],
+      [4, 'nodki.manual.b4', 'Meet the scanner'],
+      [5, 'nodki.manual.b5', 'The handoff: your controls']
+    ].map(function (m) {
+      var done = beatDone(m[0]);
+      return '<div class="gn-vault-row gn-vault-row-static"><span class="gn-vault-row-txt"><b>' + esc(tx(m[1], null, m[2])) + '</b></span>' +
+        '<span class="gn-nodki-manual-state">' + (done ? esc(tx('nodki.manual.done', null, 'DONE')) : esc(tx('nodki.manual.todo', null, 'OPEN'))) + '</span></div>';
+    }).join('');
+    var seenMap = seen();
+    var ids = Object.keys(seenMap).filter(function (id) { return seenMap[id].shown > 0; });
+    ids.sort(function (a, b) { return (seenMap[b].last || 0) - (seenMap[a].last || 0); });
+    var lib = window.GN_NODKI_LIBRARY;
+    var archive = '';
+    if (!ids.length) {
+      archive = '<p class="gn-nodki-archive-empty">' + esc(tx('nodki.archive.empty', null, 'Nothing yet. Lines you see will live here.')) + '</p>';
+    } else {
+      var anyFact = false;
+      archive = ids.map(function (id) {
+        var l = lib ? lib.byId(id) : null; if (!l) return '';
+        if (l.cat === 'fact') anyFact = true;
+        var d = seenMap[id].last ? new Date(seenMap[id].last) : null;
+        var when = d ? d.toLocaleDateString(lang() === 'es' ? 'es' : 'en', { month: 'short', day: 'numeric' }) : '';
+        return '<div class="gn-nodki-archive-row"><span class="gn-nodki-archive-tag">' + (l.cat === 'fact' ? esc(tx('nodki.factLabel', null, 'FIELD NOTE')) : esc(tx('nodki.tipLabel', null, 'TIP'))) + '</span>' +
+          '<span class="gn-nodki-archive-txt">' + esc(l[lang()] || l.en) +
+          (l.cat === 'fact' && l.source ? '<span class="gn-nodki-archive-src">' + esc(tx('nodki.archive.source', null, 'Source')) + ': ' + esc(l.source.label) + '</span>' : '') +
+          '</span><span class="gn-nodki-archive-when">' + esc(when) + '</span>' +
+          (seenMap[id].banned ? '' : '<button type="button" class="gn-nodki-archive-ban" data-gn-ban="' + esc(id) + '">' + esc(tx('nodki.archive.ban', null, "Don't show again")) + '</button>') +
+          '</div>';
+      }).join('');
+      if (anyFact) archive += '<p class="gn-nodki-archive-foot">' + esc(tx('nodki.factFrame', null, 'General information only — not medical advice.')) + '</p>';
+    }
+    host.innerHTML =
+      '<div class="gn-vault-row gn-vault-row-static"><span class="gn-vault-row-txt"><b data-i18n="nodki.tipsTitle">' + esc(tx('nodki.tipsTitle', null, 'Tips & facts')) + '</b><small>' + esc(tx('nodki.tipsHelp', null, 'Occasional notes from NODKI. Facts are general information.')) + '</small></span>' +
+      '<button type="button" class="gn-nodki-toggle" data-gn-tips-toggle aria-pressed="' + String(s.enabled) + '">' + (s.enabled ? esc(tx('nodki.on', null, 'ON')) : esc(tx('nodki.off', null, 'OFF'))) + '</button></div>' +
+      '<div class="gn-vault-row gn-vault-row-static"><span class="gn-vault-row-txt"><b>' + esc(tx('nodki.freqTitle', null, 'How often')) + '</b></span><span class="gn-nodki-freq">' +
+      freqBtn('normal', 'nodki.freqNormal', 'NORMAL') + freqBtn('quiet', 'nodki.freqQuiet', 'QUIET') + freqBtn('pull', 'nodki.freqPull', 'PULL ONLY') + '</span></div>' +
+      '<div class="gn-nodki-manual"><div class="gn-nodki-sub">' + esc(tx('nodki.manual.title', null, "OPERATOR'S MANUAL")) + '</div>' + manual +
+      '<button type="button" class="gn-nodki-manual-replay" data-gn-replay>' + esc(tx('nodki.manual.replay', null, 'Replay the guide')) + '</button></div>' +
+      '<div class="gn-nodki-archive"><div class="gn-nodki-sub">' + esc(tx('nodki.archive.title', null, "OPERATOR'S NOTES")) + '</div>' + archive + '</div>';
+    host.querySelector('[data-gn-tips-toggle]').addEventListener('click', function () {
+      var cur = settings(); cur.enabled = !cur.enabled; saveSettings(cur);
+    });
+    host.querySelectorAll('[data-gn-freq]').forEach(function (b) {
+      b.addEventListener('click', function () { var cur = settings(); cur.freq = b.getAttribute('data-gn-freq'); saveSettings(cur); });
+    });
+    host.querySelectorAll('[data-gn-ban]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var sm = seen(); var id = b.getAttribute('data-gn-ban');
+        if (sm[id]) { sm[id].banned = true; saveSeen(sm); }
+        renderPanel();
+      });
+    });
+    var rp = host.querySelector('[data-gn-replay]');
+    if (rp) rp.addEventListener('click', function () {
+      try { if (window.GN_ONBOARDING && window.GN_ONBOARDING.restart) window.GN_ONBOARDING.restart(); } catch (e) {}
+    });
+  }
+
+  /* ---------------- wiring ---------------- */
+  document.addEventListener('click', function (ev) {
+    var t = ev.target;
+    if (!t || !t.closest) return;
+    if (t.closest('#navDash')) { window.setTimeout(onDashboardArrival, 460); armIdleSoon(); }
+    else if (t.closest('.nav-item')) { settleCurrent(); clearIdle(); }
+    if (t.closest('#shotsRegionScanner .biotech-zones [data-site]')) queueEvent('firstScanner');
+    var oc = t.closest('[onclick]');
+    if (oc && /export(CSV|Backup)/.test(oc.getAttribute('onclick') || '')) queueEvent('firstExport');
+  }, true);
+  function armIdleSoon() { /* idle arms after arrival render decisions */ window.setTimeout(function () { if (dashboardVisible() && !currentShow) armIdle(); }, 600); }
+  ['pointerdown', 'keydown'].forEach(function (evt) {
+    document.addEventListener(evt, function () { if (idleTimer) armIdle(); }, { passive: true });
+  });
+  document.addEventListener('gn:nodki-setting', function () { renderPanel(); });
+  document.addEventListener('gn:langchange', function () { renderPanel(); });
+  // VAULT renders its HTML dynamically; render the panel when it appears.
+  try {
+    var mo = new MutationObserver(function () {
+      var host = document.getElementById('gnNodkiPanel');
+      if (host && !host.dataset.rendered) { host.dataset.rendered = '1'; renderPanel(); }
+      else if (host && host.dataset.rendered === '1' && !host.innerHTML) { renderPanel(); }
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
+  } catch (e) {}
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { renderPanel(); });
+  else renderPanel();
+
+  window.GN_NODKI_AMBIENT = {
+    settings: settings,
+    pull: pull,
+    cardOverride: cardOverride,
+    queueEvent: queueEvent,
+    renderPanel: renderPanel,
+    onDashboardArrival: onDashboardArrival,
+    state: { active: active, freqMode: freqMode, factor: globalFactor }
+  };
 })();
 
 window.GNModules={getProfile:getProfile,getProfileForEvidence:getProfileForEvidence,selectState:selectState,moduleState:moduleState,refreshNodeHeader:refreshNodeHeader,showScreen:showScreen,showPage:showPage,refreshAll:refreshAll,loadApp:loadApp,computeTotalChange:computeTotalChange,resetShotFormState:resetShotFormState,saveProfileMed:saveProfileMed,saveProfileMetrics:saveProfileMetrics,calcAndShowBMI:calcAndShowBMI,toggleSelect:toggleSelect,selectOpt:selectOpt,retryCloudHydration:retryCloudHydration,showPhasesModal:showPhasesModal,closePhases:closePhases,showLabSeg:showLabSeg,showYouSeg:showYouSeg,renderCalendar:renderCalendar,calPrev:calPrev,calNext:calNext,calDayClick:calDayClick,openArsenalMod:openArsenalMod,closeArs:closeArs,saveArs:saveArs,requestLoadoutRemove:requestLoadoutRemove,cancelLoadoutRemove:cancelLoadoutRemove,confirmLoadoutRemove:confirmLoadoutRemove,formatTime24:formatTime24,formatTime12:formatTime12,gnSetShotMeridiem:gnSetShotMeridiem,gnShotClockLiveFormat:gnShotClockLiveFormat,gnNormalizeShotClockField:gnNormalizeShotClockField,gnWeightDateInput:gnWeightDateInput,gnWeightTimeInput:gnWeightTimeInput,gnOpenShotDatePicker:gnOpenShotDatePicker,gnCloseShotDatePicker:gnCloseShotDatePicker,gnDatePickerMove:gnDatePickerMove,gnSelectPickerDate:gnSelectPickerDate,gnSetShotDateFromPicker:gnSetShotDateFromPicker,gnSetShotDateValue:gnSetShotDateValue,gnSetShotTimeValue:gnSetShotTimeValue,gnMedRevealGroup:gnMedRevealGroup,updatePills:updatePills,selPill:selPill,initModules:initModules,trustBadge:trustBadge,approxPct:approxPct,approxNum:approxNum};

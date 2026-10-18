@@ -387,6 +387,7 @@ function ensureProfileHub() {
         <div class="gn-vault-row gn-vault-row-static">${ico('gn-phase-ring')}<span class="gn-vault-row-txt"><b data-i18n="vault.theme">Theme</b><small data-i18n="vault.themeHelp">Dark or light display</small></span><span class="gn-theme-toggle-host" role="group" aria-label="THEME"></span></div>
         <button type="button" class="gn-vault-row" onclick="toggleGnHaptics()"><span class="gn-vault-row-txt"><b data-i18n="vault.hapticsTitle">Haptics</b><small id="gnHapticsHelp"></small></span><span id="gnHapticsState" class="gn-vault-haptics-state" aria-hidden="true"></span></button>
         <button type="button" class="gn-vault-row" onclick="toggleGnNodki()"><span class="gn-vault-row-txt"><b data-i18n="vault.nodkiTitle">NODKI companion</b><small id="gnNodkiHelp"></small></span><span id="gnNodkiState" class="gn-vault-haptics-state" aria-hidden="true"></span></button>
+        <div id="gnNodkiPanel"></div>
       </div>
     </div>
     <div class="gn-vault-group" data-gn-vault-group="devices">

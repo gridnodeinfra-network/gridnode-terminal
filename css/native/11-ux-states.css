@@ -242,9 +242,35 @@ html.gn-auth-returning .gn-auth-return {
 .gn-nodki-face img { width:56px; height:56px; object-fit:contain; display:block; }
 .gn-nodki-body { min-width:0; }
 .gn-nodki-kicker { font-size:10px; letter-spacing:.14em; color:#06BBE3; }
-.gn-nodki-line { margin-top:2px; font-size:14px; line-height:1.35; color:#EAFDFF; }
+.gn-nodki-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+.gn-nodki-dismiss { flex:0 0 auto; width:28px; height:28px; padding:0; border:1px solid rgba(6,187,227,.42); border-radius:9px; background:none; color:#EAFDFF; font-size:16px; line-height:1; cursor:pointer; }
+.gn-nodki-dismiss[hidden] { display:none; }
+/* Readability floor (Spec C.4): NODKI surface body text >=17px / 1.5. */
+.gn-nodki-line { margin-top:2px; font-size:17px; line-height:1.5; color:#EAFDFF; }
+.gn-nodki-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 .gn-nodki-cta { margin-top:8px; min-height:44px; padding:8px 14px; border:1px solid #06BBE3; border-radius:9px; background:rgba(6,187,227,.14); color:#EAFDFF; font-weight:700; letter-spacing:.06em; cursor:pointer; }
 .gn-nodki-cta[hidden] { display:none; }
+.gn-nodki-more { margin-top:8px; min-height:44px; padding:8px 4px; border:none; background:none; color:#06BBE3; font-size:12px; font-weight:700; letter-spacing:.08em; cursor:pointer; }
+.gn-nodki-more[hidden] { display:none; }
+/* Wait line: one static library line inside the existing import overlay. */
+.gn-nodki-wait-line { margin:12px 16px 0; font-size:17px; line-height:1.5; color:#EAFDFF; text-align:center; }
+.gn-nodki-wait-line[hidden] { display:none; }
+/* VAULT panel (tips settings, Operator's manual, Operator's notes). */
+.gn-nodki-toggle { flex:0 0 auto; min-width:52px; min-height:36px; padding:6px 10px; border:1px solid rgba(6,187,227,.42); border-radius:9px; background:rgba(6,187,227,.14); color:#EAFDFF; font-weight:700; letter-spacing:.06em; cursor:pointer; }
+.gn-nodki-freq { display:inline-flex; gap:6px; flex-wrap:wrap; }
+.gn-nodki-freq-btn { min-height:36px; padding:6px 10px; border:1px solid rgba(6,187,227,.42); border-radius:9px; background:none; color:#EAFDFF; font-size:12px; font-weight:700; letter-spacing:.06em; cursor:pointer; }
+.gn-nodki-freq-btn.is-on { background:rgba(6,187,227,.14); }
+.gn-nodki-sub { margin:14px 0 6px; font-size:10px; letter-spacing:.14em; color:#06BBE3; }
+.gn-nodki-manual-state { flex:0 0 auto; font-size:11px; font-weight:700; letter-spacing:.08em; color:#06BBE3; }
+.gn-nodki-manual-replay { margin-top:10px; min-height:44px; padding:8px 14px; border:1px solid #06BBE3; border-radius:9px; background:rgba(6,187,227,.14); color:#EAFDFF; font-weight:700; letter-spacing:.06em; cursor:pointer; }
+.gn-nodki-archive-empty { font-size:14px; line-height:1.5; color:#EAFDFF; opacity:.75; }
+.gn-nodki-archive-row { display:flex; gap:8px; align-items:flex-start; padding:8px 0; border-top:1px solid rgba(6,187,227,.18); flex-wrap:wrap; }
+.gn-nodki-archive-tag { flex:0 0 auto; font-size:10px; letter-spacing:.14em; color:#06BBE3; padding-top:4px; }
+.gn-nodki-archive-txt { flex:1 1 180px; font-size:14px; line-height:1.5; color:#EAFDFF; }
+.gn-nodki-archive-src { display:block; font-size:12px; opacity:.75; }
+.gn-nodki-archive-when { flex:0 0 auto; font-size:12px; color:#EAFDFF; opacity:.6; padding-top:3px; }
+.gn-nodki-archive-ban { flex:0 0 auto; min-height:32px; padding:4px 8px; border:1px solid rgba(6,187,227,.42); border-radius:9px; background:none; color:#EAFDFF; font-size:12px; cursor:pointer; }
+.gn-nodki-archive-foot { margin-top:10px; font-size:12px; line-height:1.5; color:#EAFDFF; opacity:.75; }
 .gn-nodki-empty { width:72px; height:72px; object-fit:contain; }
 @keyframes gnNodkiPop { 0% { transform:scale(1); } 35% { transform:scale(1.035); } 100% { transform:scale(1); } }
 .gn-nodki-pop { animation:gnNodkiPop .9s ease-out 1; }

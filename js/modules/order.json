@@ -12,5 +12,7 @@
   "10-importer.js",
   "11-misc.js",
   "13-tactile.js",
-  "14-nodki.js"
+  "14-nodki.js",
+  "15-nodki-library.js",
+  "16-nodki-ambient.js"
 ]
