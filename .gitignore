@@ -31,3 +31,4 @@ dist/
 
 # Smoke test artifact
 smoke-dist.png
+node_modules
