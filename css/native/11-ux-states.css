@@ -245,9 +245,12 @@ html.gn-auth-returning .gn-auth-return {
 .gn-nodki-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
 .gn-nodki-dismiss { flex:0 0 auto; width:28px; height:28px; padding:0; border:1px solid rgba(6,187,227,.42); border-radius:9px; background:none; color:#EAFDFF; font-size:16px; line-height:1; cursor:pointer; }
 .gn-nodki-dismiss[hidden] { display:none; }
-/* Readability floor (Spec C.4): NODKI surface body text >=17px / 1.5. */
-.gn-nodki-line { margin-top:2px; font-size:17px; line-height:1.5; color:#EAFDFF; }
-.gn-nodki-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+/* Readability floor (Spec C.4): NODKI surface body text >=17px / 1.5.
+ * The line reserves three lines and the actions row its full height,
+ * so the card's height is constant across every state and ambient
+ * swap: appearances never move the page (CLS 0 by construction). */
+.gn-nodki-line { margin-top:2px; font-size:17px; line-height:1.5; min-height:77px; color:#EAFDFF; }
+.gn-nodki-actions { display:flex; align-items:flex-start; gap:10px; flex-wrap:wrap; min-height:52px; }
 .gn-nodki-cta { margin-top:8px; min-height:44px; padding:8px 14px; border:1px solid #06BBE3; border-radius:9px; background:rgba(6,187,227,.14); color:#EAFDFF; font-weight:700; letter-spacing:.06em; cursor:pointer; }
 .gn-nodki-cta[hidden] { display:none; }
 .gn-nodki-more { margin-top:8px; min-height:44px; padding:8px 4px; border:none; background:none; color:#06BBE3; font-size:12px; font-weight:700; letter-spacing:.08em; cursor:pointer; }

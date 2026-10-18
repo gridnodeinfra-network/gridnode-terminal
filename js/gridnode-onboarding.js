@@ -1254,7 +1254,7 @@
     hideOverlay();
     try {
       if (typeof window.showPage === 'function') {
-        window.showPage('History', document.getElementById('navLog'));
+        window.showPage('Log', document.getElementById('navLog'));
       }
     } catch (e) { /* resolution below degrades back to the briefing */ }
     window.setTimeout(function () {

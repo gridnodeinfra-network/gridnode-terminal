@@ -210,6 +210,17 @@
     });
     cands = cands.filter(function (l) { return proactiveAllowed(l, want.pull ? 'pull' : 'card'); });
     if (!cands.length) return null;
+    if (want.pull) {
+      // Pull rotates: never repeat the line on screen when an approved
+      // alternative exists; least-recently-shown first.
+      var fresh = cands.filter(function (l) { return !currentShow || l.id !== currentShow.id; });
+      if (fresh.length) cands = fresh;
+      cands.sort(function (a, b) {
+        var d = lineStats(a.id).last - lineStats(b.id).last;
+        return d !== 0 ? d : b.priority - a.priority;
+      });
+      return cands[0];
+    }
     // mix control: facts are the minority; among state candidates prefer
     // the requested cat, then priority, then least recently shown.
     cands.sort(function (a, b) {
@@ -263,7 +274,7 @@
   function ctaGo(target) {
     try {
       var nav = { dash: 'navDash', history: 'navLog', results: 'navRes', lab: 'navLab', vault: 'navVault', profile: 'navVault', scanner: 'navLog' };
-      var page = { dash: 'Dash', history: 'History', results: 'Results', lab: 'Lab', vault: 'Profile', profile: 'Profile', scanner: 'History' };
+      var page = { dash: 'Dash', history: 'Log', results: 'Results', lab: 'Lab', vault: 'Profile', profile: 'Profile', scanner: 'Log' };
       if (target === 'log') {
         if (typeof window.handleShotFab === 'function') window.handleShotFab();
         else if (typeof window.openLogModal === 'function') window.openLogModal();
@@ -481,6 +492,7 @@
     if (!t || !t.closest) return;
     if (t.closest('#navDash')) { window.setTimeout(onDashboardArrival, 460); armIdleSoon(); }
     else if (t.closest('.nav-item')) { settleCurrent(); clearIdle(); }
+    if (t.closest('#navVault')) { window.setTimeout(renderPanel, 420); }
     if (t.closest('#shotsRegionScanner .biotech-zones [data-site]')) queueEvent('firstScanner');
     var oc = t.closest('[onclick]');
     if (oc && /export(CSV|Backup)/.test(oc.getAttribute('onclick') || '')) queueEvent('firstExport');
@@ -491,12 +503,13 @@
   });
   document.addEventListener('gn:nodki-setting', function () { renderPanel(); });
   document.addEventListener('gn:langchange', function () { renderPanel(); });
-  // VAULT renders its HTML dynamically; render the panel when it appears.
+  // VAULT renders its HTML dynamically (first on the profile page's
+  // first show). Render the panel whenever it appears empty; settings
+  // changes and VAULT arrivals re-render it explicitly.
   try {
     var mo = new MutationObserver(function () {
       var host = document.getElementById('gnNodkiPanel');
-      if (host && !host.dataset.rendered) { host.dataset.rendered = '1'; renderPanel(); }
-      else if (host && host.dataset.rendered === '1' && !host.innerHTML) { renderPanel(); }
+      if (host && !host.innerHTML) renderPanel();
     });
     mo.observe(document.body, { childList: true, subtree: true });
   } catch (e) {}

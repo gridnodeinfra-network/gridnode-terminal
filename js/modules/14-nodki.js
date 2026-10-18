@@ -250,6 +250,7 @@
     else flash('afterLog', 'nodki.afterLogPlain', {}, 5200);
   });
   document.addEventListener('gn:nodki-setting', render);
+  document.addEventListener('gn:onboarding-done', function () { setTimeout(render, 350); });
   document.addEventListener('click', function (ev) {
     var t = ev.target;
     if (t && t.closest && t.closest('#navDash')) setTimeout(render, 420);
