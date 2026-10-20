@@ -199,14 +199,37 @@
       </div>
       
       
-      <!-- Shot Constellation Timeline -->
-      <div class="gn-constellation" id="gnConstellation" hidden>
-        <div class="gn-constellation-kicker" data-i18n="history.constellation">TIMELINE</div>
-        <div class="gn-constellation-track" id="gnConstellationTrack">
-          <div class="gn-constellation-line"></div>
-          <div class="gn-constellation-nodes" id="gnConstellationNodes"></div>
+      <!-- Shot Timeline: dated event axis over the entries list. Every
+           marker is a real record; the readout names the selected event
+           and opens its entry. Rendered by renderTimeline (03). -->
+      <div class="gn-timeline" id="gnTimeline" hidden>
+        <div class="gn-timeline-head">
+          <span class="gn-timeline-kicker" data-i18n="history.constellation">TIMELINE</span>
+          <span class="gn-timeline-range" id="gnTimelineRange"></span>
         </div>
+        <div class="gn-timeline-track" id="gnTimelineTrack">
+          <div class="gn-timeline-line"></div>
+          <div class="gn-timeline-ticks" id="gnTimelineTicks"></div>
+          <div class="gn-timeline-nodes" id="gnTimelineNodes"></div>
+        </div>
+        <button type="button" class="gn-timeline-readout" id="gnTimelineReadout" hidden>
+          <span class="gn-timeline-readout-main" id="gnTimelineReadoutMain"></span>
+          <span class="gn-timeline-readout-action" data-i18n="history.timelineOpen">OPEN ›</span>
+        </button>
       </div>
+      <div class="shot-history-controls" id="historyTypeFilter" role="group" aria-label="HISTORY type filter" data-i18n-aria-label="history.typeFilterAria">
+        <button class="shot-history-toggle active" type="button" data-history-type="all" data-i18n="history.typeAll">ALL</button>
+        <button class="shot-history-toggle" type="button" data-history-type="shots" data-i18n="history.typeShots">SHOTS</button>
+        <button class="shot-history-toggle" type="button" data-history-type="weight" data-i18n="history.typeWeight">WEIGHT</button>
+      </div>
+      <div class="shot-history-controls" id="shotHistoryControls" role="group" aria-label="SHOT HISTORY view controls" data-i18n-aria-label="shot.historyControlsAria">
+        <button class="shot-history-toggle active" type="button" data-shot-history-view="active" data-i18n="shots.activeTab">ACTIVE</button>
+        <button class="shot-history-toggle" type="button" data-shot-history-view="archived" data-i18n="shots.archivedTab">ARCHIVED</button>
+      </div>
+      <div class="shot-history-helper" id="shotHistoryHelper"></div>
+
+      <div id="logList"><div class="empty"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span>NO SHOTS LOGGED YET<br><button class="btn-full btn-primary empty-cta" type="button" onclick="openLogModal()" aria-label="Log your first shot">LOG YOUR FIRST SHOT</button></div></div>
+      
       <section class="shots-scanner-card" id="shotsRegionScanner">
         <div class="shots-scanner-head">
           <div>
@@ -318,19 +341,6 @@
         </div>
         <div class="shots-safety-note" data-i18n="shots.scannerSafety">// SYSTEM NOTICE: USER-ENTERED LOCATION TRACKING ONLY. GRID//NODE DOES NOT PROVIDE LOCATION RECOMMENDATIONS OR MEDICAL ADVICE.</div>
       </section>
-
-      <div class="shot-history-controls" id="historyTypeFilter" role="group" aria-label="HISTORY type filter" data-i18n-aria-label="history.typeFilterAria">
-        <button class="shot-history-toggle active" type="button" data-history-type="all" data-i18n="history.typeAll">ALL</button>
-        <button class="shot-history-toggle" type="button" data-history-type="shots" data-i18n="history.typeShots">SHOTS</button>
-        <button class="shot-history-toggle" type="button" data-history-type="weight" data-i18n="history.typeWeight">WEIGHT</button>
-      </div>
-      <div class="shot-history-controls" id="shotHistoryControls" role="group" aria-label="SHOT HISTORY view controls" data-i18n-aria-label="shot.historyControlsAria">
-        <button class="shot-history-toggle active" type="button" data-shot-history-view="active" data-i18n="shots.activeTab">ACTIVE</button>
-        <button class="shot-history-toggle" type="button" data-shot-history-view="archived" data-i18n="shots.archivedTab">ARCHIVED</button>
-      </div>
-      <div class="shot-history-helper" id="shotHistoryHelper"></div>
-
-      <div id="logList"><div class="empty"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-protocol-event"></use></svg></span></span>NO SHOTS LOGGED YET<br><button class="btn-full btn-primary empty-cta" type="button" onclick="openLogModal()" aria-label="Log your first shot">LOG YOUR FIRST SHOT</button></div></div>
     </div>
 
     

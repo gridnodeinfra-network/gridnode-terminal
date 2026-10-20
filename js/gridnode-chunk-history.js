@@ -205,6 +205,7 @@ function renderShots() {
     });
   }
   syncCustomPickers($('gnShotFilters') || document);
+  renderTimeline(visible.map(record => toTimelineEvent(record, 'shot')));
   setText('shotHistoryHelper', moduleState.shotHistoryView === 'archived' ? tx('shots.archivedRetained', 'Archived records remain stored for review and can be restored.') : tx('shots.activeRecordsRetained', 'Active SHOT records are retained in your local VAULT.'));
   qa('[data-shot-history-view]').forEach(button => button.classList.toggle('active', button.dataset.shotHistoryView === moduleState.shotHistoryView));
   if (!visible.length) {
@@ -278,6 +279,7 @@ function renderWeightHistory() {
   const list = $('logList');
   if (!list) return;
   const weights = validWeights().sort((a, b) => new Date(b.date) - new Date(a.date));
+  renderTimeline(weights.map(record => toTimelineEvent(record, 'weight')));
   if (!weights.length) {
     list.innerHTML = `<div class="empty gn-first-run-card"><span class="empty-ico"><span class="gn-icon gn-icon-lg gn-icon-hud gn-accent-c"><svg><use href="#gn-biometric-gauge"></use></svg></span></span><b class="gn-first-run-title">${tx('history.noWeights', 'NO WEIGHT RECORDS')}</b><span class="gn-first-run-sub">${tx('history.noWeightsSub', 'Log your weight to start building your trend.')}</span><br><button class="btn-full btn-primary empty-cta" type="button" onclick="openWeightModal()">${tx('history.logWeight', 'LOG WEIGHT')}</button></div>`;
     return;
@@ -348,36 +350,169 @@ function buildTimeline(options = {}) {
   return events;
 }
 
-/* Shot Constellation Timeline: visual event map above the history list.
- * Item 7: consumes the render's own (memoized, filtered) timeline —
- * no second buildTimeline() per render — and maps nodes to records by
- * timeline id instead of by child index. */
-function renderConstellation(orderedEvents) {
-  var el = document.getElementById('gnConstellation');
-  if (!el) return;
+/* Shot Timeline: dated event axis above the history list (redesign
+ * 2026-10-20, replacing the Shot Constellation). The old strip plotted
+ * the same events on a proportional time axis but published no scale:
+ * no dates, no labels, no per-event identity, and same-week events
+ * merged into one glowing smear — decoration formatted like data.
+ * This version keeps the honest proportional axis and adds the scale:
+ * a range label (first–last date, event count), month ticks on long
+ * spans, one marker per real record, and a readout that names the
+ * selected event. Markers too close to read individually (< 3.4% of
+ * the axis apart, same type lane) group into a counted cluster;
+ * tapping a cluster cycles its members in the readout instead of
+ * faking spread. Tapping the readout opens the entry in the list
+ * (revealHistoryRecord). Consumes the render's own (memoized,
+ * filtered) event set — it is a map of the list below it, in every
+ * subview (ALL union, SHOTS, WEIGHT). */
+const TIMELINE_WINDOW = 60;
+let timelineSelectedKey = null;
+let timelineEventsDesc = [];
+let timelineGroups = [];
+let timelineScopeSig = '';
+let timelineReadoutWired = false;
+
+function timelineEventMs(event) {
+  if (event.occurredAtMs) return event.occurredAtMs;
+  const ms = Date.parse(event.record?.createdAt || '');
+  return Number.isFinite(ms) ? ms : 0;
+}
+
+function timelineShortDate(event, withYear) {
+  const opts = withYear ? { month: 'short', day: 'numeric', year: 'numeric' } : { month: 'short', day: 'numeric' };
+  return String(formatDate(event.record.date, opts)).toUpperCase();
+}
+
+function timelineEventLabel(event) {
+  const record = event.record;
+  if (event.type === 'weight') return tx('results.weight', 'WEIGHT') + ' ' + Number(record.weight).toFixed(1) + 'lb';
+  const med = medicationLabel(record.med) || '';
+  const dose = record.dose != null && record.dose !== '' ? ' ' + record.dose + 'mg' : '';
+  const site = record.site ? ' · ' + (zoneLabel(record.site) || record.site) : '';
+  return (med + dose + site).trim();
+}
+
+function refreshTimelineSelection() {
+  const main = document.getElementById('gnTimelineReadoutMain');
+  const btn = document.getElementById('gnTimelineReadout');
+  if (!main || !btn) return;
+  const sel = timelineEventsDesc.find(e => e.id === timelineSelectedKey) || timelineEventsDesc[0];
+  if (!sel) { btn.hidden = true; return; }
+  timelineSelectedKey = sel.id;
+  document.querySelectorAll('#gnTimelineNodes .gn-const-node').forEach(node => {
+    const group = timelineGroups[Number(node.dataset.group)];
+    node.classList.toggle('gn-tl-selected', Boolean(group && group.members.some(m => m.id === sel.id)));
+  });
+  let text = timelineShortDate(sel, false) + ' · ' + timelineEventLabel(sel);
+  const group = timelineGroups.find(g => g.members.some(m => m.id === sel.id));
+  if (group && group.members.length > 1) {
+    const newestFirst = group.members.slice().reverse();
+    const pos = newestFirst.findIndex(m => m.id === sel.id) + 1;
+    text = timelineShortDate(sel, false) + ' · ' + tx('history.timelineOf', '{index} OF {count}', { index: pos, count: group.members.length }) + ' · ' + timelineEventLabel(sel);
+  }
+  main.textContent = text;
+  btn.hidden = false;
+}
+
+function selectTimelineGroup(groupIndex) {
+  const group = timelineGroups[groupIndex];
+  if (!group) return;
+  const newestFirst = group.members.slice().reverse();
+  const current = newestFirst.findIndex(m => m.id === timelineSelectedKey);
+  timelineSelectedKey = newestFirst[(current + 1) % newestFirst.length].id;
+  refreshTimelineSelection();
+}
+
+function renderTimeline(orderedEvents) {
+  const root = document.getElementById('gnTimeline');
+  if (!root) return;
   try {
-    var events = (orderedEvents || []).slice().reverse(); // oldest first for left-to-right
-    if (events.length < 2) { el.hidden = true; return; }
-    el.hidden = false;
-    var nodes = document.getElementById('gnConstellationNodes');
-    if (!nodes) return;
-    var times = events.map(function(e){ return new Date(e.record.date || e.record.createdAt || 0).getTime(); }).filter(function(t){ return !Number.isNaN(t); });
-    if (!times.length) { el.hidden = true; return; }
-    var mn = Math.min.apply(null, times), mx = Math.max.apply(null, times), span = (mx - mn) || 1;
-    // vertical lane by type: shots center, weights upper, labs lower
-    nodes.innerHTML = events.slice(-40).map(function(e){
-      var t = new Date(e.record.date || e.record.createdAt || 0).getTime();
-      var x = ((t - mn) / span * 96 + 2).toFixed(2);
-      var lane = e.type === 'shot' ? '50%' : (e.type === 'weight' ? '28%' : '72%');
-      var cls = e.type === 'shot' ? 'shot' : (e.type === 'weight' ? 'weight' : 'lab');
-      return '<div class="gn-const-node ' + cls + '" style="left:' + x + '%;top:' + lane + '" data-const-key="' + e.id + '" title="' + e.type + '" role="button" tabindex="0" aria-label="' + e.type + ' event"></div>';
-    }).join('');
-    nodes.querySelectorAll('.gn-const-node').forEach(function(n){
-      n.addEventListener('click', function(){
-        revealHistoryRecord(n.dataset.constKey, orderedEvents);
-      });
+    const desc = (Array.isArray(orderedEvents) ? orderedEvents : []).filter(e => timelineEventMs(e) > 0);
+    timelineEventsDesc = desc;
+    if (!desc.length) { root.hidden = true; timelineSelectedKey = null; timelineGroups = []; return; }
+    /* Selection survives re-renders of the same visible set; a new set
+     * (filter/view/data change) reselects the newest event. */
+    const sig = historyScopeKey() + '|' + desc.length + '|' + desc[0].id + '|' + desc[desc.length - 1].id;
+    if (sig !== timelineScopeSig) {
+      timelineScopeSig = sig;
+      if (!desc.some(e => e.id === timelineSelectedKey)) timelineSelectedKey = null;
+    }
+    if (!timelineSelectedKey) timelineSelectedKey = desc[0].id;
+    const capped = desc.length > TIMELINE_WINDOW;
+    const chrono = desc.slice(0, TIMELINE_WINDOW).reverse(); // oldest first, left-to-right
+    const times = chrono.map(timelineEventMs);
+    const mn = Math.min.apply(null, times), mx = Math.max.apply(null, times);
+    const span = mx - mn;
+    const pad = Math.max(span * 0.04, 30 * 60 * 1000);
+    const d0 = mn - pad, d1 = mx + pad;
+    const X = t => 2 + ((t - d0) / (d1 - d0)) * 96;
+    /* Cluster per type lane: a marker joins the open cluster when it
+     * lands within 3.4% of the axis of the previous marker AND the
+     * cluster stays within an honest time width — beyond that a new
+     * cluster starts, so position never claims a spread that is not
+     * in the data. */
+    const widthCap = Math.max(3 * 864e5, span * 0.09);
+    const groupsByType = { shot: [], weight: [] };
+    chrono.forEach(event => {
+      const t = timelineEventMs(event);
+      const x = X(t);
+      const laneGroups = groupsByType[event.type] || (groupsByType[event.type] = []);
+      const open = laneGroups[laneGroups.length - 1];
+      if (open && x - open.lastX <= 3.4 && t - open.firstT <= widthCap) {
+        open.members.push(event); open.lastX = x; open.sumX += x; open.lastT = t;
+      } else {
+        laneGroups.push({ type: event.type, members: [event], firstT: t, lastT: t, lastX: x, sumX: x });
+      }
     });
-  } catch (_) { el.hidden = true; }
+    timelineGroups = groupsByType.shot.concat(groupsByType.weight);
+    timelineGroups.forEach(g => { g.x = g.sumX / g.members.length; });
+    /* Range label: the scale the old strip never published. */
+    const withYear = new Date(mn).getFullYear() !== new Date(mx).getFullYear() || span > 300 * 864e5;
+    const rangeText = (capped ? tx('history.timelineLastOf', 'LAST {shown} OF {total}', { shown: TIMELINE_WINDOW, total: desc.length }) + ' · ' : '')
+      + timelineShortDate(chrono[0], withYear) + ' – ' + timelineShortDate(chrono[chrono.length - 1], withYear)
+      + ' · ' + tx(desc.length === 1 ? 'history.timelineEvents_one' : 'history.timelineEvents_other', '{count} EVENTS', { count: desc.length });
+    document.getElementById('gnTimelineRange').textContent = rangeText;
+    /* Month ticks on long spans, labelled where they cannot collide
+     * with the axis ends. */
+    const ticks = document.getElementById('gnTimelineTicks');
+    let tickHtml = '';
+    if (span >= 45 * 864e5) {
+      const cursor = new Date(mn); cursor.setDate(1); cursor.setHours(0, 0, 0, 0);
+      cursor.setMonth(cursor.getMonth() + 1);
+      while (cursor.getTime() < mx) {
+        const x = X(cursor.getTime());
+        if (x >= 7 && x <= 93) {
+          tickHtml += '<span class="gn-timeline-tick" style="left:' + x.toFixed(2) + '%"></span>'
+            + '<span class="gn-timeline-tick-label" style="left:' + x.toFixed(2) + '%">' + String(formatDate(cursor, { month: 'short' })).toUpperCase() + '</span>';
+        }
+        cursor.setMonth(cursor.getMonth() + 1);
+      }
+    }
+    ticks.innerHTML = tickHtml;
+    const nodes = document.getElementById('gnTimelineNodes');
+    nodes.innerHTML = timelineGroups.map((g, gi) => {
+      const lane = g.type === 'weight' ? '22%' : '50%';
+      const rep = g.members[g.members.length - 1];
+      const label = g.members.length > 1
+        ? g.members.length + ' ' + (g.type === 'weight' ? tx('history.typeWeight', 'WEIGHT') : tx('history.typeShots', 'SHOTS')) + ' · ' + timelineShortDate(g.members[0], false) + ' – ' + timelineShortDate(rep, false)
+        : timelineShortDate(rep, false) + ' · ' + timelineEventLabel(rep);
+      const badge = g.members.length > 1 ? '<span class="gn-tl-badge">' + g.members.length + '</span>' : '';
+      return '<div class="gn-const-node ' + g.type + '" style="left:' + g.x.toFixed(2) + '%;top:' + lane + '" data-group="' + gi + '" role="button" tabindex="0" aria-label="' + safeText(label) + '">' + badge + '</div>';
+    }).join('');
+    nodes.querySelectorAll('.gn-const-node').forEach(node => {
+      const act = () => selectTimelineGroup(Number(node.dataset.group));
+      node.addEventListener('click', act);
+      node.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); act(); } });
+    });
+    if (!timelineReadoutWired) {
+      timelineReadoutWired = true;
+      document.getElementById('gnTimelineReadout')?.addEventListener('click', () => {
+        if (timelineSelectedKey) revealHistoryRecord(timelineSelectedKey, timelineEventsDesc);
+      });
+    }
+    root.hidden = false;
+    refreshTimelineSelection();
+  } catch (_) { root.hidden = true; }
 }
 
 /* S5: ALL subview — renders the TimelineEvent union, newest first. */
@@ -388,6 +523,7 @@ function renderAllHistory() {
   const events = historyFiltersActive()
     ? allEvents.filter(event => event.type === 'shot' ? shotMatchesFilters(event.record) : weightMatchesFilters(event.record))
     : allEvents;
+  renderTimeline(events);
   if (!events.length && allEvents.length && historyFiltersActive()) {
     list.innerHTML = `<div class="empty">${nodkiEmptyIcon()}<b class="gn-first-run-title">${tx('shots.noFilterMatch', 'NO SHOTS MATCH THESE FILTERS.')}</b><br><button class="btn-full btn-secondary empty-cta" type="button" id="gnShotFilterEmptyClear">${tx('shots.clearFilters', 'CLEAR FILTERS')}</button></div>`;
     $('gnShotFilterEmptyClear')?.addEventListener('click', () => { moduleState.shotFilters = { medication: '', site: '', range: 'all', query: '' }; renderShots(); });
@@ -399,7 +535,6 @@ function renderAllHistory() {
     list.innerHTML = `<div class="empty gn-first-run-card">${nodkiEmptyIcon()}<b class="gn-first-run-title">${tx('history.allEmptyTitle', 'NOTHING LOGGED YET')}</b><span class="gn-first-run-sub">${tx('history.allEmptySub', 'Log a shot or your weight to start your timeline.')}</span><br><button class="btn-full btn-primary empty-cta" type="button" data-empty-shot>${tx('runtime.logShot', 'LOG SHOT')}</button><br><button class="gn-ux-empty-link" type="button" onclick="openWeightModal()">${tx('history.logWeightInstead', 'or log your weight instead')}</button></div>`;
     return;
   }
-  renderConstellation(events);
   const windowSize = historyWindow(events.length);
   list.innerHTML = events.slice(0, windowSize).map(event => event.type === 'shot'
     ? shotCardHtml(event.record, false)
