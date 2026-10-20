@@ -4830,12 +4830,21 @@ const GN_TACTILE_ESSENTIAL = Object.freeze({ warn: true, error: true });
   }
   function proactiveAllowed(line, surface) {
     if (!active()) return false;
-    if (sessionCount() <= 1) return false;                    // none in the user's first session
-    if (onboardingQuiet()) return false;                      // 24h post-onboarding quiet
     if ((line.tenure || 0) > tenureDays()) return false;
     if (line.expires && Date.now() > Date.parse(line.expires)) return false;
     if (benched(line.id)) return false;
     if (surface !== 'pull') {
+      /* Proactive-only gates. These two used to run for EVERY surface,
+       * pull included, which silently deadened MORE FROM NODKI / the
+       * face tap for exactly the users most likely to try it: anyone
+       * in their first session or within 24h of finishing onboarding
+       * (tap landed, handler ran, zero eligible lines, nothing moved).
+       * Spec B: pull is user-initiated and uncapped — frequency gates
+       * govern what NODKI volunteers, never what the user asks for.
+       * Content eligibility above (tenure, expiry, bench, state) still
+       * applies to pull: it decides WHICH lines exist for this user. */
+      if (sessionCount() <= 1) return false;                  // none in the user's first session
+      if (onboardingQuiet()) return false;                    // 24h post-onboarding quiet
       var mode = freqMode();
       if (mode === 'pull') return false;
       if (mode === 'quiet' && line.trigger.type !== 'state') return false;

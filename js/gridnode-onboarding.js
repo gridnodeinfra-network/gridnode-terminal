@@ -683,6 +683,15 @@
     var i, candidates;
     if (step === 'S1') {
       var sd = document.getElementById('cpShotDayProf');
+      /* The control lives inside the VAULT medication <details> card,
+       * which ships closed: a closed details' contents have no rect,
+       * so the target could NEVER resolve on a real device and the
+       * guide waited out its whole retry budget. The guide surfaces
+       * its own target (same spirit as the scrollIntoView below). */
+      if (sd && sd.closest) {
+        var det = sd.closest('details');
+        if (det && !det.open) { try { det.open = true; } catch (e) { /* ignore */ } }
+      }
       return hasRect(sd) ? sd : null;
     }
     if (step === 'C1') {
@@ -859,7 +868,14 @@
       if (guide.scrolledStep !== guide.step) {
         guide.scrolledStep = guide.step;
         var r = el.getBoundingClientRect();
-        if (r.top < 0 || r.bottom > window.innerHeight) {
+        if (guide.step === 'S1') {
+          /* S1's target grows downward when its dropdown opens
+           * (in-flow, up to 240px): centered or merely in-view, the
+           * open options slide under the fixed bottom nav and the
+           * later options become untappable. Anchor the select high
+           * so the whole dropdown stays clear of the nav. */
+          try { el.scrollIntoView({ block: 'start' }); } catch (e) { /* ignore */ }
+        } else if (r.top < 0 || r.bottom > window.innerHeight) {
           try { el.scrollIntoView({ block: 'center' }); } catch (e) { /* ignore */ }
         }
       }
@@ -894,10 +910,19 @@
     var vw = window.innerWidth, vh = window.innerHeight;
     var p = guide.panes;
     if (!guide.target) {
-      setPane(p.top, 0, 0, vw, vh); setPane(p.bottom, 0, 0, 0, 0);
+      /* No target, NO dim. The previous behavior painted the top pane
+       * across the whole viewport while the target was unresolved:
+       * a full-screen grey lockout (panes capture pointer events, no
+       * ring, no callout, no Skip) for as long as resolution took —
+       * seconds on real devices, forever if the target lived in a
+       * collapsed container. Now the scrim exists only WITH a hole
+       * around a resolved target; while waiting, all panes collapse
+       * and the callout docks at the top with the step line + Skip,
+       * leaving the page fully interactive. */
+      setPane(p.top, 0, 0, 0, 0); setPane(p.bottom, 0, 0, 0, 0);
       setPane(p.left, 0, 0, 0, 0); setPane(p.right, 0, 0, 0, 0);
       guide.ring.style.display = 'none';
-      if (!guide.docked) guide.callout.style.display = 'none';
+      if (!guide.docked) dockCallout();
       return;
     }
     var r = guide.target.getBoundingClientRect();
@@ -915,6 +940,10 @@
     ring.style.display = '';
     ring.style.left = (hole.left - 4) + 'px'; ring.style.top = (hole.top - 4) + 'px';
     ring.style.width = (hole.width + 8) + 'px'; ring.style.height = (hole.height + 8) + 'px';
+    /* A callout app-docked while the target was unresolved rejoins
+     * hole-relative placement now that there is a hole. A modal-docked
+     * callout (inside #logOv) keeps its dock, as before. */
+    if (guide.docked && guide.callout.classList.contains('is-docked-app')) undockCallout();
     if (!guide.docked) placeCallout(hole, vw, vh);
   }
 
@@ -956,7 +985,11 @@
   }
   function dockCallout() {
     var c = guide.callout;
-    if (guide.step !== 'G1') {
+    if (guide.step !== 'G1' && logModalOpen()) {
+      /* Modal dock only while the log modal is actually open. The
+       * modal element exists in the DOM at all times; docking into it
+       * while closed (the unresolved-target path on page steps) hid
+       * the callout inside a display:none subtree — no line, no Skip. */
       var panel = document.querySelector('#logOv .modal');
       if (panel) {
         panel.insertBefore(c, panel.firstChild);

@@ -71,6 +71,12 @@
 /* ── Story surface chrome (§2.3) ───────────────────────────────── */
 .gn-ob {
   position: fixed; inset: 0; z-index: 9500;
+  /* Dynamic viewport height: on Chrome Android the layout viewport
+   * (inset:0 alone) is taller than the visible area while the URL bar
+   * is shown, which pushed the surface's lower beats behind the bar.
+   * 100dvh tracks the visible viewport; unsupported engines keep
+   * inset:0. */
+  height: 100dvh;
   display: flex; flex-direction: column;
   background:
     radial-gradient(120% 60% at 50% 0%, color-mix(in srgb, var(--brand-cyan) 6%, transparent), transparent 60%),
@@ -108,6 +114,13 @@
   width: min(400px, 100%); margin: 0 auto;
   padding: var(--sp-4);
   display: flex; flex-direction: column; justify-content: center; gap: var(--sp-3);
+  /* Safe centering: with plain `center`, content taller than the
+   * scroll area overflows BOTH ends and the top (the NODKI host card)
+   * is clipped above the scroll origin, unreachable by scrolling.
+   * `safe center` falls back to start alignment on overflow so every
+   * beat stays fully reachable. Engines without the keyword keep the
+   * centered layout above. */
+  justify-content: safe center;
   position: relative;
 }
 .gn-ob-in-f { animation: obScreenIn var(--dur-3) var(--ease-inout) both; }
@@ -230,7 +243,7 @@
 }
 
 /* ── THE VISUAL GUIDE (§2.7) ───────────────────────────────────── */
-.gn-ob-guide { position: fixed; inset: 0; z-index: 9600; pointer-events: none; }
+.gn-ob-guide { position: fixed; inset: 0; height: 100dvh; z-index: 9600; pointer-events: none; }
 .gn-ob-scrim { position: fixed; background: rgba(5, 5, 8, .78); pointer-events: auto; }
 [data-theme="light"] .gn-ob-scrim { background: rgba(28, 43, 49, .45); }
 .gn-ob-ring {
