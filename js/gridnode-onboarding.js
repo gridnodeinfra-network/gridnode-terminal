@@ -82,7 +82,7 @@
     'ob.done.title': 'Log the shot. Read the curve. Run your protocol.',
     'ob.done.body': 'That is all there is to it. Welcome to GRID//NODE.',
     'ob.done.cta': 'Enter GRID//NODE',
-    'nodki.host.start': 'Start', 'nodki.host.beatOf': 'Beat {n} of {total}',
+    'nodki.host.start': 'Start', 'nodki.host.beatOf': 'Step {n} of {total}',
     'nodki.host.b0': "I'm NODKI, your grid operator.",
     'nodki.host.b1': 'First, your rhythm. This is the day your shot lands each week.',
     'nodki.host.beat1Cta': 'Set my shot day',
