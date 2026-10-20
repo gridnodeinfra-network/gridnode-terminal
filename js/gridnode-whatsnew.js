@@ -302,7 +302,8 @@
         ],
         IMPROVED: [
           'You control the volume: Tips & facts has its own switch in VAULT (separate from the mascot switch), with Normal, Quiet, and Pull-only levels. Turning NODKI off turns everything off, and it sticks.',
-          'Bigger, calmer type on his card and guide lines, built from the same cards and colors as the rest of the grid.'
+          'Bigger, calmer type on his card and guide lines, built from the same cards and colors as the rest of the grid.',
+          'The HISTORY timeline now shows real dates, and every marker opens its record: tap a marker to jump straight to that shot or weight entry in the list.'
         ],
         FIXED: [
           'Real-phone polish, from device testing: the intro card no longer clips on tall phones, the guide no longer holds the screen grey while it finds its target (it opens your medication card and points at your shot day directly), and MORE FROM NODKI on his card now answers every tap, including right after your intro.'
@@ -316,7 +317,8 @@
         ],
         IMPROVED: [
           'Tú controlas el volumen: Consejos y datos tiene su propio interruptor en VAULT (aparte del interruptor del personaje), con niveles Normal, Tranquilo y Solo al tocar. Apagar a NODKI apaga todo, y se queda así.',
-          'Letra más grande y tranquila en su tarjeta y en las líneas de la guía, construida con las mismas tarjetas y colores del resto de la red.'
+          'Letra más grande y tranquila en su tarjeta y en las líneas de la guía, construida con las mismas tarjetas y colores del resto de la red.',
+          'La línea de tiempo de HISTORIAL ahora muestra fechas reales, y cada marcador abre su registro: toca un marcador para ir directo a esa inyección o peso en la lista.'
         ],
         FIXED: [
           'Pulido en teléfono real, desde pruebas en dispositivo: la tarjeta de la intro ya no se corta en pantallas altas, la guía ya no deja la pantalla en gris mientras busca su objetivo (abre tu tarjeta de medicación y apunta directo a tu día de inyección), y MÁS DE NODKI en su tarjeta ahora responde a cada toque, incluso justo después de tu intro.'
