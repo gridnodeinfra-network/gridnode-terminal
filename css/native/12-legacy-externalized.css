@@ -3966,6 +3966,12 @@ html[data-theme="light"] #shotsRegionScanner .scanner-selected-panel .gn-locatio
 .gn-phase[data-phase="empty"] .gn-phase-svg{opacity:.22}
 .gn-phase[data-phase="empty"] .gn-phase-center{opacity:0}
 .gn-phase.gn-phase-gated .gn-phase-guidance,.gn-phase.gn-phase-gated .gn-phase-timing,.gn-phase.gn-phase-gated .gn-phase-timeline{display:none}
+.gn-phase.gn-phase-gated .gn-phase-hero{display:none}
+.gn-phase.gn-phase-gated .gn-phase-why,.gn-phase.gn-phase-gated .gn-phase-why-body{display:none}
+.gn-phase-gated-note{border:1px solid var(--border-2);border-radius:14px;background:color-mix(in srgb,var(--text-1) 2%,transparent);padding:20px;margin:2px 0 20px;text-align:left}
+.gn-phase-gated-note[hidden]{display:none}
+.gn-phase-gated-title{font:600 .8rem var(--font-m);letter-spacing:2.2px;color:var(--text-1);margin:0 0 10px}
+.gn-phase-gated-body{font:400 .95rem/1.65 var(--font-b);color:var(--text-2);margin:0;max-width:52ch}
 .gn-phase-ignite{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:600 .72rem var(--font-m);letter-spacing:2.2px;color:var(--text-1);background:color-mix(in srgb,var(--text-1) 4%,transparent);border:1px solid var(--border-2);border-radius:999px;padding:15px 30px;min-height:52px;cursor:pointer;transition:opacity .4s ease,border-color .3s ease}
 .gn-phase-ignite[hidden]{display:none}
 .gn-phase-ignite:hover{border-color:color-mix(in srgb,var(--brand-cyan) 50%,transparent)}
@@ -7333,6 +7339,16 @@ body.gn-vault-picker-open #pageProfile .gn-vault-hud-select.open .gn-vault-hud-o
 #pageLog #logList .empty{
   margin-bottom:calc(92px + var(--safe-bottom)) !important;
   padding-right:74px;
+}
+/* Anti-slop audit (2026-10-20): FAB clearance parity. #pageLog (FIX 2 above)
+   and #pageProfile already carry FAB/nav bottom clearance; #pageDash and
+   #pageLab never got it (18px), so the fixed FAB permanently covered their
+   last cards (e.g. TODAY's YOUR LEVEL value clipped to "OPE..."). */
+#pageDash{
+  padding-bottom:calc(142px + var(--safe-bottom)) !important;
+}
+#pageLab{
+  padding-bottom:calc(142px + var(--safe-bottom)) !important;
 }
 #pageLog .shot-history-helper{
   margin-right:0;

@@ -249,6 +249,8 @@
     if (!s) return; // server unreachable: keep the current UI untouched
     if (s.gated) { renderGated(s); return; }
     panel.classList.remove('gn-phase-gated');
+    var gatedNote = $('reactorGatedNote');
+    if (gatedNote) gatedNote.hidden = true;
     var chipEl = $('reactorTemplateChip');
     if (chipEl) chipEl.hidden = false;
     if (s.empty) {
@@ -314,7 +316,10 @@
   // framed state instead of bailing: panel frame + dimmed ring outline
   // via the existing [data-phase="empty"] treatment, timing/guidance
   // regions hidden by the gated class (no "--" husks), and the caption
-  // carries the existing LOCAL-FIRST READOUT key — no new copy.
+  // carries the existing LOCAL-FIRST READOUT key. Anti-slop audit
+  // (2026-10-20): the hero void is hidden in gated mode and the framed
+  // #reactorGatedNote (phase.gatedTitle / phase.gatedBody) explains the
+  // state explicitly — an empty glowing box read as a broken render.
   function renderGated(s) {
     var panel = $('phaseSpherePanel');
     if (!panel) return;
@@ -325,6 +330,8 @@
     state.lastState = null;
     state.previewIndex = -1;
     setText('reactorMetaLine', tx('phase.localFirstReadout', 'LOCAL-FIRST READOUT'));
+    var note = $('reactorGatedNote');
+    if (note) note.hidden = false;
     var ignite = $('reactorIgnite');
     if (ignite) ignite.hidden = true;
     var chip = $('reactorTemplateChip');

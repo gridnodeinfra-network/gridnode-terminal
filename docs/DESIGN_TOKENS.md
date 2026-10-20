@@ -1,6 +1,19 @@
 # DESIGN TOKENS — shared component system (release 20260802.12)
 
-Single source: `css/native/` (shared; 5 ordered files, cascade pinned in `css/native/order.json`) + `css/daylight-nexus-pilot.css`
+> **Correction (anti-slop audit, 2026-10-20):** this doc's token table had
+> drifted from the code and one claim was false. The canonical token source
+> is `css/native/08-design-tokens.css` (15 native files load, not 5; order
+> pinned in `css/native/order.json`, with `css/daylight-nexus-pilot.css`
+> first and `12-legacy-externalized.css` last). `--text-dim #6f6f88` was
+> claimed ">=4.5:1" — it measured **3.94:1** on `--surface-1`; the token
+> is now `#8383a0` (5.23:1). The lava family in code is
+> `--lava-core-hi #FF5B5B / --lava-core #FF3B3B / --lava-edge #D12424`, and
+> `--radius-card` is **16px**. The 2026-10-20 audit also completed the
+> `html[data-theme="light"]` block in 08-design-tokens.css (semantic
+> success/warning/danger + chart tokens were previously dark-only values
+> on light surfaces, measuring as low as 1.19:1).
+
+Single source: `css/native/` (cascade pinned in `css/native/order.json`) + `css/daylight-nexus-pilot.css`
 (DAY OPS overrides) + `:root` semantic tokens in index.html.
 
 ## Core identity tokens
@@ -10,11 +23,11 @@ Single source: `css/native/` (shared; 5 ordered files, cascade pinned in `css/na
 | --surface (elevated) | #0a0a14 | #fbf9f2 |
 | --text (primary) | #eef6f8 | #1c2b31 |
 | --text-mid | #b7c7d3 | #2e424b |
-| --text-dim | #6f6f88 (>=4.5:1) | #4d6b75 |
+| --text-dim | #8383a0 (5.23:1 on --surface-1) | #476169 |
 | --border | rgba(255,255,255,.15) | rgba(20,60,70,.3) |
 | system cyan | #00d4ff family | #006f82 family |
-| action lava | --lava-core-hi #ff5a6e / --lava-core #ff2d4d / --lava-edge #8f0f28 | same family, deepened |
-| --radius-card | 12px | 12px |
+| action lava | --lava-core-hi #FF5B5B / --lava-core #FF3B3B / --lava-edge #D12424 | same family, deepened |
+| --radius-card | 16px | 16px |
 
 ## Shared component classes (in gn-native.css)
 - Typography-by-role: technical font for labels/headings/HUD; readable font for

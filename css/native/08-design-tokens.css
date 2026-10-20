@@ -124,15 +124,31 @@
   --lava-hot: #CC2944;                 /* preserved dark cascade winner */
   --lava-glow: rgba(255, 79, 34, .28); /* preserved cascade winner */
   /* Dim text + helper size — readability-floor cascade winners. */
-  --text-dim: #6f6f88;
+  --text-dim: #8383a0;                 /* anti-slop audit 2026-10-20: was #6f6f88 = 3.94:1 on --surface-1 (failed AA for the small text it serves); #8383a0 = 5.23:1 */
   --type-helper: .78rem;
 }
 
 html[data-theme="light"] {
   --brand-cyan: #00677f;
+  /* Anti-slop audit (2026-10-20): complete the light token block. The
+     semantic/brand tokens below were never redefined for light, so any
+     component reading them got the dark values on cream surfaces —
+     --success/--warning measured 1.19:1 / 1.28:1. Values are AA-verified
+     on both light surfaces and match the light pill colours already
+     hand-applied in 09-unified-components (#00794a / #8a5b00). */
+  --brand-red: #D12424;
+  --brand-green: #00794a;
+  --brand-amber: #8a5b00;
+  --success: #00794a;
+  --warning: #8a5b00;
+  --danger: #D12424;
+  --chart-actual: #00677f;
+  --chart-estimate: #8a5b00;
+  --chart-danger: #D12424;
+  --border-cyan: rgba(0, 103, 127, .35);
   --text-1: #1c2b31;
   --text-2: #3f535a;
-  --text-3: #5d7a86;
+  --text-3: #4f6d79;          /* was #5d7a86 = 4.05:1 on --surface-1; #4f6d79 = 4.90:1 / 5.44:1 */
   --surface-1: #f4f1e9;
   --surface-2: #f8f5ed;
   --surface-3: #fffdf8;

@@ -366,6 +366,11 @@
 
         <div class="gn-phase-meta" id="reactorMetaLine"></div>
 
+        <div class="gn-phase-gated-note" id="reactorGatedNote" hidden>
+          <h3 class="gn-phase-gated-title" data-i18n="phase.gatedTitle">NO PHASE READING IN LOCAL MODE</h3>
+          <p class="gn-phase-gated-body" data-i18n="phase.gatedBody">Phase readings are computed for signed-in accounts. In local mode your records stay on this device and are never transmitted, so no reading is generated here. Your shots, weight, and history keep working in full.</p>
+        </div>
+
         <div class="gn-phase-guidance" id="reactorGuidance">
           <div class="gn-phase-tabs" role="tablist" aria-label="Phase guidance">
             <button class="gn-phase-tab active" type="button" role="tab" data-rtab="now" data-i18n="phase.tabNow">NOW</button>
@@ -580,10 +585,6 @@
             <p class="gn-syr-safety" data-i18n="lab.syrSafety">Educational math and user-entered tracking only. GRID//NODE does not provide dosing recommendations. Verify protocol decisions independently.</p>
           </details>
           <div class="gn-syr-forensic">
-            <div class="left">
-              <span><span class="k" data-i18n="lab.forensicLot">LOT</span> GRN-2087-04A</span>
-              <span><span class="k" data-i18n="lab.forensicBuild">BUILD</span> 0xA9F3…7E1C</span>
-            </div>
             <div class="right">
               <span data-i18n="lab.sterile">STERILE · SINGLE USE</span>
               <span data-i18n="lab.u100Ref">U-100 INSULIN REFERENCE</span>

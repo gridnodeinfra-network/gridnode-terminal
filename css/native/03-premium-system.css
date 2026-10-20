@@ -495,6 +495,16 @@ html[data-theme="light"] #landing .landing-preview-caption { color: #49616a; }
     margin: 0 auto !important;
     row-gap: 18px !important;
   }
+  /* Anti-slop audit (2026-10-20): in the collapsed single-column range the
+     headline kept the desktop rule (max-width 9.5ch at >=3.35rem), so
+     "Your biology." wrapped one word per line at tablet widths (Orbitron's
+     average glyph is wider than the ch unit, so ch-based measures
+     under-size it). Let the 720px hero container govern the measure and
+     track the size to the viewport inside this range only. */
+  #landing .landing-headline {
+    max-width: none !important;
+    font-size: clamp(2.7rem, 8vw, 3.2rem) !important;
+  }
   #landing .landing-logo,
   #landing .landing-kicker,
   #landing .landing-headline,
@@ -768,7 +778,7 @@ html[data-theme="light"] :is(.cp-select-trigger,.gn-select-trigger,.gn-custom-pi
 html[data-theme="light"] :is(.gn-shot-date-helper,.gn-shot-time-helper) { color: var(--text-helper) !important; background: rgba(0,95,115,.055) !important; }
 html[data-theme="light"] :is(.time-tab,.scanner-mode-btn,.shot-history-toggle):not(.active) { color: var(--text-muted) !important; background: #e4e9e7 !important; }
 html[data-theme="light"] :is(.time-tab,.scanner-mode-btn,.shot-history-toggle).active { color: var(--text-on-dark) !important; background: #006579 !important; }
-html[data-theme="light"] :is(.btn-primary,.landing-btn.primary,.gn-auth-primary,.gn-dashboard-mission button,.empty-cta,.gn-whatsnew-close) {
+html[data-theme="light"] :is(.btn-primary,.landing-btn.primary,.gn-auth-primary,.gn-dashboard-mission button.gn-mission-primary,.empty-cta,.gn-whatsnew-close) {
   color: #fff !important; -webkit-text-fill-color: #fff !important; background: linear-gradient(135deg,#b51536,#760b22) !important; border-color: #8e112e !important;
 }
 html[data-theme="light"] :is(.cal-wrap,.cal-header,.cal-grid,.cal-detail) { background: var(--panel) !important; border-color: var(--border) !important; }
@@ -1239,7 +1249,7 @@ html[data-theme="light"] #logOv #cpShotMedDrop .cp-group-minimized-label {
   #wtOv .btn-primary,#wtOv .modal-btn.save,
   #gnResearchSave,#gnPreferencesSave,
   .future-confirm-save,.archive-confirm-delete,.gn-delete-confirm,
-  .gn-dashboard-mission button,.gn-whatsnew-close,.landing-btn.primary
+  .gn-dashboard-mission button.gn-mission-primary,.gn-whatsnew-close,.landing-btn.primary
 ) {
   border-color: var(--lava-edge) !important;
   background: linear-gradient(180deg, var(--lava-hot) 0%, var(--lava-core) 52%, var(--lava-edge) 100%) !important;
@@ -1253,7 +1263,7 @@ html[data-theme="light"] #logOv #cpShotMedDrop .cp-group-minimized-label {
   #wtOv .btn-primary,#wtOv .modal-btn.save,
   #gnResearchSave,#gnPreferencesSave,
   .future-confirm-save,.archive-confirm-delete,.gn-delete-confirm,
-  .gn-dashboard-mission button,.gn-whatsnew-close,.landing-btn.primary
+  .gn-dashboard-mission button.gn-mission-primary,.gn-whatsnew-close,.landing-btn.primary
 ):active {
   background: linear-gradient(180deg, #c91f12 0%, #b8180f 55%, #79050a 100%) !important;
 }
