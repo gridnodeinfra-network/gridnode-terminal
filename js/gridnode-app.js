@@ -148,6 +148,18 @@ function injectStableStyles() {
     .gn-no-account.gn-key-ok p{color:#9fc7d4}
     .gn-waitlist-form{display:grid;gap:8px;margin-top:10px}
     .gn-waitlist-consent{margin:0;color:#586d76;font:.56rem/1.5 var(--font-m,monospace)}
+    .gn-entry-key-big{display:block;width:100%;margin-top:12px;padding:13px 14px;text-align:left;border:1px solid rgba(0,212,255,.55);border-left:3px solid #00d4ff;border-radius:3px;background:linear-gradient(120deg,rgba(0,212,255,.12),rgba(0,212,255,.03));cursor:pointer}
+    .gn-entry-key-big span:first-child{display:block;color:#e8fcff;font:800 .74rem var(--font-d,monospace);letter-spacing:2px}
+    .gn-entry-key-big .gn-quiet-sub{display:block;margin-top:4px;color:#9fc7d4;font:500 .6rem var(--font-m,monospace);letter-spacing:.6px}
+    .gn-entry-key-big:hover{border-color:#00d4ff;background:linear-gradient(120deg,rgba(0,212,255,.18),rgba(0,212,255,.05))}
+    .gn-request-card{margin-top:14px;padding:16px 14px;border:1px solid rgba(0,212,255,.5);border-top:2px solid #00d4ff;border-radius:6px;background:linear-gradient(160deg,rgba(0,212,255,.09),rgba(0,212,255,.02) 55%,rgba(0,0,0,.25));box-shadow:0 0 24px rgba(0,212,255,.12)}
+    .gn-request-title{margin:0 0 8px;color:#fff;font:800 .95rem var(--font-d,monospace);letter-spacing:2px}
+    .gn-request-body{margin:0;color:#cfeef7;font:.68rem/1.55 var(--font-m,monospace);letter-spacing:.4px}
+    .gn-request-btn{width:100%;min-height:52px;margin-top:4px;border:0;border-radius:3px;cursor:pointer;background:linear-gradient(135deg,#00d4ff,#0094c6);color:#03222e;font:800 .74rem var(--font-d,monospace);letter-spacing:2px;box-shadow:0 6px 22px rgba(0,212,255,.28)}
+    .gn-request-btn:hover{filter:brightness(1.08)}
+    .gn-request-btn:disabled{cursor:not-allowed;opacity:.55;box-shadow:none}
+    .gn-request-alt{margin:12px 0 0;color:#8295a0;font:.6rem/1.5 var(--font-m,monospace)}
+    .gn-request-card .gn-waitlist-consent{color:#7d99a6}
     .gn-auth-back{display:inline-block;margin:0 0 6px;padding:6px 2px;border:0;background:transparent;color:#8295a0;font:600 .6rem var(--font-m,monospace);letter-spacing:1.4px;cursor:pointer}
     .gn-auth-back:hover{color:#00d4ff}
     .gn-auth-message[data-tone="error"]{color:#FF5B5B}
@@ -219,9 +231,10 @@ function injectStableStyles() {
 /* Passwordless auth redesign — three-view state machine.
  * welcome: email code (primary), Google, quiet passkey, quiet device, new-here link, password fallback.
  * code: 6-digit OTP with expiry + resend countdown.
- * newhere: NODE KEY validate -> claim (OTP or Google) -> code; quiet No-NODE-KEY waitlist.
+ * newhere: NODE KEY validate -> claim (OTP or Google) -> code; always-visible REQUEST A NODE KEY card (waitlist) below.
  * requestLegalAccept() keeps wrapping every entry path. Password recovery card unchanged. */
 let gnAuthView = 'welcome';
+let gnBootView = null; /* one-shot deep link: startGridNode('newhere') from the landing REQUEST A NODE KEY buttons */
 let gnOtp = null; /* { email, sentAt, createUser } */
 let gnOtpTimers = [];
 let gnVerifying = false;
@@ -334,7 +347,8 @@ function authShell() {
   $('gnVaultPolicyLink')?.addEventListener('click', openPrivacyPolicy);
   login.querySelector('.gn-auth-card')?.insertAdjacentHTML('afterbegin', '<div class="gn-auth-lang-kanji" role="group" data-i18n-aria-label="lang.switcherAria"><button type="button" class="gn-lang-globe" data-lang-choice="es" aria-label="Español" title="Cambiar a Español"><svg class="gn-lang-kanji" viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="M4.5 5.2h15M7.2 5.2v2.4c0 1.1.5 2.1 1.4 2.8l2.4 1.7-2.4 1.7c-.9.7-1.4 1.7-1.4 2.8v2.6M16.8 5.2v2.4c0 1.1-.5 2.1-1.4 2.8l-2.4 1.7 2.4 1.7c.9.7 1.4 1.7 1.4 2.8v2.6M9.2 18.8h5.6M12 12.1v6.7" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>');
   applyAuthTranslations();
-  showAuthView(gnAuthView === 'code' && !gnOtp ? 'welcome' : gnAuthView);
+  showAuthView(gnBootView || (gnAuthView === 'code' && !gnOtp ? 'welcome' : gnAuthView));
+  gnBootView = null;
   window.GN_I18N?.applyTo?.(login);
 }
 
@@ -380,9 +394,9 @@ function renderWelcomeView() {
     <span data-i18n="otp.localTitle">CONTINUE ON THIS DEVICE</span>
     <span class="gn-quiet-sub" data-i18n="otp.localSub">Start now, no account. Your data stays on this device.</span>
   </button>
-  <button class="gn-auth-quiet gn-entry-key" id="gnNewHereBtn" type="button">
-    <span data-i18n="otp.newHereNodeKey">New to GRID//NODE? ENTER NODE KEY</span>
-    <span class="gn-quiet-sub" data-i18n="otp.keySub">Invite-only beta — enter the key you were given.</span>
+  <button class="gn-entry-key-big" id="gnNewHereBtn" type="button">
+    <span data-i18n="otp.newHereNodeKey">🗝 NEW HERE? REQUEST A NODE KEY</span>
+    <span class="gn-quiet-sub" data-i18n="otp.keySub">Invite-only beta. Request a key, or enter the one you were given.</span>
   </button>
   <div class="gn-auth-links" style="justify-content:center;margin-top:10px">
     <button class="gn-auth-link" id="gnMoreOptionsToggle" type="button" aria-expanded="false"><span data-i18n="otp.moreSignInOptions">More sign-in options</span></button>
@@ -438,7 +452,7 @@ function renderNewHereView(opts = {}) {
   return `
   <button class="gn-auth-back" id="gnNewHereBack" type="button">&larr; <span data-i18n="otp.backToWelcome">Back</span></button>
   <h2 class="gn-auth-view-title" data-i18n="otp.newHereTitle">NEW HERE</h2>
-  <p class="gn-auth-view-sub" data-i18n="otp.newHereSub">GRID//NODE is invite-only. Enter your NODE KEY to begin.</p>
+  <p class="gn-auth-view-sub" data-i18n="otp.newHereSub">Invite-only beta. Enter your NODE KEY to begin, or request one below.</p>
   ${opts.allowSkip ? `<button class="gn-auth-secondary" id="gnKeySkipBtn" type="button"><span data-i18n="otp.alreadyHaveAccount">I already have an account</span></button>` : ''}
   <div id="gnKeyFormWrap">
     <input class="gn-auth-field" id="gnNewKeyInput" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" data-i18n-ph="nodekey.placeholder" placeholder="NODE-XXXXXX" data-i18n-aria-label="nodekey.enterKey" aria-label="NODE KEY" style="text-transform:uppercase;letter-spacing:1.5px">
@@ -457,18 +471,19 @@ function renderNewHereView(opts = {}) {
     <div class="gn-google-button-shell" id="gnGoogleButtonMount" data-i18n-aria-label="auth.continueWithGoogle" aria-label="Continue with Google"></div>
     <div class="gn-auth-message" id="gnClaimMsg" role="status" aria-live="polite"></div>
   </div>
-  <details class="gn-auth-options" id="gnNoKeyDetails">
-    <summary><span data-i18n="otp.noKeyQ">No NODE KEY?</span></summary>
-    <p class="gn-auth-note" style="text-align:left;border:0;padding:0" data-i18n="otp.askInviter">GRID//NODE is invite-only right now. Ask the person who told you about it for a key. Each one looks like NODE-XXXXXX.</p>
-    <p class="gn-auth-note" style="text-align:left;border:0;padding:0" data-i18n="otp.waitlistOr">Or leave your email and we'll notify you when new keys open.</p>
+  <div class="gn-auth-divider"><span data-i18n="otp.noKeyDivider">NO KEY YET?</span></div>
+  <section class="gn-request-card">
+    <h3 class="gn-request-title">🗝 <span data-i18n="otp.requestTitle">REQUEST A NODE KEY</span></h3>
+    <p class="gn-request-body" data-i18n="otp.requestBody">Invites go out by email. Leave yours and we'll send your NODE KEY when your spot opens. Every request is read by a human, and new keys open regularly.</p>
     <form class="gn-waitlist-form" id="gnWaitlistForm" novalidate>
       <input class="gn-auth-field" id="gnWaitlistEmail" type="email" inputmode="email" autocomplete="email" data-i18n-ph="otp.emailPlaceholder" placeholder="name@email.com" data-i18n-aria-label="auth.emailAddress" aria-label="Email">
       <input type="text" id="gnWaitlistHp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
-      <button class="gn-auth-secondary" id="gnWaitlistBtn" type="submit"><span data-i18n="otp.notifyMe">NOTIFY ME</span></button>
+      <button class="gn-request-btn" id="gnWaitlistBtn" type="submit"><span data-i18n="otp.requestBtn">REQUEST MY KEY</span></button>
       <p class="gn-waitlist-consent" data-i18n="otp.waitlistConsent">One email when keys open. No marketing, no spam. Ask us to delete your data anytime at support@gridnode.network.</p>
       <div class="gn-auth-message" id="gnWaitlistMsg" role="status" aria-live="polite"></div>
     </form>
-  </details>`;
+    <p class="gn-request-alt" data-i18n="otp.askInviter">Someone told you about GRID//NODE? Ask them for their key. A member's key is the fastest way in.</p>
+  </section>`;
 }
 
 function wireAuthView(name) {
@@ -784,7 +799,7 @@ async function submitWaitlist(event) {
   const honeypot = ($('gnWaitlistHp')?.value || '').trim();
   /* Honeypot: bots get the same success message, nothing is stored. */
   if (honeypot) {
-    setViewMsg('gnWaitlistMsg', 'otp.waitlistSuccess', "You're on the list. We'll email you once when new keys open. Nothing else, ever.", false);
+    setViewMsg('gnWaitlistMsg', 'otp.waitlistSuccess', "Request received. You're on the list. When your key opens, it lands in this inbox. One email, nothing else.", false);
     $('gnWaitlistForm')?.reset();
     return;
   }
@@ -824,7 +839,7 @@ async function submitWaitlist(event) {
     });
     /* 201 created, 200/409 duplicate — duplicates get the same success message. */
     if (res.status === 201 || res.status === 200 || res.status === 409) {
-      setViewMsg('gnWaitlistMsg', 'otp.waitlistSuccess', "You're on the list. We'll email you once when new keys open. Nothing else, ever.", false);
+      setViewMsg('gnWaitlistMsg', 'otp.waitlistSuccess', "Request received. You're on the list. When your key opens, it lands in this inbox. One email, nothing else.", false);
       $('gnWaitlistForm')?.reset();
     } else {
       throw new Error('WAITLIST_' + res.status);
@@ -1898,9 +1913,10 @@ ${copy}`);
     } catch (_) { /* auth or storage hiccup — never block the main flow */ }
   }
 
-async function startGridNode() {
+async function startGridNode(view) {
   if (bootRunning) return;
   bootRunning = true;
+  if (view === 'newhere') gnBootView = 'newhere';
   if (window.GN_I18N?.ready) await window.GN_I18N.ready;
   modules.showScreen('boot');
   const term = $('bootTerm'), bar = $('bootBar'), pct = $('bootPct');
