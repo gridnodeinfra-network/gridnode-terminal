@@ -293,6 +293,21 @@
       }
     },
     '__CURRENT_BUILD__': {
+      version: '1.3.1', title: 'SIGN-IN CLARITY', date: '2026-11-01',
+      en: {
+        FIXED: [
+          'The Google sign-in lane no longer sits blank while it loads: it now shows a LOADING GOOGLE state, so the option never reads as missing on a slow connection.',
+          'PROGRESS in local mode now says plainly that full phase readings are a server feature for signed-in accounts, and that TODAY still shows a local estimate from your logged shots. Before, the two screens contradicted each other.'
+        ]
+      },
+      es: {
+        FIXED: [
+          'La vía de acceso con Google ya no se queda en blanco mientras carga: ahora muestra un estado CARGANDO GOOGLE, para que la opción nunca parezca ausente en una conexión lenta.',
+          'PROGRESO en modo local ahora dice claramente que las lecturas de fase completas son una función del servidor para cuentas con sesión iniciada, y que HOY sigue mostrando una estimación local a partir de tus dosis registradas. Antes, las dos pantallas se contradecían.'
+        ]
+      }
+    },
+    '20261020.713287b': {
       version: '1.3.0', title: 'YOUR OPERATOR', date: '2026-10-17',
       en: {
         NEW: [

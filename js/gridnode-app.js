@@ -1063,14 +1063,26 @@ function renderGoogleFallback(host, message) {
 async function renderGoogleIdentityButton() {
   const host = $('gnGoogleButtonMount');
   if (!host) return;
-  host.style.display = 'none';
-  /* AGENT2 full-pass: the GOOGLE label above the mount must never dangle
-   * without a button — it follows the mount's visibility exactly. */
+  /* v1.3.1: while the provider check and the GIS library load resolve, show
+   * a loading placeholder so the Google lane never reads as missing (the
+   * Nov 1 production verification watched it stay blank for ~30s on a slow
+   * chain). If the provider check fails, the mount hides again — no dead
+   * button, same rule as before. */
   const gnGoogleLabel = $('gnGoogleLabel');
-  if (gnGoogleLabel) gnGoogleLabel.style.display = 'none';
+  host.replaceChildren();
+  const loadingBtn = document.createElement('button');
+  loadingBtn.type = 'button';
+  loadingBtn.className = 'gn-auth-secondary gn-google-fallback-btn';
+  loadingBtn.disabled = true;
+  loadingBtn.textContent = tx('auth.loadingGoogle', 'LOADING GOOGLE…');
+  host.appendChild(loadingBtn);
   const enabled = await isCloudProviderEnabled('google');
   if (!host.isConnected) return;
-  if (!enabled) return;
+  if (!enabled) {
+    host.style.display = 'none';
+    if (gnGoogleLabel) gnGoogleLabel.style.display = 'none';
+    return;
+  }
   host.style.removeProperty('display');
   if (gnGoogleLabel) gnGoogleLabel.style.removeProperty('display');
   try {
