@@ -11,6 +11,13 @@ Cloudflare Managed Ruleset -> ON
 Free tier includes a reduced set. Leave sensitivity at default.
 
 ## 3. Rate limiting rule (Security > WAF > Rate limiting rules)
+CORRECTION (2026-11-01, verified live): the Edge Functions live on the
+Supabase domain (quwbmhxgteyykujydvii.supabase.co/functions/v1/), NOT on
+gridnode.network. Rules 3, 4b and 4c below guard a path this zone never
+sees, so they are no-ops here; do not spend the free rate-limit slot on
+them. Zone-effective items are 1 (Bot Fight Mode), 2 (Managed Ruleset)
+and 4a (scanner probes). The original text is kept for reference.
+
 You get 1 rule on free. Spend it guarding the API:
 
 - Rule name: guard-functions-api
