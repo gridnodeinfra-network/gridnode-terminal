@@ -373,7 +373,8 @@ html[data-theme="light"] #landing .landing-btn.secondary {
 }
 #landing .landing-copy { grid-row: 4; max-width: 43ch !important; text-wrap: balance; }
 #landing .landing-cta-row { grid-row: 5; width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-#landing .landing-trust { grid-row: 6; }
+#landing .landing-key-card { grid-column: 1 !important; grid-row: 6; }
+#landing .landing-trust { grid-row: 7; }
 
 #landing .landing-product-preview {
   grid-column: 2 !important;
@@ -510,9 +511,10 @@ html[data-theme="light"] #landing .landing-preview-caption { color: #49616a; }
   #landing .landing-headline,
   #landing .landing-copy,
   #landing .landing-cta-row,
+  #landing .landing-key-card,
   #landing .landing-trust,
   #landing .landing-product-preview { grid-column: 1 !important; }
-  #landing .landing-product-preview { grid-row: 7 !important; margin-top: 18px; }
+  #landing .landing-product-preview { grid-row: 8 !important; margin-top: 18px; }
   #landing .landing-product-preview::before { inset: -14px 0 24px; }}@media (max-width: 480px){
   #landing .landing-hero {
     padding-top: calc(env(safe-area-inset-top, 0px) + 58px) !important;
@@ -541,9 +543,9 @@ html[data-theme="light"] #landing .landing-preview-caption { color: #49616a; }
     line-height: 1.25;
     letter-spacing: 1.05px;
   }
-  #landing .landing-product-preview { grid-row: 6 !important; margin-top: 6px; gap: 9px; }
+  #landing .landing-product-preview { grid-row: 7 !important; margin-top: 6px; gap: 9px; }
   #landing .landing-trust {
-    grid-row: 7 !important;
+    grid-row: 8 !important;
     margin-top: 3px;
     padding: 12px 13px;
     border-left: 2px solid rgba(0, 212, 255, .62);
