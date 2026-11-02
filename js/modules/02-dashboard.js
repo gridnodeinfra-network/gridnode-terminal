@@ -126,6 +126,13 @@ function syncUnitSystemForm() {
   const unit = metric ? 'kg' : 'lbs';
   setText('profStartWtLabel', tx('profile.startWeightUnit', 'START WEIGHT ({unit})', { unit }));
   setText('profGoalWtLabel', tx('profile.goalWeightUnit', 'GOAL WEIGHT ({unit})', { unit }));
+  /* Empty-field placeholders are example values; keep them in the active
+     system so an empty kg field never shows a pounds-sized example. */
+  if ($('profStartWt')) $('profStartWt').placeholder = metric ? '100' : '220';
+  if ($('profGoalWt')) $('profGoalWt').placeholder = metric ? '80' : '180';
+  /* If the measurements card is already rendered, keep its unit buttons
+     in step with the global switch. */
+  if (typeof renderMeasurements === 'function') { try { renderMeasurements(); } catch (_) {} }
 }
 
 export function setUnitSystem(system) {
