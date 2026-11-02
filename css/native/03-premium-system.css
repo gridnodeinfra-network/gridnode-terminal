@@ -348,14 +348,14 @@ html[data-theme="light"] #landing .landing-btn.secondary {
   max-width: none !important;
   min-height: calc(100vh - 44px - var(--safe-top)) !important;
   margin: 0 !important;
-  padding: clamp(78px, 9vh, 112px) 0 clamp(54px, 7vh, 84px) !important;
+  padding: clamp(54px, 6.5vh, 84px) 0 clamp(54px, 7vh, 84px) !important;
   display: grid !important;
   grid-template-columns: minmax(0, 520px) minmax(440px, 1fr) !important;
   grid-template-rows: repeat(6, auto) !important;
   align-content: center !important;
   align-items: start !important;
   column-gap: clamp(44px, 5vw, 78px) !important;
-  row-gap: 17px !important;
+  row-gap: 12px !important;
 }
 #landing .landing-logo,
 #landing .landing-kicker,
@@ -584,8 +584,8 @@ html[data-theme="light"] #landing .landing-preview-caption { color: #49616a; }
 #landing .landing-cta-row .landing-btn.primary:only-child { grid-column: 1 / -1; }
 #landing .landing-key-card {
   position: relative;
-  margin-top: 12px;
-  padding: 16px 14px 13px;
+  margin-top: 4px;
+  padding: 13px 14px 11px;
   border: 1px solid rgba(0, 212, 255, .55);
   border-top: 2px solid #00d4ff;
   border-radius: 10px;
@@ -594,7 +594,7 @@ html[data-theme="light"] #landing .landing-preview-caption { color: #49616a; }
   text-align: left;
 }
 #landing .landing-key-title { font-family: 'Orbitron', monospace; font-weight: 700; letter-spacing: 1.6px; font-size: .92rem; color: #00e5ff; }
-#landing .landing-key-body { margin: 7px 0 12px; font-size: .8rem; line-height: 1.5; color: #a9c3cb; }
+#landing .landing-key-body { margin: 5px 0 9px; font-size: .8rem; line-height: 1.45; color: #a9c3cb; }
 #landing .landing-key-form { display: flex; gap: 8px; }
 #landing .landing-key-input { flex: 1 1 auto; min-width: 0; min-height: 50px; padding: 0 13px; border-radius: 6px; border: 1px solid rgba(0, 212, 255, .35); background: rgba(0, 0, 0, .35); color: #e8fbff; font-size: .95rem; }
 #landing .landing-key-input:focus { outline: none; border-color: #00d4ff; box-shadow: 0 0 0 3px rgba(0, 212, 255, .18); }
