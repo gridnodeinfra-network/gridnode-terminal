@@ -36,7 +36,7 @@ function bridge() {
     'confirmFutureTimestampSave', 'setScannerMode',
     'selectScannerLocation', 'renderScanner', 'openWeightModal', 'closeWt', 'saveWt',
     'setWeightUnit', 'setRange', 'setWtRange', 'showLabSeg', 'showYouSeg', 'toggleSelect',
-    'selectOpt', 'saveProfileMed', 'saveProfileMetrics', 'calcAndShowBMI', 'updatePills',
+    'selectOpt', 'saveProfileMed', 'saveProfileMetrics', 'setUnitSystem', 'gnUnitSystem', 'gnWeightUnit', 'gnLbToKg', 'gnKgToLb', 'calcAndShowBMI', 'updatePills',
     'selPill', 'gnMedRevealGroup', 'gnSetShotMeridiem', 'gnShotClockLiveFormat',
     'gnNormalizeShotClockField', 'gnWeightDateInput', 'gnWeightTimeInput', 'gnOpenShotDatePicker',
     'gnCloseShotDatePicker', 'gnDatePickerMove', 'gnSelectPickerDate', 'gnSetShotDateFromPicker',

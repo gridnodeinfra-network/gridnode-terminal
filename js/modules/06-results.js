@@ -1,5 +1,8 @@
 export function openWeightModal() {
   clearWtFieldErrors();
+  /* Default the entry unit to the global measurement system; the modal
+     toggle still lets the user flip for a single entry. */
+  try { setWeightUnit(gnWeightUnit()); } catch (_) {}
   const wtOvEl = $('wtOv');
   if (wtOvEl && !wtOvEl.querySelector('.gn-drawer-handle')) wtOvEl.insertAdjacentHTML('afterbegin', '<div class="gn-drawer-handle" aria-hidden="true"></div>');
   setHumanDateInput($('wtDate'), todayISO(), true);
@@ -197,10 +200,11 @@ export function renderResults() {
   setDisplay('r6BMICard', Boolean(resultsBMI));
   setText('r6Wt', latest ? `${latest.weight.toFixed(1)} lb` : '—');
   setText('r6Pct', weightMetrics.percentLost === null ? '—' : `${weightMetrics.percentLost.toFixed(1)}%`);
-  setText('r6Avg', weightMetrics.weeklyAverage === null ? '—' : tx('dashboard.weeklyRate', '{value} lb/wk', { value: weightMetrics.weeklyAverage.toFixed(1) }));
-  setText('r6Goal', profile.goalWt && latest ? `${Math.max(0, latest.weight - Number(profile.goalWt)).toFixed(1)} lb` : '—');
+  const resultsMetric = gnUnitSystem() === 'metric';
+  setText('r6Avg', weightMetrics.weeklyAverage === null ? '—' : resultsMetric ? tx('dashboard.weeklyRateKg', '{value} kg/wk', { value: gnLbToKg(weightMetrics.weeklyAverage).toFixed(1) }) : tx('dashboard.weeklyRate', '{value} lb/wk', { value: weightMetrics.weeklyAverage.toFixed(1) }));
+  setText('r6Goal', profile.goalWt && latest ? `${(resultsMetric ? gnLbToKg(Math.max(0, latest.weight - Number(profile.goalWt))) : Math.max(0, latest.weight - Number(profile.goalWt))).toFixed(1)} ${resultsMetric ? 'kg' : 'lb'}` : '—');
   const wtChartValue = $('wtChartVal');
-  if (wtChartValue) wtChartValue.innerHTML = latest ? Number(latest.weight).toFixed(1) + '<span>' + tx('results.lbsCurrent', 'lbs current') + '</span>' : '—';
+  if (wtChartValue) wtChartValue.innerHTML = latest ? (resultsMetric ? gnLbToKg(Number(latest.weight)) : Number(latest.weight)).toFixed(1) + '<span>' + tx(resultsMetric ? 'results.kgCurrent' : 'results.lbsCurrent', resultsMetric ? 'kg current' : 'lbs current') + '</span>' : '—';
   const direction = $('resWeightDirection');
   if (direction) { direction.textContent = directionReady ? tx(change < 0 ? 'results.trendDownAcross' : change > 0 ? 'results.trendUpAcross' : 'results.trendStableAcross', 'Trend direction: Stable across logged measurements') : tx('results.trendInsufficient', 'Trend direction: Insufficient Data'); direction.className = 'results-direction ' + (!directionReady ? 'insufficient' : change <= 0 ? 'good' : 'warn'); }
   setDisplay('weightTrendEmpty', !weights.length); setDisplay('weightTrendLive', Boolean(weights.length));

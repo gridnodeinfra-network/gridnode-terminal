@@ -976,7 +976,7 @@ function ensureProfileMeasurements() {
       <p class="gn-measurements-copy" data-i18n="vault.measurementsCopy">Use this profile section as the single entry point for weight and user-entered body measurements.</p>
       <button type="button" class="btn-full btn-primary" onclick="openWeightModal()" style="margin-bottom:10px" data-i18n="dashboard.logWeight">LOG WEIGHT</button>
       <form id="gnMeasurementsForm" class="gn-measurements-form">
-        <div class="gn-measurements-tools"><label><span data-i18n="vault.measurementUnit">UNIT</span><select id="gnMeasurementUnit" onchange="setMeasurementUnit(this.value)"><option value="in" data-i18n="vault.inches">INCHES</option><option value="cm" data-i18n="vault.centimeters">CENTIMETERS</option></select></label><label><span data-i18n="vault.measurementDate">DATE</span><input id="gnMeasurementDate" type="date"></label></div>
+        <div class="gn-measurements-tools"><label><span data-i18n="vault.measurementUnit">UNIT</span><span class="results-weight-unit-toggle" role="group" aria-label="Measurement unit"><button type="button" class="results-weight-unit" data-measure-unit="in" onclick="setMeasurementUnit('in')" data-i18n="vault.inchesShort">IN</button><button type="button" class="results-weight-unit" data-measure-unit="cm" onclick="setMeasurementUnit('cm')" data-i18n="vault.centimetersShort">CM</button></span></label><label><span data-i18n="vault.measurementDate">DATE</span><input id="gnMeasurementDate" type="date"></label></div>
         <div class="gn-measurements-grid">${MEASUREMENT_TYPES.map(([type, label, key]) => `<label><span><b data-i18n="${key}">${label}</b><small id="gnMeasurementLatest_${type}" data-i18n="vault.noRecord">NO RECORD</small></span><input type="number" min="0" step="0.1" inputmode="decimal" data-measurement-type="${type}" aria-label="${tx(key, label)}"></label>`).join('')}</div>
         <button type="submit" class="btn-full btn-secondary" data-i18n="vault.saveMeasurements">SAVE MEASUREMENTS</button>
       </form>
@@ -997,8 +997,7 @@ function renderMeasurements() {
   const card = $('gnMeasurementsCard');
   if (!card) return;
   const unit = measurementUnit();
-  const unitSelect = $('gnMeasurementUnit');
-  if (unitSelect) unitSelect.value = unit;
+  qa('[data-measure-unit]').forEach(button => button.classList.toggle('active', button.dataset.measureUnit === unit));
   syncCustomPickers(card);
   const dateInput = $('gnMeasurementDate');
   if (dateInput && !dateInput.value) dateInput.value = todayISO();

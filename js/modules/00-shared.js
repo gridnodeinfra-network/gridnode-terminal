@@ -111,6 +111,26 @@ export const moduleState = {
   labOriginalSlots: new Map()
 };
 
+/* Measurement system (2026-11-01, Pk feedback): one global preference,
+   preferences.unitSystem, drives weight, height and body-measurement
+   entry + display. Canonical storage stays imperial (lbs, ft/in) exactly
+   as the rest of the app already treats profile values; this layer only
+   converts at entry/display time. Derivation when unset: an explicit
+   legacy measurementUnit wins, then profile weightUnit, then locale
+   (en-US imperial, everywhere else metric). */
+export function gnUnitSystem() {
+  const prefs = S.get('preferences', {});
+  if (prefs.unitSystem === 'metric' || prefs.unitSystem === 'imperial') return prefs.unitSystem;
+  if (prefs.measurementUnit === 'cm') return 'metric';
+  if (prefs.measurementUnit === 'in') return 'imperial';
+  try { if (String(getProfile().weightUnit || '').toLowerCase().startsWith('kg')) return 'metric'; } catch (_) {}
+  const lang = String((typeof navigator !== 'undefined' && navigator.language) || 'en-US').toLowerCase();
+  return lang === 'en-us' ? 'imperial' : 'metric';
+}
+export function gnWeightUnit() { return gnUnitSystem() === 'metric' ? 'kg' : 'lb'; }
+export function gnLbToKg(lb) { return Number(lb) / 2.2046226218; }
+export function gnKgToLb(kg) { return Number(kg) * 2.2046226218; }
+
 const ZONES = Object.freeze({
   core: [
     'Upper Left', 'Upper Right',

@@ -2748,7 +2748,14 @@ function scrollLandingTo(id) {
       <span class="gn-vault-chev" aria-hidden="true">&rsaquo;</span>
     </summary>
     <div class="gn-vault-card-body">
-    <div class="form-row">
+    <div class="form-group" style="margin-bottom:14px">
+      <div class="form-label" data-i18n="settings.measurementSystem">MEASUREMENT SYSTEM</div>
+      <div class="results-weight-unit-toggle" role="group" aria-label="Measurement system">
+        <button class="results-weight-unit" type="button" data-unit-system="imperial" onclick="setUnitSystem('imperial')" data-i18n="settings.imperial">IMPERIAL (LB / IN)</button>
+        <button class="results-weight-unit" type="button" data-unit-system="metric" onclick="setUnitSystem('metric')" data-i18n="settings.metric">METRIC (KG / CM)</button>
+      </div>
+    </div>
+    <div class="form-row" id="profHeightImperial">
       <div class="form-group">
         <label class="form-label" for="profHtFt" data-i18n="profile.heightFt">HEIGHT (ft)</label>
         <input class="form-input" id="profHtFt" type="number" placeholder="5" min="3" max="8" oninput="saveProfileMetrics()">
@@ -2756,6 +2763,12 @@ function scrollLandingTo(id) {
       <div class="form-group">
         <label class="form-label" for="profHtIn" data-i18n="profile.heightIn">HEIGHT (in)</label>
         <input class="form-input" id="profHtIn" type="number" placeholder="8" min="0" max="11" oninput="saveProfileMetrics()">
+      </div>
+    </div>
+    <div class="form-row" id="profHeightMetric" style="display:none">
+      <div class="form-group">
+        <label class="form-label" for="profHtCm" data-i18n="profile.heightCm">HEIGHT (cm)</label>
+        <input class="form-input" id="profHtCm" type="number" placeholder="173" min="90" max="250" step="0.1" oninput="saveProfileMetrics()">
       </div>
     </div>
     <div class="form-row">
@@ -2780,11 +2793,11 @@ function scrollLandingTo(id) {
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label" for="profStartWt" data-i18n="profile.startWeight">START WEIGHT (lbs)</label>
+        <label class="form-label" for="profStartWt" id="profStartWtLabel" data-i18n="profile.startWeight">START WEIGHT (lbs)</label>
         <input class="form-input" id="profStartWt" type="number" placeholder="220" oninput="saveProfileMetrics()">
       </div>
       <div class="form-group">
-        <label class="form-label" for="profGoalWt" data-i18n="profile.goalWeight">GOAL WEIGHT (lbs)</label>
+        <label class="form-label" for="profGoalWt" id="profGoalWtLabel" data-i18n="profile.goalWeight">GOAL WEIGHT (lbs)</label>
         <input class="form-input" id="profGoalWt" type="number" placeholder="180" oninput="saveProfileMetrics()">
       </div>
     </div>

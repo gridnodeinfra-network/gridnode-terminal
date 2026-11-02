@@ -145,7 +145,7 @@
     'openArchiveConfirm cancelArchiveShot confirmArchiveShot restoreArchivedShot openPermanentDeleteConfirm cancelPermanentDeleteShot confirmPermanentDeleteShot ' +
     'openFutureTimestampConfirm closeFutureTimestampConfirm cancelFutureTimestampSave confirmFutureTimestampSave setScannerMode ' +
     'selectScannerLocation renderScanner openWeightModal closeWt saveWt setWeightUnit setRange setWtRange showLabSeg showYouSeg toggleSelect ' +
-    'selectOpt saveProfileMed saveProfileMetrics calcAndShowBMI updatePills selPill gnMedRevealGroup gnSetShotMeridiem gnShotClockLiveFormat ' +
+    'selectOpt saveProfileMed saveProfileMetrics setUnitSystem gnUnitSystem gnWeightUnit gnLbToKg gnKgToLb calcAndShowBMI updatePills selPill gnMedRevealGroup gnSetShotMeridiem gnShotClockLiveFormat ' +
     'gnNormalizeShotClockField gnWeightDateInput gnWeightTimeInput gnOpenShotDatePicker gnCloseShotDatePicker gnDatePickerMove gnSelectPickerDate gnSetShotDateFromPicker ' +
     'gnSetShotDateValue gnSetShotTimeValue updateSyr updateRecon updateSupply exportCSV exportBackup exportInventory handleCSVImportFile cancelCSVImport confirmCSVImport prepareCSVImport ' +
     'openImportDialog closeImportDialog handleBackupImportFile confirmBackupImport handleShotsyJSONFile toggleImportForce parseShotsyJSON ' +

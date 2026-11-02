@@ -1788,6 +1788,26 @@ const moduleState = {
   labOriginalSlots: new Map()
 };
 
+/* Measurement system (2026-11-01, Pk feedback): one global preference,
+   preferences.unitSystem, drives weight, height and body-measurement
+   entry + display. Canonical storage stays imperial (lbs, ft/in) exactly
+   as the rest of the app already treats profile values; this layer only
+   converts at entry/display time. Derivation when unset: an explicit
+   legacy measurementUnit wins, then profile weightUnit, then locale
+   (en-US imperial, everywhere else metric). */
+function gnUnitSystem() {
+  const prefs = S.get('preferences', {});
+  if (prefs.unitSystem === 'metric' || prefs.unitSystem === 'imperial') return prefs.unitSystem;
+  if (prefs.measurementUnit === 'cm') return 'metric';
+  if (prefs.measurementUnit === 'in') return 'imperial';
+  try { if (String(getProfile().weightUnit || '').toLowerCase().startsWith('kg')) return 'metric'; } catch (_) {}
+  const lang = String((typeof navigator !== 'undefined' && navigator.language) || 'en-US').toLowerCase();
+  return lang === 'en-us' ? 'imperial' : 'metric';
+}
+function gnWeightUnit() { return gnUnitSystem() === 'metric' ? 'kg' : 'lb'; }
+function gnLbToKg(lb) { return Number(lb) / 2.2046226218; }
+function gnKgToLb(kg) { return Number(kg) * 2.2046226218; }
+
 const ZONES = Object.freeze({
   core: [
     'Upper Left', 'Upper Right',
@@ -2650,7 +2670,63 @@ function hydrateProfileFields(profile) {
     setSelect('cpShotDayProf', String(profile.shotDay), days[Number(profile.shotDay)] || 'Select shot day');
   }
   if (profile.sex) setSelect('cpSexProf', profile.sex, profile.sex);
+  /* Fields were just filled with canonical imperial values; convert the
+     visible ones when the measurement system is metric. */
+  if (gnUnitSystem() === 'metric') {
+    ['profStartWt', 'profGoalWt'].forEach(id => {
+      const el = $(id);
+      const lbs = Number(el?.value);
+      if (el && Number.isFinite(lbs) && lbs) el.value = String(Math.round(gnLbToKg(lbs) * 10) / 10);
+    });
+  }
+  syncUnitSystemForm();
   calcAndShowBMI();
+}
+
+/* Static side of the measurement-system form state: toggle buttons,
+   which height row shows, the cm field value (derived from the canonical
+   ft/in fields), and the weight unit labels. Weight field VALUES are
+   converted by the two call sites that know their direction (hydrate
+   above, setUnitSystem below), never here. */
+function syncUnitSystemForm() {
+  const metric = gnUnitSystem() === 'metric';
+  qa('[data-unit-system]').forEach(button => button.classList.toggle('active', (button.dataset.unitSystem === 'metric') === metric));
+  setDisplay('profHeightImperial', !metric);
+  setDisplay('profHeightMetric', metric);
+  if (metric) {
+    const profile = getProfile();
+    const ft = Number($('profHtFt')?.value || profile.htFt) || 0;
+    const inch = Number($('profHtIn')?.value || profile.htIn) || 0;
+    if ($('profHtCm') && (ft || inch)) $('profHtCm').value = String(Math.round((ft * 12 + inch) * 2.54 * 10) / 10);
+  }
+  const unit = metric ? 'kg' : 'lbs';
+  setText('profStartWtLabel', tx('profile.startWeightUnit', 'START WEIGHT ({unit})', { unit }));
+  setText('profGoalWtLabel', tx('profile.goalWeightUnit', 'GOAL WEIGHT ({unit})', { unit }));
+}
+
+function setUnitSystem(system) {
+  const metric = system === 'metric';
+  const wasMetric = gnUnitSystem() === 'metric';
+  if (metric !== wasMetric) {
+    /* Convert the visible weight values from the old system to the new
+       one before the preference flips; storage stays canonical lbs and
+       profileSnapshot converts back on save. */
+    ['profStartWt', 'profGoalWt'].forEach(id => {
+      const el = $(id);
+      const value = Number(el?.value);
+      if (!el || !Number.isFinite(value) || !value) return;
+      el.value = String(Math.round((metric ? gnLbToKg(value) : gnKgToLb(value)) * 10) / 10);
+    });
+  }
+  const preferences = { ...S.get('preferences', {}) };
+  preferences.unitSystem = metric ? 'metric' : 'imperial';
+  preferences.measurementUnit = metric ? 'cm' : 'in';
+  S.set('preferences', preferences);
+  const profile = profileSnapshot();
+  profile.weightUnit = metric ? 'kg' : 'lbs';
+  if (S.set('profile', profile)) { queueCloudSync('profile', profile); queueCloudSync('workspace'); }
+  syncUnitSystemForm();
+  showToast(tx(metric ? 'profile.unitsMetric' : 'profile.unitsImperial', metric ? 'Measurement system: metric (kg / cm).' : 'Measurement system: imperial (lb / in).'));
 }
 
 function profileSnapshot() {
@@ -2659,12 +2735,35 @@ function profileSnapshot() {
   profile.med = normalizeMedicationId(selectState.cpMedProf?.val || profile.med);
   profile.dose = $('profDose')?.value || profile.dose || '';
   profile.shotDay = selectState.cpShotDayProf?.val !== undefined ? Number(selectState.cpShotDayProf.val) : profile.shotDay;
-  profile.htFt = $('profHtFt')?.value || profile.htFt || '';
-  profile.htIn = $('profHtIn')?.value || profile.htIn || '';
   profile.age = $('profAge')?.value || profile.age || '';
   profile.sex = selectState.cpSexProf?.val || profile.sex || '';
-  profile.startWt = $('profStartWt')?.value || profile.startWt || '';
-  profile.goalWt = $('profGoalWt')?.value || profile.goalWt || '';
+  if (gnUnitSystem() === 'metric') {
+    /* The form shows cm and kg; storage stays canonical ft/in and lbs.
+       The hidden imperial fields are kept synced so BMI and every other
+       reader of the fields stays correct. */
+    const cm = Number($('profHtCm')?.value);
+    if (Number.isFinite(cm) && cm > 0) {
+      const totalIn = cm / 2.54;
+      const ft = Math.floor(totalIn / 12);
+      const inch = Math.round((totalIn - ft * 12) * 10) / 10;
+      profile.htFt = String(ft);
+      profile.htIn = String(inch);
+      if ($('profHtFt')) $('profHtFt').value = profile.htFt;
+      if ($('profHtIn')) $('profHtIn').value = profile.htIn;
+    } else {
+      profile.htFt = $('profHtFt')?.value || profile.htFt || '';
+      profile.htIn = $('profHtIn')?.value || profile.htIn || '';
+    }
+    const startKg = Number($('profStartWt')?.value);
+    if (Number.isFinite(startKg) && startKg > 0) profile.startWt = String(Math.round(gnKgToLb(startKg) * 10) / 10);
+    const goalKg = Number($('profGoalWt')?.value);
+    if (Number.isFinite(goalKg) && goalKg > 0) profile.goalWt = String(Math.round(gnKgToLb(goalKg) * 10) / 10);
+  } else {
+    profile.htFt = $('profHtFt')?.value || profile.htFt || '';
+    profile.htIn = $('profHtIn')?.value || profile.htIn || '';
+    profile.startWt = $('profStartWt')?.value || profile.startWt || '';
+    profile.goalWt = $('profGoalWt')?.value || profile.goalWt || '';
+  }
   return profile;
 }
 
@@ -5200,7 +5299,7 @@ const GN_TACTILE_ESSENTIAL = Object.freeze({ warn: true, error: true });
   };
 })();
 
-window.GNModules={getProfile:getProfile,getProfileForEvidence:getProfileForEvidence,selectState:selectState,moduleState:moduleState,refreshNodeHeader:refreshNodeHeader,showScreen:showScreen,showPage:showPage,refreshAll:refreshAll,loadApp:loadApp,computeTotalChange:computeTotalChange,resetShotFormState:resetShotFormState,saveProfileMed:saveProfileMed,saveProfileMetrics:saveProfileMetrics,calcAndShowBMI:calcAndShowBMI,toggleSelect:toggleSelect,selectOpt:selectOpt,retryCloudHydration:retryCloudHydration,showPhasesModal:showPhasesModal,closePhases:closePhases,showLabSeg:showLabSeg,showYouSeg:showYouSeg,renderCalendar:renderCalendar,calPrev:calPrev,calNext:calNext,calDayClick:calDayClick,openArsenalMod:openArsenalMod,closeArs:closeArs,saveArs:saveArs,requestLoadoutRemove:requestLoadoutRemove,cancelLoadoutRemove:cancelLoadoutRemove,confirmLoadoutRemove:confirmLoadoutRemove,formatTime24:formatTime24,formatTime12:formatTime12,gnSetShotMeridiem:gnSetShotMeridiem,gnShotClockLiveFormat:gnShotClockLiveFormat,gnNormalizeShotClockField:gnNormalizeShotClockField,gnWeightDateInput:gnWeightDateInput,gnWeightTimeInput:gnWeightTimeInput,gnOpenShotDatePicker:gnOpenShotDatePicker,gnCloseShotDatePicker:gnCloseShotDatePicker,gnDatePickerMove:gnDatePickerMove,gnSelectPickerDate:gnSelectPickerDate,gnSetShotDateFromPicker:gnSetShotDateFromPicker,gnSetShotDateValue:gnSetShotDateValue,gnSetShotTimeValue:gnSetShotTimeValue,gnMedRevealGroup:gnMedRevealGroup,updatePills:updatePills,selPill:selPill,initModules:initModules,trustBadge:trustBadge,approxPct:approxPct,approxNum:approxNum};
+window.GNModules={getProfile:getProfile,getProfileForEvidence:getProfileForEvidence,selectState:selectState,moduleState:moduleState,gnUnitSystem:gnUnitSystem,gnWeightUnit:gnWeightUnit,gnLbToKg:gnLbToKg,gnKgToLb:gnKgToLb,refreshNodeHeader:refreshNodeHeader,showScreen:showScreen,showPage:showPage,refreshAll:refreshAll,loadApp:loadApp,computeTotalChange:computeTotalChange,resetShotFormState:resetShotFormState,setUnitSystem:setUnitSystem,saveProfileMed:saveProfileMed,saveProfileMetrics:saveProfileMetrics,calcAndShowBMI:calcAndShowBMI,toggleSelect:toggleSelect,selectOpt:selectOpt,retryCloudHydration:retryCloudHydration,showPhasesModal:showPhasesModal,closePhases:closePhases,showLabSeg:showLabSeg,showYouSeg:showYouSeg,renderCalendar:renderCalendar,calPrev:calPrev,calNext:calNext,calDayClick:calDayClick,openArsenalMod:openArsenalMod,closeArs:closeArs,saveArs:saveArs,requestLoadoutRemove:requestLoadoutRemove,cancelLoadoutRemove:cancelLoadoutRemove,confirmLoadoutRemove:confirmLoadoutRemove,formatTime24:formatTime24,formatTime12:formatTime12,gnSetShotMeridiem:gnSetShotMeridiem,gnShotClockLiveFormat:gnShotClockLiveFormat,gnNormalizeShotClockField:gnNormalizeShotClockField,gnWeightDateInput:gnWeightDateInput,gnWeightTimeInput:gnWeightTimeInput,gnOpenShotDatePicker:gnOpenShotDatePicker,gnCloseShotDatePicker:gnCloseShotDatePicker,gnDatePickerMove:gnDatePickerMove,gnSelectPickerDate:gnSelectPickerDate,gnSetShotDateFromPicker:gnSetShotDateFromPicker,gnSetShotDateValue:gnSetShotDateValue,gnSetShotTimeValue:gnSetShotTimeValue,gnMedRevealGroup:gnMedRevealGroup,updatePills:updatePills,selPill:selPill,initModules:initModules,trustBadge:trustBadge,approxPct:approxPct,approxNum:approxNum};
 
 const modules=window.GNModules;
 
@@ -5237,7 +5336,7 @@ function bridge() {
     'confirmFutureTimestampSave', 'setScannerMode',
     'selectScannerLocation', 'renderScanner', 'openWeightModal', 'closeWt', 'saveWt',
     'setWeightUnit', 'setRange', 'setWtRange', 'showLabSeg', 'showYouSeg', 'toggleSelect',
-    'selectOpt', 'saveProfileMed', 'saveProfileMetrics', 'calcAndShowBMI', 'updatePills',
+    'selectOpt', 'saveProfileMed', 'saveProfileMetrics', 'setUnitSystem', 'gnUnitSystem', 'gnWeightUnit', 'gnLbToKg', 'gnKgToLb', 'calcAndShowBMI', 'updatePills',
     'selPill', 'gnMedRevealGroup', 'gnSetShotMeridiem', 'gnShotClockLiveFormat',
     'gnNormalizeShotClockField', 'gnWeightDateInput', 'gnWeightTimeInput', 'gnOpenShotDatePicker',
     'gnCloseShotDatePicker', 'gnDatePickerMove', 'gnSelectPickerDate', 'gnSetShotDateFromPicker',

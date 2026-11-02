@@ -385,7 +385,7 @@ function timelineShortDate(event, withYear) {
 
 function timelineEventLabel(event) {
   const record = event.record;
-  if (event.type === 'weight') return tx('results.weight', 'WEIGHT') + ' ' + Number(record.weight).toFixed(1) + 'lb';
+  if (event.type === 'weight') { const historyMetric = gnUnitSystem() === 'metric'; return tx('results.weight', 'WEIGHT') + ' ' + (historyMetric ? gnLbToKg(Number(record.weight)).toFixed(1) + 'kg' : Number(record.weight).toFixed(1) + 'lb'); }
   const med = medicationLabel(record.med) || '';
   const dose = record.dose != null && record.dose !== '' ? ' ' + record.dose + 'mg' : '';
   const site = record.site ? ' · ' + (zoneLabel(record.site) || record.site) : '';
