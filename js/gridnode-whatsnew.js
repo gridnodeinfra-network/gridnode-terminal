@@ -292,7 +292,7 @@
         ]
       }
     },
-    '__CURRENT_BUILD__': {
+    '20261101.7be0216': {
       version: '1.3.1', title: 'SIGN-IN CLARITY', date: '2026-11-01',
       en: {
         FIXED: [
@@ -304,6 +304,27 @@
         FIXED: [
           'La vía de acceso con Google ya no se queda en blanco mientras carga: ahora muestra un estado CARGANDO GOOGLE, para que la opción nunca parezca ausente en una conexión lenta.',
           'PROGRESO en modo local ahora dice claramente que las lecturas de fase completas son una función del servidor para cuentas con sesión iniciada, y que HOY sigue mostrando una estimación local a partir de tus dosis registradas. Antes, las dos pantallas se contradecían.'
+        ]
+      }
+    },
+    '__CURRENT_BUILD__': {
+      version: '1.4.0', title: 'THE OPEN DOOR', date: '2026-11-01',
+      en: {
+        NEW: [
+          'Requesting a NODE KEY is now front-door simple: the GET YOUR NODE KEY form sits right under ENTER THE GRID on the home page. Type your email, tap REQUEST MY KEY, done. No digging through screens, and the request card inside sign-in got the same treatment.',
+          'One Measurement System for the whole grid: VAULT, BODY METRICS, IMPERIAL (LB / IN) or METRIC (KG / CM). Weights, height and body measurements all follow it, for entering and for reading, and accounts outside the US start in metric automatically.'
+        ],
+        FIXED: [
+          'On some mobile browsers the measurements unit list opened at the bottom of the page, far from the field. It is now plain IN | CM buttons that stay exactly where you tap.'
+        ]
+      },
+      es: {
+        NEW: [
+          'Pedir tu NODE KEY ahora es tan simple como la puerta principal: el formulario CONSIGUE TU NODE KEY está justo debajo de ENTRAR A LA GRID en la página de inicio. Escribe tu correo, toca PEDIR MI CLAVE y listo. Sin buscar entre pantallas, y la tarjeta de solicitud dentro del acceso recibió el mismo tratamiento.',
+          'Un solo sistema de medidas para toda la red: VAULT, MÉTRICAS DEL CUERPO, IMPERIAL (LB / PULG) o MÉTRICO (KG / CM). Pesos, estatura y medidas corporales lo siguen todos, al registrar y al leer, y las cuentas fuera de EE. UU. empiezan en métrico automáticamente.'
+        ],
+        FIXED: [
+          'En algunos navegadores móviles la lista de unidades de medidas se abría al final de la página, lejos del campo. Ahora son botones simples PULG | CM que se quedan justo donde tocas.'
         ]
       }
     },
