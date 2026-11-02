@@ -152,7 +152,8 @@ function injectStableStyles() {
     .gn-entry-key-big span:first-child{display:block;color:#e8fcff;font:800 .74rem var(--font-d,monospace);letter-spacing:2px}
     .gn-entry-key-big .gn-quiet-sub{display:block;margin-top:4px;color:#9fc7d4;font:500 .6rem var(--font-m,monospace);letter-spacing:.6px}
     .gn-entry-key-big:hover{border-color:#00d4ff;background:linear-gradient(120deg,rgba(0,212,255,.18),rgba(0,212,255,.05))}
-    .gn-request-card{margin-top:14px;padding:16px 14px;border:1px solid rgba(0,212,255,.5);border-top:2px solid #00d4ff;border-radius:6px;background:linear-gradient(160deg,rgba(0,212,255,.09),rgba(0,212,255,.02) 55%,rgba(0,0,0,.25));box-shadow:0 0 24px rgba(0,212,255,.12)}
+    .gn-request-card{margin-top:14px;padding:16px 14px;border:1px solid rgba(0,212,255,.5);border-top:2px solid #00d4ff;border-radius:6px;background:linear-gradient(160deg,rgba(0,212,255,.09),rgba(0,212,255,.02) 55%,rgba(0,0,0,.25));box-shadow:0 0 24px rgba(0,212,255,.12);animation:gnGlowPulse 2.8s ease-in-out infinite}
+    @media (prefers-reduced-motion: reduce){.gn-request-card{animation:none}}
     .gn-request-title{margin:0 0 8px;color:#fff;font:800 .95rem var(--font-d,monospace);letter-spacing:2px}
     .gn-request-body{margin:0;color:#cfeef7;font:.68rem/1.55 var(--font-m,monospace);letter-spacing:.4px}
     .gn-request-btn{width:100%;min-height:52px;margin-top:4px;border:0;border-radius:3px;cursor:pointer;background:linear-gradient(135deg,#00d4ff,#0094c6);color:#03222e;font:800 .74rem var(--font-d,monospace);letter-spacing:2px;box-shadow:0 6px 22px rgba(0,212,255,.28)}
@@ -793,6 +794,31 @@ async function submitNewHereKey() {
   }
 }
 
+/* One waitlist write for every surface (auth view, landing hero).
+   201 created, 200/409 duplicate: duplicates count as success, since
+   anon cannot SELECT to check first. */
+async function gnWaitlistPost(email, source) {
+  const res = await fetch(`${CLOUD_CONFIG.url}/rest/v1/waitlist`, {
+    method: 'POST',
+    headers: {
+      apikey: CLOUD_CONFIG.anonKey,
+      Authorization: 'Bearer ' + CLOUD_CONFIG.anonKey,
+      'Content-Type': 'application/json',
+      /* No resolution=ignore-duplicates: upsert needs SELECT which anon
+       * must not have. Plain INSERT returns 409 on duplicate email,
+       * which we treat as success in the caller. */
+      Prefer: 'return=minimal'
+    },
+    body: JSON.stringify({
+      email,
+      source,
+      locale: window.GN_I18N?.getLang?.() === 'es-419' ? 'es' : 'en',
+      consented_at: new Date().toISOString()
+    })
+  });
+  return res.status === 201 || res.status === 200 || res.status === 409;
+}
+
 async function submitWaitlist(event) {
   if (event?.preventDefault) event.preventDefault();
   const email = ($('gnWaitlistEmail')?.value || '').trim().toLowerCase();
@@ -819,26 +845,7 @@ async function submitWaitlist(event) {
   const btn = $('gnWaitlistBtn');
   if (btn) btn.disabled = true;
   try {
-    const res = await fetch(`${CLOUD_CONFIG.url}/rest/v1/waitlist`, {
-      method: 'POST',
-      headers: {
-        apikey: CLOUD_CONFIG.anonKey,
-        Authorization: 'Bearer ' + CLOUD_CONFIG.anonKey,
-        'Content-Type': 'application/json',
-        /* No resolution=ignore-duplicates: upsert needs SELECT which anon
-         * must not have. Plain INSERT returns 409 on duplicate email,
-         * which we treat as success below. */
-        Prefer: 'return=minimal'
-      },
-      body: JSON.stringify({
-        email,
-        source: 'auth-no-key',
-        locale: window.GN_I18N?.getLang?.() === 'es-419' ? 'es' : 'en',
-        consented_at: new Date().toISOString()
-      })
-    });
-    /* 201 created, 200/409 duplicate — duplicates get the same success message. */
-    if (res.status === 201 || res.status === 200 || res.status === 409) {
+    if (await gnWaitlistPost(email, 'auth-no-key')) {
       setViewMsg('gnWaitlistMsg', 'otp.waitlistSuccess', "Request received. You're on the list. When your key opens, it lands in this inbox. One email, nothing else.", false);
       $('gnWaitlistForm')?.reset();
     } else {
@@ -846,6 +853,46 @@ async function submitWaitlist(event) {
     }
   } catch (error) {
     setViewMsg('gnWaitlistMsg', 'otp.waitlistError', "Couldn't join the list. Try again.", true);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+/* Landing hero request: same waitlist, zero navigation. Success swaps
+   the whole card to its received state. */
+function gnWlShowDone() {
+  const wrap = $('gnWlFormWrap');
+  if (wrap) wrap.style.display = 'none';
+  const done = $('gnWlDone');
+  if (done) done.style.display = 'block';
+}
+
+async function submitLandingWaitlist(event) {
+  if (event?.preventDefault) event.preventDefault();
+  const email = ($('gnWlEmail')?.value || '').trim().toLowerCase();
+  const honeypot = ($('gnWlHp')?.value || '').trim();
+  /* Honeypot: bots get the same success state, nothing is stored. */
+  if (honeypot) { gnWlShowDone(); return; }
+  const now = Date.now();
+  if (now - gnWaitLastSubmit < 30000) {
+    setViewMsg('gnWlMsg', 'otp.cooldown', 'Too many attempts. Wait a bit and try again.', true);
+    return;
+  }
+  if (!email || !email.includes('@')) {
+    const lang = window.GN_I18N?.getLang?.();
+    setViewMsg('gnWlMsg', null);
+    const el = document.getElementById('gnWlMsg');
+    if (el) el.textContent = lang === 'es-419' ? 'Escribe un correo válido.' : 'Enter a valid email address.';
+    return;
+  }
+  gnWaitLastSubmit = now;
+  const btn = $('gnWlBtn');
+  if (btn) btn.disabled = true;
+  try {
+    if (await gnWaitlistPost(email, 'landing-hero')) gnWlShowDone();
+    else throw new Error('WAITLIST');
+  } catch (error) {
+    setViewMsg('gnWlMsg', 'otp.waitlistError', "Couldn't join the list. Try again.", true);
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -2184,6 +2231,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   injectStableStyles();
   modules.initModules();
   window.startGridNode = startGridNode;
+  window.submitLandingWaitlist = submitLandingWaitlist;
   window.handleGoogleSignIn = handleGoogleSignIn;
   /* F1 steering: the static #loginGoogleBtn in index.html routes here so
    * it lands on the GIS welcome view instead of firing the Supabase

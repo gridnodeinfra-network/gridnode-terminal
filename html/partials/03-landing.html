@@ -12,7 +12,23 @@
       <div class="landing-phase-visual" aria-hidden="true"><div class="phase-segment-ring"></div><div class="landing-phase-core"><span data-i18n="landing.localFirst">LOCAL-FIRST</span><b data-i18n="landing.systemReady">SYSTEM READY</b></div></div>
       <div class="landing-cta-row">
         <button class="landing-btn primary" type="button" onclick="startGridNode()" data-usage="enter_grid_click" data-i18n="landing.enterGrid">ENTER THE GRID</button>
-        <button class="landing-btn secondary" type="button" onclick="startGridNode('newhere')" data-usage="request_key_click" data-i18n="landing.requestKey">🗝 REQUEST A NODE KEY</button>
+      </div>
+      <div class="landing-key-card" id="gnWlCard">
+        <div id="gnWlFormWrap">
+          <div class="landing-key-title" data-i18n="landing.keyCardTitle">🗝 GET YOUR NODE KEY</div>
+          <p class="landing-key-body" data-i18n="landing.keyCardBody">Invite-only beta. Leave your email and we will send your NODE KEY when your spot opens. Every request is read by a human.</p>
+          <form class="landing-key-form" id="gnWlForm" onsubmit="return submitLandingWaitlist(event)">
+            <input type="email" id="gnWlEmail" class="landing-key-input" placeholder="name@email.com" data-i18n-ph="otp.emailPlaceholder" autocomplete="email" inputmode="email" aria-label="Email address">
+            <input type="text" id="gnWlHp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
+            <button type="submit" class="landing-key-btn" id="gnWlBtn" data-usage="request_key_submit" data-i18n="landing.keyCardBtn">REQUEST MY KEY</button>
+          </form>
+          <div class="landing-key-msg" id="gnWlMsg" role="status" aria-live="polite"></div>
+          <p class="landing-key-consent" data-i18n="landing.keyCardConsent">One email when your key opens. No marketing, no spam. Ask us to delete your data anytime at support@gridnode.network.</p>
+        </div>
+        <div id="gnWlDone" style="display:none">
+          <div class="landing-key-title" data-i18n="landing.keyDoneTitle">✓ REQUEST RECEIVED</div>
+          <p class="landing-key-body" data-i18n="landing.keyDoneBody">You're on the list. When your key opens, it lands in this inbox. One email, nothing else.</p>
+        </div>
       </div>
       <p class="landing-entry-ways" data-i18n="landing.entryWays">Start on this device · Sync with Google · Invited? Use your NODE KEY</p>
       <button class="landing-explore-link" type="button" onclick="scrollLandingTo('howItWorks');return false" data-i18n="landing.explore">EXPLORE THE SYSTEM ↓</button>
