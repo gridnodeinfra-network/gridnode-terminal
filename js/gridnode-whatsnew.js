@@ -307,7 +307,7 @@
         ]
       }
     },
-    '__CURRENT_BUILD__': {
+    '20261102.1fb2c0a': {
       version: '1.4.0', title: 'THE OPEN DOOR', date: '2026-11-01',
       en: {
         NEW: [
@@ -327,6 +327,24 @@
           'En algunos navegadores móviles la lista de unidades de medidas se abría al final de la página, lejos del campo. Ahora son botones simples PULG | CM que se quedan justo donde tocas.'
         ]
       }
+    },
+    '__CURRENT_BUILD__': {
+      version: '1.4.1', title: 'FIRST SCREEN', date: '2026-11-04',
+      en: {
+        FIXED: [
+          'The install banner could land on top of the home page pitch for returning visitors. It now waits until you are inside the app, where it belongs.',
+          'On shorter laptop windows the home page pushed ENTER THE GRID and the key request form below the fold. The hero now compresses to fit the first screen.',
+          'Home page layout polish: the intro lines now stack in the right order on every screen size, including the line about pharma GLPs under the headline.'
+        ]
+      },
+      es: {
+        FIXED: [
+          'El banner de instalación podía caer encima del mensaje principal para visitantes que volvían. Ahora espera a que estés dentro de la app, donde pertenece.',
+          'En ventanas de laptop más bajas la página principal empujaba ENTRAR A LA GRID y el formulario de clave bajo el pliegue. El héroe ahora se comprime para caber en la primera pantalla.',
+          'Pulido de la página principal: las líneas de intro ahora se apilan en el orden correcto en todo tamaño de pantalla, incluida la línea sobre GLP farmacéuticos bajo el titular.'
+        ]
+      }
+
     },
     '20261020.713287b': {
       version: '1.3.0', title: 'YOUR OPERATOR', date: '2026-10-17',
