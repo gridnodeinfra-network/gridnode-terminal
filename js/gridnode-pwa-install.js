@@ -9,6 +9,10 @@
  *
  * Polite by design: never nags on the first visit, never re-prompts
  * within 14 days of a dismissal, never shows when already installed.
+ * Landing rule (2026-11-04): the banner and hint cards NEVER cover the
+ * landing hero. They may only appear once entry has completed (the app
+ * screen is active), even for eligible returning visitors: an install
+ * ask should reward interest, not interrupt the pitch.
  */
 (function () {
   'use strict';
@@ -130,7 +134,33 @@
     tryFire();
   }
 
-  /* 2. Install prompt driver. */
+  /* 2. Install prompt driver. Display is gated on entryComplete() (the
+   * landing rule above): the observer below watches #app exactly like
+   * the shortcut-action queue, so the moment a visitor enters the grid
+   * an eligible install ask may appear inside the app, and never
+   * before. Returning users whose session restores on its own get the
+   * same path with no interaction. */
+  function maybeShowInstall() {
+    if (!eligible() || !entryComplete()) return;
+    if (isIOS()) { var ios = $('gnPwaIosHint'); if (ios) ios.style.display = 'flex'; return; }
+    if (!isAndroid()) return;
+    if (deferredPrompt) { var b = $('gnPwaInstallBanner'); if (b) b.style.display = 'flex'; }
+    else { var c = $('gnPwaAndroidHint'); if (c) c.style.display = 'flex'; }
+  }
+
+  function watchEntry() {
+    var appEl = $('app');
+    if (appEl && typeof window.MutationObserver === 'function') {
+      var observer = new window.MutationObserver(maybeShowInstall);
+      try { observer.observe(appEl, { attributes: true, attributeFilter: ['class', 'style'] }); }
+      catch (_) { observer = null; }
+    }
+    // Android fallback: the prompt event may land after entry; one
+    // delayed re-check covers it without ever showing on the landing.
+    window.setTimeout(maybeShowInstall, 2500);
+    maybeShowInstall();
+  }
+
   function wire() {
     var installBtn = $('gnPwaInstallBtn');
     if (installBtn) installBtn.addEventListener('click', function () {
@@ -153,7 +183,7 @@
     window.addEventListener('beforeinstallprompt', function (e) {
       try { e.preventDefault(); } catch (_) {}
       deferredPrompt = e;
-      if (eligible()) { var el = $('gnPwaInstallBanner'); if (el) el.style.display = 'flex'; }
+      maybeShowInstall();
     });
     window.addEventListener('appinstalled', dismiss);
   }
@@ -162,15 +192,7 @@
     handleActionParam();
     wire();
     write(VISITS_KEY, String(Number(read(VISITS_KEY) || 0) + 1));
-    if (!eligible()) return;
-    if (isIOS()) { var ios = $('gnPwaIosHint'); if (ios) ios.style.display = 'flex'; return; }
-    if (!isAndroid()) return;
-    // Android: give beforeinstallprompt a moment; fall back to manual steps.
-    window.setTimeout(function () {
-      if (!eligible()) return;
-      if (deferredPrompt) { var b = $('gnPwaInstallBanner'); if (b) b.style.display = 'flex'; }
-      else { var c = $('gnPwaAndroidHint'); if (c) c.style.display = 'flex'; }
-    }, 2500);
+    watchEntry();
   }
 
   window.GN_PWA = Object.freeze({
