@@ -143,9 +143,11 @@
   function maybeShowInstall() {
     if (!eligible() || !entryComplete()) return;
     if (isIOS()) { var ios = $('gnPwaIosHint'); if (ios) ios.style.display = 'flex'; return; }
-    if (!isAndroid()) return;
-    if (deferredPrompt) { var b = $('gnPwaInstallBanner'); if (b) b.style.display = 'flex'; }
-    else { var c = $('gnPwaAndroidHint'); if (c) c.style.display = 'flex'; }
+    // A captured beforeinstallprompt drives the banner on any platform
+    // that fires it (Android and desktop Chrome alike); Android without
+    // the event falls back to the manual-steps hint.
+    if (deferredPrompt) { var b = $('gnPwaInstallBanner'); if (b) b.style.display = 'flex'; return; }
+    if (isAndroid()) { var c = $('gnPwaAndroidHint'); if (c) c.style.display = 'flex'; }
   }
 
   function watchEntry() {
